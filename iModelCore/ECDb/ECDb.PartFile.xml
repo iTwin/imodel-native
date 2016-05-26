@@ -61,10 +61,8 @@
         <SubPart PartName="PublishedApi" />
     </Part>
   
-    <!-- TRICKY: There are two sets of public APIs, BeSQLite and ECDb. There is only one published API for this repository, and it must do for both. 
-         To avoid that we run the publishing twice this part cares for it and symlinks the same published API once under the name of BeSQLite and
-         once under the name of ECDb-->
     <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
+        <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
         <SubPart PartName="ECDbLibrary" />
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi"  SubPartDirectory="PublishedApi/ECDb"/>
@@ -199,12 +197,25 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
-    <ProductDirectoryList ListName="Empty" />
+    <ProductDirectoryList ListName="ECDbTestedDirList" >
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Libs"                               Deliver="false"/>
+        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
+        <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
+        <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
+    </ProductDirectoryList>
+
     <Product Name="ECDbTested">
         <SubPart PartName="RunGtest" />
         <!--  *** NEEDS WORK: What's the best way to include all platforms? Redefine this container product as a 'MultiPlatform'? -->
-        <Directories DirectoryListName="Empty" />
+        <Directories DirectoryListName="ECDbTestedDirList" />
     </Product>
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // ECSqlConsole                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->

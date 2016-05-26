@@ -210,18 +210,9 @@ Utf8String ECInstanceIdRelationshipConstraintPropertyMap::_ToString() const
 //----------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle             01/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-ECClassIdRelationshipConstraintPropertyMap::ECClassIdRelationshipConstraintPropertyMap
-(
-    ECN::ECPropertyCR constraintProperty,
-    std::vector<DbColumn const*> columns,
-    ECSqlSystemProperty kind,
-    ECClassId defaultConstraintECClassId,
-    ClassMap const& classMap,
-    Utf8CP endTableColumnAlias,
-    bool colIsDelayGenerated
-)
-    : RelationshipConstraintPropertyMap(constraintProperty, columns, kind, endTableColumnAlias),
-    m_defaultConstraintClassId(defaultConstraintECClassId), m_isMappedToClassMapTables(false)
+ECClassIdRelationshipConstraintPropertyMap::ECClassIdRelationshipConstraintPropertyMap(ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*> columns,
+    ECSqlSystemProperty kind, ECClassId defaultConstraintECClassId, ClassMap const& classMap, Utf8CP endTableColumnAlias, bool colIsDelayGenerated)
+    : RelationshipConstraintPropertyMap(constraintProperty, columns, kind, endTableColumnAlias), m_defaultConstraintClassId(defaultConstraintECClassId), m_isMappedToClassMapTables(false)
     {
     m_isMappedToClassMapTables = true;
     for (DbColumn const* column : columns)
@@ -244,9 +235,12 @@ ECClassIdRelationshipConstraintPropertyMap::ECClassIdRelationshipConstraintPrope
 
                         if (!ptr.expired())
                             {
-                            DbTable&  table = ptr.lock()->GetTableR();
-                            table.DeleteColumn(ptr.lock()->GetName().c_str());
-
+                            DbTable& table = ptr.lock()->GetTableR();
+                            if (SUCCESS != table.DeleteColumn(*ptr.lock()))
+                                {
+                                BeAssert(false && "DbTable::DeleteColumn failed in ColumnEventHandler of ECClassIdRelationshipConstraintPropertyMap");
+                                break;
+                                }
                             }
 
                         ptrList[std::distance(ptrList.begin(), itor)] = column.GetTable().FindColumnWeakPtr(column.GetName().c_str());

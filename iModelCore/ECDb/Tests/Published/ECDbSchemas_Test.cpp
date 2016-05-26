@@ -559,7 +559,7 @@ TEST_F(ECDbSchemaTests, IntegrityCheck)
     ECDbR db = saveTestProject.Create("IntegrityCheck.ecdb", L"IntegrityCheck.01.00.ecschema.xml", true);
     Statement stmt;
     std::map<Utf8String, Utf8String> expected;
-    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase]([ECInstanceId] INTEGER NOT NULL, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [SourceECInstanceId] INTEGER NOT NULL, PRIMARY KEY([ECInstanceId]), FOREIGN KEY([SourceECInstanceId]) REFERENCES [ic_SourceBase]([ECInstanceId]) ON DELETE CASCADE ON UPDATE NO ACTION)";
+    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase]([ECInstanceId] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [SourceECInstanceId] INTEGER NOT NULL, FOREIGN KEY([SourceECInstanceId]) REFERENCES [ic_SourceBase]([ECInstanceId]) ON DELETE CASCADE ON UPDATE NO ACTION)";
     stmt.Prepare(db, "select name, sql from sqlite_master Where type='table' AND tbl_name = 'ic_TargetBase'");
     int nRows = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
@@ -1033,27 +1033,6 @@ TEST_F(ECDbSchemaTests, ImportSupplementalSchemas)
         allCustomAttributesCount2++;
         }
     ASSERT_EQ(2, allCustomAttributesCount2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Affan.Khan                        03/13
-! This test need to be moved to ECF test suit
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaTests, SystemSchemaTest)
-    {
-    ECDbR ecdb = SetupECDb("startupcompany.ecdb", BeFileName("StartupCompany.02.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    ECSchemaCP startupCompanySchema = ecdb.Schemas().GetECSchema("StartupCompany");
-    ASSERT_TRUE(startupCompanySchema != nullptr);
-    ECSchemaCP ecdbSystemSchema = ecdb.Schemas().GetECSchema("ECDb_System");
-    ASSERT_TRUE(ecdbSystemSchema != nullptr);
-
-    ASSERT_TRUE(ecdbSystemSchema->IsSystemSchema());
-    ASSERT_TRUE(StandardCustomAttributeHelper::IsSystemSchema(*ecdbSystemSchema));
-
-    ASSERT_FALSE(startupCompanySchema->IsSystemSchema());
-    ASSERT_FALSE(StandardCustomAttributeHelper::IsSystemSchema(*startupCompanySchema));
     }
 
 /*---------------------------------------------------------------------------------**//**

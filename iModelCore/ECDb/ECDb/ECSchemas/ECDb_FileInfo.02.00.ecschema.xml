@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="ECDb_FileInfo" nameSpacePrefix="ecdbf" version="02.00" description="ECDb FileInfo" displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap"/>
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" prefix="CoreCA"/>
 
     <ECEntityClass typeName="FileInfo" description="Abstract base class for holding attributes of a file" modifier="Abstract">
         <ECProperty propertyName="Name" typeName="string" description="File name"/>
@@ -9,7 +9,7 @@
         <ECProperty propertyName="Description" typeName="string" description="File description"/>
         <ECProperty propertyName="LastModified" typeName="dateTime" description="Time the file was last modified.">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -62,7 +62,7 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00.01">
                 <MapStrategy/>
-                <Indexes>
+                  <Indexes>
                     <DbIndex>
                         <Name>uix_ecdbf_fileinfoownership_fileinfoid_fileinfoecclassid</Name>
                         <IsUnique>True</IsUnique>

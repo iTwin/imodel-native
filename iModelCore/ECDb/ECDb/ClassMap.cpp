@@ -261,8 +261,8 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
         }
 
     BeAssert(currentTimeStampColumn->GetType() == DbColumn::Type::TimeStamp);
-    currentTimeStampColumn->GetConstraintR().SetDefaultExpression(CURRENTIMESTAMP_SQLEXP);
-    currentTimeStampColumn->GetConstraintR().SetIsNotNull(true);
+    currentTimeStampColumn->GetConstraintsR().SetDefaultValueExpression(CURRENTIMESTAMP_SQLEXP);
+    currentTimeStampColumn->GetConstraintsR().SetNotNullConstraint();
 
     PropertyMapCP idPropMap = GetECInstanceIdPropertyMap();
     if (idPropMap == nullptr)
@@ -875,8 +875,7 @@ Utf8String ClassMap::GetUpdatableViewName() const
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const
     {
-    ViewGenerator viewGenerator(GetECDbMap());
-    return viewGenerator.Generate(viewSql, *this, isPolymorphic, prepareContext);
+    return ViewGenerator::GenerateSelectViewSql(viewSql, *this, isPolymorphic, prepareContext);
     }
 
 //=========================================================================================
@@ -897,13 +896,13 @@ ColumnFactory::ColumnFactory(ClassMapCR classMap) : m_classMap(classMap), m_uses
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP requestedColumnName, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraint::Collation collation) const
+DbColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP requestedColumnName, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
     {
     DbColumn* outColumn = nullptr;
     if (m_usesSharedColumnStrategy)
         {
         // Shared column does not support NOT NULL constraint -> omit NOT NULL and issue warning
-        if (addNotNullConstraint || addUniqueConstraint || collation != DbColumn::Constraint::Collation::Default)
+        if (addNotNullConstraint || addUniqueConstraint || collation != DbColumn::Constraints::Collation::Default)
             {
             m_classMap.GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. It is mapped "
                                                           "to a column though shared with other ECProperties. Therefore ECDb cannot enforce any of these constraints. "
@@ -930,7 +929,7 @@ DbColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP requestedCol
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //-----------------------------------------------------------------------------------------
-DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, PropertyMapCR propMap, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraint::Collation collation) const
+DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, PropertyMapCR propMap, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
     {
     BeAssert(!Utf8String::IsNullOrEmpty(requestedColumnName) && "Column name must not be null for default strategy");
 
@@ -938,9 +937,9 @@ DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, Proper
     if (existingColumn != nullptr && !IsColumnInUseByClassMap(*existingColumn) &&
         DbColumn::IsCompatible(existingColumn->GetType(), colType))
         {
-        if (!GetTable().IsOwnedByECDb() || (existingColumn->GetConstraint().IsNotNull() == addNotNullConstraint &&
-                                            existingColumn->GetConstraint().IsUnique() == addUniqueConstraint &&
-                                            existingColumn->GetConstraint().GetCollation() == collation))
+        if (!GetTable().IsOwnedByECDb() || (existingColumn->GetConstraints().HasNotNullConstraint() == addNotNullConstraint &&
+                                            existingColumn->GetConstraints().HasUniqueConstraint() == addUniqueConstraint &&
+                                            existingColumn->GetConstraints().GetCollation() == collation))
             {
             return existingColumn;
             }
@@ -975,10 +974,13 @@ DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, Proper
         return nullptr;
         }
 
-    newColumn->GetConstraintR().SetIsNotNull(addNotNullConstraint);
-    newColumn->GetConstraintR().SetIsUnique(addUniqueConstraint);
-    newColumn->GetConstraintR().SetCollation(collation);
+    if (addNotNullConstraint)
+        newColumn->GetConstraintsR().SetNotNullConstraint();
 
+    if (addUniqueConstraint)
+        newColumn->GetConstraintsR().SetUniqueConstraint();
+
+    newColumn->GetConstraintsR().SetCollation(collation);
     return newColumn;
     }
 

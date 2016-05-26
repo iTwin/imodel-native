@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-static const SchemaVersion EXPECTED_PROFILEVERSION (3, 7, 0, 0);
+static const SchemaVersion EXPECTED_PROFILEVERSION (3, 7, 1, 0);
 
 static const PropertySpec PROFILEVERSION_PROPSPEC ("SchemaVersion", "ec_Db");
 
@@ -65,6 +65,27 @@ TEST_F(ECDbTestFixture, ECDbProfile)
         uint64_t lastECInstanceId = -1LL;
         EXPECT_EQ (BE_SQLITE_OK, ecdb.GetBLVCache().QueryValue(lastECInstanceId, sequenceIndex)) << L"ECInstanceId sequence not found in ECDb file which was newly created";
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, ECDbProfileSchemas)
+    {
+    ECDbCR ecdb = SetupECDb("empty.ecdb");
+
+    ECSchemaCP systemSchema = ecdb.Schemas().GetECSchema("ECDb_System");
+    ASSERT_TRUE(systemSchema != nullptr);
+    
+    //Terminology of system/standard schemas is not clear yet for the EC3 world. Right now, the profile schemas are neither of that.
+    ASSERT_FALSE(systemSchema->IsSystemSchema());
+    ASSERT_FALSE(StandardCustomAttributeHelper::IsSystemSchema(*systemSchema));
+
+    ECSchemaCP fileInfoSchema = ecdb.Schemas().GetECSchema("ECDb_FileInfo");
+    ASSERT_TRUE(fileInfoSchema != nullptr);
+
+    ASSERT_FALSE(fileInfoSchema->IsSystemSchema());
+    ASSERT_FALSE(StandardCustomAttributeHelper::IsSystemSchema(*fileInfoSchema));
     }
 
 //---------------------------------------------------------------------------------------
