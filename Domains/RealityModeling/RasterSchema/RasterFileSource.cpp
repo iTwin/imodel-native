@@ -62,11 +62,13 @@ static HFCPtr<HRPPixelType> s_GetTileQueryPixelType(HRARaster const& raster, Ren
         return new HRPPixelTypeV32R8G8B8A8();
         }
 
+#if defined (NEEDS_WORK_READ_IMAGE)
     if (raster.GetPixelType()->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID))
         {
         format = Render::Image::Format::Gray;
         return new HRPPixelTypeV8Gray8();
         }
+#endif
 
     format = Render::Image::Format::Rgb;
     return new HRPPixelTypeV24R8G8B8();
@@ -112,6 +114,9 @@ Render::Image RasterFileSource::_QueryTile(TileId const& id, bool& alphaBlend)
 
     __ippLock.unlock(); // done with imagepp...
 
+#if defined (NEEDS_WORK_READ_IMAGE)
     alphaBlend = (Render::Image::Format::Rgba == imageFormat || Render::Image::Format::Bgra == imageFormat);
+#endif
+    alphaBlend = (Render::Image::Format::Rgba == imageFormat);
     return Render::Image(effectiveTileSizeX, effectiveTileSizeY, imageFormat, std::move(dataStream));
     }

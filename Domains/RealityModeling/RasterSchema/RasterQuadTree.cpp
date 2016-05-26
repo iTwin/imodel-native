@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
-#include <DgnPlatform/ImageUtilities.h>
 #include "RasterQuadTree.h"
 
 static const uint32_t DRAW_CHILDREN_DELTA = 2;

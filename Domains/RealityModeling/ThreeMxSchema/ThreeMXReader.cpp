@@ -233,16 +233,16 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
                 return ERROR;
                 }
 
-            ByteStream jpeg(buffer, resourceSize);
-            RgbImageInfo imageInfo;
-            Render::Image rgba;
-            if (SUCCESS != imageInfo.ReadImageFromJpgBuffer(rgba, jpeg.GetData(), jpeg.GetSize(), RgbImageInfo::BottomUp::Yes))
+            ByteStream jpegData(buffer, resourceSize);
+            ImageSource jpeg(ImageSource::Format::Jpeg, std::move(jpegData), ImageSource::Alpha::No, ImageSource::BottomUp::Yes);
+            Render::Image rgba(jpeg);
+            if (!rgba.IsValid())
                 {
                 LOG_ERROR("bad texture data");
                 return ERROR;
                 }
 
-            renderTextures[resourceName] = scene.m_renderSystem->_CreateImageTexture(rgba, imageInfo.m_hasAlpha);
+            renderTextures[resourceName] = scene.m_renderSystem->_CreateImageTexture(rgba, jpeg.HasAlpha());
             }
         }
 
