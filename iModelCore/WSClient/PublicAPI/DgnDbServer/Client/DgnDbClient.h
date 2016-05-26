@@ -14,6 +14,7 @@
 #include <DgnDbServer/Client/DgnDbBriefcase.h>
 #include <DgnDbServer/Client/DgnDbLocks.h>
 
+
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -43,6 +44,7 @@ private:
     Credentials                 m_credentials;
     ClientInfoPtr               m_clientInfo;
     AuthenticationHandlerPtr    m_authenticationHandler;
+
 
     DgnDbClient (ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
@@ -140,6 +142,9 @@ public:
 
     //! Returns DgnDbServer RepositoryManager.
     DGNDBSERVERCLIENT_EXPORT IRepositoryManager*            GetRepositoryManagerP   ();
+
+    //! Receive Events from Event Service
+    DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr          ReceiveEventsFromEventService(Utf8String repoId, bool longPolling = true);
 };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

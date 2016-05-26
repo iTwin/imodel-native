@@ -13,6 +13,7 @@
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
+#include <DgnDbServer/Client/EventServiceInfo.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <WebServices/Azure/EventServiceClient.h>
 #include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
@@ -32,6 +33,8 @@ DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbLockSetResultInfo, DgnDbServerLockSet);
+DEFINE_TASK_TYPEDEFS(EventServiceInfoPtr, EventServiceInfo);
+DEFINE_TASK_TYPEDEFS(EventServiceReceivePtr, EventServiceReceive);
 
 //=======================================================================================
 //! DgnDbLockSet results.
@@ -70,19 +73,20 @@ private:
     RepositoryInfo                          m_repositoryInfo;
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
-    //EventServiceClient         m_eventServiceClient;
+    EventServiceClient         *m_eventServiceClient;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
     friend struct DgnDbRepositoryManager;
+    friend struct EventServiceClient;
 
     DgnDbRepositoryConnection (RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
     //! Sets AzureBlobStorageClient. 
     void SetAzureClient(IAzureBlobStorageClientPtr azureClient);
 
-    //Sets EventServiceClient
-    //void SetEventServiceClient(EventServiceClient eventServiceClient);
+    //! Sets EventServiceClient.
+    void SetEventServiceClient(EventServiceClient *eventServiceClient);
 
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
@@ -110,6 +114,9 @@ private:
 
     //! Get all revision information based on a query.
     DgnDbServerRevisionsTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get the SasToken and NameSpace based on query to EventService WebAPI.
+    EventServiceInfoTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -208,5 +215,10 @@ public:
     //! @param[in] ids lock ids to query
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocksById (LockableIdSet const& ids, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+
+    //! Receive Events from EventService
+    DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr    ReceiveEventsFromEventService(bool longPolling = true);
+
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

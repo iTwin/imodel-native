@@ -166,6 +166,7 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp" />
+    <ClCompile Include="DgnDbServerClient\EventServiceInfo.cpp" />
     <ClCompile Include="DgnDbServerClient\RepositoryInfo.cpp" />
     <ClCompile Include="Ims\SolrQuery.cpp" />
     <ClCompile Include="Ims\SolrClient.cpp" />
@@ -259,6 +260,7 @@
     <ClInclude Include="ConnectC\CWSCCPrivate.h" />
     <ClInclude Include="ConnectC\WSLocalState.h" />
     <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenBufferPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h" />

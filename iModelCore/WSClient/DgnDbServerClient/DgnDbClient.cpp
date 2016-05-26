@@ -197,10 +197,13 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::InitializeRepository(IWSRepositoryClie
             ->Then ([=] (const DgnDbRepositoryConnectionResult& result)
             {
             if (result.IsSuccess())
-                finalResult->SetSuccess (std::make_shared<RepositoryInfo>(result.GetValue()->GetRepositoryInfo()));
+                {
+                finalResult->SetSuccess(std::make_shared<RepositoryInfo>(result.GetValue()->GetRepositoryInfo()));
+                }
             else
                 finalResult->SetError (result.GetError());
             });
+
         })->Then<DgnDbServerRepositoryResult>([=]
             {
             return *finalResult;
@@ -574,5 +577,37 @@ DgnDbServerFileNameTaskPtr DgnDbClient::AcquireBriefcase(RepositoryInfoCR reposi
 Dgn::IRepositoryManager* DgnDbClient::GetRepositoryManagerP()
     {
     return dynamic_cast<Dgn::IRepositoryManager*>(m_repositoryManager.get());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Arvind.Venkateswaran           05/2016
+//---------------------------------------------------------------------------------------
+EventServiceReceiveTaskPtr DgnDbClient::ReceiveEventsFromEventService(Utf8String repoId, bool longPolling)
+    {
+
+    /*auto connectToRepoTask = ConnectToRepository(RepositoryInfo(m_serverUrl, repoId))->GetResult();;
+    auto receiveTask = connectToRepoTask.GetValue()->ReceiveEventsFromEventService(longPolling);
+    bset<std::shared_ptr<AsyncTask>> tasks;
+    tasks.insert(receiveTask);
+    return AsyncTask::WhenAll(tasks)->Then<EventServiceReceiveTaskPtr>([=] ()
+        {
+        if (!connectToRepoTask.IsSuccess())
+            return EventServiceReceiveResult::Error(connectToRepoTask.GetError());
+        return EventServiceReceiveResult::Success(receiveTask->GetResult().GetValue());
+        });*/
+
+    EventServiceReceiveResultPtr result = std::make_shared<EventServiceReceiveResult>();
+    return ConnectToRepository(RepositoryInfo(m_serverUrl, repoId))->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
+        {
+        if (!connectionResult.IsSuccess())
+            {
+            return result->SetError(connectionResult.GetError());
+            }
+        EventServiceReceiveTaskPtr taskPtr = connectionResult.GetValue()->ReceiveEventsFromEventService(longPolling);
+        return result->SetSuccess(taskPtr->GetResult().GetValue());
+        })->Then<EventServiceReceiveResult>([=] ()
+            {
+            return *result;
+            });
     }
 

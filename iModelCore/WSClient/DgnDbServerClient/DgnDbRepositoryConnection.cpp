@@ -10,6 +10,7 @@
 #include <WebServices/Client/WSChangeset.h>
 #include "DgnDbServerUtils.h"
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
+#include <WebServices/Connect/ConnectSignInManager.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
@@ -59,6 +60,14 @@ AuthenticationHandlerPtr   authenticationHandler
 void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageClientPtr azureClient)
     {
     m_azureClient = azureClient;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Arvind.Venkateswaran            03/2016
+//---------------------------------------------------------------------------------------
+void DgnDbRepositoryConnection::SetEventServiceClient(EventServiceClient *eventServiceClient)
+    {
+    m_eventServiceClient = eventServiceClient;
     }
 
 //---------------------------------------------------------------------------------------
@@ -131,6 +140,19 @@ AuthenticationHandlerPtr authenticationHandler
         //if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
+        //Get Event Service SASToken and Set EventService Client
+        EventServiceInfoTaskPtr taskPtr = repositoryConnection->GetEventServiceSAS();
+        if (!taskPtr->GetResult().IsSuccess())
+            return DgnDbRepositoryConnectionResult::Error(result.GetError());
+        auto manager = ConnectSignInManager::Create(clientInfo, authenticationHandler);
+        EventServiceInfo info = *(taskPtr->GetResult().GetValue());
+        Utf8String userid = manager->GetUserInfo().userId;
+        userid.ReplaceAll("@", "_");
+        EventServiceClient *eventServiceClient = new EventServiceClient(info.GetNamespace(), repository.GetId(), userid);
+        eventServiceClient->UpdateSASToken(info.GetSasToken());
+        repositoryConnection->SetEventServiceClient(eventServiceClient);
+
+        //Now return
         return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
         });
     }
@@ -433,6 +455,27 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                   Arvind.Venkateswaran             05/2016
+//---------------------------------------------------------------------------------------
+EventServiceReceiveTaskPtr DgnDbRepositoryConnection::ReceiveEventsFromEventService
+(
+bool longPolling
+) 
+    {
+    //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+    //EventServiceReceiveResult::Error(DgnDbServerError());
+    //return EventServiceReceiveResult::Success(EventServiceReceive::Create(rtnVal, msg));
+    //return result->SetSuccess(EventServiceReceive::Create(rtnVal, msg));
+    //EventServiceReceiveResultPtr result = std::make_shared<EventServiceReceiveResult>();
+
+    Utf8String msg = "";
+    bool rtnVal = m_eventServiceClient->Receive(msg, longPolling);
+    if (!rtnVal)
+        return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InternalServerError));
+    return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Success(EventServiceReceive::Create(rtnVal, msg)));
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 DgnDbServerLockSetTaskPtr DgnDbRepositoryConnection::QueryLocksById
@@ -612,6 +655,62 @@ ICancellationTokenPtr cancellationToken
             }
         else
             return DgnDbServerRevisionResult::Error(revisionResult.GetError());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Arvind.Venkateswaran           05/2016
+//---------------------------------------------------------------------------------------
+EventServiceInfoTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICancellationTokenPtr cancellationToken) const
+    {
+    //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/EventService
+    ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventSAS, "");
+
+    return m_wsRepositoryClient->SendGetObjectRequest(eventServiceObject, nullptr, cancellationToken)->Then<EventServiceInfoResult>
+        ([=] (WSObjectsResult& eventServiceResult)
+        {
+        if (eventServiceResult.IsSuccess())
+            {
+            bvector<WSObjectsReader::Instance> jsoninstances;
+            for (WSObjectsReader::Instance instance : eventServiceResult.GetValue().GetInstances())
+                {
+                jsoninstances.push_back(instance);
+                }
+
+            //Todo: Find a better way to handle error
+            if (jsoninstances.size() < 1)
+                return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+
+            //Get json values 
+            RapidJsonValueCR instanceProperties = jsoninstances[0].GetProperties();
+
+            //Todo: Find a better way to handle error
+            if (
+                !instanceProperties.HasMember(ServerSchema::Property::EventServiceSASToken) ||
+                !instanceProperties.HasMember(ServerSchema::Property::EventServiceNameSpace)
+                )
+                return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+
+            auto info = EventServiceInfo::Create(
+                instanceProperties[ServerSchema::Property::EventServiceSASToken].GetString(),
+                instanceProperties[ServerSchema::Property::EventServiceNameSpace].GetString()
+                );
+
+            //Todo: Find a better way to handle error
+            if (Utf8String::IsNullOrEmpty(info->GetSasToken().c_str()) ||
+                Utf8String::IsNullOrEmpty(info->GetNamespace().c_str())
+                )
+                return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+
+            return EventServiceInfoResult::Success(info);
+            }
+        else
+            {
+            //Todo: Find a better way to handle error
+
+            //return EventServiceInfoResult::Error(eventServiceResult.GetError());
+            return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+            }
         });
     }
 

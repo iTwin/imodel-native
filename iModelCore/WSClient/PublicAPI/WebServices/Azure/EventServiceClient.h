@@ -29,6 +29,7 @@ struct EventServiceClient
         bool Receive(Utf8StringR msgOut, int retry, bool longPolling);
 
     public:
+        EventServiceClient(); //Need a default constructor for DgnDbClientRepository
         WSCLIENT_EXPORT EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId);
         WSCLIENT_EXPORT bool Receive(Utf8StringR msgOut, bool longPolling = true);
         WSCLIENT_EXPORT void UpdateSASToken(Utf8StringCR sasToken);
