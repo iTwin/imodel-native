@@ -316,6 +316,7 @@ public:
     DgnModelId GetBaseModelId() const {return m_baseModelId;}
     bool IsCategoryViewed(DgnCategoryId categoryId) const {return m_viewedCategories.Contains(categoryId);}
     bool IsModelViewed(DgnModelId modelId) const {return m_viewedModels.Contains(modelId);}
+    bool HasSubCategoryOverride() const {return !m_subCategoryOverrides.empty();}
     DGNPLATFORM_EXPORT void LookAtViewAlignedVolume(DRange3dCR volume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
     void SaveToSettings(JsonValueR val) const {_SaveToSettings(val);}
     void RestoreFromSettings(JsonValueCR val) {_RestoreFromSettings(val);}
