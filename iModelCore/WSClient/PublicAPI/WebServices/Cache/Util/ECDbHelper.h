@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/ECDbHelper.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,7 +57,8 @@ struct ECDbHelper
         WSCACHE_EXPORT static ECInstanceKeyMultiMapPair ToPair(ECInstanceKeyCR key);
         //! ECInstanceKeyMultiMap util
         WSCACHE_EXPORT static void Erase(ECInstanceKeyMultiMap& map, ECInstanceKeyCR key);
-        //! Convert ECInstanceKeyMultiMap iterators to comma seperated ECInstanceId list
+
+        //! DEPRECATED. Use InVirtualSet with ECInstanceIdSet instead.
         WSCACHE_EXPORT static Utf8String ToECInstanceIdList
             (
             ECInstanceKeyMultiMap::const_iterator from,
