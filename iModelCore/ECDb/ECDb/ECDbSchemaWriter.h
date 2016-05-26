@@ -76,7 +76,6 @@ private:
     BentleyStatus DeleteECProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty);
     BentleyStatus DeleteECCustomAttributes(ECContainerId id, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType type);
     BentleyStatus DeleteECInstances(ECClassCR deletedClass);
-    BentleyStatus DeleteECClassEntry(ECClassCR deletedClass);
     bool IsSpecifiedInECRelationshipConstraint(ECClassCR deletedClass) const;
     BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const;
 

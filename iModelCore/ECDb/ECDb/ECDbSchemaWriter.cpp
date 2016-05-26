@@ -795,33 +795,8 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
             return ERROR;
         }
 
-    //Delete Class from ec_ tables and also its mapping
-    if (DeleteECClassEntry(deletedClass) != SUCCESS)
-        return ERROR;
 
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  05/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::DeleteECClassEntry(ECClassCR deletedClass )
-    {
-
-    //DELETE ec_Class
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Class WHERE Id = ?");
-    stmt->BindId(1, deletedClass.GetId());
-    if (stmt->Step() != BE_SQLITE_DONE)
-        return ERROR;
-
-    //Delete CustomAttribute
-    if (DeleteECCustomAttributes(deletedClass.GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class) != SUCCESS)
-        {
-        BeAssert(false && "Failed to prepare delete statement");
-        return ERROR;
-        }
-
-    return SUCCESS;
+    return DeleteECCustomAttributes(deletedClass.GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class);
     }
 
 //---------------------------------------------------------------------------------------
@@ -981,7 +956,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
         return ERROR;
         }
 
-    return SUCCESS;
+    return DeleteECCustomAttributes(deletedProperty.GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property);
     }
 
 //---------------------------------------------------------------------------------------
