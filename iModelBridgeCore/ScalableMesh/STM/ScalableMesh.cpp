@@ -739,7 +739,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
                                                             &*pStreamingIndiceTileStore,
-                                                            ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
+                                                    //        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                             new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),                                                            
                                                             &*pStreamingTextureTileStore,                                                            
                                                             &*pStreamingUVTileStore,                                                            
@@ -768,7 +768,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pTileStore,                                                       
                                                        &*pIndiceTileStore,
-                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
+                                                     //  ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                        //new HPMIndirectCountLimitedPool<MTGGraph>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000*sizeof(POINT)), 600000000),
                                                        &*pGraphTileStore,                                                       
                                                        &*pTextureTileStore,                                                       
@@ -790,8 +790,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             ((SMSQLiteDiffsetTileStore*)(store.GetPtr()))->Open();
             //store->StoreMasterHeader(NULL,0);
             m_scmIndexPtr->SetClipStore(store);
-            auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
-            m_scmIndexPtr->SetClipPool(pool);
+      //      auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
+      //      m_scmIndexPtr->SetClipPool(pool);
             WString clipFileDefPath = m_path;
             clipFileDefPath.append(L"_clipDefinitions");
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);

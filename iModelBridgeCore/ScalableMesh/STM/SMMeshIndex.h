@@ -265,10 +265,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> poolMemItemPtr;
 
 
-        if (!SMMemoryPool::GetInstance()->GetItem<MTGGraph>(poolMemItemPtr, m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph) && loadGraph)
+        if (!SMMemoryPool::GetInstance()->GetItem<MTGGraph>(poolMemItemPtr, m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)m_SMIndex) && loadGraph)
             {
             //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
-            RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(GetBlockID().m_integerID, GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph));
+            RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(GetBlockID().m_integerID, GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph, (uint64_t)m_SMIndex));
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
             m_graphPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
             assert(m_graphPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
@@ -284,10 +284,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
 
 
-        if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::DiffSet))
+        if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::DiffSet, (uint64_t)m_SMIndex))
             {
             //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
-            RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericVectorItem<DifferenceSet>(GetBlockID().m_integerID, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore().GetPtr(), SMPoolDataTypeDesc::DiffSet));
+            RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericVectorItem<DifferenceSet>(GetBlockID().m_integerID, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore().GetPtr(), SMPoolDataTypeDesc::DiffSet, (uint64_t)m_SMIndex));
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
             m_diffSetsItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
             assert(m_diffSetsItemId != SMMemoryPool::s_UndefinedPoolItemId);
@@ -432,10 +432,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphStore();
         };
 
-    HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > GetGraphPool() const
+ /*   HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > GetGraphPool() const
         {
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphPool();
-        };
+        };*/
         
     void PushPtsIndices(const int32_t* indices, size_t size);
 
@@ -447,10 +447,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
                 
-        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriPtIndices))
+        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex))
             {                  
             //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, GetPtsIndiceStore().GetPtr(), SMPoolDataTypeDesc::TriPtIndices));
+            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, GetPtsIndiceStore().GetPtr(), SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex));
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
             m_triIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
             assert(m_triIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
@@ -464,7 +464,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {                        
         assert(smCachedDisplayData != 0);        
 
-        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> customGenericBlobItemPtr(new SMMemoryPoolGenericBlobItem<SmCachedDisplayData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMPoolDataTypeDesc::Display));        
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> customGenericBlobItemPtr(new SMMemoryPoolGenericBlobItem<SmCachedDisplayData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMPoolDataTypeDesc::Display, (uint64_t)m_SMIndex));
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
         m_displayDataPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
         assert(m_displayDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);                                            
@@ -475,14 +475,14 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {        
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> cachedDisplayDataItemPtr;
                 
-        GetMemoryPool()->GetItem<SmCachedDisplayData>(cachedDisplayDataItemPtr, m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display);
+        GetMemoryPool()->GetItem<SmCachedDisplayData>(cachedDisplayDataItemPtr, m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display, (uint64_t)m_SMIndex);
             
         return cachedDisplayDataItemPtr;
         }    
 
     virtual void RemoveDisplayData()
         {                                
-        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display);                                                    
+        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;        
         }    
         
@@ -520,9 +520,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             return poolMemBlobItemPtr;
                   
         //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
-        if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Texture))
+        if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Texture, (uint64_t)m_SMIndex))
             {                              
-            RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, GetTextureStore().GetPtr(), SMPoolDataTypeDesc::Texture));
+            RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, GetTextureStore().GetPtr(), SMPoolDataTypeDesc::Texture, (uint64_t)m_SMIndex));
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
             m_texturePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
             assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
@@ -546,10 +546,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         if (!IsTextured())
             return poolMemVectorItemPtr;
                 
-        if (!GetMemoryPool()->GetItem<DPoint2d>(poolMemVectorItemPtr, m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::UvCoords))
+        if (!GetMemoryPool()->GetItem<DPoint2d>(poolMemVectorItemPtr, m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::UvCoords, (uint64_t)m_SMIndex))
             {                  
             //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<DPoint2d>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<DPoint2d>(GetBlockID().m_integerID, GetUVStore().GetPtr(), SMPoolDataTypeDesc::UvCoords));
+            RefCountedPtr<SMStoredMemoryPoolVectorItem<DPoint2d>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<DPoint2d>(GetBlockID().m_integerID, GetUVStore().GetPtr(), SMPoolDataTypeDesc::UvCoords, (uint64_t)m_SMIndex));
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
             m_uvCoordsPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
             assert(m_uvCoordsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
@@ -573,10 +573,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         if (!IsTextured())
             return poolMemVectorItemPtr;
                 
-        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriUvIndices))
+        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriUvIndices, (uint64_t)m_SMIndex))
             {                  
             //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, GetUVsIndicesStore().GetPtr(), SMPoolDataTypeDesc::TriUvIndices));
+            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, GetUVsIndicesStore().GetPtr(), SMPoolDataTypeDesc::TriUvIndices, (uint64_t)m_SMIndex));
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
             m_triUvIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
             assert(m_triUvIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
@@ -678,7 +678,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         SMMeshIndex(SMMemoryPoolPtr& smMemoryPool,                         
                      HFCPtr<SMPointTileStore<POINT, EXTENT> > ptsStore,                      
                      HFCPtr<SMPointTileStore<int32_t, EXTENT>> ptsIndiceStore,
-                     HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > graphPool,
+                    // HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > graphPool,
                      HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> graphStore,                     
                      HFCPtr<IScalableMeshDataStore<Byte, float, float> > textureStore,                     
                      HFCPtr<SMPointTileStore<DPoint2d, EXTENT> > uvStore,                     
@@ -729,7 +729,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetPtsIndicesStore() const { return m_ptsIndicesStore; }
         HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> GetGraphStore() const { return m_graphStore; }
-        HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> GetGraphPool() const { return m_graphPool; }
+//        HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> GetGraphPool() const { return m_graphPool; }
         HFCPtr<IScalableMeshDataStore<Byte, float, float>> GetTexturesStore() const { return m_texturesStore; }
         HFCPtr<SMPointTileStore<DPoint2d, EXTENT>> GetUVStore() const { return m_uvStore; }        
         HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetUVsIndicesStore() const { return m_uvsIndicesStore; }
@@ -746,7 +746,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             {
             return m_clipStore;
             }
-        HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> GetClipPool() const { return m_clipPool; }
+//        HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> GetClipPool() const { return m_clipPool; }
         void                SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool);
 
         //IDTMFile::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
@@ -782,7 +782,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         SMMemoryPoolPtr m_smMemoryPool;
         
         HFCPtr<SMPointTileStore<int32_t, EXTENT> > m_ptsIndicesStore;
-        HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> m_graphPool;
+       // HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> m_graphPool;
         HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> m_graphStore;        
         HFCPtr<IScalableMeshDataStore<Byte, float, float> > m_texturesStore;       
         HFCPtr<SMPointTileStore<DPoint2d, EXTENT> > m_uvStore;        
@@ -793,7 +793,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         HFCPtr<HPMCountLimitedPool<int32_t>> m_featurePool;
         HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> m_clipStore;
         HFCPtr<ClipRegistry> m_clipRegistry;
-        HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> m_clipPool;
+       // HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> m_clipPool;
 
         std::vector<std::future<bool>> m_textureWorkerTasks;
 

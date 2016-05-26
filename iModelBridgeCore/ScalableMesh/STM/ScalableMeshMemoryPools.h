@@ -48,9 +48,9 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPool
     m_graphPoolSize = 600000000;        
     //m_genericPoolSize = 100000000;
     m_genericPoolSize = 1000000000;    
-    m_graphPool = new HPMIndirectCountLimitedPool<MTGGraph>(m_graphPoolSize);        
+  //  m_graphPool = new HPMIndirectCountLimitedPool<MTGGraph>(m_graphPoolSize);        
     m_featurePool = new HPMCountLimitedPool<int32_t>(m_featurePoolSize);
-    m_diffSetPool = new HPMIndirectCountLimitedPool<DifferenceSet>(m_diffSetPoolSize);
+   // m_diffSetPool = new HPMIndirectCountLimitedPool<DifferenceSet>(m_diffSetPoolSize);
     m_genericPool = SMMemoryPool::GetInstance();
     bool result = m_genericPool->SetMaxSize(m_genericPoolSize);
     assert(result == true);

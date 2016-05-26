@@ -101,6 +101,7 @@ class SMMemoryPoolItemBase : public RefCountedBase
         Byte*                     m_data;
         uint64_t                  m_size;
         uint64_t                  m_nodeId;
+        uint64_t                  m_smId;
         SMPoolDataTypeDesc        m_dataType;
         bool                      m_dirty;   
                 
@@ -114,7 +115,7 @@ class SMMemoryPoolItemBase : public RefCountedBase
 
         SMMemoryPoolItemBase();
             
-        SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMPoolDataTypeDesc& dataType);
+        SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMPoolDataTypeDesc& dataType, uint64_t smId);
                     
         template<typename T>
         RefCountedPtr<SMMemoryPoolVectorItem<T>> GetAsPoolVector()
@@ -144,7 +145,9 @@ class SMMemoryPoolItemBase : public RefCountedBase
                     
         uint64_t GetSize();
         
-        bool IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType);        
+        bool IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType);
+
+        bool IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType, uint64_t smId);
             
         SMMemoryPoolItemId GetPoolItemId() const;
             
@@ -184,11 +187,11 @@ template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolIte
 
     public : 
         
-        SMMemoryPoolBlobItem(size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+        SMMemoryPoolBlobItem(size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
             {            
             m_size = size;
             m_nodeId = nodeId;
-
+            m_smId = smId;
             if (m_size > 0)
                 m_data = (Byte*)new Byte[m_size];
             else
@@ -214,12 +217,13 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
 
     public : 
         
-        SMMemoryPoolGenericBlobItem(DataType* data, size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+        SMMemoryPoolGenericBlobItem(DataType* data, size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
             {               
             m_size = size;
             m_nodeId = nodeId;
             m_data = (Byte*)data;            
             m_dataType = dataType;
+            m_smId = smId;
             }
 
         virtual ~SMMemoryPoolGenericBlobItem()
@@ -241,6 +245,8 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
 
         void SetData(DataType* data)
             {
+            if (m_data != nullptr && m_size > 0)
+                delete (DataType*)m_data;
             m_data = (Byte*)data;
             if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) NotifySizeChangePoolItem(GetSizeInMemory(data) - m_size);
             m_size = GetSizeInMemory(data);
@@ -256,8 +262,8 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
 
     public:
 
-        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType)
-            : SMMemoryPoolGenericBlobItem(nullptr,store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType)
+        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType, uint64_t smId)
+            : SMMemoryPoolGenericBlobItem(nullptr,store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
             {
             m_store = store;
 
@@ -289,8 +295,8 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
 
     public : 
         
-         SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<Byte>* store, SMPoolDataTypeDesc dataType)
-            : SMMemoryPoolBlobItem(store->GetBlockDataCount(HPMBlockID(nodeId)) * sizeof(DataType), nodeId, dataType)
+         SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<Byte>* store, SMPoolDataTypeDesc dataType, uint64_t smId)
+            : SMMemoryPoolBlobItem(store->GetBlockDataCount(HPMBlockID(nodeId)) * sizeof(DataType), nodeId, dataType, smId)
             {                                    
             m_store = store;            
             
@@ -303,8 +309,8 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
             }
 
 
-         SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, const DataType* data, uint64_t dataSize, SMPoolDataTypeDesc dataType)
-            : SMMemoryPoolBlobItem(dataSize, nodeId, dataType)
+         SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, const DataType* data, uint64_t dataSize, SMPoolDataTypeDesc dataType, uint64_t smId)
+            : SMMemoryPoolBlobItem(dataSize, nodeId, dataType, smId)
             {                                    
             m_store = store;                        
 
@@ -433,12 +439,13 @@ public:
         -----------------------------------------------------------------------------
     */
 
-    SMMemoryPoolVectorItem(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType)                        
+    SMMemoryPoolVectorItem(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)                        
             {
             m_nbItems = nbItems;
             m_size = nbItems * sizeof(DataType);
             m_allocatedSize = m_size;
             m_nodeId = nodeId;
+            m_smId = smId;
             
             if (m_nbItems > 0)
                 m_data = (Byte*)new DataType[nbItems];
@@ -671,8 +678,8 @@ public:
 template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemoryPoolVectorItem<DataType>
     {
     public:
-    SMMemoryPoolGenericVectorItem(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType)
-        : SMMemoryPoolVectorItem<DataType>(nbItems, nodeId, dataType)
+    SMMemoryPoolGenericVectorItem(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+        : SMMemoryPoolVectorItem<DataType>(nbItems, nodeId, dataType, smId)
         {
 
         }
@@ -851,8 +858,8 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
         
     public:        
                         
-        SMStoredMemoryPoolGenericVectorItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType)
-            : SMMemoryPoolGenericVectorItem(store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType)
+        SMStoredMemoryPoolGenericVectorItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType, uint64_t smId)
+            : SMMemoryPoolGenericVectorItem(store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
             {                                    
             m_store = store;            
             
@@ -882,8 +889,8 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
 
         public:
 
-            SMStoredMemoryPoolVectorItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType)
-                : SMMemoryPoolVectorItem(store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType)
+            SMStoredMemoryPoolVectorItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType, uint64_t smId)
+                : SMMemoryPoolVectorItem(store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
                 {
                 m_store = store;
 
@@ -942,7 +949,7 @@ class SMMemoryPool : public RefCountedBase
         
             
         template<typename T>
-        bool GetItem(RefCountedPtr<SMMemoryPoolVectorItem<T>>& poolMemVectorItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+        bool GetItem(RefCountedPtr<SMMemoryPoolVectorItem<T>>& poolMemVectorItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
             {
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false; 
@@ -950,7 +957,7 @@ class SMMemoryPool : public RefCountedBase
             assert(!poolMemVectorItemPtr.IsValid());
             SMMemoryPoolItemBasePtr memItemPtr;
             
-            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType))
+            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType,smId))
                 {
                 poolMemVectorItemPtr = memItemPtr->GetAsPoolVector<T>();                
                 }
@@ -959,7 +966,7 @@ class SMMemoryPool : public RefCountedBase
             }  
 
         template<typename T>
-        bool GetItem(RefCountedPtr<SMMemoryPoolGenericVectorItem<T>>& poolMemVectorItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+        bool GetItem(RefCountedPtr<SMMemoryPoolGenericVectorItem<T>>& poolMemVectorItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
             {
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false;
@@ -967,7 +974,7 @@ class SMMemoryPool : public RefCountedBase
             assert(!poolMemVectorItemPtr.IsValid());
             SMMemoryPoolItemBasePtr memItemPtr;
 
-            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType))
+            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType, smId))
                 {
                 poolMemVectorItemPtr = memItemPtr->GetAsGenericPoolVector<T>();
                 }
@@ -976,7 +983,7 @@ class SMMemoryPool : public RefCountedBase
             }
 
         template<typename T>
-        bool GetItem(RefCountedPtr<SMMemoryPoolBlobItem<T>>& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+        bool GetItem(RefCountedPtr<SMMemoryPoolBlobItem<T>>& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
             {
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false; 
@@ -984,7 +991,7 @@ class SMMemoryPool : public RefCountedBase
             assert(!poolMemBlobItemPtr.IsValid());
             SMMemoryPoolItemBasePtr memItemPtr;
             
-            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType))
+            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType, smId))
                 {
                 poolMemBlobItemPtr = memItemPtr->GetAsBlobPoolItem<T>();                
                 }
@@ -994,7 +1001,7 @@ class SMMemoryPool : public RefCountedBase
 
 
         template<typename T>
-        bool GetItem(RefCountedPtr<SMMemoryPoolGenericBlobItem<T>>& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+        bool GetItem(RefCountedPtr<SMMemoryPoolGenericBlobItem<T>>& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
             {
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false; 
@@ -1002,7 +1009,7 @@ class SMMemoryPool : public RefCountedBase
             assert(!poolMemBlobItemPtr.IsValid());
             SMMemoryPoolItemBasePtr memItemPtr;
             
-            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType))
+            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType, smId))
                 {
                 poolMemBlobItemPtr = memItemPtr->GetAsGenericBlobPoolItem<T>();                
                 }
@@ -1013,11 +1020,11 @@ class SMMemoryPool : public RefCountedBase
                
         bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id);
             
-        bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType);
+        bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId);
             
         SMMemoryPoolItemId AddItem(SMMemoryPoolItemBasePtr& poolItem);
 
-        void ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType);
+        void ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId);
 
         void NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int64_t sizeDelta);
 

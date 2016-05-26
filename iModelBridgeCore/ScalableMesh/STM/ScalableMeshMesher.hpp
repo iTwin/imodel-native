@@ -1162,7 +1162,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         }
 #endif
     // *node->GetGraphPtr() = *meshGraphStitched;
-    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, node->GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph));
+    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, node->GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph, (uint64_t)node->m_SMIndex));
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
     MTGGraph * tempGraph = new MTGGraph();
     bvector<int> componentPointsId;
@@ -1172,7 +1172,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     storedMemoryPoolItem->SetData(tempGraph);
     storedMemoryPoolItem->SetDirty();
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
-    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, node->m_graphPoolItemId, node->GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph);
+    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, node->m_graphPoolItemId, node->GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)node->m_SMIndex);
    /* for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
         {
         TagFeatureEdges(&tempGraph, (const DTMFeatureType)node->m_featureDefinitions[i][0], node->m_featureDefinitions[i].size() - 1, &node->m_featureDefinitions[i][1]);
@@ -1702,128 +1702,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             assert(status == SUCCESS);
             }
         }
-
- /*           bvector<bvector<DPoint3d>> newFBoundary;
-            HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
-            HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
-            for (auto&feature : postFeatureBoundary)
-                {
-                UntieLoopsFromPolygon(feature);
-                HArrayAutoPtr<double> tempBuffer(new double[feature.size() * 2]);
-
-                int bufferInd = 0;
-
-                for (size_t pointInd = 0; pointInd < feature.size(); pointInd++)
-                    {
-                    tempBuffer[bufferInd * 2] = feature[pointInd].x;
-                    tempBuffer[bufferInd * 2 + 1] = feature[pointInd].y;
-                    bufferInd++;
-                    }
-                HVE2DPolygonOfSegments polygon(feature.size() * 2, tempBuffer, coordSysPtr);
-
-                HFCPtr<HVEShape> subShapePtr = new HVEShape(polygon);
-                allPolyShape->Unify(*subShapePtr);
-                }
-            if (allPolyShape->GetLightShape()->IsComplex())
-                {
-                for (auto& elem : allPolyShape->GetLightShape()->GetShapeList())
-                    {
-                    if (!elem->IsComplex())
-                        {
-                        HGF2DPositionCollection thePoints;
-                        elem->Drop(&thePoints, elem->GetTolerance());
-
-                        bvector<DPoint3d> vec(thePoints.size());
-
-                        for (size_t idx = 0; idx < thePoints.size(); idx++)
-                            {
-                            vec[idx].x = thePoints[idx].GetX();
-                            vec[idx].y = thePoints[idx].GetY();
-                            vec[idx].z = 0; // As mentionned below the Z is disregarded
-                            }
-                        newFBoundary.push_back(vec);
-                        }
-                    else
-                        {
-                        for (auto& subElem : elem->GetShapeList())
-                            {
-                            HGF2DPositionCollection thePoints;
-                            subElem->Drop(&thePoints, subElem->GetTolerance());
-
-                            bvector<DPoint3d> vec(thePoints.size());
-
-                            for (size_t idx = 0; idx < thePoints.size(); idx++)
-                                {
-                                vec[idx].x = thePoints[idx].GetX();
-                                vec[idx].y = thePoints[idx].GetY();
-                                vec[idx].z = 0; // As mentionned below the Z is disregarded
-                                }
-                            newFBoundary.push_back(vec);
-                            }
-                        }
-                    }
-                }
-            else if (!allPolyShape->GetLightShape()->IsEmpty())
-                {
-                HGF2DPositionCollection thePoints;
-                allPolyShape->GetLightShape()->Drop(&thePoints, allPolyShape->GetLightShape()->GetTolerance());
-
-                bvector<DPoint3d> vec(thePoints.size());
-
-                for (size_t idx = 0; idx < thePoints.size(); idx++)
-                    {
-                    vec[idx].x = thePoints[idx].GetX();
-                    vec[idx].y = thePoints[idx].GetY();
-                    vec[idx].z = 0; // As mentionned below the Z is disregarded
-                    }
-
-                newFBoundary.push_back(vec);
-                }
-            postFeatureBoundary = newFBoundary;*/
         MergePolygonSets(postFeatureBoundary);
-#if 0
-            for (auto& polygon : postFeatureBoundary)
-                {
-                if (polygon.size() > 2)
-                    {
-                        {
-                      /*  WString namePoly = LOG_PATH_STR_W + L"postmergepoly_";
-                        namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
-                        namePoly.append(L"_");
-                        namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
-                        namePoly.append(L"_");
-                        namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                        namePoly.append(L"_");
-                        namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                        namePoly.append(L"_");
-                        namePoly.append(to_wstring(&polygon - &postFeatureBoundary[0]).c_str());
-                        namePoly.append(L".p");
-                        FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
-                        size_t boundSize = polygon.size();
-                        fwrite(&boundSize, sizeof(size_t), 1, polyCliPFile);
-                        fwrite(&polygon[0], sizeof(DPoint3d), polygon.size(), polyCliPFile);
-                        fclose(polyCliPFile);*/
-                        }
-                    UntieLoopsFromPolygon(polygon);
-                   /* WString namePoly = LOG_PATH_STR_W + L"postFBoundpoly_";
-                    namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
-                    namePoly.append(L"_");
-                    namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
-                    namePoly.append(L"_");
-                    namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                    namePoly.append(L"_");
-                    namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                    namePoly.append(L"_");
-                    namePoly.append(to_wstring(&polygon - &postFeatureBoundary[0]).c_str());
-                    namePoly.append(L".p");
-                    FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
-                    size_t boundSize = polygon.size();
-                    fwrite(&boundSize, sizeof(size_t), 1, polyCliPFile);
-                    fwrite(&polygon[0], sizeof(DPoint3d), polygon.size(), polyCliPFile);
-                    fclose(polyCliPFile);*/
-                    }
-                }
-#endif
 
     status = AddPolygonsToDTMObject(postFeatureBoundary, DTMFeatureType::DrapeVoid, dtmObjP);
 
