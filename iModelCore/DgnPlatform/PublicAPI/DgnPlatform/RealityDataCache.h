@@ -397,7 +397,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Storage : RefCountedBase, NonCopyableClass
 
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        11/2014
-    //===================================================================================
+        //===================================================================================
     struct StorageWork : RefCounted<Work>
     {
         StoragePtr m_storage;
@@ -588,9 +588,6 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncSource : Source
         RefCountedPtr<AsyncSourceRequest const> m_request;
         Cache& m_responseReceiver;
 
-        RequestHandler(AsyncSource& source, AsyncSourceRequest const& request, Cache& responseReceiver)
-            : m_source(&source), m_request(&request), m_responseReceiver(responseReceiver)
-            {}
         void SendResponse(SourceResponse const& response, Options options) {m_responseReceiver._OnResponseReceived(response, options);}
 
     protected:
@@ -598,10 +595,9 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncSource : Source
         virtual bool _ShouldCancel() const override;
 
     public:
-        static RefCountedPtr<RequestHandler> Create(AsyncSource& source, AsyncSourceRequest const& request, Cache& responseReceiver)
-            {
-            return new RequestHandler(source, request, responseReceiver);
-            }
+        RequestHandler(AsyncSource& source, AsyncSourceRequest const& request, Cache& responseReceiver)
+            : m_source(&source), m_request(&request), m_responseReceiver(responseReceiver)
+            {}
     };
 
 private:

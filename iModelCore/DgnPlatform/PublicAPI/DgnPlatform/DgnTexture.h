@@ -25,73 +25,44 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnTexture : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_Texture, DefinitionElement);
 
 public:
-    //! Supported texture formats. A texture's binary data is interpreted according to its specified format.
-    enum class Format
-    {
-        JPEG    = 0,    //!< JPEG
-        RAW     = 1,    //!< Raw RGBA bitmap
-        PNG     = 2,    //!< PNG
-        TIFF    = 3,    //!< TIFF
-        Unknown = 0xff  //!< Unrecognized texture format.
-    };
-
     //! Optional flags which can be applied to a texture
     enum class Flags : uint32_t
     {
         None = 0,    //!< No flags
     };
 
-    //! Holds the raw texture data in memory
-    struct Data : ByteStream
-    {
-    private:
-        friend struct DgnTexture;
-        uint32_t  m_width;
-        uint32_t  m_height;
-        Flags     m_flags;
-        Format    m_format;
-
-    public:
-        //! Constructs an empty, invalid Texture::Data
-        Data() : m_flags(Flags::None), m_format(Format::Unknown) {m_width=m_height=0;}
-
-        //! Constructor
-        //! @param[in] format   The format of the raw texture data
-        //! @param[in] data     The texture data encoded according to specified format. Must be non-null.
-        //! @param[in] dataSize The number of byte in the texture data. Must be greater than 0
-        //! @param[in] width    The width of the texture
-        //! @param[in] height   The height of the texture
-        //! @param[in] flags    Additional texture flags
-        Data(Format format, Byte const* data, uint32_t dataSize, uint32_t width, uint32_t height, Flags flags = Flags::None)
-            : ByteStream(data, dataSize), m_width(width), m_height(height), m_format(format), m_flags(flags) {}
-        Format GetFormat() const {return m_format;}//!< The format of the texture data
-        uint32_t GetWidth() const {return m_width;} //!< The texture width
-        uint32_t GetHeight() const {return m_height;}//!< The texture height
-        Flags GetFlags() const {return m_flags;}//!< Texture flags
-        };
-
     //! Parameters used to construct a DgnTexture
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(DgnTexture::T_Super::CreateParams);
 
-        Data       m_data;
+        Render::ImageSource m_data;
+        uint32_t  m_width=0;
+        uint32_t  m_height=0;
+        Flags     m_flags=Flags::None;
         Utf8String m_descr;
 
         //! Constructor from base class. Chiefly for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params, Data const& data = Data(), Utf8String descr="") : T_Super(params), m_data(data), m_descr(descr) {}
+        explicit CreateParams(DgnElement::CreateParams const& params, Utf8String descr="") : T_Super(params), m_descr(descr) {}
 
         //! Constructs parameters for creating a texture
-        //! @param[in]      db    The DgnDb in which the texture is to reside
-        //! @param[in]      name  The name of the texture - must be unique within the DgnDb.
-        //! @param[in]      data  The data describing the texture's appearance
-        //! @param[in]      descr An optional description of the texture
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR name, Data const& data, Utf8StringCR descr="");
+        //! @param[in] db The DgnDb in which the texture is to reside
+        //! @param[in] name The name of the texture - must be unique within the DgnDb.
+        //! @param[in] data The data describing the texture's appearance
+        //! @param[in] descr An optional description of the texture
+        //! @param[in] height the height of the image
+        //! @param[in] width the width of the image
+        //! @param[in] flags optional flags
+        CreateParams(DgnDbR db, Utf8StringCR name, Render::ImageSourceCR data, uint32_t width, uint32_t height, Utf8StringCR descr="", Flags flags=Flags::None) : 
+                T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateTextureCode(name)), m_data(data), m_width(width), m_height(height), m_flags(flags), m_descr(descr) {}
     };
 
 private:
-    mutable Data m_data;
-    Utf8String  m_descr;
+    uint32_t m_width=0;
+    uint32_t m_height=0;
+    Flags m_flags=Flags::None;
+    Render::ImageSource m_data;
+    Utf8String m_descr;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
@@ -111,11 +82,14 @@ public:
     DgnTextureId GetTextureId() const {return DgnTextureId(GetElementId().GetValue());} //!< The texture ID.
     Utf8String GetTextureName() const {return GetCode().GetValue();} //!< The texture name
 
-    Data const& GetTextureData() const {return m_data;} //!< The texture data
+    Render::ImageSourceCR GetImageSource() const {return m_data;} //!< The texture data
+    Render::ImageSourceCR GetImageSourceR() {return m_data;} //!< A writable reference to the texture data
     Utf8StringCR GetDescription() const {return m_descr;} //!< The description of this texture
-    Data& GetTextureDataR() {return m_data;} //!< A writable reference to the texture data
-    void SetTextureData(Data const& data) {m_data = data;} //!< Set the texture data
+    void SetImageSource(Render::ImageSourceCR data) {m_data = data;} //!< Set the texture data
     void SetDescription(Utf8StringCR descr) {m_descr = descr;} //!< Set the description
+    uint32_t GetWidth() const {return m_width;}
+    uint32_t GetHeight() const {return m_height;}
+    Flags GetFlags() const {return m_flags;}
 
     static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Texture);} //!< Return the class ID used for textures
     static DgnClassId QueryDgnClassId(DgnDbR db) {return DgnClassId(QueryECClassId(db));} //!< Return the class ID used for textures
@@ -134,8 +108,6 @@ public:
 
     //! Looks up a texture by ID
     static DgnTextureCPtr QueryTexture(DgnTextureId textureId, DgnDbR db) {return db.Elements().Get<DgnTexture>(textureId);}
-
-    DGNPLATFORM_EXPORT Render::Image ExtractImage() const; //!< The image data 
 };
 
 namespace dgn_ElementHandler

@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDb.h"
-#include <DgnPlatform/ImageUtilities.h>
 #include <DgnPlatform/LinkElement.h>
 #include <DgnPlatform/QueryView.h>
 
@@ -236,15 +235,13 @@ public:
     //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
     //! @param compressImageProperty If true, the image data is compressed before being stored in the database. 
-    DGNPLATFORM_EXPORT void StoreImageData(Render::Image const& imageData, bool fitToX, bool compressImageProperty=true);
+    DGNPLATFORM_EXPORT void StoreImageData(Render::ImageCR imageData, bool fitToX, bool compressImageProperty=true);
 
     //! Save an image as the backdrop for this redline model.
-    //! @param jpegData         The image data in JPEG format.
-    //! @param jpegDataSize     The size of the image data
-    //! @param imageInfoIn      Information about the format of the image. Note that the width and format members are ignored as they are already encoded in the JPEG data.
-    //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
-    //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
-    DGNPLATFORM_EXPORT void StoreImageDataFromJPEG(uint8_t const* jpegData, size_t jpegDataSize, RgbImageInfo& imageInfoIn, bool fitToX);
+    //! @param source the image source 
+    //! @param fitToX If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
+    //!               If false, the image is stretched to fit the height of the sheet, and the image width is computed.
+    DGNPLATFORM_EXPORT void StoreImageData(Render::ImageSourceCR source, bool fitToX);
 
 /** @name Association to DgnDb */
 /** @{ */

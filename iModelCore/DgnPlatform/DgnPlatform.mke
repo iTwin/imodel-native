@@ -314,7 +314,7 @@ $(CoreObjs)DgnShxFontData$(oext) :                  $(DgnCoreDir)DgnShxFontData.
 
 $(CoreObjs)Sprites$(oext) :                         $(DgnCoreDir)Sprites.cpp ${MultiCompileDepends}
 
-$(CoreObjs)ImageUtilities$(oext) :                  $(DgnCoreDir)ImageUtilities.cpp $(DgnPlatformAPISrc)ImageUtilities.h ${MultiCompileDepends}
+$(CoreObjs)ImageUtilities$(oext) :                  $(DgnCoreDir)ImageUtilities.cpp ${MultiCompileDepends}
 
 $(CoreObjs)GeomPart$(oext) :                        $(DgnCoreDir)GeomPart.cpp $(DgnPlatformAPISrc)GeomPart.h ${MultiCompileDepends}
 

@@ -10,7 +10,6 @@
 
 #include "DgnModel.h"
 #include "DgnCategory.h"
-#include "ImageUtilities.h"
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
 
@@ -221,36 +220,54 @@ public:
     DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op) const;
 };
 
+
 //=======================================================================================
-// @bsiclass                                                    BentleySystems
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct ImageSource
+{
+    enum class BottomUp : bool {No=0, Yes=1};
+    enum class Alpha : bool {No=0, Yes=1};
+    enum class Format : uint32_t {Jpeg=0, Png=2};
+
+private:
+    Format m_format = Format::Jpeg;
+    Alpha m_hasAlpha = Alpha::Yes;  //!< If true, each pixel also has an alpha value (so that the source has 4 bytes per pixel).
+    bool m_isBGR = false;    //!< If true, the source data is in BGR format; else RGB format. Always false for an image read from PNG.
+    BottomUp m_bottomUp = BottomUp::No; //!< If true, the image data is in top-down row order; else bottom-up order. Always true for an image read from PNG.
+    ByteStream m_stream;
+
+public:
+    void SetFormat(Format format) {m_format=format;}
+    void SetBottomUp(bool yesNo=true) {m_bottomUp = yesNo ? BottomUp::Yes : BottomUp::No;}
+    void SetTopDown(bool yesNo=true) {SetBottomUp(!yesNo);}
+    bool IsBottomUp() const {return BottomUp::Yes==m_bottomUp;}
+    bool IsTopDown() const {return !IsBottomUp();}
+    void SetHasAlpha(bool yesNo) {m_hasAlpha=yesNo ? Alpha::Yes : Alpha::No;}
+    void SetIsBGR(bool yesNo) {m_isBGR=yesNo;}
+    bool HasAlpha() const {return Alpha::Yes==m_hasAlpha;}
+    bool IsBGR() const {return m_isBGR;}
+    Format GetFormat() const {return m_format;}
+    ByteStream const& GetByteStream() const {return m_stream;}
+    ByteStream& GetByteStreamR() {return m_stream;}
+    bool IsValid() const {return 0 < m_stream.GetSize();}
+
+    ImageSource() {}
+    StatusInt FromJpeg(ByteStream&& stream, BottomUp bottomUp=BottomUp::No);
+    StatusInt FromPng(ByteStream&& stream, BottomUp bottomUp=BottomUp::No);
+    StatusInt FromImage(Format format, ImageCR, int quality=100, BottomUp bottomUp=BottomUp::No);
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct Image
 {
     enum class Format
     {
-        Rgba = 0,
-        Bgra = 1,
+        Rgba = 0, // must match qvision.h values
         Rgb  = 2,
-        Bgr  = 3,
-        Gray = 4,
-        Jpeg = 5,
-        PNG  = 6,
     };
-    static size_t BytesPerPixel(Format format)
-        {
-        switch (format)
-            {
-            case Format::Rgba:
-            case Format::Bgra:
-            case Format::Jpeg:
-            case Format::PNG:
-                return 4;
-            case Format::Rgb:
-            case Format::Bgr:
-                return 3;
-            }
-        return 1;
-        }
 
 protected:
     uint32_t   m_width = 0;
@@ -260,19 +277,21 @@ protected:
 
 public:
     Image() {}
-    Image(uint32_t width, uint32_t height, Format format, uint8_t const* data=0, uint32_t size=0) : m_width(width), m_height(height), m_format(format), m_image(data, size) {}
     Image(uint32_t width, uint32_t height, Format format, ByteStream&& data) : m_width(width), m_height(height), m_format(format), m_image(std::move(data)) {}
+    DGNPLATFORM_EXPORT Image(ImageSourceCR);
+
+    int GetBytesPerPixel()const {return m_format == Format::Rgba ? 4 : 3;}
     void Invalidate() {m_width=m_height=0; ClearData();}
     void ClearData() {m_image.Clear();}
     void Initialize(uint32_t width, uint32_t height, Format format) {m_height=height; m_width=width; m_format=format; ClearData();}
     uint32_t GetWidth() const {return m_width;}
     uint32_t GetHeight() const {return m_height;}
     Format GetFormat() const {return m_format;}
-    void SetFormat(Format f) {m_format=f;}
+    void SetFormat(Format format) {m_format=format;}
     bool IsValid() {return 0!=m_width && 0!=m_height;}
     ByteStream const& GetByteStream() const {return m_image;}
     ByteStream& GetByteStreamR() {return m_image;}
-    void SetSize(uint32_t width, uint32_t height);
+    void SetSize(uint32_t width, uint32_t height) {BeAssert(0 == m_width && 0 == m_height); m_width = width; m_height = height;}
 };
 
 //=======================================================================================

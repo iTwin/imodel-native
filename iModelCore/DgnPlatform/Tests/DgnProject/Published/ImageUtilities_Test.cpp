@@ -6,25 +6,22 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/ImageUtilities.h>
+
+USING_NAMESPACE_BENTLEY_RENDER
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      04/2013
 //---------------------------------------------------------------------------------------
 TEST (ImageUtilities_Tests, Png)
     {
-    ByteStream testImage;
-    RgbImageInfo info;
-    info.m_isBGR = false;
-    info.m_hasAlpha = true;
-    info.m_width = 100;
-    info.m_height = 200;
+    uint32_t width = 100;
+    uint32_t height = 200;
 
-    testImage.Resize(info.m_height * info.m_width * 4);
+    ByteStream testImage(height * width * 4);
     Byte* p=testImage.GetDataP();
-    for (uint8_t y = 0; y<info.m_height; ++y)
+    for (uint8_t y = 0; y<height; ++y)
         {
-        for (uint8_t x = 0; x<info.m_width; ++x)
+        for (uint8_t x = 0; x<width; ++x)
             {
             *p++ = (y%256); // R
             *p++ = (x%256); // G
@@ -33,71 +30,25 @@ TEST (ImageUtilities_Tests, Png)
             }
         }
 
-    BeFileName pngFileName;
-    BeTest::GetHost().GetOutputRoot(pngFileName);
-    pngFileName.AppendToPath(L"ImageUtilities_Tests.png");
-    BeFile pngFile;
-    ASSERT_TRUE( pngFile.Create(pngFileName, /*createAlways*/true) == BeFileStatus::Success );
+    Image image(width, height, Image::Format::Rgba, std::move(testImage));
+    ASSERT_TRUE(image.IsValid());
 
-    ASSERT_TRUE( info.WriteImageToPngFile(pngFile, testImage) == BSISUCCESS);
+    ImageSource pngImg(ImageSource::Format::Png, image);
+    ASSERT_TRUE(pngImg.IsValid());
+    ASSERT_TRUE(pngImg.HasAlpha());
+    ASSERT_FALSE(pngImg.IsBGR());
+    ASSERT_TRUE(pngImg.IsTopDown());
+    ASSERT_TRUE(pngImg.GetFormat()==ImageSource::Format::Png);
 
-    ByteStream imageRead;
-    RgbImageInfo infoRead;
-    pngFile.Close();
-    ASSERT_TRUE( pngFile.Open(pngFileName, BeFileAccess::Read) == BeFileStatus::Success );
-    ASSERT_TRUE( infoRead.ReadImageFromPngFile(imageRead, pngFile) == BSISUCCESS );
-    ASSERT_EQ( infoRead.m_width, info.m_width );
-    ASSERT_EQ( infoRead.m_height, info.m_height );
-    ASSERT_EQ( infoRead.m_hasAlpha, info.m_hasAlpha );
-    ASSERT_TRUE( infoRead.IsTopDown()); // PNG is always top-down
-    ASSERT_TRUE( 0==memcmp(imageRead.GetDataP(), testImage.GetDataP(), imageRead.GetSize()) ); // Since our input was RGBA, there was no transformation on the way out to the file.
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Umar.Hayat      11/2015
-//---------------------------------------------------------------------------------------
-TEST (ImageUtilities_Tests, PngReadFromBuffer)
-    {
-    ByteStream testImage;
-    RgbImageInfo info;
-    info.m_isBGR = false;
-    info.m_hasAlpha = true;
-    info.m_width = 100;
-    info.m_height = 200;
+    Image image2(pngImg);
+    ASSERT_TRUE(image2.IsValid());
 
-    testImage.Resize(info.m_height * info.m_width * 4);
-    Byte* p=testImage.GetDataP();
-    for (uint8_t y = 0; y<info.m_height; ++y)
-        {
-        for (uint8_t x = 0; x<info.m_width; ++x)
-            {
-            *p++ = (y%256); // R
-            *p++ = (x%256); // G
-            *p++ = (0xff);  // B
-            *p++ = (0xff);  // A
-            }
-        }
+    ASSERT_EQ(width, image2.GetWidth());
+    ASSERT_EQ(height, image2.GetHeight());
+    ASSERT_TRUE(Image::Format::Rgba == image2.GetFormat());
 
-    BeFileName pngFileName;
-    BeTest::GetHost().GetOutputRoot(pngFileName);
-    pngFileName.AppendToPath(L"ImageUtilities_Tests.png");
-    BeFile pngFile;
-    ASSERT_TRUE( pngFile.Create(pngFileName, /*createAlways*/true) == BeFileStatus::Success );
-
-    ASSERT_TRUE( info.WriteImageToPngFile(pngFile, testImage) == BSISUCCESS);
-
-    Render::Image imageRead;
-    ::RgbImageInfo infoRead;
-    pngFile.Close();
-    ASSERT_TRUE( pngFile.Open(pngFileName, BeFileAccess::Read) == BeFileStatus::Success );
-    bvector<Byte> readBuffer;
-    ASSERT_TRUE(BeFileStatus::Success == pngFile.ReadEntireFile(readBuffer));
-    ASSERT_TRUE(0 != readBuffer.size());
-    ASSERT_TRUE(infoRead.ReadImageFromPngBuffer(imageRead, &readBuffer[0], readBuffer.size()) == BSISUCCESS);
-    ASSERT_EQ( infoRead.m_width, info.m_width );
-    ASSERT_EQ( infoRead.m_height, info.m_height );
-    ASSERT_EQ( infoRead.m_hasAlpha, info.m_hasAlpha );
-    ASSERT_TRUE( infoRead.IsTopDown() ); // PNG is always top-down
-    ASSERT_TRUE( 0==memcmp(imageRead.GetByteStream().GetDataP(), testImage.GetDataP(), imageRead.GetByteStream().GetSize()) ); // Since our input was RGBA, there was no transformation on the way out to the file.
+    ASSERT_EQ(image2.GetByteStream().GetSize(), image.GetByteStream().GetSize());
+    ASSERT_TRUE( 0==memcmp(image.GetByteStream().GetData(), image2.GetByteStream().GetData(), image2.GetByteStream().GetSize()) ); // Since our input was RGBA, there was no transformation on the way out to the file.
     }
 
 //---------------------------------------------------------------------------------------
@@ -105,19 +56,15 @@ TEST (ImageUtilities_Tests, PngReadFromBuffer)
 //---------------------------------------------------------------------------------------
 TEST (ImageUtilities_Tests, JPG)
     {
-    ByteStream testImage;
-    RgbImageInfo info;
-    info.m_isBGR = false;
-    info.m_hasAlpha = false;
-    info.m_width = 100;
-    info.m_height = 200;
+    uint32_t width = 100;
+    uint32_t height = 200;
 
-    testImage.Resize(info.m_height * info.m_width * 3);
+    ByteStream testImage(height * width * 4);
     Byte* p=testImage.GetDataP();
 
-    for (uint8_t y = 0; y<info.m_height; ++y)
+    for (uint8_t y = 0; y<height; ++y)
         {
-        for (uint8_t x = 0; x<info.m_width; ++x)
+        for (uint8_t x = 0; x<width; ++x)
             {
             *p++ =  (255-y%256); // R
             *p++ = ((x % 256) ^ 0xFF ); // G
@@ -125,29 +72,22 @@ TEST (ImageUtilities_Tests, JPG)
             }
         }
 
-    BeFileName pngFileName;
-    BeTest::GetHost().GetOutputRoot(pngFileName);
-    pngFileName.AppendToPath(L"ImageUtilities_JPGTests.jpg");
-    BeFile pngFile;
-    ASSERT_TRUE( pngFile.Create(pngFileName, /*createAlways*/true) == BeFileStatus::Success );
-    
-    ByteStream jpegData;
-    ASSERT_TRUE(SUCCESS == info.WriteImageToJpgBuffer(jpegData, testImage, 100));
-    ASSERT_TRUE(BeFileStatus::Success == pngFile.Write(NULL, jpegData.GetData(), (uint32_t)jpegData.GetSize()));
+    Image image(width, height, Image::Format::Rgb, std::move(testImage));
 
-    Render::Image imageRead;
-    RgbImageInfo infoRead = info;
-    pngFile.Close();
-    ASSERT_TRUE(pngFile.Open(pngFileName, BeFileAccess::Read) == BeFileStatus::Success);
-    bvector<Byte> readBuffer;
-    ASSERT_TRUE(BeFileStatus::Success == pngFile.ReadEntireFile(readBuffer));
-    ASSERT_TRUE(0 != readBuffer.size());
-    ASSERT_TRUE(infoRead.ReadImageFromJpgBuffer(imageRead, &readBuffer[0], readBuffer.size()) == BSISUCCESS);
-    ASSERT_EQ(infoRead.m_width, info.m_width);
-    ASSERT_EQ(infoRead.m_height, info.m_height);
-    ASSERT_EQ(infoRead.m_hasAlpha, info.m_hasAlpha);
-    ASSERT_TRUE(infoRead.IsTopDown()); // PNG is always top-down
-    EXPECT_EQ(imageRead.GetByteStream().GetSize(), testImage.GetSize());
+    ImageSource jpgImg(ImageSource::Format::Jpeg, image, 100);
+    ASSERT_TRUE(jpgImg.IsValid());
+    ASSERT_FALSE(jpgImg.HasAlpha());
+    ASSERT_FALSE(jpgImg.IsBGR());
+    ASSERT_TRUE(jpgImg.IsTopDown());
+    ASSERT_TRUE(jpgImg.GetFormat()==ImageSource::Format::Jpeg);
+
+    Image image2(jpgImg);
+    ASSERT_TRUE(image2.IsValid());
+
+    ASSERT_EQ(width, image2.GetWidth());
+    ASSERT_EQ(height, image2.GetHeight());
+    ASSERT_TRUE(Image::Format::Rgb == image2.GetFormat());
+
     // Why image is not same , qaulity was 100 so it should transform or change any thing
     //ASSERT_TRUE(imageRead == testImage); // Since our input was RGBA, there was no transformation on the way out to the file.
     }

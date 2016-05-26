@@ -16,6 +16,7 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DPTEST
+USING_NAMESPACE_BENTLEY_RENDER
 
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Julija.Suboc     07/2013
@@ -33,49 +34,40 @@ struct ImportTest : DgnDbTestFixture
 static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, JsonRenderMaterial::TextureMap::Units unitMode)
     {
     RgbFactor red = { 1.0, 0.0, 0.0};
-    ByteStream fileImageData, imageData;
     uint32_t width, height;
-    RgbImageInfo rgbImageInfo;
    
     JsonRenderMaterial renderMaterialAsset;
     renderMaterialAsset.SetColor(RENDER_MATERIAL_Color, red);
     renderMaterialAsset.SetBool(RENDER_MATERIAL_FlagHasBaseColor, true);
 
+    Image image;
+    ImageSource imageSource;
     BeFile imageFile;
-    if (BeFileStatus::Success == imageFile.Open(pngFileName, BeFileAccess::Read) &&
-        SUCCESS == rgbImageInfo.ReadImageFromPngFile(fileImageData, imageFile))
+    if (BeFileStatus::Success == imageFile.Open(pngFileName, BeFileAccess::Read))
         {
-        width = rgbImageInfo.m_width;
-        height = rgbImageInfo.m_height;
-
-        imageData.Resize(width*height * 4);
-        Byte* p = imageData.GetDataP(); 
-        Byte* s = fileImageData.GetDataP(); 
-        for (uint32_t i=0; i<imageData.GetSize(); i += 4)
-            {
-            *p++ = *s++;
-            *p++ = *s++;
-            *p++ = *s++;
-            *p++ = 255;     // Alpha.
-            ++s;
-            }
-
-        EXPECT_EQ(p, imageData.GetDataP() + imageData.GetSize());
-        EXPECT_EQ(s, fileImageData.GetDataP() + imageData.GetSize());
+        ByteStream pngBytes;
+        imageFile.ReadEntireFile(pngBytes);
+        imageSource = ImageSource(ImageSource::Format::Png, std::move(pngBytes), ImageSource::Alpha::Yes);
+        image = Image(imageSource);
         }
     else
         {
         width = height = 512;
-        imageData.Resize(width * height * 4);
+        ByteStream data(width * height * 4);
 
         size_t      value = 0;
-        Byte* imageByte=imageData.GetDataP();
-        for (uint32_t i=0; i<imageData.GetSize(); ++i)
+        Byte* imageByte=data.GetDataP();
+        for (uint32_t i=0; i<data.GetSize(); ++i)
             *imageByte++ = ++value % 0xff;        
+
+        image = Image(width, height, Image::Format::Rgba, std::move(data));
+        imageSource = ImageSource(ImageSource::Format::Png, image);
         }
 
-    DgnTexture::Data textureData(DgnTexture::Format::RAW, imageData.GetData(), imageData.GetSize(), width, height);
-    DgnTexture texture(DgnTexture::CreateParams(dgnDb, materialName/*###TODO unnamed textures*/, textureData));
+    EXPECT_TRUE(imageSource.IsValid());
+    EXPECT_TRUE(image.IsValid());
+
+    DgnTexture texture(DgnTexture::CreateParams(dgnDb, materialName/*###TODO unnamed textures*/, imageSource, image.GetWidth(), image.GetHeight()));
     texture.Insert();
     DgnTextureId textureId = texture.GetTextureId();
     EXPECT_TRUE(textureId.IsValid());

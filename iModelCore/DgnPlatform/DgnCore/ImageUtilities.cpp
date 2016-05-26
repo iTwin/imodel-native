@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#include <DgnPlatform/ImageUtilities.h>
-
 #if defined (BENTLEY_TOOL_CONTEXT_IsLinuxGcc)
 // See pngconf.h
 #define PNG_SKIP_SETJMP_CHECK
@@ -17,7 +15,7 @@
 #include <png/png.h>
 #include <BeJpeg/BeJpeg.h>
 
-namespace {
+BEGIN_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                     Mathieu.Marchand  07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -44,29 +42,9 @@ private:
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                                     Sam.Wilson      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct PngReadFile
-{
-    BeFile& m_file;
-
-    PngReadFile(BeFile& file) : m_file(file) {;}
-
-    static void Read(png_structp png_ptr, png_bytep data, png_size_t length)
-        {
-        PngReadFile* pngFile = (PngReadFile*)(png_ptr->io_ptr);
-
-        uint32_t bytesRead;
-        if (pngFile->m_file.Read(data, &bytesRead, (uint32_t)length) != BeFileStatus::Success || bytesRead != length)
-            png_error(png_ptr, "Read Error");   // >>>>  Will long jump and not return.
-        }
-};
-}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename READER> static BentleyStatus readPngToBuffer(ByteStream& outPixels, RgbImageInfo& info, READER& reader)
+static BentleyStatus readPng(Image& image, PngReadData& reader)
     {
     png_structp png_ptr;
     png_infop info_ptr;
@@ -93,7 +71,7 @@ template<typename READER> static BentleyStatus readPngToBuffer(ByteStream& outPi
         }
 
     // Register our png data reader.
-    png_set_read_fn(png_ptr, &reader, READER::Read);
+    png_set_read_fn(png_ptr, &reader, PngReadData::Read);
 
     // If we have already read some of the signature */
     png_set_sig_bytes(png_ptr, sig_read);
@@ -116,75 +94,19 @@ template<typename READER> static BentleyStatus readPngToBuffer(ByteStream& outPi
         }
         
     // Fill in the outputs.
-    info.m_width = info_ptr->width;
-    info.m_height = info_ptr->height;
-    info.m_hasAlpha = (32 == info_ptr->pixel_depth);     // either RGB or RGBA
-    info.m_isBGR = false;
-    info.SetTopDown();
-    outPixels.Resize((uint32_t) (info.m_height*bytesPerRow));
+    image.SetSize(info_ptr->width, info_ptr->height);
+    image.SetFormat((32 == info_ptr->pixel_depth) ? Image::Format::Rgba : Image::Format::Rgb); 
+    image.GetByteStreamR().Resize((uint32_t) (info_ptr->height*bytesPerRow));
 
-    for (uint32_t line=0; line < info.m_height; ++line)
-        memcpy(outPixels.GetDataP() + line*bytesPerRow, rows_pointers[line], bytesPerRow);
-
-#if 0 //DUMP_TO_FILE
-    WString filename;
-    filename.Sprintf(L"c:\\pngDump_%dx%d.raw", info_ptr->width, info_ptr->height);
-    BeFile dumpFile;
-    dumpFile.Create(filename.c_str());
-    uint32_t bytesWritten;
-    dumpFile.Write(&bytesWritten, &outPixels[0], (uint32_t)outPixels.size());
-    dumpFile.Close();
-#endif
+    Byte* out = image.GetByteStreamR().GetDataP();
+    for (uint32_t line=0; line < info_ptr->height; ++line)
+        memcpy(out + line*bytesPerRow, rows_pointers[line], bytesPerRow);
 
     // Clean up after the read, and free any memory allocated 
     png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
 
     return SUCCESS;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus RgbImageInfo::ReadImageFromPngBuffer(Render::Image& image, Byte const*inputBuffer, size_t numberBytes)
-    {
-    image.Initialize(0, 0, m_hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb); // zero...we haven't read the dimensions yet...
-    PngReadData pngData(inputBuffer, numberBytes);
-    auto status = readPngToBuffer(image.GetByteStreamR(), *this, pngData);
-    if (SUCCESS == status)
-        image.SetSize(m_width, m_height);   // now we know the dimensions...
-
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      10/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus RgbImageInfo::ReadImageFromPngFile(ByteStream& rgbaBuffer, BeFile& file)
-    {
-    PngReadFile pngFile(file);
-    return readPngToBuffer(rgbaBuffer, *this, pngFile);
-    }
-
-BEGIN_UNNAMED_NAMESPACE
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson  10/13
-//=======================================================================================
-struct FileWriter
-{
-    BeFile& m_pngFile;          // The output file
-
-    FileWriter(BeFile& f) : m_pngFile(f) {;}
-
-    static void Write(png_structp png_ptr, png_bytep data, png_size_t length)
-        {
-        FileWriter* app = (FileWriter*) png_get_io_ptr(png_ptr);
-        uint32_t bytesWritten = 0;
-        if (app->m_pngFile.Write(&bytesWritten, data, (uint32_t)length) != BeFileStatus::Success || length != bytesWritten)
-            {
-            png_error(png_ptr, "Write Error");   // >>>>  Will long jump and not return.
-            }
-        }
-};
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson  10/13
@@ -206,15 +128,14 @@ struct Bgra {uint8_t b, g, r, a;};
 struct Bgr  {uint8_t b, g, r;};
 struct Rgba {uint8_t r, g, b, a;};
 
-END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  10/2013
 //---------------------------------------------------------------------------------------
-static BentleyStatus prepareForPng(int& pngformat, bvector <png_bytep>& rows, ByteStream& img, RgbImageInfo const& pngInfo)
+static BentleyStatus prepareForPng(int& pngformat, bvector <png_bytep>& rows, ImageCR img, ImageSource const& source)
     {
-    uint32_t bytesPerPixel = pngInfo.m_hasAlpha? 4: 3;
-    size_t  lengthInPixels = pngInfo.m_width*pngInfo.m_height;
+    uint32_t bytesPerPixel = img.GetBytesPerPixel();
+    size_t  lengthInPixels = img.GetWidth()*img.GetHeight();
 
     //  ---------------------------------------------------------------------------------------------------
     //  PNG does not support BGR*, only RGB*. If the input is BGR, we must swap B and R.
@@ -226,9 +147,9 @@ static BentleyStatus prepareForPng(int& pngformat, bvector <png_bytep>& rows, By
     if (bytesPerPixel == 3)
         {
         pngformat = PNG_COLOR_TYPE_RGB;
-        if (pngInfo.m_isBGR)
+        if (source.IsBGR())
             {
-            Bgr* pixel = (Bgr*) img.GetData();
+            Bgr* pixel = (Bgr*) img.GetByteStream().GetData();
             Bgr* pixelEnd = pixel + lengthInPixels;
             for (; pixel < pixelEnd; ++pixel)
                 std::swap(pixel->r, pixel->b);
@@ -238,9 +159,9 @@ static BentleyStatus prepareForPng(int& pngformat, bvector <png_bytep>& rows, By
         {
         pngformat = PNG_COLOR_TYPE_RGBA;
         
-        if (pngInfo.m_isBGR)
+        if (source.IsBGR())
             {
-            Bgra* pixel = (Bgra*) img.GetData();
+            Bgra* pixel = (Bgra*) img.GetByteStream().GetData();
             Bgra* pixelEnd = pixel + lengthInPixels;
             for (; pixel < pixelEnd; ++pixel)
                 {
@@ -259,11 +180,11 @@ static BentleyStatus prepareForPng(int& pngformat, bvector <png_bytep>& rows, By
     //  ---------------------------------------------------------------------------------------------------
     //  PNG wants a pointer to each row, in TOP-DOWN ORDER. This is where we correct for bottom-up images. 
     //  ---------------------------------------------------------------------------------------------------
-    rows.resize(pngInfo.m_height);
+    rows.resize(img.GetHeight());
 
-    int    rowSize = pngInfo.m_width * bytesPerPixel;
-    uint8_t* row     = pngInfo.IsTopDown() ? img.GetDataP() : img.GetDataP() + (pngInfo.m_height-1)*rowSize;
-    int    rowStep = pngInfo.IsTopDown() ? rowSize : -rowSize;
+    int    rowSize = img.GetWidth() * bytesPerPixel;
+    uint8_t* row = source.IsTopDown() ? img.GetByteStream().GetDataP() : img.GetByteStream().GetDataP() + (img.GetHeight()-1)*rowSize;
+    int    rowStep = source.IsTopDown() ? rowSize : -rowSize;
     for (size_t i=0; i<rows.size(); ++i)
         {
         rows[i] = row;
@@ -276,11 +197,11 @@ static BentleyStatus prepareForPng(int& pngformat, bvector <png_bytep>& rows, By
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/13
 //---------------------------------------------------------------------------------------
-template<typename WRITER> BentleyStatus writeImageToPng(WRITER& writer, ByteStream& imageData, RgbImageInfo const& pngInfo)
+static BentleyStatus writeImageToPng(BufferWriter& writer, ImageCR imageData, ImageSource const& source)
     {
     int pngFormat;
     bvector<png_bytep> rowPointers;
-    if (prepareForPng(pngFormat, rowPointers, imageData, pngInfo) != BSISUCCESS)
+    if (prepareForPng(pngFormat, rowPointers, imageData, source) != BSISUCCESS)
         return BSIERROR;
 
     png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -294,9 +215,9 @@ template<typename WRITER> BentleyStatus writeImageToPng(WRITER& writer, ByteStre
     if (setjmp(png_jmpbuf(png_ptr)))
         return BSIERROR;
 
-    png_set_write_fn(png_ptr, &writer, WRITER::Write, NULL);
+    png_set_write_fn(png_ptr, &writer, BufferWriter::Write, NULL);
 
-    png_set_IHDR (png_ptr, info_ptr, pngInfo.m_width, pngInfo.m_height, 8, pngFormat, PNG_INTERLACE_NONE,
+    png_set_IHDR (png_ptr, info_ptr, imageData.GetWidth(), imageData.GetHeight(), 8, pngFormat, PNG_INTERLACE_NONE,
                   PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
     png_write_info(png_ptr, info_ptr);
@@ -314,63 +235,64 @@ template<typename WRITER> BentleyStatus writeImageToPng(WRITER& writer, ByteStre
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      10/13
-//---------------------------------------------------------------------------------------
-BentleyStatus RgbImageInfo::WriteImageToPngFormat(ByteStream& pngData, ByteStream& imageData) const
-    {
-    BufferWriter writer(pngData);
-    return writeImageToPng(writer, imageData, *this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      10/13
-//---------------------------------------------------------------------------------------
-BentleyStatus RgbImageInfo::WriteImageToPngFile(BeFile& pngFile, ByteStream& imageData) const
-    {
-    FileWriter writer(pngFile);
-    return writeImageToPng(writer, imageData, *this);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2013
 //---------------------------------------------------------------------------------------
-static BeJpegPixelType computePixelFormat(RgbImageInfo const& infoIn)
+static BeJpegPixelType computePixelFormat(ImageSourceCR source)
     {
-    if (infoIn.m_hasAlpha)
-        return infoIn.m_isBGR ? BE_JPEG_PIXELTYPE_BgrA : BE_JPEG_PIXELTYPE_RgbA;
+    if (source.HasAlpha())
+        return source.IsBGR() ? BE_JPEG_PIXELTYPE_BgrA : BE_JPEG_PIXELTYPE_RgbA;
         
-    return infoIn.m_isBGR ? BE_JPEG_PIXELTYPE_Bgr : BE_JPEG_PIXELTYPE_Rgb;
+    return source.IsBGR() ? BE_JPEG_PIXELTYPE_Bgr : BE_JPEG_PIXELTYPE_Rgb;
+    }
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Image::Image(ImageSourceCR source)
+    {
+    ByteStream const& input = source.GetByteStream();
+    if (source.GetFormat() == ImageSource::Format::Jpeg)
+        {
+        BeJpegDecompressor reader;
+        if (SUCCESS != reader.ReadHeader(m_width, m_height, input.GetData(), input.GetSize()))
+            {
+            Invalidate();
+            return;
+            }
+
+        m_image.Resize(m_width * m_height * 4);
+        if (SUCCESS != reader.Decompress(m_image.GetDataP(), m_image.GetSize(), input.GetData(), input.GetSize(), computePixelFormat(source), source.IsBottomUp() ? BeJpegBottomUp::Yes : BeJpegBottomUp::No))
+            Invalidate();
+
+        return;
+        }
+
+    PngReadData pngData(input.GetData(), input.GetSize());
+    if (SUCCESS != readPng(*this, pngData))
+        Invalidate();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      10/2013
-//---------------------------------------------------------------------------------------
-static size_t computeBytesPerPixel(RgbImageInfo const& infoIn)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageSource::ImageSource(Format format, ImageCR image, int quality, BottomUp bottomUp) : m_format(format), m_bottomUp(bottomUp)
     {
-    return infoIn.m_hasAlpha ? 4 : 3;
-    }
+    m_hasAlpha = image.GetFormat() == Image::Format::Rgba ? Alpha::Yes : Alpha::No;
+    m_isBGR = false;
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      10/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus RgbImageInfo::WriteImageToJpgBuffer(ByteStream& jpegData, ByteStream const& imageData, int quality, BottomUp bottomUp) const
-    {
-    BeJpegCompressor writer;
-    return writer.Compress(jpegData, imageData.GetData(), m_width, m_height, computePixelFormat(*this), quality, BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No);
-    }
+    if (m_format == Format::Jpeg)
+        {
+        BeJpegCompressor writer;
+        if (SUCCESS != writer.Compress(m_stream, image.GetByteStream().GetData(), image.GetWidth(), image.GetHeight(), computePixelFormat(*this), quality, BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No))
+            m_stream.Clear();
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      10/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus RgbImageInfo::ReadImageFromJpgBuffer(Render::Image& image, Byte const*inputBuffer, size_t inputBufferSize, BottomUp bottomUp)
-    {
-    BeJpegDecompressor reader;
-    if (SUCCESS != reader.ReadHeader(m_width, m_height, inputBuffer, inputBufferSize))
-        return ERROR;
+        return;
+        }
 
-    image.Initialize(m_width, m_height, m_hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb);
-    ByteStream& rgbaBuffer = image.GetByteStreamR();
-    rgbaBuffer.Resize((uint32_t) (m_width*m_height*computeBytesPerPixel(*this)));
-    return reader.Decompress(rgbaBuffer.GetDataP(), rgbaBuffer.GetSize(), inputBuffer, inputBufferSize, computePixelFormat(*this), BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No);
+    BufferWriter writer(m_stream);
+    if (SUCCESS != writeImageToPng(writer, image, *this))
+        m_stream.Clear();
+
     }
 

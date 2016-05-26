@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgnTexturesTest : public BlankDgnDbTestFixture
     {
-    DgnTexture::Data MakeTextureData (DgnTexture::Format fmt, uint32_t w, uint32_t h)
+    DgnTexture::Data MakeTextureData(DgnTexture::Format fmt, uint32_t w, uint32_t h)
         {
         // For the purposes of this test we really don't know/care about the raw texture data
         bvector<Byte> bytes (w*h);

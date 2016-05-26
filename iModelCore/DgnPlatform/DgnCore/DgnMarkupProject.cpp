@@ -1210,12 +1210,9 @@ BeAssert(def1x1.GetSizeofPixelInBytes() == 3);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageDataFromJPEG(uint8_t const* jpegData, size_t jpegDataSize, RgbImageInfo& imageInfoIn, bool fitToX)
+void RedlineModel::StoreImageData(ImageSourceCR source, bool fitToX)
     {
-    Render::Image image;
-    if (imageInfoIn.ReadImageFromJpgBuffer(image, jpegData, jpegDataSize) != BSISUCCESS)
-        return;
-
+    Render::Image image(source);
     StoreImageData(image, fitToX, /*compresssImageProperty*/false);
     }
 

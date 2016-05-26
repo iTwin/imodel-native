@@ -23,7 +23,7 @@ protected:
     bool            m_isLoaded;
     Render::Image   m_image;  //  Expanded PNG
     DGNPLATFORM_EXPORT virtual void _LoadSprite();
-    void PopulateRgbaSpriteFromPngBuffer(Byte const*inputBuffer, size_t numberBytes);
+    void Load(Render::ImageSourceCR);
 
 public:
     DGNPLATFORM_EXPORT RgbaSprite();
@@ -31,7 +31,7 @@ public:
 
     Point2d _GetSize() override {_LoadSprite(); Point2d pt; pt.x=m_image.GetWidth(); pt.y=m_image.GetHeight(); return pt;}
     virtual Byte const* _GetRgbaDefinition() override;
-    DGNPLATFORM_EXPORT static RgbaSpritePtr CreateFromPngBuffer(Byte const*inputBuffer, size_t numberBytes);
+    DGNPLATFORM_EXPORT static RgbaSpritePtr CreateFrom(Render::ImageSourceCR);
 
 };
 
