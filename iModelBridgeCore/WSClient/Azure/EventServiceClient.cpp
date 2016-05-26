@@ -22,6 +22,14 @@ EventServiceClient::EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repo
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Arvind.Venkateswaran   05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+//Need a default constructor for DgnDbClientRepository
+EventServiceClient::EventServiceClient()
+    {
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 HttpResponse EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
