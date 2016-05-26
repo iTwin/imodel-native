@@ -23,27 +23,25 @@ JsonReader::JsonReader(ECDbCR ecdb, ECN::ECClassId ecClassId) : m_ecDb(ecdb), m_
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus JsonReader::Read(JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions) const
     {
-    jsonInstances = Json::arrayValue;
-    jsonDisplayInfo = Json::objectValue;
+    jsonInstances = Json::nullValue;
+    jsonDisplayInfo = Json::nullValue;
 
     if (!IsValid())
         return ERROR;
 
     // Add any instances of the specified class itself
     ECRelationshipPath trivialPathToClass;
-    BentleyStatus status = GetTrivialPathToSelf(trivialPathToClass, *m_ecClass);
-    if (SUCCESS == status)
-        status = AddInstancesFromSpecifiedClassPath(jsonInstances, jsonDisplayInfo, trivialPathToClass, ecInstanceId, formatOptions, false /*isPolymorphic*/);
+    if (SUCCESS != GetTrivialPathToSelf(trivialPathToClass, *m_ecClass))
+        return ERROR;
+
+    jsonInstances = Json::arrayValue;
+    jsonDisplayInfo = Json::objectValue;
+
+    BentleyStatus status = AddInstancesFromSpecifiedClassPath(jsonInstances, jsonDisplayInfo, trivialPathToClass, ecInstanceId, formatOptions, false /*isPolymorphic*/);
 
     // Add any related instances according to the "RelatedItemsDisplaySpecification" custom attribute
-    if (SUCCESS == status)
-        status = AddInstancesFromRelatedItems(jsonInstances, jsonDisplayInfo, *m_ecClass, trivialPathToClass, ecInstanceId, formatOptions);
-
-    if (status != SUCCESS)
-        {
-        jsonInstances = Json::nullValue;
-        jsonDisplayInfo = Json::nullValue;
-        }
+    if (SUCCESS != AddInstancesFromRelatedItems(jsonInstances, jsonDisplayInfo, *m_ecClass, trivialPathToClass, ecInstanceId, formatOptions))
+        status = ERROR;
 
     return status;
     }
@@ -99,6 +97,7 @@ BentleyStatus JsonReader::AddInstancesFromRelatedItems(JsonValueR allInstances, 
     ECRelationshipPath pathToParent;
     pathFromParent.Reverse(pathToParent);
 
+    BentleyStatus status = SUCCESS;
     for (ECRelationshipPath const& appendPath : appendPathsFromParent)
         {
         ECRelationshipPath pathToRelatedClass = pathToParent;
@@ -108,10 +107,10 @@ BentleyStatus JsonReader::AddInstancesFromRelatedItems(JsonValueR allInstances, 
         pathToRelatedClass.Reverse(pathFromRelatedClass);
 
         if (SUCCESS != AddInstancesFromSpecifiedClassPath(allInstances, allDisplayInfo, pathFromRelatedClass, ecInstanceId, formatOptions, true /*isPolymorphic*/))
-            return ERROR;
+            status = ERROR;
         }
 
-    return SUCCESS;
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -128,6 +127,7 @@ BentleyStatus JsonReader::AddInstancesFromSpecifiedClassPath(JsonValueR allInsta
     if (SUCCESS != PrepareAndBindStatement(statementKey, ecSqlKey, ecInstanceId))
         return ERROR;
 
+    BentleyStatus status = SUCCESS;
     while (BE_SQLITE_ROW == statementKey->Step())
         {
         ECClassId selectClassId = statementKey->GetValueId<ECClassId>(0);
@@ -146,10 +146,13 @@ BentleyStatus JsonReader::AddInstancesFromSpecifiedClassPath(JsonValueR allInsta
         pathFromDerivedClass.SetEndClass(*selectClass, ECRelationshipPath::End::Root);
 
         if (SUCCESS != AddInstancesFromPreparedStatement(allInstances, allDisplayInfo, *statement, formatOptions, pathFromDerivedClass.ToString()))
-            return ERROR;
+            {
+            status = ERROR;
+            continue;
+            }
         }
 
-    return SUCCESS;
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -318,13 +321,18 @@ BentleyStatus JsonReader::AddInstancesFromPreparedStatement(JsonValueR allInstan
 
     int currentInstanceIndex = (int) allInstances.size();
 
+    BentleyStatus status = SUCCESS;
+
     while (BE_SQLITE_ROW == statement.Step())
         {
         if (currentInstanceIndex == 0)
             {
             // Setup instance the first time
             if (!jsonAdapter.GetRow(allInstances))
-                return ERROR;
+                status = ERROR;
+            
+            if (allInstances.size() == 0)
+                continue;
 
             // Setup display info the first time
             jsonAdapter.GetRowDisplayInfo(allDisplayInfo);
@@ -337,7 +345,10 @@ BentleyStatus JsonReader::AddInstancesFromPreparedStatement(JsonValueR allInstan
             */
             Json::Value addInstances;
             if (!jsonAdapter.GetRow(addInstances))
-                return ERROR;
+                status = ERROR;
+
+            if (addInstances.size() == 0)
+                continue;
 
             AddInstances(allInstances, addInstances, currentInstanceIndex);
 
@@ -357,10 +368,10 @@ BentleyStatus JsonReader::AddInstancesFromPreparedStatement(JsonValueR allInstan
             AddClasses(allDisplayInfo["Classes"], addDisplayInfo["Classes"]);
             }
 
-        currentInstanceIndex++;
+        currentInstanceIndex = (int) allInstances.size();
         }
 
-    return SUCCESS;
+    return status;
     }
 
 
