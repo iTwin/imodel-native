@@ -769,10 +769,6 @@ BentleyStatus ECSchemaComparer::AppendCustomAttribute(ECInstanceChanges& changes
     if (ConvertECInstanceToValueMap(map, v) != SUCCESS)
         return ERROR;
 
-
-    if (map.empty())
-        return SUCCESS;
-
     auto& change = changes.Add(state, v.GetClass().GetFullName());
     for (auto& key : map)
         change.GetOrCreate(state, Split(key.first)).SetValue(appendType, key.second);

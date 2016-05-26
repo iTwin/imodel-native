@@ -4897,4 +4897,37 @@ TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
     ASSERT_FALSE(asserted);
     }
 
+TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECCustomAttributes>"
+        "       <SystemSchema xmlns = 'Bentley_Standard_CustomAttributes.01.13' >"
+        "       </SystemSchema>"
+        "   </ECCustomAttributes>"
+        "   <ECEntityClass typeName='NewTestClass' modifier='None' >"
+        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem deleteAllCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass'>"
+        "   </ECCustomAttributeClass>"
+        "   <ECEntityClass typeName='NewTestClass' modifier='None' >"
+        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    ASSERT_FALSE(asserted);
+    }
 END_ECDBUNITTESTS_NAMESPACE

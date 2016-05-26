@@ -795,6 +795,28 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
             return ERROR;
         }
 
+    for (ECPropertyCP localProperty : deletedClass.GetProperties(false))
+        {
+        if (DeleteECCustomAttributes(localProperty->GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property) != ERROR)
+            {
+            BeAssert(false && "Failed to delete property customAttribute ");
+            return ERROR;
+            }
+        }
+
+    if (auto relationshipClass = deletedClass.GetRelationshipClassCP())
+        {
+        if (DeleteECCustomAttributes(relationshipClass->GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint) != ERROR)
+            {
+            BeAssert(false && "Failed to delete property customAttribute ");
+            return ERROR;
+            }
+        if (DeleteECCustomAttributes(relationshipClass->GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint) != ERROR)
+            {
+            BeAssert(false && "Failed to delete property customAttribute ");
+            return ERROR;
+            }
+        }
 
     return DeleteECCustomAttributes(deletedClass.GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class);
     }
