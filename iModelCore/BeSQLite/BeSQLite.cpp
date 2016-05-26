@@ -3079,12 +3079,12 @@ DbResult StatementCache::GetPreparedStatement(CachedStatementPtr& stmt, DbFile c
     if (!dbFile.CheckImplicitTxn())
         {
         BeAssert(false);
-        return  BE_SQLITE_ERROR_NoTxnActive;
+        return BE_SQLITE_ERROR_NoTxnActive;
         }
 
     FindStatement(stmt, sqlString);
     if (stmt.IsValid())
-        return  BE_SQLITE_OK;
+        return BE_SQLITE_OK;
 
     AddStatement(stmt, sqlString);
     return stmt->Prepare(dbFile, sqlString);
@@ -3124,7 +3124,7 @@ StatementCache& Db::GetStatementCache() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::GetCachedStatement(CachedStatementPtr& stmt, Utf8CP sqlString) const
     {
-    stmt = nullptr;  // just in case she's already holding a pointer to a valid statement. Otherwise we may not share it.
+    stmt = nullptr;  // just in case caller is already holding a pointer to a valid statement. Otherwise we may not share it.
     return GetStatementCache().GetPreparedStatement(stmt, *m_dbFile, sqlString);
     }
 
