@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DProjectiveTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -1758,4 +1758,56 @@ TEST_F(HGF2DProjectiveTester, IsStretchableTest3)
     ASSERT_DOUBLE_EQ(-0.99977163243554656, ScalingX);
     ASSERT_DOUBLE_EQ(0.999860415180864770, ScalingY);
 
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  5/2016
+//----------------------------------------------------------------------------------------
+TEST_F (HGF2DProjectiveTester, ProjectiveReverse)
+    {
+    double matrix[3][3];
+    matrix[0][0] = 5.5147648962581428;
+    matrix[0][1] = 0.0042851133851941970;
+    matrix[0][2] = -7523.2436222951546;
+    matrix[1][0] = -0.0050683470067062007;
+    matrix[1][1] = 5.4906630316330816;
+    matrix[1][2] = -41556.362377641810;
+    matrix[2][0] = -1.4525233209147976e-010;
+    matrix[2][1] = -6.5392539244920719e-008;
+    matrix[2][2] = 1.0000000000000000;
+
+    HFCPtr<HGF2DProjective> pProjec = new HGF2DProjective(matrix);
+    HFCPtr<HGF2DProjective> pProjecInverse = static_cast<HGF2DProjective*>(pProjec->Clone());
+    pProjecInverse->Reverse();
+
+    // Compute coordinates of four corners
+    HGF2DPosition BottomLeft(0, 0);
+    HGF2DPosition TopLeft(0, 256);
+    HGF2DPosition TopRight(512, 256);
+    HGF2DPosition BottomRight(512, 0);
+
+    pProjec->ConvertPosInverse(&BottomLeft);
+    pProjec->ConvertPosInverse(&TopLeft);
+    pProjec->ConvertPosInverse(&TopRight);
+    pProjec->ConvertPosInverse(&BottomRight);
+
+    HGF2DPosition BottomLeft2(0, 0);
+    HGF2DPosition TopLeft2(0, 256);
+    HGF2DPosition TopRight2(512, 256);
+    HGF2DPosition BottomRight2(512, 0);
+
+    pProjecInverse->ConvertPosDirect(&BottomLeft2);
+    pProjecInverse->ConvertPosDirect(&TopLeft2);
+    pProjecInverse->ConvertPosDirect(&TopRight2);
+    pProjecInverse->ConvertPosDirect(&BottomRight2);
+
+    ASSERT_DOUBLE_EQ(BottomLeft.GetX(), BottomLeft2.GetX());
+    ASSERT_DOUBLE_EQ(BottomLeft.GetY(), BottomLeft2.GetY());
+    ASSERT_DOUBLE_EQ(TopLeft.GetX(), TopLeft2.GetX());
+    ASSERT_DOUBLE_EQ(TopLeft.GetY(), TopLeft2.GetY());
+    ASSERT_DOUBLE_EQ(TopRight.GetX(), TopRight2.GetX());
+    ASSERT_DOUBLE_EQ(TopRight.GetY(), TopRight2.GetY());
+    ASSERT_DOUBLE_EQ(BottomRight.GetX(), BottomRight2.GetX());
+    ASSERT_DOUBLE_EQ(BottomRight.GetY(), BottomRight2.GetY());
     }

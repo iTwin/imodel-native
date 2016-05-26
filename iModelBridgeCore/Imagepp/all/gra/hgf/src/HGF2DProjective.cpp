@@ -30,15 +30,15 @@
 HGF2DProjective::HGF2DProjective()
     : HGF2DTransfoModel()
     {
-    m_M00 = 1.0;
-    m_M01 = 0.0;
-    m_M02 = 0.0;
-    m_M10 = 0.0;
-    m_M11 = 1.0;
-    m_M12 = 0.0;
-    m_M20 = 0.0;
-    m_M21 = 0.0;
-    m_M22 = 1.0;
+    m_D00 = 1.0;
+    m_D01 = 0.0;
+    m_D02 = 0.0;
+    m_D10 = 0.0;
+    m_D11 = 1.0;
+    m_D12 = 0.0;
+    m_D20 = 0.0;
+    m_D21 = 0.0;
+    m_D22 = 1.0;
 
     Prepare();
 
@@ -75,15 +75,15 @@ HGF2DProjective::HGF2DProjective(const HFCMatrix<3, 3>& pi_rMatrix)
     HPRECONDITION((pi_rMatrix[1][0] != 0.0) || (pi_rMatrix[1][1] != 0.0));
 
     // Copy matrix parameters
-    m_M00 = pi_rMatrix[0][0] / pi_rMatrix[2][2];
-    m_M01 = pi_rMatrix[0][1] / pi_rMatrix[2][2];
-    m_M02 = pi_rMatrix[0][2] / pi_rMatrix[2][2];
-    m_M10 = pi_rMatrix[1][0] / pi_rMatrix[2][2];
-    m_M11 = pi_rMatrix[1][1] / pi_rMatrix[2][2];
-    m_M12 = pi_rMatrix[1][2] / pi_rMatrix[2][2];
-    m_M20 = pi_rMatrix[2][0] / pi_rMatrix[2][2];
-    m_M21 = pi_rMatrix[2][1] / pi_rMatrix[2][2];
-    m_M22 = 1.0;
+    m_D00 = pi_rMatrix[0][0] / pi_rMatrix[2][2];
+    m_D01 = pi_rMatrix[0][1] / pi_rMatrix[2][2];
+    m_D02 = pi_rMatrix[0][2] / pi_rMatrix[2][2];
+    m_D10 = pi_rMatrix[1][0] / pi_rMatrix[2][2];
+    m_D11 = pi_rMatrix[1][1] / pi_rMatrix[2][2];
+    m_D12 = pi_rMatrix[1][2] / pi_rMatrix[2][2];
+    m_D20 = pi_rMatrix[2][0] / pi_rMatrix[2][2];
+    m_D21 = pi_rMatrix[2][1] / pi_rMatrix[2][2];
+    m_D22 = 1.0;
 
     // Prepare acceleration attributes
     Prepare();
@@ -112,15 +112,15 @@ HGF2DProjective::HGF2DProjective(double const  pi_pMatrix[3][3])
     HPRECONDITION((pi_pMatrix[1][0] != 0.0) || (pi_pMatrix[1][1] != 0.0));
 
     // Copy matrix parameters
-    m_M00 = pi_pMatrix[0][0] / pi_pMatrix[2][2];
-    m_M01 = pi_pMatrix[0][1] / pi_pMatrix[2][2];
-    m_M02 = pi_pMatrix[0][2] / pi_pMatrix[2][2];
-    m_M10 = pi_pMatrix[1][0] / pi_pMatrix[2][2];
-    m_M11 = pi_pMatrix[1][1] / pi_pMatrix[2][2];
-    m_M12 = pi_pMatrix[1][2] / pi_pMatrix[2][2];
-    m_M20 = pi_pMatrix[2][0] / pi_pMatrix[2][2];
-    m_M21 = pi_pMatrix[2][1] / pi_pMatrix[2][2];
-    m_M22 = 1.0;
+    m_D00 = pi_pMatrix[0][0] / pi_pMatrix[2][2];
+    m_D01 = pi_pMatrix[0][1] / pi_pMatrix[2][2];
+    m_D02 = pi_pMatrix[0][2] / pi_pMatrix[2][2];
+    m_D10 = pi_pMatrix[1][0] / pi_pMatrix[2][2];
+    m_D11 = pi_pMatrix[1][1] / pi_pMatrix[2][2];
+    m_D12 = pi_pMatrix[1][2] / pi_pMatrix[2][2];
+    m_D20 = pi_pMatrix[2][0] / pi_pMatrix[2][2];
+    m_D21 = pi_pMatrix[2][1] / pi_pMatrix[2][2];
+    m_D22 = 1.0;
 
     // Prepare acceleration attributes
     Prepare();
@@ -175,15 +175,15 @@ HGF2DProjective::HGF2DProjective(const HGF2DDisplacement& pi_rTranslation,
     HDEBUGCODE(double MyTrigoValue = CalculateNormalizedTrigoValue(pi_rAnorthogonality));
     HPRECONDITION((MyTrigoValue < PI/2) || (MyTrigoValue > (3*PI/2)));
 
-    m_M00 = pi_ScaleX * cos(pi_rRotation);
-    m_M01 = -pi_ScaleY * sin(pi_rRotation +  pi_rAnorthogonality);
-    m_M02 = pi_rTranslation.GetDeltaX();
-    m_M10 = pi_ScaleX * sin(pi_rRotation);
-    m_M11 = pi_ScaleY * cos(pi_rRotation + pi_rAnorthogonality);
-    m_M12 = pi_rTranslation.GetDeltaY();
-    m_M20 = 0.0;
-    m_M21 = 0.0;
-    m_M22 = 1.0;
+    m_D00 = pi_ScaleX * cos(pi_rRotation);
+    m_D01 = -pi_ScaleY * sin(pi_rRotation +  pi_rAnorthogonality);
+    m_D02 = pi_rTranslation.GetDeltaX();
+    m_D10 = pi_ScaleX * sin(pi_rRotation);
+    m_D11 = pi_ScaleY * cos(pi_rRotation + pi_rAnorthogonality);
+    m_D12 = pi_rTranslation.GetDeltaY();
+    m_D20 = 0.0;
+    m_D21 = 0.0;
+    m_D22 = 1.0;
 
     Prepare();
 
@@ -227,15 +227,15 @@ HGF2DProjective::HGF2DProjective(unsigned short pi_NumberOfPoints,
     double Matrix[4][4];
     HGF2DDCTransfoModel::GetProjectiveTransfoMatrixFromScaleAndTiePts(Matrix, pi_NumberOfPoints, pi_pTiePoints);
 
-    m_M00 = Matrix[0][0];
-    m_M01 = Matrix[0][1];
-    m_M02 = Matrix[0][3];
-    m_M10 = Matrix[1][0];
-    m_M11 = Matrix[1][1];
-    m_M12 = Matrix[1][3];
-    m_M20 = Matrix[3][0];
-    m_M21 = Matrix[3][1];
-    m_M22 = Matrix[3][3];
+    m_D00 = Matrix[0][0];
+    m_D01 = Matrix[0][1];
+    m_D02 = Matrix[0][3];
+    m_D10 = Matrix[1][0];
+    m_D11 = Matrix[1][1];
+    m_D12 = Matrix[1][3];
+    m_D20 = Matrix[3][0];
+    m_D21 = Matrix[3][1];
+    m_D22 = Matrix[3][3];
     Prepare();
     }
 
@@ -618,7 +618,7 @@ bool   HGF2DProjective::PreservesParallelism() const
 
     // A projective preserves linearity if perspective parameters
     // are null
-    return (m_M20 == 0.0 && m_M21 == 0.0);
+    return (m_D20 == 0.0 && m_D21 == 0.0);
     }
 
 //-----------------------------------------------------------------------------
@@ -631,8 +631,8 @@ bool   HGF2DProjective::PreservesShape() const
 
     // Shape is preserved only if there is no anisotropic scaling implied
     // and no anorthogonality
-    return ((m_M00 == m_M11) &&
-            (m_M20 == 0.0 && m_M21 == 0.0));
+    return ((m_D00 == m_D11) &&
+            (m_D20 == 0.0 && m_D21 == 0.0));
     }
 
 //-----------------------------------------------------------------------------
@@ -645,9 +645,9 @@ bool   HGF2DProjective::PreservesDirection() const
 
     // Direction is preserved only if there is no anisotropic scaling implied
     // no rotation nor anorthogonality
-    return ((m_M00 == m_M11) &&
-            (m_M10 == 0.0 && m_M01 == 0.0) &&
-            (m_M20 == 0.0 && m_M21 == 0.0));
+    return ((m_D00 == m_D11) &&
+            (m_D10 == 0.0 && m_D01 == 0.0) &&
+            (m_D20 == 0.0 && m_D21 == 0.0));
     }
 
 
@@ -671,9 +671,9 @@ bool HGF2DProjective::IsIdentity () const
     {
     HINVARIANTS;
 
-    return((m_M00 == 1.0) && (m_M01 == 0.0) && (m_M02 == 0.0) &&
-           (m_M10 == 0.0) && (m_M11 == 1.0) && (m_M12 == 0.0) &&
-           (m_M20 == 0.0) && (m_M21 == 0.0) && (m_M22 == 1.0));
+    return((m_D00 == 1.0) && (m_D01 == 0.0) && (m_D02 == 0.0) &&
+           (m_D10 == 0.0) && (m_D11 == 1.0) && (m_D12 == 0.0) &&
+           (m_D20 == 0.0) && (m_D21 == 0.0) && (m_D22 == 1.0));
     }
 
 //-----------------------------------------------------------------------------
@@ -688,8 +688,8 @@ bool HGF2DProjective::IsStretchable (double pi_AngleTolerance) const
     // There must be no perspective
     return(HDOUBLE_EQUAL(GetRotation(), 0.0, pi_AngleTolerance) &&
            HDOUBLE_EQUAL(GetAnorthogonality(), 0.0, pi_AngleTolerance) &&
-           (m_M20 == 0.0) && (m_M21 == 0.0) &&
-           (m_M22 == 1.0));
+           (m_D20 == 0.0) && (m_D21 == 0.0) &&
+           (m_D22 == 1.0));
     }
 
 
@@ -711,8 +711,8 @@ void HGF2DProjective::GetStretchParams (double* po_pScaleFactorX,
     *po_pScaleFactorX = GetXScaling();
     *po_pScaleFactorY = GetYScaling();
 
-    po_pDisplacement->SetDeltaX(m_M02);
-    po_pDisplacement->SetDeltaY(m_M12);
+    po_pDisplacement->SetDeltaX(m_D02);
+    po_pDisplacement->SetDeltaY(m_D12);
     }
 
 /** -----------------------------------------------------------------------------
@@ -738,8 +738,8 @@ double HGF2DProjective::GetRotation () const
     double MyRotation;
 
 //HChk AR ???? should make fHGFAntan2 work
-    if (m_M00 != 0.0)
-        MyRotation = atan(m_M10/m_M00);
+    if (m_D00 != 0.0)
+        MyRotation = atan(m_D10/m_D00);
     else
         MyRotation = PI/2;
 
@@ -768,8 +768,8 @@ double HGF2DProjective::GetAnorthogonality() const
     double        Rotation = GetRotation();
 
 //HChk AR ???? should make fHGFAntan2 work
-    if (m_M11 != 0.0)
-        MyAnorthogonality = atan(-m_M01/m_M11) - Rotation;
+    if (m_D11 != 0.0)
+        MyAnorthogonality = atan(-m_D01/m_D11) - Rotation;
     else
         MyAnorthogonality = PI/2 - Rotation;
 
@@ -827,9 +827,9 @@ double HGF2DProjective::GetXScaling() const
     ** as a bonus increases the precision of the result.
     */
     if (fabs(MyCos) > fabs(MySin))
-        ScaleX = m_M00 / MyCos;
+        ScaleX = m_D00 / MyCos;
     else
-        ScaleX = m_M10 / MySin;
+        ScaleX = m_D10 / MySin;
 
     return(ScaleX);
     }
@@ -874,9 +874,9 @@ double HGF2DProjective::GetYScaling() const
     ** as a bonus increases the precision of the result.
     */
     if (fabs(MyCos) > fabs(MySin))
-        ScaleY = m_M11 / MyCos;
+        ScaleY = m_D11 / MyCos;
     else
-        ScaleY = - m_M01 / MySin;
+        ScaleY = - m_D01 / MySin;
 
     return(ScaleY);
 
@@ -920,15 +920,15 @@ void HGF2DProjective::SetByMatrix(const HFCMatrix<3, 3>& pi_rMatrix)
 
     // Copy matrix
 
-    m_M00 = pi_rMatrix[0][0] / pi_rMatrix[2][2];
-    m_M01 = pi_rMatrix[0][1] / pi_rMatrix[2][2];
-    m_M02 = pi_rMatrix[0][2] / pi_rMatrix[2][2];
-    m_M10 = pi_rMatrix[1][0] / pi_rMatrix[2][2];
-    m_M11 = pi_rMatrix[1][1] / pi_rMatrix[2][2];
-    m_M12 = pi_rMatrix[1][2] / pi_rMatrix[2][2];
-    m_M20 = pi_rMatrix[2][0] / pi_rMatrix[2][2];
-    m_M21 = pi_rMatrix[2][1] / pi_rMatrix[2][2];
-    m_M22 = 1.0;
+    m_D00 = pi_rMatrix[0][0] / pi_rMatrix[2][2];
+    m_D01 = pi_rMatrix[0][1] / pi_rMatrix[2][2];
+    m_D02 = pi_rMatrix[0][2] / pi_rMatrix[2][2];
+    m_D10 = pi_rMatrix[1][0] / pi_rMatrix[2][2];
+    m_D11 = pi_rMatrix[1][1] / pi_rMatrix[2][2];
+    m_D12 = pi_rMatrix[1][2] / pi_rMatrix[2][2];
+    m_D20 = pi_rMatrix[2][0] / pi_rMatrix[2][2];
+    m_D21 = pi_rMatrix[2][1] / pi_rMatrix[2][2];
+    m_D22 = 1.0;
 
 
     // Compute prepared settings
@@ -949,15 +949,15 @@ HFCMatrix<3, 3> HGF2DProjective::GetMatrix() const
 
     HFCMatrix<3, 3> Matrix;
 
-    Matrix[0][0] = m_M00;
-    Matrix[0][1] = m_M01;
-    Matrix[0][2] = m_M02;
-    Matrix[1][0] = m_M10;
-    Matrix[1][1] = m_M11;
-    Matrix[1][2] = m_M12;
-    Matrix[2][0] = m_M20;
-    Matrix[2][1] = m_M21;
-    Matrix[2][2] = m_M22;
+    Matrix[0][0] = m_D00;
+    Matrix[0][1] = m_D01;
+    Matrix[0][2] = m_D02;
+    Matrix[1][0] = m_D10;
+    Matrix[1][1] = m_D11;
+    Matrix[1][2] = m_D12;
+    Matrix[2][0] = m_D20;
+    Matrix[2][1] = m_D21;
+    Matrix[2][2] = m_D22;
 
     return(Matrix);
     }
@@ -970,15 +970,15 @@ HFCMatrix<3, 3>& HGF2DProjective::GetMatrix(HFCMatrix<3, 3>& po_rRecipient) cons
     {
     HINVARIANTS;
 
-    po_rRecipient[0][0] = m_M00;
-    po_rRecipient[0][1] = m_M01;
-    po_rRecipient[0][2] = m_M02;
-    po_rRecipient[1][0] = m_M10;
-    po_rRecipient[1][1] = m_M11;
-    po_rRecipient[1][2] = m_M12;
-    po_rRecipient[2][0] = m_M20;
-    po_rRecipient[2][1] = m_M21;
-    po_rRecipient[2][2] = m_M22;
+    po_rRecipient[0][0] = m_D00;
+    po_rRecipient[0][1] = m_D01;
+    po_rRecipient[0][2] = m_D02;
+    po_rRecipient[1][0] = m_D10;
+    po_rRecipient[1][1] = m_D11;
+    po_rRecipient[1][2] = m_D12;
+    po_rRecipient[2][0] = m_D20;
+    po_rRecipient[2][1] = m_D21;
+    po_rRecipient[2][2] = m_D22;
 
     return(po_rRecipient);
     }
@@ -1007,8 +1007,8 @@ void HGF2DProjective::AddTranslation (const HGF2DDisplacement& pi_rTranslation)
     HINVARIANTS;
 
     // Set translation
-    m_M02 += pi_rTranslation.GetDeltaX();
-    m_M12 += pi_rTranslation.GetDeltaY();
+    m_D02 += pi_rTranslation.GetDeltaX();
+    m_D12 += pi_rTranslation.GetDeltaY();
 
     // Compute prepared settings
     Prepare ();
@@ -1324,27 +1324,27 @@ void    HGF2DProjective::Reverse()
     // Copy other parameters
 
     // Compute inverse matrix parameters (The adjoint)
-    double I00 = (m_M11 * m_M22 - m_M12 * m_M21);
-    double I01 = (m_M02 * m_M21 - m_M01 * m_M22);
-    double I02 = (m_M01 * m_M12 - m_M02 * m_M11);
-    double I10 = (m_M12 * m_M20 - m_M10 * m_M22);
-    double I11 = (m_M00 * m_M22 - m_M02 * m_M20);
-    double I12 = (m_M02 * m_M10 - m_M00 * m_M12);
-    double I20 = (m_M10 * m_M21 - m_M11 * m_M20);
-    double I21 = (m_M01 * m_M20 - m_M00 * m_M21);
-    double I22 = (m_M00 * m_M11 - m_M01 * m_M10);
+    double I00 = (m_D11 * m_D22 - m_D12 * m_D21);
+    double I01 = (m_D02 * m_D21 - m_D01 * m_D22);
+    double I02 = (m_D01 * m_D12 - m_D02 * m_D11);
+    double I10 = (m_D12 * m_D20 - m_D10 * m_D22);
+    double I11 = (m_D00 * m_D22 - m_D02 * m_D20);
+    double I12 = (m_D02 * m_D10 - m_D00 * m_D12);
+    double I20 = (m_D10 * m_D21 - m_D11 * m_D20);
+    double I21 = (m_D01 * m_D20 - m_D00 * m_D21);
+    double I22 = (m_D00 * m_D11 - m_D01 * m_D10);
 
     // Copy to master data
 
-    m_M00 = I00 / I22;
-    m_M01 = I01 / I22;
-    m_M02 = I02 / I22;
-    m_M10 = I10 / I22;
-    m_M11 = I11 / I22;
-    m_M12 = I12 / I22;
-    m_M20 = I20 / I22;
-    m_M21 = I21 / I22;
-    m_M22 = I22 / I22;
+    m_D00 = I00 / I22;
+    m_D01 = I01 / I22;
+    m_D02 = I02 / I22;
+    m_D10 = I10 / I22;
+    m_D11 = I11 / I22;
+    m_D12 = I12 / I22;
+    m_D20 = I20 / I22;
+    m_D21 = I21 / I22;
+    m_D22 = I22 / I22;
 
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
@@ -1452,20 +1452,10 @@ HFCPtr<HGF2DTransfoModel>  HGF2DProjective::ComposeYourself (const HGF2DTransfoM
 //-----------------------------------------------------------------------------
 void HGF2DProjective::Prepare ()
     {
-    // Direct matrix
-    m_D00 = m_M00;
-    m_D01 = m_M01;
-    m_D02 = m_M02;
-    m_D10 = m_M10;
-    m_D11 = m_M11;
-    m_D12 = m_M12;
-    m_D20 = m_M20;
-    m_D21 = m_M21;
-    m_D22 = m_M22;
 
     // Compute inverse matrix parameters (The adjoint)
     // Calculate global scale
-    double GlobalInverseScale = (m_M00 * m_M11 - m_M01 * m_M10);
+    double GlobalInverseScale = (m_D00 * m_D11 - m_D01 * m_D10);
 
     // Determinant must be different than 0.0
     HASSERT (GlobalInverseScale != 0.0);
@@ -1475,14 +1465,14 @@ void HGF2DProjective::Prepare ()
     // We just add this test to bypass such fortuitous errors.
     if (GlobalInverseScale != 0.0)
         {
-        m_I00 = (m_M11 * m_M22 - m_M12 * m_M21) / GlobalInverseScale;
-        m_I01 = (m_M02 * m_M21 - m_M01 * m_M22) / GlobalInverseScale;
-        m_I02 = (m_M01 * m_M12 - m_M02 * m_M11) / GlobalInverseScale;
-        m_I10 = (m_M12 * m_M20 - m_M10 * m_M22) / GlobalInverseScale;
-        m_I11 = (m_M00 * m_M22 - m_M02 * m_M20) / GlobalInverseScale;
-        m_I12 = (m_M02 * m_M10 - m_M00 * m_M12) / GlobalInverseScale;
-        m_I20 = (m_M10 * m_M21 - m_M11 * m_M20) * GlobalInverseScale;
-        m_I21 = (m_M01 * m_M20 - m_M00 * m_M21) * GlobalInverseScale;
+        m_I00 = (m_D11 * m_D22 - m_D12 * m_D21) / GlobalInverseScale;
+        m_I01 = (m_D02 * m_D21 - m_D01 * m_D22) / GlobalInverseScale;
+        m_I02 = (m_D01 * m_D12 - m_D02 * m_D11) / GlobalInverseScale;
+        m_I10 = (m_D12 * m_D20 - m_D10 * m_D22) / GlobalInverseScale;
+        m_I11 = (m_D00 * m_D22 - m_D02 * m_D20) / GlobalInverseScale;
+        m_I12 = (m_D02 * m_D10 - m_D00 * m_D12) / GlobalInverseScale;
+        m_I20 = (m_D10 * m_D21 - m_D11 * m_D20) / GlobalInverseScale;
+        m_I21 = (m_D01 * m_D20 - m_D00 * m_D21) / GlobalInverseScale;
         m_I22 = 1.0;
         }
     }
@@ -1495,17 +1485,6 @@ void HGF2DProjective::Prepare ()
 void HGF2DProjective::Copy(const HGF2DProjective& pi_rObj)
     {
     // Copy master data
-    m_M00 = pi_rObj.m_M00;
-    m_M01 = pi_rObj.m_M01;
-    m_M02 = pi_rObj.m_M02;
-    m_M10 = pi_rObj.m_M10;
-    m_M11 = pi_rObj.m_M11;
-    m_M12 = pi_rObj.m_M12;
-    m_M20 = pi_rObj.m_M20;
-    m_M21 = pi_rObj.m_M21;
-    m_M22 = pi_rObj.m_M22;
-
-    // Copy direct matrix
     m_D00 = pi_rObj.m_D00;
     m_D01 = pi_rObj.m_D01;
     m_D02 = pi_rObj.m_D02;
@@ -1540,23 +1519,23 @@ HFCPtr<HGF2DTransfoModel> HGF2DProjective::CreateSimplifiedModel() const
     HFCPtr<HGF2DTransfoModel> pSimplifiedModel;
 
     // In order to be simplified at all, projection parameters must be null
-    if (m_M20 == 0.0 && m_M21 == 0.0)
+    if (m_D20 == 0.0 && m_D21 == 0.0)
         {
         // No perspective ... surely can be simplified
 
         // Check if any rotation and anorthogonality can be detected
-        if (m_M10 == 0.0 && m_M01 == 0.0)
+        if (m_D10 == 0.0 && m_D01 == 0.0)
             {
             // No rotation neither anorthogonality
             // The model is at worst a stretch
 
             // Check if scaling factors are unitary
-            if ((m_M00 == 1.0) && (m_M11 == 1.0))
+            if ((m_D00 == 1.0) && (m_D11 == 1.0))
                 {
                 // No scaling
 
                 // Check if there are any translation
-                if (m_M02 == 0.0 && m_M12 == 0.0)
+                if (m_D02 == 0.0 && m_D12 == 0.0)
                     {
                     // No translation
 
@@ -1585,7 +1564,7 @@ HFCPtr<HGF2DTransfoModel> HGF2DProjective::CreateSimplifiedModel() const
             // Check if there are any anorthogonality or if scaling is isotropic
             // In order to do so, the [0,0] and [1,1] factor must be equal
             // and the [0,1] and [1,0] must be of inverse sign
-            if ((m_M00 == m_M11) && (m_M10 == -m_M01))
+            if ((m_D00 == m_D11) && (m_D10 == -m_D01))
                 {
                 // Isotropic scaling and no arthogonality
                 // we have and affine
