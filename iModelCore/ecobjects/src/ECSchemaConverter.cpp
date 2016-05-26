@@ -205,22 +205,21 @@ static Utf8CP const  DISPLAY_UNIT_SPECIFICATION     = "DisplayUnitSpecificationA
 struct UnitSpecification
     {
     UnitSpecification() = delete;
-    static Utf8CP GetNewKOQName(IECInstanceCR instance)
+    static bool TryGetNewKOQName(IECInstanceCR instance, Utf8StringR newKindOfQuantityName)
         {
-        Utf8CP newKOQName = GetStringValue(instance, KOQ_NAME);
-        if (Utf8String::IsNullOrEmpty(newKOQName))
-            newKOQName = GetStringValue(instance, DIMENSION_NAME);
-
-        return newKOQName;
+        return TryGetStringValue(instance, KOQ_NAME, newKindOfQuantityName) || TryGetStringValue(instance, DIMENSION_NAME, newKindOfQuantityName);
         }
 
-    static Utf8CP GetStringValue(IECInstanceCR instance, Utf8CP propName)
+    static bool TryGetStringValue(IECInstanceCR instance, Utf8CP propName, Utf8StringR stringValue)
         {
         ECValue v;
-        if (ECObjectsStatus::Success == instance.GetValue(v, propName) && !v.IsNull())
-            return v.GetUtf8CP();
+        if (ECObjectsStatus::Success == instance.GetValue(v, propName) && !v.IsNull() && !Utf8String::IsNullOrEmpty(v.GetUtf8CP()))
+            {
+            stringValue = v.GetUtf8CP();
+            return true;
+            }
         
-        return nullptr;
+        return false;
         }
     };
 
@@ -870,33 +869,33 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         }
 
     KindOfQuantityP newKOQ;
-    Utf8CP newKOQName = UnitSpecification::GetNewKOQName(instance);
-    if (Utf8String::IsNullOrEmpty(newKOQName))
+    Utf8String newKOQName;
+    if (!UnitSpecification::TryGetNewKOQName(instance, newKOQName))
         newKOQName = newUnit->GetPhenomenon()->GetName();
 
-    newKOQ = schema.GetKindOfQuantityP(newKOQName);
+    newKOQ = schema.GetKindOfQuantityP(newKOQName.c_str());
     if (nullptr != newKOQ)
         {
         if (!newKOQ->GetPersistenceUnit().Equals(newUnit->GetName()))
             {
             Utf8String fullName = schema.GetFullSchemaName();
             LOG.infov("Found property %s:%s.%s with KindOfQuantity '%s' and unit '%s' but the KindOfQuantity defines the unit '%s'.  Looking for alternate KindOFQuantity",
-                        fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), newKOQName, newUnit->GetName(), newKOQ->GetPersistenceUnit().c_str());
+                        fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), newKOQName.c_str(), newUnit->GetName(), newKOQ->GetPersistenceUnit().c_str());
 
             Utf8PrintfString newKoqString("%s_%s", newKOQName, newUnit->GetName());
-            ECValidatedName newKoqName;
-            newKoqName.SetName(newKoqString.c_str());
-            newKOQ = schema.GetKindOfQuantityP(newKoqName.GetName().c_str());
+            ECValidatedName validatedKoqName;
+            validatedKoqName.SetName(newKoqString.c_str());
+            newKOQ = schema.GetKindOfQuantityP(validatedKoqName.GetName().c_str());
             if (nullptr == newKOQ)
                 {
-                schema.CreateKindOfQuantity(newKOQ, newKoqName.GetName().c_str());
+                schema.CreateKindOfQuantity(newKOQ, validatedKoqName.GetName().c_str());
                 newKOQ->SetPersistenceUnit(newUnit->GetName());
                 }
             }
         }
     else
         {
-        schema.CreateKindOfQuantity(newKOQ, newKOQName);
+        schema.CreateKindOfQuantity(newKOQ, newKOQName.c_str());
         newKOQ->SetPersistenceUnit(newUnit->GetName());
         }
 
