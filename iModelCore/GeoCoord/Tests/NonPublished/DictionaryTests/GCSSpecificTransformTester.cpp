@@ -25,9 +25,7 @@ TEST_F (GCSSpecificTransformTester, KuwaitUtilityInstanciationFailureTest)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
 
- 
-    DPoint2d resultPoint;
-    
+   
     currentGCS = GeoCoordinates::BaseGCS::CreateGCS(L"KuwaitUtility.KTM");
 
     EXPECT_TRUE(currentGCS.IsValid());
