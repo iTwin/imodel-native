@@ -104,6 +104,7 @@ TEST_F (PackageTestFixture, InvalidVersion)
     ASSERT_TRUE(!pPackage.IsValid());
     }
 
+#if (0)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
@@ -1363,4 +1364,4 @@ TEST_F (PackageTestFixture, CreateAndRead)
         ASSERT_STREQ(pLeft->GetSource(0).GetType().c_str(), pRight->GetSource(0).GetType().c_str());
         }
     }
-
+#endif
