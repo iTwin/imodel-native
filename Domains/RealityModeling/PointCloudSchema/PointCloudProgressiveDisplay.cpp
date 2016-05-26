@@ -22,6 +22,11 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
+// These pragma are necessary because of the "DEBUG_PRINTF" macro. With clang, they cause a "-Wunused-value" error.
+#ifdef __APPLE__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wunused-value"
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
@@ -81,8 +86,8 @@ struct MyPointCloudDraw : Render::PointCloudDraw    //NEEDS_WORK_CONTINUOUS_REND
     ColorDef const* m_pRgb;
 
     virtual bool _IsThreadBound() { return false; } // I think we can remove that or somehow rework that concept.
-    virtual bool _GetRange(DPoint3dP range) { return nullptr; }
-    virtual bool _GetOrigin(DPoint3dP origin) { return nullptr; }
+    virtual bool _GetRange(DPoint3dP range) { return false; }
+    virtual bool _GetOrigin(DPoint3dP origin) { return false; }
 
     virtual ColorDef const* _GetRgbColors() { return m_pRgb; }
 
@@ -259,3 +264,9 @@ bool PointCloudProgressiveDisplay::ShouldDrawInContext(Dgn::RenderContextR conte
 
     return true;
     }
+
+#ifdef __APPLE__
+#   pragma clang diagnostic pop
+#endif
+
+
