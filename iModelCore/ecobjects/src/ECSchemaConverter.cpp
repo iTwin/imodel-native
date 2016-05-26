@@ -882,7 +882,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
             LOG.infov("Found property %s:%s.%s with KindOfQuantity '%s' and unit '%s' but the KindOfQuantity defines the unit '%s'.  Looking for alternate KindOFQuantity",
                         fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), newKOQName.c_str(), newUnit->GetName(), newKOQ->GetPersistenceUnit().c_str());
 
-            Utf8PrintfString newKoqString("%s_%s", newKOQName, newUnit->GetName());
+            Utf8PrintfString newKoqString("%s_%s", newKOQName.c_str(), newUnit->GetName());
             ECValidatedName validatedKoqName;
             validatedKoqName.SetName(newKoqString.c_str());
             newKOQ = schema.GetKindOfQuantityP(validatedKoqName.GetName().c_str());
