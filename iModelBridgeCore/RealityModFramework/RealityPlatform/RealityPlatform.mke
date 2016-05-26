@@ -76,6 +76,8 @@ $(o)SpatioTemporalSelector$(oext) : $(baseDir)SpatioTemporalSelector.cpp $(Publi
 
 $(o)SpatioTemporalData$(oext) : $(baseDir)SpatioTemporalData.cpp $(baseDir)SpatioTemporalData.h ${MultiCompileDepends}
 
+$(o)FtpTraversalEngine$(oext) : $(baseDir)FtpTraversalEngine.cpp $(PublicApiDir)FtpTraversalEngine.h ${MultiCompileDepends}
+
 $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 
 #

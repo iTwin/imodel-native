@@ -2,12 +2,14 @@
 |
 |     $Source: RealityPlatform/PointCloudDataHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "stdafx.h"
 #include "PointCloudVortex.h"
+
+#include <atlimage.h>
 
 #include <RealityPlatform/RealityDataHandler.h>
 #include <RealityPlatform/RealityPlatformUtil.h>
@@ -225,38 +227,38 @@ StatusInt PointCloudData::ExtractFootprint(DRange2dP pFootprint) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-//StatusInt PointCloudDataHandler::_GetThumbnail(HBITMAP *pThumbnailBmp) const
-//    {
-//    return ExtractThumbnail(pThumbnailBmp, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-//    }
+StatusInt PointCloudData::_GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const
+    {
+    return ExtractThumbnail(pThumbnailBmp, width, height);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Paquet                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-//StatusInt PointCloudDataHandler::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height) const
-//    {
-//    if (NULL == m_cloudFileHandle || NULL == m_cloudHandle)
-//        return ERROR;
-//
-//    // Set density (number of points retrieved) according to number of pixels in bitmap. Using the total number of pixels in the bitmap * 4
-//    // seems to produce generally good results.
-//    float densityValue = (float) (width * height * 4);
-//
-//    // Get transfo matrix to fit the point cloud in the thumbnail
-//    Transform transform;
-//    PointCloudVortex::GetTransformForThumbnail(transform, m_cloudHandle, width, height, m_view);
-//
-//    bool needsWhiteBackground = PointCloudVortex::PointCloudNeedsWhiteBackground(m_cloudHandle);
-//
-//    HRESULT hr = PointCloudVortex::ExtractPointCloud(pThumbnailBmp, width, height, m_cloudHandle, densityValue, transform, needsWhiteBackground);
-//    if (*pThumbnailBmp == NULL)
-//        return ERROR;
-//
-//    if (hr != NOERROR)
-//        return ERROR;
-//
-//    return SUCCESS;
-//    }
+StatusInt PointCloudData::ExtractThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const
+    {
+    if (NULL == m_cloudFileHandle || NULL == m_cloudHandle)
+        return ERROR;
+
+    // Set density (number of points retrieved) according to number of pixels in bitmap. Using the total number of pixels in the bitmap * 4
+    // seems to produce generally good results.
+    float densityValue = (float) (width * height * 4);
+
+    // Get transfo matrix to fit the point cloud in the thumbnail
+    Transform transform;
+    PointCloudVortex::GetTransformForThumbnail(transform, m_cloudHandle, width, height, m_view);
+
+    bool needsWhiteBackground = PointCloudVortex::PointCloudNeedsWhiteBackground(m_cloudHandle);
+
+    HRESULT hr = PointCloudVortex::ExtractPointCloud(pThumbnailBmp, width, height, m_cloudHandle, densityValue, transform, needsWhiteBackground);
+    if (*pThumbnailBmp == NULL)
+        return ERROR;
+
+    if (hr != NOERROR)
+        return ERROR;
+
+    return SUCCESS;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
@@ -309,7 +311,7 @@ StatusInt PointCloudData::ExtractThumbnail(bvector<Byte>& buffer, uint32_t width
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt PointCloudData::_SaveFootprint(const DRange2dR data, const BeFileName outFilename) const
+StatusInt PointCloudData::_SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const
     {
     return SUCCESS;
     }
@@ -317,7 +319,19 @@ StatusInt PointCloudData::_SaveFootprint(const DRange2dR data, const BeFileName 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt PointCloudData::_SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const
+StatusInt PointCloudData::_SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const
     {
+    return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt PointCloudData::_SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const
+    {
+    CImage image;
+    image.Attach(*pThumbnailBmp);
+    image.Save(outFilename.GetNameUtf8().c_str());
+
     return SUCCESS;
     }

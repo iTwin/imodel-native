@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/RealityPlatformAPI.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,3 +56,24 @@ REALITYPLATFORM_REF_COUNTED_PTR(SpatioTemporalDataset)
 
 REALITYPLATFORM_TYPEDEFS(SpatioTemporalData)
 REALITYPLATFORM_REF_COUNTED_PTR(SpatioTemporalData)
+
+REALITYPLATFORM_TYPEDEFS(FtpClient)
+REALITYPLATFORM_REF_COUNTED_PTR(FtpClient)
+
+REALITYPLATFORM_TYPEDEFS(FtpRequest)
+REALITYPLATFORM_REF_COUNTED_PTR(FtpRequest)
+
+REALITYPLATFORM_TYPEDEFS(FtpResponse)
+REALITYPLATFORM_REF_COUNTED_PTR(FtpResponse)
+
+REALITYPLATFORM_TYPEDEFS(FtpData)
+REALITYPLATFORM_REF_COUNTED_PTR(FtpData)
+
+REALITYPLATFORM_TYPEDEFS(FtpThumbnail)
+REALITYPLATFORM_REF_COUNTED_PTR(FtpThumbnail)
+
+REALITYPLATFORM_TYPEDEFS(FtpMetadata)
+REALITYPLATFORM_REF_COUNTED_PTR(FtpMetadata)
+
+REALITYPLATFORM_TYPEDEFS(FtpServer)
+REALITYPLATFORM_REF_COUNTED_PTR(FtpServer)

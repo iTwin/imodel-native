@@ -1,0 +1,89 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: RealityServicesNet/RealityServicesNet.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName = RealityServicesNet
+baseDir = $(_MakeFilePath)
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+PublicApiDir = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityServicesNet/
+
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+
+#--------------------------------------------------------------------------------------
+#        Now build the managed DLL
+#--------------------------------------------------------------------------------------
+assemblyName = RealityServicesNet
+
+assemDirToSearch = $(o)
+%include cincapnd.mki
+
+objList = $(o)FtpTraversalEngineCli$(oext)
+
+
+#---------------------------------------------
+#        Compile C++/CLI source files for the DLM
+#---------------------------------------------
+%include CompileForCLRStart.mki
+
+$(o)FtpTraversalEngineCli$(oext):       $(baseDir)FtpTraversalEngineCli.cpp  $(baseDir)FtpTraversalEngineCli.h
+
+%include CompileForCLRStop.mki
+
+BuildContextSubPartsLibDir = $(BuildContext)SubParts/Libs/
+
+BuildContextSubPartsLibraries = $(BuildContextSubPartsLibDir)RealityPlatform$(libext) \
+                                $(BuildContextSubPartsLibDir)BentleyGeom$(libext)
+                                
+
+#----------------------------------------------------------------------
+#   Link the mixed assembly
+#----------------------------------------------------------------------
+ASSEMBLY_TITLE          = $(assemblyName)
+ASSEMBLY_DESCRIPTION    = RealityServicesNet
+ASSEMBLY_STRONGNAME     = 1
+ASSEMBLY_VERSION        = 1.0.0.0
+
+DLM_OBJECT_DEST         = $(o)
+DLM_EXPORT_DEST         = $(o)
+DLM_NAME                = $(assemblyName)
+RIGHTSCOMPLIANT         = true
+DLM_DEST                = $(o)
+DLM_OBJECT_FILES        = $(objList)
+LINKER_LIBRARIES_DELAYLOADED = $(BuildContextSubPartsLibraries)
+
+DLM_NO_DEF              = 1
+DLM_NO_IMPLIB           = 1
+DLM_NO_DLS              = 1
+DLM_NOMSBUILTINS        = 1
+
+%include $(SharedMki)stdversion.mki
+ASSEMBLY_FILE_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+ASSEMBLY_PRODUCT_NAME   =  RealityServicesNet
+ASSEMBLY_COMPANY_NAME   = $(companyName)
+ASSEMBLY_COPYRIGHT      = $(Bentley_Copyright)
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE    =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+
+# ======================================================
+# undef DLM_CREATE_LIB_CONTEXT_LINK since there is no 
+# .lib file created that needs to be linked to the build 
+# context directory
+# ======================================================
+%undef DLM_CREATE_LIB_CONTEXT_LINK
+
+%include linkMixedAssembly.mki

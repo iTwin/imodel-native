@@ -12,7 +12,7 @@
     <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
-        <SubPart PartName="PointoolsVortexAPI"         PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
+        <SubPart PartName="PointoolsVortexAPI"		   PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
         <Bindings>
@@ -36,6 +36,13 @@
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPackage$(stlibext)</Libs>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)RealityPackage$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="RealityServicesNet" BentleyBuildMakeFile="RealityServicesNet\RealityServicesNet.mke">
+        <SubPart PartName="RealityPlatform" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/RealityServicesNet$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -84,6 +91,7 @@
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <SubPart PartName="DataHandlerTool" />
+        <SubPart PartName="RealityServicesNet"/>
         <!--<SubPart PartName="RealityCrawler"/>-->
     </Part>
 
