@@ -47,6 +47,7 @@ public:
     uint8_t* GetDataP() const {return m_data;}      //!< Get a writable pointer to the ByteStream.
     bool HasData() const {return 0 != m_size;}  //!< return false if this ByteStream is empty.
     void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
+    uint8_t* ExtractData() { uint8_t* data = m_data; m_data = nullptr; m_size = m_allocSize = 0; return data; }
 
     //! Reserve memory for this ByteStream. The stream capacity will change but not its size.
     //! @param[in] size the number of bytes to reserve
