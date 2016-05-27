@@ -153,7 +153,6 @@ AuthenticationHandlerPtr authenticationHandler
             return DgnDbRepositoryConnectionResult::Error(result.GetError());
 
         //if (!repositoryConnection->GetRepositoryInfo().GetFileURL().empty())
-
 		// WARNING: Temporarily commenting this out, should be uncommented
         //if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
@@ -667,14 +666,14 @@ ICancellationTokenPtr cancellationToken
         });
     }
 
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Arvind.Venkateswaran           05/2016
 //---------------------------------------------------------------------------------------
-EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnection(Utf8String EventServiceClass, ICancellationTokenPtr cancellationToken) const
+EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnectionId(ICancellationTokenPtr cancellationToken) const
     {
-    ObjectId eventServiceObject(ServerSchema::Schema::Repository, EventServiceClass, "");
-    return m_wsRepositoryClient->SendGetObjectRequest(eventServiceObject, nullptr, cancellationToken)->Then<EventServiceConnectionResult>
+    //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventConnection 
+	ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventConnection, "");
+	return m_wsRepositoryClient->SendGetObjectRequest(eventServiceObject, nullptr, cancellationToken)->Then<EventServiceConnectionResult>
         ([=] (WSObjectsResult& eventServiceResult)
         {
         if (eventServiceResult.IsSuccess())
@@ -693,46 +692,16 @@ EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnecti
             //Get json values 
             RapidJsonValueCR instanceProperties = jsoninstances[0].GetProperties();
 
-            if (EventServiceClass.CompareTo(ServerSchema::Class::EventSAS))
-                {
-                //Todo: Find a better way to handle error
-                if (
-                    !instanceProperties.HasMember(ServerSchema::Property::EventServiceSASToken) ||
-                    !instanceProperties.HasMember(ServerSchema::Property::EventServiceNameSpace)
-                    )
-                    //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
-                    return EventServiceConnectionResult::Error(eventServiceResult.GetError());
+            if (!instanceProperties.HasMember(ServerSchema::Property::EventServiceConnectionId))
+                //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
+                return EventServiceConnectionResult::Error(eventServiceResult.GetError());
+            auto info = EventServiceConnection::Create(nullptr, nullptr, instanceProperties[ServerSchema::Property::EventServiceConnectionId].GetString());
 
-                auto info = EventServiceConnection::Create(
-                    instanceProperties[ServerSchema::Property::EventServiceSASToken].GetString(),
-                    instanceProperties[ServerSchema::Property::EventServiceNameSpace].GetString()
-                    );
-
-                //Todo: Find a better way to handle error
-                if (Utf8String::IsNullOrEmpty(info->GetSasToken().c_str()) ||
-                    Utf8String::IsNullOrEmpty(info->GetNamespace().c_str())
-                    )
-                    //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
-                    return EventServiceConnectionResult::Error(eventServiceResult.GetError());
-                return EventServiceConnectionResult::Success(info);
-                }
-
-            else
-                {
-                if (
-                    !instanceProperties.HasMember(ServerSchema::Property::EventServiceConnectionId)
-                    )
-                    //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
-                    return EventServiceConnectionResult::Error(eventServiceResult.GetError());
-                auto info = EventServiceConnection::Create(nullptr, nullptr, instanceProperties[ServerSchema::Property::EventServiceConnectionId].GetString());
-
-                //Todo: Find a better way to handle error
-                if (Utf8String::IsNullOrEmpty(info->GetConnectionId().c_str()))
-                    //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
-                    return EventServiceConnectionResult::Error(eventServiceResult.GetError());
-                return EventServiceConnectionResult::Success(info);
-                }
-            
+            //Todo: Find a better way to handle error
+            if (Utf8String::IsNullOrEmpty(info->GetConnectionId().c_str()))
+                //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+                return EventServiceConnectionResult::Error(eventServiceResult.GetError());
+            return EventServiceConnectionResult::Success(info);
             }
         else
             {
@@ -745,19 +714,57 @@ EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnecti
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Arvind.Venkateswaran           05/2016
 //---------------------------------------------------------------------------------------
-EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnectionId(ICancellationTokenPtr cancellationToken) const
-    {
-    //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventConnection 
-    return GetEventServiceConnection(ServerSchema::Class::EventConnection, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Arvind.Venkateswaran           05/2016
-//---------------------------------------------------------------------------------------
 EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICancellationTokenPtr cancellationToken) const
     {
     //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSAS
-    return GetEventServiceConnection(ServerSchema::Class::EventSAS, cancellationToken);
+
+	ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventSAS, "");
+	return m_wsRepositoryClient->SendGetObjectRequest(eventServiceObject, nullptr, cancellationToken)->Then<EventServiceConnectionResult>
+        ([=] (WSObjectsResult& eventServiceResult)
+        {
+        if (eventServiceResult.IsSuccess())
+            {
+            bvector<WSObjectsReader::Instance> jsoninstances;
+            for (WSObjectsReader::Instance instance : eventServiceResult.GetValue().GetInstances())
+                {
+                jsoninstances.push_back(instance);
+                }
+
+            //Todo: Find a better way to handle error
+            if (jsoninstances.size() < 1)
+                //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
+                return EventServiceConnectionResult::Error(eventServiceResult.GetError());
+
+            //Get json values 
+            RapidJsonValueCR instanceProperties = jsoninstances[0].GetProperties();
+
+            //Todo: Find a better way to handle error
+            if (
+                !instanceProperties.HasMember(ServerSchema::Property::EventServiceSASToken) ||
+                !instanceProperties.HasMember(ServerSchema::Property::EventServiceNameSpace)
+                )
+                //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
+                return EventServiceConnectionResult::Error(eventServiceResult.GetError());
+
+            auto info = EventServiceConnection::Create(
+                instanceProperties[ServerSchema::Property::EventServiceSASToken].GetString(),
+                instanceProperties[ServerSchema::Property::EventServiceNameSpace].GetString()
+                );
+
+            //Todo: Find a better way to handle error
+            if (Utf8String::IsNullOrEmpty(info->GetSasToken().c_str()) ||
+                Utf8String::IsNullOrEmpty(info->GetNamespace().c_str())
+                )
+                //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+                return EventServiceConnectionResult::Error(eventServiceResult.GetError());
+            return EventServiceConnectionResult::Success(info);
+            }
+        else
+            {
+            //Todo: Find a better way to handle error
+            return EventServiceConnectionResult::Error(eventServiceResult.GetError());
+            }
+        });
     }
 
 //---------------------------------------------------------------------------------------
