@@ -2745,28 +2745,26 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     diffSetPtr->clear();
     for(auto& skirt: skirts) diffSetPtr->push_back(skirt);
     m_nbClips = skirts.size();
+    
+            
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(GetPtsIndicePtr());
 
-    //NEEDS_WORK_POOL
-    for (size_t j = 0; j < 1; ++j)
+    if (ptIndices->size() == 0)
         {
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(GetPtsIndicePtr());
-
-        if (ptIndices->size() == 0)
-            {
-            DifferenceSet current;
-            current.clientID = 0;
-            diffSetPtr->push_back(current);
-            const_cast<DifferenceSet&>(*(diffSetPtr->begin() + (diffSetPtr->size() - 1))).upToDate = true;
-            ++m_nbClips;
-            continue;
-            }
-
+        DifferenceSet current;
+        current.clientID = 0;
+        diffSetPtr->push_back(current);
+        const_cast<DifferenceSet&>(*(diffSetPtr->begin() + (diffSetPtr->size() - 1))).upToDate = true;
+        ++m_nbClips;        
+        }
+    else
+        {
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = GetUVsIndicesPtr();
         RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords = GetUVCoordsPtr();
 
         const int32_t* uvIndices = uvIndexes.IsValid() ? &(*uvIndexes)[0] : 0;
         const DPoint2d* uvBuffer= uvCoords.IsValid() ? &(*uvCoords)[0] : 0;        
-        
+    
         Clipper clipNode(&points[0], points.size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, uvBuffer, uvIndices);
         bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
@@ -2784,37 +2782,39 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                 }
             if (toClipBcDTM->GetTinHandle() != nullptr) hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, metadata, toClipDTM);
             }
-       // m_differenceSets.clear();
-       // m_nbClips = 0;
-        
-        if (!hasClip) continue;
-        bvector<bvector<PolyfaceHeaderPtr>> skirts;
-        //BuildSkirtMeshesForPolygonSet(skirts, polyfaces, polys, nodeRange);
-        map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
-
-        for (size_t i = 0; i < points.size(); ++i)
-            mapOfPoints[points[i]] = (int)i;
-        for (auto& polyface : polyfaces)
+        // m_differenceSets.clear();
+        // m_nbClips = 0;
+    
+        if (hasClip) 
             {
-            DifferenceSet current = DifferenceSet::FromPolyfaceSet(polyface, mapOfPoints, points.size() + 1);
-            for (auto& poly : polyface) poly = nullptr;
-            if (&polyface - &polyfaces[0] == 0) current.clientID = 0;
-            else current.clientID = clipIds[(&polyface - &polyfaces[0]) - 1];
-            diffSetPtr->push_back(current);
-            const_cast<DifferenceSet&>(*((diffSetPtr->begin() + (diffSetPtr->size() - 1)))).upToDate = true;
-            ++m_nbClips;
-           /* if (current.clientID != 0)
+            bvector<bvector<PolyfaceHeaderPtr>> skirts;
+            //BuildSkirtMeshesForPolygonSet(skirts, polyfaces, polys, nodeRange);
+            map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
+
+            for (size_t i = 0; i < points.size(); ++i)
+                mapOfPoints[points[i]] = (int)i;
+            for (auto& polyface : polyfaces)
                 {
-                DifferenceSet skirt = DifferenceSet::FromPolyfaceSet(skirts[&polyface - &polyfaces[0]], mapOfPoints);
-                skirt.clientID = current.clientID;
-                skirt.toggledForID = false;
-                m_differenceSets.push_back(skirt);
-                (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
+                DifferenceSet current = DifferenceSet::FromPolyfaceSet(polyface, mapOfPoints, points.size() + 1);
+                for (auto& poly : polyface) poly = nullptr;
+                if (&polyface - &polyfaces[0] == 0) current.clientID = 0;
+                else current.clientID = clipIds[(&polyface - &polyfaces[0]) - 1];
+                diffSetPtr->push_back(current);
+                const_cast<DifferenceSet&>(*((diffSetPtr->begin() + (diffSetPtr->size() - 1)))).upToDate = true;
                 ++m_nbClips;
-                }*/
+               /* if (current.clientID != 0)
+                    {
+                    DifferenceSet skirt = DifferenceSet::FromPolyfaceSet(skirts[&polyface - &polyfaces[0]], mapOfPoints);
+                    skirt.clientID = current.clientID;
+                    skirt.toggledForID = false;
+                    m_differenceSets.push_back(skirt);
+                    (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
+                    ++m_nbClips;
+                    }*/
+                } 
             }
         }
-        }
+    }
 
     DifferenceSet allClips;
     allClips.clientID = (uint64_t)-1;

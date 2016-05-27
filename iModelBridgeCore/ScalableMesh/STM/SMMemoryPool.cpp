@@ -84,28 +84,36 @@ void SMMemoryPoolItemBase::NotifySizeChangePoolItem(int64_t sizeDelta)
     SMMemoryPool::GetInstance()->NotifySizeChangePoolItem(this, sizeDelta);
     }
 
-static uint64_t s_initSize = 3000;
+static uint64_t s_binSize = 3000;
+static uint64_t s_maxBins = 1000;
 
 SMMemoryPool::SMMemoryPool()                        
     {
     m_currentPoolSizeInBytes = 0;
     m_maxPoolSizeInBytes = 0;            
-    m_memPoolItems.resize(s_initSize);
-    m_lastAccessTime.resize(s_initSize);
-    m_memPoolItemMutex.resize(s_initSize);
+    m_nbBins = 1;
+    m_memPoolItems.resize(s_maxBins);
+    m_memPoolItems[0].resize(s_binSize);
+    m_lastAccessTime.resize(s_maxBins);
+    m_lastAccessTime[0].resize(s_binSize);
+    m_memPoolItemMutex.resize(s_maxBins);
+    m_memPoolItemMutex[0].resize(s_binSize);
 
-    for (size_t itemId = 0; itemId < m_memPoolItemMutex.size(); itemId++)
+    for (size_t itemId = 0; itemId < m_memPoolItemMutex[0].size(); itemId++)
         {
-        m_memPoolItemMutex[itemId] = new mutex;                
+        m_memPoolItemMutex[0][itemId] = new mutex;                
         }
     }
 
 SMMemoryPool::~SMMemoryPool()
     {
-    for (size_t itemId = 0; itemId < m_memPoolItemMutex.size(); itemId++)
-        {                
-        delete m_memPoolItemMutex[itemId];
-        }                                                
+    for (size_t binId = 0; binId < m_nbBins; binId++)
+        {
+        for (size_t itemId = 0; itemId < m_memPoolItemMutex.size(); itemId++)
+            {                
+            delete m_memPoolItemMutex[binId][itemId];
+            }                                                
+        }
     }
     
 bool SMMemoryPool::GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id)
@@ -113,9 +121,13 @@ bool SMMemoryPool::GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItem
     if (id == SMMemoryPool::s_UndefinedPoolItemId)
         return false; 
 
-    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[id]);
-    m_lastAccessTime[id] = clock();
-    memItemPtr = m_memPoolItems[id];
+    size_t binId = id / s_binSize;
+    size_t itemId = id % s_binSize;
+    assert(binId < m_nbBins);
+
+    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[binId][itemId]);
+    m_lastAccessTime[binId][itemId] = clock();
+    memItemPtr = m_memPoolItems[binId][itemId];
     return memItemPtr.IsValid();
     }
 
@@ -124,15 +136,18 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolData
     if (id == SMMemoryPool::s_UndefinedPoolItemId)
         return false; 
 
-    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[id]);            
-    SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[id]);
+    size_t binId = id / s_binSize;
+    size_t itemId = id % s_binSize;
+    assert(binId < m_nbBins);
+
+    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[binId][itemId]);            
+    SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[binId][itemId]);
 
     if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType, smId))
         {
         m_currentPoolSizeInBytes -= memItemPtr->GetSize();        
-        memItemPtr = 0;
-        //assert(m_memPoolItems[id]->GetRefCount() == 1);
-        m_memPoolItems[id] = 0;
+        memItemPtr = 0;        
+        m_memPoolItems[binId][itemId] = 0;
         return true;
         }
 
@@ -143,23 +158,30 @@ void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolIt
     {
     if (id == SMMemoryPool::s_UndefinedPoolItemId)
         return;
-    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[id]);
-    SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[id]);
+
+    size_t binId = id / s_binSize;
+    size_t itemId = id % s_binSize;
+    assert(binId < m_nbBins);
+
+    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[binId][itemId]);
+    SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[binId][itemId]);
 
     if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType,smId))
         {
         m_currentPoolSizeInBytes -= memItemPtr->GetSize();
         memItemPtr = 0;
-        m_memPoolItems[id] = poolItem;
-        m_currentPoolSizeInBytes += m_memPoolItems[id]->GetSize();
-        m_lastAccessTime[id] = clock();
+        m_memPoolItems[binId][itemId] = poolItem;
+        m_currentPoolSizeInBytes += m_memPoolItems[binId][itemId]->GetSize();
+        m_lastAccessTime[binId][itemId] = clock();
         return;
         }
     }
 
 SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
     {    
-    uint64_t itemInd = 0;            
+    uint64_t itemInd = 0;
+    uint64_t binInd = 0;
+
     clock_t oldestTime = numeric_limits<clock_t>::max();
     uint64_t oldestInd = 0; 
 
@@ -174,108 +196,127 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
 
     //clock_t currentTime = clock(); 
 
-    for (; itemInd < (uint64_t)m_memPoolItems.size(); itemInd++)
+    for (; binInd < m_nbBins; binInd++)
         {
-            {   
-            std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemInd]);
+        for (; itemInd < (uint64_t)m_memPoolItems[binInd].size(); itemInd++)
+            {
+                {   
+                std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[binInd][itemInd]);
 
-            if (!m_memPoolItems[itemInd].IsValid())
+                if (!m_memPoolItems[binInd][itemInd].IsValid())
+                    {
+                    break;
+                    }
+                }
+
+                /*
+            if ((needToFlush && (currentTime - m_lastAccessTime[itemInd] > s_timeDiff)))                
                 {
                 break;
+                } */               
+
+            if (oldestTime > m_lastAccessTime[binInd][itemInd])
+                {
+                oldestTime = m_lastAccessTime[binInd][itemInd];
+                oldestInd = itemInd;
                 }
             }
 
-            /*
-        if ((needToFlush && (currentTime - m_lastAccessTime[itemInd] > s_timeDiff)))                
-            {
+        if (itemInd < (uint64_t)m_memPoolItems[binInd].size())
             break;
-            } */               
-
-        if (oldestTime > m_lastAccessTime[itemInd])
-            {
-            oldestTime = m_lastAccessTime[itemInd];
-            oldestInd = itemInd;
-            }
-        }               
+        }
 
     if (m_currentPoolSizeInBytes > m_maxPoolSizeInBytes)
         {
         double flushTimeThreshold = (clock() + oldestTime) / 2.0;
 
-        for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems.size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
-            {     
-            std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemIndToDelete]);
+        for (size_t binIndToDelete = 0; binIndToDelete < m_nbBins; binIndToDelete++)
+            {
+            for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems[binIndToDelete].size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
+                {     
+                std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[binIndToDelete][itemIndToDelete]);
 
-            if (m_memPoolItems[itemIndToDelete].IsValid() && m_lastAccessTime[itemIndToDelete] < flushTimeThreshold && m_memPoolItems[itemIndToDelete]->GetRefCount() == 1)                    
-                {
-                m_currentPoolSizeInBytes -= m_memPoolItems[itemIndToDelete]->GetSize();                                        
-                m_memPoolItems[itemIndToDelete] = 0; 
-                itemInd = itemIndToDelete;
-                }                                        
+                if (m_memPoolItems[binIndToDelete][itemIndToDelete].IsValid() && m_lastAccessTime[binIndToDelete][itemIndToDelete] < flushTimeThreshold && m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount() == 1)                    
+                    {
+                    m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize();                                        
+                    m_memPoolItems[binIndToDelete][itemIndToDelete] = 0; 
+                    itemInd = itemIndToDelete;
+                    binInd = binIndToDelete;
+                    }                                        
+                }
             }
         }
 
     if (m_currentPoolSizeInBytes > m_maxPoolSizeInBytes * s_maxMemBeforeFlushing)
         {
-        for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems.size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
-            {  
-            std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemIndToDelete]);                    
+        for (size_t binIndToDelete = 0; binIndToDelete < m_nbBins; binIndToDelete++)
+            {
+            for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems[binIndToDelete].size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
+                {  
+                std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[binIndToDelete][itemIndToDelete]);                    
 
-            if (m_memPoolItems[itemIndToDelete].IsValid() && m_memPoolItems[itemIndToDelete]->GetRefCount() == 1)
-                {
-                m_currentPoolSizeInBytes -= m_memPoolItems[itemIndToDelete]->GetSize();                
-                m_memPoolItems[itemIndToDelete] = 0; 
-                itemInd = itemIndToDelete;
-                }                    
+                if (m_memPoolItems[binIndToDelete][itemIndToDelete].IsValid() && m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount() == 1)
+                    {
+                    m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize();                
+                    m_memPoolItems[binIndToDelete][itemIndToDelete] = 0; 
+                    itemInd = itemIndToDelete;
+                    binInd = binIndToDelete;
+                    }                    
+                }
             }
         }            
 
     
-    if (itemInd == m_memPoolItems.size())
-        {
-        //NEEDS_WORK_SM : Replace by vector of vector
-        if (m_currentPoolSizeInBytes < m_maxPoolSizeInBytes)
-            {                      
-            for (size_t itemId = 0; itemId < m_memPoolItemMutex.size(); itemId++)
+    if (itemInd == s_binSize)
+        {                
+        m_increaseBinMutex.lock();
+
+        if (binInd == m_nbBins)
+            {                    
+            assert(m_nbBins + 1 < s_maxBins);
+            
+            m_memPoolItems[m_nbBins].resize(s_binSize);            
+            m_lastAccessTime[m_nbBins].resize(s_binSize);            
+            m_memPoolItemMutex[m_nbBins].resize(s_binSize);
+
+            for (size_t itemId = 0; itemId < m_memPoolItemMutex[m_nbBins].size(); itemId++)
                 {
-                m_memPoolItemMutex[itemId]->lock();                
+                m_memPoolItemMutex[m_nbBins][itemId] = new mutex;                
                 }
+                         
+            m_nbBins++;
+            }
 
-            m_memPoolItems.resize((size_t)(m_memPoolItems.size() * 1.5));
-            m_lastAccessTime.resize(m_memPoolItems.size());
+        m_increaseBinMutex.unlock();
 
-            size_t oldItemCount = m_memPoolItemMutex.size();
-            m_memPoolItemMutex.resize(m_memPoolItems.size());
+        itemInd = 0;
 
-            for (size_t itemId = oldItemCount; itemId < m_memPoolItemMutex.size(); itemId++)
+        for (; itemInd < (uint64_t)m_memPoolItems[binInd].size(); itemInd++)
+            {                   
+            std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[binInd][itemInd]);
+
+            if (!m_memPoolItems[binInd][itemInd].IsValid())
                 {
-                m_memPoolItemMutex[itemId] = new mutex;                
-                }
-
-            for (size_t itemId = 0; itemId < oldItemCount; itemId++)
-                {
-                m_memPoolItemMutex[itemId]->unlock();                
+                break;                
                 }
             }
-        else
-            {
-            itemInd = oldestInd;                    
-            }                
-        }
+
+        assert(itemInd < (uint64_t)m_memPoolItems[binInd].size());
+        }        
     
-    m_memPoolItemMutex[itemInd]->lock();
+    m_memPoolItemMutex[binInd][itemInd]->lock();
 
-    if (m_memPoolItems[itemInd].IsValid())            
+    if (m_memPoolItems[binInd][itemInd].IsValid())            
         {                
-        m_currentPoolSizeInBytes -= m_memPoolItems[itemInd]->GetSize();
+        m_currentPoolSizeInBytes -= m_memPoolItems[binInd][itemInd]->GetSize();
         }
 
-    m_memPoolItems[itemInd] = poolItem;
-    m_lastAccessTime[itemInd] = clock();
+    m_memPoolItems[binInd][itemInd] = poolItem;
+    m_lastAccessTime[binInd][itemInd] = clock();
 
     poolItem->SetPoolItemId(itemInd);            
 
-    m_memPoolItemMutex[itemInd]->unlock();
+    m_memPoolItemMutex[binInd][itemInd]->unlock();
 
 #ifndef NDEBUG
     /*
@@ -293,16 +334,20 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
 
 #endif
 
-    return itemInd;
+    return itemInd + binInd * s_binSize;
     }
 
 void SMMemoryPool::NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int64_t sizeDelta)
     {
     assert(poolItem->GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId);
 
-    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[poolItem->GetPoolItemId()]);    
+    size_t binId = poolItem->GetPoolItemId() / s_binSize;
+    size_t itemId = poolItem->GetPoolItemId() % s_binSize;
+    assert(binId < m_nbBins);
+    
+    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[binId][itemId]);    
 
-    if (m_memPoolItems[poolItem->GetPoolItemId()].get() == poolItem)
+    if (m_memPoolItems[binId][itemId].get() == poolItem)
         {
         m_currentPoolSizeInBytes += sizeDelta;
         }
