@@ -131,6 +131,7 @@ DLM_NO_DEF                  = 1
 LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                                 $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
                                 $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
