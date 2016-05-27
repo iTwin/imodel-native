@@ -122,9 +122,6 @@ private:
     //! Get the ConnectionId based on query to EventService WebAPI.
     EventServiceConnectionTaskPtr GetEventServiceConnectionId(ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Get the ConnectionInformation from EventService WebAPI.
-    EventServiceConnectionTaskPtr GetEventServiceConnection(Utf8String EventServiceClass, ICancellationTokenPtr cancellationToken) const;
-
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
