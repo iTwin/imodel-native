@@ -203,7 +203,6 @@ void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& pl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::AssignActiveVolume(ClipPrimitiveR volume)
     {
-    RequestAbort(true);
     m_activeVolume = &volume;
     }
 
@@ -212,7 +211,6 @@ void DgnQueryView::AssignActiveVolume(ClipPrimitiveR volume)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::ClearActiveVolume()
     {
-    RequestAbort(true);
     m_activeVolume = nullptr;
     }
 

@@ -584,7 +584,11 @@ void            LsCompoundComponent::CalculateSize(DgnModelP modelRef)
         // The length is the distance for a complete pattern, so it's the length of the
         // longest component.  However, if continuous or LTYPE_Internal components are used,
         // the length of those don't count.
-        if (!GetComponentCP(compNum)->_IsContinuous())
+        //
+        // Judging from the previous comment, this should have been testing for Internal.  It absolutely should be testing for
+        // internal when computing the size that is required for generating a texture. If we find cases where it should not be 
+        // testing for internal, then we need to track 2 separate sizes.
+        if (!GetComponentCP(compNum)->_IsContinuous() && GetComponentCP(compNum)->GetComponentType() != LsComponentType::Internal)
             {
             if (GetComponentCP(compNum)->_GetLength() > m_size.x)
                 m_size.x = GetComponentCP(compNum)->_GetLength();
@@ -698,7 +702,14 @@ StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoin
     if (style < MIN_LINECODE || style > MAX_LINECODE)
         return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
 
-    return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
+    //  Need to save and restore the GraphicParams
+    GraphicParamsR params = context.GetGraphicParamsR();
+    params.SetLinePixels(Render::GraphicParams::LinePixels(style));
+    context.GetGraphicR().ActivateGraphicParams(params);
+    context.GetGraphicR().AddLineString (nPoints, inPoints);
+
+
+    return BSISUCCESS;
 #endif
     }
 

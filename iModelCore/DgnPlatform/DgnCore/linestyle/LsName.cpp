@@ -317,7 +317,7 @@ Render::GraphicPtr Stroke(ViewContextR context) const
 //---------------------------------------------------------------------------------------
 static void initializePoints(DPoint3d points[2], LsComponentR component, double scale)
     {
-    double length = component._GetLength() * NUMBER_ITERATIONS_ComponentStroker;
+    double length = component._GetLengthForTexture() * NUMBER_ITERATIONS_ComponentStroker;
 
     if (length <  mgds_fc_epsilon)
         {
