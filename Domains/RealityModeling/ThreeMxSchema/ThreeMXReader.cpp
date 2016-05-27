@@ -242,7 +242,13 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
                 return ERROR;
                 }
 
+#ifdef TEST_JPEG
+            // Let caller decide how/when to decode jpeg
+            Render::Image jpegImg(rgba.GetWidth(), rgba.GetHeight(), Render::Image::Format::Jpeg, std::move(jpeg));
+            renderTextures[resourceName] = scene.m_renderSystem->_CreateImageTexture(jpegImg, imageInfo.m_hasAlpha);
+#else
             renderTextures[resourceName] = scene.m_renderSystem->_CreateImageTexture(rgba, imageInfo.m_hasAlpha);
+#endif
             }
         }
 
