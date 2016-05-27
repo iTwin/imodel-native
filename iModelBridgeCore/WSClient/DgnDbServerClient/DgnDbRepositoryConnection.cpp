@@ -671,8 +671,8 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnectionId(ICancellationTokenPtr cancellationToken) const
     {
-    //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventConnection 
-	ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventConnection, "");
+    //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSubscription
+	ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventSubscription, "");
 	return m_wsRepositoryClient->SendGetObjectRequest(eventServiceObject, nullptr, cancellationToken)->Then<EventServiceConnectionResult>
         ([=] (WSObjectsResult& eventServiceResult)
         {
@@ -692,10 +692,10 @@ EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnecti
             //Get json values 
             RapidJsonValueCR instanceProperties = jsoninstances[0].GetProperties();
 
-            if (!instanceProperties.HasMember(ServerSchema::Property::EventServiceConnectionId))
+            if (!instanceProperties.HasMember(ServerSchema::Property::Id))
                 //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
                 return EventServiceConnectionResult::Error(eventServiceResult.GetError());
-            auto info = EventServiceConnection::Create(nullptr, nullptr, instanceProperties[ServerSchema::Property::EventServiceConnectionId].GetString());
+            auto info = EventServiceConnection::Create(nullptr, nullptr, instanceProperties[ServerSchema::Property::Id].GetString());
 
             //Todo: Find a better way to handle error
             if (Utf8String::IsNullOrEmpty(info->GetConnectionId().c_str()))
