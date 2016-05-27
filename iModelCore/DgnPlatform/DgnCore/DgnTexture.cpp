@@ -165,12 +165,17 @@ Render::Image DgnTexture::ExtractImage() const
             break;
 
         case DgnTexture::Format::PNG:  
+#if defined(RETURN_ENCODED_IMAGES)
+            image.SetFormat(Render::Image::Format::PNG);
+            image.GetByteStreamR() = std::move(m_data);
+#else
             imageInfo.ReadImageFromPngBuffer(image, m_data.GetData(), m_data.GetSize());
+#endif
             break;
 
         case DgnTexture::Format::JPEG:
             {
-#ifdef TEST_JPEG
+#if defined(RETURN_ENCODED_IMAGES)
             image.SetFormat(Render::Image::Format::Jpeg);
             image.GetByteStreamR() = std::move(m_data);
 #else
