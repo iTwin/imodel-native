@@ -925,11 +925,14 @@ class SMMemoryPool : public RefCountedBase
 
         static SMMemoryPoolPtr           s_memoryPool; 
 
-        uint64_t                         m_maxPoolSizeInBytes;
-        atomic<uint64_t>                 m_currentPoolSizeInBytes;
-        bvector<SMMemoryPoolItemBasePtr> m_memPoolItems;
-        bvector<std::mutex*>             m_memPoolItemMutex;
-        bvector<clock_t>                 m_lastAccessTime;
+        uint64_t                                  m_maxPoolSizeInBytes;
+        atomic<uint64_t>                          m_currentPoolSizeInBytes;
+        bvector<bvector<SMMemoryPoolItemBasePtr>> m_memPoolItems;
+        bvector<bvector<std::mutex*>>             m_memPoolItemMutex;
+        bvector<bvector<clock_t>>                 m_lastAccessTime;
+        uint64_t                                  m_nbBins;
+        mutex                                     m_increaseBinMutex;
+
         
         //std::mutex                 m_poolItemMutex;
 
