@@ -170,6 +170,10 @@ Render::Image DgnTexture::ExtractImage() const
 
         case DgnTexture::Format::JPEG:
             {
+#ifdef TEST_JPEG
+            image.SetFormat(Render::Image::Format::Jpeg);
+            image.GetByteStreamR() = std::move(m_data);
+#else
             imageInfo.m_width = m_data.GetWidth();
             imageInfo.m_height = m_data.GetHeight();
             imageInfo.m_hasAlpha = true;
@@ -177,6 +181,7 @@ Render::Image DgnTexture::ExtractImage() const
             imageInfo.SetTopDown(true);
             
             imageInfo.ReadImageFromJpgBuffer(image, m_data.GetData(), m_data.GetSize());
+#endif
             break;
             }
     
