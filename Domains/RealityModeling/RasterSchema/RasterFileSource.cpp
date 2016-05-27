@@ -118,5 +118,5 @@ Render::Image RasterFileSource::_QueryTile(TileId const& id, bool& alphaBlend)
     alphaBlend = (Render::Image::Format::Rgba == imageFormat || Render::Image::Format::Bgra == imageFormat);
 #endif
     alphaBlend = (Render::Image::Format::Rgba == imageFormat);
-    return Render::Image(effectiveTileSizeX, effectiveTileSizeY, imageFormat, std::move(dataStream));
+    return Render::Image(effectiveTileSizeX, effectiveTileSizeY, std::move(dataStream), imageFormat);
     }

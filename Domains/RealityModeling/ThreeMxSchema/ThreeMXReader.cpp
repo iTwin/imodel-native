@@ -40,20 +40,17 @@ struct CtmContext
     int32_t const* GetIntegerArray(CTMenum val){return (int32_t const*) ::ctmGetIntegerArray(m_openCTM, val);}
 };
 
-template<typename T> T getJsonValue(JsonValueCR pt);
-template<> Utf8String getJsonValue(JsonValueCR pt) {return pt.asCString();}
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> bool readVectorEntry(JsonValueCR pt, Utf8CP tag, bvector<T>& v)
+static bool readVectorEntry(JsonValueCR pt, Utf8CP tag, bvector<Utf8String>& v)
     {
     JsonValueCR entry = pt[tag];
     if (!entry.isArray())
         return false;
 
     for (Json::ArrayIndex i = 0; i < entry.size(); ++i)
-        v.push_back(getJsonValue<T>(entry[i]));
+        v.push_back(entry[i].asCString());
 
     return true;
     }
@@ -234,15 +231,15 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
                 }
 
             ByteStream jpegData(buffer, resourceSize);
-            ImageSource jpeg(ImageSource::Format::Jpeg, std::move(jpegData), ImageSource::Alpha::No, ImageSource::BottomUp::Yes);
-            Render::Image rgba(jpeg);
+            ImageSource jpeg(ImageSource::Format::Jpeg, std::move(jpegData));
+            Image rgba(jpeg, Image::Format::Rgba, Image::BottomUp::Yes);
             if (!rgba.IsValid())
                 {
                 LOG_ERROR("bad texture data");
                 return ERROR;
                 }
 
-            renderTextures[resourceName] = scene.m_renderSystem->_CreateImageTexture(rgba, jpeg.HasAlpha());
+            renderTextures[resourceName] = scene.m_renderSystem->_CreateImageTexture(rgba);
             }
         }
 
