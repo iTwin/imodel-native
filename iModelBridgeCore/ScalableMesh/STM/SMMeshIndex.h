@@ -127,6 +127,20 @@ END_BENTLEY_SCALABLEMESH_NAMESPACE
 //extern size_t nGraphPins;
 //extern size_t nGraphReleases;
 
+inline bool IsLinearFeature(IDTMFile::FeatureType type)
+    {
+    DTMFeatureType dtmType = (DTMFeatureType)type;
+    return dtmType == DTMFeatureType::Breakline || dtmType == DTMFeatureType::SoftBreakline || dtmType == DTMFeatureType::ContourLine || dtmType == DTMFeatureType::GraphicBreak;
+    }
+
+inline bool IsClosedFeature(IDTMFile::FeatureType type)
+    {
+    DTMFeatureType dtmType = (DTMFeatureType)type;
+    return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Island || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
+        dtmType == DTMFeatureType::Polygon || dtmType == DTMFeatureType::Region || dtmType == DTMFeatureType::Contour || dtmType == DTMFeatureType::Hull ||
+        dtmType == DTMFeatureType::DrapeVoid;
+    }
+
 template<class POINT, class EXTENT> class SMMeshIndex;
 
 template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndexNode < POINT, EXTENT >
@@ -296,22 +310,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         return poolMemItemPtr;
         }
-    /*void SetGraphDirty()
-        {
-        //m_graphVec.RecomputeCount();
-        m_graphVec.SetDiscarded(false);
-        m_graphVec.SetDirty(true);
-        }
 
-    bool IsGraphDirty()
-        {
-        return m_graphVec.IsDirty();
-        }
-
-    void PinGraph()
-    {
-        m_graphVec.Pin();
-    }*/
     /**----------------------------------------------------------------------------
     Returns the 2.5d mesher used for meshing the points
 
@@ -432,10 +431,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphStore();
         };
 
- /*   HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > GetGraphPool() const
-        {
-        return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphPool();
-        };*/
         
     void PushPtsIndices(const int32_t* indices, size_t size);
 
@@ -458,6 +453,66 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             }
 
         return poolMemVectorItemPtr;
+        }
+
+    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetLinearFeaturesPtr()
+        {
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
+
+        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_featurePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::LinearFeature, (uint64_t)m_SMIndex))
+            {
+            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetFeatureStore().GetPtr(), SMPoolDataTypeDesc::LinearFeature, (uint64_t)m_SMIndex));
+            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
+            m_featurePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+            assert(m_featurePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            poolMemVectorItemPtr = storedMemoryPoolVector.get();
+            }
+
+        return poolMemVectorItemPtr;
+        }
+
+    void GetFeatureDefinitions(bvector < bvector<int32_t>>& featureDefs, const int32_t* serializedFeatureDefs, size_t size)
+        {
+        size_t i = 0;
+        bool inFeatureDef = false;
+        bvector<int32_t> currentFeature;
+        size_t firstIdxForCurrentFeature = 0;
+        while (i < size)
+            {
+            if (!inFeatureDef)
+                {
+                currentFeature.resize(serializedFeatureDefs[i]);
+                inFeatureDef = true;
+                firstIdxForCurrentFeature = i + 1;
+                }
+            else
+                {
+                currentFeature[i - firstIdxForCurrentFeature] = serializedFeatureDefs[i];
+                if (i + 1 - firstIdxForCurrentFeature >= currentFeature.size())
+                    {
+                    inFeatureDef = false;
+                    featureDefs.push_back(currentFeature);
+                    currentFeature.clear();
+                    }
+                }
+            i++;
+            }
+        }
+
+    bool SaveFeatureDefinitions(int32_t* serializedFeatureDefs, size_t size, const bvector < bvector<int32_t>>& featureDefs)
+        {
+        size_t i = 0;
+        for (auto& vec : featureDefs)
+            {
+            if (i > size) return false;
+            serializedFeatureDefs[i++] = (int32_t)vec.size();
+            for (auto& pt : vec)
+                {
+                if (i > size) return false;
+                serializedFeatureDefs[i++] = pt;
+                }
+            }
+        return true;
         }
 
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> AddDisplayData(SmCachedDisplayData* smCachedDisplayData)
@@ -644,7 +699,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         }
 #endif
 
-    mutable vector<HPMStoredPooledVector<int32_t>> m_featureDefinitions;
+  //  mutable vector<HPMStoredPooledVector<int32_t>> m_featureDefinitions;
     atomic<size_t> m_nbClips;
     BcDTMPtr m_tileBcDTM;
     std::mutex m_dtmLock;
@@ -662,7 +717,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable SMMemoryPoolItemId m_uvCoordsPoolItemId;
         mutable SMMemoryPoolItemId m_diffSetsItemId;
         mutable SMMemoryPoolItemId m_displayDataPoolItemId;  
-        //mutable SMMemoryPoolItemId m_graphPoolItemId;      
+        mutable SMMemoryPoolItemId m_featurePoolItemId;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
        // mutable bool m_isGraphLoaded;                
