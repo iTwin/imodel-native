@@ -21,3 +21,4 @@
 #include <ECObjects/ECInstanceIterable.h>
 #include <ECObjects/SystemSymbolProvider.h>
 #include <BeXml/BeXml.h>
+#include <Units/Units.h>

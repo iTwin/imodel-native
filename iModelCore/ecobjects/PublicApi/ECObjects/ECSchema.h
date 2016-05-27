@@ -334,10 +334,11 @@ public:
 
     //! Retrieves the custom attribute matching the class name.  DoesNot include custom attributes from either base
     //! containers or supplemental custom attributes
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttributeLocal(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttributeLocal(Utf8StringCR schemaName, Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class name.  DoesNot include custom attributes from either base
     //! containers or supplemental custom attributes
@@ -440,7 +441,7 @@ struct PrimitiveECProperty;
 Base class for an object which provides the context for an IECTypeAdapter
 @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct IECTypeAdapterContext : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE IECTypeAdapterContext : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -3275,6 +3276,10 @@ public:
     //! Removes an ECSchema from the list of referenced schemas
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
     ECOBJECTS_EXPORT ECObjectsStatus            RemoveReferencedSchema(ECSchemaR refSchema);
+
+    //! Removes an ECSchema from the list of referenced schemas
+    //! @param[in]  schemaKey   The key for the schema that should be removed from the list of referenced schemas.  Must be an exact match
+    ECOBJECTS_EXPORT ECObjectsStatus            RemoveReferencedSchema(SchemaKeyCR schemaKey);
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema

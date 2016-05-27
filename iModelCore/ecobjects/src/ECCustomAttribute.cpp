@@ -271,10 +271,11 @@ Utf8StringCR className
 //+---------------+---------------+---------------+---------------+---------------+------
 IECInstancePtr IECCustomAttributeContainer::GetPrimaryCustomAttributeLocal
 (
-    Utf8StringCR className
-    ) const
+Utf8StringCR schemaName,
+Utf8StringCR className
+) const
     {
-    return GetCustomAttributeInternal(className, false, false);
+    return GetCustomAttributeInternal(schemaName, className, false, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
