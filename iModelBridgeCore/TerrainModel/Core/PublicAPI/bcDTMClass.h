@@ -263,13 +263,9 @@ struct BcDTM : RefCounted<TerrainModel::IDTM>
             ) override;
         virtual DTMStatusInt _DrapeLinear (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
 
-        virtual DTMStatusInt _FastDrapeLinear(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
-
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
 
         virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
-
-        virtual bool _FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
 
         // End IDTMDraping Implementation
 

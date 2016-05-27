@@ -107,10 +107,6 @@ DTMStatusInt IDTMDraping::DrapeLinear (DTMDrapedLinePtr& ret, DPoint3dCP pts, in
     return _DrapeLinear(ret, pts, numPoints);
     }
 
-DTMStatusInt IDTMDraping::FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
-    {
-    return _FastDrapeLinear(ret, pts, numPoints);
-    }
 
 bool IDTMDraping::ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
@@ -122,10 +118,6 @@ bool IDTMDraping::DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspec
     return _DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector);
     }
 
-bool IDTMDraping::FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
-    {
-    return _FastDrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector);
-    }
 
 DTMStatusInt IDTMDrainage::GetDescentTrace (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxpondDepth)
     {

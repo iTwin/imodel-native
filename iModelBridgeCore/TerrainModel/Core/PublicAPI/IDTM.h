@@ -120,13 +120,9 @@ virtual DTMStatusInt _DrapePoint (double* elevationP, double* slopeP, double* as
 
 virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) = 0;
 
-virtual DTMStatusInt _FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) = 0;
-
 virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) = 0;
 
 virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) = 0;
-
-virtual bool _FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) = 0;
 
 
 /*__PUBLISH_SECTION_START__*/
@@ -147,12 +143,6 @@ BENTLEYDTM_EXPORT DTMStatusInt DrapePoint (double* elevation, double* slope, dou
 //! @return DTM status.
 BENTLEYDTM_EXPORT DTMStatusInt DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints);
 
-//! Drapes a linear feature on to the DTM, using approximation or other techniques to get a faster, but possibly less exact result.
-//! @param[out] ret         The DTMDrapedLine result.
-//! @param[in]  pts         The points of the linear feature.
-//! @param[in] numPoints   The number of points.
-//! @return DTM status.
-BENTLEYDTM_EXPORT DTMStatusInt FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints);
 
 //! Projects point on the DTM
 //! @param[out]  pointOnDTM           Projected point.
@@ -172,18 +162,7 @@ BENTLEYDTM_EXPORT bool ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DP
 //! @return true if there is an intersection with the mesh.
 BENTLEYDTM_EXPORT bool DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector);
 
-//! Drapes a point onto the DTM along a vector, using approximation or other techniques to get a faster, but possibly less exact result.
-//! @param[out] endPt           Projected point.   
-//! @param[out] slope           Slope on the point. Can be null.     
-//! @param[out] aspect          Aspect on the point. Can be null.     
-//! @param[out] triangle        Triangle around the point. Can be null.     
-//! @param[out] drapeType       Type of draping. Can be null. (should be declared as an DTMEnum !!!).    
-//! @param[in]  point           The point to drape.
-//! @param[in]  directionOfVector           Direction of vector.
-//! @param[in]  slopeOfVector           Slope of vector.
-//! @return true if there is an intersection with the mesh.
-BENTLEYDTM_EXPORT bool FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector);
-};
+    };
 
 /*=================================================================================**//**
 * Interface implemented by DTM engines.
