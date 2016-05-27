@@ -23,6 +23,7 @@ struct ScalableMeshDraping : IDTMDraping
         IScalableMesh* m_scmPtr;
         Transform m_transform;
         Transform m_UorsToStorage;
+        DTMAnalysisType m_type = DTMAnalysisType::Precise;
 
         size_t m_levelForDrapeLinear;
 
@@ -38,10 +39,10 @@ struct ScalableMeshDraping : IDTMDraping
         virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) override;
 
         virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
-        virtual DTMStatusInt _FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
+        //virtual DTMStatusInt _FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
 
         virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
-        virtual bool _FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
+        //virtual bool _FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
         
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
     public:
@@ -50,6 +51,11 @@ struct ScalableMeshDraping : IDTMDraping
             {
             m_transform = transform;
             m_UorsToStorage = m_transform.ValidatedInverse();
+            }
+
+        void SetAnalysisType(DTMAnalysisType type)
+            {
+            m_type = type;
             }
     };
 
