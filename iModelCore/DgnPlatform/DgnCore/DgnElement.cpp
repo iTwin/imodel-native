@@ -2382,9 +2382,66 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
-DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
-DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
+DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR child) const 
+    {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild))
+        return DgnDbStatus::ParentBlockedChange;
+
+    if (GetModelId() != child.GetModelId())
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongModel; // parent and child must be in same model
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const 
+    {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild))
+        return DgnDbStatus::ParentBlockedChange;
+    
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const 
+    {
+    return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnChildAdd(DgnElementCR child) const 
+    {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild))
+        return DgnDbStatus::ParentBlockedChange;
+    
+    if (GetModelId() != child.GetModelId())
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongModel; // parent and child must be in same model
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnChildDrop(DgnElementCR) const 
+    {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild))
+        return DgnDbStatus::ParentBlockedChange;
+    
+    return DgnDbStatus::Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15

@@ -625,9 +625,9 @@ public:
     void SetFillColorToViewBackground() {m_appearanceOverrides.m_fill = false; m_appearanceOverrides.m_bgFill = true;} // FillDisplay::Blanking creates an opaque view background fill...
     void SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
     void SetGeometryClass(DgnGeometryClass geomClass) {m_geometryClass = geomClass;}
-    void SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency;} // NOTE: Sets BOTH element and fill transparency...
-    void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency;}
-    void SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority;} // Set display priority (2d only).
+    void SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency; m_resolved = false;} // NOTE: Sets BOTH element and fill transparency...
+    void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency; m_resolved = false;}
+    void SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority; m_resolved = false;} // Set display priority (2d only).
     void SetMaterialId(DgnMaterialId materialId) {m_appearanceOverrides.m_material = true; m_materialId = materialId;}
     void SetPatternParams(PatternParamsP patternParams) {m_pattern = patternParams;}
 
@@ -636,6 +636,7 @@ public:
     double GetNetFillTransparency() const {BeAssert(m_resolved); return m_netFillTransparency;}
 
     int32_t GetNetDisplayPriority() const {BeAssert(m_resolved); return m_netPriority;} // Get net display priority (2d only).
+    int32_t GetNetDisplayPriority(ViewContextR context) {Resolve(context); return m_netPriority;} // Resolve and return net display priority (2d only).
     void SetNetDisplayPriority(int32_t priority) {m_netPriority = priority;} // RASTER USE ONLY!!!
 
     bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 
 USING_NAMESPACE_BENTLEY_DPTEST
 
@@ -902,5 +903,93 @@ TEST_F(DgnElementTests, TestUserProperties)
         checkValue = persistedStringProperty.GetValueEC();
         EXPECT_FALSE(checkValue.IsNull());
         EXPECT_STREQ("changed value", checkValue.ToString().c_str());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, ParentChildSameModel)
+    {
+    SetupProject(L"3dMetricGeneral.ibim", L"ParentChildSameModel.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
+    EXPECT_TRUE(categoryId.IsValid());
+
+    SpatialModelPtr modelA = DgnDbTestUtils::InsertSpatialModel(*m_db, DgnModel::CreateModelCode("modelA"));
+    SpatialModelPtr modelB = DgnDbTestUtils::InsertSpatialModel(*m_db, DgnModel::CreateModelCode("modelB"));
+    EXPECT_TRUE(modelA.IsValid());
+    EXPECT_TRUE(modelB.IsValid());
+
+    GenericPhysicalObjectPtr parentA = GenericPhysicalObject::Create(*modelA, categoryId);
+    GenericPhysicalObjectPtr parentB = GenericPhysicalObject::Create(*modelB, categoryId);
+    EXPECT_TRUE(parentA.IsValid());
+    EXPECT_TRUE(parentB.IsValid());
+    EXPECT_TRUE(parentA->Insert().IsValid());
+    EXPECT_TRUE(parentB->Insert().IsValid());
+    DgnElementId childIdA, childIdB, childIdC;
+
+    // test DgnElement::_OnChildInsert success
+        {
+        GenericPhysicalObjectPtr childA = GenericPhysicalObject::Create(*modelA, categoryId);
+        GenericPhysicalObjectPtr childB = GenericPhysicalObject::Create(*modelB, categoryId);
+        GenericPhysicalObjectPtr childC = GenericPhysicalObject::Create(*modelB, categoryId);
+        EXPECT_TRUE(childA.IsValid());
+        EXPECT_TRUE(childB.IsValid());
+        EXPECT_TRUE(childC.IsValid());
+        childA->SetParentId(parentA->GetElementId()); // Match
+        childB->SetParentId(parentB->GetElementId()); // Match
+        EXPECT_TRUE(childA->Insert().IsValid()) << "Expecting success because models of parent and child are the same";
+        EXPECT_TRUE(childB->Insert().IsValid()) << "Expecting success because models of parent and child are the same";
+        EXPECT_TRUE(childC->Insert().IsValid()) << "Expecting success because childC has no parent";
+        EXPECT_TRUE(childA->GetParentId().IsValid());
+        EXPECT_TRUE(childB->GetParentId().IsValid());
+        EXPECT_FALSE(childC->GetParentId().IsValid());
+        childIdA = childA->GetElementId();
+        childIdB = childB->GetElementId();
+        childIdC = childC->GetElementId();
+        }
+
+    // test DgnElement::_OnChildInsert failure
+        {
+        GenericPhysicalObjectPtr childA = GenericPhysicalObject::Create(*modelA, categoryId);
+        GenericPhysicalObjectPtr childB = GenericPhysicalObject::Create(*modelB, categoryId);
+        EXPECT_TRUE(childA.IsValid());
+        EXPECT_TRUE(childB.IsValid());
+        childA->SetParentId(parentB->GetElementId()); // Mismatch 
+        childB->SetParentId(parentA->GetElementId()); // Mismatch
+        DgnDbStatus insertStatusA, insertStatusB;
+        BeTest::SetFailOnAssert(false);
+        EXPECT_FALSE(childA->Insert(&insertStatusA).IsValid()) << "Expecting failure because models of parent and child are different";
+        EXPECT_FALSE(childB->Insert(&insertStatusB).IsValid()) << "Expecting failure because models of parent and child are different";
+        BeTest::SetFailOnAssert(true);
+        EXPECT_EQ(DgnDbStatus::WrongModel, insertStatusA);
+        EXPECT_EQ(DgnDbStatus::WrongModel, insertStatusB);
+        }
+
+    // test SetParentId on existing elements
+        {
+        GenericPhysicalObjectPtr childA = m_db->Elements().GetForEdit<GenericPhysicalObject>(childIdA);
+        GenericPhysicalObjectPtr childB = m_db->Elements().GetForEdit<GenericPhysicalObject>(childIdB);
+        GenericPhysicalObjectPtr childC = m_db->Elements().GetForEdit<GenericPhysicalObject>(childIdC);
+        EXPECT_TRUE(childA.IsValid());
+        EXPECT_TRUE(childB.IsValid());
+        EXPECT_TRUE(childC.IsValid());
+        childA->SetParentId(parentB->GetElementId()); // Mismatch
+        childB->SetParentId(parentA->GetElementId()); // Mismatch
+        childC->SetParentId(parentA->GetElementId()); // Mismatch
+        DgnDbStatus updateStatusA, updateStatusB, updateStatusC;
+        BeTest::SetFailOnAssert(false);
+        EXPECT_FALSE(childA->Update(&updateStatusA).IsValid()) << "Expecting failure because models of parent and child are different";
+        EXPECT_FALSE(childB->Update(&updateStatusB).IsValid()) << "Expecting failure because models of parent and child are different";
+        EXPECT_FALSE(childC->Update(&updateStatusC).IsValid()) << "Expecting failure because models of parent and child are different";
+        BeTest::SetFailOnAssert(true);
+        EXPECT_EQ(DgnDbStatus::WrongModel, updateStatusA);
+        EXPECT_EQ(DgnDbStatus::WrongModel, updateStatusB);
+        EXPECT_EQ(DgnDbStatus::WrongModel, updateStatusC);
+
+        childC->SetParentId(parentB->GetElementId()); // Match
+        EXPECT_TRUE(childC->Update(&updateStatusC).IsValid()) << "Expecting success because models of parent and child are the same";
+        EXPECT_EQ(DgnDbStatus::Success, updateStatusC);
         }
     }
