@@ -230,8 +230,7 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
                 return ERROR;
                 }
 
-            ByteStream jpegData(buffer, resourceSize);
-            ImageSource jpeg(ImageSource::Format::Jpeg, std::move(jpegData));
+            ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
             Image rgba(jpeg, Image::Format::Rgba, Image::BottomUp::Yes);
             if (!rgba.IsValid())
                 {
