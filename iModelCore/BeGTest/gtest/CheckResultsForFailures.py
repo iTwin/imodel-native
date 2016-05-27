@@ -33,6 +33,11 @@ if __name__ == '__main__':
      
     if len(failedtests) != 0:
         print ""
+        print "*** TESTS FAILED ***"
+        for t in failedtests.split(","):
+            print t
+        print "********************"
+        print ""
         print "To re-run failing tests, run the following command in your debugger:"
         print "    " + sys.argv[2] + " --gtest_break_on_failure --gtest_filter=" + failedtests
         print ""
