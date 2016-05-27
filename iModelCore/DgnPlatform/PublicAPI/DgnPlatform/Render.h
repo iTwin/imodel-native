@@ -222,43 +222,7 @@ public:
 
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   02/16
-//=======================================================================================
-struct ImageSource
-{
-    enum class BottomUp : bool {No=0, Yes=1};
-    enum class Alpha : bool {No=0, Yes=1};
-    enum class Format : uint32_t {Jpeg=0, Png=2};
-
-private:
-    Format m_format = Format::Jpeg;
-    Alpha m_hasAlpha = Alpha::Yes;  //!< If true, each pixel also has an alpha value (so that the source has 4 bytes per pixel).
-    bool m_isBGR = false;    //!< If true, the source data is in BGR format; else RGB format. Always false for an image read from PNG.
-    BottomUp m_bottomUp = BottomUp::No; //!< If true, the image data is in top-down row order; else bottom-up order. Always true for an image read from PNG.
-    ByteStream m_stream;
-
-public:
-    void SetFormat(Format format) {m_format=format;}
-    void SetBottomUp(bool yesNo=true) {m_bottomUp = yesNo ? BottomUp::Yes : BottomUp::No;}
-    void SetTopDown(bool yesNo=true) {SetBottomUp(!yesNo);}
-    bool IsBottomUp() const {return BottomUp::Yes==m_bottomUp;}
-    bool IsTopDown() const {return !IsBottomUp();}
-    void SetHasAlpha(bool yesNo) {m_hasAlpha=yesNo ? Alpha::Yes : Alpha::No;}
-    void SetIsBGR(bool yesNo) {m_isBGR=yesNo;}
-    bool HasAlpha() const {return Alpha::Yes==m_hasAlpha;}
-    bool IsBGR() const {return m_isBGR;}
-    Format GetFormat() const {return m_format;}
-    ByteStream const& GetByteStream() const {return m_stream;}
-    ByteStream& GetByteStreamR() {return m_stream;}
-    bool IsValid() const {return 0 < m_stream.GetSize();}
-
-    ImageSource() {}
-    StatusInt FromJpeg(ByteStream&& stream, BottomUp bottomUp=BottomUp::No);
-    StatusInt FromPng(ByteStream&& stream, BottomUp bottomUp=BottomUp::No);
-    StatusInt FromImage(Format format, ImageCR, int quality=100, BottomUp bottomUp=BottomUp::No);
-};
-
-//=======================================================================================
+// An uncompressed Rgb (3 bytes per pixel) or Rgba (4 bytes per pixel) image suitable for rendering. 
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct Image
@@ -272,26 +236,52 @@ struct Image
 protected:
     uint32_t   m_width = 0;
     uint32_t   m_height = 0;
-    Format     m_format = Format::Rgba;
+    Format     m_format = Format::Rgb;
     ByteStream m_image;
 
 public:
     Image() {}
-    Image(uint32_t width, uint32_t height, Format format, ByteStream&& data) : m_width(width), m_height(height), m_format(format), m_image(std::move(data)) {}
-    DGNPLATFORM_EXPORT Image(ImageSourceCR);
+    Image(uint32_t width, uint32_t height, ByteStream&& data, Format format) : m_width(width), m_height(height), m_format(format), m_image(std::move(data)) {}
+
+    enum class BottomUp : bool {No=0, Yes=1};
+    DGNPLATFORM_EXPORT Image(ImageSourceCR, Format targetFormat=Format::Rgba, BottomUp bottomUp=BottomUp::No);
 
     int GetBytesPerPixel()const {return m_format == Format::Rgba ? 4 : 3;}
     void Invalidate() {m_width=m_height=0; ClearData();}
     void ClearData() {m_image.Clear();}
-    void Initialize(uint32_t width, uint32_t height, Format format) {m_height=height; m_width=width; m_format=format; ClearData();}
+    void Initialize(uint32_t width, uint32_t height, Format format=Format::Rgb) {m_height=height; m_width=width; m_format=format; ClearData();}
     uint32_t GetWidth() const {return m_width;}
     uint32_t GetHeight() const {return m_height;}
     Format GetFormat() const {return m_format;}
     void SetFormat(Format format) {m_format=format;}
-    bool IsValid() {return 0!=m_width && 0!=m_height;}
+    bool IsValid() {return 0!=m_width && 0!=m_height && 0!=m_image.GetSize();}
     ByteStream const& GetByteStream() const {return m_image;}
     ByteStream& GetByteStreamR() {return m_image;}
     void SetSize(uint32_t width, uint32_t height) {BeAssert(0 == m_width && 0 == m_height); m_width = width; m_height = height;}
+};
+
+//=======================================================================================
+// A compressed image in either JPEG or PNG format.
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct ImageSource
+{
+    enum class Format : uint32_t {Jpeg=0, Png=2}; // don't change values, saved in DgnTexture elements
+
+private:
+    Format m_format = Format::Jpeg;
+    ByteStream m_stream;
+
+public:
+    Format GetFormat() const {return m_format;}
+    void SetFormat(Format format) {m_format=format;}
+    ByteStream const& GetByteStream() const {return m_stream;}
+    ByteStream& GetByteStreamR() {return m_stream;}
+    bool IsValid() const {return 0 < m_stream.GetSize();}
+
+    ImageSource() {}
+    ImageSource(Format format, ByteStream&& stream) : m_format(format), m_stream(stream) {}
+    DGNPLATFORM_EXPORT ImageSource(ImageCR, Format format, int quality=100, Image::BottomUp bottomUp=Image::BottomUp::No);
 };
 
 //=======================================================================================
@@ -1423,7 +1413,7 @@ struct System
     virtual TexturePtr _GetImageTexture(DgnTextureId, DgnDbR) const = 0;
 
     //! Create a new Texture from an Image. Note: this is called from multiple-threads implementer must ensure this is supported.
-    virtual TexturePtr _CreateImageTexture(ImageCR, bool enableAlpha) const = 0;
+    virtual TexturePtr _CreateImageTexture(ImageCR) const = 0;
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
@@ -1498,7 +1488,7 @@ public:
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetImageTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetImageTexture(id, dgndb);}
-    TexturePtr CreateImageTexture(ImageR image, bool enableAlpha) const {return m_system._CreateImageTexture(image, enableAlpha);}
+    TexturePtr CreateImageTexture(ImageR image) const {return m_system._CreateImageTexture(image);}
     TexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 

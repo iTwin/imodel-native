@@ -82,10 +82,10 @@ public:
     DgnTextureId GetTextureId() const {return DgnTextureId(GetElementId().GetValue());} //!< The texture ID.
     Utf8String GetTextureName() const {return GetCode().GetValue();} //!< The texture name
 
-    Render::ImageSourceCR GetImageSource() const {return m_data;} //!< The texture data
-    Render::ImageSourceCR GetImageSourceR() {return m_data;} //!< A writable reference to the texture data
+    Render::ImageSourceCR GetImageSource() const {return m_data;} //!< The image source
+    Render::ImageSourceCR GetImageSourceR() {return m_data;} //!< A writable reference to the image source
     Utf8StringCR GetDescription() const {return m_descr;} //!< The description of this texture
-    void SetImageSource(Render::ImageSourceCR data) {m_data = data;} //!< Set the texture data
+    void SetImageSource(Render::ImageSourceCR data, uint32_t width, uint32_t height) {m_data = data; m_width=width; m_height=height;} //!< Set the image source
     void SetDescription(Utf8StringCR descr) {m_descr = descr;} //!< Set the description
     uint32_t GetWidth() const {return m_width;}
     uint32_t GetHeight() const {return m_height;}

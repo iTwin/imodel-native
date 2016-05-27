@@ -1104,12 +1104,12 @@ BentleyStatus TiledRasterCache::_CleanupDatabase(Db& db) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileData::LoadTile()
     {
-    ImageSource source(m_isJpeg ? ImageSource::Format::Jpeg : ImageSource::Format::Png, std::move(m_data), ImageSource::Alpha::No);
-    Image rgba(source);
+    ImageSource source(m_isJpeg ? ImageSource::Format::Jpeg : ImageSource::Format::Png, std::move(m_data));
+    Image rgb(source);
 
     m_data = std::move(source.GetByteStreamR()); // this is necessary since we need to keep the image source to save in the cache.
 
-    if (!rgba.IsValid())
+    if (!rgb.IsValid())
         {
         BeAssert(false);
         m_tile->SetNotFound();
@@ -1117,7 +1117,7 @@ BentleyStatus TileData::LoadTile()
         }
 
     auto graphic = m_renderSys._CreateGraphic(Graphic::CreateParams(nullptr));
-    auto texture = m_renderSys._CreateImageTexture(rgba, false);
+    auto texture = m_renderSys._CreateImageTexture(rgb);
 
     graphic->SetSymbology(m_color, m_color, 0);
     graphic->AddTile(*texture, m_tile->m_corners.m_pts);

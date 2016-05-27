@@ -47,21 +47,21 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
         {
         ByteStream pngBytes;
         imageFile.ReadEntireFile(pngBytes);
-        imageSource = ImageSource(ImageSource::Format::Png, std::move(pngBytes), ImageSource::Alpha::Yes);
+        imageSource = ImageSource(ImageSource::Format::Png, std::move(pngBytes));
         image = Image(imageSource);
         }
     else
         {
         width = height = 512;
-        ByteStream data(width * height * 4);
+        ByteStream data(width * height * 3);
 
         size_t      value = 0;
         Byte* imageByte=data.GetDataP();
         for (uint32_t i=0; i<data.GetSize(); ++i)
             *imageByte++ = ++value % 0xff;        
 
-        image = Image(width, height, Image::Format::Rgba, std::move(data));
-        imageSource = ImageSource(ImageSource::Format::Png, image);
+        image = Image(width, height, std::move(data), Image::Format::Rgb);
+        imageSource = ImageSource(image, ImageSource::Format::Png);
         }
 
     EXPECT_TRUE(imageSource.IsValid());

@@ -213,7 +213,7 @@ void NamedSprite::_LoadSprite()
 
         ByteStream stream;
         pngFile.ReadEntireFile(stream);
-        ImageSource source(ImageSource::Format::Png, std::move(stream), ImageSource::Alpha::No);
+        ImageSource source(ImageSource::Format::Png, std::move(stream));
         Load(source);
         }
     }

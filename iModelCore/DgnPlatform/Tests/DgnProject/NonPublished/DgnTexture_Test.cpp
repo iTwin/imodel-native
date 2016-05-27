@@ -10,18 +10,20 @@
 #include <DgnPlatform/DgnTexture.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_RENDER
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgnTexturesTest : public BlankDgnDbTestFixture
     {
-    DgnTexture::Data MakeTextureData(DgnTexture::Format fmt, uint32_t w, uint32_t h)
+    ImageSource MakeTextureData(ImageSource::Format fmt, uint32_t w, uint32_t h)
         {
         // For the purposes of this test we really don't know/care about the raw texture data
-        bvector<Byte> bytes (w*h);
-        std::iota (bytes.begin(), bytes.end(), 0);
-        return DgnTexture::Data (fmt, &bytes[0], (uint32_t) bytes.size(), w, h);
+        ByteStream bytes(w*h*3);
+        memset(bytes.GetDataP(), 33,    bytes.GetSize());
+        Image image(w,h,std::move(bytes), Image::Format::Rgb);
+        return ImageSource(image, fmt);
         }
 
     void Compare(DgnTextureCR lhs, DgnTextureCR rhs)
@@ -30,15 +32,15 @@ struct DgnTexturesTest : public BlankDgnDbTestFixture
         EXPECT_STREQ (lhs.GetTextureName().c_str(), rhs.GetTextureName().c_str());
         EXPECT_STREQ (lhs.GetDescription().c_str(), rhs.GetDescription().c_str());
 
-        auto const& lhData = lhs.GetTextureData();
-        auto const& rhData = rhs.GetTextureData();
+        auto const& lhData = lhs.GetImageSource();
+        auto const& rhData = rhs.GetImageSource();
 
+        EXPECT_EQ (lhs.GetFlags(), rhs.GetFlags());
+        EXPECT_EQ (lhs.GetWidth(), rhs.GetWidth());
+        EXPECT_EQ (lhs.GetHeight(), rhs.GetHeight());
         EXPECT_EQ (lhData.GetFormat(), rhData.GetFormat());
-        EXPECT_EQ (lhData.GetFlags(), rhData.GetFlags());
-        EXPECT_EQ (lhData.GetWidth(), rhData.GetWidth());
-        EXPECT_EQ (lhData.GetHeight(), rhData.GetHeight());
-        EXPECT_EQ (lhData.GetSize(), rhData.GetSize());
-        EXPECT_EQ (0, memcmp (lhData.GetData(), rhData.GetData(), lhData.GetSize()));
+        EXPECT_EQ (lhData.GetByteStream().GetSize(), rhData.GetByteStream().GetSize());
+        EXPECT_EQ (0, memcmp (lhData.GetByteStream().GetData(), rhData.GetByteStream().GetData(), lhData.GetByteStream().GetSize()));
         }
     };
 
@@ -51,15 +53,15 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     DgnDbR db = GetDb();
 
     // Textures have names
-    DgnTexture tx1(DgnTexture::CreateParams(db, "Texture1", MakeTextureData(DgnTexture::Format::JPEG, 2, 4)));
+    DgnTexture tx1(DgnTexture::CreateParams(db, "Texture1", MakeTextureData(ImageSource::Format::Jpeg, 2, 4), 2,4));
     DgnTextureCPtr pTx1 = tx1.Insert();
     ASSERT_TRUE(pTx1.IsValid());
 
     // Names must be unique
-    DgnTexture tx1_duplicate(DgnTexture::CreateParams(db, "Texture1", MakeTextureData(DgnTexture::Format::JPEG, 4, 8)));
+    DgnTexture tx1_duplicate(DgnTexture::CreateParams(db, "Texture1", MakeTextureData(ImageSource::Format::Jpeg, 4, 8), 4, 8));
     EXPECT_FALSE(tx1_duplicate.Insert().IsValid());
 
-    DgnTexture tx2(DgnTexture::CreateParams(db, "Texture2", MakeTextureData(DgnTexture::Format::TIFF, 5, 5), "this is texture 2"));
+    DgnTexture tx2(DgnTexture::CreateParams(db, "Texture2", MakeTextureData(ImageSource::Format::Png, 5, 5), 5,5,"this is texture 2"));
     DgnTextureCPtr pTx2 = tx2.Insert();
     ASSERT_TRUE(pTx2.IsValid());
 
@@ -74,7 +76,7 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
 
     tx2Edit->SetDescription("New description");
     EXPECT_EQ(DgnDbStatus::Success, tx2Edit->SetCode(DgnTexture::CreateTextureCode("Texture2Renamed")));
-    tx2Edit->SetTextureData(MakeTextureData(DgnTexture::Format::JPEG, 9, 18));
+    tx2Edit->SetImageSource(MakeTextureData(ImageSource::Format::Jpeg, 9, 18), 9, 18);
 
     DgnDbStatus status;
     pTx2 = tx2Edit->Update(&status);
@@ -99,11 +101,11 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     EXPECT_EQ(DgnDbStatus::DeletionProhibited, pTx1->Delete());
 
     // Unnamed textures are supported
-    DgnTexture unnamed1(DgnTexture::CreateParams(db, "", MakeTextureData(DgnTexture::Format::JPEG, 2, 2)));
+    DgnTexture unnamed1(DgnTexture::CreateParams(db, "", MakeTextureData(ImageSource::Format::Jpeg, 2, 2), 2,2));
     EXPECT_TRUE(unnamed1.Insert().IsValid());
 
     // Multiple unnamed textures can exist
-    DgnTexture unnamed2(DgnTexture::CreateParams(db, "", MakeTextureData(DgnTexture::Format::JPEG, 4, 4)));
+    DgnTexture unnamed2(DgnTexture::CreateParams(db, "", MakeTextureData(ImageSource::Format::Jpeg, 4, 4), 4,4));
     EXPECT_TRUE(unnamed2.Insert().IsValid());
 
     // Can't query unnamed texture by name
