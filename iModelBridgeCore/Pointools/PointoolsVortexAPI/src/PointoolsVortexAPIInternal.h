@@ -82,11 +82,15 @@
 
 #include <ttl/var/variant.hpp>
 
+#ifdef HAVE_WILDMAGIC
 #include <WildMagic/math/Wm5Quaternion.h>
 #include <WildMagic/math/Wm5matrix3.h>
 #include <WildMagic/math/Wm5ApprPlaneFit3.h>
 #include <WildMagic/math/Wm5Plane3.h>
 #include <WildMagic/math/Wm5ApprGaussPointsFit3.h>
+#else
+#include <GeomApi.h>
+#endif
 
 #include <Loki/Singleton.h>
 #include <Loki/AssocVector.h>

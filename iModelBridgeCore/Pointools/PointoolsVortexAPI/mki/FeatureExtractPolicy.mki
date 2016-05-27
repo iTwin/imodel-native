@@ -21,8 +21,10 @@ nameToDefine = __FeatureExtract_BUILD__
 nameToDefine = $(baseDir)
 %include cdefapnd.mki
 
-dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
-%include cincapnd.mki
+%if defined(HAVE_WILDMAGIC)
+    dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
+    %include cincapnd.mki
+%endif
 
 dirToSearch=$(pointoolsVortexAPIVendorAPI)
 %include cincapnd.mki

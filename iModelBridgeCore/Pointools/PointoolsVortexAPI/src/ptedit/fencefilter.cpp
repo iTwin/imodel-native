@@ -5,7 +5,9 @@
 #undef PI
 #undef DEG_TO_RAD
 #undef RAD_TO_DEG
+#ifdef HAVE_WILDMAGIC
 #include <wildmagic/math/Wm5convexhull2.h>
+#endif
 #endif
 using namespace ptedit;
 using namespace pt;
@@ -104,12 +106,22 @@ bool FenceSelect::generateHullPlanes()
 	invmdl.invert();
 
 	/* get 2D hull */ 
+#ifdef HAVE_WILDMAGIC
 	Wm5::Vector2f *vertices = new Wm5::Vector2f[fence.numPoints()];
+#else
+    pt::vector2 *vertices = new pt::vector2[fence.numPoints()];
+#endif
 	for (int i=0; i<fence.numPoints(); i++)
 	{
+#ifdef HAVE_WILDMAGIC
 		vertices[i].X() = static_cast<float>(fence[i].x);
 		vertices[i].Y() = static_cast<float>(fence[i].y);
+#else
+        vertices[i].x = static_cast<float>(fence[i].x);
+		vertices[i].y = static_cast<float>(fence[i].y);
+#endif
 	}
+#ifdef HAVE_WILDMAGIC
 	Wm5::ConvexHull2f chull( fence.numPoints(), vertices, 1e-5, false, Wm5::Query::QT_INTEGER);
 	if (chull.GetDimension() >= 2)
 	{
@@ -157,6 +169,10 @@ bool FenceSelect::generateHullPlanes()
 		delete [] vertices;
 		return false;
 	}
+#else
+        // &&RB TODO: replace wilmagic function with geomlibs function
+
+#endif
 	delete [] vertices;
 
 	return true;

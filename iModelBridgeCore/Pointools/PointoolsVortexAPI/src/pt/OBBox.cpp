@@ -1,6 +1,8 @@
 #include "PointoolsVortexAPIInternal.h"
 #include <pt/OBBox.h>
+#ifdef HAVE_WILDMAGIC
 #include <wildmagic/math/Wm5ApprGaussPointsFit3.h>
+#endif
 
 namespace pt
 {
@@ -75,10 +77,14 @@ OBBoxd createFittingOBBd( const std::vector<vector3d> &pts )
 
 OBBoxd	createFittingOBBd(const vector3d *pts, int numPoints)
 {
+#ifdef HAVE_WILDMAGIC
+    // &&RB TODO: replace wilmagic function with geomlibs function
 	Wm5::Box3d wbox= Wm5::GaussPointsFit3<double>(numPoints, (Wm5::Vector3d*) pts);
 	vector3d axis[] = { &wbox.Axis[0].X(), &wbox.Axis[1].X(), &wbox.Axis[2].X() };
-
 	OBBoxd box( &wbox.Center.X(), axis, wbox.Extent );
+#else
+    OBBoxd box;
+#endif
 
 	// Let C be the box center and let U0, U1, and U2 be the box axes.  Each
 	// input point is of the form X = C + y0*U0 + y1*U1 + y2*U2.  The

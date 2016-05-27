@@ -10,7 +10,9 @@
 #include <pt/geomtypes.h>
 #include <pt/BoundingBox.h>
 #include <math/matrix_math.h>
+#ifdef HAVE_WILDMAGIC
 #include <wildmagic/math/Wm5Quaternion.h>
+#endif
 
 namespace pt
 {

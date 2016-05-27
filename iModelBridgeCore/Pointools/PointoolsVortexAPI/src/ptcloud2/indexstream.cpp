@@ -16,8 +16,10 @@
 
 #include <ptcloud2/scene.h>
 
+#ifdef HAVE_WILDMAGIC
 #include <wildmagic/math/Wm5Plane3.h>
 #include <wildmagic/math/Wm5ApprPlaneFit3.h>
+#endif
 
 #include <ptcmdppe/cmdprogress.h>
 #include <utility/ptstr.h>
@@ -919,8 +921,13 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 	/*load data*/ 
 	/*allocate channel*/ 
 	int cpm[150];
+#ifdef HAVE_WILDMAGIC
 	Wm5::Vector3f _v[150];
 	Wm5::Vector3f _n, _o, _n1, _origin(0,0,0);
+#else
+    pt::vector3 _v[150];
+    pt::vector3 _n, _o, _n1, _origin(0,0,0);
+#endif
 
 	unsigned int errors =0 ;
 #ifdef _VERBOSE
@@ -974,49 +981,88 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 					{
 						memcpy(&_v[valid_points++], &points[cpm[j]], sizeof(float)*3);
 
+#ifdef HAVE_WILDMAGIC
 						diff.x -= _v[j].X();
 						diff.y -= _v[j].Y();
 						diff.z -= _v[j].Z();
+#else
+						diff.x -= _v[j].x;
+						diff.y -= _v[j].y;
+						diff.z -= _v[j].z;
+#endif
 					}
 				}
 				if (valid_points > 3 && !diff.is_zero())
 				{
 					count++;
+#ifdef HAVE_WILDMAGIC
+                    // &&RB TODO: replace wilmagic function with geomlibs function
 					Wm5::Plane3f plane = Wm5::OrthogonalPlaneFit3(valid_points, _v);
 					_n = plane.Normal;
 					_o = plane.Constant * plane.Normal;
+#endif
 
 					_origin = -_o;
+#ifdef HAVE_WILDMAGIC
 					_origin.Normalize();
 					_n.Normalize();
+#else
+					_origin.normalize();
+					_n.normalize();
+
+#endif
 					
 					/*check side for flip*/ 
+#ifdef HAVE_WILDMAGIC
 					float dot = _n.Dot(_origin);
+#else
+                    float dot = _n.dot(_origin);
+#endif
 					if ( dot < 0)
 					{
+#ifdef HAVE_WILDMAGIC
 						_n.X() = -_n.X();
 						_n.Y() = -_n.Y();
 						_n.Z() = -_n.Z();
+#else
+						_n.invert();
+#endif
 					}
 					if (transform) 
 					{
 						mat.vec3_multiply_mat4f(_n);
+#ifdef HAVE_WILDMAGIC
 						_n.Normalize();
+#else
+                        _n.normalize();
+#endif
 					}
 				}
 				else
 				{
 					/*point toward scanner by default*/ 
+#ifdef HAVE_WILDMAGIC
 					_n = Wm5::Vector3f(zvec.x, zvec.y, zvec.z);
+#else
+                    _n = zvec;
+#endif
 					sparse++;
 				}
 			}
 			else
 			{
+#ifdef HAVE_WILDMAGIC
                 _n = Wm5::Vector3f(zvec.x, zvec.y, zvec.z);
+#else
+                _n = zvec;
+#endif
 				sparse++;
 			}
+#ifdef HAVE_WILDMAGIC
 			normals[p].set(_n.X(), _n.Y(), _n.Z()); 
+#else
+			normals[p].set(_n.x, _n.y, _n.z); 
+#endif
 		}
 	}	
 	////post process - use neighbour normal for zero normals

@@ -74,6 +74,7 @@ BentleyBuid.py -ax86 -p PointoolsVortexAPI -f $(ProjectDir)PointoolsVortexAPI re
     <NMakeCleanCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL -c</NMakeCleanCommandLine>
     <NMakeOutput>$(OutRoot)Winx86\build\PointoolsVortexAPI\PointoolsVortexAPI.dll</NMakeOutput>
     <IntDir>$(SolutionDir)$(IntermediateOutputPath)</IntDir>
+    <IncludePath>E:\dev\VortexMobile\out\Debug\Winx64\BuildContexts\WildMagicHeaders\VendorAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>

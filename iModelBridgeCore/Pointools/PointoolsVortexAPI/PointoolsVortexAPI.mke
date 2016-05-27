@@ -547,9 +547,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 ContextSubpartsStaticLibs = $(BuildContext)SubParts/StaticLibs/
 
-LINKER_LIBRARIES =  \
-    $(ContextSubpartsLibs)$(stlibprefix)wildmagic$(stlibext) \
-    $(ContextSubpartsLibs)$(stlibprefix)scz_compress$(stlibext)
+LINKER_LIBRARIES = $(ContextSubpartsLibs)$(stlibprefix)scz_compress$(stlibext)
 
 %if $(TARGET_PLATFORM)=="Windows"   
 LINKER_LIBRARIES + Comdlg32.lib Ws2_32.lib
@@ -562,6 +560,10 @@ LINKER_LIBRARIES + Comdlg32.lib Ws2_32.lib
 
 %if defined(HAVE_OPENGL)
     LINKER_LIBRARIES + opengl32.lib glu32.lib $(ContextSubpartsStaticLibs)$(stlibprefix)glew$(stlibext)
+%endif
+
+%if defined(HAVE_WILDMAGIC)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)wildmagic$(stlibext)
 %endif
 
 %include $(sharedMki)linkLibrary.mki

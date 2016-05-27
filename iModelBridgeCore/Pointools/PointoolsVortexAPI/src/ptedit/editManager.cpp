@@ -5,8 +5,10 @@
 //-----------------------------------------------------------------------------------------------
 
 #include "PointoolsVortexAPIInternal.h"
+#ifdef HAVE_WILDMAGIC
 #include <wildmagic/math/Wm5matrix3.h>
 #include <wildmagic/math/Wm5ApprPlaneFit3.h>
+#endif
 
 #include <pt/trace.h>
 

@@ -1,6 +1,8 @@
 #include "PointoolsVortexAPIInternal.h"
+#ifdef HAVE_WILDMAGIC
 #include <wildmagic/math/Wm5Plane3.h>
 #include <wildmagic/math/Wm5ApprPlanefit3.h>
+#endif
 
 #include <ptedit/planefilter.h>
 
@@ -17,22 +19,37 @@ void  PlaneSelect::computePlane()
 	}
 	else
 	{
+#ifdef HAVE_WILDMAGIC
 		Wm5::Vector3d mgcPoints[500];
 		Wm5::Vector3d planeOrigin, planeNormal;
+#else
+        pt::vector3d mgcPoints[500];
+        pt::vector3d planeOrigin, planeNormal;
+#endif
 		
 		int size = static_cast<int>(points.size());
 		if (size > 500) size = 500;
 
 		for (int i=0; i<size; i++)
 		{
+#ifdef HAVE_WILDMAGIC
 			mgcPoints[i].X() = points[i].x;
 			mgcPoints[i].Y() = points[i].y;
 			mgcPoints[i].Z() = points[i].z;
+#else
+            mgcPoints[i] = points[i];
+#endif
 		}
 		
+#ifdef HAVE_WILDMAGIC
 		Wm5::Plane3d wplane = Wm5::OrthogonalPlaneFit3( size, mgcPoints );
 		plane.normal( (const double*)wplane.Normal );
 		plane.constant( wplane.Constant );
+#else
+        // &&RB TODO: replace wilmagic function with geomlibs function
+        pt::Planed wplane;
+        plane = wplane;
+#endif
 		plane.base();
 	}
 	/* build the fence */ 

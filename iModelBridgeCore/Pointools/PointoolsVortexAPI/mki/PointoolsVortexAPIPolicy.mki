@@ -80,7 +80,9 @@ dirToSearch=$(PointoolsVortexAPIInclude)
     %include cincapnd.mki
 %endif
 
-dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
-%include cincapnd.mki
+%if defined(HAVE_WILDMAGIC)
+    dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
+    %include cincapnd.mki
+%endif
 
 

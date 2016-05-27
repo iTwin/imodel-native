@@ -7,8 +7,10 @@
 
 #include "Plane.h"
 
+#ifdef HAVE_WILDMAGIC
 #include <wildmagic/math/Wm5ApprCylinderFit3.h>
 #include <wildmagic/math/Wm5ApprPlaneFit3.h>
+#endif
 
 //#define ENABLE_CLUSTER_ANALYSIS	1
 
@@ -49,7 +51,7 @@ T	FitCylinderToPoints( PThandle query, Cylinder<T> &res_cylinder,
 
 	int		num_pnts=0;
 	int		i=0;
-	T		error0, error1;
+	T		error0 = 0, error1 = 0;
 	T		radius = cylinder.radius;
 
 	std::vector< Cylinder<T> > cylinders;
@@ -73,43 +75,70 @@ T	FitCylinderToPoints( PThandle query, Cylinder<T> &res_cylinder,
 
 #else
 			buffer.executeQuery();
+#ifdef HAVE_WILDMAGIC
 			const Wm5::Vector3<T> *candidate_pnts = reinterpret_cast<const Wm5::Vector3<T> *>(buffer.getPointsBuffer());
+#else
+			const Vector3<T> *candidate_pnts = reinterpret_cast<const Vector3<T> *>(buffer.getPointsBuffer());
+#endif
 			num_pnts = buffer.numPntsInQueryIteration();
 
 			if (num_pnts<5) return 0;
 #endif	
 
+#ifdef HAVE_WILDMAGIC
 			Wm5::Vector3<T> cen, cen2;
 			Wm5::Vector3<T> axis;
+#else
+			Vector3<T> cen, cen2;
+			Vector3<T> axis;
+#endif
 			T height = 0;
 
 			Cylinder<T> candidate_cylinders[10];
 			T errors[10];
 			for (int j=0;j<10;j++) errors[j] =1e6;
 
+#ifdef HAVE_WILDMAGIC
 			min_error = error0 = Wm5::CylinderFit3<T> (num_pnts, 
 				candidate_pnts, cen, axis, radius, height, 
 				(radius > 0 && !cylinder.axis.isZero()) || constrainToAxis);
+#else
+            // &&RB TODO: replace wilmagic function with geomlibs function
+#endif
 		
 			cen2 = cen;
 			cen2 -= axis * height * 0.5f; 
+#ifdef HAVE_WILDMAGIC
 			cylinder.base.set(cen2.X(),cen2.Y(),cen2.Z());
 			cylinder.axis.set(axis.X(),axis.Y(),axis.Z());
+#else
+			cylinder.base.set(cen2.x,cen2.y,cen2.z);
+			cylinder.axis.set(axis.x,axis.y,axis.z);
+#endif
 			cylinder.height = height;
 			cylinder.radius = radius;
 
 			// multiple
 			for (int j = 1; j <= 10; j++)
 			{
+#ifdef HAVE_WILDMAGIC
 				error1 = Wm5::CylinderFit3<T> (num_pnts, 
 					candidate_pnts, cen, axis, radius, height, true);
+#else
+            // &&RB TODO: replace wilmagic function with geomlibs function
+#endif
 
 				if (error1 < min_error)
 				{
 					cen2 = cen;
 					cen2 -= axis * height * 0.5f; 
-					cylinder.base.set(cen2.X(),cen2.Y(),cen2.Z());
-					cylinder.axis.set(axis.X(),axis.Y(),axis.Z());
+#ifdef HAVE_WILDMAGIC
+        			cylinder.base.set(cen2.X(),cen2.Y(),cen2.Z());
+        			cylinder.axis.set(axis.X(),axis.Y(),axis.Z());
+#else
+        			cylinder.base.set(cen2.x,cen2.y,cen2.z);
+        			cylinder.axis.set(axis.x,axis.y,axis.z);
+#endif
 					cylinder.height = height;
 					cylinder.radius = radius;
 
@@ -180,13 +209,22 @@ double	PTVFIT_API FitCylinderToPointsd( PThandle query, Cylinderd &res_cylinder,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
+#ifdef HAVE_WILDMAGIC
 static T computeRMSToPlane( const Wm5::Plane3<T> &plane, int num_points, const Wm5::Vector3<T> *points )
+#else
+static T computeRMSToPlane( const vortex::Plane<T> &plane, int num_points, const Vector3<T> *points )
+#endif
 //-----------------------------------------------------------------------------
 {
 	T rms=0;
 	for (int i=0; i<num_points; i++)
 	{
+#ifdef HAVE_WILDMAGIC
 		T d = plane.DistanceTo( points[i] );
+#else
+		T d = plane.distToPlane( points[i] );
+#endif
+        
 		rms += d * d;
 	}
 	return sqrt(rms/num_points);
@@ -205,22 +243,39 @@ T	FitPlaneToPoints( QueryBuffer<T> &pointsBuffer, Vector3<T> &planeNormal,
 
 	int		num_pnts=pointsBuffer.numPntsInQueryIteration();
 
+#ifdef HAVE_WILDMAGIC
 	const Wm5::Vector3<T> *candidate_pnts = 
 		reinterpret_cast<const Wm5::Vector3<T> *>(pointsBuffer.getPointsBuffer());
 
-	Wm5::Plane3<T> plane =  Wm5::OrthogonalPlaneFit3( 
+    Wm5::Plane3<T> plane =  Wm5::OrthogonalPlaneFit3( 
 		pointsBuffer.numPntsInQueryIteration(), candidate_pnts );
-	
+#else
+    const Vector3<T> *candidate_pnts = reinterpret_cast<const Vector3<T> *>(pointsBuffer.getPointsBuffer());
+
+    vortex::Plane<T> plane;
+#endif
+
 	if (constrainToNormal)
 	{
+#ifdef HAVE_WILDMAGIC
 		memcpy(&plane.Normal, &planeNormal, sizeof(Vector3<T>));
+#else
+        plane.normal(planeNormal);
+#endif
 	}
 	T rms = computeRMSToPlane( plane, num_pnts, candidate_pnts );
 
+#ifdef HAVE_WILDMAGIC
 	Wm5::Vector3<T> pOrigin = plane.Normal * plane.Constant;
 
-	memcpy(&planeNormal, &plane.Normal, sizeof(Vector3<T>));
+    memcpy(&planeNormal, &plane.Normal, sizeof(Vector3<T>));
 	memcpy(&planeOrigin, &pOrigin, sizeof(Vector3<T>));
+#else
+    Vector3<T> pOrigin = plane.normal() * plane.constant();
+
+        plane.normal(planeNormal);
+    	memcpy(&planeOrigin, &pOrigin, sizeof(Vector3<T>));
+#endif
 
 	return rms;
 }

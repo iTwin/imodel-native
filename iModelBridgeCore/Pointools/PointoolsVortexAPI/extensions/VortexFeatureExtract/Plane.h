@@ -56,11 +56,11 @@ public:
 
 	/*access*/ 	
 	/* plane normal												*/ 
-	inline void normal(const VectorType &n)		{ m_normal = n; m_transform_dirty = true; }
+	inline void normal(const VectorType &n)		{ m_normal = n; /*m_transform_dirty = true;*/ }
 	inline const VectorType	&normal() const		{ return m_normal; }
 
 	/* plane's constant											*/ 
-	inline void constant(T k)		{ m_constant = k; m_base = m_normal * k; m_transform_dirty = true; }
+	inline void constant(T k)		{ m_constant = k; m_base = m_normal * k; /*m_transform_dirty = true;*/ }
 	inline T constant() const		{ return m_constant; }
 
 	/* plane's base position									*/ 
@@ -218,6 +218,11 @@ public:
 	}
 
 	inline T distToPlane(const PointType &v) const
+	{ 
+		return m_normal.dot(v) - m_constant; 
+	}
+
+	inline T distToPlane(const VectorType &v) const
 	{ 
 		return m_normal.dot(v) - m_constant; 
 	}
