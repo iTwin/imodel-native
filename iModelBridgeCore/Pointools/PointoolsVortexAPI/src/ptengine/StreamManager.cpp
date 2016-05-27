@@ -599,7 +599,7 @@ void StreamManager::load(Voxel *voxel, bool new_ooc, float am, GlobalPagerData &
 
 		if (req > lod)
 		{
-			uint bytesLoaded = pager.loadVoxel(voxel, lodRead, false);
+			int bytesLoaded = pager.loadVoxel(voxel, lodRead, false);
 
 #ifdef _VERBOSE
 			std::cout << "+";

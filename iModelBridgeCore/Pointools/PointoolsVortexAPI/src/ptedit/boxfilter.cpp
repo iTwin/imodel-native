@@ -16,7 +16,7 @@ bool BoxSelect::writeState(pt::datatree::Branch *b) const
 
 bool BoxSelect::readState(const pt::datatree::Branch *b)
 {
-	return memcpy(&box, b->getBlob("box")->_data, sizeof(box)) != 0;
+	return memcpy((void*)&box, (void*)b->getBlob("box")->_data, sizeof(box)) != 0;
 
 	//memcpy(corners, b->getBlob("corners")->_data, sizeof(corners));
 	//memcpy(planes, b->getBlob("planes")->_data, sizeof(planes));
@@ -42,7 +42,7 @@ bool OrientedBoxSelect::readState(const pt::datatree::Branch *b)
 {
 	bool result = true;
 
-	result &= memcpy(&box, b->getBlob("box")->_data, sizeof(box)) ? true : false;
+	result &= memcpy((void*)&box, (void*)b->getBlob("box")->_data, sizeof(box)) ? true : false;
 	result &= memcpy(&position, b->getBlob("pos")->_data, sizeof(position)) ? true : false;
 	result &= memcpy(&uAxis, b->getBlob("uAxis")->_data, sizeof(uAxis)) ? true : false;
 	result &= memcpy(&vAxis, b->getBlob("vAxis")->_data, sizeof(vAxis)) ? true : false;

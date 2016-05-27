@@ -4,10 +4,6 @@
 
 using namespace pt;
 
-namespace 
-{
-	bool g_hasInitialisedScripting = false;
-}
 //-----------------------------------------------------------------------------
 PersistentObjectRef::PersistentObjectRef()
 {

@@ -600,7 +600,6 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 
 	int version = 0;
 	//int hasVal;
-	int numCHD = 0;
 	int num_clouds = 0;
 
 	// Meta Data

@@ -711,8 +711,6 @@ bool	MetaAudit::getMetaDataString(const pt::String &item, pt::String &value ) co
 		{
 			if (import_date < 10e9)
 			{
-				time_t now = time(0);
-
                 struct tm*  ts = localtime(&import_date);
 
                 if (ts->tm_year == 70) return false;

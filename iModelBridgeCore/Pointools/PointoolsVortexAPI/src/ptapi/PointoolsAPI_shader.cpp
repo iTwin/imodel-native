@@ -546,7 +546,7 @@ PTres	PTAPI ptShaderOptioni(PTenum shader_option, PTint value)
 	{
 	case PT_INTENSITY_SHADER_RAMP:
 
-		for (i; i<numRamps; i++)
+		for (; i<numRamps; i++)
 		{
 			ptRampInfo(i, &type);
 
@@ -563,7 +563,7 @@ PTres	PTAPI ptShaderOptioni(PTenum shader_option, PTint value)
 
 	case PT_PLANE_SHADER_RAMP:
 
-		for (i; i<numRamps; i++)
+		for (; i<numRamps; i++)
 		{
 			ptRampInfo(i, &type);
 		

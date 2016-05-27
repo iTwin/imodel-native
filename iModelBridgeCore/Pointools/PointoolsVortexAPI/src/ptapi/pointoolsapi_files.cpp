@@ -137,15 +137,23 @@ PTvoid PTAPI ptSetAutoBaseMethod( PTenum method )
 
 static char teakey [] = { -43, 20, -56, -12, 2, -103, -87, 95, 2, 39, 74, 8, 82, 17, -61, 97 };
 static const char* txt_any = "any";
-static const PTstr txt_licModuleFailure = L"Not licensed for use with this module";
+
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
+    static const PTstr txt_licModuleFailure = L"Not licensed for use with this module";
+#endif
+
 static const PTstr txt_expired = L"License has expired";
-static const PTstr txt_setback = L"Clock setback detected";
+// Pip Option - static const PTstr txt_setback = L"Clock setback detected";
 static const char* txt_restricted = "restricted";
 static const char* txt_demo = "demo";
-static const PTstr txt_licDemoTimeFailure = L"Not yet available for demo re-use, please try again";
+
+#if defined(NEEDS_WORK_VORTEX_DGNDB) 
+    static const PTstr txt_licDemoTimeFailure = L"Not yet available for demo re-use, please try again";
+    static bool _hasPSTimeOut = true;
+#endif
+
 static std::wstring lastrunKey = L"Software\\Pointools\\Vortex\\LastRun";
 static std::wstring lastrunKeySetback = L"Software\\Pointools\\Vortex\\lr";
-static bool _hasPSTimeOut = true;
 
 #if NOTUSED
 //-----------------------------------------------------------------------------
@@ -220,53 +228,53 @@ PTstr PTAPI ptGetLastErrorString(void)
 {
     switch (g_lastErrorCode)
         {
-        case PTV_SUCCESS: return L"No error";
+        case PTV_SUCCESS: return const_cast<wchar_t*> (L"No error");
 
             // File Errors
-        case PTV_FILE_NOT_EXIST: return L"File does not exist";
-        case PTV_FILE_NOT_ACCESSIBLE: return L"File is not accessible";
-        case PTV_FILE_WRONG_TYPE:	return L"Wrong file type";
-        case PTV_FILE_COM_ERROR:	return L"COM error";
-        case PTV_FILE_USER_CANCELLED:	return L"User cancelled file operation";
-        case PTV_FILE_ALREADY_OPENED:	return L"File is already opened";
-        case PTV_FILE_NOTHING_TO_WRITE: return L"Nothing to write";
-        case PTV_FILE_WRITE_FAILURE:	return L"General write failure";
-        case PTV_FILE_READ_FAILURE:	return L"General read failure";
-        case PTV_FILE_FAILED_TO_CREATE: return L"Failed to create file";
-        case PTV_FILE_INVALID_POD:	return L"POD file invalid or corrupt";
-        case PTV_FILE_VERSION_NOT_HANDLED: return L"POD version not handled";
+        case PTV_FILE_NOT_EXIST: return const_cast<wchar_t*> (L"File does not exist");
+        case PTV_FILE_NOT_ACCESSIBLE: return const_cast<wchar_t*> (L"File is not accessible");
+        case PTV_FILE_WRONG_TYPE:	return const_cast<wchar_t*> (L"Wrong file type");
+        case PTV_FILE_COM_ERROR:	return const_cast<wchar_t*> (L"COM error");
+        case PTV_FILE_USER_CANCELLED:	return const_cast<wchar_t*> (L"User cancelled file operation");
+        case PTV_FILE_ALREADY_OPENED:	return const_cast<wchar_t*> (L"File is already opened");
+        case PTV_FILE_NOTHING_TO_WRITE: return const_cast<wchar_t*> (L"Nothing to write");
+        case PTV_FILE_WRITE_FAILURE:	return const_cast<wchar_t*> (L"General write failure");
+        case PTV_FILE_READ_FAILURE:	return const_cast<wchar_t*> (L"General read failure");
+        case PTV_FILE_FAILED_TO_CREATE: return const_cast<wchar_t*> (L"Failed to create file");
+        case PTV_FILE_INVALID_POD:	return const_cast<wchar_t*> (L"POD file invalid or corrupt");
+        case PTV_FILE_VERSION_NOT_HANDLED: return const_cast<wchar_t*> (L"POD version not handled");
 
             // Generic Errors
-        case PTV_UNKNOWN_ERROR:	return L"Unknown error";
-        case PTV_INVALID_PARAMETER:	return L"Invalid parameter";
-        case PTV_VALUE_OUT_OF_RANGE:	return L"Value out of range";
-        case PTV_INVALID_OPTION:	return L"Invalid option";
-        case PTV_INVALID_VALUE_FOR_PARAMETER:	return L"Invalid value for parameter";
-        case PTV_VOID_POINTER:		return L"Null pointer used";
-        case PTV_NOT_INITIALIZED:	return L"Library not initialised, did you forgot to call ptInitialise ?";
-        case PTV_NOT_IMPLEMENTED_IN_VERSION: return L"Function called has not been implemented in this version";
-        case PTV_OUT_OF_MEMORY:	return L"Out of memory";
+        case PTV_UNKNOWN_ERROR:	return const_cast<wchar_t*> (L"Unknown error");
+        case PTV_INVALID_PARAMETER:	return const_cast<wchar_t*> (L"Invalid parameter");
+        case PTV_VALUE_OUT_OF_RANGE:	return const_cast<wchar_t*> (L"Value out of range");
+        case PTV_INVALID_OPTION:	return const_cast<wchar_t*> (L"Invalid option");
+        case PTV_INVALID_VALUE_FOR_PARAMETER:	return const_cast<wchar_t*> (L"Invalid value for parameter");
+        case PTV_VOID_POINTER:		return const_cast<wchar_t*> (L"Null pointer used");
+        case PTV_NOT_INITIALIZED:	return const_cast<wchar_t*> (L"Library not initialised, did you forgot to call ptInitialise ?");
+        case PTV_NOT_IMPLEMENTED_IN_VERSION: return const_cast<wchar_t*> (L"Function called has not been implemented in this version");
+        case PTV_OUT_OF_MEMORY:	return const_cast<wchar_t*> (L"Out of memory");
 
             // Licensing
-        case PTV_LICENSE_EXPIRY:	return L"Licence has expired";
-        case PTV_LICENSE_MODULE_ERROR: return L"Not licensed for this client module";
-        case PTV_LICENSE_CORRUPT: return L"License is corrupted";
-        case PTV_NO_LICENSE_FOR_FEATURE: return L"No license available for this feature";
-        case PTV_PRODUCT_LICENSE_NA: return L"Pointools product license not available for license share";
+        case PTV_LICENSE_EXPIRY:	return const_cast<wchar_t*> (L"Licence has expired");
+        case PTV_LICENSE_MODULE_ERROR: return const_cast<wchar_t*> (L"Not licensed for this client module");
+        case PTV_LICENSE_CORRUPT: return const_cast<wchar_t*> (L"License is corrupted");
+        case PTV_NO_LICENSE_FOR_FEATURE: return const_cast<wchar_t*> (L"No license available for this feature");
+        case PTV_PRODUCT_LICENSE_NA: return const_cast<wchar_t*> (L"Pointools product license not available for license share");
 
             // Viewports
-        case PTV_MAXIMUM_VIEWPORTS_USED: return L"Max number of viewports used";
-        case PTV_MIN_OPENGL_VERSION_NA: return L"Minimum OpenGL version (1.4) is not available on this machine";
+        case PTV_MAXIMUM_VIEWPORTS_USED: return const_cast<wchar_t*> (L"Max number of viewports used");
+        case PTV_MIN_OPENGL_VERSION_NA: return const_cast<wchar_t*> (L"Minimum OpenGL version (1.4) is not available on this machine");
 
             // IO Block errors
-        case PTV_INVALID_BLOCK_VERSION: return L"Invalid block version for data type";
+        case PTV_INVALID_BLOCK_VERSION: return const_cast<wchar_t*> (L"Invalid block version for data type");
 
             // Metadata
-        case PTV_METATAG_NOT_FOUND: return L"Metatag not found";
-        case PTV_METATAG_EMPTY: return L"Metatag is empty";
+        case PTV_METATAG_NOT_FOUND: return const_cast<wchar_t*> (L"Metatag not found");
+        case PTV_METATAG_EMPTY: return const_cast<wchar_t*> (L"Metatag is empty");
 
         default:
-            return L"Unrecognised error code";
+            return const_cast<wchar_t*> (L"Unrecognised error code");
         }
 }
 //-----------------------------------------------------------------------------
@@ -317,8 +325,7 @@ const PTstr getShortVersionString()
 		ptGetVersionNum(v);
 		
 		wchar_t versionString[12];
-		
-		swprintf(L"%02d.%02d.%02d.%02d", 12, versionString, v[0], v[1], v[2], v[3]);
+		swprintf(versionString, 12, L"%02d.%02d.%02d.%02d", v[0], v[1], v[2], v[3]);
 
 		version = versionString;
 	}

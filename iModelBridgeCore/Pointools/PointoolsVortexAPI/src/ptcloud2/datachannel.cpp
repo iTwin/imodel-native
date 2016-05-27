@@ -374,7 +374,6 @@ void DataChannel::computeRange()
 {
 	if (!_data) return;
 
-	int i=0;
 	switch (_storeas)
 	{
 	case Float32:

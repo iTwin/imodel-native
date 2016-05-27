@@ -438,7 +438,9 @@ namespace querydetail
 
 			// get channels
 			DataChannel *crgb = vox->channel( pcloud::PCloud_RGB );
+            UNUSED_VARIABLE(crgb);
 			DataChannel *cfilter = vox->channel( pcloud::PCloud_Filter );
+            UNUSED_VARIABLE(cfilter);
 
 			spatialGridFailure = false;
 			float lod_amount = 0;
@@ -462,6 +464,8 @@ namespace querydetail
 
 			return true; /* ie continue */
 		}
+        
+        using PointsVisitor::point;
 		//---------------------------------------------------------------------
 		bool point(const vector3d &pnt, int index, ubyte &f)
 		{
@@ -758,7 +762,6 @@ namespace querydetail
 			bool							doLoad;
 			
 			bool							voxelLoadDump = true;
-			pcloud::Voxel				*	lastPartiallyIteratedVoxel = NULL;
 
 			if(rwPos.counter >= bufferSize)
 				return false;
@@ -974,7 +977,7 @@ namespace querydetail
                 
 															// Set the bounds
 				getNodeBounds(voxel, objCsBounds);
-				bool res = C->boundsCheck(objCsBounds);
+				C->boundsCheck(objCsBounds);
 
 															// Calculate load details based on LODs and density settings
 				amount = calculateVoxelLoad(voxel, doLoad);
@@ -1193,7 +1196,6 @@ namespace querydetail
 			}
 			if (numPointChannels)
 			{
-				int ch = 0;
 				for (uint c=0; c<numPointChannels; c++)
 				{
 					if (uvchannel[c])
@@ -1214,6 +1216,9 @@ namespace querydetail
 			}
 			return false;
 		}
+
+        using PointsVisitor::point; // tell the compiler we want both the point from PointsVisitor and ReadPoints (otherwise clang complains)
+
 		//---------------------------------------------------------------------
 		bool point(const vector3d &pnt, uint index, ubyte &f)
 		{
@@ -2701,7 +2706,7 @@ public:
 		thePointsPager().pause();
 															// Process MiniMax priority queue to prune distance
 															// and calculate MiniMax prune queue a
-		float pruneDistance = calculateNeighbourhood(e, neighbourhood, getK());
+		calculateNeighbourhood(e, neighbourhood, getK());
 															// Calculate K-NN for each point based on g
 		//calculatePointKNN(g, numResults, bufferSize, resultSetSize, geomBufferArray, rgbBufferArray, intensityArray);
 		calculatePointKNNCoherent(neighbourhood, numResultSets, bufferSize, resultSetSize, geomBufferArray, rgbBufferArray, intensityArray);
@@ -2724,7 +2729,7 @@ public:
 	{
 		float							pruneDistance;
 		PriorityQueueNodeMiniMax	*	h;
-		unsigned long					s;
+		int64_t                         s;
 
 		unsigned int					totalPointCount;
 
@@ -3613,6 +3618,7 @@ public:
 		return voxel(static_cast<Voxel*>(const_cast<pcloud::Node*>(n)));
 	}
 
+    using PointsVisitor::scene;
 	bool scene(const pcloud::Scene *sc)	{ return sc == checkScene;  }
 
 	bool cloud(pcloud::PointCloud *cloud)
@@ -3668,7 +3674,7 @@ public:
 		return true; /* ie continue */ 
 	} 
 
-
+    using PointsVisitor::point;
 	void point(const pt::vec3<Real> &pnt, int index, ubyte &f) 
 	{
 		double dist, t;
@@ -4087,8 +4093,6 @@ struct UserChannelCondition
 	{ 
 		if (n->isLeaf())
 		{
-			const pcloud::Voxel* v = static_cast<const pcloud::Voxel*>(n);
-			
 			if (m_vxData)
 			{
 				UCValueCompare::hasValuesInRange(m_vxData, m_minValue, m_maxValue);
@@ -5118,8 +5122,6 @@ static querydetail::Query *prepareQueryRun( PThandle query )
 		if (!computePntLimitDensity( i->second )) 
 			return 0;
 	}
-
-	static int counter = 0;
 
 	return i->second;
 }

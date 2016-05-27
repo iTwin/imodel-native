@@ -493,8 +493,6 @@ bool EvaluatedOpStack::Apply( const ptds::FilePath &path )
 		EvaluatedOpStackHeader::LeafNodeStates::iterator i = 
 			header.m_leafNodeStates.begin();
 
-		int filePtrIndex = 0;
-
 		while (i != header.m_leafNodeStates.end() )
 		{
 			LeafID lid = i->first;

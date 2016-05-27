@@ -130,6 +130,12 @@ void Log::println(const std::wstring& s) {
 }
 
 
+// clang reports that this function is unused, but the call to it is commented out below, so we just disable the warning for now.
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 /**
  Attempts to produce the stack frame list as a string.
 
@@ -197,7 +203,9 @@ static std::string getBacktrace(
 		return "";
 #endif
 }
-
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 void Log::printHeader() {
     time_t t;
