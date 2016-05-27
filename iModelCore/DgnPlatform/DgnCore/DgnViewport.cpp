@@ -1107,17 +1107,6 @@ int32_t DgnViewport::GetDisplayPriorityFrontPlane() {return GetMaxDisplayPriorit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnViewport::UseClipVolume(DgnModelCP modelRef) const
-    {
-    if (!IsActive())
-        return false;
-
-    return !GetViewController().GetViewFlags().noClipVolume;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
-+---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DgnViewport::GetContrastToBackgroundColor() const
     {
     // should we use black or white

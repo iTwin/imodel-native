@@ -1312,8 +1312,7 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
     DgnElementId rootId = cat.GetElementId();
 
     Byte textureBytes[] = { 1, 2, 3 };
-    ByteStream stream(textureBytes, 3);
-    ImageSource textureData(ImageSource::Format::Jpeg, std::move(stream));
+    ImageSource textureData(ImageSource::Format::Jpeg, ByteStream(textureBytes, 3));
     DgnTexture texture(DgnTexture::CreateParams(db, "Dependent", textureData, 1,1));
     EXPECT_TRUE(texture.Insert().IsValid());
     auto depId = texture.GetElementId();

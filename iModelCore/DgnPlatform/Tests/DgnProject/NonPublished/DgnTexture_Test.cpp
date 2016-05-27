@@ -21,7 +21,7 @@ struct DgnTexturesTest : public BlankDgnDbTestFixture
         {
         // For the purposes of this test we really don't know/care about the raw texture data
         ByteStream bytes(w*h*3);
-        memset(bytes.GetDataP(), 33,    bytes.GetSize());
+        memset(bytes.GetDataP(), 33, bytes.GetSize());
         Image image(w,h,std::move(bytes), Image::Format::Rgb);
         return ImageSource(image, fmt);
         }
