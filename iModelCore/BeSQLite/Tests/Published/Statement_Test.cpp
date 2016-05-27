@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/Statement_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
@@ -219,6 +219,94 @@ TEST(StatementTests, ClearBinding)
     EXPECT_EQ (NULL, stat1.GetValueText(1)); //There should be no value
 
     stat1.Finalize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test to confirm ORDER BY semantics when NULL values are present.
+* @bsimethod                                    Shaun.Sewall                    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(StatementTests, OrderBy)
+    {
+    initBeSQLiteLib();
+    Db db;
+    createDB(L"OrderBy.db", db);
+    EXPECT_EQ(BE_SQLITE_OK, db.CreateTable("test_OrderBy", "[Id] INTEGER NOT NULL, [Label] TEXT COLLATE NOCASE, [Priority] INTEGER"));
+
+    // Insert sample data that includes positive number, negative number, zero, and null
+        {
+        Statement statement;
+        enum Column {Id=1, Label=2, Priority=3};
+        EXPECT_EQ(BE_SQLITE_OK, statement.Prepare(db, "INSERT INTO test_OrderBy ([Id],[Label],[Priority]) VALUES (?,?,?)"));
+    
+        statement.BindInt(Column::Id, 1);
+        statement.BindText(Column::Label, "Entry1", Statement::MakeCopy::No);
+        statement.BindInt(Column::Priority, 100);
+        EXPECT_EQ(BE_SQLITE_DONE, statement.Step());
+        EXPECT_EQ(BE_SQLITE_OK, statement.Reset());
+
+        statement.BindInt(Column::Id, 2);
+        statement.BindText(Column::Label, "Entry2", Statement::MakeCopy::No);
+        statement.BindInt(Column::Priority, -100);
+        EXPECT_EQ(BE_SQLITE_DONE, statement.Step());
+        EXPECT_EQ(BE_SQLITE_OK, statement.Reset());
+
+        statement.BindInt(Column::Id, 3);
+        statement.BindText(Column::Label, "Entry3", Statement::MakeCopy::No);
+        statement.BindInt(Column::Priority, 0);
+        EXPECT_EQ(BE_SQLITE_DONE, statement.Step());
+        EXPECT_EQ(BE_SQLITE_OK, statement.Reset());
+
+        statement.BindInt(Column::Id, 4);
+        statement.BindText(Column::Label, "Entry4", Statement::MakeCopy::No);
+        statement.BindNull(Column::Priority);
+        EXPECT_EQ(BE_SQLITE_DONE, statement.Step());
+        }
+
+    // Verify ascending (which is the default) behavior
+        {
+        Statement statement;
+        enum Column {Id=0, Priority=1};
+        EXPECT_EQ(BE_SQLITE_OK, statement.Prepare(db, "SELECT [Id],[Priority] FROM test_OrderBy ORDER BY [Priority]"));
+
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(4, statement.GetValueInt(Column::Id));
+        EXPECT_TRUE(statement.IsColumnNull(Column::Priority));
+
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(2, statement.GetValueInt(Column::Id));
+        EXPECT_EQ(-100, statement.GetValueInt(Column::Priority));
+
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(3, statement.GetValueInt(Column::Id));
+        EXPECT_EQ(0, statement.GetValueInt(Column::Priority));
+
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(1, statement.GetValueInt(Column::Id));
+        EXPECT_EQ(100, statement.GetValueInt(Column::Priority));
+        }
+
+    // Verify descending behavior
+        {
+        Statement statement;
+        enum Column {Id=0, Priority=1};
+        EXPECT_EQ(BE_SQLITE_OK, statement.Prepare(db, "SELECT [Id],[Priority] FROM test_OrderBy ORDER BY [Priority] DESC"));
+
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(1, statement.GetValueInt(Column::Id));
+        EXPECT_EQ(100, statement.GetValueInt(Column::Priority));
+
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(3, statement.GetValueInt(Column::Id));
+        EXPECT_EQ(0, statement.GetValueInt(Column::Priority));
+
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(2, statement.GetValueInt(Column::Id));
+        EXPECT_EQ(-100, statement.GetValueInt(Column::Priority));
+
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(4, statement.GetValueInt(Column::Id));
+        EXPECT_TRUE(statement.IsColumnNull(Column::Priority));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
