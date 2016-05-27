@@ -452,7 +452,7 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties)
     //Delete some properties
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
         "   <ECEntityClass typeName='Koo' modifier='None' >"
         "        <ECCustomAttributes>"

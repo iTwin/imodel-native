@@ -869,6 +869,14 @@ BentleyStatus ECDbSchemaWriter::DeleteECCustomAttributes(ECContainerId id, ECDbS
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty)
     {
+
+    if (!IsMajorChangeAllowedForECSchema(deletedProperty.GetClass().GetSchema().GetId()))
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECProperty '%s.%s'. This schema include a major change but does not increment the MajorVersion for the schema. Bump up the major version for this schema and try again.",
+                                  deletedProperty.GetClass().GetSchema().GetFullSchemaName().c_str(), deletedProperty.GetClass().GetName().c_str(), deletedProperty.GetName().c_str());
+        return ERROR;
+        }
+
     ClassMapCP classMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(deletedProperty.GetClass());
     if (classMap == nullptr)
         {
