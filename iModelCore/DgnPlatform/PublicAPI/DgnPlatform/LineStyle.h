@@ -380,6 +380,7 @@ public:
     virtual bool        _IsContinuous           () const override  {return false;}
     virtual bool        _HasWidth               () const override  {return true;}
     virtual double      _GetLength              () const override  {return 0.0;}
+    virtual double      _GetLengthForTexture    () const           {return _GetLength();}
     virtual void        _PostProcessLoad        (DgnModelP modelRef) { return; }
     virtual void        _ClearPostProcess       () { return; }
     virtual StatusInt   _StrokeLineString       (Render::GraphicR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const override;
@@ -1223,6 +1224,7 @@ public:
     virtual bool        _IsContinuousOrSingleDash        () const override {return _IsContinuous();}
     virtual bool        _HasLineCodes                    () const override {return IsHardwareStyle();}
     virtual StatusInt   _DoStroke                       (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
+    virtual double      _GetLengthForTexture    () const override {return 0;}
     static LsInternalComponentPtr CreateInternalComponent   (LsLocation&location);
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsInternalComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
