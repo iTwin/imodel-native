@@ -251,28 +251,6 @@ public:
     //! Validates the specified relationship path
     ECOBJECTS_EXPORT bool Validate() const;
 
-#if 0
-    // TODO: Remove these methods after ensuring they are not needed -- wait until Navigator is 
-    // completely ported to DgnDb0601Dev. 
-    
-    //! Determines if there is a "AnyClass" at the specified end
-    //! @return true if the end has "AnyClass". false otherwise. 
-    ECOBJECTS_EXPORT bool IsAnyClassAtEnd(End end) const;
-
-    //! Get the number of related class specifiers in the path
-    size_t GetRelatedClassSpecifierCount() const { return m_relatedClassSpecifiers.size(); }
-
-    //! Gets the related class specifier at the specified index. 
-    ECRelatedClassSpecifier const* GetRelatedClassSpecifier(size_t index) const { return (index >= m_relatedClassSpecifiers.size()) ? nullptr : &m_relatedClassSpecifiers[index]; }
-
-    //! Removes leaf entries in the relationship path starting with the specified index
-    BentleyStatus TrimLeafEnd(size_t relatedClassSpecifierIndex);
-
-    //! Replaces the class at the end if it's originally specified as AnyClass. 
-    //! @return ERROR if the existing path does not have AnyClass at the specified end. 
-    //! Returns SUCCESS otherwise. 
-    ECOBJECTS_EXPORT BentleyStatus ReplaceAnyClassAtEnd(ECN::ECClassCR replacementClass, End end);
-#endif
 
 };
 
