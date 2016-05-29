@@ -120,7 +120,7 @@ bool ECNameValidation::DecodeFromValidName (Utf8StringR decoded, Utf8StringCR na
         if ('_' == buf[pos+7] && '_' == buf[pos+8])
             {
             uint32_t charCode;
-            if (1 == swscanf(buf.c_str() + pos + 3, L"%x", &charCode))
+            if (1 == BE_STRING_UTILITIES_SWSCANF(buf.c_str() + pos + 3, L"%x", &charCode))
                 {
                 buf[pos] = (WChar)charCode;
                 buf.erase (pos+1, 8);
@@ -492,7 +492,8 @@ static Utf8CP s_standardSchemaNames[] =
     "Unit_Attributes",
     "Units_Schema",
     "USCustomaryUnitSystemDefaults",
-    "ECDbMap"
+    "ECDbMap",
+    "MetaSchema"
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1408,6 +1409,16 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR
 
     m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const Utf8String> (&refSchema, prefix));
     return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                  06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECSchema::RemoveReferencedSchema(SchemaKeyCR schemaKey)
+    {
+    ECSchemaReferenceListCR schemas = GetReferencedSchemas();
+    auto schemaIt = schemas.Find(schemaKey, SchemaMatchType::Exact);
+    return schemaIt != schemas.end() ? RemoveReferencedSchema(*schemaIt->second) : ECObjectsStatus::SchemaNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**

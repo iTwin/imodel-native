@@ -35,6 +35,10 @@ struct ECSchemaConverter
     {
 /*__PUBLISH_SECTION_END__*/
 private:
+    ECSchemaConverter() { }
+    ECSchemaConverter(const ECSchemaConverter & rhs) = delete;
+    ECSchemaConverter & operator= (const ECSchemaConverter & rhs) = delete;
+
     static ECSchemaConverterP GetSingleton();
     bool m_convertedOK = true;
     bmap<Utf8String, IECCustomAttributeConverterPtr> m_converterMap;
@@ -81,18 +85,19 @@ public:
     //! @remarks   Overwrites converter if schemaName+customAttribute name already exists. 
     ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR schemaName, Utf8StringCR customAttributeName, IECCustomAttributeConverterPtr& converter);
 
-	//! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
-	//! @param[in] customAttributeQualifiedName Key used to retrieve converter
-	//! @param[in] converter The converter that is to be called when schemaName:customAtrributeName is found
-	//! @remarks   Overwrites converter if key already exists. 
-	ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter);
+    //! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
+    //! @param[in] customAttributeQualifiedName Key used to retrieve converter
+    //! @param[in] converter The converter that is to be called when schemaName:customAtrributeName is found
+    //! @remarks   Overwrites converter if key already exists. 
+    ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter);
 
     //! Removes a custom attribute from the ecProperty including its base and child ecProperties
     //! @param[in] ecProperty               The ecProperty whose custom attribute is being removed
     //! @param[in] ecSchema                 The schema the ecProperty belongs to
+    //! @param[in] schemaName               The schema name the custom attribute is defined in
     //! @param[in] customAttributeName      The name of the cutomAtrribute being removed
     //! @remarks   Traverse the ecProperty hierarchy to remove customattribute from all of them
-    ECOBJECTS_EXPORT static ECObjectsStatus RemoveCustomAttribute(ECPropertyP& ecProperty, ECSchemaR ecSchema, Utf8StringCR customAttributeName);
+    ECOBJECTS_EXPORT static ECObjectsStatus RemoveCustomAttribute(ECPropertyP& ecProperty, ECSchemaR ecSchema, Utf8StringCR schemaName, Utf8StringCR customAttributeName);
 
     //! Gets a vector of EClasses sorted by hierarchy in descending order (parent comes first)
     //! @param[in] schema           The schema whose classes are to be sorted
@@ -132,7 +137,7 @@ public:
     //! @returns bool        True if baseClass is infact baseClass of ecClass
     ECOBJECTS_EXPORT static bool IsBaseClass(ECClassCP ecClass, ECClassCP baseClass);
 
-	static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
+    static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
