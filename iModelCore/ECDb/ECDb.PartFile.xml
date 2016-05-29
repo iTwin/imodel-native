@@ -238,6 +238,7 @@
         <ProductDirectory Name="ECSqlConsole"                       Path=""/>
         <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
         <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
+        <ProductDirectory Name="unitsnativeassemblies"              Path=""/>
         <ProductDirectory Name="ecschemas"                          Path=""/>
         <ProductDirectory Name="geomnativeassemblies"               Path=""/>
         <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
