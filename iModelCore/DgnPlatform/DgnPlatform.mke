@@ -79,6 +79,7 @@ BuildContext                    = $(OutBuildContexts)DgnPlatform/
 ToolsubsLib                     = $(libprefix)Toolsubs$(libext)
 BentleyGeomLib                  = $(libprefix)BentleyGeom$(libext)
 ECNativeObjectsLib              = $(libprefix)ECObjects$(libext)
+UnitsLib                        = $(libprefix)Units$(libext)
 
 
 #----------------------------------------------------------
@@ -632,6 +633,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
                             $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
+                            $(ContextSubpartsLibs)$(UnitsLib) \
                             $(ContextSubpartsLibs)$(BentleyGeomLib) \
                             $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)\
