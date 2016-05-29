@@ -53,7 +53,7 @@ logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/RunAndroidJUnitTest.log
 
 ${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt): $(_makefilespec)
     >$@
-adb logcat BeTestX:* doOpenChoice:* ICU_DATA_FILE:* TestRunner:I BeSQLiteDb:* BeSQLite:* ECDbMap:F ECObjectsNative:F test:F wpa_supplicant:F msm8660.gralloc:F libEGL:F com.samsung.app:F TODmobile:F TelephonyManager:F EmailWidget:F APNews:F PowerManagerService:F *:E
+adb logcat BeTestX:* doOpenChoice:* ICU_DATA_FILE:* TestRunner:I BeSQLiteDb:* BeSQLite:* ECDbMap:F ECObjectsNative:F Units:F test:F wpa_supplicant:F msm8660.gralloc:F libEGL:F com.samsung.app:F TODmobile:F TelephonyManager:F EmailWidget:F APNews:F PowerManagerService:F *:E
     <
 
 %message Run 
