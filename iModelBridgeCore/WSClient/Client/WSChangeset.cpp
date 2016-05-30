@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSChangeset.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -429,7 +429,7 @@ void WSChangeset::Instance::FillBase(JsonValueR instanceJsonOut, ObjectIdCR id, 
         instanceJsonOut["changeState"] = stateStr;
         }
 
-    if (nullptr != properties && (ChangeState::Created == state || ChangeState::Modified == state))
+    if (nullptr != properties && !properties->empty() && (ChangeState::Created == state || ChangeState::Modified == state))
         {
         instanceJsonOut["properties"] = *properties;
         }

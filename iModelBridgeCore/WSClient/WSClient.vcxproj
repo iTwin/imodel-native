@@ -121,6 +121,7 @@
     <ClCompile Include="Cache\Util\ECDbDebugInfo.cpp" />
     <ClCompile Include="Cache\Util\ECDbHelper.cpp" />
     <ClCompile Include="Cache\Util\ECExpressionHelper.cpp" />
+    <ClCompile Include="Cache\Util\ECInstanceKeyFilter.cpp" />
     <ClCompile Include="Cache\Util\ECSqlStatementCache.cpp" />
     <ClCompile Include="Cache\Util\ExtendedData.cpp" />
     <ClCompile Include="Cache\Util\ExtendedDataAdapter.cpp" />
@@ -241,6 +242,7 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h" />
     <ClInclude Include="Cache\Schemas.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\Util\StringHelper.h" />
     <ClInclude Include="Cache\SyncCachedDataTask.h" />
