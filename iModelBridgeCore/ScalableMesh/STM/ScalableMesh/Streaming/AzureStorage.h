@@ -292,8 +292,8 @@ namespace scalable_mesh
                     }
                 catch (const std::exception& e)
                     {
-                    assert(!"There is an error downloading from Azure");
                     std::wcout << U("Error: ") << e.what() << std::endl;
+                    assert(!"There is an error downloading from Azure");
                     }
 #ifdef DEBUG_AZURE
                 s_parallelCalls -= 1;

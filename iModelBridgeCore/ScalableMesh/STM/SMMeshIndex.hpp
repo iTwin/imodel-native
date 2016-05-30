@@ -605,7 +605,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
         auto countTextureData = textureStore->GetBlockDataCount(GetBlockID());
         if (countTextureData > 0)
             {
-            uint8_t* textureData = new uint8_t[countTextureData + sizeof(size_t)];
+            uint8_t* textureData = new uint8_t[countTextureData];
             size_t newCount = textureStore->LoadCompressedBlock(textureData, countTextureData, GetBlockID());
             pi_pTextureStore->StoreCompressedBlock(textureData, newCount, GetBlockID());
             }           
@@ -3568,17 +3568,17 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFor
                                                                                           HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const
     {
     // Set paths
-    WString point_store_path = pi_pOutputDirPath + L"point_store\\";
-    WString indice_store_path = pi_pOutputDirPath + L"indice_store\\";
-    WString uv_store_path = pi_pOutputDirPath + L"uv_store\\";
-    WString uvIndice_store_path = pi_pOutputDirPath + L"uvIndice_store\\";
-    WString texture_store_path = pi_pOutputDirPath + L"texture_store\\";
+    WString point_store_path = pi_pOutputDirPath + L"points\\";
+    WString indice_store_path = pi_pOutputDirPath + L"indices\\";
+    WString uv_store_path = pi_pOutputDirPath + L"uvs\\";
+    WString uvIndice_store_path = pi_pOutputDirPath + L"uvindices\\";
+    WString texture_store_path = pi_pOutputDirPath + L"textures\\";
 
-    // Create streaming stores
-    po_pPointStore = new StreamingPointStoreType(point_store_path, L"", pi_pCompress);
-    po_pIndiceStore = new StreamingIndiceStoreType(indice_store_path, L"", pi_pCompress);
-    po_pUVStore = new StreamingUVStoreType(uv_store_path, L"", pi_pCompress);
-    po_pUVIndiceStore = new StreamingIndiceStoreType(uvIndice_store_path, L"", pi_pCompress);
+    // Create streaming stores (only the point store will manage the headers
+    po_pPointStore = new StreamingPointStoreType(point_store_path, pi_pCompress, true);
+    po_pIndiceStore = new StreamingIndiceStoreType(indice_store_path, pi_pCompress);
+    po_pUVStore = new StreamingUVStoreType(uv_store_path, pi_pCompress);
+    po_pUVIndiceStore = new StreamingIndiceStoreType(uvIndice_store_path);
     po_pTextureStore = new StreamingTextureTileStoreType(texture_store_path.c_str());
 
     }

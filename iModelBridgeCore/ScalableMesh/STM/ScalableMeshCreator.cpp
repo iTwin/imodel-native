@@ -630,17 +630,17 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                 {
                 assert(ERROR_PATH_NOT_FOUND != GetLastError());
                 }
-            WString point_store_path = streamingFilePath + L"point_store\\";
-            WString indice_store_path = streamingFilePath + L"indice_store\\";
-            WString uv_store_path = streamingFilePath + L"uv_store\\";
-            WString uvIndice_store_path = streamingFilePath + L"uvIndice_store\\"; 
-            WString texture_store_path = streamingFilePath + L"texture_store\\";
+            WString point_store_path = streamingFilePath + L"points\\";
+            WString indice_store_path = streamingFilePath + L"indices\\";
+            WString uv_store_path = streamingFilePath + L"uvs\\";
+            WString uvIndice_store_path = streamingFilePath + L"uvindices\\"; 
+            WString texture_store_path = streamingFilePath + L"textures\\";
 
-            pStreamingTileStore = new StreamingStoreType(point_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingTileStore = new StreamingStoreType(point_store_path, (SCM_COMPRESSION_DEFLATE == m_compressionType), true);
             // SM_NEEDS_WORKS : layerID 
-            pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(indice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, PointIndexExtentType>(uv_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(uvIndice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(indice_store_path, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, PointIndexExtentType>(uv_store_path, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(uvIndice_store_path, (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
             
             pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       

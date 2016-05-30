@@ -731,10 +731,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     WString texture_store_path       = streamingSourcePath + L"textures\\";
 
                     // NEEDS_WORK_SM - Need to stream textures as well
-                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, groupedStreamingFilePath, s_stream_from_grouped_store, AreDataCompressed());
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingUVTileStore = new StreamingUVStoreType(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, AreDataCompressed(), true, groupedStreamingFilePath, s_stream_from_grouped_store);
+                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(indice_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
+                    pStreamingUVTileStore = new StreamingUVStoreType(uv_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
+                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(uvIndice_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
                     pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
                     m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
