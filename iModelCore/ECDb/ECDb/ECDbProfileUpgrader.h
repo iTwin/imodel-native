@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECDbProfileUpgrader
     {
 private:
-    virtual DbResult _Upgrade(ECDbR) const = 0;
+    virtual DbResult _Upgrade(ECDbCR) const = 0;
 
     static DbResult AlterColumnsInView(ECDbCR, Utf8CP viewName, Utf8CP allColumnNamesAfter);
     static DbResult AlterColumnsInTable(ECDbCR, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames);
@@ -52,7 +52,17 @@ protected:
 //    static BentleyStatus CheckIntegrity(ECDbCR);
 public:
     virtual ~ECDbProfileUpgrader() {}
-    DbResult Upgrade(ECDbR ecdb) const { return _Upgrade(ecdb); }
+    DbResult Upgrade(ECDbCR ecdb) const { return _Upgrade(ecdb); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      05/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbProfileUpgrader_3710 : ECDbProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+private:
+    virtual DbResult _Upgrade(ECDbCR) const override;
     };
 
 //=======================================================================================

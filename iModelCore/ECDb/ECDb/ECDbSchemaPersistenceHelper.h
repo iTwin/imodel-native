@@ -66,7 +66,7 @@ public:
     static BentleyStatus SerializeECEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR);
     static BentleyStatus DeserializeECEnumerationValues(ECEnumerationR, Utf8CP jsonStr);
     
-    static bool ContainsECSchemaWithNamespacePrefix(ECDbCR db, Utf8CP namespacePrefix);
+    static bool ContainsECSchemaWithNamespacePrefix(ECDbCR, Utf8CP namespacePrefix);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -71,6 +71,7 @@ public:
     };
 
 struct DbTable;
+struct PrimaryKeyDbConstraint;
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
@@ -103,7 +104,7 @@ public:
         NonRelSystemColumn = ECInstanceId | ECClassId
         };
 
-    struct Constraint : NonCopyableClass
+    struct Constraints : NonCopyableClass
         {
         public:
             enum class Collation
@@ -115,25 +116,26 @@ public:
                 };
 
         private:
-            bool m_constraintNotNull : 1;
-            bool m_constraintIsUnique : 2;
-            Utf8String m_constraintCheck;
-            Utf8String m_constraintDefaultValue;
+            bool m_hasNotNullConstraint;
+            bool m_hasUniqueConstraint;
+            Utf8String m_checkConstraint;
+            Utf8String m_defaultValueConstraint;
             Collation m_collation;
 
         public:
-            Constraint() : m_constraintNotNull(false), m_constraintIsUnique(false), m_collation(Collation::Default) {}
+            Constraints() : m_hasNotNullConstraint(false), m_hasUniqueConstraint(false), m_collation(Collation::Default) {}
 
-            bool IsNotNull() const { return m_constraintNotNull; }
-            void SetIsNotNull(bool isNotNull) { m_constraintNotNull = isNotNull; }
-            bool IsUnique() const { return m_constraintIsUnique; }
-            void SetIsUnique(bool isUnique) { m_constraintIsUnique = isUnique; }
-            Utf8StringCR GetCheckExpression() const { return m_constraintCheck; }
-            void SetCheckExpression(Utf8CP expression) { m_constraintCheck = expression; }
-            Utf8StringCR GetDefaultExpression() const { return m_constraintDefaultValue; }
-            void SetDefaultExpression(Utf8CP expression) { m_constraintDefaultValue = expression; }
+            bool HasNotNullConstraint() const { return m_hasNotNullConstraint; }
+            void SetNotNullConstraint() { m_hasNotNullConstraint = true; }
+            bool HasUniqueConstraint() const { return m_hasUniqueConstraint; }
+            void SetUniqueConstraint() { m_hasUniqueConstraint = true; }
+            Utf8StringCR GetCheckConstraint() const { return m_checkConstraint; }
+            void SetCheckConstraint(Utf8CP expression) { m_checkConstraint = expression; }
+            Utf8StringCR GetDefaultValueConstraint() const { return m_defaultValueConstraint; }
+            void SetDefaultValueExpression(Utf8CP expression) { m_defaultValueConstraint = expression; }
             Collation GetCollation()  const { return m_collation; }
             void SetCollation(Collation collation) { m_collation = collation; }
+
             static Utf8CP CollationToSql(Collation);
             static bool TryParseCollationString(Collation&, Utf8CP);
         };
@@ -144,12 +146,13 @@ private:
     DbTable& m_table;
     Type m_type;
     Kind m_kind;
-    Constraint m_constraints;
+    Constraints m_constraints;
     PersistenceType m_persistenceType;
+    PrimaryKeyDbConstraint const* m_pkConstraint;
 
 public:
     DbColumn(DbColumnId id, DbTable& table, Utf8CP name, Type type, Kind kind, PersistenceType persistenceType)
-        : m_id(id), m_table(table), m_name(name), m_type(type), m_persistenceType(persistenceType), m_kind(kind)
+        : m_id(id), m_table(table), m_name(name), m_type(type), m_persistenceType(persistenceType), m_kind(kind), m_pkConstraint(nullptr)
         {}
 
     ~DbColumn() {}
@@ -157,17 +160,20 @@ public:
     DbColumnId GetId() const { return m_id; }
     PersistenceType GetPersistenceType() const { return m_persistenceType; }
     Utf8StringCR GetName() const { return m_name; }
-    Type GetType() const { return m_type; };
-    DbTable const& GetTable() const { return m_table; }
-    DbTable&  GetTableR() const { return m_table; }
-    Constraint const& GetConstraint() const { return m_constraints; };
-    Constraint& GetConstraintR() { return m_constraints; };
+    Type GetType() const { return m_type; }
+    bool DoNotAllowDbNull() const { return m_pkConstraint != nullptr || m_constraints.HasNotNullConstraint(); }
+    bool IsUnique() const;
 
+    DbTable const& GetTable() const { return m_table; }
+    DbTable& GetTableR() const { return m_table; }
+    Constraints const& GetConstraints() const { return m_constraints; };
+    Constraints& GetConstraintsR() { return m_constraints; };
+    void SetIsPrimaryKeyColumn(PrimaryKeyDbConstraint const& pkConstraint) { m_pkConstraint = &pkConstraint; }
+    bool IsOnlyColumnOfPrimaryKeyConstraint() const;
     Kind GetKind() const { return m_kind; }
+    bool IsShared() const { return m_kind == Kind::SharedDataColumn; }
     BentleyStatus SetKind(Kind);
     BentleyStatus AddKind(Kind kind) { return SetKind(Enum::Or(m_kind, kind)); }
-
-    bool IsShared() const { return m_kind == Kind::SharedDataColumn; }
 
     static Utf8CP TypeToSql(DbColumn::Type);
     static Type PrimitiveTypeToColumnType(ECN::PrimitiveType);
@@ -209,14 +215,13 @@ struct PrimaryKeyDbConstraint : DbConstraint
 private:
     std::vector<DbColumn const*> m_columns;
 
-public:
-    PrimaryKeyDbConstraint(DbTable const& table) :DbConstraint(Type::PrimaryKey, table) {}
-    ~PrimaryKeyDbConstraint() {}
-    BentleyStatus Add(Utf8CP columnName);
-    BentleyStatus InsertOrReplace(Utf8CP columnName, size_t position);
+    explicit PrimaryKeyDbConstraint(DbTable const& table) : DbConstraint(Type::PrimaryKey, table) {}
 
-    BentleyStatus Remove(Utf8CP columnName);
-    bool Contains(Utf8CP columnName) const { return std::find_if(m_columns.begin(), m_columns.end(), [columnName] (DbColumn const* column) { return column->GetName().EqualsI(columnName); }) != m_columns.end(); }
+public:
+    ~PrimaryKeyDbConstraint() {}
+    static std::unique_ptr<PrimaryKeyDbConstraint> Create(DbTable const&, std::vector<DbColumn*> const&);
+
+    bool Contains(DbColumn const& column) const { return std::find(m_columns.begin(), m_columns.end(), &column) != m_columns.end(); }
     std::vector<DbColumn const*> const& GetColumns() const { return m_columns; }
     };
 
@@ -347,13 +352,14 @@ private:
     Type m_type;
     PersistenceType m_persistenceType;
     std::map<Utf8CP, std::shared_ptr<DbColumn>, CompareIUtf8Ascii> m_columns;
-    std::map<Utf8CP, std::unique_ptr<DbTrigger>, CompareIUtf8Ascii> m_triggers;
     std::vector<DbColumn const*> m_orderedColumns;
+    std::unique_ptr<PrimaryKeyDbConstraint> m_pkConstraint;
+    std::vector<std::unique_ptr<DbConstraint>> m_constraints;
+    std::map<Utf8CP, std::unique_ptr<DbTrigger>, CompareIUtf8Ascii> m_triggers;
 
     int m_minimumSharedColumnCount;
     mutable bool m_isClassIdColumnCached;
     mutable DbColumn const* m_classIdColumn;
-    std::vector<std::unique_ptr<DbConstraint>> m_constraints;
     EditHandle m_editHandle;
     std::vector<DbTable const*> m_joinedTables;
     std::vector<std::function<void(ColumnEvent, DbColumn&)>> m_columnEvents;
@@ -363,7 +369,7 @@ private:
 public:
     DbTable(DbTableId id, Utf8CP name, DbSchema& dbSchema, PersistenceType type, Type tableType, DbTable const* parentOfJoinedTable)
         : m_id(id), m_name(name), m_dbSchema(dbSchema), m_columnNameGenerator("sc%02x"), m_persistenceType(type), m_type(tableType),
-        m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT), m_isClassIdColumnCached(false),
+        m_pkConstraint(nullptr), m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT), m_isClassIdColumnCached(false),
         m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable)
         {
         BeAssert((tableType == Type::Joined && parentOfJoinedTable != nullptr) ||
@@ -404,13 +410,13 @@ public:
     BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, PersistenceType) const;
     BentleyStatus GetFilteredColumnList(std::vector<DbColumn const*>&, DbColumn::Kind) const;
     DbColumn const* GetFilteredColumnFirst(DbColumn::Kind) const;
-    bool DeleteColumn(Utf8CP name);
+    BentleyStatus DeleteColumn(DbColumn&);
     void AddColumnEventHandler(std::function<void(ColumnEvent, DbColumn&)> columnEventHandler) { m_columnEvents.push_back(columnEventHandler); }
 
     EditHandle& GetEditHandleR() { return m_editHandle; }
     EditHandle const& GetEditHandle() const { return m_editHandle; }
-    PrimaryKeyDbConstraint& GetPrimaryKeyConstraintR();
-    PrimaryKeyDbConstraint const* GetPrimaryKeyConstraint() const;
+    BentleyStatus CreatePrimaryKeyConstraint(std::vector<DbColumn*> const& pkColumns, std::vector<size_t> const* pkOrdinals = nullptr);
+    PrimaryKeyDbConstraint const* GetPrimaryKeyConstraint() const { return m_pkConstraint.get(); }
     ForeignKeyDbConstraint const* CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
     std::vector<DbConstraint const*> GetConstraints() const;
     BentleyStatus RemoveConstraint(DbConstraint const&);

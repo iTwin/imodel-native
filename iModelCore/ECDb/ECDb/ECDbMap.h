@@ -106,9 +106,7 @@ struct ECDbMap :NonCopyableClass
         BentleyStatus PurgeOrphanColumns() const;
         BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
         BentleyStatus CreateClassIdColumnIfNecessary(DbTable&, bset<ClassMap*> const&) const;
-
         MappingStatus AddClassMap(ClassMapPtr&) const;
-
         ClassMapsByTable GetClassMapsByTable() const;
         BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
         std::vector<ECClassCP> GetBaseClassesNotAlreadyMapped(ECClassCR ecclass) const;
@@ -120,25 +118,19 @@ struct ECDbMap :NonCopyableClass
 
         ClassMap const* GetClassMap(ECN::ECClassCR) const;
         ClassMap const* GetClassMap(ECN::ECClassId) const;
-
         std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
         std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
         DbTable const* GetPrimaryTable(DbTable const& joinedTable) const;
         //!Loads the class maps if they were not loaded yet
         size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
-
         MappingStatus MapSchemas(SchemaImportContext&);
-
         BentleyStatus CreateECClassViewsInDb() const;
         DbTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, DbTable::Type, bool isVirtual, Utf8CP primaryKeyColumnName);
-
         void ClearCache();
-
         bool IsImportingSchema() const;
         SchemaImportContext* GetSchemaImportContext() const;
         bool AssertIfIsNotImportingSchema() const;
         DbTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, DbTable::Type, bool isVirtual, Utf8CP primaryKeyColumnName, DbTable const* baseTable);
-
         DbSchema const& GetDbSchema() const { return m_dbSchema; }
         DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }
         LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }

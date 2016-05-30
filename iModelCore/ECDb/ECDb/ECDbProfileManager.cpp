@@ -214,8 +214,10 @@ DbResult ECDbProfileManager::ReadProfileVersion(SchemaVersion& profileVersion, E
 //static
 void ECDbProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<ECDbProfileUpgrader>>& upgraders, SchemaVersion const& currentProfileVersion)
     {
-    // Upgradibility not needed for 0601.
     upgraders.clear();
+
+    if (currentProfileVersion < SchemaVersion(3, 7, 1, 0))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3710()));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -312,7 +314,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "Description TEXT,"
                            "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (0,1)),"
                            "Kind INTEGER NOT NULL,"
-                           "Ordinal INTEGER,"
+                           "Ordinal INTEGER NOT NULL,"
                            "PrimitiveType INTEGER,"
                            "EnumerationId INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,"
                            "StructClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
@@ -400,7 +402,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "ParentId INTEGER REFERENCES ec_ClassMap(Id) ON DELETE CASCADE,"
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
-                           "MapStrategyOptions INTEGER,"
+                           "MapStrategyOptions INTEGER NOT NULL,"
                            "MapStrategyAppliesToSubclasses BOOLEAN NOT NULL CHECK (MapStrategyAppliesToSubclasses IN (0,1)),"
                            "MapStrategyMinSharedColumnCount INTEGER)");
     if (BE_SQLITE_OK != stat)
@@ -448,13 +450,13 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "Type INTEGER NOT NULL,"
                            "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0,1)),"
                            "Ordinal INTEGER NOT NULL,"
-                           "NotNullConstraint BOOLEAN,"
-                           "UniqueConstraint BOOLEAN,"
+                           "NotNullConstraint BOOLEAN NOT NULL CHECK (NotNullConstraint IN (0,1)),"
+                           "UniqueConstraint BOOLEAN NOT NULL CHECK (UniqueConstraint IN (0,1)),"
                            "CheckConstraint TEXT COLLATE NOCASE,"
                            "DefaultConstraint TEXT COLLATE NOCASE,"
-                           "CollationConstraint INTEGER,"
+                           "CollationConstraint INTEGER NOT NULL,"
                            "OrdinalInPrimaryKey INTEGER,"
-                           "ColumnKind INTEGER)");
+                           "ColumnKind INTEGER NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

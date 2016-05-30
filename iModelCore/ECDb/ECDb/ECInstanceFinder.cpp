@@ -234,7 +234,7 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
         ECRelationshipClassCP ecRelationshipClass = ecClass->GetRelationshipClassCP();
         BeAssert(ecRelationshipClass != nullptr);
 
-        ECRelationshipEnd thisRelationshipEnd = (stmt->GetValueInt(1) == 1) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
+        ECRelationshipEnd thisRelationshipEnd = (ECRelationshipEnd) stmt->GetValueInt(1);
         queryableRelationships.push_back(QueryableRelationship(*ecRelationshipClass, *foreignEndClass, thisRelationshipEnd));
         }
 
