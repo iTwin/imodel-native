@@ -82,9 +82,9 @@ return _GetRange();
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-TerrainModel::IDTM* IMeshSpatialModel::GetDTM() 
+TerrainModel::IDTM* IMeshSpatialModel::GetDTM(BentleyApi::ScalableMesh::DTMAnalysisType type)
     {
-    return _GetDTM();
+    return _GetDTM(type);
     }
 
 //----------------------------------------------------------------------------------------

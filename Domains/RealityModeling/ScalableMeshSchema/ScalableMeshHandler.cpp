@@ -117,10 +117,10 @@ BentleyStatus ScalableMeshModel::_CreateIterator(ITerrainTileIteratorPtr& iterat
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-TerrainModel::IDTM* ScalableMeshModel::_GetDTM()
+TerrainModel::IDTM* ScalableMeshModel::_GetDTM(ScalableMesh::DTMAnalysisType type)
     {
     if (nullptr == m_smPtr.get()) return nullptr;
-    return m_smPtr->GetDTMInterface(m_storageToUorsTransfo);
+    return m_smPtr->GetDTMInterface(m_storageToUorsTransfo, type);
     }
 
 //----------------------------------------------------------------------------------------
