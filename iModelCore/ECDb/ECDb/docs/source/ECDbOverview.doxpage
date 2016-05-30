@@ -237,6 +237,11 @@
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
     - @b ECProperties
         - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
+        - @b Delete an @ref BentleyApi::ECN::ECProperty "ECProperty" which is
+            - mapped to a shared column (see MapStrategy::Options @em SharedColumns, @em SharedColumnsForSubclasses in @ref CustomClassMapDescription)
+            - not used in an @ref BentleyApi::ECN::ECStructClass "ECStructClass"
+            - not used as @em Key property in an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass"
+            - not overridden
     - @b CustomAttributes on the ECClass
         - @b Add, @b delete, @b modify
 
@@ -449,7 +454,7 @@
             - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
             The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
             <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
-        - <b>Options</b> (optional): The above values can be combined with these options:
+        - Property @b Options (optional): The above values can be combined with these options:
             - @c SharedColumns : This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
             This can reduce the number of columns (and cells with NULL values) in the table significantly.
             This can only be applied to @b SharedTable.
@@ -459,8 +464,8 @@
             column sharing was enabled on a base class. The property @em Strategy must not be set.
             - @c JoinedTablePerDirectSubclasses : This options tells ECDb that the properties of the subclasses are mapped to an extra table joined
             to the table of the root class. Each direct subclass of this class is mapped to its own joined table. Can only be used with @b SharedTable and @b AppliesToSubclasses being true.
-            - @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class.
-        If false (default), the MapStrategy only applies to this class.
+        - Property @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class.
+          If false (default), the MapStrategy only applies to this class.
     - @b TableName (optional, required for MapStrategies @em ExistingTable and <i>SharedTable (non-polymorphic)</i>):
     Specify a table name for this class (instead of letting ECDb choose a name)
     - @b Indexes (optional) : List of indexes to be created for properties of this class.
