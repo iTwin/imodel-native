@@ -679,15 +679,17 @@ void ScalableMeshDraping::QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>&
 
         DRange3d range;
         m_scmPtr->GetRange(range);
-        ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
-                                                                               m_scmPtr->GetTerrainDepth(),
-                                                                               ray,
-                                                                               params->Get2d(),
-                                                                               params->GetDepth(),
-                                                                               params->GetUseUnboundedRay(),
-                                                                               ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
         for (auto& node : m_nodeSelection)
+            {
+            ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
+                                                                                   node->GetLevel(),
+                                                                                   ray,
+                                                                                   params->Get2d(),
+                                                                                   params->GetDepth(),
+                                                                                   params->GetUseUnboundedRay(),
+                                                                                   ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
             node->RunQuery(query, nodes);
+            }
         }
     }
 
@@ -746,7 +748,8 @@ size_t ScalableMeshDraping::ComputeLevelForTransform(const DMatrix4d& w2vMap)
     w2vTrans.InitFrom(w2vMap);
     w2vTrans.Multiply(range.low);
     w2vTrans.Multiply(range.high);
-    double maxLength = std::max(std::max(range.XLength(), range.YLength()), range.ZLength());
+    DRange3d newRange = DRange3d::From(range.low, range.high);
+    double maxLength = std::max(std::max(newRange.XLength(), newRange.YLength()), newRange.ZLength());
     size_t targetLevel = std::min(m_scmPtr->GetTerrainDepth(), (size_t)(ceil(log(maxLength / 20.0) / log(4))));
     return  targetLevel;
     }

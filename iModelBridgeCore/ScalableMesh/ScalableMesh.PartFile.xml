@@ -227,6 +227,13 @@
         <ProductDirectory Name="GeoCoordData" Deliver="true" Path="Dlls/GeoCoordinateData"/>
         <ProductDirectory Name="Libs" Deliver="false" />
         <ProductDirectory Name="Libs" LibType="static" Deliver="false" />
+      <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
+      <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
+      <ProductDirectory Name="wastorageAssemblies" Path="Dlls" />
+      <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
+      <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />
+      <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
+      <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
     </ProductDirectoryList>   
       
     <Product Name="ScalableMeshCommandLine">

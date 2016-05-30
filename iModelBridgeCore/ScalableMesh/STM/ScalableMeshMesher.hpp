@@ -1294,8 +1294,8 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     //return true;
-    LOG_SET_PATH("E:\\output\\scmesh\\2016-05-05\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-05-05\\")
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-05-29\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-05-29\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 
@@ -1498,7 +1498,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         if (bound.size() > 2)
             {
             if (!bsiDPoint3d_pointEqualTolerance(&bound.front(), &bound.back(), 1e-8)) bound.push_back(bound.front());
-           /* WString namePoly = L"E:\\output\\scmesh\\2016-01-28\\poly_";
+            /*WString namePoly = L"E:\\output\\scmesh\\2016-01-28\\poly_";
             namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
             namePoly.append(L"_");
             namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
