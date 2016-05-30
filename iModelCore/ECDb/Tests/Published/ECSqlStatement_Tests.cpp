@@ -1674,11 +1674,11 @@ TEST_F(ECSqlStatementTestFixture, BindVirtualSet)
     }
 
     ECInstanceIdSet idSet;
-    BeAssert(0 < perClassRowCount);
+    ASSERT_TRUE(0 < perClassRowCount);
     idSet.insert(allIds[0]);
-    BeAssert(4 < perClassRowCount);
+    ASSERT_TRUE(4 < perClassRowCount);
     idSet.insert(allIds[4]);
-    BeAssert(6 < perClassRowCount);
+    ASSERT_TRUE(6 < perClassRowCount);
     idSet.insert(allIds[6]);
 
     ECSqlStatement statement;
@@ -1694,9 +1694,9 @@ TEST_F(ECSqlStatementTestFixture, BindVirtualSet)
     statement.ClearBindings();
 
     idSet.clear();
-    BeAssert(1 < perClassRowCount);
+    ASSERT_TRUE(1 < perClassRowCount);
     idSet.insert(allIds[1]);
-    BeAssert(3 < perClassRowCount);
+    ASSERT_TRUE(3 < perClassRowCount);
     idSet.insert(allIds[3]);
 
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));

@@ -308,7 +308,8 @@ void ECDb::Impl::ECSqlStatementRegistry::Remove(ECSqlStatement::Impl& stmt) cons
 ECSqlStatus ECDb::Impl::ECSqlStatementRegistry::ReprepareStatements() const
     {
     BeMutexHolder lock(m_mutex);
-    for (ECSqlStatement::Impl* stmt : m_statements)
+    bset<ECSqlStatement::Impl*> readOnlyCachedStatementSet = m_statements;
+    for (ECSqlStatement::Impl* stmt : readOnlyCachedStatementSet)
         {
         if (stmt != nullptr && stmt->IsPrepared())
             stmt->Reprepare();
