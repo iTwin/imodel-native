@@ -122,7 +122,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual BentleyStatus _StartClipMaskBulkInsert() override;
         virtual BentleyStatus _StopClipMaskBulkInsert() override;
         virtual BentleyStatus _CreateIterator(ITerrainTileIteratorPtr& iterator) override;
-        virtual TerrainModel::IDTM* _GetDTM() override;
+        virtual TerrainModel::IDTM* _GetDTM(ScalableMesh::DTMAnalysisType type) override;
         virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
 

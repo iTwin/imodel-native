@@ -11,6 +11,7 @@
 #include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 #include <ScalableMeshSchema/ExportMacros.h>
 #include <TerrainModel/TerrainModel.h>
+#include <ScalableMesh/IScalableMesh.h>
 SCALABLEMESH_SCHEMA_REF_COUNTED_PTR(ITerrainTileIterator)
 SCALABLEMESH_SCHEMA_REF_COUNTED_PTR(ITerrainTexture)
 SCALABLEMESH_SCHEMA_TYPEDEFS(IMeshSpatialModel)
@@ -71,7 +72,7 @@ struct IMeshSpatialModel : Dgn::SpatialModel
         virtual BentleyStatus _StartClipMaskBulkInsert() = 0;
         virtual BentleyStatus _StopClipMaskBulkInsert() = 0;
         virtual BentleyStatus _CreateIterator(ITerrainTileIteratorPtr& iterator) = 0;
-        virtual TerrainModel::IDTM* _GetDTM() = 0;
+        virtual TerrainModel::IDTM* _GetDTM(BentleyApi::ScalableMesh::DTMAnalysisType type) = 0;
         virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) = 0;
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) = 0;
 
@@ -96,7 +97,7 @@ struct IMeshSpatialModel : Dgn::SpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus CreateIterator(ITerrainTileIteratorPtr& iterator);
 
-        SCALABLEMESH_SCHEMA_EXPORT TerrainModel::IDTM* GetDTM();
+        SCALABLEMESH_SCHEMA_EXPORT TerrainModel::IDTM* GetDTM(BentleyApi::ScalableMesh::DTMAnalysisType type = BentleyApi::ScalableMesh::DTMAnalysisType::Precise);
 
         SCALABLEMESH_SCHEMA_EXPORT void RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener);
         SCALABLEMESH_SCHEMA_EXPORT bool UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener);
