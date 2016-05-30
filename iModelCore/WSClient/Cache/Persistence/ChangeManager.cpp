@@ -202,14 +202,14 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
         return ERROR;
         }
 
+    Json::Value instanceJson;
+    if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJson, instanceKey))
+        return ERROR;
+
     if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
-        Json::Value instanceJson;
-        if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJson, instanceKey) ||
-            SUCCESS != m_changeInfoManager.SaveBackupInstance(info, instanceJson))
-            {
+        if (SUCCESS != m_changeInfoManager.SaveBackupInstance(info, instanceJson))
             return ERROR;
-            }
         }
 
     if (SUCCESS != SetupNewRevision(info))
@@ -227,6 +227,11 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
 
     rapidjson::Document propertiesRapidJson;
     JsonUtil::ToRapidJson(properties, propertiesRapidJson);
+
+    rapidjson::Document instanceRapidJson;
+    JsonUtil::ToRapidJson(instanceJson, instanceRapidJson);
+
+    JsonUtil::DeepCopy(propertiesRapidJson, instanceRapidJson);
 
     if (SUCCESS != m_instanceCacheHelper.UpdateExistingInstanceData(info, propertiesRapidJson))
         {
@@ -361,11 +366,6 @@ BentleyStatus ChangeManager::ModifyFileName(ECInstanceKeyCR instanceKey, Utf8Str
         }
 
     FileInfo info = m_fileInfoManager.ReadInfo(objInfo.GetCachedInstanceKey());
-    if (info.GetChangeStatus() != ChangeStatus::Modified)
-        {
-        BeAssert(false && "Only modified file name changing is allowed");
-        return ERROR;
-        }
 
     if (IsSyncActive())
         {
