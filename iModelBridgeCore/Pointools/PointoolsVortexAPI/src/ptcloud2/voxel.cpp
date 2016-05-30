@@ -298,8 +298,6 @@ bool Voxel::initializeChannels(int newsize)
 	// THE FOLLOWING CODE IS WIP FOR DENSITY STRATIFICATION ON IMPORT
 	// comment out starting here to remove
 	// order points in strata of uniform samples to improve lower lod representations
-	float				factor = 1.0f;
-	int					iterations = 0;
 	float				density = 1.0f;
 	int					strata[ NUM_STRATA ];
 
@@ -514,9 +512,9 @@ void *Voxel::resizeChannelToRequestedLod(Channel ch, float amount, int &num_poin
 	if (!doNotResize) num_points = static_cast<int>(req * _pointCount - prev_size);
 	num_bytes = abs(num_points * bytesPerPnt);
 	
-	/* block to 8Kb */ 
-	int total_bytes_remaining = static_cast<int>((_pointCount - prev_size) * bytesPerPnt);
 #ifdef BLOCK_THE_SIZE
+	/* block to 8Kb */
+	int total_bytes_remaining = static_cast<int>((_pointCount - prev_size) * bytesPerPnt);
 
 	if (!doNotResize)
 	{
@@ -637,10 +635,10 @@ if(req < 1.0f / 255.0f)
 
 	num_bytes = abs(num_points * bytesPerPnt);
 
+#ifdef BLOCK_THE_SIZE
+
 	/* block to 8Kb */ 
 	int total_bytes_remaining = static_cast<int>((_pointCount - prev_size) * bytesPerPnt);
-
-#ifdef BLOCK_THE_SIZE
 
 	if (!doNotResize)
 	{
@@ -845,10 +843,10 @@ int Voxel::getChannelResizeReadInfo(Channel ch, float amount, int &num_points, u
 
 	num_bytes = abs(num_points * bytesPerPnt);
 
+#ifdef BLOCK_THE_SIZE
+
 	/* block to 8Kb */ 
 	int total_bytes_remaining = static_cast<int>((_pointCount - prev_size) * bytesPerPnt);
-
-#ifdef BLOCK_THE_SIZE
 
 	if (!doNotResize)
 	{
@@ -870,12 +868,6 @@ int Voxel::getChannelResizeReadInfo(Channel ch, float amount, int &num_points, u
 		num_points = 0;
 		return 0;
 	}
-
-#ifdef BLOCK_THE_SIZE	
-	uint pcount = prev_size + num_points;
-#else
-	uint pcount = static_cast<uint>(req * _pointCount);
-#endif
 
 	num_points	= _channels[ch]->size() - prev_size;
 	num_bytes	= abs((int)(_channels[ch]->bytesize() - prev_bytesize));
@@ -1279,10 +1271,10 @@ public:
 
 	float distToNearestValue(const pt::vector3 &pt) const	// approx dist, not cartesian
 	{
-		float d[] = 
-		{	fabsf(fmod(pt.x, _spacing)) / _spacing,
-			fabsf(fmod(pt.y, _spacing)) / _spacing,
-			fabsf(fmod(pt.z, _spacing)) / _spacing};		// normalise to make simple
+		float d[] =
+		{	(float)std::abs(fmod(pt.x, _spacing)) / _spacing,
+			(float)std::abs(fmod(pt.y, _spacing)) / _spacing,
+			(float)std::abs(fmod(pt.z, _spacing)) / _spacing};		// normalise to make simple
 		
 		return  0.33333f * _spacing *
 			(fabs( d[0] - 0.5f ) + fabs( d[1] - 0.5f ) + fabs( d[2] - 0.5f ));	// return dist where -0.5*spacing < d < 0.5*spacing
@@ -1532,7 +1524,6 @@ int		Voxel::computeStrataIndex(std::vector<int> &index, int *strata/*[NUM_STRATA
 		_iterateTransformedPoints( uniform, lst );
 		maxDistCoeff *= 2.0f;
 	}
-	int pnt = 0;
 	int i= 0;
 
 	// transfer strata into the index - each one is randomised to avoid patterns formed by insertion order

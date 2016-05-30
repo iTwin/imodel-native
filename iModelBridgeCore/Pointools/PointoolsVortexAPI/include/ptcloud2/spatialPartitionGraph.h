@@ -241,6 +241,8 @@ class Container
 
 public:
 
+    virtual                                ~Container               () {};
+
 	virtual void							setChild				(ChildIndex index, Container *container) = 0;
 	virtual Container					*	getChild				(ChildIndex index)	= 0;
 
@@ -294,7 +296,7 @@ protected:
 public:
 
 															SpatialPartitionGraph		(void);
-														   ~SpatialPartitionGraph		(void);
+												           ~SpatialPartitionGraph		(void);
 
 	template<class PartitionNode> unsigned int				partition					(PointSet &source);
 

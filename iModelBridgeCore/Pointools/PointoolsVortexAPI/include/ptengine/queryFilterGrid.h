@@ -39,11 +39,8 @@ struct HashGrid
 			return true;
 		}
 		return false;
-	}	
-	bool hasPoint( const pt::vector3d &pt)
-	{	
-		return hasPoint( pt::vector3d(pt.x,pt.y,pt.z));
 	}
+
 	bool insertPoint( const pt::vector3 &pt)
 	{
 		HashVal hash;

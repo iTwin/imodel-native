@@ -32,7 +32,7 @@ bool DataSourceBufferedWrite::flush()
 {
 	if (!m_position) return true;
 
-	DataSource::Size sz = m_dataSrc->writeBytes( m_buffer, m_position);
+	m_dataSrc->writeBytes( m_buffer, m_position);
 
 	bool suc = m_position ? true : false;
 	m_position = 0;

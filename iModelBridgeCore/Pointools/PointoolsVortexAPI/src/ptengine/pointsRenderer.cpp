@@ -146,8 +146,6 @@ void PointsRenderer::filterVoxelList( bool dismissRendered, const pcloud::Scene 
 
 	ubyte layers = (ubyte)thePointLayersState().visibleBitMask();
 
-	int count = 0;
-
 	while (i != vend)
 	{
 		pcloud::Voxel *vox = *i;
@@ -176,11 +174,14 @@ void PointsRenderer::filterVoxelList( bool dismissRendered, const pcloud::Scene 
 * @return int
 */
 /*****************************************************************************/
+/* unused method
 inline static int voxPriorityCmp(const pcloud::Voxel *a, const pcloud::Voxel *b)
 {	
 	if ( a->priority() == b->priority()) return (a > b ? 1 : 0);
 	return a->priority() > b->priority() ? 1 : 0;
 }
+*/
+
 /*****************************************************************************/
 /**
 * @brief		fills the points buffer and sends to render
@@ -354,7 +355,6 @@ int PointsRenderer::numVoxelPointsToRender( const pcloud::Voxel * vox, float min
 
 			/*no data check - must do sanity check on channels to ensure data is available */ 
 			/* this is done post OOC load, so is still valid for OOC nodes */ 
-			bool nodata = false;
 			const pcloud::DataChannel *dc=0;
 			uint channelbit = 1;
 

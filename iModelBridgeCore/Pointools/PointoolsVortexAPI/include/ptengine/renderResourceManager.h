@@ -49,6 +49,7 @@ private:
 class ResourceAdaptorI
 {
 public:
+    virtual                    ~ResourceAdaptorI() = 0;
 	virtual		Texture1D		*createGradientTexture( int gradientID ) const=0;
 	virtual		Texture1D		*createGradientTexture( const char* name) const=0;
 	virtual		LPVOIDSHADER	createShaderObj( const char* name, const char*precompiler=0 ) const=0;

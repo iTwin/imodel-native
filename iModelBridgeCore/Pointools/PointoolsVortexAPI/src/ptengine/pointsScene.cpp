@@ -236,8 +236,6 @@ void PointsScene::addScene(pcloud::Scene *sc)
 
 	for (i=0; i<_scenes.size(); i++) if (_scenes[i] == sc) return;
 
-	int vcount = static_cast<int>(_voxels.size());
-		
 	for (i=0; i<sc->size(); i++)
 	{
 		pcloud::PointCloud *pc = (*sc)[i];
@@ -257,7 +255,7 @@ void PointsScene::addScene(pcloud::Scene *sc)
 	}
 	// is this an instance?
 	typedef std::map<pt::ObjectKey, pcloud::Scene*> SceneMap;
-	SceneMap::iterator sci = _sceneByKey.begin();
+	_sceneByKey.begin();
 	int instances = 0;
 	pcloud::PointCloudGUID guid;
 	

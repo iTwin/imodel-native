@@ -55,7 +55,6 @@ Status DataSourceMultiReadSet::deleteAll(void)
 DataSourceMultiRead *DataSourceMultiReadSet::addMultiRead(DataSourceMultiRead &multiRead)
 {
 	Status				status;
-	DataSize			readSize = 0;
 
 															// Add MultiRead
 	multiReadSet.push_back(multiRead);

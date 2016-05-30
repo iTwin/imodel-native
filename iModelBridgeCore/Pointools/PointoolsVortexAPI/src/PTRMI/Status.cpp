@@ -105,9 +105,9 @@ unsigned int Status::getMaxWriteSize(void)
 
 void Status::writeTime(void)
 {
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 	double t = timer.getEllapsedTimeSeconds();
 
-#if defined (NEEDS_WORK_VORTEX_DGNDB)
 	std::wofstream out;
 	out.open(logFile.c_str(), std::ios::out | std::ios::app);
 	out << "T = " << t;

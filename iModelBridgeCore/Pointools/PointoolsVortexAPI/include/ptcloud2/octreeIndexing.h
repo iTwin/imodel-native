@@ -76,7 +76,7 @@ namespace pcloud
 				pnt += p;
 				pnt /= ++num;
 			}
-			void operator = (const AvData &a) { memcpy(this, &a, sizeof(this)); }
+			void operator = (const AvData &a) { memcpy(this, &a, sizeof(a)); }
 		};
 
 		static bool hashPoint(const pt::vector3d &vec, float multiple, uint64_t &hash)
@@ -178,7 +178,6 @@ namespace pcloud
 			}
 
 			/*first kill off empties*/ 
-			int pcount = 0;
 			int i;
 			pt::BoundingBoxD bb;
 

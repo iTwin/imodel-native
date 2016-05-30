@@ -55,6 +55,7 @@ DataSize GUID::getMaxWriteSize(void)
 
 	return maxSize;
 #endif
+return 0;
 }
 
 

@@ -602,7 +602,9 @@ bool PointsBoundsTree::buildTreeDetail( TreeNode *_node, TreeNode *_parent,
 		splitStack.pop();
 
 		int64_t debug_count = QueryPointsArrayd::totalPointsAllocatedCount();
+        UNUSED_VARIABLE(debug_count);
 		int64_t debug_mem = QueryPointsArrayd::totalPointsStoredCount();
+        UNUSED_VARIABLE(debug_mem);
 
 		// start of algo
 		OBBoxd left, right;
@@ -775,8 +777,6 @@ bool PointsBoundsTree::buildTree( TreeNode *_node, bool preliminary, int target_
 
 	// sanity check
 	assert (min_dim < max_dim);
-
-	int iterations = 0;
 
 	pt::vector3d spacing(min_dim, min_dim, min_dim);
 

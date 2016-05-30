@@ -177,6 +177,7 @@ public:
 	inline void point(const pt::vector3d &pnt, uint index, ubyte &f)	
 	{
 		static pcloud::Voxel *lvoxel=(pcloud::Voxel*)1;
+        UNUSED_VARIABLE(lvoxel);
 
 		if (_isolationFilterInside(0, pnt)
 			&& PointFilter::inside(0, _filter, pnt))

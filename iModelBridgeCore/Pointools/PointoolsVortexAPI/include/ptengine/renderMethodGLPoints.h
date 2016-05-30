@@ -1,4 +1,4 @@
-#pragma 
+#pragma once
 
 #include <ptengine/renderPointsMethod.h>
 

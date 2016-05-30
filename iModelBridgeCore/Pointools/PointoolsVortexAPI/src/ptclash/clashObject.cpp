@@ -80,6 +80,7 @@ bool		ClashObject::updateTransform()
 	{
 		m_lastTransform.invert();
 		mmatrix4d diffMat = objMat >> m_lastTransform;
+        UNUSED_VARIABLE(diffMat);
 
 		m_tree->tree()->root()->transform( m_lastTransform );	// back to identity
 		m_tree->tree()->root()->transform( objMat );
@@ -111,8 +112,6 @@ bool		ClashObject::prepareForTest( TreeFeedbackFunc feedback )
 
 	//m_tree = obj->extractBoundsTree()  // yes but not now
 	if (!obj) return false;
-
-	bool hasCache = false;
 
 	if (wcsncmp(obj->typeDescriptor(), L"Point Cloud", 11)==0)
 	{
@@ -250,7 +249,6 @@ struct DifferenceComputer // ala Signore Babbage
 
 		int pos = 0;
 		float prog = 0;
-		float last_prog = 0;
 
 		for (LeavesSet::const_iterator i=m_leaves.begin(); i!=m_leaves.end(); i++)
 		{
@@ -305,10 +303,8 @@ ClashTree	*ClashObject::compareTrees( const ClashObject *b, bool difference, Com
 
 		// distribute these to 8 threads
 		int leaves_per_thread = num_leaves / NUM_DIFFERENCING_THREADS;
-		int last_thread_leaves = leaves_per_thread + num_leaves % NUM_DIFFERENCING_THREADS;		
 
 		int count = 0;
-		int thread_id = 0;
 		LeavesSet threadLeaves[NUM_DIFFERENCING_THREADS];
 		DifferenceComputer *diffComps[NUM_DIFFERENCING_THREADS];
 		std::thread *diffThreads[NUM_DIFFERENCING_THREADS];

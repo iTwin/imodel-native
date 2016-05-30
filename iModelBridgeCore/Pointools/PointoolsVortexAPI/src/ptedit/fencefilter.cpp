@@ -161,7 +161,9 @@ bool FenceSelect::generateHullPlanes()
 		p30.normalize();
 
 		pt::Planed nearp( p31, -p30 );
-		nearp.constant(nearp.constant() - 1);
+        double constantd = nearp.constant();
+		nearp.constant(constantd - 1);
+
 		if (isPerspective) hullPlanes.push_back(nearp);
 	}
 	else

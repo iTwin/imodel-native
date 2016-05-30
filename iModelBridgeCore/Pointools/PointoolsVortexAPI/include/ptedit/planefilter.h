@@ -35,6 +35,8 @@ namespace ptedit
 			return p.didSelect() ? true : false;
 		}
 		int icon() const { return 5; }
+        
+        using EditNodeDef::flags;
 		uint flags() const { return EditNodeMultithread | EditNodePostConsolidateSel; }
 
 		void addPoint(const pt::vector3d &pnt);

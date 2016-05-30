@@ -641,6 +641,8 @@
     <ProductDirectory Name="ConfigDir" Path="" Deliver="false"/>                   <!-- This shouldn't be needed? -->
 
     <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="true"/>
+    <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="true" LibType="Static"/>
+
     <ProductDirectory Name="PointoolsAssemblies32Ext" Path="" Deliver="false"/>
     
     <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false"/>
@@ -693,6 +695,7 @@
     <ProductDirectory Name="ConfigDir" Path="" Deliver="false"/>                   <!-- This shouldn't be needed? -->
   
     <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="false"/>
+    <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="false" LibType="Static"/>
     
     <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false"/>
     <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false" LibType="Static"/>
@@ -772,7 +775,9 @@
 
     <ProductDirectoryList ListName="PointoolsVortexAPI_List_Null">
         <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="false"/>
+        <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="false" LibType="static"/>
         <ProductDirectory Name="PublicAPI" Path="" Deliver="false"/>
+        <ProductDirectory Name="PublicAPI" Path="" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false"/>
         <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="Libs" Path="Libs" Deliver="false"/>
