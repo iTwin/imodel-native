@@ -92,7 +92,7 @@ struct IMeshSpatialModel : Dgn::SpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus StartClipMaskBulkInsert();
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus StopClipMaskBulkInsert();
-
+         
 
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus CreateIterator(ITerrainTileIteratorPtr& iterator);
 
