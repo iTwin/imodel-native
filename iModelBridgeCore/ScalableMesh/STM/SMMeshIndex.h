@@ -26,6 +26,7 @@
 
 extern bool s_useThreadsInStitching;
 extern bool s_useThreadsInMeshing;
+extern bool s_useThreadsInTexturing;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
@@ -553,11 +554,14 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetPtsIndicesStore();
         }
 
-    void         SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
-                                    HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
-                                    HFCPtr<StreamingUVStoreType> pi_pUVStore,
-                                    HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
-                                    HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore) override;
+    typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
+    typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
+    typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
+    void         SaveMeshToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+                                 HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
+                                 HFCPtr<StreamingUVStoreType> pi_pUVStore,
+                                 HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
+                                 HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -757,13 +761,18 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Mesh();
 
+        typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
+        typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
+        typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
         virtual void        GetCloudFormatStores(const WString& pi_pOutputDirPath,
                                                  const bool& pi_pCompress,
                                                  HFCPtr<StreamingPointStoreType>& po_pPointStore,
                                                  HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
                                                  HFCPtr<StreamingUVStoreType>& po_pUVStore,
                                                  HFCPtr<StreamingIndiceStoreType>& po_pUVIndiceStore,
-                                                 HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const override;
+                                                 HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const;
+
+        StatusInt           SaveMeshToCloud(const WString& pi_pOutputDirPath, const bool& pi_pCompress);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
 
