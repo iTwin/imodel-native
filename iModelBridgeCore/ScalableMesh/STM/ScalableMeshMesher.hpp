@@ -54,8 +54,8 @@ bool firstTile = false;
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     bool isMeshingDone = false;
-    LOG_SET_PATH("E:\\output\\scmesh\\2016-05-17\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-05-17\\")
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-05-27\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-05-27\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
     //NEEDS_WORK_SM
@@ -101,20 +101,23 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
         PtToPtConverter::Transform(&points[0], &(*pointsPtr)[0], points.size());
 
         BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
-
-        if (!node->m_isGrid || node->m_featureDefinitions.size() > 0 || !s_useSpecialTriangulationOnGrids)
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
+        bvector<bvector<int32_t>> defs;
+        if (linearFeaturesPtr->size() > 0) node->GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
+        if (!node->m_isGrid || linearFeaturesPtr->size() > 0 || !s_useSpecialTriangulationOnGrids)
             {
             status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &points[0], (long)pointsPtr->size());
 
             assert(status == SUCCESS);
 
-            for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
+            for (size_t i = 0; i < defs.size(); ++i)
                 {
                 vector<DPoint3d> feature;
-                for (size_t j = 1; j < node->m_featureDefinitions[i].size(); ++j)
+                for (size_t j = 1; j < defs[i].size(); ++j)
                     {
-                    if (node->m_featureDefinitions[i][j] < points.size()) feature.push_back(points[node->m_featureDefinitions[i][j]]);
+                    if (defs[i][j] < points.size()) feature.push_back(points[defs[i][j]]);
                     }
+                if (IsClosedFeature((IDTMFile::FeatureType)defs[i][0]) && DVec3d::FromStartEnd(feature.front(), feature.back()).Magnitude() > 0) feature.push_back(feature.front());
 #if SM_TRACE_FEATURE_DEFINITIONS
                 WString namePoly = LOG_PATH_STR_W + L"prefeaturepoly_";
                 LOGSTRING_NODE_INFO_W(node, namePoly)
@@ -123,7 +126,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 namePoly.append(L".p");
                 LOG_POLY_FROM_FILENAME_AND_BUFFERS_W(namePoly,feature.size(),&feature[0])
 #endif
-                status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)node->m_featureDefinitions[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
+                    status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)defs[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
                 }
             status = bcdtmObject_triangulateDtmObject(dtmObjP);
             bool dbg = false;
@@ -239,7 +242,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
             if (meshP != 0)
                 {
                 pointsPtr->clear();
-
+                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
                 vector<POINT> nodePts(meshP->GetNbPoints());
                 bvector<DPoint3d> pts(meshP->GetNbPoints());
                 map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> pointsMap(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
@@ -249,43 +252,50 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     nodePts[pointInd].y = meshP->GetPoints()[pointInd].y;
                     nodePts[pointInd].z = meshP->GetPoints()[pointInd].z;
                     pts[pointInd] = meshP->GetPoints()[pointInd];
-                    if (node->m_featureDefinitions.size() > 0)
+                    if (linearFeaturesPtr->size() > 0)
                         pointsMap.insert(std::make_pair(pts[pointInd], (int32_t)pointInd));
                     }
 #if SM_TRACE_FEATURE_DEFS
                 std::string s;
                 s += "NPOINTS " + std::to_string(meshP->GetNbPoints())+"\n";
 #endif
-                if (node->m_featureDefinitions.size() > 0)
+                bvector<bvector<int32_t>> defs;
+                if (linearFeaturesPtr->size() > 0)node->GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
+                if (linearFeaturesPtr->size() > 0)
                     {
-                    for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
+                    size_t count = 0;
+                    for (size_t i = 0; i < defs.size(); ++i)
                         {
+                        count += 1 + defs[i].size();
                         vector<DPoint3d> feature;
-                        for (size_t j = 1; j < node->m_featureDefinitions[i].size(); ++j)
+                        for (size_t j = 1; j < defs[i].size(); ++j)
                             {
 #if SM_TRACE_FEATURE_DEFS
                             s += "BEFORE: " + std::to_string(node->m_featureDefinitions[i][j]) + "\n";
 #endif
-                            if (node->m_featureDefinitions[i][j] < points.size() && pointsMap.count(points[node->m_featureDefinitions[i][j]]) > 0)
+                            if (defs[i][j] < points.size() && pointsMap.count(points[defs[i][j]]) > 0)
                                 {
-                                const_cast<int32_t&>(node->m_featureDefinitions[i][j]) = pointsMap[points[node->m_featureDefinitions[i][j]]];
-                                feature.push_back(pts[node->m_featureDefinitions[i][j]]);
+                                const_cast<int32_t&>(defs[i][j]) = pointsMap[points[defs[i][j]]];
+                                feature.push_back(pts[defs[i][j]]);
                                 }
-                            else if (node->m_featureDefinitions[i][j] < points.size() && pointsMap.count(points[node->m_featureDefinitions[i][j]]) == 0)
+                            else if (defs[i][j] < points.size() && pointsMap.count(points[defs[i][j]]) == 0)
                                 {
-                                pts.push_back(points[node->m_featureDefinitions[i][j]]);
+                                pts.push_back(points[defs[i][j]]);
                                 nodePts.push_back(PointOp<POINT>::Create(pts.back().x, pts.back().y, pts.back().z));
-                                const_cast<int32_t&>(node->m_featureDefinitions[i][j]) = (int32_t)pts.size() - 1;
+                                const_cast<int32_t&>(defs[i][j]) = (int32_t)pts.size() - 1;
                                 pointsMap.insert(std::make_pair(pts.back(), (int32_t)pts.size() - 1));
                                 }
                             else
                                 {
-                                const_cast<int32_t&>(node->m_featureDefinitions[i][j]) = INT_MAX;
+                                const_cast<int32_t&>(defs[i][j]) = INT_MAX;
                                 }
 #if SM_TRACE_FEATURE_DEFS
                             s += "AFTER: " + std::to_string(node->m_featureDefinitions[i][j]) + "\n";
 #endif
                             }
+                        linearFeaturesPtr->reserve(count);
+                        for (size_t i = linearFeaturesPtr->size(); i < count; ++i) linearFeaturesPtr->push_back(INT_MAX);
+                        if (linearFeaturesPtr->size() > 0)node->SaveFeatureDefinitions(const_cast<int32_t*>(&*linearFeaturesPtr->begin()), count, defs);
 #if SM_TRACE_FEATURE_DEFS
                         s += "\n\n----\n\n";
 #endif
@@ -337,9 +347,12 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     MTGGraph* newGraph = new MTGGraph();
                     CreateGraphFromIndexBuffer(newGraph, (const long*)&faceIndexes[0], (int)faceIndexes.size(), (int)nodePts.size(), componentPointsId, &pts[0]);
                     //PrintGraph(LOG_PATH_STR, std::to_string(node->GetBlockID().m_integerID).c_str(), node->GetGraphPtr());
-                    for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
+                    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
+                    bvector<bvector<int32_t>> defs;
+                    if (linearFeaturesPtr->size() > 0) node->GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
+                    for (size_t i = 0; i < defs.size(); ++i)
                         {
-                        TagFeatureEdges(newGraph, (const DTMFeatureType)node->m_featureDefinitions[i][0], node->m_featureDefinitions[i].size() - 1, &node->m_featureDefinitions[i][1]);
+                        TagFeatureEdges(newGraph, (const DTMFeatureType)defs[i][0], defs[i].size() - 1, &defs[i][1]);
                         }
                     graphPtr->SetData(newGraph);
                     graphPtr->SetDirty();
@@ -1162,7 +1175,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         }
 #endif
     // *node->GetGraphPtr() = *meshGraphStitched;
-    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, node->GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph));
+    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, node->GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph, (uint64_t)node->m_SMIndex));
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
     MTGGraph * tempGraph = new MTGGraph();
     bvector<int> componentPointsId;
@@ -1172,7 +1185,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     storedMemoryPoolItem->SetData(tempGraph);
     storedMemoryPoolItem->SetDirty();
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
-    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, node->m_graphPoolItemId, node->GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph);
+    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, node->m_graphPoolItemId, node->GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)node->m_SMIndex);
    /* for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
         {
         TagFeatureEdges(&tempGraph, (const DTMFeatureType)node->m_featureDefinitions[i][0], node->m_featureDefinitions[i].size() - 1, &node->m_featureDefinitions[i][1]);
@@ -1471,8 +1484,10 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     bvector<bvector<DPoint3d>> islandFeatures;
     bvector<DTMFeatureType> types;
     VuPolygonClassifier vu;
-
-    ProcessFeatureDefinitions(voidFeatures, types, islandFeatures, nodePoints, dtmObjP, node->m_featureDefinitions);
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
+    bvector<bvector<int32_t>> defs;
+    if (linearFeaturesPtr->size() > 0) node->GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
+    ProcessFeatureDefinitions(voidFeatures, types, islandFeatures, nodePoints, dtmObjP, defs);
 
 
 
@@ -1702,128 +1717,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             assert(status == SUCCESS);
             }
         }
-
- /*           bvector<bvector<DPoint3d>> newFBoundary;
-            HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
-            HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
-            for (auto&feature : postFeatureBoundary)
-                {
-                UntieLoopsFromPolygon(feature);
-                HArrayAutoPtr<double> tempBuffer(new double[feature.size() * 2]);
-
-                int bufferInd = 0;
-
-                for (size_t pointInd = 0; pointInd < feature.size(); pointInd++)
-                    {
-                    tempBuffer[bufferInd * 2] = feature[pointInd].x;
-                    tempBuffer[bufferInd * 2 + 1] = feature[pointInd].y;
-                    bufferInd++;
-                    }
-                HVE2DPolygonOfSegments polygon(feature.size() * 2, tempBuffer, coordSysPtr);
-
-                HFCPtr<HVEShape> subShapePtr = new HVEShape(polygon);
-                allPolyShape->Unify(*subShapePtr);
-                }
-            if (allPolyShape->GetLightShape()->IsComplex())
-                {
-                for (auto& elem : allPolyShape->GetLightShape()->GetShapeList())
-                    {
-                    if (!elem->IsComplex())
-                        {
-                        HGF2DPositionCollection thePoints;
-                        elem->Drop(&thePoints, elem->GetTolerance());
-
-                        bvector<DPoint3d> vec(thePoints.size());
-
-                        for (size_t idx = 0; idx < thePoints.size(); idx++)
-                            {
-                            vec[idx].x = thePoints[idx].GetX();
-                            vec[idx].y = thePoints[idx].GetY();
-                            vec[idx].z = 0; // As mentionned below the Z is disregarded
-                            }
-                        newFBoundary.push_back(vec);
-                        }
-                    else
-                        {
-                        for (auto& subElem : elem->GetShapeList())
-                            {
-                            HGF2DPositionCollection thePoints;
-                            subElem->Drop(&thePoints, subElem->GetTolerance());
-
-                            bvector<DPoint3d> vec(thePoints.size());
-
-                            for (size_t idx = 0; idx < thePoints.size(); idx++)
-                                {
-                                vec[idx].x = thePoints[idx].GetX();
-                                vec[idx].y = thePoints[idx].GetY();
-                                vec[idx].z = 0; // As mentionned below the Z is disregarded
-                                }
-                            newFBoundary.push_back(vec);
-                            }
-                        }
-                    }
-                }
-            else if (!allPolyShape->GetLightShape()->IsEmpty())
-                {
-                HGF2DPositionCollection thePoints;
-                allPolyShape->GetLightShape()->Drop(&thePoints, allPolyShape->GetLightShape()->GetTolerance());
-
-                bvector<DPoint3d> vec(thePoints.size());
-
-                for (size_t idx = 0; idx < thePoints.size(); idx++)
-                    {
-                    vec[idx].x = thePoints[idx].GetX();
-                    vec[idx].y = thePoints[idx].GetY();
-                    vec[idx].z = 0; // As mentionned below the Z is disregarded
-                    }
-
-                newFBoundary.push_back(vec);
-                }
-            postFeatureBoundary = newFBoundary;*/
         MergePolygonSets(postFeatureBoundary);
-#if 0
-            for (auto& polygon : postFeatureBoundary)
-                {
-                if (polygon.size() > 2)
-                    {
-                        {
-                      /*  WString namePoly = LOG_PATH_STR_W + L"postmergepoly_";
-                        namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
-                        namePoly.append(L"_");
-                        namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
-                        namePoly.append(L"_");
-                        namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                        namePoly.append(L"_");
-                        namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                        namePoly.append(L"_");
-                        namePoly.append(to_wstring(&polygon - &postFeatureBoundary[0]).c_str());
-                        namePoly.append(L".p");
-                        FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
-                        size_t boundSize = polygon.size();
-                        fwrite(&boundSize, sizeof(size_t), 1, polyCliPFile);
-                        fwrite(&polygon[0], sizeof(DPoint3d), polygon.size(), polyCliPFile);
-                        fclose(polyCliPFile);*/
-                        }
-                    UntieLoopsFromPolygon(polygon);
-                   /* WString namePoly = LOG_PATH_STR_W + L"postFBoundpoly_";
-                    namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
-                    namePoly.append(L"_");
-                    namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
-                    namePoly.append(L"_");
-                    namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                    namePoly.append(L"_");
-                    namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                    namePoly.append(L"_");
-                    namePoly.append(to_wstring(&polygon - &postFeatureBoundary[0]).c_str());
-                    namePoly.append(L".p");
-                    FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
-                    size_t boundSize = polygon.size();
-                    fwrite(&boundSize, sizeof(size_t), 1, polyCliPFile);
-                    fwrite(&polygon[0], sizeof(DPoint3d), polygon.size(), polyCliPFile);
-                    fclose(polyCliPFile);*/
-                    }
-                }
-#endif
 
     status = AddPolygonsToDTMObject(postFeatureBoundary, DTMFeatureType::DrapeVoid, dtmObjP);
 
@@ -1949,9 +1843,10 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         assert(pointsPtr->size() == stitchedPoints.size());
 		if (s_useThreadsInStitching) node->UnlockPts();
 				
-        if (node->m_featureDefinitions.size() > 0)
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
+        if (linearFeaturesPtr->size() > 0)
             {
-            for (auto& def : node->m_featureDefinitions) if (!def.Discarded()) def.Discard();
+//            for (auto& def : node->m_featureDefinitions) if (!def.Discarded()) def.Discard();
             for (auto& polyline : features)
                 {
                 DRange3d extent = DRange3d::From(polyline);

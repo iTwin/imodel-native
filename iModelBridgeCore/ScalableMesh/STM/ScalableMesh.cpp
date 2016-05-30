@@ -217,14 +217,14 @@ IScalableMeshNodeRayQueryPtr IScalableMesh::GetNodeQueryInterface() const
     return _GetNodeQueryInterface();
     }
 
-BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface()
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DTMAnalysisType type)
     {
-    return _GetDTMInterface();
+    return _GetDTMInterface(type);
     }
 
-BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DMatrix4d& storageToUors)
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type)
     {
-    return _GetDTMInterface(storageToUors);
+    return _GetDTMInterface(storageToUors, type);
     }
 
 const BaseGCSCPtr& IScalableMesh::GetBaseGCS() const 
@@ -739,7 +739,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
                                                             &*pStreamingIndiceTileStore,
-                                                            ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
+                                                    //        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                             new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),                                                            
                                                             &*pStreamingTextureTileStore,                                                            
                                                             &*pStreamingUVTileStore,                                                            
@@ -768,7 +768,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pTileStore,                                                       
                                                        &*pIndiceTileStore,
-                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
+                                                     //  ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                        //new HPMIndirectCountLimitedPool<MTGGraph>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000*sizeof(POINT)), 600000000),
                                                        &*pGraphTileStore,                                                       
                                                        &*pTextureTileStore,                                                       
@@ -790,8 +790,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             ((SMSQLiteDiffsetTileStore*)(store.GetPtr()))->Open();
             //store->StoreMasterHeader(NULL,0);
             m_scmIndexPtr->SetClipStore(store);
-            auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
-            m_scmIndexPtr->SetClipPool(pool);
+      //      auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
+      //      m_scmIndexPtr->SetClipPool(pool);
             WString clipFileDefPath = m_path;
             clipFileDefPath.append(L"_clipDefinitions");
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
@@ -858,7 +858,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                        
 
         m_contentExtent = ComputeTotalExtentFor(&*m_scmIndexPtr);
-        m_scalableMeshDTM = ScalableMeshDTM::Create(this);
+        m_scalableMeshDTM[DTMAnalysisType::Precise] = ScalableMeshDTM::Create(this);
+        m_scalableMeshDTM[DTMAnalysisType::Precise]->SetAnalysisType(DTMAnalysisType::Precise);
+        m_scalableMeshDTM[DTMAnalysisType::Fast] = ScalableMeshDTM::Create(this);
+        m_scalableMeshDTM[DTMAnalysisType::Fast]->SetAnalysisType(DTMAnalysisType::Fast);
         return BSISUCCESS;  
         }
     catch(...)
@@ -1246,15 +1249,15 @@ IDTMVolumeP ScalableMeshDTM::_GetDTMVolume()
     return m_dtmVolume;
     }
 
-template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface()
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface(DTMAnalysisType type)
  {
-    return m_scalableMeshDTM.get();
+    return m_scalableMeshDTM[type].get();
  }
 
-template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface(DMatrix4d& storageToUors)
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type)
     {
-    m_scalableMeshDTM->SetStorageToUors(storageToUors);
-    return m_scalableMeshDTM.get();
+    m_scalableMeshDTM[type]->SetStorageToUors(storageToUors);
+    return m_scalableMeshDTM[type].get();
     }
 
 
@@ -1968,13 +1971,13 @@ template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>
     }
 
 
-template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface()
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface(DTMAnalysisType type)
     {
     assert(0);
     return 0;
     }
 
-template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface(DMatrix4d& storageToUors)
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type)
     {
     assert(0);
     return 0;

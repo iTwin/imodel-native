@@ -153,6 +153,11 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
             m_transformToUors.InitFrom(storageToUors);
             m_draping->SetTransform(m_transformToUors);
             }
+
+        void SetAnalysisType(DTMAnalysisType type)
+            {
+            m_draping->SetAnalysisType(type);
+            }
     };
 /*----------------------------------------------------------------------------+
 |Class ScalableMesh
@@ -195,7 +200,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         double                          m_minScreenPixelsPerPoint;            
 
         HFCPtr<MeshIndexType>          m_scmIndexPtr;                                                    
-        RefCountedPtr<ScalableMeshDTM>  m_scalableMeshDTM;
+        RefCountedPtr<ScalableMeshDTM>  m_scalableMeshDTM[DTMAnalysisType::Qty];
 
         bvector<IScalableMeshNodePtr> m_viewedNodes;
 
@@ -249,9 +254,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool          _IsTerrain() override;
         
 
-        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
-        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors) override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
@@ -353,9 +358,9 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual bool          _IsTerrain() override;
 
-        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
-        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors) override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 

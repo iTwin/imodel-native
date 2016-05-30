@@ -732,7 +732,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
     HINVARIANTS;
     if (GetBlockID().IsValid())
         {
-        SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points);                        
+        SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex);
         GetPointsStore()->DestroyBlock(GetBlockID());                
         }
         
@@ -3715,7 +3715,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
             GetPointsStore()->StoreHeader(&m_nodeHeader, GetBlockID());                 
             }            
                     
-        SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points);       
+        SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex);
 
         m_isDirty = false;
         }
