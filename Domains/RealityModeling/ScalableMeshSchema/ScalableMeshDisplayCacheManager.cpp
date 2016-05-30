@@ -43,8 +43,11 @@ BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedMesh(SmCachedDispla
         return SUCCESS;
 
     if (NULL != cachedDisplayMesh->m_qvElem)
+        {
         T_HOST.GetGraphicsAdmin()._DeleteQvElem(cachedDisplayMesh->m_qvElem);
-
+        cachedDisplayMesh->m_qvElem = 0;
+        }
+    
     delete cachedDisplayMesh;
 
     return SUCCESS;
