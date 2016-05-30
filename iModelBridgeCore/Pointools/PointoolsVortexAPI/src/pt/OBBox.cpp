@@ -78,14 +78,9 @@ OBBoxd createFittingOBBd( const std::vector<vector3d> &pts )
 OBBoxd	createFittingOBBd(const vector3d *pts, int numPoints)
 {
 #ifdef HAVE_WILDMAGIC
-    // &&RB TODO: replace wilmagic function with geomlibs function
 	Wm5::Box3d wbox= Wm5::GaussPointsFit3<double>(numPoints, (Wm5::Vector3d*) pts);
 	vector3d axis[] = { &wbox.Axis[0].X(), &wbox.Axis[1].X(), &wbox.Axis[2].X() };
 	OBBoxd box( &wbox.Center.X(), axis, wbox.Extent );
-#else
-    OBBoxd box;
-#endif
-
 	// Let C be the box center and let U0, U1, and U2 be the box axes.  Each
 	// input point is of the form X = C + y0*U0 + y1*U1 + y2*U2.  The
 	// following code computes min(y0), max(y0), min(y1), max(y1), min(y2),
@@ -129,6 +124,14 @@ OBBoxd	createFittingOBBd(const vector3d *pts, int numPoints)
 	box.extent(0,((double)0.5)*(pmax[0] - pmin[0]));
 	box.extent(1,((double)0.5)*(pmax[1] - pmin[1]));
 	box.extent(2,((double)0.5)*(pmax[2] - pmin[2]));
+
+#else
+    OBBoxd box;
+    BoundBox b;
+    // &&RB TODO: the following geomlibs function call must be tested
+    bound_optimizedBoxCompute(&b, reinterpret_cast<DPoint3dP>(const_cast<vector3d*>(pts)), numPoints);
+    // &&RB TODO: set box object members to proper values from geomlibs BoundBox structure
+#endif
 
 	return box;
 }

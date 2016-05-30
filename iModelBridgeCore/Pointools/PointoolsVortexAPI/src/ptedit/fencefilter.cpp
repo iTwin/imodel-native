@@ -170,8 +170,56 @@ bool FenceSelect::generateHullPlanes()
 		return false;
 	}
 #else
-        // &&RB TODO: replace wilmagic function with geomlibs function
+    DPoint3dP chull = new DPoint3d[fence.numPoints()];
+    int hullNbPts = -1;
+    // &&RB The following geomlibs function call must be tested
+    if ( false == bsiDPoint3dArray_convexHullXY(chull, &hullNbPts, reinterpret_cast<DPoint3dP>(vertices), fence.numPoints()))
+    {
+        assert(hullNbPts <= fence.numPoints());
 
+        int numEdges = hullNbPts;
+        isConvex = numEdges == fence.numPoints();
+
+        pt::vector3d p30,p31, p32;
+
+        /* create planes */ 
+        for (int i=0; i<numEdges; i++)
+        {
+            auto p0 = chull[i];
+            auto p1 = chull[i+1];
+
+            if (isPerspective)
+            {
+                p30.set(p0.x*-1,p0.y*-1, -1.0);
+                p31.set(p1.x*-1,p1.y*-1,-1.0);
+                p32.set(p1.x*-3.0f,p1.y*-3.0f,-3.0);
+            }
+            else
+            {
+                p30.set(p0.x, p0.y, -0.5);
+                p31.set(p1.x, p1.y, -0.5);
+                p32.set(p1.x, p1.y, -1.0);
+            }
+            invmdl.vec3_multiply_mat4(p30);
+            invmdl.vec3_multiply_mat4(p31);
+            invmdl.vec3_multiply_mat4(p32);
+
+            pt::Planed plane(p30,p31,p32);
+            hullPlanes.push_back(plane);
+        }
+
+        p30.set(modelm.extractZVector().data());
+        p30.normalize();
+
+        pt::Planed nearp( p31, -p30 );
+        nearp.constant(nearp.constant() - 1);
+        if (isPerspective) hullPlanes.push_back(nearp);
+    }
+    else 
+    {
+        delete[] vertices;
+        return false;
+    }
 #endif
 	delete [] vertices;
 

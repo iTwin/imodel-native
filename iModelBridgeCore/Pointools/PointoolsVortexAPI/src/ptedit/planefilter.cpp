@@ -49,6 +49,8 @@ void  PlaneSelect::computePlane()
         // &&RB TODO: replace wilmagic function with geomlibs function
         pt::Planed wplane;
         plane = wplane;
+        // &&RB TODO: the following geomlibs function call must be tested
+
 #endif
 		plane.base();
 	}

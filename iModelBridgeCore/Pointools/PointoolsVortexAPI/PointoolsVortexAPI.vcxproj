@@ -94,6 +94,7 @@ BentleyBuild.py -ax64 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexA
     <NMakeOutput>$(OutRoot)Winx64\build\PointoolsVortexAPI\PointoolsVortexAPI.dll</NMakeOutput>
     <NMakeIncludeSearchPath>$(ProjectDir)include</NMakeIncludeSearchPath>
     <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>E:\dev\VortexMobile\src\GeomLibs\PublicAPI\Geom;E:\dev\VortexMobile\out\Debug\Winx64\BuildContexts\WildMagicHeaders\VendorAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakeOutput>$(OutRoot)Winx64\build\PointoolsVortexAPI\PointoolsVortexAPI.dll</NMakeOutput>

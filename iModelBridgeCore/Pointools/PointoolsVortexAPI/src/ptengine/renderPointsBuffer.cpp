@@ -200,7 +200,7 @@ int PointsBuffer::addPoints( const pcloud::Voxel *voxel, int fromPoint, int numP
 	const pt::vector3		*geom = 0;
 
 	const PointCloud *pc = voxel->pointCloud();
-	const_cast<Transform*>(&pc->registration())->compileMatrix();
+	const_cast<pt::Transform*>(&pc->registration())->compileMatrix();
 	mmatrix4d mat = pc->registration().cmpMatrix();
 	mat >>= pc->userTransformationMatrix();
 

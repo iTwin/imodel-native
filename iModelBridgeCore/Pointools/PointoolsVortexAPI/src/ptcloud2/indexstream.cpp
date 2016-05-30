@@ -996,10 +996,15 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 				{
 					count++;
 #ifdef HAVE_WILDMAGIC
-                    // &&RB TODO: replace wilmagic function with geomlibs function
 					Wm5::Plane3f plane = Wm5::OrthogonalPlaneFit3(valid_points, _v);
 					_n = plane.Normal;
 					_o = plane.Constant * plane.Normal;
+#else
+                    // &&RB TODO: the following geomlibs function call must be tested
+                    if (false == bsiGeom_planeThroughPoints(reinterpret_cast<DPoint3dP>(&_n), 
+                                                            reinterpret_cast<DPoint3dP>(&_origin), 
+                                                            reinterpret_cast<DPoint3dCP>(_v), valid_points)) 
+                        assert(!"Every point lies on the line joining the two extremal points");
 #endif
 
 					_origin = -_o;

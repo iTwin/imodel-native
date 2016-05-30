@@ -89,7 +89,7 @@
 #include <WildMagic/math/Wm5Plane3.h>
 #include <WildMagic/math/Wm5ApprGaussPointsFit3.h>
 #else
-#include <GeomApi.h>
+#include <Geom/GeomApi.h>
 #endif
 
 #include <Loki/Singleton.h>

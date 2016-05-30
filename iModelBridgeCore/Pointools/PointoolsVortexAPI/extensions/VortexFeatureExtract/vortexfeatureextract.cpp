@@ -104,6 +104,7 @@ T	FitCylinderToPoints( PThandle query, Cylinder<T> &res_cylinder,
 				(radius > 0 && !cylinder.axis.isZero()) || constrainToAxis);
 #else
             // &&RB TODO: replace wilmagic function with geomlibs function
+            // &&RB TODO: the following geomlibs function call must be tested
 #endif
 		
 			cen2 = cen;
@@ -126,6 +127,7 @@ T	FitCylinderToPoints( PThandle query, Cylinder<T> &res_cylinder,
 					candidate_pnts, cen, axis, radius, height, true);
 #else
             // &&RB TODO: replace wilmagic function with geomlibs function
+            // &&RB TODO: the following geomlibs function call must be tested
 #endif
 
 				if (error1 < min_error)
@@ -252,6 +254,8 @@ T	FitPlaneToPoints( QueryBuffer<T> &pointsBuffer, Vector3<T> &planeNormal,
 #else
     const Vector3<T> *candidate_pnts = reinterpret_cast<const Vector3<T> *>(pointsBuffer.getPointsBuffer());
 
+    // &&RB TODO: replace wilmagic function with geomlibs function
+    // &&RB TODO: the following geomlibs function call must be tested
     vortex::Plane<T> plane;
 #endif
 
