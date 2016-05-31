@@ -230,34 +230,68 @@ static BentleyStatus writeImageToPng(BufferWriter& writer, ImageCR imageData, Im
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Image::ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat, BottomUp bottomUp)
+    {
+    m_format = targetFormat;
+
+    BeJpegDecompressor reader;
+    if (SUCCESS != reader.ReadHeader(m_width, m_height, srcData, srcLen))
+        {
+        Invalidate();
+        return;
+        }
+
+    m_image.Resize(m_width * m_height * 4);
+
+    BeJpegPixelType fmt = m_format == Format::Rgb ? BE_JPEG_PIXELTYPE_Rgb : BE_JPEG_PIXELTYPE_RgbA;
+    if (SUCCESS != reader.Decompress(m_image.GetDataP(), m_image.GetSize(), srcData, srcLen, fmt, bottomUp==Image::BottomUp::Yes ? BeJpegBottomUp::Yes : BeJpegBottomUp::No))
+        Invalidate();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Image::ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat)
+    {
+    m_format = targetFormat;
+
+    PngData pngData(srcData, srcLen);
+    if (SUCCESS != pngData.DoRead(*this))
+        Invalidate();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Image::Image(ImageSourceCR source, Format targetFormat, Image::BottomUp bottomUp)
     {
-    m_format = targetFormat;
-
     ByteStream const& input = source.GetByteStream();
-    if (source.GetFormat() == ImageSource::Format::Jpeg)
-        {
-        BeJpegDecompressor reader;
-        if (SUCCESS != reader.ReadHeader(m_width, m_height, input.GetData(), input.GetSize()))
-            {
-            Invalidate();
-            return;
-            }
+    if (ImageSource::Format::Jpeg == source.GetFormat())
+        ReadJpeg(input.GetData(), input.GetSize(), targetFormat, bottomUp);
+    else
+        ReadPng(input.GetData(), input.GetSize(), targetFormat);
+    }
 
-        m_image.Resize(m_width * m_height * 4);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Image Image::FromJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat, BottomUp bottomUp)
+    {
+    Image image;
+    image.ReadJpeg(srcData, srcLen, targetFormat, bottomUp);
+    return image;
+    }
 
-        BeJpegPixelType fmt = m_format == Format::Rgb ? BE_JPEG_PIXELTYPE_Rgb : BE_JPEG_PIXELTYPE_RgbA;
-        if (SUCCESS != reader.Decompress(m_image.GetDataP(), m_image.GetSize(), input.GetData(), input.GetSize(), fmt, bottomUp==Image::BottomUp::Yes ? BeJpegBottomUp::Yes : BeJpegBottomUp::No))
-            Invalidate();
-
-        return;
-        }
-
-    PngData pngData(input.GetData(), input.GetSize());
-    if (SUCCESS != pngData.DoRead(*this))
-        Invalidate();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Image Image::FromPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat)
+    {
+    Image image;
+    image.ReadPng(srcData, srcLen, targetFormat);
+    return image;
     }
 
 /*---------------------------------------------------------------------------------**//**

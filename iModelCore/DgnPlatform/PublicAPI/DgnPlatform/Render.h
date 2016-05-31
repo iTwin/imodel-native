@@ -228,7 +228,7 @@ public:
 struct Image
 {
     enum class Format {Rgba=0, Rgb=2}; // must match qvision.h values
-
+    enum class BottomUp : bool {No=0, Yes=1}; //!< whether the rows in the image should be flipped top-to-bottom
 protected:
     uint32_t   m_width = 0;
     uint32_t   m_height = 0;
@@ -238,6 +238,8 @@ protected:
     void ClearData() {m_image.Clear();}
     void Initialize(uint32_t width, uint32_t height, Format format=Format::Rgb) {m_height=height; m_width=width; m_format=format; ClearData();}
 
+    void ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat, BottomUp bottomUp);
+    void ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat);
 public:
     //! Construct a blank invalid image
     Image() {}
@@ -251,7 +253,6 @@ public:
     //! either pass a temporary variable or use std::move on a non-temporary variable.
     Image(uint32_t width, uint32_t height, ByteStream&& image, Format format) : m_width(width), m_height(height), m_format(format), m_image(std::move(image)) {}
 
-    enum class BottomUp : bool {No=0, Yes=1}; //!< whether the rows in the image should be flipped top-to-bottom
     //! Construct an image from an ImageSource.
     //! @param[in] source the ImageSource from which the image is to be created.
     //! @param[in] targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded. If
@@ -259,6 +260,23 @@ public:
     //! @param[in] bottomUp If Yes, the source image is flipped vertically (top-to-bottom) to create the image.
     //! @note If the source is invalid, or if the decompression fails, IsValid() will return false on the new Image.
     DGNPLATFORM_EXPORT explicit Image(ImageSourceCR source, Format targetFormat=Format::Rgba, BottomUp bottomUp=BottomUp::No);
+
+    //! Create an image from a Jpeg.
+    //! @param[in]      srcData      the Jpeg data
+    //! @param[in]      srcLen       the number of bytes of Jpeg data
+    //! @param[in]      targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded.
+    //! If the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
+    //! @param[in]      bottomUp     If Yes, the source image is flipped vertically (top-to-bottom) to create the image.
+    //! @return The decompressed Image, or an invalid Image if decompression failed.
+    DGNPLATFORM_EXPORT static Image FromJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat=Format::Rgba, BottomUp bottomUp=BottomUp::No);
+
+    //! Create an image from a Png.
+    //! @param[in]      srcData      the Png data
+    //! @param[in]      srcLen       the number of bytes of Png data
+    //! @param[in]      targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded.
+    //! If the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
+    //! @return The decompressed Image, or an invalid Image if decompression failed.
+    DGNPLATFORM_EXPORT static Image FromPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat=Format::Rgba);
 
     int GetBytesPerPixel()const {return m_format == Format::Rgba ? 4 : 3;} //!< get the number of bytes per pixel
     void Invalidate() {m_width=m_height=0; ClearData();} //!< Clear the contents and invalidate this image.
