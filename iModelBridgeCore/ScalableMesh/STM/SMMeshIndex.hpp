@@ -3456,7 +3456,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
         m_pRootNode->Unload();
 
     m_pRootNode = NULL;
-
+    m_createdNodeMap.clear();
     }
 
 

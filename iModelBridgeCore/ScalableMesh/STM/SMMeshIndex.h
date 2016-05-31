@@ -307,8 +307,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             m_diffSetsItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
             assert(m_diffSetsItemId != SMMemoryPool::s_UndefinedPoolItemId);
             poolMemItemPtr = storedMemoryPoolItem.get();
+            const_cast<atomic<size_t>&>(m_nbClips) = poolMemItemPtr->size();
             }
-
         return poolMemItemPtr;
         }
 

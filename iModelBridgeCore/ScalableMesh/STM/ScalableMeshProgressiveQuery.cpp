@@ -1082,6 +1082,13 @@ class NewQueryStartingNodeProcessor
             delete [] m_workingThreads;
             }
 
+        void ClearNodeInfo()
+            {
+            m_lowerResOverviewNodes.clear();
+            m_requiredMeshNodes.clear();
+            m_toLoadNodes.clear();
+            }
+
         void QueryThread(/*DgnPlatformLib::Host* hostToAdopt,*/ size_t threadId, IScalableMeshPtr& scalableMeshPtr)
             {       
             m_lowerResOverviewNodes[threadId].clear();
@@ -1183,7 +1190,27 @@ class NewQueryStartingNodeProcessor
             }    
     };
 
-NewQueryStartingNodeProcessor s_newQueryStartingNodeProcessor;
+//NEEDS_WORK_SM: needed to remove the global constructor, but this isn't that much cleaner
+NewQueryStartingNodeProcessor* s_newQueryStartingNodeProcessor = nullptr;
+
+void InitializeProgressiveQueries()
+    {
+    if (nullptr == s_newQueryStartingNodeProcessor)
+        s_newQueryStartingNodeProcessor = new NewQueryStartingNodeProcessor();
+    }
+
+void ClearProgressiveQueriesInfo()
+    {
+    s_newQueryStartingNodeProcessor->ClearNodeInfo();
+    }
+
+void TerminateProgressiveQueries()
+    {
+    if (nullptr != s_newQueryStartingNodeProcessor)
+        delete s_newQueryStartingNodeProcessor;
+    s_newQueryStartingNodeProcessor = nullptr;
+    }
+
 
 void ComputeOverviewSearchToLoadNodes(RequestedQuery&                                                 newQuery, 
                                       bvector<IScalableMeshCachedDisplayNodePtr>&                     lowerResOverviewNodes,
@@ -1203,7 +1230,7 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
             searchingNodes.push_back(nodesToSearch.GetNodes()[nodeInd]);
             }   
 
-        s_newQueryStartingNodeProcessor.Execute(newQuery, lowerResOverviewNodes, searchingNodes, toLoadNodes, nodesToSearch, currentInd, foundNodes, activeClips, scalableMeshPtr);
+        s_newQueryStartingNodeProcessor->Execute(newQuery, lowerResOverviewNodes, searchingNodes, toLoadNodes, nodesToSearch, currentInd, foundNodes, activeClips, scalableMeshPtr);
         }       
     else
         {

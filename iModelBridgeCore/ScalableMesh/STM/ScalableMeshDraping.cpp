@@ -722,6 +722,7 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
     for (auto& node : nodes)
         {
         BcDTMPtr dtmP = node->GetBcDTM();
+        assert(dtmP->GetPointCount() < 4 || dtmP->GetTrianglesCount() > 0);
         if (dtmP != nullptr && dtmP->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, transformedPt, directionOfVector, slopeOfVector))
             {
             if (endPt != nullptr)
