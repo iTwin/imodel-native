@@ -660,4 +660,57 @@ TEST_F (HGF2DExtentTester, ContainsTest)
     ASSERT_FALSE(ExtentHimself.OuterContains(ExtentNoInside, MYEPSILON));
 
     }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  5/2016
+//----------------------------------------------------------------------------------------
+TEST_F (HGF2DExtentTester, ProjectiveChangeCS)
+    {
+    double matrix[3][3];
+    matrix[0][0] = 5.5147648962581428;
+    matrix[0][1] = 0.0042851133851941970;
+    matrix[0][2] = -7523.2436222951546;
+    matrix[1][0] = -0.0050683470067062007;
+    matrix[1][1] = 5.4906630316330816;
+    matrix[1][2] = -41556.362377641810;
+    matrix[2][0] = -1.4525233209147976e-010;
+    matrix[2][1] = -6.5392539244920719e-008;
+    matrix[2][2] = 1.0000000000000000;
+
+    HFCPtr<HGF2DProjective> pProjec = new HGF2DProjective(matrix);
+
+    HFCPtr<HGF2DCoordSys> pProjCS = new HGF2DCoordSys(*pProjec, pWorld);
+
+    HFCPtr<HGF2DTransfoModel> pTransfoToProj = pWorld->GetTransfoModelTo(pProjCS);
+
+    HGF2DRectangle currentExtent(0, 0, 512, 256);
+    HFCPtr<HGF2DShape> resultShape = currentExtent.AllocTransformDirect(*pTransfoToProj);
+    HGF2DLiteExtent finalExtent = resultShape->GetExtent();
+
+    // Compute coordinates of four corners
+    HGF2DLocation BottomLeft(0, 0, pWorld);
+    HGF2DLocation TopLeft(0, 256, pWorld);
+    HGF2DLocation TopRight(512, 256, pWorld);
+    HGF2DLocation BottomRight(512, 0, pWorld);
+
+    // Change coordinate sytem for these four points
+    BottomLeft.ChangeCoordSys (pProjCS);
+    TopLeft.ChangeCoordSys (pProjCS);
+    TopRight.ChangeCoordSys (pProjCS);
+    BottomRight.ChangeCoordSys (pProjCS);
+
+    HGF2DExtent extent2(pProjCS);
+    extent2.Add(BottomLeft);
+    extent2.Add(TopLeft);
+    extent2.Add(TopRight);
+    extent2.Add(BottomRight);  
+
+    ASSERT_DOUBLE_EQ(extent2.GetXMin(), finalExtent.GetXMin());
+    ASSERT_DOUBLE_EQ(extent2.GetXMax(), finalExtent.GetXMax());
+    ASSERT_DOUBLE_EQ(extent2.GetYMin(), finalExtent.GetYMin());
+    ASSERT_DOUBLE_EQ(extent2.GetYMax(), finalExtent.GetYMax());
+    }
+ 
+
 #endif

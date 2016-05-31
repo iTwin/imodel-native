@@ -195,8 +195,8 @@ private:
 #ifdef HVERIFYCONTRACT
     void                    ValidateInvariants() const
         {
-        // Make sure that m_M22 equals 1.0
-        HASSERT(m_M22 == 1.0);
+        // Make sure that m_D22 equals 1.0
+        HASSERT(m_D22 == 1.0);
 
         // Make sure that direct and inverse global scale equal 1.0
         HASSERT(m_D22 == 1.0);
@@ -208,16 +208,12 @@ private:
         // One of [0,0] and [1,0] must different from 0.0
         // One of [0,1] and [1,1] must different from 0.0
         // One of [1,0] and [1,1] must different from 0.0
-        HASSERT((m_M00 != 0.0) || (m_M01 != 0.0));
-        HASSERT((m_M00 != 0.0) || (m_M10 != 0.0));
-        HASSERT((m_M01 != 0.0) || (m_M11 != 0.0));
-        HASSERT((m_M10 != 0.0) || (m_M11 != 0.0));
-
-        // The same applies to direct and inverse parameters
         HASSERT((m_D00 != 0.0) || (m_D01 != 0.0));
         HASSERT((m_D00 != 0.0) || (m_D10 != 0.0));
         HASSERT((m_D01 != 0.0) || (m_D11 != 0.0));
         HASSERT((m_D10 != 0.0) || (m_D11 != 0.0));
+
+        // The same applies to inverse parameters
 
         HASSERT((m_I00 != 0.0) || (m_I01 != 0.0));
         HASSERT((m_I00 != 0.0) || (m_I10 != 0.0));
@@ -241,28 +237,15 @@ private:
     // After transformation of a coordinate, the inverse units must be applied to result
 //        HFCMatrix<3, 3>     m_Matrix;
 
-    // Master data
-    double         m_M00;
-    double         m_M01;
-    double         m_M02;   // Translation X
-    double         m_M10;
-    double         m_M11;
-    double         m_M12;   // Translation Y
-    double         m_M20;   // Perspective component
-    double         m_M21;   // Perspective component
-    double         m_M22;   // Overall scaling ... this can be = 1 at all times
-
-
-    // Acceleration attributes
-    // The direct matrix compensated for unit conversion
+    // The direct matrix
     double         m_D00;
     double         m_D01;
-    double         m_D02;   // Translation X Expressed in inverse X units
+    double         m_D02;   // Translation X
     double         m_D10;
     double         m_D11;
-    double         m_D12;   // Translation Y Expressed in inverse Y units
-    double         m_D20;   // Perspective component in inverse of dist unit X (inverse)
-    double         m_D21;   // Perspective component in inverse of dist unit Y (inverse)
+    double         m_D12;   // Translation Y
+    double         m_D20;   // Perspective component
+    double         m_D21;   // Perspective component
     double         m_D22;   // Overall scaling ... this can be = 1 at all times
 
     // The inverse matrix
@@ -275,8 +258,6 @@ private:
     double         m_I20;   // Perspective component in inverse of dist unit X (direct)
     double         m_I21;   // Perspective component in inverse of dist unit Y (direct)
     double         m_I22;   // Overall scaling ... this can be = 1 at all times
-
-    // The following are the units ponderated for unit transformation
 
     // Private methods
     void            Copy (const HGF2DProjective& pi_rObj);
