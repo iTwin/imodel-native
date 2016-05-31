@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
-#include <DgnPlatform/ImageUtilities.h>
 #include "WmsSource.h"
 
 #define TABLE_NAME_WmsTileData "WmsTileData"
@@ -407,6 +406,7 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
 
     BeAssert(pWmsTileData.IsValid());
 
+#if defined (NEEDS_WORK_READ_IMAGE)
     auto const& data = pWmsTileData->GetData();
     RgbImageInfo actualImageInfo;
     Utf8StringCR contentType = pWmsTileData->GetContentType();
@@ -436,6 +436,7 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     //&&MM how to tell if we need to enable alpha?
     //     We cannot reuse buffer anymore review...
     alphaBlend = m_mapInfo.m_transparent && actualImageInfo.m_hasAlpha;
+#endif
     return image;
     }
 

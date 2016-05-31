@@ -16,7 +16,6 @@
 
 
 #include <DgnPlatform/DgnDomain.h>
-#include <DgnPlatform/ImageUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/image.h>
 #include <Imagepp/h/ImageppAPI.h>
