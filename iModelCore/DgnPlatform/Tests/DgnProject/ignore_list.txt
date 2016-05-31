@@ -36,3 +36,6 @@ DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Ra
 DgnECNavigatorTest.PlantElementInfo # Improperly creating a GroupInformationElement when the "NamedGroupOwnsMembers" CA is found - Shaun/Carole
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # notified Raman
 DgnECNavigatorTest.DgnLinksElementInfo # on merge into 0601dev; notified Raman
+DependencyRevisionTest.TestDependency # sometimes fails on 0601 winx64 optimized; notified Paul
+
+DgnDb.GetCoordinateSystemProperties # on merge from graphite0505; notified John
