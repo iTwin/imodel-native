@@ -2,13 +2,13 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="BePointCloud" BentleyBuildMakeFile="BePointCloud.mke" >
+    <Part Name="BePointCloud" BentleyBuildMakeFile="BePointCloud.mke" ApiNumber="G06">
         <SubPart PartName="BentleyDll"      PartFile="Bentley"   Repository="Bentley"/>
         <SubPart PartName="BePointCloudSubParts"/>
         <SubPart PartName="VortexLibs" PartFile="PointoolsVortexAPI" Repository="PointoolsVortexAPI" />
         <Bindings>
           <PublicAPI Domain="BePointCloud" />
-          <Assemblies ProductDirectoryName="PointCloudAssemblies">Delivery/$(shlibprefix)BePointCloud$(shlibext)</Assemblies>
+          <Assemblies ProductDirectoryName="PointCloudAssemblies">Delivery/$(shlibprefix)BePointCloud$(ApiNumber)$(shlibext)</Assemblies>
           <Libs>Delivery/$(shlibprefix)BePointCloud$(libext)</Libs>
         </Bindings>
     </Part>
