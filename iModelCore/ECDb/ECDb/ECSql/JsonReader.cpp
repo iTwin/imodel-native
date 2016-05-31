@@ -612,7 +612,7 @@ void JsonReader::RelatedItemsDisplaySpecificationsCache::RemoveDuplicates(Relati
                 RelationshipPathInfo const& derivedInfo = *derivedInfoIter;
                 bvector<RelationshipPathInfo>::const_iterator it = std::find_if(baseInfos.begin(), baseInfos.end(), [&derivedInfo] (RelationshipPathInfo const& baseInfo)
                     {
-                    return (0 == ::stricmp(derivedInfo.m_path.c_str(), baseInfo.m_path.c_str()));
+                    return (0 == BeStringUtilities::StricmpAscii(derivedInfo.m_path.c_str(), baseInfo.m_path.c_str()));
                     });
 
                 if (it != baseInfos.end())
@@ -700,7 +700,7 @@ void JsonReader::RelatedItemsDisplaySpecificationsCache::AddEntryToCache(ECN::EC
 void JsonReader::RelatedItemsDisplaySpecificationsCache::DumpCache(ECClassCP ecClass /*=nullptr*/) const
     {
     if (ecClass)
-        LOG.tracev("ECRelationshipPath Cache (Filtered By Class %s)", ecClass->GetECSqlName());
+        LOG.tracev("ECRelationshipPath Cache (Filtered By Class %s)", ecClass->GetECSqlName().c_str());
     else
         LOG.tracev("ECRelationshipPath Cache:");
 
