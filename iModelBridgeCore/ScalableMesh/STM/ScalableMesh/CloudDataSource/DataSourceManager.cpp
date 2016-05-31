@@ -51,6 +51,32 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName &name, Dat
 }
 
 
+/*
+			DataSource							*	dataSource;
+			DataSource::Name						dataSourceName;
+			wstringstream							ss;
+			wstringstream							name;
+
+			if (m_dataSourceAccount == nullptr)
+				return nullptr;
+															// Get DataSourceName based on this thread's ID
+			std::thread::id threadID = std::this_thread::get_id();
+			name << threadID;
+			dataSourceName = name.str();
+															// Get the thread's DataSource or create a new one
+			dataSource = m_dataSourceAccount->getOrCreateDataSource(dataSourceName);
+			if (dataSource == nullptr)
+				return nullptr;
+															// Enable caching for this DataSource
+			dataSource->setCachingEnabled(true);
+
+			destSize = DEFAULT_DATA_SOURCE_BUFFER_SIZE;
+
+			dest.reset(new unsigned char[destSize]);
+
+			return dataSource;
+*/
+
 DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name, DataSourceAccount &account, bool *created)
 {
 	DataSource *	dataSource;

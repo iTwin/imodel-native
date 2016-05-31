@@ -575,6 +575,8 @@ DataSourceStatus ScalableMeshBase::initializeAzureTest(void)
 	accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
 															// Set up local file based caching
 	accountAzure->setCaching(*accountCaching, DataSourceURL());
+															// Set up default container
+	accountAzure->setPathPrefix(DataSourceURL(L"scalablemeshtest"));
 
 
 	return status;

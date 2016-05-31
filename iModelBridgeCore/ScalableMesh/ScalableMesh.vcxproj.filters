@@ -1531,6 +1531,7 @@
     <None Include="STM\ScalableMesh\CloudDataSource\CloudDataSourcePolicy.mki">
       <Filter>Source\STM\CloudDataSource</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="transkit\transkit.xml" />

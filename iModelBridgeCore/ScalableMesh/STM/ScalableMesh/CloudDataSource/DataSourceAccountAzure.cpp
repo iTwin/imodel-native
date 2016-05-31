@@ -124,9 +124,7 @@ DataSourceStatus DataSourceAccountAzure::setAccount(const AccountName & account,
 
 DataSourceStatus DataSourceAccountAzure::download(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize)
 {
-	downloadBlobSync(dataSource.getSubPath(), dest, readSize, destSize);
-	
-	return DataSourceStatus();
+	return downloadBlobSync(dataSource.getSubPath(), dest, readSize, destSize);
 }
 
 DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL & blobPath, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)

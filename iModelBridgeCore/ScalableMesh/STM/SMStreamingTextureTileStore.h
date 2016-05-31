@@ -34,7 +34,60 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     m_stream_store = &pi_Store;
                     }
 
-                void Load(uint32_t m_pID)
+
+				DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer> &dest, DataSourceBuffer::BufferSize destSize) const
+				{
+					if (dataSourceAccount == nullptr)
+						return nullptr;
+															// Get the thread's DataSource or create a new one
+					DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
+					if (dataSource == nullptr)
+						return nullptr;
+															// Make sure caching is enabled for this DataSource
+					dataSource->setCachingEnabled(true);
+
+					dest.reset(new unsigned char[destSize]);
+															// Return the DataSource
+					return dataSource;
+				}
+
+				void Load(DataSourceAccount *dataSourceAccount, uint32_t m_pID)
+				{
+					std::unique_ptr<DataSource::Buffer>			dest;
+					DataSource								*	dataSource;
+					DataSource::DataSize						readSize;
+
+					wstringstream ss;
+					ss << m_DataSource << L"t_" << m_pID << L".bin";
+					auto filename = ss.str();
+
+					DataSourceURL	dataSourceURL(ss.str());
+
+					DataSourceBuffer::BufferSize	destSize = 5 * 1024 * 1024;
+
+					dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
+					if (dataSource == nullptr)
+						return;
+
+					if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+						return;
+
+					if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+						return;
+
+					dataSource->close();
+
+					size_t UncompressedSize = reinterpret_cast<size_t&>(dest.get()[0]);
+					uint32_t compressedSize = (uint32_t) readSize - sizeof(size_t);
+
+					auto DataTypeArray = new uint8_t[UncompressedSize];
+					memcpy(DataTypeArray, &dest.get()[0] + sizeof(size_t), compressedSize);
+					this->DecompressTexture(DataTypeArray, compressedSize, (uint32_t)UncompressedSize);
+
+					m_IsLoaded = true;
+				}
+
+                void Load_Old(uint32_t m_pID)
                     {
                     wstringstream ss;
                     ss << m_DataSource << L"t_" << m_pID << L".bin";
@@ -53,6 +106,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                         }
                     m_IsLoaded = true;
                     }
+
                 bool IsLoaded() { return m_IsLoaded; }
                 bool IsLoading() { return m_IsLoading; }
                 void LockAndWait()
@@ -172,6 +226,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                     }
 
+				void				setDataSourceAccount	(DataSourceAccount *dataSourceAccount)		{ m_dataSourceAccount = dataSourceAccount; }
+				DataSourceAccount *	getDataSourceAccount	(void) const								{ return m_dataSourceAccount; }
+
             private:
                 bool m_IsLoaded;
                 bool m_IsLoading;
@@ -181,6 +238,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 condition_variable m_TextureCV;
                 mutex m_TextureMutex;
                 const scalable_mesh::azure::Storage* m_stream_store;
+
+				DataSourceAccount *	m_dataSourceAccount;
             };
 
         void OpenOrCreateBeFile(BeFile& file, HPMBlockID blockID)
@@ -206,7 +265,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     {
                     texture.SetDataSource(m_path);
                     texture.SetStore(m_stream_store);
-                    texture.Load(blockID.m_integerID);
+                    texture.Load(getDataSourceAccount(), blockID.m_integerID);
                     }
                 }
             assert(texture.IsLoaded());
@@ -233,7 +292,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 // stream from azure
                 }
 
-			m_dataSourceAccount = dataSourceAccount;
+			setDataSourceAccount(dataSourceAccount);
             }
 
         virtual ~StreamingTextureTileStore()
@@ -375,6 +434,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             {
             return false;
             }
+
+		void				setDataSourceAccount	(DataSourceAccount *dataSourceAccount)	{m_dataSourceAccount = dataSourceAccount;}
+		DataSourceAccount *	getDataSourceAccount	(void) const							{return m_dataSourceAccount;}
 
     private:
         WString m_path;

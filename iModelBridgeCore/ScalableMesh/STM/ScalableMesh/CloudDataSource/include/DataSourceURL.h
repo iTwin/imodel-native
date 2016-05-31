@@ -40,5 +40,5 @@ public:
 
 		DataSourceStatus	collapseDirectories		(DataSourceURL &result) const;
 
-		DataSourceStatus	appendDirectory			(const DataSourceURL &directory);
+		DataSourceStatus	append					(const DataSourceURL &directory);
 };

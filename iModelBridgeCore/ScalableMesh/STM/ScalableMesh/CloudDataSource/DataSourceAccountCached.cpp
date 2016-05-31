@@ -36,28 +36,18 @@ DataSourceStatus DataSourceAccountCached::getFullCacheURL(const DataSourceURL & 
 	if (getCacheRootURL() == nullptr)
 		return DataSourceStatus(DataSourceStatus::Status_Error);
 
-	// Construct cache path based on <CacheRootPath>\\<AccountName>\\<SourceURL>
-
-/*
-	cacheURL = *getCacheRootURL();
-	cacheURL += L"/";
-	cacheURL += getAccountName();
-	cacheURL += L"/";
-	cacheURL += sourceURL;
-*/
-
+															// Construct cache path based on <CacheRootPath>\\<AccountName>\\<SourceURL>
 	DataSourceURL	dataPath;
 	DataSourceURL	dataPathCollapsed;
 
-
 	cacheURL = *getCacheRootURL();
-	cacheURL += L"/";
 
-	dataPath = ((getAccountName() + L"/") + sourceURL);
-
+	dataPath = getAccountName();
+	dataPath.append(getPathPrefix());
+	dataPath.append(sourceURL);
 	dataPath.collapseDirectories(dataPathCollapsed);
 
-	cacheURL += dataPathCollapsed;
+	cacheURL.append(dataPathCollapsed);
 
 
 	return DataSourceStatus();

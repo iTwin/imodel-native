@@ -81,9 +81,6 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
 	}
 	else
 	{
-																// Size the buffer ready to read an arbitrary amount of data into it
-		if ((status = initializeBuffer(destSize, dest)).isFailed())
-			return status;
 																// Download unknown size
 		status = account->download(*this, dest, destSize, readSize);
 	}

@@ -772,6 +772,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="Import\Import.mke.realOrig" />
     <None Include="mki\AssertScalableTerrainModelPolicy.mki" />
     <None Include="PrivateAPI\STMInternal\Foundations\_Description.mki" />

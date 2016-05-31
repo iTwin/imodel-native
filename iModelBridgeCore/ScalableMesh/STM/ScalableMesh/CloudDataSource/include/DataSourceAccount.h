@@ -27,6 +27,7 @@ protected:
 	AccountName						accountName;
 	AccountIdentifier				accountIdentifier;
 	AccountKey						accountKey;
+	DataSourceURL					pathPrefix;
 
 	DataSourceTransferScheduler		transferScheduler;
 
@@ -62,7 +63,7 @@ public:
 			DataSource			*	createDataSource			(DataSource::Name &name);
 
 			DataSource			*	getOrCreateDataSource		(DataSource::Name &name, bool *created = nullptr);
-
+			DataSource			*	getOrCreateThreadDataSource	(bool *created = nullptr);
 
 	virtual DataSourceStatus		destroyDataSource			(DataSource *dataSource) = 0;
 
@@ -82,6 +83,9 @@ public:
 
 	virtual void					setCacheRootURL				(const DataSourceURL &root);
 	virtual const DataSourceURL	*	getCacheRootURL				(void);
+
+	void							setPathPrefix				(const DataSourceURL &url);
+	const	DataSourceURL			getPathPrefix				(void) const;
 
 	virtual DataSourceStatus		getFullCacheURL				(const DataSourceURL &sourceURL, DataSourceURL &fullCacheURL);
 

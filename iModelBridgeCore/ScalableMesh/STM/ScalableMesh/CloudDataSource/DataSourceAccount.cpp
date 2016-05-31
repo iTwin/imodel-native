@@ -4,6 +4,7 @@
 #include "DataSourceManager.h"
 #include "include\DataSourceAccount.h"
 
+#include <sstream>
 
 DataSourceTransferScheduler & DataSourceAccount::getTransferScheduler(void)
 {
@@ -110,6 +111,30 @@ DataSource * DataSourceAccount::getOrCreateDataSource(DataSourceManager::DataSou
 	return getDataSourceManager().getOrCreateDataSource(name, *this, created);
 }
 
+
+DataSource * DataSourceAccount::getOrCreateThreadDataSource(bool *created)
+{
+	std::wstringstream		name;
+	DataSource::Name		dataSourceName;
+															// Get thread ID and use as DataSource name
+	std::thread::id threadID = std::this_thread::get_id();
+	name << threadID;
+
+	dataSourceName = name.str();
+
+	return getDataSourceManager().getOrCreateDataSource(dataSourceName, *this, created);
+}
+
+
+void DataSourceAccount::setPathPrefix(const DataSourceURL & prefix)
+{
+	pathPrefix = prefix;
+}
+
+const DataSourceURL DataSourceAccount::getPathPrefix(void) const
+{
+	return pathPrefix;
+}
 
 DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
 {

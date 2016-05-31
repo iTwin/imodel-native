@@ -111,9 +111,9 @@ public:
 
     const WChar*						GetPath                 () const;
 
-	static DataSourceManager &			getDataSourceManager	(void)							{return s_dataSourceManager;}
-	void								setDataSourceAccount	(DataSourceAccount *account)	{m_dataSourceAccount = account;}
-	DataSourceAccount *					getDataSourceAccount	(void) const					{return m_dataSourceAccount;}
+	static DataSourceManager &			getDataSourceManager	(void)									{return s_dataSourceManager;}
+	void								setDataSourceAccount	(DataSourceAccount *dataSourceAccount)	{m_dataSourceAccount = dataSourceAccount;}
+	DataSourceAccount *					getDataSourceAccount	(void) const							{return m_dataSourceAccount;}
 
 	DataSourceStatus					initializeAzureTest		(void);
 

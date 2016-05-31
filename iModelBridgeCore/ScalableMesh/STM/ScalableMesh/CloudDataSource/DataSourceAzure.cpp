@@ -19,6 +19,7 @@ DataSourceStatus DataSourceAzure::open(const DataSourceURL & sourceURL, DataSour
 	DataSourceURL				containerName;
 	DataSourceURL				blobPathName;
 	DataSourceAccountAzure *	azureAccount;
+	DataSourceURL				path;
 
 
 	setMode(sourceMode);
@@ -30,10 +31,12 @@ DataSourceStatus DataSourceAzure::open(const DataSourceURL & sourceURL, DataSour
 	if((azureAccount = dynamic_cast<DataSourceAccountAzure *>(getAccount())) == nullptr)
 		return DataSourceStatus(DataSourceStatus::Status_Error_Not_Initialized);
 
-															// Get first directory as Container and the remainder as the blob's virtual path
-	if ((status = sourceURL.getContainerAndBlob(containerName, blobPathName)).isFailed())
-		return status;
+	path = azureAccount->getPathPrefix();
+	path.append(sourceURL);
 
+															// Get first directory as Container and the remainder as the blob's virtual path
+	if ((status = path.getContainerAndBlob(containerName, blobPathName)).isFailed())
+		return status;
 															// Set the name of the root container
 	setContainerName(containerName);
 															// Set blob's name within the root container

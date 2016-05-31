@@ -143,11 +143,12 @@ DataSourceStatus DataSourceURL::collapseDirectories(DataSourceURL & result) cons
 	return DataSourceStatus();
 }
 
-DataSourceStatus DataSourceURL::appendDirectory(const DataSourceURL & directory)
+DataSourceStatus DataSourceURL::append(const DataSourceURL & path)
 {
-	*this += DATA_SOURCE_URL_SEPARATOR;
+	if(length() > 0 && path.length() > 0)
+		*this += DATA_SOURCE_URL_SEPARATOR;
 
-	*this += directory;
+	*this += path;
 
 	return DataSourceStatus();
 }
