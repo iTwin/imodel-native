@@ -22,10 +22,13 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 //----------------------------------------------------------------------------------------
 PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel const& model, PtViewport& ptViewport)
     :m_ptViewport(&ptViewport),
-     m_model(model),
-     m_waitTime(0),
-     m_nextRetryTime(0),
-     m_lastTentativeStopped(false)
+    m_model(model),
+    m_waitTime(0),
+    m_nextRetryTime(0),
+    m_lastTentativeStopped(false),
+    m_progressivePts(0),
+    m_firstPassPts(0),
+    m_totalProgressivePts(0)
     {
     m_tentativeId = 0;
     m_model.GetRange(m_sceneRangeWorld, PointCloudModel::Unit::World);
@@ -36,6 +39,7 @@ PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel cons
 //----------------------------------------------------------------------------------------
 PointCloudProgressiveDisplay::~PointCloudProgressiveDisplay() 
     {
+    INFO_PRINTF("END Display firstPass=%ld progressive=%ld TotalProgressive=%ld", m_firstPassPts, m_progressivePts, m_totalProgressivePts);
     }
 
 //----------------------------------------------------------------------------------------
@@ -88,7 +92,7 @@ struct MyPointCloudDraw : Render::PointCloudDraw    //NEEDS_WORK_CONTINUOUS_REND
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
 //----------------------------------------------------------------------------------------
-bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::RenderContextR context, PtQueryDensity densityType, float density, bool doCheckStop)
+bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, uint64_t& pointsDrawn, Dgn::RenderContextR context, PtQueryDensity densityType, float density, bool doCheckStop)
     {
     PointCloudQueryHandlePtr queryHandle(m_model.GetPointCloudSceneP()->GetFrustumQueryHandle());
 
@@ -140,6 +144,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
             pointCloudDraw.m_ptCount = queryBuffers->GetNumPoints();
 
             pGraphic->AddPointCloud(&pointCloudDraw);
+            pointsDrawn += pointCloudDraw.m_ptCount;
             ++buffersCount;
             }
         }
@@ -184,7 +189,7 @@ void PointCloudProgressiveDisplay::DrawView (Dgn::RenderContextR context)
     DEBUG_PRINTF("        ");
     DEBUG_PRINTF("Begin PointCloudProgressiveDisplay::DrawView");
     int64_t pointsToLoad = 0;
-    if (!DrawPointCloud(pointsToLoad, context, densityType, density, false/*checkStop*/) || pointsToLoad > 0 || density < 1.0f)
+    if (!DrawPointCloud(pointsToLoad, m_firstPassPts, context, densityType, density, false/*checkStop*/) || pointsToLoad > 0 || density < 1.0f)
         {
         context.GetViewportR().ScheduleTerrainProgressiveTask(*this);
         m_waitTime = 100;
@@ -219,16 +224,19 @@ ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::Pr
     static float density = m_model.GetViewDensity();
     static PtQueryDensity densityType = PtQueryDensity::QUERY_DENSITY_VIEW; // Get only points in memory for a view representation. Points still on disk will get loaded at a later time.
 
+    m_progressivePts = 0;
     int64_t pointsToLoad = 0;
-    if (!DrawPointCloud(pointsToLoad, context, densityType, density, true/*checkStop*/) || pointsToLoad > 0)
+    if (!DrawPointCloud(pointsToLoad, m_progressivePts, context, densityType, density, true/*checkStop*/) || pointsToLoad > 0)
         {
+        m_totalProgressivePts += m_progressivePts;
         m_waitTime = (uint64_t)(m_waitTime * 1.33);
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;  
 
         DEBUG_PRINTF("(%d)Aborted _DoProgressive pointsToLoad=%ld", m_tentativeId, pointsToLoad);
         return ProgressiveTask::Completion::Aborted;
         }
-    
+
+    m_totalProgressivePts += m_progressivePts;
     DEBUG_PRINTF("(%d)Finished _DoProgressive", m_tentativeId);
     return ProgressiveTask::Completion::Finished;
     }

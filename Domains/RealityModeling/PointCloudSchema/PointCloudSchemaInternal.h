@@ -53,10 +53,12 @@
 #if defined (POINTCLOUD_TRACE)
 #   define PCLOG (*NativeLogging::LoggingManager::GetLogger ("PointCloud"))
 #   define DEBUG_PRINTF PCLOG.debugv
+#   define INFO_PRINTF  PCLOG.infov
 #   define WARN_PRINTF  PCLOG.warningv
 #   define ERROR_PRINTF PCLOG.errorv
 #else
 #   define DEBUG_PRINTF(...)
+#   define INFO_PRINTF(...)
 #   define WARN_PRINTF(...)
 #   define ERROR_PRINTF(...)
 #endif
