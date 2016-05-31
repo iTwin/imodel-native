@@ -30,7 +30,6 @@ struct FileStorage
 
         static BentleyStatus CreateNewCachedFileFolderName(Utf8StringR folderNameOut);
         static BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
-        static BentleyStatus GetIsFilePersistent(bool& isPersistent, FileCache cacheLocation, FileInfoCR existingFileInfo);
         static BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
         static BeFileName GetFileCacheFolderPath(BeFileName rootDir, WStringCR cacheName);
 
