@@ -640,8 +640,6 @@ BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::ExtractRelatio
 
         for (RelationshipPathInfo const& pathInfo : iter->second)
             {
-            pathInfo.m_derivedClasses;
-
             Utf8String basePathStr = relationshipPathStr;
             
             basePathStr.append(".");
@@ -712,7 +710,7 @@ void JsonReader::RelatedItemsDisplaySpecificationsCache::DumpCache(ECClassCP ecC
         if (ecClass != nullptr && !ecClass->Is(pathClass))
             continue;
 
-        LOG.infov("\tClass %s:", pathClass->GetECSqlName());
+        LOG.infov("\tClass %s:", pathClass->GetECSqlName().c_str());
 
         bvector<ECRelationshipPath> const& pathVector = iter->second;
         for (ECRelationshipPath const& path : pathVector)
