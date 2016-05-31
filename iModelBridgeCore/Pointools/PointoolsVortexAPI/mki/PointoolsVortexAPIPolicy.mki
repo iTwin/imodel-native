@@ -8,6 +8,7 @@
 
 BUILD_NO_STACK_CHECK=1
 #HAVE_OPENGL= 1
+IS_THIRD_PARTY_LIBRARY              = 1
 
 %include $(SrcRoot)/Pointools/PointoolsCommon/mki/PolicyCommon.mki
 %include $(SrcRoot)/Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPI_Version.mki
