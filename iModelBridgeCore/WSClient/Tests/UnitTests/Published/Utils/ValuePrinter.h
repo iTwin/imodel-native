@@ -73,8 +73,9 @@ namespace Json
     void PrintTo(const Value& value, ::std::ostream* os);
     }
 
-void PrintTo(const WString& value, ::std::ostream* os);
 void PrintTo(const Utf8String& value, ::std::ostream* os);
+void PrintTo(const WString& value, ::std::ostream* os);
+void PrintTo(const BeFileName& value, ::std::ostream* os);
 void PrintTo(BentleyStatus value, ::std::ostream* os);
 END_BENTLEY_NAMESPACE
 
