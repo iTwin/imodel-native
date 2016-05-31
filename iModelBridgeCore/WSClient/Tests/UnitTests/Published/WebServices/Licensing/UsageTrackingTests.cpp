@@ -75,6 +75,6 @@ TEST_F(UsageTrackingTests, PostMultipleUsage)
 TEST_F(UsageTrackingTests, PostEmptyUsage)
     {
     UsageTrackingData utd;
-    auto status = UsageTracking::RegisterUserUsages (utd);
+    auto status = UsageTracking::RegisterUserUsages (utd)->GetResult();
     EXPECT_EQ(UsageTracking::Status::NoUsages, status);
     }
