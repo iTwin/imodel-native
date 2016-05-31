@@ -268,38 +268,18 @@
     /**
     @page ECDbECSchemaRules Rules for ECSchemas supported by ECDb
     
-    There are some rules creators of @ref BentleyApi::ECN::ECSchema "ECSchemas" should follow so that the 
-    %ECSchema can be used in %ECDb. These rules are semantically common sense anyways and might eventually be merged into the 
-    %ECSchema specification, so it should be straightforward to follow them.
-
-    ### Naming
-    Names may not differ only by case. This applies to
-    - %ECSchemas
-    - %ECClasses within a schema
-    - %ECProperties withing a class (including inherited properties)
-    
-    It is suggested that you avoid names that only differ by case throughout the system
-
-    ### Schema
-    - A unique namespace prefix must be defined and the namespace prefix must be a valid ECName and must not be empty.
-
-    ### Relationship Class
-    - For non-abstract relationship classes, both relationship constraints must be well-defined.
-        - At least one class must be specified for each constraint
-    - For abstract relationship classes constraints must not be specified because they are not inherited.
-    - Abstract relationship classes may not be instantiated or used to relate instances in a repository.
-    
-    @see @ref ECDbRelationshipMappingRules for more rules
-
-    ### Properties
-    - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
-    - @ref BentleyApi::ECN::ArrayECProperty "Array ECProperties'" @b MinOccurs and @b MaxOccurs are enforced.
+    This lists rules that ECDb enforces in addition to what ECObjects already enforces, as well as limitations which ECDb cannot enforce.
+    Rules already enforced by ECObjects are not listed here.
 
     ### Enumerations
     - %ECDb does not enforce @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" 
     @ref BentleyApi::ECN::ECEnumeration "ECEnumerations". For %ECProperties that
     have a @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" %ECEnumeration as property type, 
     callers have to make sure to not assign values which are not defined in the %ECEnumeration.
+    
+    ### Properties
+    - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
+    - @ref BentleyApi::ECN::ArrayECProperty "Array ECProperties'" @b MinOccurs and @b MaxOccurs are enforced.
     
     @see @ref ECDbOverview
     */
