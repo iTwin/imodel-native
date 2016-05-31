@@ -63,6 +63,7 @@ LINKER_LIBRARIES               =    $(SubpartLibs)Bentley.lib \
                                     $(SubpartLibs)BeLibXml2.lib         \
                                     $(SubpartLibs)BentleyGeom.lib       \
                                     $(SubpartLibs)ECObjects.lib         \
+                                    $(SubpartLibs)Units.lib             \
                                     $(SubpartLibs)BeJsonCpp.lib         \
                                     gdi32.lib                           \
                                     user32.lib                          \

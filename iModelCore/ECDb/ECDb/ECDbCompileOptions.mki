@@ -2,7 +2,7 @@
 #
 #     $Source: ECDb/ECDbCompileOptions.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 appName                     = BeSQLiteEC
@@ -13,6 +13,7 @@ buildDir                    = $(OutputRootDir)build/
 
 BeSQLiteLib                 = $(libprefix)BeSQLite$(libext)
 ECNativeObjectsLib          = $(libprefix)ECObjects$(libext)
+UnitsLib                    = $(libprefix)Units$(libext)
 BentleyGeomLib              = $(libprefix)BentleyGeom$(libext)
 BentleyGeomFlatBufferLib    = $(libprefix)BentleyGeomFlatBuffer$(libext)
 
