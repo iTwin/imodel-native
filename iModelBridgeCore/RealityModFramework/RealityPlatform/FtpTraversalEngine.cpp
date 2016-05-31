@@ -22,35 +22,21 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
-struct FtpFile
+struct CurlHolder
     {
-    const char* filename; // Name to store the file as if successful.
-    FILE* stream;
+    public:
+        CurlHolder() : m_curl(curl_easy_init()) {}
+        ~CurlHolder() { if (NULL != m_curl) curl_easy_cleanup(m_curl); }
+        CURL* Get() const { return m_curl; }
+
+    private:
+        CURL* m_curl;
     };
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    4/2016
-//-------------------------------------------------------------------------------------
-//static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
-//    {
-//    FtpFile* out = (FtpFile*)stream;
-//    if (out && !out->stream)
-//        {
-//        // Open file for writing.
-//        out->stream = fopen(out->filename, "wb");
-//        if (!out->stream)
-//            return -1; // Failure, can't open file to write.
-//        }
-//    return fwrite(buffer, size, nmemb, out->stream);
-//    }
-
-//static size_t GetFilesList_response(void* ptr, size_t size, size_t nmemb, void* data)
-//    {
-//    FILE* writehere = (FILE*) data;
-//    return fwrite(ptr, size, nmemb, writehere);
-//    }
 
 //-------------------------------------------------------------------------------------
+// Curl callback that receive data.
+//
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
@@ -60,6 +46,7 @@ static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
     }
 
 
+// Client repository mapping init.
 FtpClient::RepositoryMapping FtpClient::m_dataRepositories = FtpClient::RepositoryMapping();
 
 //-------------------------------------------------------------------------------------
@@ -77,13 +64,9 @@ FtpStatus FtpClient::DownloadContent(Utf8CP outputDirPath) const
     {
     FtpStatus status = FtpStatus::UnknownError;
 
-    // Make sure client is init.
-    if (NULL == m_curlHolder.Get())
-        return FtpStatus::ClientInitError;
-
-    // Set output directory.
+    // Set working directory.
     Utf8String workingDir = outputDirPath;
-    if (NULL == outputDirPath)
+    if (workingDir.empty())
         {
         // Find temp directory.
         BeFileName tempDirPath;
@@ -108,21 +91,68 @@ FtpStatus FtpClient::DownloadContent(Utf8CP outputDirPath) const
         {
         WString filename(workingDir.c_str(), BentleyCharEncoding::Utf8);
         RealityDataDownload::ExtractFileName(filename, fileList[i]);
-
-        // RealityDataDownload mapping.
         urlList.push_back(std::make_pair(fileList[i], filename));
         }
 
     // Download files.
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);
     if (pDownload == NULL)
-        return FtpStatus::DownloadInitError;
+        return FtpStatus::DownloadError;
 
     pDownload->SetStatusCallBack(ConstructRepositoryMapping);
     if (!pDownload->Perform())
-        return FtpStatus::DownloadRequestError;
+        return FtpStatus::DownloadError;
 
-    
+    return status;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    4/2016
+//-------------------------------------------------------------------------------------
+FtpStatus FtpClient::GetFileList(bvector<Utf8String>& fileList) const
+    {
+    return GetFileList(m_pServer->GetUrl().c_str(), fileList);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+FtpStatus FtpClient::GetData() const
+    {
+    FtpStatus status = FtpStatus::UnknownError;
+
+    // Download files from root. Store them in our temp directory.
+    status = DownloadContent();
+    if (FtpStatus::Success != status)
+        return status;
+
+    // Data extraction.
+    FtpDataPtr pExtractedData;
+    for (size_t i = 0; i < m_dataRepositories.size(); ++i)
+        {
+        //&&JFC TODO: Can do better ?
+        // Construct output path.
+        Utf8String outputPath = m_dataRepositories[i].second;
+        outputPath.erase(outputPath.find_last_of('.'));
+        WString outputPathW(outputPath.c_str(), BentleyCharEncoding::Utf8);
+        BeFileName::CreateNewDirectory(outputPathW.c_str());
+
+        // Extract data.
+        pExtractedData = FtpDataHandler::ExtractDataFromPath(m_dataRepositories[i].second.c_str(), outputPath.c_str());
+
+        // Override source url so that it points to the ftp repository and not the local one.
+        pExtractedData->SetUrl(m_dataRepositories[i].first.c_str());
+
+        // Set server.
+        pExtractedData->SetServer(*m_pServer);
+
+        // Process created data.
+        if (m_pObserver != NULL && pExtractedData != NULL)
+            m_pObserver->OnDataExtracted(*pExtractedData);
+
+        // Delete working dir and its content.
+        BeFileName::EmptyAndRemoveDirectory(outputPathW.c_str());
+        }    
 
     return status;
     }
@@ -136,51 +166,11 @@ Utf8StringCR FtpClient::GetServerUrl() const
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    4/2016
-//-------------------------------------------------------------------------------------
-FtpStatus FtpClient::GetFileList(bvector<Utf8String>& fileList) const
-    {
-    return GetFileListFromPath(m_pServer->GetUrl().c_str(), fileList);
-    }
-
-//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpStatus FtpClient::GetData() const
+const FtpClient::RepositoryMapping& FtpClient::GetRepositoryMapping() const
     {
-    FtpStatus status = FtpStatus::UnknownError;
-    //FtpDataHandlerPtr pDataHandler = FtpDataHandler::Create();
-
-    // Download files from root. Store them in our temp directory.
-    status = DownloadContent();
-    if (FtpStatus::Success != status)
-        return status;
-
-    // Data extraction.
-    FtpDataPtr pExtractedData;
-    for (size_t i = 0; i < m_dataRepositories.size(); ++i)
-        {
-        // Construct output path.
-        Utf8String outputPath = m_dataRepositories[i].second;
-        outputPath.erase(outputPath.find_last_of('.'));
-
-        //BeFileName outputDir(m_dataRepositories[i].second);
-        WString outputPathW(outputPath.c_str(), BentleyCharEncoding::Utf8);
-        BeFileName::CreateNewDirectory(outputPathW.c_str());
-
-        pExtractedData = FtpDataHandler::ExtractDataFromPath(m_dataRepositories[i].second.c_str(), outputPath.c_str());
-
-        // Override source url so that it points to the ftp repository and not the local one.
-        pExtractedData->SetUrl(m_dataRepositories[i].first.c_str());
-
-        // Set server.
-        pExtractedData->SetServer(*m_pServer);
-
-        if (m_pObserver != NULL && pExtractedData != NULL)
-            m_pObserver->OnDataExtracted(*pExtractedData);
-        }
-
-    return status;
+    return m_dataRepositories;
     }
 
 //-------------------------------------------------------------------------------------
@@ -196,28 +186,9 @@ void FtpClient::SetObserver(IFtpTraversalObserver* pObserver)
 //-------------------------------------------------------------------------------------
 FtpClient::FtpClient(Utf8CP url)
     {
-    //curl_global_init(CURL_GLOBAL_ALL);
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-
-    //WChar exePath[MAX_PATH];
-    //GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-    // Find temp directory and construct the working directory.
-    //BeFileName tempDirPath;
-    //BeFileName::BeGetTempPath(tempDirPath);
-    //if (!tempDirPath.IsEmpty())
-    //    {
-    //    tempDirPath.AppendToPath(L"Bentley\\ConceptStationApp\\.RealityData\\ftpdata");
-    //    BeFileName::CreateNewDirectory(tempDirPath.GetName());
-    //    m_workingDir = tempDirPath.GetNameUtf8();
-    //    }
-
-    m_pObserver = NULL;
-    
-    //m_dataRepositories = bvector<DataRepositoryPair>();
-
-    // Create FtpServer.
     m_pServer = FtpServer::Create(url);
+    m_pObserver = NULL;    
+    m_dataRepositories = RepositoryMapping();    
     }
 
 //-------------------------------------------------------------------------------------
@@ -225,8 +196,6 @@ FtpClient::FtpClient(Utf8CP url)
 //-------------------------------------------------------------------------------------
 FtpClient::~FtpClient()
     {
-    curl_global_cleanup();
-
     if (0 != m_pObserver)
         {
         delete m_pObserver;
@@ -237,36 +206,7 @@ FtpClient::~FtpClient()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-//FtpStatus FtpClient::GetContent(bvector<Utf8String>& contentList) const
-//    {
-//    // Create request to get a list of all the content from root.
-//    FtpRequestPtr pRequest = FtpRequest::Create(m_pServer->GetUrl().c_str());
-//    pRequest->SetDirListOnly(true);
-//
-//    // Perform content request.
-//    FtpResponsePtr pResponse = pRequest->Perform();
-//    if (!pResponse->IsSuccess())
-//        return pResponse->GetStatus();
-//
-//    // Parse response.
-//    bvector<Utf8String> parsedList;
-//    BeStringUtilities::Split(pResponse->GetContent().c_str(), "\n", contentList);
-//
-//    return FtpStatus::Success;
-//    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    4/2016
-//-------------------------------------------------------------------------------------
-//Utf8StringCR FtpClient::GetUrl() const
-//    {
-//    return m_pServer->GetUrl();
-//    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    4/2016
-//-------------------------------------------------------------------------------------
-FtpStatus FtpClient::GetFileListFromPath(Utf8CP url, bvector<Utf8String>& fileList) const
+FtpStatus FtpClient::GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
     {
     // Create request to get a list of all the files from the given path.
     FtpRequestPtr pRequest = FtpRequest::Create(url);
@@ -292,7 +232,7 @@ FtpStatus FtpClient::GetFileListFromPath(Utf8CP url, bvector<Utf8String>& fileLi
             subPath.append(content);
             subPath.append("/");
 
-            GetFileListFromPath(subPath.c_str(), fileList);
+            GetFileList(subPath.c_str(), fileList);
             }
         else
             {
@@ -312,9 +252,9 @@ FtpStatus FtpClient::GetFileListFromPath(Utf8CP url, bvector<Utf8String>& fileLi
 void FtpClient::ConstructRepositoryMapping(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
-    if (pEntry->filename.EndsWith(L"zip") && ErrorCode == 0)
+    if (ErrorCode == 0)
         {
-        // Construct data mapping (FileFullPathAndName, FileNameOnly) for downloaded file.
+        // Construct repo mapping (remote location, local location) for downloaded file.
         Utf8String url(pEntry->url);
         Utf8String filename(pEntry->filename);
 
@@ -323,18 +263,11 @@ void FtpClient::ConstructRepositoryMapping(int index, void *pClient, int ErrorCo
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-//FtpDataPtr FtpClient::CreateDataFromFile(BeFileNameCR file) const
-//    {
-//    return FtpData::Create(file);
-//    }
-
-//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 bool FtpClient::IsDirectory(Utf8CP content) const
     {
+    //&&JFC TODO: More robust check.
     Utf8String contentStr(content);
     return (BeStringUtilities::NPOS == contentStr.find("."));
     }
@@ -351,58 +284,33 @@ FtpRequestPtr FtpRequest::Create(Utf8CP url)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpRequestPtr FtpRequest::Create(const CurlHolder& curlHolder, Utf8CP url)
-    {
-    return new FtpRequest(curlHolder, url);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    4/2016
-//-------------------------------------------------------------------------------------
 FtpResponsePtr FtpRequest::Perform()
     {
-    Utf8String response = "";
-    FtpStatus status = FtpStatus::UnknownError;
+    Utf8String response;
+    CurlHolder curl;
     CURLcode res;
-    CurlHolder test;
 
-    // Specify URL to get.
-    curl_easy_setopt(test.Get(), CURLOPT_URL, m_url);
+    // Specify url to get.
+    curl_easy_setopt(curl.Get(), CURLOPT_URL, m_url);
 
     // Set options.
-    curl_easy_setopt(test.Get(), CURLOPT_CUSTOMREQUEST, m_method); // Custom string for request method.
-    curl_easy_setopt(test.Get(), CURLOPT_DIRLISTONLY, m_dirListOnly); // Ask for names only in a directory listing.
-    curl_easy_setopt(test.Get(), CURLOPT_VERBOSE, m_verbose); // Switch on full protocol/debug output while testing.
+    curl_easy_setopt(curl.Get(), CURLOPT_CUSTOMREQUEST, m_method); // Custom string for request method.
+    curl_easy_setopt(curl.Get(), CURLOPT_DIRLISTONLY, m_dirListOnly); // Ask for names only in a directory listing.
+    curl_easy_setopt(curl.Get(), CURLOPT_VERBOSE, m_verbose); // Switch on full protocol/debug output while testing.
 
     // Send all data to this function.
-    curl_easy_setopt(test.Get(), CURLOPT_WRITEFUNCTION, WriteData);
+    curl_easy_setopt(curl.Get(), CURLOPT_WRITEFUNCTION, WriteData);
 
     // We pass our struct to the callback function.
-    curl_easy_setopt(test.Get(), CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl.Get(), CURLOPT_WRITEDATA, &response);
 
     // Perform the request, res will get the return code.
-    res = curl_easy_perform(test.Get());
+    res = curl_easy_perform(curl.Get());
 
     // Check for errors.
-    if (CURLE_OK != res)
-        {
-        switch (res)
-            {
-            case CURLE_COULDNT_RESOLVE_HOST:
-                status = FtpStatus::CouldntResolveHost;
-                break;
-            case CURLE_COULDNT_CONNECT:
-                status = FtpStatus::CouldntConnect;
-                break;
-            default:
-                status = FtpStatus::UnknownError;
-                break;
-            }
-        }
-    else if (response.empty())
-        status = FtpStatus::ResponseError;
-    else
-        status = FtpStatus::Success;
+    FtpStatus status = FtpStatus::Success;
+    if (CURLE_OK != res || response.empty())
+        status = FtpStatus::CurlError;
 
     return FtpResponse::Create(m_url.c_str(), response.c_str(), status);
     }
@@ -414,13 +322,14 @@ FtpRequest::FtpRequest(Utf8CP url)
     : m_url(url), m_method("NLST"), m_dirListOnly(false), m_verbose(false)
     {}
 
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpRequest::FtpRequest(const CurlHolder& curlHolder, Utf8CP url)
-    : m_curlHolder(curlHolder), m_url(url), m_method("NLST"), m_dirListOnly(false), m_verbose(false)
-    {}
-
+FtpResponsePtr FtpResponse::Create()
+    {
+    return new FtpResponse("", "", FtpStatus::UnknownError);
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
@@ -459,7 +368,9 @@ FtpStatus FtpResponse::GetStatus() const
 //-------------------------------------------------------------------------------------
 bool FtpResponse::IsSuccess() const
     {
-    return (!m_effectiveUrl.empty() && !m_content.empty() && (FtpStatus::Success == m_status));
+    return (!m_effectiveUrl.empty() && 
+            !m_content.empty() && 
+            (FtpStatus::Success == m_status));
     }
 
 //-------------------------------------------------------------------------------------
@@ -467,9 +378,8 @@ bool FtpResponse::IsSuccess() const
 //-------------------------------------------------------------------------------------
 FtpResponse::FtpResponse(Utf8CP effectiveUrl, Utf8CP content, FtpStatus status)
     : m_effectiveUrl(effectiveUrl), m_content(content), m_status(status)
-    {
+    {}
 
-    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
@@ -477,14 +387,6 @@ FtpResponse::FtpResponse(Utf8CP effectiveUrl, Utf8CP content, FtpStatus status)
 FtpDataPtr FtpData::Create()
     {
     return new FtpData();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpDataPtr FtpData::Create(BeFileNameCR file)
-    {
-    return new FtpData(file);
     }
 
 //-------------------------------------------------------------------------------------
@@ -528,72 +430,12 @@ void FtpData::SetServer(FtpServerR server) { m_pServer = &server; }
 //-------------------------------------------------------------------------------------
 FtpData::FtpData()
     {
-    m_name = "";
-    m_url = "";
-    m_compoundType = "";
     m_size = 0;
-    m_dataType = "";
-    m_locationInCompound = "";
     m_date = DateTime();
     m_footprint = DRange2d();
     m_pThumbnail = FtpThumbnail::Create();
     m_pMetadata = FtpMetadata::Create();
-    m_pServer = FtpServer::Create("");
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpData::FtpData(BeFileNameCR file)
-    {
-    //// Unzip files downloaded from the ftp server so we can have access to the tif files.
-    //UnzipFiles(file);
-    //
-    //// Get a list of tif files to process.
-    //bvector<BeFileName> fileFoundList;
-    //BeDirectoryIterator::WalkDirsAndMatch(fileFoundList, m_workingDir, L"*.tif", true);
-
-    // Data extraction.
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-FtpStatus FtpData::UnzipFiles(BeFileNameCR file) const
-    {
-    // Get a list of zip files to process.
-    //bvector<BeFileName> fileFoundList;
-    //BeDirectoryIterator::WalkDirsAndMatch(fileFoundList, m_workingDir, L"*.zip", true);
-
-    // Unzip files.    
-    //for (size_t i = 0; i < fileFoundList.size(); ++i)
-    //    {
-   //     WString outputDirPathW(m_workingDir.GetName());
-   //
-   //     // Construct output path.
-   //     WString outputFolderName;
-   //     RealityDataDownload::ExtractFileName(outputFolderName, fileFoundList[i].GetNameUtf8());
-   //     outputFolderName.erase(outputFolderName.find_last_of('.'));
-   //     outputDirPathW.append(outputFolderName);
-   //     BeFileName::CreateNewDirectory(outputDirPathW.c_str());
-   //
-   //     WString filenameW(fileFoundList[i].GetName());
-   //     RealityDataDownload::UnZipFile(filenameW, outputDirPathW);
-   //     }
-    
-    //WString outputDirPathW(file.GetName());
-    //
-    //// Construct output path.
-    //WString outputFolderName;
-    //RealityDataDownload::ExtractFileName(outputFolderName, file.GetNameUtf8());
-    //outputFolderName.erase(outputFolderName.find_last_of('.'));
-    //outputDirPathW.append(outputFolderName);
-    //BeFileName::CreateNewDirectory(outputDirPathW.c_str());
-    //
-    //WString filenameW(fileFoundList[i].GetName());
-    //RealityDataDownload::UnZipFile(filenameW, outputDirPathW);
-
-    return FtpStatus::Success;
+    m_pServer = FtpServer::Create();
     }
 
 
@@ -608,9 +450,9 @@ FtpThumbnailPtr FtpThumbnail::Create()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpThumbnailPtr FtpThumbnail::Create(Utf8CP rasterFilePath)
+FtpThumbnailPtr FtpThumbnail::Create(RealityDataCR rasterData)
     {
-    return new FtpThumbnail(rasterFilePath);
+    return new FtpThumbnail(rasterData);
     }
 
 //-------------------------------------------------------------------------------------
@@ -642,9 +484,6 @@ void FtpThumbnail::SetGenerationDetails(Utf8CP details) { m_generationDetails = 
 //-------------------------------------------------------------------------------------
 FtpThumbnail::FtpThumbnail()
     {
-    m_provenance = "";
-    m_format = "";
-    m_generationDetails = "";
     m_width = THUMBNAIL_WIDTH;
     m_height = THUMBNAIL_HEIGHT;
     m_stamp = DateTime::GetCurrentTimeUtc();
@@ -654,7 +493,7 @@ FtpThumbnail::FtpThumbnail()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpThumbnail::FtpThumbnail(Utf8CP rasterFilePath)
+FtpThumbnail::FtpThumbnail(RealityDataCR rasterData)
     {
     m_provenance = "Created by RealityDataHandler tool.";
     m_format = "png";
@@ -663,8 +502,7 @@ FtpThumbnail::FtpThumbnail(Utf8CP rasterFilePath)
     m_stamp = DateTime::GetCurrentTimeUtc();
     m_generationDetails = "Created by RealityDataHandler tool.";        
 
-    RealityDataPtr pRasterData = RasterData::Create(rasterFilePath);
-    pRasterData->GetThumbnail(m_data, m_width, m_height);
+    rasterData.GetThumbnail(m_data, m_width, m_height);
     }
 
 
@@ -679,7 +517,7 @@ FtpMetadataPtr FtpMetadata::Create()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpMetadataPtr FtpMetadata::Create(Utf8CP filePath)
+FtpMetadataPtr FtpMetadata::CreateFromFile(Utf8CP filePath)
     {
     return new FtpMetadata(filePath);
     }
@@ -709,14 +547,7 @@ void FtpMetadata::SetData(Utf8CP data) { m_data = data; }
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 FtpMetadata::FtpMetadata()
-    {
-    m_provenance = "";
-    m_description = "";
-    m_contactInfo = "";
-    m_legal = "";
-    m_format = "";
-    m_data = "";
-    }
+    {}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
@@ -726,12 +557,8 @@ FtpMetadata::FtpMetadata(Utf8CP filePath)
     BeFileName metadataFile(filePath);
     Utf8String provenance(metadataFile.GetFileNameAndExtension());
     m_provenance = provenance;
-    m_description = "";
-    m_contactInfo = "";
-    m_legal = "";
     Utf8String format(metadataFile.GetExtension());
     m_format = format;
-    m_data = "";
 
     BeXmlStatus xmlStatus = BEXML_Success;
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filePath, NULL);
@@ -746,6 +573,14 @@ FtpMetadata::FtpMetadata(Utf8CP filePath)
         }
     }
 
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+FtpServerPtr FtpServer::Create()
+    {
+    return new FtpServer();
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
@@ -794,27 +629,29 @@ void FtpServer::SetType(Utf8CP type) { m_type = type; }
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
+FtpServer::FtpServer()
+    {}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
 FtpServer::FtpServer(Utf8CP url)
     : m_url(url)
     {
     // Default values.
-    m_protocol = "";
-    m_name = "";
-    m_contactInfo = "";
-    m_legal = "";
-    m_state = "";
-    m_type = "";
     m_online = true;
     m_lastCheck = DateTime::GetCurrentTimeUtc();
     m_lastTimeOnline = DateTime::GetCurrentTimeUtc();
     m_latency = 0.0;
 
-    // Extract protocol and name from url.
     if (!m_url.empty())
         {
+        // Extract protocol and type from url.
         Utf8String protocol(url);
         m_protocol = protocol.substr(0, protocol.find_first_of(":"));
+        m_type = m_protocol;
 
+        // Extract name from url.
         Utf8String name(url);
         size_t beginPos = name.find_first_of("://") + 3;
         size_t pos = name.find_last_of(".");
@@ -890,26 +727,18 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
     pExtractedData->SetFootprint(shape);
 
     // Thumbnail.
-    bvector<Byte> data;
-    pRasterData->GetThumbnail(data, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-    FtpThumbnailPtr pThumbnail = FtpThumbnail::Create();
-    pThumbnail->SetProvenance("Created by RealityDataHandler tool.");
-    pThumbnail->SetFormat("pgn");
-    pThumbnail->SetWidth(THUMBNAIL_WIDTH);
-    pThumbnail->SetHeight(THUMBNAIL_HEIGHT);
-    pThumbnail->SetData(data);
-    pThumbnail->SetGenerationDetails("Created by RealityDataHandler tool.");
+    FtpThumbnailPtr pThumbnail = FtpThumbnail::Create(*pRasterData);
     if (pThumbnail != NULL)
         pExtractedData->SetThumbnail(*pThumbnail);
 
     // Metadata.    
     BeFileName metadataFilename = FtpDataHandler::BuildMetadataFilename(tifFileList[0].GetDirectoryName().GetNameUtf8().c_str());
-    FtpMetadataPtr pMetadata = FtpMetadata::Create(metadataFilename.GetNameUtf8().c_str());
+    FtpMetadataPtr pMetadata = FtpMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
     if (pMetadata != NULL)
         pExtractedData->SetMetadata(*pMetadata);
 
     // Server.
-    FtpServerPtr pServer = FtpServer::Create("");
+    FtpServerPtr pServer = FtpServer::Create();
     if (pServer != NULL)
         pExtractedData->SetServer(*pServer);
 

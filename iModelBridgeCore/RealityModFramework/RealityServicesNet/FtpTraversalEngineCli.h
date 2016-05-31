@@ -23,22 +23,14 @@ namespace RealityServicesCli
     {
     public enum class FtpStatusWrapper
         {
-        Success = SUCCESS,  // The operation was successful.
-        ClientInitError,
-        CouldntResolveHost,
-        CouldntConnect,
-        DownloadInitError,
-        DownloadRequestError,
-        FootprintCreationError,
-        FootprintSaveError,
-        ResponseError,
-        ThumbnailCreationError,
-        ThumbnailSaveError,
-        UnzipError,
+        Success = SUCCESS,      // The operation was successful.
+        ClientError,
+        CurlError,
+        DataExtractError,
+        DownloadError,
         // *** Add new here.
-        UnknownError = ERROR,    // The operation failed with an unspecified error.
+        UnknownError = ERROR,   // The operation failed with an unspecified error.
         };
-
 
     //=====================================================================================
     //! @bsiclass                                   Jean-Francois.Cote              5/2016
@@ -76,15 +68,15 @@ namespace RealityServicesCli
             //! Download all files from root and saved them to an optional output path. Default is temp directory.
             FtpStatusWrapper DownloadContent(System::String^ outputPath);
 
-            //! Get url/root.
-            System::String^ GetServerUrl();
-
             //! Get a list of all files from all directories starting at root.
             FtpStatusWrapper GetFileList(System::Collections::Generic::List<System::String^>^ fileList);
 
             //! Get complete data from root. This includes base, source, thumbnail, metadata and server details.
             //! An observer must be set to catch the data after each extraction.
             FtpStatusWrapper GetData();
+
+            //! Get url/root.
+            System::String^ GetServerUrl();
 
             //! Set the IFtpTraversalObserver to be called after each extraction. Only one observer
             //! can be set. Typically, the user of the handler would implement the IFtpTraversalObserver
@@ -105,7 +97,7 @@ namespace RealityServicesCli
     public ref class FtpDataWrapper
         {
         public:
-            //!
+            //! Create invalid data.
             static FtpDataWrapper^ Create();
     
             //! Get/Set
@@ -165,7 +157,7 @@ namespace RealityServicesCli
     public ref class FtpThumbnailWrapper
         {
         public:
-            //!
+            //! Create invalid thumbnail.
             static FtpThumbnailWrapper^ Create();
 
             //! Get/Set
@@ -209,9 +201,10 @@ namespace RealityServicesCli
     public ref class FtpMetadataWrapper
         {
         public:
-            //!
+            //! Create empty metadata.
             static FtpMetadataWrapper^ Create();
 
+            //! Get/Set
             System::String^ GetProvenance();
             void SetProvenance(System::String^ provenance);
 
@@ -248,7 +241,7 @@ namespace RealityServicesCli
     public ref class FtpServerWrapper
         {
         public:
-            //!
+            //! Create invalid server.
             static FtpServerWrapper^ Create();
 
             //! Get/Set

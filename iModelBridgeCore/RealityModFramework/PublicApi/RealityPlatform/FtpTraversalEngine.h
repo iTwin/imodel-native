@@ -26,37 +26,14 @@ struct FtpServer;
 //=====================================================================================
 enum class FtpStatus
     {
-    Success = SUCCESS,  // The operation was successful.
-    ClientInitError,
-    CouldntResolveHost,
-    CouldntConnect,
-    DownloadInitError,
-    DownloadRequestError,
-    FootprintCreationError,
-    FootprintSaveError,
-    ResponseError,
-    ThumbnailCreationError,
-    ThumbnailSaveError,
-    UnzipError,    
+    Success = SUCCESS,      // The operation was successful.
+    ClientError,
+    CurlError,
+    DataExtractError,
+    DownloadError,
     // *** Add new here.
-    UnknownError = ERROR,    // The operation failed with an unspecified error.
+    UnknownError = ERROR,   // The operation failed with an unspecified error.
     };
-
-
-//=====================================================================================
-//! @bsiclass                                   Jean-Francois.Cote              4/2016
-//=====================================================================================
-struct CurlHolder
-    {
-    public:
-        CurlHolder() : m_curl(curl_easy_init()) {}
-        ~CurlHolder() { if(NULL != m_curl) curl_easy_cleanup(m_curl); }
-        CURL* Get() const { return m_curl; }
-
-    private:
-        CURL* m_curl;
-    };
-
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
@@ -67,12 +44,11 @@ struct CurlHolder
 struct IFtpTraversalObserver
     {
     public:
-        //! OnDataExtracted is called during the call process whenever an extraction is completed by the 
-        //! data handler. The data content object given defines the data discovered. It is up to
+        //! OnDataExtracted is called whenever an extraction is completed by the 
+        //! data handler. The data object given defines the data discovered. It is up to
         //! the effective traversal observer to do whatever process is required on the data.
         virtual void OnDataExtracted(FtpDataCR data) = 0;    
     };
-
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
@@ -80,16 +56,14 @@ struct IFtpTraversalObserver
 struct FtpClient : public RefCountedBase
     {
     public:
+        //! Mapping of the remote and local link to a file.
         typedef bvector<bpair<Utf8String, Utf8String>> RepositoryMapping;
 
-        //! Create ftp client by setting the ftp root.
+        //! Create ftp client by setting the url/root.
         REALITYDATAPLATFORM_EXPORT static FtpClientPtr ConnectTo(Utf8CP url);
 
         //! Download all files from root and saved them in the specified directory. Default is temp directory.
         REALITYDATAPLATFORM_EXPORT FtpStatus DownloadContent(Utf8CP outputDirPath = NULL) const;
-
-        //!
-        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerUrl() const;
 
         //! Get a list of all files from all directories starting at root.
         REALITYDATAPLATFORM_EXPORT FtpStatus GetFileList(bvector<Utf8String>& fileList) const;
@@ -97,6 +71,12 @@ struct FtpClient : public RefCountedBase
         //! Get complete data from root. This includes base, source, thumbnail, metadata and server details.
         //! An observer must be set to catch the data after each extraction.
         REALITYDATAPLATFORM_EXPORT FtpStatus GetData() const;
+
+        //! Get url/root.
+        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerUrl() const;
+
+        //! Get repository mapping (remote and local repository).
+        REALITYDATAPLATFORM_EXPORT const RepositoryMapping& GetRepositoryMapping() const;
 
         //! Set the IFtpTraversalObserver to be called after each extraction. Only one observer
         //! can be set. Typically, the user of the handler would implement the IFtpTraversalObserver
@@ -108,21 +88,18 @@ struct FtpClient : public RefCountedBase
         ~FtpClient();
 
         //! Recurse into sub directories and create a list of all files.
-        FtpStatus GetFileListFromPath(Utf8CP url, bvector<Utf8String>& fileList) const;
+        FtpStatus GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const;
 
         //! Check if content is a directory or not.
         bool IsDirectory(Utf8CP content) const;
 
         //! Callback when a file is downloaded to construct the data repository mapping.
         static void ConstructRepositoryMapping(int index, void *pClient, int ErrorCode, const char* pMsg);
-
-        FtpServerPtr m_pServer;
-        CurlHolder m_curlHolder;           
-        IFtpTraversalObserver* m_pObserver;
-
+        
+        FtpServerPtr m_pServer;         
+        IFtpTraversalObserver* m_pObserver;        
         static RepositoryMapping m_dataRepositories;
     };
-
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
@@ -130,38 +107,31 @@ struct FtpClient : public RefCountedBase
 struct FtpRequest : public RefCountedBase
     {
     public:
-        //!
+        //! Create curl request.
         static FtpRequestPtr Create(Utf8CP url);
 
-        //!
-        static FtpRequestPtr Create(const CurlHolder& curlHolder, Utf8CP url);
-
-        //!
+        //! Get response from request.
         FtpResponsePtr Perform();
 
-        //!
+        //! Get url.
         Utf8StringCR GetUrl() const { return m_url; }
 
-        //! Get/Set
+        //! Get/Set method option.
         Utf8StringCR GetMethod() const { return m_method; }
         void SetMethod(Utf8CP method) { m_method = method; }
 
-        //! Get/Set
+        //! Get/Set dirList option.
         bool IsDirListOnly() const { return m_dirListOnly; }
         void SetDirListOnly(bool isDirListOnly) { m_dirListOnly = isDirListOnly; }
 
-        //! Get/Set
+        //! Get/Set verbose option.
         bool IsVerbose() const { return m_verbose; }
         void SetVerbose(bool isVerbose) { m_verbose = isVerbose; }
         
     private:
         FtpRequest(Utf8CP url);
-        FtpRequest(const CurlHolder& curlHolder, Utf8CP url);
 
-        CurlHolder m_curlHolder;
         Utf8String m_url;
-
-        // Options.
         Utf8String m_method;
         bool m_dirListOnly;
         bool m_verbose;
@@ -174,26 +144,25 @@ struct FtpRequest : public RefCountedBase
 struct FtpResponse : public RefCountedBase
     {
     public:
-        //! Create invalid response with FtpStatus::Error.
+        //! Create invalid response with FtpStatus::UnknownError.
         static FtpResponsePtr Create();
 
         //! Create response.
         static FtpResponsePtr Create(Utf8CP effectiveUrl, Utf8CP m_content, FtpStatus traversalStatus);
 
-        //!
+        //! Get url.
         Utf8StringCR GetUrl() const;
 
-        //!
+        //! Get content.
         Utf8StringCR GetContent() const;
 
-        //!
+        //! Get status.
         FtpStatus GetStatus() const;
 
-        //!
+        //! Return if request was a success or not.
         bool IsSuccess() const;
 
     private:
-        FtpResponse();
         FtpResponse(Utf8CP effectiveUrl, Utf8CP content, FtpStatus status);
 
         Utf8String m_effectiveUrl;
@@ -208,11 +177,8 @@ struct FtpResponse : public RefCountedBase
 struct FtpData : public RefCountedBase
     {
     public:
-        //! Create invalid FtpData.
+        //! Create invalid data.
         REALITYDATAPLATFORM_EXPORT static FtpDataPtr Create();
-
-        //! Create from zip file.
-        REALITYDATAPLATFORM_EXPORT static FtpDataPtr Create(BeFileNameCR file);
 
         //! Get/Set
         REALITYDATAPLATFORM_EXPORT Utf8StringCR GetName() const;
@@ -260,10 +226,6 @@ struct FtpData : public RefCountedBase
 
     private:
         FtpData();
-        FtpData(BeFileNameCR file);
-
-        //! Unzip files.
-        FtpStatus UnzipFiles(BeFileNameCR file) const;
 
         Utf8String m_name;
         Utf8String m_url;
@@ -273,7 +235,6 @@ struct FtpData : public RefCountedBase
         Utf8String m_locationInCompound;        
         DateTime m_date;
         DRange2d m_footprint;
-
         FtpThumbnailPtr m_pThumbnail;
         FtpMetadataPtr m_pMetadata;
         FtpServerPtr m_pServer;
@@ -286,11 +247,11 @@ struct FtpData : public RefCountedBase
 struct FtpThumbnail : public RefCountedBase
     {
     public:
-        //!
+        //! Create invalid thumbnail.
         REALITYDATAPLATFORM_EXPORT static FtpThumbnailPtr Create();
 
-        //!
-        REALITYDATAPLATFORM_EXPORT static FtpThumbnailPtr Create(Utf8CP rasterFilePath);
+        //! Create from raster file.
+        REALITYDATAPLATFORM_EXPORT static FtpThumbnailPtr Create(RealityDataCR rasterData);
 
         //! Get/Set
         REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvenance() const;
@@ -322,7 +283,7 @@ struct FtpThumbnail : public RefCountedBase
 
     private:
         FtpThumbnail();
-        FtpThumbnail(Utf8CP rasterFilePath);
+        FtpThumbnail(RealityDataCR rasterData);
 
         Utf8String m_provenance;
         Utf8String m_format;
@@ -340,11 +301,11 @@ struct FtpThumbnail : public RefCountedBase
 struct FtpMetadata : public RefCountedBase
     {
     public:
-        //!
+        //! Create empty metadata.
         REALITYDATAPLATFORM_EXPORT static FtpMetadataPtr Create();
 
-        //!
-        REALITYDATAPLATFORM_EXPORT static FtpMetadataPtr Create(Utf8CP filePath);
+        //! Create from xml file.
+        REALITYDATAPLATFORM_EXPORT static FtpMetadataPtr CreateFromFile(Utf8CP filePath);
     
         //! Get/Set
         REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvenance() const;
@@ -389,7 +350,10 @@ struct FtpMetadata : public RefCountedBase
 struct FtpServer : public RefCountedBase
     {
     public:
-        //!
+        //! Create invalid server.
+        REALITYDATAPLATFORM_EXPORT static FtpServerPtr Create();
+
+        //! Create from url.
         REALITYDATAPLATFORM_EXPORT static FtpServerPtr Create(Utf8CP url);
 
         //! Get/Set
@@ -437,6 +401,7 @@ struct FtpServer : public RefCountedBase
         REALITYDATAPLATFORM_EXPORT void SetType(Utf8CP type);
 
     private:
+        FtpServer();
         FtpServer(Utf8CP url);
 
         Utf8String m_protocol;
@@ -454,9 +419,11 @@ struct FtpServer : public RefCountedBase
 
 
 //=====================================================================================
+//! Utility class to extract the required data from a zip file.
+//!
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
-struct FtpDataHandler : public RefCountedBase
+struct FtpDataHandler
     {
     public:
         //! Ftp data extraction.

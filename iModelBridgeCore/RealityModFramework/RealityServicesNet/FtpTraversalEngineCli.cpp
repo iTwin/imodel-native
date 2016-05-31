@@ -61,9 +61,19 @@ void FtpTraversalObserverWrapper::OnDataExtracted(FtpDataCR data)
     thumbnailWrapper->SetFormat(ctx.marshal_as<String^>(data.GetThumbnail().GetFormat().c_str()));
     thumbnailWrapper->SetWidth(data.GetThumbnail().GetWidth());
     thumbnailWrapper->SetHeight(data.GetThumbnail().GetHeight());
-    thumbnailWrapper->SetStamp(ctx.marshal_as<String^>(data.GetThumbnail().GetStamp().ToString().c_str()));
-    //thumbnailWrapper->SetData();
+    thumbnailWrapper->SetStamp(ctx.marshal_as<String^>(data.GetThumbnail().GetStamp().ToString().c_str()));    
     thumbnailWrapper->SetGenerationDetails(ctx.marshal_as<String^>(data.GetThumbnail().GetGenerationDetails().c_str()));
+
+    // Convert bvector to array.    
+    bvector<System::Byte> nativeData = data.GetThumbnail().GetData();
+    int size = static_cast<int>(nativeData.size());
+    List<System::Byte>^ managedData = gcnew List<System::Byte>(size);
+    for (int i = 0; i < size; ++i)
+        {
+        managedData->Add(nativeData[i]);
+        }
+    thumbnailWrapper->SetData(managedData);
+
     dataWrapper->SetThumbnail(thumbnailWrapper);
 
     FtpMetadataWrapper^ metadataWrapper = FtpMetadataWrapper::Create();
@@ -101,13 +111,15 @@ FtpClientWrapper^ FtpClientWrapper::ConnectTo(System::String^ url)
     return gcnew FtpClientWrapper(url);
     }
 
-
-
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 FtpStatusWrapper FtpClientWrapper::DownloadContent(String^ outputPath)
     {
+    // Make sure client is init and valid.
+    if (NULL == m_pClient && (*m_pClient).IsValid())
+        return FtpStatusWrapper::ClientError;
+
     Utf8String outputPathUtf8;
     BeStringUtilities::WCharToUtf8(outputPathUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(outputPath).ToPointer()));
 
@@ -119,6 +131,10 @@ FtpStatusWrapper FtpClientWrapper::DownloadContent(String^ outputPath)
 //-------------------------------------------------------------------------------------
 String^ FtpClientWrapper::GetServerUrl()
     {
+    // Make sure client is init and valid.
+    if (NULL == m_pClient && (*m_pClient).IsValid())
+        return "";
+
     marshal_context ctx;
     return ctx.marshal_as<System::String^>((*m_pClient)->GetServerUrl().c_str());
     }
@@ -128,11 +144,15 @@ String^ FtpClientWrapper::GetServerUrl()
 //-------------------------------------------------------------------------------------
 FtpStatusWrapper FtpClientWrapper::GetFileList(List<System::String^>^ fileList)
     {
+    // Make sure client is init and valid.
+    if (NULL == m_pClient && (*m_pClient).IsValid())
+        return FtpStatusWrapper::ClientError;
+
     bvector<Utf8String> nativeFileList;
     FtpStatusWrapper status = static_cast<FtpStatusWrapper>((*m_pClient)->GetFileList(nativeFileList));
 
     // Convert native to managed.
-
+    //&&JFC: TODO
 
     return status;
     }
@@ -141,8 +161,12 @@ FtpStatusWrapper FtpClientWrapper::GetFileList(List<System::String^>^ fileList)
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 FtpStatusWrapper FtpClientWrapper::GetData()
-    {
-    return static_cast<FtpStatusWrapper>((*m_pClient)->GetData());
+    {   
+    // Make sure client is init and valid.
+    if (NULL == m_pClient && (*m_pClient).IsValid())
+        return FtpStatusWrapper::ClientError;
+
+    return static_cast<FtpStatusWrapper>((*m_pClient)->GetData());        
     }
 
 //-------------------------------------------------------------------------------------
@@ -150,8 +174,11 @@ FtpStatusWrapper FtpClientWrapper::GetData()
 //-------------------------------------------------------------------------------------
 void FtpClientWrapper::SetObserver(IFtpTraversalObserverWrapper^ traversalObserver)
     {
-    FtpTraversalObserverWrapper* pTraversalObserverWrapper = new FtpTraversalObserverWrapper(traversalObserver);
+    // Make sure client is init and valid.
+    if (NULL == m_pClient && (*m_pClient).IsValid())
+        return;
 
+    FtpTraversalObserverWrapper* pTraversalObserverWrapper = new FtpTraversalObserverWrapper(traversalObserver);
     (*m_pClient)->SetObserver(pTraversalObserverWrapper);
     }
 
@@ -383,9 +410,17 @@ FtpThumbnailWrapper^ FtpDataWrapper::GetThumbnail()
     managedThumbnail->SetFormat(ctx.marshal_as<String^>(nativeThumbnail.GetFormat().c_str()));
     managedThumbnail->SetWidth(nativeThumbnail.GetWidth());
     managedThumbnail->SetHeight(nativeThumbnail.GetHeight());
-    managedThumbnail->SetStamp(ctx.marshal_as<String^>(nativeThumbnail.GetStamp().ToString().c_str()));
-    //managedThumbnail->SetData();
+    managedThumbnail->SetStamp(ctx.marshal_as<String^>(nativeThumbnail.GetStamp().ToString().c_str()));    
     managedThumbnail->SetGenerationDetails(ctx.marshal_as<String^>(nativeThumbnail.GetGenerationDetails().c_str()));
+
+    bvector<System::Byte> nativeData = nativeThumbnail.GetData();
+    int size = static_cast<int>(nativeData.size());
+    List<System::Byte>^ data = gcnew List<System::Byte>(size); 
+    for (int i = 0; i < size; ++i)
+        {
+        data->Add(nativeData[i]);
+        }
+    managedThumbnail->SetData(data);
 
     return managedThumbnail;
     }
@@ -415,11 +450,17 @@ void FtpDataWrapper::SetThumbnail(FtpThumbnailWrapper^ thumbnail)
     BentleyApi::DateTime::FromString(date, dateStr.c_str());
     nativeThumbnail->SetStamp(date);
 
-    //nativeThumbnail->SetData(List<Byte>^ data);
-
     Utf8String details;
     BeStringUtilities::WCharToUtf8(details, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(thumbnail->GetGenerationDetails()).ToPointer()));
     nativeThumbnail->SetGenerationDetails(details.c_str());
+
+    List<System::Byte> data = thumbnail->GetData();
+    bvector<System::Byte> nativeData = bvector<System::Byte>();
+    for (int i = 0; i < data.Count; ++i)
+        {
+        nativeData.push_back(data[i]);
+        }
+    nativeThumbnail->SetData(nativeData);
 
     (*m_pData)->SetThumbnail(*nativeThumbnail);
     }
@@ -688,7 +729,15 @@ void FtpThumbnailWrapper::SetStamp(System::String^ date)
 //-------------------------------------------------------------------------------------
 List<System::Byte>^ FtpThumbnailWrapper::GetData()
     {
-    List<System::Byte>^ data;
+    bvector<System::Byte> nativeData = (*m_pThumbnail)->GetData();
+    int size = static_cast<int>(nativeData.size());
+    List<System::Byte>^ data = gcnew List<System::Byte>(size);
+
+    // Native to managed.    
+    for (int i = 0; i < size; ++i)
+        {
+        data->Add(nativeData[i]);
+        }
 
     return data;
     }
@@ -698,7 +747,14 @@ List<System::Byte>^ FtpThumbnailWrapper::GetData()
 //-------------------------------------------------------------------------------------
 void FtpThumbnailWrapper::SetData(List<System::Byte>^ data)
     {
+    // Managed to native.
+    bvector<System::Byte> nativeData = bvector<System::Byte>();
+    for (int i = 0; i < data->Count; ++i)
+        {
+        nativeData.push_back(data[i]);
+        }
 
+    (*m_pThumbnail)->SetData(nativeData);
     }
 
 //-------------------------------------------------------------------------------------
