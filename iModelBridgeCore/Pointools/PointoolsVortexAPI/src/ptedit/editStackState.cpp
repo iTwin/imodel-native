@@ -14,6 +14,14 @@ using namespace pointsengine;
 using namespace ptedit;
 using namespace pcloud;
 
+namespace ptedit
+{
+    static bool operator < ( const LeafID &a, const LeafID &b )
+    {
+	    return ( a.pc < b.pc || a.leafIndex < b.leafIndex ) ? true : false;
+    }
+}
+
 //static
 Voxel * LeafID::voxelFromID( LeafID lid )
 {

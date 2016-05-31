@@ -32,7 +32,7 @@ public:
 	};
 
 	BoundsTreeNode(const B &b, int depth=0, ubyte flags=0, uint elementCount=0) 
-		: m_bounds(b), m_left(0), m_right(0), m_depth(depth), m_flags(flags),
+		: m_bounds(b), m_left(0), m_right(0), m_depth((ubyte) depth), m_flags(flags),
 		m_userFlags(0), m_elementCount(elementCount)
 	{}
 
@@ -88,7 +88,7 @@ public:
 		pt::vector3 v;
 		
 		r.read( depth );
-		m_depth = depth;
+		m_depth = (ubyte)depth;
 
 		r.read( flags );
 		m_flags = flags;

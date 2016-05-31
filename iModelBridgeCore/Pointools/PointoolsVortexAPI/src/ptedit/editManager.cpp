@@ -520,7 +520,7 @@ bool PointEditManager::setCurrentLayer( int layer, bool maskValue )
 {
 	PTTRACE_FUNC
 
-	ubyte blyr = maskValue ? layer : (1 << layer);
+	ubyte blyr = (ubyte) (maskValue ? layer : (1 << layer));
 
 	if (g_lockedLayers & blyr) return false;
 

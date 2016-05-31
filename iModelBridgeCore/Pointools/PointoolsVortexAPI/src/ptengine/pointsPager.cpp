@@ -568,6 +568,7 @@ PointsPager::MemMode determineMemoryMode( int64_t &available )
 	MEMORYSTATUS mem;
 	GlobalMemoryStatus(&mem);
 	uint memload = mem.dwMemoryLoad;
+    UNUSED_VARIABLE(memload);
 	available = _MEMAVAL;
 
 	/* auto mem target management */ 

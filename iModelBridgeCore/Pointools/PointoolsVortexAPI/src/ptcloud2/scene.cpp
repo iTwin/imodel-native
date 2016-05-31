@@ -214,7 +214,6 @@ const char* Scene::creationErrorText( int errorCode )
 		default:
 			return "Unknown Error";
 	}
-	return 0;
 }
 int		Scene::editStateID() const				
 { 

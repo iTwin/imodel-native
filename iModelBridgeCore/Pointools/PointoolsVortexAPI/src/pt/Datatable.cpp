@@ -212,13 +212,13 @@ int DataTable::serializeWrite(void *d) const
 	ptr[pos++] = s;
 
 	/*integers*/ 
-    s = static_cast<uint>(integers.size());
+    s = static_cast<unsigned char>(integers.size());
 	ptr[pos++] = s;
 
 	for (INTMAP::const_iterator i = integers.begin(); i!= integers.end(); i++)
 	{
 		/*id*/
-		s = static_cast<uint>(i->first.size());
+		s = static_cast<unsigned char>(i->first.size());
 		ptr[pos++] = s;
 
 		memcpy(&ptr[pos], i->first.c_str() ,s);		
@@ -229,13 +229,13 @@ int DataTable::serializeWrite(void *d) const
 	}
 
 	/*floats*/
-	s = static_cast<uint>(floats.size());
+	s = static_cast<unsigned char>(floats.size());
 	ptr[pos++] = s;
 
 	for (FLOATMAP::const_iterator f = floats.begin(); f!= floats.end(); f++)
 	{
 		/*id*/
-		s = static_cast<uint>(f->first.size());
+		s = static_cast<unsigned char>(f->first.size());
 		ptr[pos++] = s;
 
 		memcpy(&ptr[pos], f->first.c_str() ,s);		
@@ -245,13 +245,13 @@ int DataTable::serializeWrite(void *d) const
 		pos += sizeof(float);
 	}
 	/*bools*/
-	s = static_cast<uint>(bools.size());
+	s = static_cast<unsigned char>(bools.size());
 	ptr[pos++] = s;
 
 	for (BOOLMAP::const_iterator b = bools.begin(); b!= bools.end(); b++)
 	{
 		/*id*/
-		s = static_cast<uint>(b->first.size());
+		s = static_cast<unsigned char>(b->first.size());
 		ptr[pos++] = s;
 
 		memcpy(&ptr[pos], b->first.c_str() ,s);		

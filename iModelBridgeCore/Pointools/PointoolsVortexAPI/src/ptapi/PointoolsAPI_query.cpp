@@ -951,7 +951,7 @@ namespace querydetail
 			float						lod_amount;
 			bool						doLoad;
 			VoxelPtrSet::iterator		it;
-			Voxel					*	voxel;
+			Voxel					*	voxel = nullptr;
 			pcloud::Voxel			*	previousLastVoxel = rwPos.lastVoxel;
 			PTint						previousLastPoint = rwPos.lastPoint;
 															// End ReadSet generation
@@ -1151,7 +1151,7 @@ namespace querydetail
 					if (uvchannel[c])
 					{
 						uchannels[c]->unlock( uvchannel[c], (int)(vox->getNumPointsAtLOD(amount)) );
-						channelBPP[c] = uvchannel[c]->getBytesPerPoint();
+						channelBPP[c] = (PTubyte) (uvchannel[c]->getBytesPerPoint());
 					}
 				}
 				else
@@ -1625,7 +1625,7 @@ namespace querydetail
 
 						// need to load to make this evaluation
 						pointsengine::VoxelLoader load( v, densityCoeff, false, false);
-						v->iterateTransformedPoints( counter, pt::ProjectSpace, layerMask );
+						v->iterateTransformedPoints( counter, pt::ProjectSpace, (PTubyte)layerMask );
 						count += counter.count;
 					}
 				}
@@ -1655,7 +1655,7 @@ namespace querydetail
 					reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false, lastVoxel, lastPnt,
 					density, densityCoeff, ugrid, rgbMode, layers, classification, 0, 0, 0, 
 					getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(),
-					layerMask );
+					(PTubyte)layerMask );
 
 			reader.cs = cs;
 			reader.pcloudOnly = pcloudOnly;
@@ -1744,7 +1744,7 @@ namespace querydetail
 			
 			ReadPoints<Condition, float>
 					reader( &C, static_cast<int>(buffersize), geomBuffer, rgbBuffer, 0 /* intensity */, false, lastVoxel, lastPnt,
-					density, densityCoeff, ugrid, rgbMode,0, 0 /*classification*/, 0, 0, 0, 0, 0, layerMask );
+					density, densityCoeff, ugrid, rgbMode,0, 0 /*classification*/, 0, 0, 0, 0, 0, (PTubyte)layerMask );
 
 			reader.cs = cs;
 			reader.pcloudOnly = pcloudOnly;
@@ -1790,7 +1790,7 @@ namespace querydetail
 			ReadPoints<Condition, T>
 					reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false, lastVoxel, lastPnt, density, densityCoeff, ugrid,
 					rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, 
-					getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(), layerMask);
+					getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(), (PTubyte)layerMask);
 
 			reader.pcloudOnly = pcloudOnly;
 			reader.sceneOnly = sceneOnly;
@@ -1801,7 +1801,7 @@ namespace querydetail
 			if (_writer) delete _writer;
 
 			ReadPoints<Condition, T> *writer = new ReadPoints<Condition, T>( &C, buffersize, geomBuffer, rgbBuffer, inten, true, lastVoxel, lastPnt,
-				density, densityCoeff, ugrid, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, 0, 0, layerMask);
+				density, densityCoeff, ugrid, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, 0, 0, (PTubyte)layerMask);
 
 			writer->pcloudOnly = pcloudOnly;
 			writer->sceneOnly = sceneOnly;
@@ -2727,7 +2727,7 @@ public:
 
 	float calculateNeighbourhood(PriorityQueueMiniMax &e, PriorityQueueMiniMin &result, PTuint k)
 	{
-		float							pruneDistance;
+		float							pruneDistance = 0;
 		PriorityQueueNodeMiniMax	*	h;
 		int64_t                         s;
 
@@ -2933,7 +2933,7 @@ h->extents = ext;
 
 		unsigned int	t;
 		unsigned int	v;
-		float			tMax;
+		float			tMax = 0;
 		float			minimumMax;
 															// For each remaining query point
 		for(t = 1; t < queryPoints.size(); t++)
@@ -3032,8 +3032,8 @@ h->extents = ext;
 			return;
 
 		T					*	baseGeom;
-		ubyte				*	baseRGB;
-		PTshort				*	baseIntensity;
+		ubyte				*	baseRGB = nullptr;
+		PTshort				*	baseIntensity = nullptr;
 
 		KNNQueryPoint<Real>	*	queryPoint;
 		VoxelPoint				voxelPoint;
@@ -4438,7 +4438,7 @@ struct FrustumQuery : public Query
 
 		ReadPoints<FrustumCondition, T> reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false,
 			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, layers, cf, numPointChannels, pointChannelsReq, pointChannels, 
-			getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(), layerMask);
+			getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(), (PTubyte)layerMask);
 
 		reader.cs = cs;
 
@@ -4446,7 +4446,7 @@ struct FrustumQuery : public Query
 		{
 			_writer = new ReadPoints<FrustumCondition, T>( &C, buffersize, geomBuffer, rgbBuffer, inten, true,
 			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, layers, cf, numPointChannels, pointChannelsReq, pointChannels ,
-			0, 0, layerMask );
+			0, 0, (PTubyte)layerMask );
 		}
 		/* run query on voxel list */ 
 		for (int i=0; i<voxels.size(); i++)

@@ -262,7 +262,6 @@ bool Voxel::initializeChannels(int newsize)
 {
 	int					i;							// general counter
 	std::vector<int>	index;						// point ordering index
-	float				density_spacing = 0.25f;	// starting value
 
 	// defaults are ok in case of failure
 	memset( _strataSize, 0, NUM_STRATA * sizeof(int));
@@ -295,9 +294,11 @@ bool Voxel::initializeChannels(int newsize)
 	}
 	return true;	// leave in if stratification is not required - ie for current release of Vortex
 
+/* Code was commented out, since it is unreachable; create a build warning
 	// THE FOLLOWING CODE IS WIP FOR DENSITY STRATIFICATION ON IMPORT
 	// comment out starting here to remove
 	// order points in strata of uniform samples to improve lower lod representations
+	float				density_spacing = 0.25f;	// starting value
 	float				density = 1.0f;
 	int					strata[ NUM_STRATA ];
 
@@ -313,15 +314,17 @@ bool Voxel::initializeChannels(int newsize)
 		strata[0] = static_cast<int>(_pointCount);
 	}
 	_strataSpacing = density_spacing;
-	/* end comment out here */
 
-	/* re-order channel using this index */ 
+	// end comment out here
+
+	// re-order channel using this index
 	for (i=0;i<MAX_CHANNELS; i++)
 	{
 		if (_channels[i]) 
 			_channels[i]->repositionByIndex(index);
 	}
 	return true;
+*/
 }
 
 
@@ -891,8 +894,6 @@ int Voxel::getChannelResizeReadInfo(Channel ch, float amount, int &num_points, u
 		return 0;
 	}
 
-
-	return 0;
 }
 
 //--------------------------------------------------------------------------------------

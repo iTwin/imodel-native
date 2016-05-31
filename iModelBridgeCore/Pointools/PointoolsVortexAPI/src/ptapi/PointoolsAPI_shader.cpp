@@ -420,8 +420,9 @@ PTbool PTAPI ptIsEnabled(PTenum option)
 	case PT_ADAPTIVE_POINT_SIZE:return g_shaders[g_currentViewport].adaptivePntSize;
 	case PT_FRONT_BIAS:			return g_shaders[g_currentViewport].frontBias;
 	default:
-		debugAssertM(0, "Unsupported ptIsEnabled option"); return PT_TRUE;
+		debugAssertM(0, "Unsupported ptIsEnabled option"); 
 		setLastErrorCode( PTV_INVALID_OPTION );
+        return PT_TRUE;
 	}	
 }
 //-------------------------------------------------------------------------------

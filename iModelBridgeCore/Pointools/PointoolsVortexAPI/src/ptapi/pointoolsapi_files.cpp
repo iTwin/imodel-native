@@ -538,7 +538,7 @@ auto scrambler = [](std::string toScramble) -> std::string
     std::string out;
     for (char& value : toScramble)
         {
-        value += 100 + i*7;
+        value += (char) (100 + i*7);
         }
     out[toScramble.size()] = static_cast<char>(100 + toScramble.size() * 7);
     return out;
@@ -557,7 +557,7 @@ bool useSELECTLicense(std::string& company, std::string& module, std::string& ty
         {
         char			c;
         unsigned int	t = 0;
-        while ((c = str[t] - 100 - (t * 7)) != 0x0 && t < COMPANY_NON_SELECT_LICENSES_MAX_NAME_LENGTH)
+        while ((c = (char) (str[t] - 100 - (t * 7))) != 0x0 && t < COMPANY_NON_SELECT_LICENSES_MAX_NAME_LENGTH)
             {
             out += c;
             t++;

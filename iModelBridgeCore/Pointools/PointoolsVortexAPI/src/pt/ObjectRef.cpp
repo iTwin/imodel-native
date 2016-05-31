@@ -183,13 +183,13 @@ bool PersistentObjectRef::createReference( const pt::Object3D *obj )
 		int depth = 0;
 		// find index of this object in the scene if it is a sub object
 		int index = findIndexInParent(obj);
-		m_index[depth] = index;
+		m_index[depth] = (short)index;
 
 		while (index != -1 && depth < 4)
 		{
 			if (!obj) break;
 			obj = obj->parent();
-			m_index[++depth] = findIndexInParent(obj);
+			m_index[++depth] = (short)findIndexInParent(obj);
 		}
 		return true;
 	}

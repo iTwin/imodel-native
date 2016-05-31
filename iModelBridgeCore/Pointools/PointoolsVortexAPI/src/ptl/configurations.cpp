@@ -61,25 +61,33 @@ bool Project::readConfigsBranch(const pt::datatree::Branch *branch)
 {
 	return true;
 
-	/*copy subbranches*/ 
+    /* unreachable code. Must comment out.
+
+	// copy subbranches
 	CopySubbranchVisitor v;
 	branch->visitBranches(v);
 
 	return true;
+
+    */
 }
 bool Project::writeConfigsBranch(pt::datatree::Branch *branch)
 {
 	return true;
 
+    /* unreachable code. Must comment out.
+
 	Configurations::iterator it = Project::project()->_configs.begin();
 
-	/*don't save the startup configuration*/ 
+	// don't save the startup configuration
 	while (it != Project::project()->_configs.end())
 	{
 		if (strcmp("Start-up", it->first.c_str())!=0)
 			branch->addBranchCopy(it->second->configs());	
 		++it;
 	}
+
+    */
 }
 //
 /*configuration handling																			*/ 

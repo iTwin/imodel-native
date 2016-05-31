@@ -203,7 +203,6 @@ pcloud::DataType	VoxelInPlaceBuffer::getBufferType(BufferValueType bufferType) c
 	default:
 		return NullType;
 	}
-	return NullType;
 }
 /*****************************************************************************/
 /**

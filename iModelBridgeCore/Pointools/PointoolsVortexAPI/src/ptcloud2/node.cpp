@@ -196,7 +196,7 @@ void Node::subdivide( int iterations, int quadtree, int __deep )
 				_child[i]->reparent( this );
 			}
 
-		if (parent()) _depth = parent()->depth() + 1;
+		if (parent()) _depth = (ubyte) parent()->depth() + 1;
 		
 		pt::vector3 m = mid();
 		

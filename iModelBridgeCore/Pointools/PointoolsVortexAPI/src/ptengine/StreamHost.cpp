@@ -622,7 +622,7 @@ bool StreamHost::loadMultiReadSetVoxelData(void)
 	DataSourceMultiReadSet::MultiReadIndex		t;
 	DataSourceMultiRead						*	multiRead;
 	DataSource::Data						*	source;
-	DataSourceReadSet						*	readSet;
+	DataSourceReadSet						*	readSet = nullptr;
 
 															// Get MultiReadSet buffer
 	source = multiReadSetBuffer.getBuffer();

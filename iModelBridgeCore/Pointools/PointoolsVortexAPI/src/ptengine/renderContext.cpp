@@ -258,7 +258,6 @@ RenderContext * RenderContextManager::createOpenGLContext(bool forceFixedFunc)
 RenderContext * RenderContextManager::createDirect3DContext() 
 {
 	throw("Not implemented yet");
-	return 0;
 }
 /*****************************************************************************/
 /**
@@ -269,7 +268,6 @@ RenderContext * RenderContextManager::createDirect3DContext()
 RenderContext	* RenderContextManager::getDirect3DContext( ContextID cid )
 {
 	throw("Not implemented yet");
-	return 0;
 }
 /*****************************************************************************/
 /**

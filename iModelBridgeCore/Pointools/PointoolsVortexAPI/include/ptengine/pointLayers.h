@@ -48,11 +48,11 @@ public:
 	}
 	inline ubyte pointLayerMask( uint layerMask )
 	{
-		return layerMask & ~SELECTED_PNT_BIT;
+		return (ubyte) (layerMask & ~SELECTED_PNT_BIT);
 	}
 	inline ubyte pointVisLayerMask()
 	{
-		return _visibleLayersBitMask & ~SELECTED_PNT_BIT;
+		return (ubyte) (_visibleLayersBitMask & ~SELECTED_PNT_BIT);
 	}
 	uint numLayers() const { return 7; }
 

@@ -532,8 +532,8 @@ bool		UserChannelManager::applyChannelToLayers( const UserChannel *channel, pclo
 				{
 					retval = true;
 					
-					vx->layers(0) = vdata->getUser0();
-					vx->layers(1) = vdata->getUser1();
+					vx->layers(0) = (ubyte) vdata->getUser0();
+					vx->layers(1) = (ubyte) vdata->getUser1();
 
 					if (vx->layers(1) && vdata->getData() )
 					{

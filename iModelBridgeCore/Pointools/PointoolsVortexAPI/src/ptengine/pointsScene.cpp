@@ -74,7 +74,11 @@ PointsScene::UseSceneVoxels::UseSceneVoxels(VOXELSLIST &vlist, int &state)
 		{
 			hasLock = true;//_listusemutex.try_lock_shared();
 		}
-		catch(...) { hasLock = false; }
+		catch(...) 
+        { 
+            // code is unreachable if _listusemutex.try_lock_shared() is commented out (above) 
+            // hasLock = false; 
+        }
 		if (!hasLock) return;
 		/*copy the list*/ 
 
@@ -257,7 +261,7 @@ void PointsScene::addScene(pcloud::Scene *sc)
 	typedef std::map<pt::ObjectKey, pcloud::Scene*> SceneMap;
 	_sceneByKey.begin();
 	int instances = 0;
-	pcloud::PointCloudGUID guid;
+	pcloud::PointCloudGUID guid = 0;
 	
 	if(sc->size() > 0 && sc->cloud(0))
 	{
