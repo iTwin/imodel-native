@@ -144,7 +144,7 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 //----------------------------------------------------------------------------------------
 #define QUERY_ID 0 
 
-static double s_minScreenPixelsPerPoint = 50;
+static double s_minScreenPixelsPerPoint = 1000;
 
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
@@ -256,9 +256,10 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
         {
         //NEEDS_WORK_SM : If kept needs clean up
         for (size_t nodeInd = 0; nodeInd < overviewMeshNodes.size(); nodeInd++)
-            {              
+            {                          
             if (context.CheckStop())
                 break;                           
+            
             
             //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
             //assert(overviewMeshNodes[nodeInd]->IsHeaderLoaded() && overviewMeshNodes[nodeInd]->IsMeshLoaded());
