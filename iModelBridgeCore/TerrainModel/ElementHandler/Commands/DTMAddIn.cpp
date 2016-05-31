@@ -619,7 +619,7 @@ void ImportSurfaces (TerrainImporter& reader, array<LandXMLImportForm::SurfaceDa
 
 void DoImport (WCharCP unparsed, bool onlyLandXML)
     {
-    WString fileName;
+    WString fileName = unparsed;
     if (WString::IsNullOrEmpty (unparsed))
         {
         FileOpenParams fileOpenParams;
