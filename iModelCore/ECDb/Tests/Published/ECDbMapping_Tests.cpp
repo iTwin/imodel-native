@@ -8689,6 +8689,431 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void AssertAndExecuteECSql(ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
+    if (stmt.IsPrepared())
+        {
+        ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRelationship)
+    {
+    SchemaItem opSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant' nameSpacePrefix='op' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='ITEM' >"
+        "    <ECProperty propertyName='op_ITEM_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='UNIT' >"
+        "    <ECProperty propertyName='op_UNIT_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='UNIT_HAS_ITEM' strength='referencing' strengthDirection='forward'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='UNIT' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='ITEM' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, opSchema, "addderivedclassonNsideof1Nrelationship.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    ECClassCP unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+
+    Savepoint sp(ecdb, "CRUD Operations");
+    //Insert Statements
+    {
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select statements
+    {
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    sp.Cancel();
+
+    ecdb.SaveChanges();
+    SchemaItem op3dSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant_3D' nameSpacePrefix='op3d' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='OpenPlant' version='01.00' prefix='op' />"
+        "  <ECEntityClass typeName='ITEM_3D' >"
+        "    <BaseClass>op:ITEM</BaseClass>"
+        "    <ECProperty propertyName='op3d_ITEM_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, op3dSchema);
+    ASSERT_FALSE(asserted);
+
+    item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+    ECClassCP item_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "ITEM_3D");
+
+    //Insert Statements
+    {
+    Utf8String ecsql;
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    //relationship between UNIT and ITEM_3D(new derived Class)
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(202, 'unitString2')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString1', 'item3dString1')");
+
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402, 202, %llu, 301, %llu)", unit->GetId().GetValue(), item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select statements
+    {
+    Utf8String ecsql;
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE ECInstanceId = 402 AND TargetECClassId = %llu", item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRelationship)
+    {
+    SchemaItem opSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant' nameSpacePrefix='op' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='ITEM' >"
+        "    <ECProperty propertyName='op_ITEM_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='UNIT' >"
+        "    <ECProperty propertyName='op_UNIT_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='UNIT_HAS_ITEM' strength='referencing' strengthDirection='forward'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='UNIT' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='ITEM' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, opSchema, "addderivedclasson1sideof1Nrelationship.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+    ECClassCP item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+
+    Savepoint sp(ecdb, "CRUD operations");
+    //Insert Statements
+    {
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select Statements
+    {
+    Utf8String ecsql;
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    sp.Cancel();
+
+    ecdb.SaveChanges();
+    SchemaItem op3dSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant_3D' nameSpacePrefix='op3d' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='OpenPlant' version='01.00' prefix='op' />"
+        "  <ECEntityClass typeName='UNIT_3D' >"
+        "    <BaseClass>op:UNIT</BaseClass>"
+        "    <ECProperty propertyName='op3d_UNIT_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, op3dSchema);
+    ASSERT_FALSE(asserted);
+
+    item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+    ECClassCP unit_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "UNIT_3D");
+
+    //Insert Statements
+    {
+    Utf8String ecsql;
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    //relationship between UNIT_3D(new derived Class) and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(301, 'unitString2', 'unit3dString2')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(102, 'itemString2')");
+
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402, 301, %llu, 102, %llu)", unit_3D->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select Statements
+    {
+    Utf8String ecsql;
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE ECInstanceId = 402 AND SourceECClassId=%llu", unit_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
+    {
+    SchemaItem opSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant' nameSpacePrefix='op' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='ITEM' >"
+        "    <ECProperty propertyName='op_ITEM_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='UNIT' >"
+        "    <ECProperty propertyName='op_UNIT_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='UNIT_HAS_ITEM' strength='referencing' strengthDirection='forward'>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='UNIT' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='ITEM' />"
+        "    </Target>"
+        "    <ECProperty propertyName='relProp' typeName='string' />"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, opSchema, "addderivedclassofconstraintsforNNrelationship.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    ECClassCP unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+
+    Savepoint sp(ecdb, "CRUD Operations");
+    //Insert Statements
+    {
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(401, 201, %llu, 101, %llu, 'relPropString1')", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select statements
+    {
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu",unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //update Statement
+    {
+    AssertAndExecuteECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=401");
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %lld AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //verify Deltion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    sp.Cancel();
+
+    ecdb.SaveChanges();
+    SchemaItem op3dSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant_3D' nameSpacePrefix='op3d' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='OpenPlant' version='01.00' prefix='op' />"
+        "  <ECEntityClass typeName='ITEM_3D' >"
+        "    <BaseClass>op:ITEM</BaseClass>"
+        "    <ECProperty propertyName='op3d_ITEM_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='UNIT_3D' >"
+        "    <BaseClass>op:UNIT</BaseClass>"
+        "    <ECProperty propertyName='op3d_UNIT_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, op3dSchema);
+    ASSERT_FALSE(asserted);
+
+    item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+    ECClassCP item_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "ITEM_3D");
+    ECClassCP unit_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "UNIT_3D");
+
+    //Insert Statements
+    {
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(501, 201, %llu, 101, %llu, 'relPropString1')", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    //relationship between UNIT_3D and ITEM_3D newly added derived classes
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(401, 'unitString2', 'unit3dString2')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString2', 'item3dString2')");
+
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(502, 401, %llu, 301, %llu, 'relPropString2')", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select statements
+    {
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //update Statement
+    {
+    AssertAndExecuteECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=501");
+
+    //update relationship between newly added derived classes
+    AssertAndExecuteECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString2' WHERE ECInstanceId=502");
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %lld AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %lld AND TargetECClassId = %llu", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECDbHoldingRelationshipStrengthTestFixture : ECDbMappingTestFixture

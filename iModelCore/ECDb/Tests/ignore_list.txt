@@ -27,3 +27,8 @@ ECDbMappingTestFixture.JoinedTableCATests
 
 #TFS 438843
 ECSchemaUpdateTests.DeleteEntityClassPartOfRelationshipConstraint
+
+#TFS 467814
+ECDbMappingTestFixture.AddDerivedClassOfConstraintOnNsideOf1NRelationship
+ECDbMappingTestFixture.AddDerivedClassOfConstraintOn1sideOf1NRelationship
+ECDbMappingTestFixture.AddDerivedClassOfConstraintsForNNRelationship
