@@ -37,3 +37,5 @@ DgnECNavigatorTest.PlantElementInfo # Improperly creating a GroupInformationElem
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # notified Raman
 DgnECNavigatorTest.DgnLinksElementInfo # on merge into 0601dev; notified Raman
 DependencyRevisionTest.TestDependency # sometimes fails on 0601 winx64 optimized; notified Paul
+
+DgnDb.GetCoordinateSystemProperties # on merge from graphite0505; notified John
