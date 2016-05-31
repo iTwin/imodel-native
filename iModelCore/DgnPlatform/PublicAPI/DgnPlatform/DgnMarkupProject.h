@@ -198,7 +198,7 @@ public:
 
 private:
     ImageDef            m_imageDef;
-    Render::GraphicPtr  m_tileGraphic;
+    Render::GraphicBuilderPtr  m_tileGraphic;
     DgnViewAssociationData m_assoc;
 
     friend struct DgnMarkupProject;
@@ -213,7 +213,7 @@ protected:
 
 public:
     explicit RedlineModel(CreateParams const& params): T_Super(params) {}
-    Render::GraphicP GetImageGraphic(ViewContextR);
+    Render::GraphicBuilderPtr GetImageGraphic(ViewContextR);
     BentleyStatus LoadImageData(ImageDef& def, bvector<uint8_t>& imageData);
     DGNPLATFORM_EXPORT static BentleyStatus LoadImageData(ImageDef& def, bvector<uint8_t>& imageData, DgnDbCR, DgnModelId);
     

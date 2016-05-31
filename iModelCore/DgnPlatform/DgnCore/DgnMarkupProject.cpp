@@ -900,8 +900,6 @@ Render::Image::Format RedlineModel::ImageDef::GetRenderImageFormat() const
         {
         case QV_RGBA_FORMAT: return Render::Image::Format::Rgba;
         case QV_RGB_FORMAT: return Render::Image::Format::Rgb;
-        case QV_BGRA_FORMAT: return Render::Image::Format::Bgra;
-        case QV_BGR_FORMAT: return Render::Image::Format::Bgr;
         }
     BeAssert(false);
     return Render::Image::Format::Rgb;
@@ -1270,14 +1268,14 @@ bool RedlineViewController::GetDrawBorder() const {return m_drawBorder;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicP RedlineModel::GetImageGraphic(ViewContextR context)
+Render::GraphicBuilderPtr RedlineModel::GetImageGraphic(ViewContextR context)
     {
     if (m_tileGraphic.IsValid())
-        return m_tileGraphic.get();
+        return m_tileGraphic;
 
     bvector<uint8_t> imageData;
     LoadImageData(m_imageDef, imageData);
-        
+    ByteStream byteStream(imageData.data(), (uint32_t) imageData.size());
     //  tile corners:
     //
     //          [2]                         [3]   ^
@@ -1307,14 +1305,14 @@ Render::GraphicP RedlineModel::GetImageGraphic(ViewContextR context)
     ColorDef color(0xff, 0, 0, 0);      // *** WIP_MARKUP - what 'color' should be used for an image??
     m_tileGraphic->SetSymbology(color, color, 0);
 
-    Render::Image image(m_imageDef.m_sizeInPixels.x, m_imageDef.m_sizeInPixels.y, ifmt, imageData.data(), (uint32_t)imageData.size());
-    auto texture = rsys._CreateTexture(image, m_imageDef.HasAlpha());
+    Render::Image image(m_imageDef.m_sizeInPixels.x, m_imageDef.m_sizeInPixels.y, std::move(byteStream), ifmt);
+    auto texture = rsys._CreateTexture(image/*, m_imageDef.HasAlpha()*/);
 
     m_tileGraphic->AddTile(*texture, uvPts);
         
     m_tileGraphic->Close();
 
-    return m_tileGraphic.get();
+    return m_tileGraphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1331,7 +1329,7 @@ void RedlineViewController::_DrawView(ViewContextR context)
         }
 
     auto graphic = targetModel->GetImageGraphic(context);
-    if (nullptr != graphic)
+    if (graphic.IsValid())
         context.OutputGraphic(*graphic, nullptr);
 
     T_Super::_DrawView(context);   // draws sheet border and redline graphics
