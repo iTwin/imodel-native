@@ -231,14 +231,7 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
                 }
 
             ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-            Image rgba(jpeg, Image::Format::Rgba, Image::BottomUp::Yes);
-            if (!rgba.IsValid())
-                {
-                LOG_ERROR("bad texture data");
-                return ERROR;
-                }
-
-            renderTextures[resourceName] = scene.m_renderSystem->_CreateImageTexture(rgba);
+            renderTextures[resourceName] = scene.m_renderSystem->_CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes);
             }
         }
 
