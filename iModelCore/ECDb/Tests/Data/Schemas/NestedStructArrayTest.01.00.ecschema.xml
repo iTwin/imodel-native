@@ -48,7 +48,7 @@
 		<ECProperty propertyName="PropDerivedA" typeName="int" readOnly="false"/>
         <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="BaseHasDerivedA" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="BaseHasDerivedA" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00"/>
         </ECCustomAttributes>
@@ -77,7 +77,7 @@
 		<ECProperty propertyName="PropDoubleDerivedA" typeName="int" readOnly="false"/>
         <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="DerivedBHasChildren" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="DerivedBHasChildren" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00"/>
         </ECCustomAttributes>

@@ -90,7 +90,7 @@
         </ECCustomAttributes>
         <ECProperty propertyName="RightDoubleProperty" typeName="double" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="RightRelationshipClass" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="RightRelationshipClass" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="Property" typeName="string" readOnly="false"/>
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="bs:AddressDomain"/>
@@ -108,7 +108,7 @@
         <ECProperty propertyName="Property" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Property1" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="TestRelationshipClass" modifier="None" strength="holding" strengthDirection="backward">
+    <ECRelationshipClass typeName="TestRelationshipClass" modifier="Sealed" strength="holding" strengthDirection="backward">
         <ECProperty propertyName="PropertyA" typeName="string" readOnly="false"/>
         <ECProperty propertyName="PropertyB" typeName="double" readOnly="false"/>
         <Source cardinality="(0,N)" polymorphic="true">

@@ -59,7 +59,7 @@
         <ECProperty propertyName="CompanyName" typeName="string" displayLabel="Company Name" readOnly="false"/>
         <ECProperty propertyName="SubContractorId" typeName="int" displayLabel="Sub Contractor Id" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ManagerRelationship" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ManagerRelationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Manager"/>
         </Source>
@@ -67,7 +67,7 @@
             <Class class="Employee"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SubContractorRelationship" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="SubContractorRelationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="false">
             <Class class="SubContractor"/>
         </Source>

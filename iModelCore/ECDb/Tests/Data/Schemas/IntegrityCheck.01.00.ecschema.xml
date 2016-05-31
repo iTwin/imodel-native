@@ -34,7 +34,7 @@
         <ECProperty propertyName="I" typeName="int" readOnly="false"/>
         <ECProperty propertyName="S" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SourceToTarget_Embedding" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="SourceToTarget_Embedding" strength="embedding" strengthDirection="forward" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01">
                 <OnDeleteAction>Cascade</OnDeleteAction>

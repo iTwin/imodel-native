@@ -61,7 +61,7 @@
     <ECEntityClass typeName="Widget" modifier="None">
         <ECProperty propertyName="stringOfWidget" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AAFoo_references_Widget_11" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="AAFoo_references_Widget_11" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" roleLabel="refers to" polymorphic="true">
             <Class class="AAFoo"/>
         </Source>
@@ -146,7 +146,7 @@
         <ECProperty propertyName="FloorCode" typeName="string" displayLabel="Floor Code" readOnly="false"/>
         <ECProperty propertyName="RecordKey" typeName="int" displayLabel="Record Key" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="BuildingFloorRelationship" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="BuildingFloorRelationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01">
                 <ForeignKeyColumn>Building__src_11_Id</ForeignKeyColumn>
@@ -456,7 +456,7 @@
         <ECProperty propertyName="Manager" typeName="int" displayLabel="Project Manager" readOnly="false"/>
         <ECProperty propertyName="ProjectRecordKey" typeName="int" displayLabel="Record Key" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="CompanyProject" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="CompanyProject" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01">
                 <ForeignKeyColumn>Company__src_11_id</ForeignKeyColumn>
@@ -734,7 +734,7 @@
         <ECStructProperty propertyName="Address" typeName="Location" readOnly="false"/>
         <ECProperty propertyName="EmployeeRecordKey" typeName="dateTime" displayLabel="Record Key" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="EmployeeCompany" modifier="None" strength="referencing" strengthDirection="backward">
+    <ECRelationshipClass typeName="EmployeeCompany" modifier="Sealed" strength="referencing" strengthDirection="backward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01">
                 <ForeignKeyColumn>Company__trg_11_id</ForeignKeyColumn>
@@ -747,7 +747,7 @@
             <Class class="Company"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="EmployeeFurniture" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="EmployeeFurniture" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01" />
         </ECCustomAttributes>
@@ -759,7 +759,7 @@
             <Class class="Desk"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="EmployeeHardware" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="EmployeeHardware" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00.01">
                 <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
@@ -773,7 +773,7 @@
             <Class class="Hardware"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="EmployeeOffice" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="EmployeeOffice" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00.01">
                 <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
@@ -793,7 +793,7 @@
         <ECProperty propertyName="Owner" typeName="string" readOnly="false"/>
         <ECProperty propertyName="User" typeName="int" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="EmployeePhone" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="EmployeePhone" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01"/>
         </ECCustomAttributes>
@@ -804,7 +804,7 @@
             <Class class="Phone"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="EmployeeProject" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="EmployeeProject" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00.01">
                 <SourceECInstanceIdColumn>Employee__src_1N_id</SourceECInstanceIdColumn>
@@ -818,7 +818,7 @@
             <Class class="Project"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="FloorCubicle" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="FloorCubicle" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01">
                 <ForeignKeyColumn>BuildingFloor__src_11_id</ForeignKeyColumn>
@@ -1005,7 +1005,7 @@
             </ECCustomAttributes>
         </ECStructArrayProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="Foo_has_Bars" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="Foo_has_Bars" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" roleLabel="owns" polymorphic="true">
             <Class class="Foo"/>
         </Source>
@@ -1013,7 +1013,7 @@
             <Class class="Bar"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="Foo_has_Bars_hint" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="Foo_has_Bars_hint" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" roleLabel="owns" polymorphic="true">
             <Class class="Foo"/>
         </Source>
@@ -1063,7 +1063,7 @@
         <ECProperty propertyName="Vendor" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Weight" typeName="double" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="RelationWithLinkTableMapping" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="RelationWithLinkTableMapping" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="Created" typeName="dateTime" readOnly="false"/>
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="Employee"/>

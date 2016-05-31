@@ -35,7 +35,7 @@
         <ECProperty propertyName="ShipCity" typeName="string" readOnly="false"/>
         <ECProperty propertyName="ShipPostalCode" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="CustomerHasOrder" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="CustomerHasOrder" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Customer"/>
         </Source>
@@ -48,7 +48,7 @@
         <ECProperty propertyName="IsContractual" typeName="boolean" readOnly="false"/>
         <ECStructArrayProperty propertyName="ContactDetails" typeName="ContactDetails" readOnly="false" minOccurs="3" maxOccurs="3"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="EmployeeHasOrder" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="EmployeeHasOrder" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" roleLabel="EmployeeHasOrder" polymorphic="true">
             <Class class="Employee"/>
         </Source>
@@ -70,7 +70,7 @@
         <ECProperty propertyName="Country" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Phone" typeName="long" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ProductHasSupplier" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ProductHasSupplier" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" roleLabel="ProductHasSupplier" polymorphic="true">
             <Class class="Product"/>
         </Source>
