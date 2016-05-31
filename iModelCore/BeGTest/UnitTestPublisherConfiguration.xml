@@ -35,6 +35,6 @@
         <OptionBool name="ConvertSeedDrawingsTo3d" value="false"/>
         <OptionBool name="EmbedIssues" value="true"/>
         <OptionBool name="EmbedConfigFile" value="true"/>
-        <OptionBool name="EmbedDgnLinkFiles" value="false"/>
+        <OptionBool name="EmbedDgnLinkFiles" value="true"/>
     </Options>
 </ImportConfig>
