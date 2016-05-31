@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSQuery.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -115,6 +115,50 @@ Utf8StringCR WSQuery::GetSelect() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSQuery& WSQuery::SetFilter(Utf8StringCR filter)
     {
+    m_filter = filter;
+    return *this;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+WSQuery& WSQuery::AddFilterIdsIn
+(
+std::deque<ObjectId>& idsInOut,
+std::set<ObjectId>* idsAddedOut,
+size_t maxIdsInFilter,
+size_t maxFilterLength
+)
+    {
+    int objectCountInFilter = 0;
+
+    Utf8String filter = "$id+in+[";
+
+    while (
+        filter.length() < maxFilterLength &&
+        objectCountInFilter < maxIdsInFilter &&
+        !idsInOut.empty() &&
+        idsInOut.front().schemaName.Equals(GetSchemaName()) &&
+        GetClasses().end() != GetClasses().find(idsInOut.front().className)
+        )
+        {
+        if (objectCountInFilter > 0)
+            filter += ",";
+
+        filter += "'" + idsInOut.front().remoteId + "'";
+
+        if (idsAddedOut)
+            idsAddedOut->insert(idsInOut.front());
+
+        idsInOut.pop_front();
+        objectCountInFilter++;
+        }
+
+    filter += "]";
+
+    if (!m_filter.empty())
+        filter = "(" + m_filter + ")+and+" + filter;
+
     m_filter = filter;
     return *this;
     }
