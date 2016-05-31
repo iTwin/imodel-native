@@ -10,7 +10,6 @@
 
 #include "DgnModel.h"
 #include "DgnCategory.h"
-#include "ImageUtilities.h"
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
 
@@ -221,58 +220,94 @@ public:
     DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op) const;
 };
 
+
 //=======================================================================================
-// @bsiclass                                                    BentleySystems
+//! An uncompressed image in Rgb (3 bytes per pixel) or Rgba (4 bytes per pixel) format suitable for rendering.
+// @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct Image
 {
-    enum class Format
-    {
-        Rgba = 0,
-        Bgra = 1,
-        Rgb  = 2,
-        Bgr  = 3,
-        Gray = 4,
-        Jpeg = 5,
-        PNG  = 6,
-    };
-    static size_t BytesPerPixel(Format format)
-        {
-        switch (format)
-            {
-            case Format::Rgba:
-            case Format::Bgra:
-            case Format::Jpeg:
-            case Format::PNG:
-                return 4;
-            case Format::Rgb:
-            case Format::Bgr:
-                return 3;
-            }
-        return 1;
-        }
+    enum class Format {Rgba=0, Rgb=2}; // must match qvision.h values
 
 protected:
     uint32_t   m_width = 0;
     uint32_t   m_height = 0;
-    Format     m_format = Format::Rgba;
+    Format     m_format = Format::Rgb;
     ByteStream m_image;
 
-public:
-    Image() {}
-    Image(uint32_t width, uint32_t height, Format format, uint8_t const* data=0, uint32_t size=0) : m_width(width), m_height(height), m_format(format), m_image(data, size) {}
-    Image(uint32_t width, uint32_t height, Format format, ByteStream&& data) : m_width(width), m_height(height), m_format(format), m_image(std::move(data)) {}
-    void Invalidate() {m_width=m_height=0; ClearData();}
     void ClearData() {m_image.Clear();}
-    void Initialize(uint32_t width, uint32_t height, Format format) {m_height=height; m_width=width; m_format=format; ClearData();}
-    uint32_t GetWidth() const {return m_width;}
-    uint32_t GetHeight() const {return m_height;}
-    Format GetFormat() const {return m_format;}
-    void SetFormat(Format f) {m_format=f;}
-    bool IsValid() {return 0!=m_width && 0!=m_height;}
-    ByteStream const& GetByteStream() const {return m_image;}
-    ByteStream& GetByteStreamR() {return m_image;}
-    void SetSize(uint32_t width, uint32_t height);
+    void Initialize(uint32_t width, uint32_t height, Format format=Format::Rgb) {m_height=height; m_width=width; m_format=format; ClearData();}
+
+public:
+    //! Construct a blank invalid image
+    Image() {}
+
+    //! Construct an image from a ByteStream containing either Rgb or Rgba data.
+    //! @param[in] width the width of the image in pixels
+    //! @param[in] height the height of the image in pixels
+    //! @param[in] image an rvalue reference to the ByteStream holding the data. The ByteStream is moved into the newly constructed Image.
+    //! @param[in] format the format of the data held in image
+    //! @note the ByteStream is moved by this constructor, so it will be empty after this call. To use this method, you must
+    //! either pass a temporary variable or use std::move on a non-temporary variable.
+    Image(uint32_t width, uint32_t height, ByteStream&& image, Format format) : m_width(width), m_height(height), m_format(format), m_image(std::move(image)) {}
+
+    enum class BottomUp : bool {No=0, Yes=1}; //!< whether the rows in the image should be flipped top-to-bottom
+    //! Construct an image from an ImageSource.
+    //! @param[in] source the ImageSource from which the image is to be created.
+    //! @param[in] targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded. If
+    //! the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
+    //! @param[in] bottomUp If Yes, the source image is flipped vertically (top-to-bottom) to create the image.
+    //! @note If the source is invalid, or if the conversion fails, IsValid() will return false on the new Image.
+    DGNPLATFORM_EXPORT Image(ImageSourceCR source, Format targetFormat=Format::Rgba, BottomUp bottomUp=BottomUp::No);
+
+    int GetBytesPerPixel()const {return m_format == Format::Rgba ? 4 : 3;} //!< get the number of bytes per pixel
+    void Invalidate() {m_width=m_height=0; ClearData();} //!< Clear the contents and invalidate this image.
+    uint32_t GetWidth() const {return m_width;} //!< Get the width of this image in pixels
+    uint32_t GetHeight() const {return m_height;} //!< Get the height of this image in pixels
+    Format GetFormat() const {return m_format;} //!< Get the format (Rgb or Rgba) of this image
+    void SetFormat(Format format) {m_format=format;} //!< Change the format of this image in pixels
+    bool IsValid() {return 0!=m_width && 0!=m_height && 0!=m_image.GetSize();} //!< @return true if this image holds valid data
+    ByteStream const& GetByteStream() const {return m_image;} //!< get a readonly reference to the ByteStream of this image
+    ByteStream& GetByteStreamR() {return m_image;}//!< Get a writable reference to the ByteStream of this image
+    void SetSize(uint32_t width, uint32_t height) {BeAssert(0 == m_width && 0 == m_height); m_width = width; m_height = height;} //!< change the size in pixels of this image
+};
+
+//=======================================================================================
+//! A compressed image in either JPEG or PNG format. This is called a "source" because it is usually
+//! stored externally and can be used to create an Image.
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct ImageSource
+{
+    enum class Format : uint32_t {Jpeg=0, Png=2}; // don't change values, saved in DgnTexture elements
+
+private:
+    Format m_format = Format::Jpeg;
+    ByteStream m_stream;
+
+public:
+    Format GetFormat() const {return m_format;} //!< Get the format of this ImageSource
+    void SetFormat(Format format) {m_format=format;} //!< Change the format of this ImageSource
+    ByteStream const& GetByteStream() const {return m_stream;} //!< Get a readonly refernce to the ByteStream of this ImageSource.
+    ByteStream& GetByteStreamR() {return m_stream;} //!< Get a writable reference to the ByteStream of this ImageSource.
+    bool IsValid() const {return 0 < m_stream.GetSize();} //!< @return true if this ImageSource holds valid data
+
+    //! Construct a blank invalid ImageSource
+    ImageSource() {}
+
+    //! Construct an ImageSource from a ByteStream containing either Jpeg or Png data.
+    //! @param[in] format the format of the data held in stream
+    //! @param[in] stream an rvalue reference to a ByteStream holding the data. The ByteStream is moved into the newly constructed ImageSource.
+    //! @note the ByteStream is moved by this constructor, so it will be empty after this call. To use this method, you must
+    //! either pass a temporary variable or use std::move on a non-temporary variable.
+    ImageSource(Format format, ByteStream&& stream) : m_format(format), m_stream(stream) {}
+
+    //! Construct an ImageSource by compressing the pixels of an Image. This compresses using either Jpeg or Png format.
+    //! @param[in] image the Rgb or Rgba image data to compress to create the ImageSource
+    //! @param[in] format the format (either Jpeg or Png) to compress the image
+    //! @param[in] quality a value between 1 and 100 to control the level of compression. Used only if format==Jpeg.
+    //! @param[in] bottomUp If Yes, the image is flipped vertically (top-to-bottom) in the new ImageSource.
+    DGNPLATFORM_EXPORT ImageSource(ImageCR image, Format format, int quality=100, Image::BottomUp bottomUp=Image::BottomUp::No);
 };
 
 //=======================================================================================
@@ -1156,7 +1191,7 @@ public:
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void AddBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped)));}
 
-    //! Add DRange3d edges 
+    //! Add DRange3d edges
     void AddRangeBox(DRange3dCR range)
         {
         DPoint3d p[8], tmpPts[9];
@@ -1179,7 +1214,7 @@ public:
         AddLineString(2, DSegment3d::From(p[2], p[6]).point);
         }
 
-    //! Add DRange2d edges 
+    //! Add DRange2d edges
     void AddRangeBox2d(DRange2dCR range, double zDepth)
         {
         DPoint2d tmpPts[5];
@@ -1405,7 +1440,7 @@ struct System
     virtual TexturePtr _GetImageTexture(DgnTextureId, DgnDbR) const = 0;
 
     //! Create a new Texture from an Image. Note: this is called from multiple-threads implementer must ensure this is supported.
-    virtual TexturePtr _CreateImageTexture(ImageCR, bool enableAlpha) const = 0;
+    virtual TexturePtr _CreateImageTexture(ImageCR) const = 0;
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
@@ -1480,7 +1515,7 @@ public:
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetImageTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetImageTexture(id, dgndb);}
-    TexturePtr CreateImageTexture(ImageR image, bool enableAlpha) const {return m_system._CreateImageTexture(image, enableAlpha);}
+    TexturePtr CreateImageTexture(ImageR image) const {return m_system._CreateImageTexture(image);}
     TexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 

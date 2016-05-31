@@ -51,7 +51,7 @@ struct ISprite : IRefCounted
 
     //! Create an RGBA sprite from a buffer that contains a PNG image with alpha channel.
     //! @return the sprite definition or NULL if the PNG definition is not valid.
-    DGNPLATFORM_EXPORT static ISpritePtr CreateFromPngBuffer(Byte const*inputBuffer, size_t numberBytes);
+    DGNPLATFORM_EXPORT static ISpritePtr CreateFrom(Render::ImageSourceCR);
 
     //! Get the RGBA definition from this Sprite Definition.
     //! @return the RGBA definition or NULL

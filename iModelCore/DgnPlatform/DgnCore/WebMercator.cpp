@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/ImageUtilities.h>
 #include <DgnPlatform/RealityDataCache.h>
 
 #define DEBUG_MERCATOR
@@ -272,6 +271,7 @@ void WebMercatorModel::TileCache::Trim()
             }
         }
 
+    oldest->second->SetAbandoned();
     m_map.erase(oldest);
     }
 
@@ -402,7 +402,8 @@ void TileRange::Extend(WPixelPoint pt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double WebMercatorDisplay::ComputeGroundResolution(uint8_t zoomLevel)
     {
-    // "Exact length of the equator (according to wikipedia) is 40075.016686 km in WGS-84. A horizontal tile size at zoom 0 would be 156543.034 meters" (http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Resolution_and_Scale)
+    // "Exact length of the equator (according to wikipedia) is 40075.016686 km in WGS-84. A horizontal tile size at zoom 0 would be 156543.034 meters" 
+    // (http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Resolution_and_Scale)
     return 156543.034 * cos(m_originLatitudeInRadians) / (1<<zoomLevel);
     }
 
@@ -531,7 +532,6 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
     Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View);
     double viewDiag = viewFrust.m_pts[NPC_LeftBottomRear].Distance(viewFrust.m_pts[NPC_RightTopRear]);
 
-
     // Get the number of meters / pixel that we are showing in the view
     double viewResolution = worldDiag / viewDiag;
 
@@ -656,7 +656,6 @@ void DrawArgs::DrawGraphics(double bias)
     if (m_graphics.m_entries.empty())
         return;
 
-                       
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, bias));
     auto group = m_context.CreateGroupNode(Graphic::CreateParams(nullptr, biasTrans), m_graphics, nullptr);
@@ -680,11 +679,17 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
         return; // the xy plane is edge-on in view
 
     TileIdList tileIds = GetTileIds(m_zoomLevel);
+
+    DEBUG_PRINTF("zoom level=%d, ntiles=%d", m_zoomLevel, tileIds.GetSize());
+
     if (tileIds.empty())
         return;
 
     if (tileIds.GetSize() >= m_model.GetTileCache().GetMaxSize())
+        {
+        BeAssert(false);
         m_model.GetTileCache().SetMaxSize(tileIds.GetSize());
+        }
 
     Render::SystemR renderSys = context.GetTargetR().GetSystem();
 
@@ -693,7 +698,7 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
         {
         auto tile = GetCachedTile(tileId);
         if (!tile.IsValid())
-            tile = m_model.CreateTile(tileId, ComputeCorners(tileId), renderSys);
+            m_model.CreateTile(tileId, ComputeCorners(tileId), renderSys);
         }
 
     DrawArgs args(context);
@@ -725,8 +730,7 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
 
     if (m_zoomLevel > 0)
         {
-        //  If we are missing any tiles, first draw the whole view at a coarser zoomLevel. That provides a backdrop. We'll fill in the tiles that we do have after this.
-        //  We draw the whole view rather than substitute for individual missing tiles because we can use the texture cache to draw the whole view.
+        // If we are missing any tiles, draw the whole view at a coarser zoomLevel. That provides a backdrop. We'll fill in the tiles that we do have at higher z value.
         DrawCoarserTiles(args, m_zoomLevel - 1, 3);
         }
 
@@ -999,8 +1003,8 @@ struct TiledRasterCache : RealityData::Storage
 {
     uint64_t m_allowedSize = MAX_DB_CACHE_SIZE;
     using Storage::Storage;
-    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override;
-    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override;
+    virtual BentleyStatus _PrepareDatabase(Db& db) const override;
+    virtual BentleyStatus _CleanupDatabase(Db& db) const override;
 };
 
 //=======================================================================================
@@ -1017,14 +1021,14 @@ private:
     Render::SystemR m_renderSys;
 
 private:
-    void LoadTile();
+    BentleyStatus LoadTile();
 
 protected:
     virtual bool _IsExpired() const override {return false;}
     virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _LoadFromStorage(BeSQLite::Db& db) override;
+    virtual BentleyStatus _LoadFromStorage(Db& db) override;
     virtual BentleyStatus _LoadFromFile(ByteStream const& data) override {return ERROR;}
-    virtual BentleyStatus _PersistToStorage(BeSQLite::Db& db) const override;
+    virtual BentleyStatus _PersistToStorage(Db& db) const override;
 
 public:
     TileData(TileR tile, Render::SystemR renderSys, ColorDef color, Utf8CP url) : m_tile(&tile), m_renderSys(renderSys), m_color(color), Payload(url) {}
@@ -1036,18 +1040,17 @@ DEFINE_REF_COUNTED_PTR(TileData)
 
 END_UNNAMED_NAMESPACE
 
-
 #define TABLE_NAME_TiledRaster  "TiledRaster"
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis           03/2015
 +---------------+---------------+---------------+---------------+---------------+--*/
-BentleyStatus TiledRasterCache::_PrepareDatabase(BeSQLite::Db& db) const
+BentleyStatus TiledRasterCache::_PrepareDatabase(Db& db) const
     {
     if (db.TableExists(TABLE_NAME_TiledRaster))
         return SUCCESS;
 
     Utf8CP ddl = "Id BLOB PRIMARY KEY,Image BLOB,NumBytes INT,JPeg BOOL,Created BIGINT";
-    if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
+    if (BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
         return SUCCESS;
 
     return ERROR;
@@ -1056,7 +1059,7 @@ BentleyStatus TiledRasterCache::_PrepareDatabase(BeSQLite::Db& db) const
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis           03/2015
 +---------------+---------------+---------------+---------------+---------------+--*/
-BentleyStatus TiledRasterCache::_CleanupDatabase(BeSQLite::Db& db) const
+BentleyStatus TiledRasterCache::_CleanupDatabase(Db& db) const
     {
     CachedStatementPtr sumStatement;
     db.GetCachedStatement(sumStatement, "SELECT SUM(NumBytes) FROM " TABLE_NAME_TiledRaster);
@@ -1099,35 +1102,33 @@ BentleyStatus TiledRasterCache::_CleanupDatabase(BeSQLite::Db& db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileData::LoadTile()
+BentleyStatus TileData::LoadTile()
     {
-    Render::Image rgba;
-    BentleyStatus readStatus = ERROR;
+    ImageSource source(m_isJpeg ? ImageSource::Format::Jpeg : ImageSource::Format::Png, std::move(m_data));
+    Image rgb(source);
 
-    RgbImageInfo imageInfo;
-    imageInfo.m_width = imageInfo.m_height = TILE_SIZE;
+    m_data = std::move(source.GetByteStreamR()); // this is necessary since we need to keep the image source to save in the cache.
 
-    if (!m_isJpeg)
-        readStatus = imageInfo.ReadImageFromPngBuffer(rgba, m_data.GetData(), m_data.GetSize());
-    else 
-        readStatus = imageInfo.ReadImageFromJpgBuffer(rgba, m_data.GetData(), m_data.GetSize());
-
-    if (ERROR == readStatus || !rgba.IsValid())
+    if (!rgb.IsValid())
         {
         BeAssert(false);
         m_tile->SetNotFound();
-        return;
+        return ERROR;
         }
 
-    BeAssert(!imageInfo.m_isBGR);
     auto graphic = m_renderSys._CreateGraphic(Graphic::CreateParams(nullptr));
-    auto texture = m_renderSys._CreateImageTexture(rgba, false);
+    auto texture = m_renderSys._CreateImageTexture(rgb);
 
     graphic->SetSymbology(m_color, m_color, 0);
     graphic->AddTile(*texture, m_tile->m_corners.m_pts);
-    graphic->Close();
+
+    auto stat = graphic->Close();
+    BeAssert(SUCCESS==stat);
+    UNUSED_VARIABLE(stat);
+
     m_tile->m_graphic = graphic;
     m_tile->SetLoaded();
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1135,42 +1136,60 @@ void TileData::LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileData::_LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body)
     {
+    if (!m_tile->IsQueued())
+        {
+        BeAssert(m_tile->IsAbandoned());
+        return SUCCESS;
+        }
+
+    DEBUG_PRINTF("loading from Http %s", ToString().c_str());
     m_creationDate = DateTime::GetCurrentTime();
 
     auto contentTypeIter = header.find("Content-Type");
     if (contentTypeIter == header.end())
+        {
+        BeAssert(false);
         return ERROR;
+        }
 
     m_isJpeg = contentTypeIter->second.Equals("image/jpeg");
     BeAssert(!m_isJpeg);
 
     m_data = body;
-
-    LoadTile();
-    return BSISUCCESS;
+    return LoadTile();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_LoadFromStorage(BeSQLite::Db& db)
+BentleyStatus TileData::_LoadFromStorage(Db& db)
     {
+    if (!m_tile->IsQueued())
+        {
+        BeAssert(m_tile->IsAbandoned());
+        return SUCCESS;
+        }
+
     CachedStatementPtr stmt;
-    db.GetCachedStatement(stmt, "SELECT Image,NumBytes,JPeg,Created FROM " TABLE_NAME_TiledRaster " WHERE Id=?");
+    auto rc = db.GetCachedStatement(stmt, "SELECT Image,NumBytes,JPeg,Created FROM " TABLE_NAME_TiledRaster " WHERE Id=?");
+    BeAssert(rc == BE_SQLITE_OK);
     stmt->BindBlob(1, &m_tile->m_id, sizeof(m_tile->m_id), Statement::MakeCopy::No);
 
-    if (BeSQLite::BE_SQLITE_ROW != stmt->Step())
+    rc= stmt->Step();
+    if (BE_SQLITE_ROW != rc)
         {
-//        DEBUG_PRINTF("missing %s", ToString().c_str());
+        BeAssert(BE_SQLITE_DONE == rc);
+        DEBUG_PRINTF("missing %s", ToString().c_str());
         return ERROR;
         }
 
-    m_data.SaveData((Byte*) stmt->GetValueBlob(0), stmt->GetValueInt(1));
+    int nbytes = stmt->GetValueInt(1);
+    BeAssert(nbytes>0);
+    m_data.SaveData((Byte*) stmt->GetValueBlob(0), nbytes);
     m_isJpeg = TO_BOOL(stmt->GetValueInt(2));
     DateTime::FromUnixMilliseconds(m_creationDate,(uint64_t) stmt->GetValueInt64(3));
 
-    LoadTile();
-    return SUCCESS;
+    return LoadTile();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1178,9 +1197,15 @@ BentleyStatus TileData::_LoadFromStorage(BeSQLite::Db& db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileData::_PersistToStorage(Db& db) const
     {
-//    DEBUG_PRINTF("saving %s", ToString().c_str());
+    if (!m_tile->IsLoaded())
+        {
+        BeAssert(m_tile->IsAbandoned());
+        return SUCCESS;
+        }
 
+    DEBUG_PRINTF("saving %s", ToString().c_str());
     int bufferSize = (int) GetData().GetSize();
+    BeAssert(bufferSize>0);
 
     int64_t creationTime = 0;
     if (SUCCESS != GetCreationDate().ToUnixMilliseconds(creationTime))
@@ -1188,15 +1213,18 @@ BentleyStatus TileData::_PersistToStorage(Db& db) const
 
     // insert
     CachedStatementPtr stmt;
-    db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TiledRaster "(Id,Image,NumBytes,JPeg,Created) VALUES(?,?,?,?,?)");
+    auto rc = db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TiledRaster "(Id,Image,NumBytes,JPeg,Created) VALUES(?,?,?,?,?)");
+    BeAssert(rc == BE_SQLITE_OK);
 
     stmt->BindBlob(1, &m_tile->m_id, sizeof(m_tile->m_id), Statement::MakeCopy::No);
-    stmt->BindBlob(2, GetData().GetData(), bufferSize, BeSQLite::Statement::MakeCopy::No);
+    stmt->BindBlob(2, GetData().GetData(), bufferSize, Statement::MakeCopy::No);
     stmt->BindInt(3, bufferSize);
     stmt->BindInt(4, m_isJpeg);
     stmt->BindInt64(5, creationTime);
 
-    return BeSQLite::BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
+    rc = stmt->Step();
+    BeAssert(BE_SQLITE_DONE == rc);
+    return BE_SQLITE_DONE == rc ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1107,17 +1107,6 @@ int32_t DgnViewport::GetDisplayPriorityFrontPlane() {return GetMaxDisplayPriorit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnViewport::UseClipVolume(DgnModelCP modelRef) const
-    {
-    if (!IsActive())
-        return false;
-
-    return !GetViewController().GetViewFlags().noClipVolume;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
-+---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DgnViewport::GetContrastToBackgroundColor() const
     {
     // should we use black or white
@@ -1232,8 +1221,31 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
     if (m_viewController.IsValid())
         {
-        m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
-        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
+        bool dropGraphics = true;
+
+        if (m_viewController->GetClassId() == viewController.GetClassId())
+            {
+            ViewFlags oldFlags = m_viewController->GetViewFlags();
+            ViewFlags newFlags = viewController.GetViewFlags();
+
+            // Check for view flag changes that may require us to re-generate cached graphic...
+            if (newFlags.GetRenderMode() == oldFlags.GetRenderMode() &&
+                newFlags.constructions == oldFlags.constructions &&
+                newFlags.text == oldFlags.text &&
+                newFlags.dimensions == oldFlags.dimensions &&
+                newFlags.fill == oldFlags.fill)
+                {
+                // Both sub-category visibility and appearance gets baked into cached graphic...
+                if (!m_viewController->HasSubCategoryOverride() && !viewController.HasSubCategoryOverride())
+                    dropGraphics = false;
+                }
+            }
+
+        if (dropGraphics)
+            {
+            m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
+            m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
+            }
         }
 
     ClearUndo();

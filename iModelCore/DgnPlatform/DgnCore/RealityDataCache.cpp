@@ -584,7 +584,7 @@ SourceResult AsyncSource::QueueRequest(AsyncSourceRequest& request, Cache& respo
         m_activeRequests.insert(request.GetPayload().GetPayloadId());
         }
     
-    RefCountedPtr<RequestHandler> handler = RequestHandler::Create(*this, request, responseReceiver);
+    RefCountedPtr<RequestHandler> handler = new RequestHandler(*this, request, responseReceiver);
     request.SetCancellationToken(*handler);
     m_threadPool->QueueWork(*handler);
 
@@ -816,9 +816,11 @@ struct HttpSourceRequest : AsyncSourceRequest, IHttpRequestCancellationToken
             {
             case HttpRequestStatus::NoConnection:
                 return new SourceResponse(SourceResult::Error_NoConnection, *m_payload);
+
             case HttpRequestStatus::CouldNotResolveHost:
             case HttpRequestStatus::CouldNotResolveProxy:
                 return new SourceResponse(SourceResult::Error_CouldNotResolveHost,  *m_payload);
+
             case HttpRequestStatus::UnknownError:
                 BeAssert(false && "All HTTP errors should be handled");
                 return new SourceResponse(SourceResult::Error_Unknown, *m_payload);

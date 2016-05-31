@@ -41,17 +41,6 @@ void Render::Target::Debug::Show()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Image::SetSize(uint32_t w, uint32_t h)
-    {
-    // Called when we load the image, because we don't know the dimensions until we read the image data...
-    BeAssert(0 == m_width && 0 == m_height);
-    m_width = w;
-    m_height = h;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Target::RecordFrameTime(uint32_t count, double seconds, bool isFromProgressiveDisplay) 

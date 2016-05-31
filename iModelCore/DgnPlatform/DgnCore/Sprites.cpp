@@ -123,7 +123,7 @@ void initKeypointSprites()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ISpriteP SnapContext::GetSnapSprite(SnapMode snapMode)
     {
-    KeypointType    keypointType = GetSnapKeypointType(snapMode);
+    KeypointType keypointType = GetSnapKeypointType(snapMode);
 
     if (KEYPOINT_TYPE_Unknown <= keypointType)
         return nullptr;
@@ -147,35 +147,29 @@ void RgbaSprite::_LoadSprite()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2014
 //---------------------------------------------------------------------------------------
-ISpritePtr ISprite::CreateFromPngBuffer(Byte const*inputBuffer, size_t numberBytes)
+ISpritePtr ISprite::CreateFrom(ImageSourceCR source)
     {
-    RgbaSpritePtr ptr = RgbaSprite::CreateFromPngBuffer(inputBuffer, numberBytes);
+    RgbaSpritePtr ptr = RgbaSprite::CreateFrom(source);
     return ptr.get();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2014
 //---------------------------------------------------------------------------------------
-RgbaSpritePtr RgbaSprite::CreateFromPngBuffer(Byte const*inputBuffer, size_t numberBytes)
+RgbaSpritePtr RgbaSprite::CreateFrom(ImageSourceCR source)
     {
     RgbaSprite* rgbaSprite = new RgbaSprite();
-    rgbaSprite->PopulateRgbaSpriteFromPngBuffer(inputBuffer, numberBytes);
+    rgbaSprite->Load(source);
     return rgbaSprite;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-void RgbaSprite::PopulateRgbaSpriteFromPngBuffer(Byte const*inputBuffer, size_t numberBytes)
+void RgbaSprite::Load(ImageSourceCR source)
     {
-    RgbImageInfo info;
-    if (BSISUCCESS != info.ReadImageFromPngBuffer(m_image, inputBuffer, numberBytes) || !info.m_hasAlpha)
-        {
-        m_isLoaded = false;
-        m_image.Invalidate();
-        return;
-        }
-    m_isLoaded = true;
+    m_image = Image(source);
+    m_isLoaded = m_image.IsValid();
     }
 
 //---------------------------------------------------------------------------------------
@@ -217,10 +211,10 @@ void NamedSprite::_LoadSprite()
         if (BeFileStatus::Success != pngFile.Open(pngPath, BeFileAccess::Read))
             return;
 
-        bvector<Byte> pngData;
-        pngFile.ReadEntireFile(pngData);
-
-        PopulateRgbaSpriteFromPngBuffer(&pngData[0], pngData.size());
+        ByteStream stream;
+        pngFile.ReadEntireFile(stream);
+        ImageSource source(ImageSource::Format::Png, std::move(stream));
+        Load(source);
         }
     }
 
