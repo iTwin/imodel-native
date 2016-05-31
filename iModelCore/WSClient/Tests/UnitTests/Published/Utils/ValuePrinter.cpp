@@ -444,6 +444,11 @@ void PrintTo(const WString& value, ::std::ostream* os)
     PrintTo(Utf8String(value), os);
     }
 
+void PrintTo(const BeFileName& value, ::std::ostream* os)
+    {
+    PrintTo(Utf8String(value), os);
+    }
+
 void PrintTo(BentleyStatus value, ::std::ostream* os)
     {
     static std::map<BentleyStatus, Utf8String> names
