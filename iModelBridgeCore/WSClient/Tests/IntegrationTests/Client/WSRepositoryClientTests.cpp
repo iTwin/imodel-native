@@ -236,9 +236,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChun
     BeFileName filePath(StubFileWithSize(10 * 1000 * 1000));
     auto paralelUploadCount = 10;
 
-    bset<AsyncTaskPtr<WSCreateObjectResult>> uploadTasks;
-    bset<std::shared_ptr<AsyncTask>> tasks;
-
+    bset<AsyncTaskPtr<WSCreateObjectResult>> tasks;
     for (int i = 0; i < paralelUploadCount; i++)
         {
         auto onProgress = [=] (double bytesTransfered, double bytesTotal)
@@ -247,11 +245,11 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChun
             };
 
         auto task = client->SendCreateObjectRequest(objectCreationJson, filePath, onProgress);
-        uploadTasks.insert(task);
+        tasks.insert(task);
         }
 
     AsyncTask::WhenAll(tasks)->Wait();
-    for (auto task : uploadTasks)
+    for (auto task : tasks)
         {
         auto result = task->GetResult();
 
