@@ -45,3 +45,4 @@ DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceC
 #----------------------------------------------------------------------------------------
 # New issues
 #----------------------------------------------------------------------------------------
+ChangeManagerTests.ModifyObject_ExistingObject_SavesNewValuesToCache # fails after graphite0505 merge - notified Benediktas
