@@ -883,8 +883,11 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     {    
     assert(m_smPtr == nullptr);
 
-    m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), false, true);
-
+    BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
+    clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
+    clipFileBase.AppendUtf8("_");
+    clipFileBase.AppendUtf8(std::to_string(GetModelId().GetValue()).c_str());
+    m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
     assert(m_smPtr != 0);
     if (m_smPtr->IsTerrain())
         {
@@ -940,8 +943,9 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, DgnModel::CreateModelCode("terrain")));
     
     BeFileName terrainDefaultFileName(ScalableMeshModel::GetTerrainModelPath(dgnDb));
-    model->OpenFile(terrainDefaultFileName, dgnDb);
     model->Insert();
+    model->OpenFile(terrainDefaultFileName, dgnDb);
+
     ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(dgnDb));
 
     appData->m_smTerrainPhysicalModelP = model;
@@ -1045,10 +1049,9 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
 
     RefCountedPtr<ScalableMeshModel> model(new ScalableMeshModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(nameToSet))));
 
-    model->OpenFile(smFilename, db);
-
     //After Insert model pointer is handled by DgnModels.
     model->Insert();
+    model->OpenFile(smFilename, db);
     
     if (model->IsTerrain())
         {
