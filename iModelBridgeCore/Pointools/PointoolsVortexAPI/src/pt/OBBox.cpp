@@ -127,9 +127,9 @@ OBBoxd	createFittingOBBd(const vector3d *pts, int numPoints)
 
 #else
     OBBoxd box;
-    BoundBox b;
     // &&RB TODO: the following geomlibs function call must be tested
-    bound_optimizedBoxCompute(&b, reinterpret_cast<DPoint3dP>(const_cast<vector3d*>(pts)), numPoints);
+    //BoundBox b;
+    //bound_optimizedBoxCompute(&b, reinterpret_cast<DPoint3dP>(const_cast<vector3d*>(pts)), numPoints);
     // &&RB TODO: set box object members to proper values from geomlibs BoundBox structure
 #endif
 

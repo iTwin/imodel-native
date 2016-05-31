@@ -56,7 +56,7 @@
         <SubPart PartName="ttl"             PartFile="ttl"              Repository="libsrc-ttl"/>
         <SubPart PartName="Loki"            PartFile="Loki"             Repository="libsrc-loki"/>
         <SubPart PartName="FastDelegate"    PartFile="FastDelegate"     Repository="libsrc-FastDelegate"/>
-        <SubPart PartName="wildmagic"       PartFile="wildmagic"        Repository="libsrc-geometrictools"/>
+        <!--<SubPart PartName="wildmagic"       PartFile="wildmagic"        Repository="libsrc-geometrictools"/>-->
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"         Repository="GeomLibs"/>
         <SubPart PartName="SCZ_Compress"    PartFile="scz_compress"     Repository="libsrc-scz_compress"/>
         <Bindings>
