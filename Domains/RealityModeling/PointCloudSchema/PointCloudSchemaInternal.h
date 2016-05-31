@@ -44,6 +44,23 @@
 
 #include <list>
 
+#include <Logging/bentleylogging.h>
+
+#ifndef NDEBUG
+//#define POINTCLOUD_TRACE 1
+#endif
+
+#if defined (POINTCLOUD_TRACE)
+#   define PCLOG (*NativeLogging::LoggingManager::GetLogger ("PointCloud"))
+#   define DEBUG_PRINTF PCLOG.debugv
+#   define WARN_PRINTF  PCLOG.warningv
+#   define ERROR_PRINTF PCLOG.errorv
+#else
+#   define DEBUG_PRINTF(...)
+#   define WARN_PRINTF(...)
+#   define ERROR_PRINTF(...)
+#endif
+
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
 #endif // __POINTCLOUDSCHEMAINTERNAL_H__

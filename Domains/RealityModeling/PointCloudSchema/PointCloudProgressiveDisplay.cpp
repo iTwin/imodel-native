@@ -7,17 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudSchemaInternal.h>
 
-#include <Logging/bentleylogging.h>
-
-//#define POINTCLOUD_TRACE
-
-#if defined (POINTCLOUD_TRACE)
-#   define LOG (*NativeLogging::LoggingManager::GetLogger (L"PointCloud"))
-#   define DEBUG_PRINTF LOG.errorv
-#else
-#   define DEBUG_PRINTF
-#endif
-
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
@@ -88,7 +77,7 @@ struct MyPointCloudDraw : Render::PointCloudDraw    //NEEDS_WORK_CONTINUOUS_REND
 
     virtual uint32_t _GetNumPoints() { return m_ptCount; }
     virtual DPoint3dCP _GetDPoints() { return m_ptCP; }
-    virtual FPoint3dCP _GetFPoints() { return nullptr; }
+    virtual FPoint3dCP _GetFPoints() { return nullptr; }        //&&MM use qv_addPointsFloat
     };
 
 //----------------------------------------------------------------------------------------
@@ -127,7 +116,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
         {
         if (doCheckStop && context.CheckStop())
             {
-            DEBUG_PRINTF("***** DrawPointCloud CheckStop Reach");
+            DEBUG_PRINTF("CHECK_STOP reached, aborting");
             queryCompleted = false;
             m_lastTentativeStopped = true;
             break;
@@ -217,7 +206,7 @@ ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::Pr
 
     ++m_tentativeId;   
 
-    int64_t loadedSinceLastDraw = PointCloudVortex::PtsLoadedInViewportSinceLastDraw(m_model.GetPointCloudSceneP()->GetSceneHandle());
+    int64_t loadedSinceLastDraw = PointCloudVortex::PtsLoadedInViewportSinceLastDraw(m_model.GetPointCloudSceneP()->GetSceneHandle());  UNUSED_VARIABLE(loadedSinceLastDraw);
     DEBUG_PRINTF("(%d)Begin _DoProgressive loadedSinceDraw                        (%ld)", m_tentativeId, loadedSinceLastDraw);
 
     wantShow = WantShow::Yes; // Would like to show only when we have a good amount of new pts but we do not have that info.

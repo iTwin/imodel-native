@@ -97,6 +97,7 @@ PointCloudModelPtr PointCloudModelHandler::CreatePointCloudModel(PointCloudModel
     BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, params.m_fileId, params.m_dgndb);
     if (status != SUCCESS)
         {
+        ERROR_PRINTF("Failed to resolve filename = %s", fileName.GetNameUtf8().c_str());
         return nullptr;
         }
     Utf8String resolvedName(fileName);
@@ -106,6 +107,7 @@ PointCloudModelPtr PointCloudModelHandler::CreatePointCloudModel(PointCloudModel
     PointCloudScenePtr pPointCloudScene = PointCloudScene::Create(fileName.c_str());
     if (pPointCloudScene.IsNull())
         {
+        ERROR_PRINTF("Failed to create PointCloudScene = %s", fileName.GetNameUtf8().c_str());
         // Can't create model; probably that file name is invalid.
         return nullptr;
         }
@@ -221,12 +223,18 @@ PointCloudSceneP PointCloudModel::GetPointCloudSceneP() const
         BeFileName fileName;
         BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, m_properties.m_fileId, GetDgnDb());
         if (status != SUCCESS)
+            {
+            ERROR_PRINTF("Failed to resolve filename = %s", fileName.GetNameUtf8().c_str());
             return nullptr;
+            }
             
         m_pointCloudScenePtr = PointCloudScene::Create(fileName.c_str());
 
         if (m_pointCloudScenePtr.IsValid())
+            {
             m_loadSceneStatus = PointCloudModel::LoadStatus::Loaded;
+            DEBUG_PRINTF("PointCloudScene loaded file = %s", fileName.GetNameUtf8().c_str());
+            }
         }
 
     return m_pointCloudScenePtr.get();
@@ -285,7 +293,10 @@ void PointCloudModel::_AddSceneGraphics(Dgn::SceneContextR context) const
 
     PtViewport* ptViewport = GetPtViewportP(context.GetViewportR());
     if (nullptr == ptViewport)
+        {
+        ERROR_PRINTF("Error: no more pt viewport");
         return;     // We ran out of viewport.
+        }
 
     RefCountedPtr<PointCloudProgressiveDisplay> display = new PointCloudProgressiveDisplay(*this, *ptViewport);
     display->DrawView(context);
