@@ -685,7 +685,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_BothFilesCachedAndSkipCached_NoFileReq
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(0);
 
-    auto result = ds->CacheFiles(files, true, FileCache::ExistingOrTemporary, nullptr, nullptr)->GetResult();
+    auto result = ds->CacheFiles(files, true, FileCache::Persistent, nullptr, nullptr)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
     }
 
@@ -714,7 +714,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndSkipCached_OneFileRequ
         return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
         }));
 
-    auto result = ds->CacheFiles(files, true, FileCache::ExistingOrTemporary, nullptr, nullptr)->GetResult();
+    auto result = ds->CacheFiles(files, true, FileCache::Persistent, nullptr, nullptr)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
     }
 
@@ -743,7 +743,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRe
         return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
         }));
 
-    auto result = ds->CacheFiles(files, false, FileCache::ExistingOrTemporary, nullptr, nullptr)->GetResult();
+    auto result = ds->CacheFiles(files, false, FileCache::Persistent, nullptr, nullptr)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
     }
 

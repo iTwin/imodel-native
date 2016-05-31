@@ -142,8 +142,8 @@ WorkerThreadPtr cacheAccessThread
     return cacheAccessThread->ExecuteAsync([=]
         {
         LOG.infov(L"CachingDataSource::OpenOrCreate() using environment:\n%ls\n%ls",
-            cacheEnvironment.persistentFileCacheDir.c_str(),
-            cacheEnvironment.temporaryFileCacheDir.c_str());
+                  cacheEnvironment.persistentFileCacheDir.c_str(),
+                  cacheEnvironment.temporaryFileCacheDir.c_str());
 
         ECDb::CreateParams params;
         params.SetStartDefaultTxn(DefaultTxn_No); // Allow concurrent multiple connection access
@@ -209,11 +209,11 @@ WorkerThreadPtr cacheAccessThread
             openResult->SetSuccess(ds);
             });
         })
-        ->Then<OpenResult>([=]
+            ->Then<OpenResult>([=]
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms", 
-                openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+            LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
+                      openResult->IsSuccess() ? "succeeded" : "failed", end - start);
 
             return *openResult;
             });
@@ -737,7 +737,7 @@ ICancellationTokenPtr ct
                 if (!response.IsFinal())
                     {
                     CacheObjects(responseKey, query, origin, response.GetSkipToken(), page + 1, ct)
-                    ->Then([=] (DataOriginResult nextResult)
+                        ->Then([=] (DataOriginResult nextResult)
                         {
                         *result = nextResult;
                         });
@@ -1103,10 +1103,12 @@ ICancellationTokenPtr ct
             return;
             }
 
+        auto txn = StartCacheTransaction();
+        auto cacheLocation = txn.GetCache().GetFileCacheLocation(objectId);
+
         // check cache for object
         if (DataOrigin::CachedData == origin || DataOrigin::CachedOrRemoteData == origin)
             {
-            auto txn = StartCacheTransaction();
             Json::Value file;
             txn.GetCache().ReadInstance(objectId, file);
             BeFileName cachedFilePath;
@@ -1129,14 +1131,7 @@ ICancellationTokenPtr ct
         bset<ObjectId> filesToDownload;
         filesToDownload.insert(objectId);
 
-        auto task = std::make_shared<DownloadFilesTask>
-            (
-            shared_from_this(),
-            std::move(filesToDownload),
-            FileCache::ExistingOrTemporary,
-            std::move(onProgress),
-            ct
-            );
+        auto task = std::make_shared<DownloadFilesTask>(shared_from_this(), std::move(filesToDownload), cacheLocation, std::move(onProgress), ct);
 
         m_cacheAccessThread->Push(task);
 

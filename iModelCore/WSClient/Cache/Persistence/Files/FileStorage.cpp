@@ -30,37 +30,6 @@ m_environment(environment)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileStorage::GetIsFilePersistent(bool& isPersistent, FileCache cacheLocation, FileInfoCR existingFileInfo)
-    {
-    bool cachedFileExists = existingFileInfo.IsInCache();
-
-    if (cachedFileExists && (FileCache::Existing == cacheLocation ||
-        FileCache::ExistingOrPersistent == cacheLocation ||
-        FileCache::ExistingOrTemporary == cacheLocation))
-        {
-        isPersistent = existingFileInfo.IsFilePersistent();
-        }
-    else if (FileCache::Persistent == cacheLocation ||
-             (!cachedFileExists && FileCache::ExistingOrPersistent == cacheLocation))
-        {
-        isPersistent = true;
-        }
-    else if (FileCache::Temporary == cacheLocation ||
-             (!cachedFileExists && FileCache::ExistingOrTemporary == cacheLocation))
-        {
-        isPersistent = false;
-        }
-    else
-        {
-        BeAssert(false && "Unknown cache option");
-        return ERROR;
-        }
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileStorage::RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath)
     {
     BeFileNameStatus status = BeFileName::BeMoveFile(backupPath, originalPath);
@@ -239,12 +208,7 @@ BeFileName FileStorage::GetAbsoluteFilePath(bool isPersistent, BeFileNameCR rela
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileStorage::SetFileCacheLocation(FileInfo& info, FileCache cacheLocation)
     {
-    bool cachePersistentFile = false;
-    if (SUCCESS != GetIsFilePersistent(cachePersistentFile, cacheLocation, info))
-        {
-        return ERROR;
-        }
-
+    bool cachePersistentFile = FileCache::Persistent == cacheLocation;
     if (!info.IsInCache())
         {
         info.SetFilePath(cachePersistentFile, BeFileName());
@@ -300,8 +264,8 @@ bool copyFile
     {
     LOG.infov(L"Caching file: %ls", suppliedFileAbsolutePath.c_str());
 
-    if ((FileCache::Persistent == cacheLocation || FileCache::ExistingOrPersistent == cacheLocation) && m_environment.persistentFileCacheDir.empty() ||
-        (FileCache::Temporary == cacheLocation || FileCache::ExistingOrTemporary == cacheLocation) && m_environment.temporaryFileCacheDir.empty())
+    if (FileCache::Persistent == cacheLocation && m_environment.persistentFileCacheDir.empty() ||
+        FileCache::Temporary == cacheLocation && m_environment.temporaryFileCacheDir.empty())
         {
         LOG.error("Invalid environment");
         BeAssert(false);
@@ -309,13 +273,7 @@ bool copyFile
         }
 
     // Set new file path
-
-    bool cachePersistentFile = false;
-    if (SUCCESS != GetIsFilePersistent(cachePersistentFile, cacheLocation, info))
-        {
-        return ERROR;
-        }
-
+    bool cachePersistentFile = FileCache::Persistent == cacheLocation;
     BeFileName newFileRelativePath = CreateNewRelativeCachedFilePath(suppliedFileAbsolutePath, cachePersistentFile);
     if (newFileRelativePath.empty())
         {
