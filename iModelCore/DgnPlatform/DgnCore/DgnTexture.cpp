@@ -129,16 +129,6 @@ DgnDbStatus DgnTexture::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined(RETURN_ENCODED_IMAGES)
-            image.SetFormat(Render::Image::Format::PNG);
-            image.GetByteStreamR() = std::move(m_data);
-#else
-#endif
-#if defined(RETURN_ENCODED_IMAGES)
-            image.SetFormat(Render::Image::Format::Jpeg);
-            image.GetByteStreamR() = std::move(m_data);
-#else
-#endif
 DgnTextureId DgnTexture::QueryTextureId(DgnCode const& code, DgnDbR db)
     {
     return DgnTextureId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
