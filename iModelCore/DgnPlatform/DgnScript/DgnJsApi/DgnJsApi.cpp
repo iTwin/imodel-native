@@ -449,7 +449,9 @@ int32_t JsDgnDb::SaveChanges()
     {
     DGNJSAPI_VALIDATE_ARGS(IsValid(), -1);
     auto res = (int32_t)m_db->SaveChanges();
-    m_db->Memory().Purge(0);
+
+    m_db->Memory().Purge();
+
     if (JsDgnElement::s_count > 1000)
         {
         LOG.warningv("DgnJsApi - element count is %d. Call Dispose to free objects.", JsDgnElement::s_count);

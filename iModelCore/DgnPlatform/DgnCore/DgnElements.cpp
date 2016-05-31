@@ -83,7 +83,7 @@ public:
     virtual void _CalculateNodeRange() const = 0;
     virtual void _Add(DgnElementCR entry, uint64_t counter) = 0;
     virtual struct ElemIdLeafNode const* _GetFirstNode() const = 0;
-    virtual ElemPurge _Purge(int64_t memTarget) = 0;
+    virtual ElemPurge _Purge(uint64_t memTarget) = 0;
     virtual ElemPurge _Drop(uint64_t key) = 0;
     virtual void _Empty() = 0;
     virtual void _Visit(T_VisitElemFunc) const = 0;
@@ -120,7 +120,7 @@ private:
     virtual ElemIdLeafNode const* _GetFirstNode() const {return this;}
     virtual void _CalculateNodeRange() const override {CalculateLeafRange();}
     virtual void _Add(DgnElementCR entry, uint64_t counter) override;
-    virtual ElemPurge _Purge(int64_t) override;
+    virtual ElemPurge _Purge(uint64_t) override;
     virtual ElemPurge _Drop(uint64_t key) override;
     virtual void _Empty() override;
     virtual void _Visit(T_VisitElemFunc) const override;
@@ -149,7 +149,7 @@ protected:
     virtual void _CalculateNodeRange() const override;
     virtual ElemIdLeafNode const* _GetFirstNode() const override {return (*FirstEntryC())->_GetFirstNode();}
     virtual ElemIdLeafNode const* _NextSibling(ElemIdRangeNodeCP from) const override;
-    virtual ElemPurge _Purge(int64_t) override;
+    virtual ElemPurge _Purge(uint64_t) override;
     virtual ElemPurge _Drop(uint64_t key) override;
     virtual void _Empty() override;
     virtual void _Visit(T_VisitElemFunc) const override;
@@ -272,7 +272,7 @@ ElemPurge ElemIdLeafNode::_Drop(uint64_t key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemPurge ElemIdLeafNode::_Purge(int64_t memTarget)
+ElemPurge ElemIdLeafNode::_Purge(uint64_t memTarget)
     {
     if (m_allReferenced || m_treeRoot.m_totals.m_allocedBytes < memTarget || 0 == m_treeRoot.m_totals.m_unreferenced)
         return ElemPurge::Kept;
@@ -359,7 +359,7 @@ ElemPurge ElemIdInternalNode::_Drop(uint64_t key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemPurge ElemIdInternalNode::_Purge(int64_t memTarget)
+ElemPurge ElemIdInternalNode::_Purge(uint64_t memTarget)
     {
     if (m_allReferenced || m_treeRoot.m_totals.m_allocedBytes < memTarget || 0 == m_treeRoot.m_totals.m_unreferenced)
         return ElemPurge::Kept;
@@ -970,7 +970,7 @@ void DgnElements::DropFromPool(DgnElementCR element) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t DgnElements::_Purge(int64_t memTarget)
+uint64_t DgnElements::_Purge(uint64_t memTarget)
     {
     BeDbMutexHolder _v_v(m_mutex);
     m_tree->Purge(memTarget);

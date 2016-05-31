@@ -108,7 +108,7 @@ BEGIN_UNNAMED_NAMESPACE
 struct SpatialBounds : DgnQueryView::SpatialQuery
 {
     BeSQLite::RTree3dVal  m_bounds;
-    SpatialBounds() : DgnQueryView::SpatialQuery(nullptr) {m_bounds.Invalidate();}
+    SpatialBounds() : DgnQueryView::SpatialQuery(nullptr,nullptr) {m_bounds.Invalidate();}
     int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const& info) override
         {
         BeAssert(6 == info.m_nCoord);

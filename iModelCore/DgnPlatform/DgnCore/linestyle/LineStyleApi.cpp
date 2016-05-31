@@ -128,8 +128,9 @@ DPoint3dCR      pt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeLineString (Render::GraphicBuilderR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, DPoint3dCP pts, int nPts, bool isClosed) const
+StatusInt       LsComponent::_StrokeLineString (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbP lsSymb, DPoint3dCP pts, int nPts, bool isClosed) const
     {
+    ViewContextP viewContext = lsContext.GetViewContext();
     double      totalLength;
     int         disconnect=0;
 
@@ -138,9 +139,9 @@ StatusInt       LsComponent::_StrokeLineString (Render::GraphicBuilderR graphic,
         {
         if (disconnect > 1) // if we have a disconnect, recursively draw the part before and after
             {
-            _StrokeLineString (graphic, viewContext, lsSymb, pts, disconnect, false);
+            _StrokeLineString (graphic, lsContext, lsSymb, pts, disconnect, false);
 
-            return _StrokeLineString (graphic, viewContext, lsSymb, pts+disconnect+1, nPts-disconnect-1, false);
+            return _StrokeLineString (graphic, lsContext, lsSymb, pts+disconnect+1, nPts-disconnect-1, false);
             }
 
         graphic.AddLineString (nPts, pts);
@@ -151,10 +152,9 @@ StatusInt       LsComponent::_StrokeLineString (Render::GraphicBuilderR graphic,
     lsSymb->SetElementClosed (isClosed);
     lsSymb->SetTotalLength (totalLength);
 
-    LineStyleContext context(graphic, viewContext);
     double iterationLength = _GetLength() * lsSymb->GetScale();
     if (nullptr == viewContext || iterationLength == 0 || totalLength/iterationLength < 1000)
-        return _DoStroke (context, pts, nPts, lsSymb);
+        return _DoStroke (lsContext, pts, nPts, lsSymb);
 
     //  We should never encounter this if drawing line styles with textures.  
     BeAssert (false && L"Trying to clip line string");
@@ -200,7 +200,7 @@ StatusInt       LsComponent::_StrokeLineString (Render::GraphicBuilderR graphic,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeLineString2d (Render::GraphicBuilderR graphic, ViewContextP context, LineStyleSymbP lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
+StatusInt       LsComponent::_StrokeLineString2d (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbP lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
     {
     if (nPts < 2)
         return ERROR;
@@ -218,7 +218,7 @@ StatusInt       LsComponent::_StrokeLineString2d (Render::GraphicBuilderR graphi
         }
 
     // output points in 3d
-    return _StrokeLineString (graphic, context, lsSymb, pts3d, nPts, isClosed);
+    return _StrokeLineString (graphic, lsContext, lsSymb, pts3d, nPts, isClosed);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -354,13 +354,13 @@ void            genArc3d (DPoint3dP outPts, double xPos, double yPos, double sin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeArc (Render::GraphicBuilderR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
+StatusInt       LsComponent::_StrokeArc (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
                                         double r0, double r1, double const* inStart, double const* inSweep, DPoint3dCP range) const
     {
-    LineStyleContext context(graphic, viewContext);
-    if (SUCCESS == StrokeContinuousArc (context, lsSymb, origin, rMatrix, r0, r1, inStart, inSweep, range))
+    if (SUCCESS == StrokeContinuousArc (lsContext, lsSymb, origin, rMatrix, r0, r1, inStart, inSweep, range))
         return SUCCESS;
 
+    ViewContextP viewContext = lsContext.GetViewContext();
     double      start = inStart ? *inStart : 0.0;
     double      sweep = inSweep ? *inSweep : msGeomConst_2pi;
     DPoint3d    vec[2];
@@ -437,7 +437,7 @@ StatusInt       LsComponent::_StrokeArc (Render::GraphicBuilderR graphic, ViewCo
 
     lsSymb->SetTotalLength (totalLength);
 
-    StatusInt status = _DoStroke (context, pts, nPts, lsSymb);
+    StatusInt status = _DoStroke (lsContext, pts, nPts, lsSymb);
 
     lsSymb->SetTreatAsSingleSegment (saveTreatAsSingle);
     lsSymb->SetIsCurve (saveIsCurve);
@@ -448,11 +448,12 @@ StatusInt       LsComponent::_StrokeArc (Render::GraphicBuilderR graphic, ViewCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeBSplineCurve (Render::GraphicBuilderR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, MSBsplineCurveCP curve, double const* optTolerance) const
+StatusInt       LsComponent::_StrokeBSplineCurve (Render::GraphicBuilderR graphic, LineStyleContextR lsContext, LineStyleSymbP lsSymb, MSBsplineCurveCP curve, double const* optTolerance) const
     {
     DPoint3d    firstPt;
     curve->FractionToPoint (firstPt, 0.0);
 
+    ViewContextP viewContext = lsContext.GetViewContext();
     // if the linestyle is too small to recognize in this view, just draw the bspline with no style.
     if (!IsWidthDiscernible (viewContext, lsSymb, firstPt))
         {
@@ -504,8 +505,7 @@ StatusInt       LsComponent::_StrokeBSplineCurve (Render::GraphicBuilderR graphi
 
         lsSymb->SetTotalLength (totalLength);
 
-        LineStyleContext context(graphic, viewContext);
-        status = _DoStroke (context, &points[0], nPoints, lsSymb);
+        status = _DoStroke (lsContext, &points[0], nPoints, lsSymb);
 
         lsSymb->SetTreatAsSingleSegment (saveTreatAsSingle);
         lsSymb->SetIsCurve (saveIsCurve);

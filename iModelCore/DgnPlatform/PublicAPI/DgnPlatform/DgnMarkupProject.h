@@ -191,41 +191,35 @@ public:
         size_t GetPitch() const;            //!< Get the "pitch" or number of bytes per row. This is just m_size.x * GetSizeofPixelInBytes().
         size_t GetSizeInBytes() const;      //!< Get the total size of the image in bytes. This is just m_size.x*m_size.y*GetSizeofPixelInBytes().
         size_t GetSizeofPixelInBytes() const; //!< Get the number of bytes per pixel. That will be 4 if the image has alpha data or 3 if not.
+        bool HasAlpha() const;              //!< Check if the image has alpha data
         bool GetIsTopDown() const;          //!< Is the image top-down? Else, bottom-up.
+        Render::Image::Format GetRenderImageFormat() const; //!< Get the format of the image
         };
 
 private:
     ImageDef            m_imageDef;
-    bvector<intptr_t>   m_tileIds;
-    bvector<DPoint3d>   m_tileOrigins;
-    int                 m_tilesX;
+    Render::GraphicPtr  m_tileGraphic;
     DgnViewAssociationData m_assoc;
 
     friend struct DgnMarkupProject;
     friend struct RedlineModelHandler;
+    friend struct RedlineViewController;
 
 protected:
     void _WriteJsonProperties(Json::Value&) const override;
     void _ReadJsonProperties(Json::Value const&) override;
 
-    void DefineImageTexturesForRow(ImageDef const& imageDef, uint8_t const* rowStart, DPoint3dCR rowOrigin, Point2dCR tileDims, uint32_t nTilesAcross);
-
     static RedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModel);
 
 public:
-    explicit RedlineModel(CreateParams const& params): T_Super(params) {m_tilesX = 0;}
-    BentleyStatus DrawImage(ViewContextR, DPoint3dCR, DVec3dCR, bool drawBorder);
+    explicit RedlineModel(CreateParams const& params): T_Super(params) {}
+    Render::GraphicP GetImageGraphic(ViewContextR);
     BentleyStatus LoadImageData(ImageDef& def, bvector<uint8_t>& imageData);
     DGNPLATFORM_EXPORT static BentleyStatus LoadImageData(ImageDef& def, bvector<uint8_t>& imageData, DgnDbCR, DgnModelId);
-    void DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t> const& imageData);
-
-    void LoadImageDataAndDefineTexture();
-
+    
     DgnViewId GetFirstView();
 
 public:
-
-    DGNPLATFORM_EXPORT uintptr_t GetBackDropTextureId() const;
 
     //! Get the DgnMarkupProject that contains this redline model
     DGNPLATFORM_EXPORT DgnMarkupProject* GetDgnMarkupProject() const;

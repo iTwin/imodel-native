@@ -203,7 +203,6 @@ void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& pl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::AssignActiveVolume(ClipPrimitiveR volume)
     {
-    RequestAbort(true);
     m_activeVolume = &volume;
     }
 
@@ -212,7 +211,6 @@ void DgnQueryView::AssignActiveVolume(ClipPrimitiveR volume)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::ClearActiveVolume()
     {
-    RequestAbort(true);
     m_activeVolume = nullptr;
     }
 
@@ -289,7 +287,7 @@ void DgnQueryView::_OnCategoryChange(bool singleEnabled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::SpatialQuery::TestElement(DgnElementId elId)
+bool DgnQueryView::ElementsQuery::TestElement(DgnElementId elId)
     {
     if (IsNever(elId))
         return false;
@@ -988,12 +986,11 @@ void DgnQueryView::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan) :
-        SpatialQuery(&view.m_special), DgnQueryQueue::Task(view, plan)
+        SpatialQuery(&view.m_special, view.GetActiveVolume().get()), DgnQueryQueue::Task(view, plan)
     {
     m_count = 0;
     m_localToNpc = vp.GetWorldToNpcMap()->M0;
     m_cameraOn   = vp.IsCameraOn();
-    m_activeVolume = view.GetActiveVolume();
 
     if (m_cameraOn)
         {
@@ -1311,12 +1308,18 @@ void DgnQueryView::SpatialQuery::SetFrustum(FrustumCR frustum)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::SpatialQuery::Start(DgnQueryViewCR view)
     {
-    DgnDbR db = view.GetDgnDb();
-
-    db.GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rTree(?1)");
+    view.GetDgnDb().GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rTree(?1)");
     m_rangeStmt->BindInt64(1, (uint64_t) this);
 
-    db.GetCachedStatement(m_viewStmt, view.m_viewSQL.c_str());
+    ElementsQuery::Start(view);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryView::ElementsQuery::Start(DgnQueryViewCR view)
+    {
+    view.GetDgnDb().GetCachedStatement(m_viewStmt, view.m_viewSQL.c_str());
     int vSetCol = m_viewStmt->GetParameterIndex("@vset");
     BeAssert(0 != vSetCol);
     m_viewStmt->BindVirtualSet(vSetCol, view);

@@ -415,7 +415,7 @@ private:
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
-    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context);
+    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context, GeometryParamsR);
 
     void Clear() {m_lStyle = nullptr; m_texture = nullptr;}
     void Init(ILineStyleCP);
@@ -480,7 +480,6 @@ public:
     void SetElementClosed(bool closed) {m_options.elementIsClosed = closed;}
     void SetIsCurve(bool isCurve) {m_options.isCurve = isCurve;}
 
-    DGNPLATFORM_EXPORT void ConvertLineStyleToTexture(ViewContextR context, bool force);
     bool ContinuationXElems() const {return m_options.continuationXElems;}
     DGNPLATFORM_EXPORT void ClearContinuationData();
     DGNPLATFORM_EXPORT void CheckContinuationData();
@@ -518,7 +517,7 @@ public:
     void SetStartTangent(DVec3dCR startTangent) {m_startTangent = startTangent;}
     void SetEndTangent(DVec3dCR endTangent) {m_endTangent = endTangent;}
 
-    DGNPLATFORM_EXPORT void Cook(ViewContextR);
+    DGNPLATFORM_EXPORT void Cook(ViewContextR, GeometryParamsR);
  };
 
 struct ISprite;
@@ -1368,7 +1367,7 @@ struct Plan
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
-
+    ClipPrimitiveCPtr m_activeVolume;
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 

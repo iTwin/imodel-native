@@ -244,7 +244,7 @@ void LsPointComponent::SaveToJson(Json::Value& result) const
         LsComponentId symbolId = symbolComponent->GetId();
         SaveSymbolIdToJson(entry, symbolId);
 
-        entry["strokeNnum"] = symRef.GetStrokeNumber();
+        entry["strokeNum"] = symRef.GetStrokeNumber();
         if (symRef.GetXOffset() != 0.0)
             entry["xOffset"] = symRef.GetXOffset();
         if (symRef.GetYOffset() != 0.0)

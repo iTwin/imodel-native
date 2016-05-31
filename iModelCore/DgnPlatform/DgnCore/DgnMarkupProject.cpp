@@ -894,9 +894,33 @@ BentleyStatus RedlineModel::ImageDef::FromPropertiesJson(Json::Value const& val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
+Render::Image::Format RedlineModel::ImageDef::GetRenderImageFormat() const
+    {
+    switch (m_format)
+        {
+        case QV_RGBA_FORMAT: return Render::Image::Format::Rgba;
+        case QV_RGB_FORMAT: return Render::Image::Format::Rgb;
+        case QV_BGRA_FORMAT: return Render::Image::Format::Bgra;
+        case QV_BGR_FORMAT: return Render::Image::Format::Bgr;
+        }
+    BeAssert(false);
+    return Render::Image::Format::Rgb;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/13
++---------------+---------------+---------------+---------------+---------------+------*/
 size_t RedlineModel::ImageDef::GetSizeofPixelInBytes() const
     {
-    return (m_format == QV_RGBA_FORMAT || m_format == QV_BGRA_FORMAT)? 4: 3;
+    return HasAlpha() ? 4 : 3;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RedlineModel::ImageDef::HasAlpha() const
+    { 
+    return (m_format == QV_RGBA_FORMAT || m_format == QV_BGRA_FORMAT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1184,27 +1208,6 @@ void RedlineModel::StoreImageData(Render::Image const& imageData, bool fitToX, b
         }
     
     Update();
-
-    //  Define the image texture
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DefineImageTextures(m_imageDef, imageData);
-#endif
-
-#if defined (WIP_TILED_IMAGE_TEST_TEST_TEST)
-    ImageDef def1x1;
-    def1x1.m_format = QV_RGB_FORMAT;
-    def1x1.m_origin.x = 0;
-    def1x1.m_origin.y = 0;
-    def1x1.m_size.x = 10;
-    def1x1.m_size.y = 10;
-    def1x1.m_sizeInPixels.x = 1;
-    def1x1.m_sizeInPixels.y = 1;
-    char const* def = "1  ";
-BeAssert(def1x1.GetSizeofPixelInBytes() == 3);
-    bvector<Byte> bytes1x1;
-    bytes1x1.assign(def, def+strlen(def));
-    DefineImageTextures(def1x1, bytes1x1);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1246,138 +1249,35 @@ BentleyStatus RedlineModel::LoadImageData(ImageDef& imageDef, bvector<uint8_t>& 
     return BSISUCCESS;
     }
 
-// source: http://www.hackersdelight.org/hdcodetxt/flp2.c.txt
-int hibit(unsigned int n) 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void RedlineViewController::OnOpen(RedlineModel& targetModel)
     {
-    n |= (n >>  1);
-    n |= (n >>  2);
-    n |= (n >>  4);
-    n |= (n >>  8);
-    n |= (n >> 16);
-    return n - (n >> 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::DefineImageTexturesForRow(ImageDef const& imageDef, uint8_t const* rowStart, DPoint3dCR rowOrigin, Point2dCR tileDims, uint32_t nTilesAcross)
+void RedlineViewController::OnClose(RedlineModel& targetModel)
     {
-#ifdef WIP_MOSAIC
-    uint32_t pitch = (uint32_t)imageDef.GetPitch(); // # bytes per row
-
-    uint32_t fullWidth = (uint32_t) imageDef.m_sizeInPixels.x; // # pixels per row
-
-    double pixelsToModelX = imageDef.m_size.x / imageDef.m_sizeInPixels.x;
-    double tileWidthModel = tileDims.x * pixelsToModelX;  // the width of a tile in model coordinates
-    uint32_t tileWidthInBytes = tileDims.x*(uint32_t)imageDef.GetSizeofPixelInBytes();  // the size of a tile's worth of data in bytes
-    
-    //  March tiles across the row
-    Byte const* colStart = rowStart;
-    DPoint3d colOrigin = rowOrigin;
-    intptr_t tileid = GetBackDropTextureId() + m_tileIds.size();        // the next unused tileid
-    for (uint32_t col=0; col<nTilesAcross; ++col)
-        {
-        if (tileDims.y != 0)
-            {
-            T_HOST.GetGraphicsAdmin()._DefineTile(tileid, nullptr, tileDims, false, imageDef.m_format, pitch, colStart);
-            m_tileIds.push_back(tileid);
-            ++tileid;
-            }
-        m_tileOrigins.push_back(colOrigin);
-            
-        colStart += tileWidthInBytes;
-        colOrigin.x += tileWidthModel;                           // march across
-        }
-
-    // tack on the tall, narrow tile to the right of the last full tile in this row.
-    Point2d stubColTileDims;
-    stubColTileDims.x = fullWidth - (nTilesAcross*tileDims.x);
-    if (stubColTileDims.x  != 0)
-        {
-        stubColTileDims.y = tileDims.y;
-        if (tileDims.y != 0)
-            {
-            T_HOST.GetGraphicsAdmin()._DefineTile(tileid, nullptr, stubColTileDims, false, imageDef.m_format, pitch, colStart);
-            m_tileIds.push_back(tileid);
-            ++tileid;
-            }
-        m_tileOrigins.push_back(colOrigin);
-        }
-
-    //  Append the location of the outside corner of the row.
-    colOrigin.x = rowOrigin.x + imageDef.m_size.x;
-    m_tileOrigins.push_back(colOrigin);
-#endif
+    targetModel.m_tileGraphic = nullptr;
     }
+
+void RedlineViewController::SetDrawBorder(bool allow) {m_drawBorder=allow;}
+bool RedlineViewController::GetDrawBorder() const {return m_drawBorder;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t> const& imageData)
+Render::GraphicP RedlineModel::GetImageGraphic(ViewContextR context)
     {
-#ifdef WIP_MOSAIC
-    // All dimensions are in PIXELS unless specified as "bytes" or "model" (i.e., distance)
-    uint32_t maxTileSize = 1024;
+    if (m_tileGraphic.IsValid())
+        return m_tileGraphic.get();
 
-    BeAssert(m_tileIds.empty());
-    m_tileIds.clear();
-    m_tileOrigins.clear();
-
-    uint32_t pixelsX = (uint32_t) imageDef.m_sizeInPixels.x;
-    uint32_t pixelsY = (uint32_t) imageDef.m_sizeInPixels.y;
-
-    //  What is the largest SQUARE tile we can have in this image?
-    uint32_t tileSize = std::min(maxTileSize, pixelsX);
-    tileSize = std::min(tileSize, pixelsY);
-
-    //  Round this down to a power of 2
-    tileSize = hibit(tileSize);
-
-    //  Compute the number of these tiles that we can fit across and up
-    uint32_t nTilesAcross = pixelsX / tileSize;
-    uint32_t nTilesUp     = pixelsY / tileSize;
-
-    Point2d tileDims = {tileSize,tileSize};
-
-    double pixelsToModelY = imageDef.m_size.y / imageDef.m_sizeInPixels.y;
-
-    //  For each row
-    DPoint3d rowOrigin = DPoint3d::From(imageDef.m_origin);       // lower left
-    double layoutDirection = 1.0; 
-    rowOrigin.z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
-    m_tilesX = 0;
-    Byte const* rowStart = &imageData[0];
-    uint32_t pitch = (uint32_t)imageDef.GetPitch();
+    bvector<uint8_t> imageData;
+    LoadImageData(m_imageDef, imageData);
         
-    for (uint32_t row=0; row<nTilesUp; ++row)
-        {
-        //  March tiles across the columns of this row
-        DefineImageTexturesForRow(imageDef, rowStart, rowOrigin, tileDims, nTilesAcross);
-        rowStart += tileDims.y*pitch;
-        rowOrigin.y += layoutDirection * (tileDims.y * pixelsToModelY);// march up the y-axis in model coordinates
-        ++m_tilesX;
-        } 
-
-    //  rowStart now points to the remaining pixels across the top.
-    Point2d topTileDims;
-    topTileDims.x = tileSize;
-    topTileDims.y = imageDef.m_sizeInPixels.y - (nTilesUp*tileSize);
-    if (topTileDims.y != 0)
-        {
-        DefineImageTexturesForRow(imageDef, rowStart, rowOrigin, topTileDims, nTilesAcross);
-        rowStart += topTileDims.y*pitch;
-        rowOrigin.y += layoutDirection * (topTileDims.y * pixelsToModelY);// march up the y-axis in model coordinates
-        ++m_tilesX;
-        }
-
-    //  Finally, append the corners of the last stub tile
-    Point2d nopTileDims;
-    nopTileDims.x = tileSize;
-    nopTileDims.y = 0;  // TRICKY: This tells DefineImageTexturesForRow not to define textures, just push DPoint3ds
-    DefineImageTexturesForRow(imageDef, nullptr, rowOrigin, nopTileDims, nTilesAcross);
-
-#else
-
     //  tile corners:
     //
     //          [2]                         [3]   ^
@@ -1390,94 +1290,31 @@ void RedlineModel::DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t
     uvPts[0].y = uvPts[1].y = m_imageDef.m_origin.y;
     uvPts[1].x = uvPts[3].x = m_imageDef.m_origin.x + m_imageDef.m_size.x;
     uvPts[2].y = uvPts[3].y = m_imageDef.m_origin.y + m_imageDef.m_size.y;
-    
-    for (int i=0; i<_countof(uvPts); ++i)
+
+    for (int i = 0; i<_countof(uvPts); ++i)
         uvPts[i].z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
 
-    if (imageDef.GetIsTopDown())
+    if (m_imageDef.GetIsTopDown())
         {
         std::swap(uvPts[0], uvPts[2]);
         std::swap(uvPts[1], uvPts[3]);
         }
 
-    for (auto const& corner : uvPts)
-        m_tileOrigins.push_back(corner);
+    auto& rsys = context.GetViewport()->GetRenderTarget()->GetSystem();
+        
+    m_tileGraphic = rsys._CreateGraphic(Graphic::CreateParams(nullptr));
+    auto ifmt = m_imageDef.GetRenderImageFormat();
+    ColorDef color(0xff, 0, 0, 0);      // *** WIP_MARKUP - what 'color' should be used for an image??
+    m_tileGraphic->SetSymbology(color, color, 0);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    auto pitch = (uint32_t)imageDef.GetPitch();
-    auto tileid = GetBackDropTextureId();
-    Point2d tileDims;
-    tileDims.x = imageDef.m_sizeInPixels.x;
-    tileDims.y = imageDef.m_sizeInPixels.y;
+    Render::Image image(m_imageDef.m_sizeInPixels.x, m_imageDef.m_sizeInPixels.y, ifmt, imageData.data(), (uint32_t)imageData.size());
+    auto texture = rsys._CreateTexture(image, m_imageDef.HasAlpha());
 
-    T_HOST.GetGraphicsAdmin()._DefineTile(tileid, nullptr, tileDims, false, imageDef.m_format, pitch, imageData.data());
-    m_tileIds.push_back(tileid);
-    m_tilesX = 1;
-#endif
+    m_tileGraphic->AddTile(*texture, uvPts);
+        
+    m_tileGraphic->Close();
 
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::LoadImageDataAndDefineTexture()
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (T_HOST.GetGraphicsAdmin()._IsTextureIdDefined(GetBackDropTextureId()))
-        return;
-#endif
-
-    bvector<uint8_t> imageData;
-    LoadImageData(m_imageDef, imageData);
-    DefineImageTextures(m_imageDef, imageData);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineViewController::OnOpen(RedlineModel& targetModel)
-    {
-    targetModel.LoadImageDataAndDefineTexture();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineViewController::OnClose(RedlineModel& targetModel)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    T_HOST.GetGraphicsAdmin()._DeleteTexture(targetModel.GetBackDropTextureId());
-#endif
-    }
-
-void RedlineViewController::SetDrawBorder(bool allow) {m_drawBorder=allow;}
-bool RedlineViewController::GetDrawBorder() const {return m_drawBorder;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RedlineModel::DrawImage(ViewContextR context, DPoint3dCR viewOrg, DVec3dCR viewDelta, bool drawBorder)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Make sure texture is defined. (I think it could get deleted when we run low on memory, so we might have to re-create it on the fly.)
-    LoadImageDataAndDefineTexture();
-
-    uintptr_t const& x = m_tileIds.front();
-    int tilesY = (int)m_tileIds.size() / m_tilesX;
-
-    context.GetCurrentGraphicR().AddMosaic((int)m_tilesX, tilesY, &x, &m_tileOrigins[0]);
-#endif
-
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t RedlineModel::GetBackDropTextureId() const 
-    {
-    return (uintptr_t) this;
+    return m_tileGraphic.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1487,8 +1324,15 @@ void RedlineViewController::_DrawView(ViewContextR context)
     {
     BeAssert(dynamic_cast<RedlineModel*> (context.GetViewport()->GetViewController().GetTargetModel()) != NULL && "RedlineViewController should be used only to draw RedlineModels!");
     RedlineModel* targetModel = (RedlineModel*) context.GetViewport()->GetViewController().GetTargetModel();
+    if (nullptr == targetModel)
+        {
+        BeDataAssert(false);
+        return;
+        }
 
-    targetModel->DrawImage(context, GetOrigin(), GetDelta(), m_drawBorder);
+    auto graphic = targetModel->GetImageGraphic(context);
+    if (nullptr != graphic)
+        context.OutputGraphic(*graphic, nullptr);
 
     T_Super::_DrawView(context);   // draws sheet border and redline graphics
     }
