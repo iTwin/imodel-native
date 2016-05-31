@@ -315,6 +315,7 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
         if (!m_proxyUrl.empty())
             {
             curl_easy_setopt(pCurl, CURLOPT_PROXY, m_proxyUrl.c_str());
+            curl_easy_setopt(pCurl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
             if (!m_proxyCreds.empty())
                 {
                 curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
