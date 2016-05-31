@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSQueryTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "WSQueryTests.h"
@@ -306,4 +306,173 @@ TEST_F(WSQueryTests, Equals_NonEqualQueries_False)
     query2.SetSelect("Boo");
 
     EXPECT_FALSE(query1 == query2);
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_NoIds_EmptyInFilter)
+    {
+    std::deque<ObjectId> ids;
+
+    WSQuery query("Schema", "Class");
+    query.AddFilterIdsIn(ids);
+    EXPECT_STREQ("$id+in+[]", query.GetFilter().c_str());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_TwoObjects_FilterForSelectedObjects)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema.Class", "A"});
+    ids.push_back({"Schema.Class", "B"});
+
+    WSQuery query("Schema", "Class");
+    query.AddFilterIdsIn(ids);
+    EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentSchemas_FilterForCorrectSchema)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema" , "Class", "A"});
+    ids.push_back({"Schema" , "Class", "B"});
+    ids.push_back({"SchemaB", "Class", "C"});
+    ids.push_back({"Schema" , "Class", "D"});
+
+    WSQuery query("Schema", "Class");
+    query.AddFilterIdsIn(ids);
+    EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentClasses_FilterForCorrectClasses)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "ClassA", "A"});
+    ids.push_back({"Schema", "ClassB", "B"});
+    ids.push_back({"Schema", "ClassA", "C"});
+    ids.push_back({"Schema", "ClassC", "D"});
+    ids.push_back({"Schema", "ClassA", "E"});
+
+    std::set<Utf8String> classes;
+    classes.insert("ClassA");
+    classes.insert("ClassB");
+    WSQuery query("Schema", classes);
+    query.AddFilterIdsIn(ids);
+    EXPECT_STREQ("$id+in+['A','B','C']", query.GetFilter().c_str());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterForMaxTwoObjects_CorrectFilter)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "Class", "A"});
+    ids.push_back({"Schema", "Class", "B"});
+    ids.push_back({"Schema", "Class", "C"});
+    ids.push_back({"Schema", "Class", "D"});
+
+    WSQuery query("Schema", "Class");
+    query.AddFilterIdsIn(ids, nullptr, 2);
+    EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterWithMaxLength_FilterForObjectsFittingTheLenght)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "Class", "A"});
+    ids.push_back({"Schema", "Class", "B"});
+    ids.push_back({"Schema", "Class", "C"});
+    ids.push_back({"Schema", "Class", "D"});
+
+    WSQuery query("Schema", "Class");
+    query.AddFilterIdsIn(ids, nullptr, 10, 12);
+    EXPECT_STREQ("$id+in+['A','B']", query.GetFilter().c_str());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_TwoObjects_InCollectionIsEmpty)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "Class", "A"});
+    ids.push_back({"Schema", "Class", "B"});
+
+    WSQuery query("Schema", "Class");
+    query.AddFilterIdsIn(ids);
+    EXPECT_TRUE(ids.empty());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentSchemas_InCollectionHasRemainingObjects)
+    {
+    WSQuery query("Schema", "Class");
+
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "Class", "A"});
+    ids.push_back({"Schema", "Class", "B"});
+    ids.push_back({"SchemaB", "Class", "C"});
+    ids.push_back({"SchemaC", "Class", "C"});
+    ids.push_back({"Schema", "Class", "D"});
+
+    query.AddFilterIdsIn(ids);
+    EXPECT_EQ(3, ids.size());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_TwoObjects_OutCollectionHasFilteredObjects)
+    {   
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "Class", "A"});
+    ids.push_back({"Schema", "Class", "B"});
+
+    WSQuery query("Schema", "Class");
+
+    std::set<ObjectId> idsOut;
+    query.AddFilterIdsIn(ids, &idsOut);
+    EXPECT_EQ(2, idsOut.size());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_ObjectsForDiffrentSchemas_OutCollectionHasFilteredObjects)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "Class", "A"});
+    ids.push_back({"Schema", "Class", "B"});
+    ids.push_back({"SchemaB", "Class", "C"});
+
+    WSQuery query("Schema", "Class");
+
+    std::set<ObjectId> idsOut;
+    query.AddFilterIdsIn(ids, &idsOut);
+    EXPECT_EQ(2, idsOut.size());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterForMaxTwoObjects_OutCollectionHasFilteredObjects)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "Class", "A"});
+    ids.push_back({"Schema", "Class", "B"});
+    ids.push_back({"Schema", "Class", "C"});
+    ids.push_back({"Schema", "Class", "D"});
+    ids.push_back({"Schema", "Class", "E"});
+
+    WSQuery query("Schema", "Class");
+
+    std::set<ObjectId> idsOut;
+    query.AddFilterIdsIn(ids, &idsOut, 2);
+    EXPECT_EQ(2, idsOut.size());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterToInitialFilter_TheInitialFilterRemains)
+    {
+    std::deque<ObjectId> ids;
+    
+    WSQuery query("Schema", "Class");
+    query.SetFilter("Filter");
+    query.AddFilterIdsIn(ids);
+    EXPECT_EQ(0, ids.size());
+    EXPECT_STREQ("(Filter)+and+$id+in+[]", query.GetFilter().c_str());
+    }
+
+TEST_F(WSQueryTests, AddFilterIdsIn_AddFilterForTwoIDsToInitialFilter_TheInitialFilterRemains)
+    {
+    std::deque<ObjectId> ids;
+    ids.push_back({"Schema", "Class", "A"});
+    ids.push_back({"Schema", "Class", "B"});
+
+    WSQuery query("Schema", "Class");
+    query.SetFilter("Filter");
+    query.AddFilterIdsIn(ids);
+
+    EXPECT_STREQ("(Filter)+and+$id+in+['A','B']", query.GetFilter().c_str());
     }
