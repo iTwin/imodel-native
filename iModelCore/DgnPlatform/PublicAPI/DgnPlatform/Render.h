@@ -257,8 +257,8 @@ public:
     //! @param[in] targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded. If
     //! the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
     //! @param[in] bottomUp If Yes, the source image is flipped vertically (top-to-bottom) to create the image.
-    //! @note If the source is invalid, or if the conversion fails, IsValid() will return false on the new Image.
-    DGNPLATFORM_EXPORT Image(ImageSourceCR source, Format targetFormat=Format::Rgba, BottomUp bottomUp=BottomUp::No);
+    //! @note If the source is invalid, or if the decompression fails, IsValid() will return false on the new Image.
+    DGNPLATFORM_EXPORT explicit Image(ImageSourceCR source, Format targetFormat=Format::Rgba, BottomUp bottomUp=BottomUp::No);
 
     int GetBytesPerPixel()const {return m_format == Format::Rgba ? 4 : 3;} //!< get the number of bytes per pixel
     void Invalidate() {m_width=m_height=0; ClearData();} //!< Clear the contents and invalidate this image.
@@ -300,14 +300,15 @@ public:
     //! @param[in] stream an rvalue reference to a ByteStream holding the data. The ByteStream is moved into the newly constructed ImageSource.
     //! @note the ByteStream is moved by this constructor, so it will be empty after this call. To use this method, you must
     //! either pass a temporary variable or use std::move on a non-temporary variable.
-    ImageSource(Format format, ByteStream&& stream) : m_format(format), m_stream(stream) {}
+    explicit ImageSource(Format format, ByteStream&& stream) : m_format(format), m_stream(stream) {}
 
     //! Construct an ImageSource by compressing the pixels of an Image. This compresses using either Jpeg or Png format.
     //! @param[in] image the Rgb or Rgba image data to compress to create the ImageSource
     //! @param[in] format the format (either Jpeg or Png) to compress the image
     //! @param[in] quality a value between 1 and 100 to control the level of compression. Used only if format==Jpeg.
     //! @param[in] bottomUp If Yes, the image is flipped vertically (top-to-bottom) in the new ImageSource.
-    DGNPLATFORM_EXPORT ImageSource(ImageCR image, Format format, int quality=100, Image::BottomUp bottomUp=Image::BottomUp::No);
+    //! @note If the image is invalid, or if the compression fails, IsValid() will return false on the new ImageSource.
+    DGNPLATFORM_EXPORT explicit ImageSource(ImageCR image, Format format, int quality=100, Image::BottomUp bottomUp=Image::BottomUp::No);
 };
 
 //=======================================================================================
@@ -1427,6 +1428,7 @@ struct GraphicArray
 
 //=======================================================================================
 //! A Render::System is the renderer-specific factory for creating Render::Graphics, Render::Textures, and Render::Materials.
+//! @note The methods of this class may be called from any thread.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct System
@@ -1437,13 +1439,18 @@ struct System
     virtual GraphicPtr _CreateGroupNode(Graphic::CreateParams const& params, GraphicArray& entries, ClipPrimitiveCP clip) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
-    virtual TexturePtr _GetImageTexture(DgnTextureId, DgnDbR) const = 0;
+    //! @param[in] textureId the DgnElementId of the texture element
+    //! @param[in] db the DgnDb for textureId
+    virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const = 0;
 
-    //! Create a new Texture from an Image. Note: this is called from multiple-threads implementer must ensure this is supported.
-    virtual TexturePtr _CreateImageTexture(ImageCR) const = 0;
+    //! Create a new Texture from an Image. 
+    virtual TexturePtr _CreateTexture(ImageCR image) const = 0;
+
+    //! Create a new Texture from an ImageSource. 
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp) const = 0;                                   
 
     //! Create a Texture from a graphic.
-    virtual TexturePtr _CreateGeometryTexture(GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
+    virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
 };
 
 //=======================================================================================
@@ -1514,9 +1521,10 @@ public:
     GraphicBuilderPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
-    TexturePtr GetImageTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetImageTexture(id, dgndb);}
-    TexturePtr CreateImageTexture(ImageR image) const {return m_system._CreateImageTexture(image);}
-    TexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
+    TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
+    TexturePtr CreateTexture(ImageCR image) const {return m_system._CreateTexture(image);}
+    TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}
+    TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
