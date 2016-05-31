@@ -309,6 +309,7 @@ public:
     ByteStream const& GetByteStream() const {return m_stream;} //!< Get a readonly refernce to the ByteStream of this ImageSource.
     ByteStream& GetByteStreamR() {return m_stream;} //!< Get a writable reference to the ByteStream of this ImageSource.
     bool IsValid() const {return 0 < m_stream.GetSize();} //!< @return true if this ImageSource holds valid data
+    DGNPLATFORM_EXPORT Point2d GetSize() const; //!< Reads and returns the width and height of this ImageSource
 
     //! Construct a blank invalid ImageSource
     ImageSource() {}

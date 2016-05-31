@@ -41,6 +41,7 @@ public:
         }
 
     BentleyStatus DoRead(Image& image);
+    BentleyStatus DoReadSize(Point2d& size);
 };
 
 //=======================================================================================
@@ -81,6 +82,11 @@ struct PngReader
             png_set_add_alpha(m_png, 0xff, PNG_FILLER_AFTER);
 
         png_read_png(m_png, m_info, imgTransforms, png_voidp_NULL);
+        }
+
+    void ReadInfo()
+        {
+        png_read_info(m_png, m_info);
         }
 
     Byte** GetRows() const {return png_get_rows(m_png, m_info);}
@@ -127,6 +133,24 @@ BentleyStatus PngData::DoRead(Image& image)
     Byte* out = image.GetByteStreamR().GetDataP();
     for (int line=0; line < pngReader.GetHeight(); ++line)
         memcpy(out + line*bytesPerRow, rowPointers[line], bytesPerRow);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PngData::DoReadSize(Point2d& size)
+    {
+    PngReader pngReader(*this);
+    if (!pngReader.IsValid())
+        return ERROR;
+
+    if (setjmp(png_jmpbuf(pngReader.m_png)))
+        return ERROR;
+
+    pngReader.ReadInfo();
+    size.Init(pngReader.GetWidth(), pngReader.GetHeight());
 
     return SUCCESS;
     }
@@ -248,6 +272,28 @@ void Image::ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetForma
     BeJpegPixelType fmt = m_format == Format::Rgb ? BE_JPEG_PIXELTYPE_Rgb : BE_JPEG_PIXELTYPE_RgbA;
     if (SUCCESS != reader.Decompress(m_image.GetDataP(), m_image.GetSize(), srcData, srcLen, fmt, bottomUp==Image::BottomUp::Yes ? BeJpegBottomUp::Yes : BeJpegBottomUp::No))
         Invalidate();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Point2d ImageSource::GetSize() const
+    {
+    Point2d size { 0, 0 };
+    if (Format::Jpeg == m_format)
+        {
+        uint32_t width, height;
+        BeJpegDecompressor reader;
+        if (SUCCESS == reader.ReadHeader(width, height, m_stream.GetData(), m_stream.GetSize()))
+            size.Init(static_cast<int32_t>(width), static_cast<int32_t>(height));
+        }
+    else
+        {
+        PngData pngData(m_stream.GetData(), m_stream.GetSize());
+        pngData.DoReadSize(size);
+        }
+
+    return size;
     }
 
 /*---------------------------------------------------------------------------------**//**
