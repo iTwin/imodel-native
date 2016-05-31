@@ -120,6 +120,7 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)BePointCloud$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                                 $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
 
