@@ -875,6 +875,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
 ScalableMeshModel::~ScalableMeshModel()
     {
     ScalableMeshTerrainModelAppData::Delete (GetDgnDb());
+    ClearProgressiveQueriesInfo();
     }
 
 //----------------------------------------------------------------------------------------
@@ -899,6 +900,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
              appData->m_modelSearched = true;
              }
         }
+
     if (m_progressiveQueryEngine == nullptr)
         {
         m_displayNodesCache = new ScalableMeshDisplayCacheManager(dgnProject);
@@ -930,6 +932,14 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     BeFileName dbFileName(dgnProject.GetDbFileName());
     BeFileName basePath = dbFileName.GetDirectoryName();
     T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);
+
+    bvector<uint64_t> allClips;
+    bset<uint64_t> clipsToShow;
+    bset<uint64_t> clipsShown;
+    GetClipSetIds(allClips);
+    for (auto elem : allClips)
+        clipsToShow.insert(elem);
+    SetActiveClipSets(clipsToShow, clipsShown);
     //m_properties.m_fileId = smFilename.GetNameUtf8();
     }
 
@@ -946,6 +956,7 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     BeFileName terrainDefaultFileName(ScalableMeshModel::GetTerrainModelPath(dgnDb));
     model->Insert();
     model->OpenFile(terrainDefaultFileName, dgnDb);
+    model->Update();
 
     ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(dgnDb));
 
@@ -1053,7 +1064,8 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
     //After Insert model pointer is handled by DgnModels.
     model->Insert();
     model->OpenFile(smFilename, db);
-    
+    model->Update();
+
     if (model->IsTerrain())
         {
         ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(db));
@@ -1073,7 +1085,8 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
         }
 
     db.SaveChanges();
-        
+    
+
     return model.get();    
     }
 
