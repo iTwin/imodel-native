@@ -197,8 +197,8 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
     //clock_t currentTime = clock(); 
 
     for (; binInd < m_nbBins; binInd++)
-        {
-        for (; itemInd < (uint64_t)m_memPoolItems[binInd].size(); itemInd++)
+        {        
+        for (itemInd = 0; itemInd < (uint64_t)m_memPoolItems[binInd].size(); itemInd++)
             {
                 {   
                 std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[binInd][itemInd]);
