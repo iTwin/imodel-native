@@ -215,7 +215,7 @@ void TileDataQuery::Run()
         }
 #endif         
     if (image.IsValid() && !IsCanceled())
-        m_pTile = m_target.CreateImageTexture(image);
+        m_pTile = m_target.CreateTexture(image);
         
     m_isFinished = true;
     }
