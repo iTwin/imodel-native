@@ -364,6 +364,14 @@ struct Utf8String : public bastring
     //! Perform a case-insensitive comparison. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order. @param other The other string.
     int CompareToI(Utf8StringCR other) const {return CompareToI(other.c_str());}
     //! Perform a (case-sensitive) comparison. @return 0 if the strings are equal, otherwise a negative or positive number representing order. @param other The other string.
+    //! @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order. 
+    //! @note Use only if you know that both strings contain only ASCII characters. 
+    int CompareToIAscii(Utf8CP other) const { return BeStringUtilities::StricmpAscii(c_str(), other); }
+    //! Perform a case-insensitive comparison. 
+    //! @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order. @param other The other string.
+    //! @note Use only if you know that both strings contain only ASCII characters. 
+    int CompareToIAscii(Utf8StringCR other) const { return CompareToIAscii(other.c_str()); }
+    //! Perform a (case-sensitive) comparison. @return 0 if the strings are equal, otherwise a negative or positive number representing order. @param other The other string.
     int CompareTo(Utf8CP other) const {return ::strcmp(c_str(), other);}
     //! Perform a (case-sensitive) comparison. @return 0 if the strings are equal, otherwise a negative or positive number representing order. @param other The other string.
     int CompareTo(Utf8StringCR other) const {return ::strcmp(c_str(), other.c_str());}
@@ -375,6 +383,12 @@ struct Utf8String : public bastring
     bool EqualsI(Utf8StringCR other) const {return (0 == CompareToI(other.c_str()));}
     //! Test for equality with another string, ignoring case. @return true if the strings are equal (ignoring case). @param other The other string.
     bool EqualsI(Utf8CP other) const {return (0 == CompareToI(other));}
+    //! Test for equality with another string, ignoring case. @return true if the strings are equal (ignoring case). @param other The other string.
+    //! @note Use only if you know that both strings contain only ASCII characters. 
+    bool EqualsIAscii(Utf8StringCR other) const { return (0 == CompareToIAscii(other.c_str())); }
+    //! Test for equality with another string, ignoring case. @return true if the strings are equal (ignoring case). @param other The other string.
+    //! @note Use only if you know that both strings contain only ASCII characters. 
+    bool EqualsIAscii(Utf8CP other) const { return (0 == CompareToIAscii(other)); }
     //! Checks if string ends with other string (case sensitive)
     BENTLEYDLL_EXPORT bool EndsWith(Utf8StringCR ending) const;
     //! Removes all whitespace from the left and right sides. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).
@@ -388,11 +402,17 @@ struct Utf8String : public bastring
     BENTLEYDLL_EXPORT bool StartsWith(Utf8CP) const;
     //! Determines if this instance starts with the provided string, ignoring case.
     BENTLEYDLL_EXPORT bool StartsWithI(Utf8CP) const;
+    //! Determines if this instance starts with the provided string, ignoring case.
+    //! @note Use only if you know that both strings contain only ASCII characters. 
+    BENTLEYDLL_EXPORT bool StartsWithIAscii(Utf8CP) const;
 
     //! Determines if this instance ends with the provided string.
     BENTLEYDLL_EXPORT bool EndsWith(Utf8CP) const;
     //! Determines if this instance ends with the provided string, ignoring case.
     BENTLEYDLL_EXPORT bool EndsWithI(Utf8CP) const;
+    //! Determines if this instance ends with the provided string, ignoring case.
+    //! @note Use only if you know that both strings contain only ASCII characters. 
+    BENTLEYDLL_EXPORT bool EndsWithIAscii(Utf8CP) const;
 
     //! Test for whether this string contains another string. @param other The other string. @return true if this string contains the other string. 
     BENTLEYDLL_EXPORT bool Contains(Utf8StringCR other) const;

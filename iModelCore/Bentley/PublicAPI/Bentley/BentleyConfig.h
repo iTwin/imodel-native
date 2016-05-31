@@ -56,7 +56,7 @@
     //  and DgnView is known to support the mouse properly on the system.
     #define BENTLEYCONFIG_SUPPORTS_SYSTEM_MOUSE
 
-    #define BENTLEYCONFIG_VIRTUAL_MEMORY
+    #define BENTLEYCONFIG_VIRTUAL_MEMORY 
     
     #if defined (BENTLEY_WINRT)
         // BENTLEYCONFIG_OS_WINRT will only be set for WinRTx86 and WinRTx64 (Store/Metro apps)
@@ -75,11 +75,16 @@
     #define BENTLEYCONFIG_OS_UNIX
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #define BENTLEYCONFIG_DISPLAY_WX
+    #define BENTLEYCONFIG_VIRTUAL_MEMORY
 
 #elif defined (__EMSCRIPTEN__)
 
 #else
     #error Unexpected OS configuration
+#endif
+
+#if defined (_M_X64) || defined(__LP64__)
+    #define BENTLEYCONFIG_64BIT_HARDWARE
 #endif
 
 #ifdef NO_STD_REGEX
