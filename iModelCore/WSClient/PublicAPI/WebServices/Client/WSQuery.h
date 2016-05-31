@@ -80,7 +80,7 @@ struct WSQuery
         WSCLIENT_EXPORT WSQuery& SetFilter(Utf8StringCR filter);
 
         //! Add $filter $id+in+[...]
-        //! @param[in][out] idsInOut - ids to create filter from. Will remove ids that were added.
+        //! @param[in,out] idsInOut - ids to create filter from. Will remove ids that were added.
         //! Will only use ids that are compatible with current query (by schema and classes).
         //! @param[out] idsAddedOut - [optional] return objects that were used for filter.
         //! @param[in] maxIdsInFilter - maximum count of ids in filter. Defaults to 100 - reasonable server/client load.
