@@ -396,6 +396,76 @@ TEST_F(ECSchemaUpdateTests, UpdatingECDbMapCAIsNotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ClassModifierToAbstract)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='Sealed' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //! We only like to see if insertion works. If data is left then import will fail for second schema as we do not allow rows
+    Savepoint sp(GetECDb(), "TestData");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (1, 't1')"); //Abstract
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L2, S2) VALUES (2, 't2')");
+    sp.Cancel();
+
+    //Delete some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", false);
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                          03/16
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ClassModifier)
     {
     SchemaItem schemaItem(
