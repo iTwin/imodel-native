@@ -439,9 +439,26 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
 
     if (classChange.GetClassModifier().IsValid())
         {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Changing the ECClassModifier on an ECClass is not supported.",
-                                  oldClass.GetFullName());
-        return ERROR;
+        ECClassModifier newValue = classChange.GetClassModifier().GetNew().Value();
+        if (newValue == ECClassModifier::Sealed)
+            {
+            if (!newClass.GetDerivedClasses().empty())
+                {
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Changing the 'Modifier' of ECClass to ECClassModifier::Sealed only acceptable if class has no derived classes",
+                                          oldClass.GetFullName());
+
+                return ERROR;
+                }
+            }
+        else if (newValue == ECClassModifier::Abstract)
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Changing the 'Modifier' of ECClass to ECClassModifier::Abstract is not supported",
+                                      oldClass.GetFullName());
+
+            return ERROR;
+            }
+
+        updater.Set("Modifier", Enum::ToInt(classChange.GetClassModifier().GetNew().Value()));
         }
 
     if (classChange.ClassType().IsValid())
@@ -1016,7 +1033,8 @@ BentleyStatus ECDbSchemaWriter::UpdateECClasses(ECClassChanges& classChanges, EC
                 return ERROR;
                 }
 
-            return DeleteECClass(change, *oldClass);
+            if (DeleteECClass(change, *oldClass) == ERROR)
+                return ERROR;
             }
         else if (change.GetState() == ChangeState::New)
             {
@@ -1029,8 +1047,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECClasses(ECClassChanges& classChanges, EC
 
             if (ImportECClass(*newClass) == ERROR)
                 return ERROR;
-
-            continue;
             }
         else if (change.GetState() == ChangeState::Modified)
             {
