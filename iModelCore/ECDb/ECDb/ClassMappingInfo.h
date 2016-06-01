@@ -63,17 +63,20 @@ protected:
 
 private:
     BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);
-    BentleyStatus EvaluateSharedTableMapStrategy(ClassMap const& parentClassMap, ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& userStrategy);
 
     bool GatherBaseClassMaps(bvector<ClassMap const*>& baseClassMaps, bvector<ClassMap const*>& tphMaps, bvector<ClassMap const*>& tpcMaps, bvector<ClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
-    bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
-protected:
-    virtual BentleyStatus _InitializeFromSchema();
+    MappingStatus EvaluateMapStrategy();
     virtual MappingStatus _EvaluateMapStrategy();
 
-    static void LogClassNotMapped (NativeLogging::SEVERITY severity, ECN::ECClassCR ecClass, Utf8CP explanation);
+protected:
+    BentleyStatus EvaluateSharedTableMapStrategy(ClassMap const& parentClassMap, UserECDbMapStrategy const&);
+    bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
+    virtual BentleyStatus _InitializeFromSchema();
+
+    static void LogClassNotMapped (NativeLogging::SEVERITY, ECN::ECClassCR, Utf8CP explanation);
+
 public:
     ClassMappingInfo(ECN::ECClassCR, ECDbMapCR);
     virtual ~ClassMappingInfo() {}
@@ -113,8 +116,8 @@ public:
 enum class EndTablesOptimizationOptions
     {
     Skip, //!NOP or do nothing
-    ReferencedEnd, //Select base table over joined table
-    ForeignEnd //select subset of joinedTable if possible instead of base table.
+    PrimaryTables, //Select primary table over joined table
+    JoinedTables //select subset of joinedTable if possible instead of primary table.
     };
 
 //======================================================================================
@@ -157,8 +160,14 @@ private:
 
     virtual BentleyStatus _InitializeFromSchema() override;
     virtual MappingStatus _EvaluateMapStrategy();
-    void DetermineCardinality(ECN::ECRelationshipConstraintCR source, ECN::ECRelationshipConstraintCR target);
-    BentleyStatus ResolveEndTables(EndTablesOptimizationOptions source, EndTablesOptimizationOptions target);
+
+    BentleyStatus EvaluateLinkTableStrategy(UserECDbMapStrategy const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateForeignKeyStrategy(UserECDbMapStrategy const&, ClassMap const* baseClassMap);
+
+    void DetermineCardinality();
+    BentleyStatus RetrieveEndTables(EndTablesOptimizationOptions sourceOptions, EndTablesOptimizationOptions targetOptions);
+
+    bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
 
 public:
     RelationshipMappingInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap) : ClassMappingInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
@@ -193,8 +202,6 @@ struct IndexMappingInfo : RefCountedBase
         std::vector<Utf8String> m_properties;
         bool m_addPropsAreNotNullWhereExp;
 
-        static std::vector<std::pair<Utf8String, Utf8String>> s_idSpecCustomAttributeNames;
-
         IndexMappingInfo(Utf8CP name, bool isUnique, std::vector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
             : m_name(name), m_isUnique(isUnique), m_properties(properties), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
             {}
@@ -208,8 +215,6 @@ struct IndexMappingInfo : RefCountedBase
         IndexMappingInfo(Utf8CP name, IndexMappingInfo const& rhs) : m_name(name), m_isUnique(rhs.m_isUnique), m_properties(rhs.m_properties), m_addPropsAreNotNullWhereExp(rhs.m_addPropsAreNotNullWhereExp) {}
 
         static BentleyStatus CreateFromIdSpecificationCAs(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR, ECN::ECClassCR);
-
-        static std::vector<std::pair<Utf8String, Utf8String>> const& GetIdSpecCustomAttributeNames();
 
     public:
         static IndexMappingInfoPtr Clone(Utf8CP name, IndexMappingInfo const& rhs) { return new IndexMappingInfo(name, rhs); }

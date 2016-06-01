@@ -1158,10 +1158,8 @@ BentleyStatus ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-std::set<DbTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd, EndTablesOptimizationOptions options) const
+std::set<DbTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd, bool ignoreJoinedTables) const
     {
-    BeAssert(options != EndTablesOptimizationOptions::Skip);
-
     bool hasAnyClass = false;
     std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
@@ -1195,7 +1193,7 @@ std::set<DbTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipCon
         std::set<DbTable const*> const& joinedTables = pair.second;
 
         bool isPrimaryTableSelected = tables.find(primaryTable) != tables.end();
-        if (options == EndTablesOptimizationOptions::ReferencedEnd)
+        if (ignoreJoinedTables)
             {
             for (auto childTable : primaryTable->GetJoinedTables())
                 tables.erase(childTable);
@@ -1211,7 +1209,7 @@ std::set<DbTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipCon
             }
         }
 
-    if (options == EndTablesOptimizationOptions::ForeignEnd)
+    if (!ignoreJoinedTables)
         return tables;
 
     std::map<PersistenceType, std::set<DbTable const*>> finalListOfTables;
@@ -1219,7 +1217,6 @@ std::set<DbTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipCon
         {
         finalListOfTables[table->GetPersistenceType()].insert(table);
         }
-
 
     return finalListOfTables[PersistenceType::Persisted];
     }

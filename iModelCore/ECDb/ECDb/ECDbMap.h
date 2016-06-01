@@ -135,7 +135,7 @@ struct ECDbMap :NonCopyableClass
         DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }
         LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
         ECDbCR GetECDb() const { return m_ecdb; }
-        std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, EndTablesOptimizationOptions options) const;
+        std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, bool ignoreJoinedTables) const;
     };
 
 
