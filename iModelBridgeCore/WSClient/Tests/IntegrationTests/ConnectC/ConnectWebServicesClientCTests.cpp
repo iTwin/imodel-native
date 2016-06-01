@@ -534,6 +534,112 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
     ASSERT_TRUE (status == SUCCESS);
     }
 
+TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_SuccessfulCodesReturned)
+    {
+    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
+        m_applicationName.c_str (),
+        m_applicationVersion.c_str (),
+        m_applicationGuid.c_str (),
+        m_ccProductId.c_str (),
+        m_fiddlerProxyUrl.c_str (),
+        m_fiddlerProxyUsername.c_str (),
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
+        );
+    ASSERT_TRUE (api != nullptr);
+
+/************************************************************************************//**
+* \brief Create a new project_v2
+* \param[in] apiHandle API object
+* \param[in] Name
+* \param[in] Number
+* \param[in] OrganizationId
+* \param[in] Industry
+* \param[in] AssetType
+* \param[in] LastModified
+* \param[in] Location
+* \param[in] Latitude
+* \param[in] Longitude
+* \param[in] LocationIsUsingLatLong
+* \param[in] RegisteredDate
+* \param[in] TimeZoneLocation
+* \param[in] Status
+* \param[in] Data_Location_Guid
+* \param[in] Country_Code
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+    BeGuid guid(true);
+    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
+    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
+    WString OrgId = L"1001389117";
+    WString Industry = L"8";
+    WString AssetType = L"11";
+    WString Location = L"Huntsville";
+    WString DataLocationGUID = L"99999999-9999-9999-9999-999999999999";
+    WString CountryCode = L"ZZ";
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V2(api, 
+                                            Name.c_str(),
+                                            Number.c_str (),
+                                            OrgId.c_str (),
+                                            Industry.c_str (),
+                                            AssetType.c_str (),
+                                            nullptr,
+                                            Location.c_str(),
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            DataLocationGUID.c_str(),
+                                            CountryCode.c_str());
+
+    ASSERT_TRUE (status == SUCCESS);
+
+    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+
+    WString wInstanceId;
+    wInstanceId.AssignUtf8 (instanceId);
+    CWSCCDATABUFHANDLE project;
+    status = ConnectWebServicesClientC_ReadProject_V2 (api, wInstanceId.c_str(), &project);
+    EXPECT_TRUE (status == SUCCESS);
+
+    status = ConnectWebServicesClientC_DataBufferFree (api, project);
+    EXPECT_TRUE (status == SUCCESS);
+
+    BeGuid newGuid(true);
+    WPrintfString NewName(L"CWSCCTest%s", newGuid.ToString().c_str());
+    status = ConnectWebServicesClientC_UpdateProject_V2 (api,
+                                                      wInstanceId.c_str (),
+                                                      NewName.c_str(),
+                                                      Number.c_str(),
+                                                      nullptr,
+                                                      Industry.c_str(),
+                                                      AssetType.c_str (),
+                                                      nullptr,
+                                                      nullptr,
+                                                      nullptr,
+                                                      nullptr,
+                                                      nullptr,
+                                                      nullptr,
+                                                      nullptr,
+                                                      nullptr,
+                                                      DataLocationGUID.c_str(),
+                                                      CountryCode.c_str());
+    EXPECT_TRUE(status == SUCCESS);
+
+    status = ConnectWebServicesClientC_DeleteProject_V2 (api, wInstanceId.c_str ());
+    ASSERT_TRUE (status == SUCCESS);
+
+    status = ConnectWebServicesClientC_FreeApi (api);
+    ASSERT_TRUE (status == SUCCESS);
+    }
+
 TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
