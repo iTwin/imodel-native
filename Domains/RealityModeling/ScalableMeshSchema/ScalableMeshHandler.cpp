@@ -874,6 +874,12 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
 //----------------------------------------------------------------------------------------
 ScalableMeshModel::~ScalableMeshModel()
     {
+    if (nullptr != m_progressiveQueryEngine.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+    if (nullptr != m_currentDrawingInfoPtr.get())
+        {
+        m_currentDrawingInfoPtr->m_meshNodes.clear();
+        m_currentDrawingInfoPtr->m_overviewNodes.clear();
+        }
     ScalableMeshTerrainModelAppData::Delete (GetDgnDb());
     ClearProgressiveQueriesInfo();
     }
