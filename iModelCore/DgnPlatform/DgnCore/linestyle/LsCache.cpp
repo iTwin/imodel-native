@@ -643,13 +643,11 @@ LsInternalComponent::LsInternalComponent (LsLocation const *pLocation) :
     uint32_t id = pLocation->GetComponentId().GetValue();
     m_hardwareLineCode = 0;
     if (id <= MAX_LINECODE)
+#if defined (WIP_LINESTYLE)
         m_hardwareLineCode = id;
-
-#if defined(NOTNOW)
-    // MicroStation does this but I don't see why we need any indicator other than then "Internal" type
-    // Linecode only if hardware bit is set and masked value is within range.
-    if ( (0 != (id & LSID_HARDWARE)) && ((id & LSID_HWMASK) <= MAX_LINECODE))
-        m_hardwareLineCode = id & LSID_HWMASK;
+#else
+        //  I am not certain that geometry textures will ever support line codes
+        m_hardwareLineCode = 0;
 #endif
     }
 
@@ -698,18 +696,22 @@ StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoin
 
     return SUCCESS;
 #else
+
+    #if defined(NOTNOW)
     int32_t style = GetHardwareStyle ();
-    if (style < MIN_LINECODE || style > MAX_LINECODE)
-        return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
+    if (style >= MIN_LINECODE || style <= MAX_LINECODE)
+        {
+        //  I would like to do this here but it doesn't work with geometry textures.  I don't know if that will be fixed.
+        //  Need to save and restore the GraphicParams
+        GraphicParamsR params = context.GetGraphicParamsR();
+        params.SetLinePixels(Render::GraphicParams::LinePixels(style));
+        context.GetGraphicR().ActivateGraphicParams(params);
+        context.GetGraphicR().AddLineString (nPoints, inPoints);
+        return BSISUCCESS;
+        }
+    #endif
 
-    //  Need to save and restore the GraphicParams
-    GraphicParamsR params = context.GetGraphicParamsR();
-    params.SetLinePixels(Render::GraphicParams::LinePixels(style));
-    context.GetGraphicR().ActivateGraphicParams(params);
-    context.GetGraphicR().AddLineString (nPoints, inPoints);
-
-
-    return BSISUCCESS;
+    return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
 #endif
     }
 
