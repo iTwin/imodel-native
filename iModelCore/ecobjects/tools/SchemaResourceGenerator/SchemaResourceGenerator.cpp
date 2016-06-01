@@ -396,7 +396,7 @@ static bool WriteXliff(Options const& options)
                 key = SchemaResourceKeyHelper::GetRelationshipTargetRoleLabelKey(*relC, invariant);
                 WriteResource(*xmlWriter, key.c_str(), invariant);
                 Utf8PrintfString targetConstraintKey("%s.Target", classKey);
-                WriteCustomAttributeContainerResources(*xmlWriter, targetConstraintKey.c_str(), source);
+                WriteCustomAttributeContainerResources(*xmlWriter, targetConstraintKey.c_str(), target);
                 }
 
             WriteCustomAttributeContainerResources(*xmlWriter, classKey.c_str(), *c);

@@ -212,7 +212,7 @@
                 </LocalizationData>
                 <LocalizationData>
                     <Key>House:RoomHasDoor.Target@House:ExtendedInfo:Purpose:5cdd2dde</Key>
-                    <Value>**This is a room**</Value>
+                    <Value>**This is a door**</Value>
                 </LocalizationData>
                 <LocalizationData>
                     <Key>House:RoomHasWindow.DisplayLabel:38943b93</Key>
