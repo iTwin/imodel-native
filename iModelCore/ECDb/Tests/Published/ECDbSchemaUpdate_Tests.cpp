@@ -4232,6 +4232,99 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
     ASSERT_FALSE(asserted);
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AllowChangeOfIndexName)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns = 'ECDbMap.01.00'>"
+        "               <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>False</IsUnique>"
+        "                       <Properties>"
+        "                           <string>AId</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "               </Indexes>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem schemaWithIndexNameModified(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns = 'ECDbMap.01.00'>"
+        "               <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>IDX_Partial</Name>"
+        "                       <IsUnique>False</IsUnique>"
+        "                       <Properties>"
+        "                           <string>AId</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "               </Indexes>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECProperty propertyName='PB1' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithIndexNameModified);
+    ASSERT_FALSE(asserted);
+
+    ECClassCP b = GetECDb().Schemas().GetECClass("TestSchema", "B");
+    ASSERT_NE(b, nullptr);
+    auto ca = b->GetCustomAttribute("ClassMap");
+    ASSERT_FALSE(ca.IsNull());
+
+    ECValue indexes, indexName;
+    ASSERT_EQ(ca->GetValue(indexes, "Indexes",0), ECObjectsStatus::Success);
+    ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
+    ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial");
+
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -4434,7 +4527,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECEnumeration)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
+// @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, UpdateECClassModifier)
     {
@@ -4460,7 +4553,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECClassModifier)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
+// @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ModifyIsEntityClass)
     {

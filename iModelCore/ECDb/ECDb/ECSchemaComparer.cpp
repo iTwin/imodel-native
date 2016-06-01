@@ -1375,8 +1375,23 @@ BentleyStatus ECSchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
+std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path , bool stripArrayIndex)
     {
+    auto stripArrayIndexIfRequired = [&stripArrayIndex] (Utf8String str)
+        {
+        if (stripArrayIndex)
+            {
+            auto i = str.find("[");
+            if (i == Utf8String::npos)
+                {
+                return str;
+                }
+
+            str = str.substr(0, i);
+            }
+        return str;
+        };
+
     std::vector<Utf8String> axis;
     size_t b = 0;
     size_t i = 0;
@@ -1384,13 +1399,14 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
         {
         if (path[i] == '.')
             {
-            axis.push_back(path.substr(b, i - b));
+         
+            axis.push_back(stripArrayIndexIfRequired(path.substr(b, i - b)));
             b = i + 1;
             }
         }
 
     if (b < i)
-        axis.push_back(path.substr(b , i - b ));
+        axis.push_back(stripArrayIndexIfRequired(path.substr(b , i - b )));
 
     return axis;
     }
@@ -2343,7 +2359,8 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(ECPropertyVa
         if (v->HasChildren())
             continue;
 
-        std::vector<Utf8String> path = ECSchemaComparer::Split(v->GetAccessString());
+        std::vector<Utf8String> path = ECSchemaComparer::Split(v->GetAccessString(), true);
+
         for (std::unique_ptr<Rule> const& rule : rules)
             {
             if (rule->Match(path))
