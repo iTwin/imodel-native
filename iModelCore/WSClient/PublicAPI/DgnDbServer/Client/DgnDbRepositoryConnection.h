@@ -87,7 +87,7 @@ private:
     void SetAzureClient(IAzureBlobStorageClientPtr azureClient);
 
     //! Sets EventServiceClient.
-    bool SetEventServiceClient(RepositoryInfoCR repoInfo);
+    bool SetEventServiceClient(ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
@@ -120,7 +120,7 @@ private:
     EventServiceConnectionTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get the ConnectionId based on query to EventService WebAPI.
-    EventServiceConnectionTaskPtr GetEventServiceConnectionId(ICancellationTokenPtr cancellationToken = nullptr) const;
+    EventServiceConnectionTaskPtr GetEventServiceSubscriptionId(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -222,7 +222,10 @@ public:
 
 
     //! Receive Events from EventService
-    DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr    ReceiveEventsFromEventService(bool longPolling = true);
+    DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr    ReceiveEventsFromEventService(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Receive Events from EventService
+    DGNDBSERVERCLIENT_EXPORT bool                       SendEventsToEventService(Utf8String msg, ICancellationTokenPtr cancellationToken = nullptr);  //Temporary, for testing
 
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
