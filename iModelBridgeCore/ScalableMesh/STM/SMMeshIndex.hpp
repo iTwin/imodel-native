@@ -3140,7 +3140,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
             const_cast<DifferenceSet&>(*it).upToDate = false;
             }
         }
-    diffSetPtr->erase(indices);
+    if(found) diffSetPtr->erase(indices);
     return found;
     }
 
