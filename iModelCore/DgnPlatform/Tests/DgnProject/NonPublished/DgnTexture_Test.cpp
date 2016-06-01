@@ -87,7 +87,7 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     // Purge persistent copies and check round-tripped values as expected
     pTx1 = nullptr;
     pTx2 = nullptr;
-    EXPECT_TRUE(db.Memory().Purge(0));
+    EXPECT_TRUE(db.Memory().PurgeUntil(0));
 
     pTx1 = DgnTexture::QueryTexture(tx1.GetTextureId(), db);
     pTx2 = DgnTexture::QueryTexture(tx2.GetTextureId(), db);
