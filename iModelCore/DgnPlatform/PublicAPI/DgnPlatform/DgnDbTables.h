@@ -181,14 +181,35 @@ public:
     struct Iterator : ECSqlStatementIterator<Entry>
     {
     public:
-        DGNPLATFORM_EXPORT explicit Iterator(DgnDbR db);
+        enum class Include
+        {
+            Elements = 1 << 0,
+            Models = 1 << 1,
+            Both = Elements | Models
+        };
+
+        struct Options
+        {
+        private:
+            Include m_include;
+            bool    m_includeEmpty;
+        public:
+            Options(Include include, bool includeEmpty=false) : m_include(include), m_includeEmpty(includeEmpty) { }
+            Options() : Options(Include::Both) { }
+
+            Utf8CP GetECSql() const;
+        };
+
+        DGNPLATFORM_EXPORT explicit Iterator(DgnDbR db, Options options);
     };
 
-    static Iterator MakeIterator(DgnDbR db) { return Iterator(db); }
+    static Iterator MakeIterator(DgnDbR db, Iterator::Options options = Iterator::Options()) { return Iterator(db, options); }
 
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
+
+ENUM_IS_FLAGS(DgnCode::Iterator::Include);
 
 typedef bset<DgnCode> DgnCodeSet;
 

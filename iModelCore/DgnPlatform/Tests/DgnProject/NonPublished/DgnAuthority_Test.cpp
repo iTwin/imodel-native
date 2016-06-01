@@ -41,9 +41,11 @@ struct DgnAuthoritiesTest : public BlankDgnDbTestFixture
         return auth;
         }
 
-    bool CodeExists(DgnCodeCR toFind)
+    typedef DgnCode::Iterator::Options IteratorOptions;
+
+    bool CodeExists(DgnCodeCR toFind, IteratorOptions options=IteratorOptions())
         {
-        DgnCode::Iterator iter = DgnCode::MakeIterator(GetDb());
+        DgnCode::Iterator iter = DgnCode::MakeIterator(GetDb(), options);
         for (auto const& entry : iter)
             {
             DgnCode code = entry.GetCode();
@@ -98,5 +100,37 @@ TEST_F(DgnAuthoritiesTest, IterateCodes)
 
     EXPECT_TRUE(CodeExists(pStyle->GetCode()));
     EXPECT_FALSE(CodeExists(originalStyleCode));
+
+    // Test with various options
+#ifdef TEST_EMPTY_CODES
+    DgnCode emptyCode = DgnCode::CreateEmpty();
+#endif
+    DgnCode modelCode = GetDb().GetDictionaryModel().GetCode();
+    DgnCode elementCode = pStyle->GetCode();
+
+    typedef DgnCode::Iterator::Include Include;
+
+#ifdef TEST_EMPTY_CODES
+    EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(Include::Both, true)));
+    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Both, false)));
+    EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(Include::Models, true)));
+    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Models, false)));
+    EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(Include::Elements, true)));
+    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Elements, false)));
+#endif
+
+    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Models, false)));
+    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Models, true)));
+    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Both, false)));
+    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Both, true)));
+    EXPECT_FALSE(CodeExists(modelCode, IteratorOptions(Include::Elements, false)));
+    EXPECT_FALSE(CodeExists(modelCode, IteratorOptions(Include::Elements, true)));
+
+    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Both, true)));
+    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Both, false)));
+    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Elements, true)));
+    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Elements, false)));
+    EXPECT_FALSE(CodeExists(elementCode, IteratorOptions(Include::Models, true)));
+    EXPECT_FALSE(CodeExists(elementCode, IteratorOptions(Include::Models, false)));
     }
 

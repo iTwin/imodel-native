@@ -787,18 +787,32 @@ DgnDbStatus DgnAuthority::RegenerateCode(DgnCodeR code, ICodedEntityCR codedEnti
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
+* @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode::Iterator::Iterator(DgnDbR db)
+Utf8CP DgnCode::Iterator::Options::GetECSql() const
     {
 #define SELECT_CODE_COLUMNS_FROM "SELECT Code.AuthorityId,Code.[Value],Code.Namespace,ECInstanceId FROM "
-    static const Utf8CP s_ecsql =
-        SELECT_CODE_COLUMNS_FROM DGN_SCHEMA(DGN_CLASSNAME_Element)
-        " UNION ALL "
-        SELECT_CODE_COLUMNS_FROM DGN_SCHEMA(DGN_CLASSNAME_Model)
-        " UNION ALL "
-        SELECT_CODE_COLUMNS_FROM DGN_SCHEMA(DGN_CLASSNAME_GeometryPart);
+#define SELECT_ELEMENT_CODES SELECT_CODE_COLUMNS_FROM DGN_SCHEMA(DGN_CLASSNAME_Element)
+#define SELECT_MODEL_CODES SELECT_CODE_COLUMNS_FROM DGN_SCHEMA(DGN_CLASSNAME_Model)
+#define SELECT_MODEL_AND_ELEMENT_CODES SELECT_ELEMENT_CODES " UNION ALL " SELECT_MODEL_CODES
+#define EXCLUDE_EMPTY_CODES " WHERE Code.[Value] IS NOT NULL"
 
-    Prepare(db, s_ecsql, 3);
+    switch (m_include)
+        {
+        case Include::Elements:
+            return m_includeEmpty ? SELECT_ELEMENT_CODES : SELECT_ELEMENT_CODES EXCLUDE_EMPTY_CODES;
+        case Include::Models:
+            return m_includeEmpty ? SELECT_MODEL_CODES : SELECT_MODEL_CODES EXCLUDE_EMPTY_CODES;
+        default:
+            return m_includeEmpty ? SELECT_MODEL_AND_ELEMENT_CODES : SELECT_MODEL_AND_ELEMENT_CODES EXCLUDE_EMPTY_CODES;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode::Iterator::Iterator(DgnDbR db, Options options)
+    {
+    Prepare(db, options.GetECSql(), 3);
     }
 
