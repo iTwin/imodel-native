@@ -80,3 +80,53 @@ void EventServiceClient::UpdateSASToken(Utf8StringCR sasToken)
     {
     m_token = sasToken;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Arvind.Venkateswaran   06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpResponse EventServiceClient::MakeSendRequest(Utf8String msg) //temporary, for testing
+    {
+    char numBuffer[10];
+    itoa(230, numBuffer, 10); //max timeout for service bus rest api is set to 230 seconds
+    //Utf8String url = m_fullAddress + Utf8String(numBuffer);
+    Utf8String url = m_fullAddress;
+    url.ReplaceAll("head?timeout=", "");
+    const char *test = url.c_str();
+    printf("%s\n", test);
+    HttpRequest request(url.c_str(), "POST");
+    request.GetHeaders().Clear();
+    //request.GetHeaders().SetValue("Content-Length", "0");
+    request.GetHeaders().SetValue("Content-Type", "application/atom+xml;type=entry;charset=utf-8");
+    request.GetHeaders().SetValue("BrokerProperties", "{ \"TimeToLive\":30, \"Label\":\"M1\"}");
+    request.GetHeaders().SetAuthorization(m_token);
+    request.SetTransferTimeoutSeconds(230);
+    HttpStringBodyPtr body = HttpStringBody::Create(msg);
+    request.SetRequestBody(body);
+    return request.Perform();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Arvind.Venkateswaran   06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EventServiceClient::Send(Utf8String msg) //temporary, for testing
+    {
+    HttpResponse response = MakeSendRequest(msg);
+    switch (response.GetHttpStatus())
+        {
+            case HttpStatus::OK: 
+                return true;
+            case HttpStatus::Created: 
+                return true;
+            case HttpStatus::BadRequest: 
+                return false;
+            case HttpStatus::NoContent: 
+                return false;
+            case HttpStatus::NotFound: 
+                return false;
+            case HttpStatus::Unauthorized: 
+                return false;
+            default:
+                return false;
+        }
+    }
+

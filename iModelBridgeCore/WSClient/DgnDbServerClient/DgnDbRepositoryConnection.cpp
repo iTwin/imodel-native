@@ -66,22 +66,22 @@ void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageCli
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            03/2016
 //---------------------------------------------------------------------------------------
-bool DgnDbRepositoryConnection::SetEventServiceClient(RepositoryInfoCR repoInfo)
+bool DgnDbRepositoryConnection::SetEventServiceClient(ICancellationTokenPtr cancellationToken)
     {
     //Get Event Service SASToken and Set EventService Client
     if (m_eventServiceClient == nullptr)
         {
         EventServiceConnectionTaskPtr taskPtr1, taskPtr2;
-        taskPtr1 = GetEventServiceSAS();
+        taskPtr1 = GetEventServiceSAS(cancellationToken);
         if (!taskPtr1->GetResult().IsSuccess())
             return false;
-        taskPtr2 = GetEventServiceConnectionId();
+        taskPtr2 = GetEventServiceSubscriptionId(cancellationToken);
         if (!taskPtr2->GetResult().IsSuccess())
             return false;
 
         EventServiceClient *eventServiceClient = new EventServiceClient(taskPtr1->GetResult().GetValue()->GetNamespace(), 
-                                                                        repoInfo.GetId(),
-                                                                        taskPtr2->GetResult().GetValue()->GetConnectionId());
+                                                                        m_repositoryInfo.GetId(),
+                                                                        taskPtr2->GetResult().GetValue()->GetSubscriptionId());
         eventServiceClient->UpdateSASToken(taskPtr1->GetResult().GetValue()->GetSasToken());
         m_eventServiceClient = eventServiceClient;
         }
@@ -157,9 +157,9 @@ AuthenticationHandlerPtr authenticationHandler
         //if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
-        //Set EventServiceClient
-        if (!repositoryConnection->SetEventServiceClient(repository))
-            return DgnDbRepositoryConnectionResult::Error(result.GetError());
+        //Set EventServiceClient --> For now directly initializing in the ReceiveEvents method
+        /*if (!repositoryConnection->SetEventServiceClient(repository))
+            return DgnDbRepositoryConnectionResult::Error(result.GetError());*/
 
         return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
         });
@@ -467,7 +467,8 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 EventServiceReceiveTaskPtr DgnDbRepositoryConnection::ReceiveEventsFromEventService
 (
-bool longPolling
+bool longPolling,
+ICancellationTokenPtr cancellationToken
 ) 
     {
     //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
@@ -476,11 +477,27 @@ bool longPolling
     //return result->SetSuccess(EventServiceReceive::Create(rtnVal, msg));
     //EventServiceReceiveResultPtr result = std::make_shared<EventServiceReceiveResult>();
 
+    bool rtnVal = false;
     Utf8String msg = "";
-    bool rtnVal = m_eventServiceClient->Receive(msg, longPolling);
-    if (!rtnVal)
-        return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InternalServerError));
-    return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Success(EventServiceReceive::Create(rtnVal, msg)));
+    if (
+        true == (rtnVal = SetEventServiceClient(cancellationToken)) &&
+        true == (rtnVal = m_eventServiceClient->Receive(msg, longPolling))
+        )
+        return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Success(EventServiceReceive::Create(rtnVal, msg)));    
+    return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InternalServerError));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Arvind.Venkateswaran             06/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbRepositoryConnection::SendEventsToEventService(Utf8String msg, ICancellationTokenPtr cancellationToken)  //Temporary, for testing
+    {
+    if (
+        SetEventServiceClient(cancellationToken) &&
+        m_eventServiceClient->Send(msg)
+        )
+        return true;
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -669,9 +686,12 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Arvind.Venkateswaran           05/2016
 //---------------------------------------------------------------------------------------
-EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnectionId(ICancellationTokenPtr cancellationToken) const
+EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceSubscriptionId(ICancellationTokenPtr cancellationToken) const
     {
     //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSubscription
+
+    //Todo: Find a better way to handle error
+
 	ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventSubscription, "");
 	return m_wsRepositoryClient->SendGetObjectRequest(eventServiceObject, nullptr, cancellationToken)->Then<EventServiceConnectionResult>
         ([=] (WSObjectsResult& eventServiceResult)
@@ -684,28 +704,23 @@ EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnecti
                 jsoninstances.push_back(instance);
                 }
 
-            //Todo: Find a better way to handle error
+            
             if (jsoninstances.size() < 1)
                 //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
                 return EventServiceConnectionResult::Error(eventServiceResult.GetError());
 
             //Get json values 
             RapidJsonValueCR instanceProperties = jsoninstances[0].GetProperties();
-
             if (!instanceProperties.HasMember(ServerSchema::Property::Id))
-                //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
                 return EventServiceConnectionResult::Error(eventServiceResult.GetError());
             auto info = EventServiceConnection::Create(nullptr, nullptr, instanceProperties[ServerSchema::Property::Id].GetString());
 
-            //Todo: Find a better way to handle error
-            if (Utf8String::IsNullOrEmpty(info->GetConnectionId().c_str()))
-                //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+            if (Utf8String::IsNullOrEmpty(info->GetSubscriptionId().c_str()))
                 return EventServiceConnectionResult::Error(eventServiceResult.GetError());
             return EventServiceConnectionResult::Success(info);
             }
         else
             {
-            //Todo: Find a better way to handle error
             return EventServiceConnectionResult::Error(eventServiceResult.GetError());
             }
         });
@@ -717,6 +732,8 @@ EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnecti
 EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICancellationTokenPtr cancellationToken) const
     {
     //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSAS
+
+    //Todo: Find a better way to handle error
 
 	ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventSAS, "");
 	return m_wsRepositoryClient->SendGetObjectRequest(eventServiceObject, nullptr, cancellationToken)->Then<EventServiceConnectionResult>
@@ -730,20 +747,16 @@ EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICan
                 jsoninstances.push_back(instance);
                 }
 
-            //Todo: Find a better way to handle error
             if (jsoninstances.size() < 1)
-                //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
                 return EventServiceConnectionResult::Error(eventServiceResult.GetError());
 
             //Get json values 
             RapidJsonValueCR instanceProperties = jsoninstances[0].GetProperties();
 
-            //Todo: Find a better way to handle error
             if (
                 !instanceProperties.HasMember(ServerSchema::Property::EventServiceSASToken) ||
                 !instanceProperties.HasMember(ServerSchema::Property::EventServiceNameSpace)
                 )
-                //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
                 return EventServiceConnectionResult::Error(eventServiceResult.GetError());
 
             auto info = EventServiceConnection::Create(
@@ -751,17 +764,14 @@ EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICan
                 instanceProperties[ServerSchema::Property::EventServiceNameSpace].GetString()
                 );
 
-            //Todo: Find a better way to handle error
             if (Utf8String::IsNullOrEmpty(info->GetSasToken().c_str()) ||
                 Utf8String::IsNullOrEmpty(info->GetNamespace().c_str())
                 )
-                //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
                 return EventServiceConnectionResult::Error(eventServiceResult.GetError());
             return EventServiceConnectionResult::Success(info);
             }
         else
             {
-            //Todo: Find a better way to handle error
             return EventServiceConnectionResult::Error(eventServiceResult.GetError());
             }
         });

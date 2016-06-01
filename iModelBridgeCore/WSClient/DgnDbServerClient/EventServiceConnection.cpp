@@ -17,15 +17,15 @@ EventServiceConnection::EventServiceConnection(Utf8String sasToken, Utf8String n
     {
     m_sasToken = sasToken;
     m_nameSpace = nameSpace;
-    m_connectionId = nullptr;
+    m_subscriptionId = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-EventServiceConnection::EventServiceConnection(Utf8String sasToken, Utf8String nameSpace, Utf8String connectionId) : EventServiceConnection(sasToken, nameSpace)
+EventServiceConnection::EventServiceConnection(Utf8String sasToken, Utf8String nameSpace, Utf8String subscriptionId) : EventServiceConnection(sasToken, nameSpace)
     {
-    m_connectionId = connectionId;
+    m_subscriptionId = subscriptionId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -39,9 +39,9 @@ EventServiceConnectionPtr EventServiceConnection::Create(Utf8String sasToken, Ut
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-EventServiceConnectionPtr EventServiceConnection::Create(Utf8String sasToken, Utf8String nameSpace, Utf8String connectionId)
+EventServiceConnectionPtr EventServiceConnection::Create(Utf8String sasToken, Utf8String nameSpace, Utf8String subscriptionId)
     {
-    return EventServiceConnectionPtr(new EventServiceConnection(sasToken, nameSpace, connectionId));
+    return EventServiceConnectionPtr(new EventServiceConnection(sasToken, nameSpace, subscriptionId));
     }
 
 //---------------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ Utf8String EventServiceConnection::GetNamespace()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-Utf8String EventServiceConnection::GetConnectionId()
+Utf8String EventServiceConnection::GetSubscriptionId()
     {
-    return m_connectionId;
+    return m_subscriptionId;
     }

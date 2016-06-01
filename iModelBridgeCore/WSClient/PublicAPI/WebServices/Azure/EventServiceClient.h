@@ -27,12 +27,14 @@ struct EventServiceClient
         Utf8String m_token;
         HttpResponse MakeReceiveDeleteRequest(bool longPolling);
         bool Receive(Utf8StringR msgOut, int retry, bool longPolling);
+        HttpResponse MakeSendRequest(Utf8String msg); //temporary, for testing
 
     public:
         EventServiceClient(); //Need a default constructor for DgnDbClientRepository
         WSCLIENT_EXPORT EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId);
         WSCLIENT_EXPORT bool Receive(Utf8StringR msgOut, bool longPolling = true);
         WSCLIENT_EXPORT void UpdateSASToken(Utf8StringCR sasToken);
+        WSCLIENT_EXPORT bool Send(Utf8String msg); //temporary, for testing
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

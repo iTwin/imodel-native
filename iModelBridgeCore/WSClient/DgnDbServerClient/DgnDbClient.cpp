@@ -582,7 +582,12 @@ Dgn::IRepositoryManager* DgnDbClient::GetRepositoryManagerP()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Arvind.Venkateswaran           05/2016
 //---------------------------------------------------------------------------------------
-EventServiceReceiveTaskPtr DgnDbClient::ReceiveEventsFromEventService(Utf8String repoId, bool longPolling)
+EventServiceReceiveTaskPtr DgnDbClient::ReceiveEventsFromEventService
+(
+Utf8String repoId, 
+bool longPolling, 
+ICancellationTokenPtr cancellationToken
+)
     {
 
     /*auto connectToRepoTask = ConnectToRepository(RepositoryInfo(m_serverUrl, repoId))->GetResult();;
@@ -597,17 +602,30 @@ EventServiceReceiveTaskPtr DgnDbClient::ReceiveEventsFromEventService(Utf8String
         });*/
 
     EventServiceReceiveResultPtr result = std::make_shared<EventServiceReceiveResult>();
-    return ConnectToRepository(RepositoryInfo(m_serverUrl, repoId))->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
+    return ConnectToRepository(RepositoryInfo(m_serverUrl, repoId), cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
         {
         if (!connectionResult.IsSuccess())
             {
             return result->SetError(connectionResult.GetError());
             }
-        EventServiceReceiveTaskPtr taskPtr = connectionResult.GetValue()->ReceiveEventsFromEventService(longPolling);
+        EventServiceReceiveTaskPtr taskPtr = connectionResult.GetValue()->ReceiveEventsFromEventService(longPolling, cancellationToken);
         return result->SetSuccess(taskPtr->GetResult().GetValue());
         })->Then<EventServiceReceiveResult>([=] ()
             {
             return *result;
             });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Arvind.Venkateswaran           05/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbClient::SendEventsToEventService
+(
+Utf8String repoId, 
+Utf8String msg, 
+ICancellationTokenPtr cancellationToken
+)  //Temporary, for testing
+    {
+    return  ConnectToRepository(RepositoryInfo(m_serverUrl, repoId), cancellationToken)->GetResult().GetValue()->SendEventsToEventService(msg, cancellationToken);
     }
 
