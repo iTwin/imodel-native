@@ -77,7 +77,13 @@ namespace IndexECPlugin.Source
         /// <remarks>This is only made public to simplify testing.</remarks>
         public const string PLUGIN_NAME = "IndexECPlugin";
 
-        private string m_connectionString = ConfigurationRoot.GetAppSetting("RECPConnectionString");
+        private string ConnectionString
+            {
+            get
+                {
+                return ConfigurationRoot.GetAppSetting("RECPConnectionString");
+                }
+            }
 
         /// <summary>
         /// Make plugin available to contract tests.
@@ -187,7 +193,7 @@ namespace IndexECPlugin.Source
                         IECInstance packageInstance = searchClass.Class.CreateInstance();
                         ECInstanceIdExpression exp = query.WhereClause[0] as ECInstanceIdExpression;
                         packageInstance.InstanceId = exp.RightSideString;
-                        PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, m_connectionString);
+                        PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, ConnectionString);
                         return new List<IECInstance> { packageInstance };
                         }
 
@@ -217,7 +223,7 @@ namespace IndexECPlugin.Source
                     switch ( source.ToLower() )
                         {
                         case "index":
-                            using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
+                            using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
                                 {
                                 string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
                                 IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
@@ -231,7 +237,7 @@ namespace IndexECPlugin.Source
 
                         case "all":
                             List<IECInstance> instanceList = new List<IECInstance>();
-                            using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
+                            using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
                                 {
                                 string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
                                 IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
@@ -302,7 +308,7 @@ namespace IndexECPlugin.Source
                         //FileBackedDescriptorAccessor.SetIn(instance, new FileBackedDescriptor(""));
                         //var packageRetrievalController = new PackageRetrievalController(instance, resourceManager, operation, m_packagesLocation, m_connectionString);
                         //packageRetrievalController.Run();
-                        PackageStreamRetrievalController.SetStreamRetrieval(instance, m_connectionString);
+                        PackageStreamRetrievalController.SetStreamRetrieval(instance, ConnectionString);
 
                         break;
                     case "SQLThumbnail":
@@ -497,13 +503,13 @@ namespace IndexECPlugin.Source
 
             UploadPackageInDatabase(instance);
 
-            Log.Logger.trace("Created the package file " + instance.InstanceId);
+            Log.Logger.info("Created the package file " + instance.InstanceId + ". Region selected : " + selectedRegionStr);
             return instance.InstanceId;
             }
 
         private void UploadPackageInDatabase (IECInstance instance)
             {
-            using ( DbConnection sqlConnection = new SqlConnection(m_connectionString) )
+            using ( DbConnection sqlConnection = new SqlConnection(ConnectionString) )
                 {
                 sqlConnection.Open();
                 using ( DbCommand dbCommand = sqlConnection.CreateCommand() )
