@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="House_Supplemental_Localization_ur_PK" nameSpacePrefix="loc_ur_PK" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+<ECSchema schemaName="house_Supplemental_Localization_ur_PK" nameSpacePrefix="loc_ur_PK" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" prefix="bsca"/>
     <ECSchemaReference name="SchemaLocalizationCustomAttributes" version="01.00.00" prefix="LocCA"/>
     <ECCustomAttributes>
@@ -23,6 +23,10 @@
                     <Value>~~A house schema~~</Value>
                 </LocalizationData>
                 <LocalizationData>
+                    <Key>House@House:ExtendedInfo:Purpose:9864575c</Key>
+                    <Value>~~A whole House~~</Value>
+                </LocalizationData>
+                <LocalizationData>
                     <Key>House:Content.DisplayLabel:7dd74d47</Key>
                     <Value>~~Content~~</Value>
                 </LocalizationData>
@@ -39,20 +43,100 @@
                     <Value>~~Length~~</Value>
                 </LocalizationData>
                 <LocalizationData>
+                    <Key>House:Door:Length@House:ExtendedInfo:Purpose:ff23e06d</Key>
+                    <Value>~~Length of door~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Length@EditorCustomAttributes:StandardValues:ValueMap[0].DisplayString:bdef0c66</Key>
+                    <Value>~~None~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Length@EditorCustomAttributes:StandardValues:ValueMap[1].DisplayString:e9bc61bc</Key>
+                    <Value>~~Constant~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Length@EditorCustomAttributes:StandardValues:ValueMap[2].DisplayString:4436659d</Key>
+                    <Value>~~Tapered~~</Value>
+                </LocalizationData>
+                <LocalizationData>
                     <Key>House:Door:Width.DisplayLabel:ddb8d244</Key>
                     <Value>~~Width~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Width@House:ExtendedInfo:Purpose:592f32fd</Key>
+                    <Value>~~Width of door~~</Value>
                 </LocalizationData>
                 <LocalizationData>
                     <Key>House:Door:Height.DisplayLabel:138aa6f9</Key>
                     <Value>~~Height~~</Value>
                 </LocalizationData>
                 <LocalizationData>
+                    <Key>House:Door:Height@House:ExtendedInfo:Purpose:50625c9c</Key>
+                    <Value>~~Height of door~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Height@House:ExtendedInfo:ContentInfo[0].Description:6b58ba94</Key>
+                    <Value>~~Door has item 1~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Height@House:ExtendedInfo:ContentInfo[0].DisplayName:fdfe337c</Key>
+                    <Value>~~Door Item 1~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Height@House:ExtendedInfo:ContentInfo[1].Description:6b58ba97</Key>
+                    <Value>~~Door has item 2~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Height@House:ExtendedInfo:ContentInfo[1].DisplayName:fdfe337f</Key>
+                    <Value>~~Door Item 2~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Height@House:ExtendedInfo:ExtraInfo[0]:f149a4d</Key>
+                    <Value>~~Asif~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Height@House:ExtendedInfo:ExtraInfo[1]:3c5ee8a4</Key>
+                    <Value>~~Kamran~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Height@House:ExtendedInfo:ExtraInfo[2]:cfbda4c7</Key>
+                    <Value>~~Jamil~~</Value>
+                </LocalizationData>
+                <LocalizationData>
                     <Key>House:Door:Thickness.DisplayLabel:cc6bfb46</Key>
                     <Value>~~Thickness~~</Value>
                 </LocalizationData>
                 <LocalizationData>
+                    <Key>House:Door:Thickness@House:ExtendedInfo:Purpose:efaf1f53</Key>
+                    <Value>~~Thickness of door~~</Value>
+                </LocalizationData>
+                <LocalizationData>
                     <Key>House:Door@House:ExtendedInfo:Purpose:436cb8ff</Key>
                     <Value>~~To enter and leave house~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door@House:ExtendedInfo:ContentInfo[0].Description:504d5a88</Key>
+                    <Value>~~Should have wood~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door@House:ExtendedInfo:ContentInfo[0].DisplayName:dfa2797</Key>
+                    <Value>~~wood~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door@House:ExtendedInfo:ContentInfo[1].Description:a226c9e7</Key>
+                    <Value>~~Should be painted brown~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door@House:ExtendedInfo:ContentInfo[1].DisplayName:2351dd74</Key>
+                    <Value>~~brown~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door@House:ExtendedInfo:ExtraInfo[0]:6ff2aef3</Key>
+                    <Value>~~box~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door@House:ExtendedInfo:ExtraInfo[1]:462e6640</Key>
+                    <Value>~~squar~~</Value>
                 </LocalizationData>
                 <LocalizationData>
                     <Key>House:ExtendedInfo.DisplayLabel:d852925d</Key>
@@ -119,8 +203,16 @@
                     <Value>~~Door to room~~</Value>
                 </LocalizationData>
                 <LocalizationData>
+                    <Key>House:RoomHasDoor.Source@House:ExtendedInfo:Purpose:5cdd2dde</Key>
+                    <Value>~~This is a room~~</Value>
+                </LocalizationData>
+                <LocalizationData>
                     <Key>House:RoomHasDoor.TargetRoleLabel:61b5c106</Key>
                     <Value>~~Door for room~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:RoomHasDoor.Target@House:ExtendedInfo:Purpose:5cdd2dde</Key>
+                    <Value>~~This is a room~~</Value>
                 </LocalizationData>
                 <LocalizationData>
                     <Key>House:RoomHasWindow.DisplayLabel:38943b93</Key>

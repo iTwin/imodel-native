@@ -243,55 +243,53 @@ static void WriteResource(BeXmlWriter& writer, Utf8CP key, Utf8CP value)
     writer.WriteElementEnd();//trans-unit
     }
 
-static void WriteCustomAttributeContainerResources(BeXmlWriter& writer, Utf8CP key, IECCustomAttributeContainerCR container)
+static void WriteCustomAttributeValues(BeXmlWriter& writer, ECValuesCollectionR values, Utf8CP parentKey)
+    {
+    for (auto& propValue : values)
+        {
+        ECValueCR value = propValue.GetValue();
+        if (value.IsNull())
+            continue;
+
+        if (propValue.HasChildValues())
+            {
+            if (value.IsStruct())
+                {
+                WriteCustomAttributeValues(writer, *propValue.GetChildValues(), parentKey);
+                }
+            else
+                {
+                WriteCustomAttributeValues(writer, *propValue.GetChildValues(), parentKey);
+                }
+
+            continue;
+            }
+        
+        if (!value.IsUtf8())
+            continue;
+
+        Utf8CP stringValue = value.GetUtf8CP();
+        if (Utf8String::IsNullOrEmpty(stringValue))
+            continue;
+
+        auto property = propValue.GetValueAccessor().GetECProperty();
+        if (!property->IsDefined("CoreCustomAttributes", "Localizable") && !property->IsDefined("EditorCustomAttributes", "Localizable"))
+            continue;
+
+        auto completeKey = Utf8PrintfString("%s:%s:%s", parentKey, 
+                                            propValue.GetValueAccessor().GetManagedAccessString().c_str(), SchemaResourceKeyHelper::ComputeHash(stringValue));
+        WriteResource(writer, completeKey.c_str(), stringValue);
+        }
+    }
+
+static void WriteCustomAttributeContainerResources(BeXmlWriter& writer, Utf8CP parentKey, IECCustomAttributeContainerCR container)
     {
     for (auto const& caInstance : container.GetPrimaryCustomAttributes(false))
         {
-        for (auto const prop : caInstance->GetClass().GetProperties())
-            {
-            PrimitiveECPropertyCP primitive = prop->GetAsPrimitiveProperty();
-            if (primitive != nullptr)
-                {
-                if (primitive->GetType() != PrimitiveType::PRIMITIVETYPE_String)
-                    continue;
-
-                if (!primitive->IsDefined("CoreCustomAttributes", "Localizable") && !primitive->IsDefined("EditorCustomAttributes", "Localizable"))
-                    continue;
-
-                ECValue v;
-                caInstance->GetValue(v, primitive->GetName().c_str());
-                Utf8String stringValue = v.IsNull() ? "" : v.GetUtf8CP();
-
-                auto subkey = SchemaResourceKeyHelper::GetTypeChildKey(caInstance->GetClass().GetSchema().GetName().c_str(), caInstance->GetClass().GetName().c_str(),
-                                                                       primitive->GetName().c_str());
-
-                auto completeKey = Utf8PrintfString("%s@%s:%s", key, subkey.c_str(), SchemaResourceKeyHelper::ComputeHash(stringValue.c_str()));
-                WriteResource(writer, completeKey.c_str(), stringValue.c_str());
-                continue;
-                }
-
-            ArrayECPropertyCP arrrayP = prop->GetAsArrayProperty();
-            if (arrrayP != nullptr)
-                {
-                //TODO
-                continue;
-                }
-
-            StructECPropertyCP structP = prop->GetAsStructProperty();
-            if (structP != nullptr)
-                {
-                /*EXPECT_EQ(m_instance->GetValue(arrayVal, propIndex), ECObjectsStatus::Success);
-                EXPECT_TRUE(arrayVal.IsArray());
-                EXPECT_EQ(arrayVal.GetArrayInfo().GetCount(), 42);
-                uint32_t arraySize = value.GetArrayInfo().GetCount();
-                for (uint32_t i = 0; i < arraySize; i++)
-                    {
-                    status = instance.GetValue(value, accessString.c_str(), i);
-                    if (ECObjectsStatus::Success != status && !value.IsStruct())
-                        return status;*/
-                continue;
-                }
-            }
+        ECClassCR ecClass = caInstance->GetClass();
+        auto caKey = Utf8PrintfString("%s@%s:%s", parentKey, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());
+        ECValuesCollectionPtr values = ECValuesCollection::Create(*caInstance);
+        WriteCustomAttributeValues(writer, *values, caKey.c_str());
         }
     }
 
@@ -353,6 +351,7 @@ static bool WriteXliff(Options const& options)
 
     key = SchemaResourceKeyHelper::GetSchemaDescriptionKey(*schema);
     WriteResource(*xmlWriter, key.c_str(), schema->GetInvariantDescription().c_str());
+    WriteCustomAttributeContainerResources(*xmlWriter, schema->GetName().c_str(), *schema);
     xmlWriter->WriteElementEnd();//group
 
     if (schema->GetClassCount() > 0)
@@ -375,21 +374,31 @@ static bool WriteXliff(Options const& options)
 
                 key = SchemaResourceKeyHelper::GetTypeChildDescriptionKey(*p);
                 WriteResource(*xmlWriter, key.c_str(), p->GetInvariantDescription().c_str());
-                }
 
-            if (c->IsRelationshipClass())
-                {
-                auto relC = c->GetRelationshipClassCP();
-                Utf8CP invariant = relC->GetSource().GetInvariantRoleLabel().c_str();
-                key = SchemaResourceKeyHelper::GetRelationshipSourceRoleLabelKey(*relC, invariant);
-                WriteResource(*xmlWriter, key.c_str(), invariant);
-
-                invariant = relC->GetTarget().GetInvariantRoleLabel().c_str();
-                key = SchemaResourceKeyHelper::GetRelationshipTargetRoleLabelKey(*relC, invariant);
-                WriteResource(*xmlWriter, key.c_str(), invariant);
+                auto propertyKey = SchemaResourceKeyHelper::GetTypeChildKey(schema->GetName().c_str(), c->GetName().c_str(), p->GetName().c_str());
+                WriteCustomAttributeContainerResources(*xmlWriter, propertyKey.c_str(), *p);
                 }
 
             auto classKey = SchemaResourceKeyHelper::GetTypeKey(schema->GetName().c_str(), c->GetName().c_str());
+            if (c->IsRelationshipClass())
+                {
+                auto relC = c->GetRelationshipClassCP();
+
+                ECRelationshipConstraintR source = relC->GetSource();
+                Utf8CP invariant = source.GetInvariantRoleLabel().c_str();
+                key = SchemaResourceKeyHelper::GetRelationshipSourceRoleLabelKey(*relC, invariant);
+                WriteResource(*xmlWriter, key.c_str(), invariant);
+                Utf8PrintfString sourceConstraintKey("%s.Source", classKey);
+                WriteCustomAttributeContainerResources(*xmlWriter, sourceConstraintKey.c_str(), source);
+
+                ECRelationshipConstraintR target = relC->GetTarget();
+                invariant = target.GetInvariantRoleLabel().c_str();
+                key = SchemaResourceKeyHelper::GetRelationshipTargetRoleLabelKey(*relC, invariant);
+                WriteResource(*xmlWriter, key.c_str(), invariant);
+                Utf8PrintfString targetConstraintKey("%s.Target", classKey);
+                WriteCustomAttributeContainerResources(*xmlWriter, targetConstraintKey.c_str(), source);
+                }
+
             WriteCustomAttributeContainerResources(*xmlWriter, classKey.c_str(), *c);
             }
 
