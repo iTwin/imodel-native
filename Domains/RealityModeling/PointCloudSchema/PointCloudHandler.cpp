@@ -182,7 +182,29 @@ PointCloudModel::PointCloudModel(CreateParams const& params, PointCloudModel::Pr
 //----------------------------------------------------------------------------------------
 PointCloudModel::~PointCloudModel()
     {
-    m_cachedPtViewport.clear();
+    m_viewportCache.clear();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2016
+//----------------------------------------------------------------------------------------
+Dgn::Render::Graphic* PointCloudModel::GetLowDensityGraphicP(DgnViewportCR vp) const
+    {
+    auto viewportItr = m_viewportCache.find(&vp);
+    if (viewportItr != m_viewportCache.end())
+        return viewportItr->second.m_lowDensityGraphic.get();
+
+    return nullptr;
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2016
+//----------------------------------------------------------------------------------------
+void PointCloudModel::SaveLowDensityGraphic(DgnViewportCR vp, Dgn::Render::Graphic* pGraphic)
+    {
+    // Insert or replace in cache.
+    m_viewportCache[&vp].m_lowDensityGraphic = pGraphic;
     }
 
 //----------------------------------------------------------------------------------------
@@ -190,16 +212,17 @@ PointCloudModel::~PointCloudModel()
 //----------------------------------------------------------------------------------------
 PtViewport* PointCloudModel::GetPtViewportP(DgnViewportCR vp) const
     {
-    auto viewportItr = m_cachedPtViewport.find(&vp);
-    if (viewportItr != m_cachedPtViewport.end())
-        return viewportItr->second.get();
+    auto viewportItr = m_viewportCache.find(&vp);
+    if (viewportItr != m_viewportCache.end())
+        return viewportItr->second.m_ptViewport.get();
     
-    auto ptVp = PtViewport::Create();
-    if (ptVp.IsNull())
-        return nullptr;
+    ViewportCacheEntry entry;
+    entry.m_ptViewport = PtViewport::Create();
+    if (entry.m_ptViewport.IsNull())
+        return nullptr;    
 
-    m_cachedPtViewport.insert(std::make_pair(&vp, ptVp));
-    return ptVp.get();
+    m_viewportCache.insert(std::make_pair(&vp, entry));
+    return entry.m_ptViewport.get();
     }
 
 //----------------------------------------------------------------------------------------
@@ -207,7 +230,7 @@ PtViewport* PointCloudModel::GetPtViewportP(DgnViewportCR vp) const
 //----------------------------------------------------------------------------------------
 void PointCloudModel::_DropGraphicsForViewport(Dgn::DgnViewportCR viewport)
     {
-    m_cachedPtViewport.erase(&viewport);
+    m_viewportCache.erase(&viewport);
     }
 
 //----------------------------------------------------------------------------------------

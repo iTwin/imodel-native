@@ -47,7 +47,7 @@
 #include <Logging/bentleylogging.h>
 
 #ifndef NDEBUG
-//#define POINTCLOUD_TRACE 1
+#define POINTCLOUD_TRACE 1
 #endif
 
 #if defined (POINTCLOUD_TRACE)

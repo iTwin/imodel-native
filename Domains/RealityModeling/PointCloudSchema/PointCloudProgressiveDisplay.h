@@ -31,6 +31,8 @@ private:
 
     uint32_t    m_tentativeId;
 
+    bool        m_doLowDensity;
+
     bool        m_lastTentativeStopped;
 
     uint64_t    m_firstPassPts;         // low density quick draw
@@ -41,7 +43,7 @@ private:
 
     void SetupPtViewport(Dgn::RenderContextR context);
 
-    bool DrawPointCloud(int64_t& pointToLoad, uint64_t& pointsDrawn, Dgn::RenderContextR context, BePointCloud::PtQueryDensity densityType, float density, bool doCheckStop);
+    bool DrawPointCloud(Render::GraphicBuilderPtr* pGraphicsPtr, int64_t& pointToLoad, uint64_t& pointsDrawn, Dgn::RenderContextR context, BePointCloud::PtQueryDensity densityType, float density, bool doCheckStop);
 
 protected:
     PointCloudModel const& m_model;
