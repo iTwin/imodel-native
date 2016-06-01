@@ -349,6 +349,12 @@ void IScalableMesh::SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>&
     return _SetCurrentlyViewedNodes(nodes);
     }
 
+
+void IScalableMesh::SetEditFilesBasePath(const Utf8String& path)
+    {
+    return _SetEditFilesBasePath(path);
+    }
+
 bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     {
     return _RemoveSkirt(clipID);
@@ -412,6 +418,7 @@ AccessMode GetAccessModeFor(bool                    openReadOnly,
 +----------------------------------------------------------------------------*/
 
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
+                                       const Utf8String&      baseEditsFilePath,
     bool                    openReadOnly,
     bool                    openShareable,
     StatusInt&              status)
@@ -432,10 +439,16 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
 
         return 0; // Error opening file
     }
-    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, status);
+    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, baseEditsFilePath, status);
 }
 
-
+IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
+                                       bool                    openReadOnly,
+                                       bool                    openShareable,
+                                       StatusInt&              status)
+    {
+    return GetFor(filePath, Utf8String(filePath), openReadOnly, openShareable, status);
+    }
 
 /*----------------------------------------------------------------------------+
 |IScalableMesh::GetFor
@@ -445,8 +458,21 @@ IScalableMeshPtr IScalableMesh::GetFor   (const WChar*          filePath,
                             bool                    openShareable)
     {
     StatusInt status;
-    return GetFor(filePath, openReadOnly, openShareable, status);
+    return GetFor(filePath, Utf8String(filePath), openReadOnly, openShareable, status);
     }
+
+/*----------------------------------------------------------------------------+
+|IScalableMesh::GetFor
++----------------------------------------------------------------------------*/
+IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
+                                       const Utf8String&      baseEditsFilePath,
+                                       bool                    openReadOnly,
+                                       bool                    openShareable)
+    {
+    StatusInt status;
+    return GetFor(filePath, baseEditsFilePath, openReadOnly, openShareable, status);
+    }
+
 
 
 /*----------------------------------------------------------------------------+
@@ -468,6 +494,7 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
     : m_workingLayer(DEFAULT_WORKING_LAYER),
     m_sourceGCS(GetDefaultGCS()),
     m_path(filePath),
+    m_baseExtraFilesPath(filePath),
     m_smSQLitePtr(smSQliteFile)
 {
     memset(&m_contentExtent, 0, sizeof(m_contentExtent));
@@ -656,11 +683,12 @@ template <class POINT> Count ScalableMesh<POINT>::_GetCountInRange (const DRange
 template <class POINT>
 IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
                                     const WString&     filePath,
+                                    const Utf8String&     baseEditsFilePath,
                                     StatusInt&              status)
 {
      ScalableMesh<POINT>* scmPtr = new ScalableMesh<POINT>(smSQLiteFile, filePath);
     IScalableMeshPtr scmP(scmPtr);
-
+    scmP->SetEditFilesBasePath(baseEditsFilePath);
     status = scmPtr->Open();
     return (BSISUCCESS == status ? scmP : 0);
 }
@@ -783,7 +811,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                        0);  
                     }          
 
-            WString clipFilePath = m_path;
+            WString clipFilePath = m_baseExtraFilesPath;
             clipFilePath.append(L"_clips"); 
            // IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
             HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
@@ -792,7 +820,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             m_scmIndexPtr->SetClipStore(store);
       //      auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
       //      m_scmIndexPtr->SetClipPool(pool);
-            WString clipFileDefPath = m_path;
+            WString clipFileDefPath = m_baseExtraFilesPath;
             clipFileDefPath.append(L"_clipDefinitions");
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
             m_scmIndexPtr->SetClipRegistry(registry);
@@ -1784,6 +1812,11 @@ template <class POINT> void ScalableMesh<POINT>::_GetCurrentlyViewedNodes(bvecto
 template <class POINT> void ScalableMesh<POINT>::_SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes)
     {
     m_viewedNodes = nodes;
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
+    {
+    m_baseExtraFilesPath = WString(path.c_str(), BentleyCharEncoding::Utf8);
     }
 
 

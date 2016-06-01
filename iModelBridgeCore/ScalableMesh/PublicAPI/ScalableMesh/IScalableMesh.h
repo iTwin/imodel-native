@@ -151,6 +151,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
 
         virtual void                               _TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP) = 0;
+
+        virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -203,6 +205,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT const GeoCoords::GCS&  GetGCS() const;
         BENTLEY_SM_EXPORT StatusInt              SetGCS(const GeoCoords::GCS& gcs);
+
+        BENTLEY_SM_EXPORT void                   SetEditFilesBasePath(const Utf8String& path);
 
         BENTLEY_SM_EXPORT ScalableMeshState             GetState() const;
 
@@ -257,9 +261,20 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
                                                                                  bool                    openShareable,
                                                                                  StatusInt&              status);
 
+        BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
+                                                                const Utf8String&      baseEditsFilePath,
+                                                                bool                    openReadOnly,
+                                                                bool                    openShareable,
+                                                                StatusInt&              status);
+
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,
                                                                                  bool                    openShareable);
+
+        BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
+                                                                const Utf8String&      baseEditsFilePath,
+                                                                bool                    openReadOnly,
+                                                                bool                    openShareable);
 
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes) const; 
         BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const;

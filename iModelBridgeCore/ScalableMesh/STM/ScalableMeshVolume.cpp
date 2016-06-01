@@ -145,7 +145,7 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
     {
     double totalVolume = 0.0, totalCut = 0.0, totalFill = 0.0;
 
-    IScalableMeshMeshQueryPtr meshQueryInterface = ((IScalableMesh*)m_scmPtr.get())->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    IScalableMeshMeshQueryPtr meshQueryInterface = (m_scmPtr)->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
     bvector<IScalableMeshNodePtr> returnedNodes;
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
     DRange3d fileRange;
@@ -1384,11 +1384,11 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
     {
     double totalVolume = 0.0, totalCut = 0.0, totalFill = 0.0;
 
-    IScalableMeshMeshQueryPtr meshQueryInterface = ((IScalableMesh*)m_scmPtr.get())->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    IScalableMeshMeshQueryPtr meshQueryInterface = (m_scmPtr)->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
     bvector<IScalableMeshNodePtr> returnedNodes;
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
     DRange3d fileRange;
-    ((IDTM*)m_scmPtr.get())->GetRange(fileRange);
+    m_scmPtr->GetDTMInterface()->GetRange(fileRange);
     DPoint3d box[4] = {
         DPoint3d::From(meshRange.low.x, meshRange.low.y, fileRange.low.z),
         DPoint3d::From(meshRange.low.x, meshRange.high.y, fileRange.low.z),
@@ -1412,6 +1412,6 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
     return DTMStatusInt::DTM_SUCCESS;
     }
 
-ScalableMeshVolume::ScalableMeshVolume(IScalableMeshPtr scMesh) : m_scmPtr(scMesh), hasRestrictions(false){}
+ScalableMeshVolume::ScalableMeshVolume(IScalableMeshPtr scMesh) : m_scmPtr(scMesh.get()), hasRestrictions(false){}
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
