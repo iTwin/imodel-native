@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileInfoManager.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -69,7 +69,7 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
 
         BentleyStatus DeleteFilesNotHeldByInstances(const ECInstanceKeyMultiMap& holdingInstances);
 
-        BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const override;
+        BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath) const override;
 
         BeFileName ReadFilePath(ECInstanceKeyCR instance);
 

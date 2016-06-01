@@ -3940,7 +3940,7 @@ TEST_F(DataSourceCacheTests, CacheFile_WSFileResponsePassed_MovesFileToCacheLoca
     EXPECT_EQ("TestTag", cache->ReadFileCacheTag(fileId));
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_CachedFilePathBeginsWithEnvronmentPath)
+TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_CachedFilePathBeginsWithEnvironmentPath)
     {
     auto cache = GetTestCache();
 
@@ -3950,13 +3950,11 @@ TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_CachedFilePathB
     cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Persistent);
 
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = GetTestCacheEnvironment().persistentFileCacheDir;
-
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
-    EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
+    EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().persistentFileCacheDir.c_str()));
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_CachedFilePathBeginsWithEnvronmentPath)
+TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_CachedFilePathBeginsWithEnvironmentPath)
     {
     auto cache = GetTestCache();
 
@@ -3966,10 +3964,8 @@ TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_CachedFilePathBe
     cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Temporary);
 
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = GetTestCacheEnvironment().temporaryFileCacheDir;
-
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
-    EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
+    EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().temporaryFileCacheDir.c_str()));
     }
 
 TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviously_CachesNewFileAndRemovesOld)
@@ -4123,6 +4119,43 @@ TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_ExternalFileInfo
     EXPECT_EQ("Test.txt", externalFileInfo["Name"].asString());
     }
 
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingInstance_Error)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId {"TestSchema.TestClass", "Foo"};
+    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::Temporary));
+    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingFile_SuccessAndFilePathIsEmpty)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId {"TestSchema.TestClass", "Foo"};
+    cache->LinkInstanceToRoot("Root", fileId);
+
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
+    EXPECT_EQ(FileCache::Persistent, cache->GetFileCacheLocation(fileId));
+    EXPECT_EQ(L"", cache->ReadFilePath(fileId));
+
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Temporary));
+    EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId));
+    EXPECT_EQ(L"", cache->ReadFilePath(fileId));
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingFile_SuccessAndLocationCanBeChangedWhenCaching)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId {"TestSchema.TestClass", "Foo"};
+    cache->LinkInstanceToRoot("Root", fileId);
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Temporary));
+
+    BeFileName cachedFilePath = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(cachedFilePath.DoesPathExist());
+    EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().temporaryFileCacheDir.c_str()));
+    }
+
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToTemporary_MovesFileToTemporaryEnvironmentLocation)
     {
     auto cache = GetTestCache();
@@ -4130,15 +4163,13 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToTemporary_Mo
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
 
-    cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Persistent);
+    cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Persistent);
 
     ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Temporary));
 
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = GetTestCacheEnvironment().temporaryFileCacheDir;
-
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
-    EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
+    EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().temporaryFileCacheDir.c_str()));
     }
 
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToPersistent_MovesFileToPersistentEnvironmentLocation)
@@ -4148,18 +4179,16 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToPersistent_M
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     cache->LinkInstanceToRoot("Root", fileId);
 
-    cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Temporary);
+    cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Temporary);
 
     ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
 
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = GetTestCacheEnvironment().persistentFileCacheDir;
-
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
-    EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
+    EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().persistentFileCacheDir.c_str()));
     }
-
-TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExsitingInstance_ReturnsTemporary)
+    
+TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExistingInstance_ReturnsTemporary)
     {
     auto cache = GetTestCache();
 

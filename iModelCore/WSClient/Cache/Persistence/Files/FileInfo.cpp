@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Files/FileInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,9 +14,6 @@
 #include "../Core/ECDbFileInfoSchema.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-
-const int FileInfo::PersistentRootFolderId = static_cast<int>(ExternalFileInfoRootFolder::LocalStateFolder);
-const int FileInfo::TemporaryRootFolderId = static_cast<int>(ExternalFileInfoRootFolder::TemporaryFolder);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
@@ -55,18 +52,17 @@ ECInstanceKeyCR FileInfo::GetInstanceKey() const
 BeFileName FileInfo::GetFilePath() const
     {
     if (nullptr == m_pathProvider)
-        {
         return BeFileName();
-        }
-    return m_pathProvider->GetAbsoluteFilePath(IsFilePersistent(), GetRelativePath());
+        
+    return m_pathProvider->GetAbsoluteFilePath(GetLocation(), GetRelativePath());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FileInfo::SetFilePath(bool isPersistent, BeFileNameCR relativePath)
+void FileInfo::SetFilePath(FileCache location, BeFileNameCR relativePath)
     {
-    SetIsPersistent(isPersistent);
+    SetLocation(location);
     SetRelativePath(relativePath);
     }
 
@@ -94,9 +90,7 @@ Utf8String FileInfo::GetFileCacheTag() const
     {
     BeFileName path = GetFilePath();
     if (path.empty() || !path.DoesPathExist())
-        {
         return nullptr;
-        }
 
     return m_infoJson[CLASS_CachedFileInfo_PROPERTY_CacheTag].asString();
     }
@@ -112,27 +106,21 @@ void FileInfo::SetFileCacheTag(Utf8StringCR tag)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool FileInfo::IsFilePersistent() const
+FileCache FileInfo::GetLocation() const
     {
-    int rootFolderId = m_externalFileInfoJson[CLASS_ExternalFileInfo_PROPERTY_RootFolder].asInt();
-    if (FileInfo::PersistentRootFolderId == rootFolderId)
-        {
-        return true;
-        }
-    if (FileInfo::TemporaryRootFolderId == rootFolderId)
-        {
-        return false;
-        }
-    return false;
+    JsonValueCR idJson = m_externalFileInfoJson[CLASS_ExternalFileInfo_PROPERTY_RootFolder];
+    if (!idJson.isInt())
+        return FileCache::Temporary;
+
+    return static_cast<FileCache>(idJson.asInt());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FileInfo::SetIsPersistent(bool isPersistent)
+void FileInfo::SetLocation(FileCache location)
     {
-    int rootFolderId = isPersistent ? FileInfo::PersistentRootFolderId : FileInfo::TemporaryRootFolderId;
-    m_externalFileInfoJson[CLASS_ExternalFileInfo_PROPERTY_RootFolder] = rootFolderId;
+    m_externalFileInfoJson[CLASS_ExternalFileInfo_PROPERTY_RootFolder] = static_cast<int>(location);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -142,9 +130,7 @@ DateTime FileInfo::GetFileCacheDate() const
     {
     BeFileName path = GetFilePath();
     if (path.empty() || !path.DoesPathExist())
-        {
         return DateTime();
-        }
 
     return BeJsonUtilities::DateTimeFromValue(m_infoJson[CLASS_CachedFileInfo_PROPERTY_CacheDate]);
     }

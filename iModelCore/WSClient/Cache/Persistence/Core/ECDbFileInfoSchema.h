@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/ECDbFileInfoSchema.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,13 +30,5 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 #define ECSql_ExternalFileInfoClass                         "[ecdbf].[ExternalFileInfo]"
 #define ECSql_InstanceHasFileInfoClass                      "[ecdbf].[InstanceHasFileInfo]"
-
-enum class ExternalFileInfoRootFolder
-    {
-    DocumentsFolder = 0,
-    TemporaryFolder = 1,
-    CachesFolder = 2,
-    LocalStateFolder = 3
-    };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
