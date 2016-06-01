@@ -1526,10 +1526,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 10, 0);
 
     ecsql = "select * FROM ecsql.PHasSA_11P";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 16, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 11, 0);
 
     ecsql = "select * FROM ecsql.PHasP_1NPSA";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 27, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 16, 0);
 
     ecsql = "select REL.* FROM ONLY ecsql.PSAHasPSA_1N REL ORDER BY REL.ECInstanceId DESC";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5, 0);
@@ -1541,13 +1541,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 10, 0);
 
     ecsql = "select REL.* FROM ONLY ecsql.PHasSA_11P REL ORDER BY REL.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 16, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 11, 0);
 
     ecsql = "select REL.* FROM ONLY ecsql.PHasP_1NPSA REL ORDER BY REL.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 27, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 16, 0);
 
     ecsql = "select * FROM ecsql.PHasP_1NPSA, ecsql.PSAHasPSA_1N, ecsql.PSAHasPSA_11, ecsql.PSAHasPSA_NN, ecsql.PHasSA_11P";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 63, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 47, 0);
 
     ecsql = "select COUNT (*) FROM ONLY ecsql.PHasP_1NPSA, ONLY ecsql.PSAHasPSA_1N, ONLY ecsql.PSAHasPSA_11, ONLY ecsql.PSAHasPSA_NN, ONLY ecsql.PHasSA_11P";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, 1);
@@ -1571,10 +1571,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 56, 0);
 
     ecsql = "select PHasSA_11P.*, P.*, SA.* FROM ONLY ecsql.P JOIN ecsql.SA USING ecsql.PHasSA_11P ORDER BY PHasSA_11P.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 32, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 27, 0);
 
     ecsql = "select PHasP_1NPSA.*, PARENT.*, CHILD.* FROM ecsql.P PARENT JOIN ecsql.P CHILD USING ecsql.PHasP_1NPSA BACKWARD ORDER BY PHasP_1NPSA.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 53, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 42, 0);
 
     return dataset;
     }

@@ -78,7 +78,7 @@ TEST_F(JsonReaderTests, ReadInstanceAlongWithRelatedInstances)
                         "        <BaseClass>A</BaseClass>"
                         "        <ECProperty propertyName='A2prop' typeName='int' />"
                         "    </ECEntityClass>"
-                        "    <ECRelationshipClass typeName='AHasA' strength='referencing'>"
+                        "    <ECRelationshipClass typeName='AHasA' strength='referencing' modifier='Sealed'>"
                         "        <ECProperty propertyName='Name' typeName='string' />"
                         "        <Source cardinality='(0,N)' polymorphic='False'><Class class='A'/></Source>"
                         "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"
