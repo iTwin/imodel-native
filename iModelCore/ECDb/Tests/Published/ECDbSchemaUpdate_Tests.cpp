@@ -161,6 +161,7 @@ void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true
             }
         }
     }
+
 void ExecuteECSQL(ECDbCR ecdb, Utf8CP ecsql, DbResult stepStatus, ECSqlStatus prepareStatus)
     {
     }
@@ -625,6 +626,7 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L1, S1, D1, L2, D2, L3, D3) VALUES (4, 't3', 'd4', 5, 'd5',6 ,'d6')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L1, S1, D1, L2, D2, L3, D3, L4, D4) VALUES (5, 't4', 'd7', 6, 'd8',7 ,'d9', 8,'d10')");
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1622,9 +1624,6 @@ TEST_F(ECSchemaUpdateTests, UpdateMultipleSchemasInDb)
     ASSERT_EQ(SUCCESS, schemaStatus);
     */
     }
-
-//*******************Schema Upgrade Invalid Cases*******************//
-//******************************************************************//
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
@@ -4097,6 +4096,127 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem schemaWithDeletedConstraintClass(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", false, "can't delete class which is part of relationship constraint.");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedConstraintClass);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeletePropertyUsedAsKeyProperty)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem schemaWithDeletedKeyProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>", false, "can't delete a property used as keyProperty.");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedKeyProperty);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ValidateModifingAddingDeletingBaseClassNotSupported)
     {
     SchemaItem schemaItem(
@@ -4246,7 +4366,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECEnumeration)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpgradeECClassModifier)
+TEST_F(ECSchemaUpdateTests, UpdateECClassModifier)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5006,18 +5126,157 @@ TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
     ASSERT_FALSE(asserted);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteCAClassNotSupported)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass' />"
+        "</ECSchema>");
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem deleteAllCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "</ECSchema>", false, "Deleting a Custom Attribute Class is not supported.");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECCustomAttributes>"
+        "       <TreeColorCustomAttributes xmlns = 'Bentley_Standard_CustomAttributes.01.13' >"
+        "           <NodeBackColor>Black</NodeBackColor>"
+        "       </TreeColorCustomAttributes>"
+        "   </ECCustomAttributes>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <SearchOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <SearchPolymorphically>true</SearchPolymorphically>"
+        "            </SearchOptions>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "        <ECCustomAttributes>"
+        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <Hidden>True</Hidden>"
+        "            </DisplayOptions>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deleteca.ecdb");
+    ASSERT_FALSE(asserted);
+
+    //Delete CA from Schema
+    ecdb.SaveChanges();
+    SchemaItem deleteCAFromSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <SearchOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <SearchPolymorphically>true</SearchPolymorphically>"
+        "            </SearchOptions>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "        <ECCustomAttributes>"
+        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <Hidden>True</Hidden>"
+        "            </DisplayOptions>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteCAFromSchema);
+    ASSERT_FALSE(asserted);
+    IECInstancePtr schemaCA = ecdb.Schemas().GetECSchema("TestSchema")->GetCustomAttribute("TreeColorCustomAttributes");
+    ASSERT_TRUE(schemaCA == nullptr);
+
+    //Delete CA from Class
+    ecdb.SaveChanges();
+    SchemaItem deleteCAFromClass(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "        <ECCustomAttributes>"
+        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <Hidden>True</Hidden>"
+        "            </DisplayOptions>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteCAFromClass);
+    ASSERT_FALSE(asserted);
+    IECInstancePtr classCA = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetCustomAttribute("TreeColorCustomAttributes");
+    ASSERT_TRUE(classCA == nullptr);
+
+    //Delete CA from property
+    ecdb.SaveChanges();
+    SchemaItem deleteCAFromProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteCAFromProperty);
+    ASSERT_FALSE(asserted);
+    IECInstancePtr propertyCA = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("prop")->GetCustomAttribute("TreeColorCustomAttributes");
+    ASSERT_TRUE(propertyCA == nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass'>"
+        "   </ECCustomAttributeClass>"
         "   <ECCustomAttributes>"
         "       <SystemSchema xmlns = 'Bentley_Standard_CustomAttributes.01.13' >"
         "       </SystemSchema>"
         "   </ECCustomAttributes>"
-        "   <ECEntityClass typeName='NewTestClass' modifier='None' >"
-        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <TestCA xmlns='TestSchema.01.00'>"
+        "            </TestCA>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='prop' typeName='boolean' >"
+        "        <ECCustomAttributes>"
+        "            <TestCA xmlns='TestSchema.01.00'>"
+        "            </TestCA>"
+        "        </ECCustomAttributes>"
+        "       </ECProperty>"
         "   </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
@@ -5030,7 +5289,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass'>"
         "   </ECCustomAttributeClass>"
-        "   <ECEntityClass typeName='NewTestClass' modifier='None' >"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
         "       <ECProperty propertyName='prop' typeName='boolean' />"
         "   </ECEntityClass>"
         "</ECSchema>");
@@ -5038,5 +5297,19 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
     asserted = false;
     AssertSchemaImport(asserted, ecdb, deleteAllCA);
     ASSERT_FALSE(asserted);
+
+    ECSchemaCP ecSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECClassCP testClass = ecSchema->GetClassCP("TestClass");
+    ECPropertyP ecProperty = testClass->GetPropertyP("prop");
+
+    IECInstancePtr systemSchemaCA = ecSchema->GetCustomAttribute("SystemSchema");
+    ASSERT_TRUE(systemSchemaCA == nullptr);
+
+    IECInstancePtr classCA = testClass->GetCustomAttribute("TestCA");
+    ASSERT_TRUE(classCA == nullptr);
+
+    IECInstancePtr propertyCA = ecProperty->GetCustomAttribute("TestCA");
+    ASSERT_TRUE(propertyCA == nullptr);
     }
+
 END_ECDBUNITTESTS_NAMESPACE

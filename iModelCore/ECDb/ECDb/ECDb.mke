@@ -419,6 +419,7 @@ DLM_OBJECT_FILES            = $(cppObjects)
 DLM_OBJECT_PCH              = $(o)ECDbPch$(oext) 
 LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
+                              $(ContextSubpartsLibs)$(UnitsLib) \
                               $(ContextSubpartsLibs)$(BentleyGeomLib) \
                               $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \
