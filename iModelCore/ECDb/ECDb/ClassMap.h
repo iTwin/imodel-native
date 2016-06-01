@@ -178,7 +178,14 @@ struct ClassMap : RefCountedBase
 
         Utf8String GetUpdatableViewName() const;
         BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const;
+        DbTable const* ExpectingSingleTable() const 
+            {
+            BeAssert(GetTables().size() == 1);
+            if (GetTables().size() != 1)
+                return nullptr;
 
+            return &GetJoinedTable();
+            }
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
         static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }
         void WriteDebugInfo(DebugWriter& writer) const { _WriteDebugInfo(writer); }

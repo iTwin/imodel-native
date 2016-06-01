@@ -452,27 +452,10 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
             }
         else if (newValue == ECClassModifier::Abstract)
             {
-            ECSqlStatement stmt;
-            if (stmt.Prepare(m_ecdb, SqlPrintfString("SELECT COUNT(*) FROM ONLY %s" , newClass.GetECSqlName().c_str()).GetUtf8CP()) != ECSqlStatus::Success)
-                {
-                BeAssert(false && "Failed to prepare ECSQL to get count for instance");
-                return ERROR;
-                }
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Changing the 'Modifier' of ECClass to ECClassModifier::Abstract is not supported",
+                                      oldClass.GetFullName());
 
-            if (stmt.Step() != BE_SQLITE_ROW)
-                {
-                BeAssert(false && "Expecting a single for agg funtion count(*)");
-                return ERROR;
-                }
-
-            int64_t instanceCount = stmt.GetValueInt64(0);
-            if (instanceCount != INT64_C(0))
-                {
-                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Changing the 'Modifier' of ECClass to ECClassModifier::Abstract only acceptable if class has no instance. Current Instance Count = %" PRIi64,
-                                          oldClass.GetFullName(), instanceCount);
-
-                return ERROR;
-                }
+            return ERROR;
             }
 
         updater.Set("Modifier", Enum::ToInt(classChange.GetClassModifier().GetNew().Value()));

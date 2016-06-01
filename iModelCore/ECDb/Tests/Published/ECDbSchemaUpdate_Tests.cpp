@@ -434,18 +434,6 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
         "       <ECProperty propertyName='L5' typeName='long' />"
         "       <ECProperty propertyName='S5' typeName='string' />"
         "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Uoo_None' modifier='None' >"
-        "       <ECProperty propertyName='A' typeName='long' />"
-        "       <ECProperty propertyName='B' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Uoo_Abstract' modifier='Abstract' >"
-        "       <ECProperty propertyName='A' typeName='long' />"
-        "       <ECProperty propertyName='B' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Uoo_Sealed' modifier='Sealed' >"
-        "       <ECProperty propertyName='A' typeName='long' />"
-        "       <ECProperty propertyName='B' typeName='string' />"
-        "   </ECEntityClass>"
         "</ECSchema>");
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
@@ -460,11 +448,6 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L4, S4) VALUES (4, 't4')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Moo (L5, S5) VALUES (5, 't5')");
 
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Uoo_None (A, B) VALUES (6, 't6')");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Uoo_Abstract (A, B) VALUES (6, 't6')");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Uoo_Sealed (A, B) VALUES (6, 't6')");
-
-
     sp.Cancel();
 
     //Delete some properties
@@ -472,7 +455,7 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.01'>"
         "                <MapStrategy>"
@@ -504,18 +487,6 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
         "       <ECProperty propertyName='L4' typeName='long' />"
         "       <ECProperty propertyName='S4' typeName='string' />"
         "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Uoo_None' modifier='Abstract' >"
-        "       <ECProperty propertyName='A' typeName='long' />"
-        "       <ECProperty propertyName='B' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Uoo_Abstract' modifier='None' >"
-        "       <ECProperty propertyName='A' typeName='long' />"
-        "       <ECProperty propertyName='B' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Uoo_Sealed' modifier='None' >"
-        "       <ECProperty propertyName='A' typeName='long' />"
-        "       <ECProperty propertyName='B' typeName='string' />"
-        "   </ECEntityClass>"
         "</ECSchema>");
 
     bool asserted = false;
@@ -530,10 +501,6 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Moo (L5, S5) VALUES (11, 't11')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Voo (L6, S6) VALUES (12, 't12')"); //New class added
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L3, S3) VALUES (8, 't8')"); //Class deleted
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Uoo_None (A, B) VALUES (6, 't6')");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Uoo_Abstract (A, B) VALUES (6, 't6')");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Uoo_Sealed (A, B) VALUES (6, 't6')");
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
