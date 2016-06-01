@@ -2333,6 +2333,62 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     SetDirty(true);
     }
 
+
+    //=======================================================================================
+    // @description Converts node mesh to a bcdtm object and use that triangle list as the new mesh.
+    //              Used for compatibility with civil analysis functions.
+    // @bsimethod                                                   Elenie.Godzaridis 05/16
+    //=======================================================================================
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::UpdateNodeFromBcDTM()
+    {
+    auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
+    IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
+    BcDTMPtr dtm = nodeP->GetBcDTM().get();
+    if (dtm == nullptr || dtm->GetTrianglesCount() == 0) return;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtm);
+    en->SetMaxTriangles(2000000);
+    bvector<DPoint3d> newVertices;
+    bvector<int32_t> newIndices;
+    std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
+    for (PolyfaceQueryP pf : *en)
+        {
+        PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+        vec->CopyFrom(*pf);
+        for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+            {
+            DPoint3d face[3];
+            int32_t idx[3] = { -1, -1, -1 };
+            for (size_t i = 0; i < 3; ++i)
+                {
+                face[i] = addedFacets->GetPointCP()[i];
+                idx[i] = mapOfPoints.count(face[i]) != 0 ? mapOfPoints[face[i]] : -1;
+                }
+            for (size_t i = 0; i < 3; ++i)
+                {
+                if (idx[i] == -1)
+                    {
+                    newVertices.push_back(face[i]);
+                    idx[i] = (int)newVertices.size();
+                    mapOfPoints[face[i]] = idx[i] - 1;
+                    }
+                else idx[i]++;
+                }
+            newIndices.push_back(idx[0]);
+            newIndices.push_back(idx[1]);
+            newIndices.push_back(idx[2]);
+            }
+        }
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> existingPts(GetPointsPtr());
+    if (newIndices.size() > 0 && newVertices.size() > 0)
+        {
+        existingFaces->clear();
+        existingFaces->push_back(&newIndices[0], (int)newIndices.size());
+        existingPts->clear();
+        existingPts->push_back(&newVertices[0], (int) newVertices.size());
+        }
+    }
+
 //=======================================================================================
 // @description Sets texture data for this node based on a raster. If untextured this adds
 //              a new texture.
@@ -2408,12 +2464,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
     HRAClearOptions clearOptions;
 
-    //CR 332863 - Quick trick to display the STM outside in smooth outside the area where texture data are available. 
-    //              Note that this trick will lead to the translucent color shown throughout transparent raster being a shade of gray 
-    //              instead of the color of the background.
-    uint32_t whiteOpaque = 0xFFFFFFFF;
+   //green color when no texture is available
+    uint32_t green = 0x007700FF;
 
-    clearOptions.SetRawDataValue(&whiteOpaque);
+    clearOptions.SetRawDataValue(&green);
 
     pTextureBitmap->Clear(clearOptions);
 
@@ -2510,6 +2564,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
         }
     PushTexture(pixelBufferP, 3 * sizeof(int) + textureWidthInPixels * textureHeightInPixels * 3);     
     
+    UpdateNodeFromBcDTM();
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
 
     if (existingFaces->size() >= 4)
@@ -2534,8 +2589,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                 face[i] = points[idx[i] - 1];
                 uvCoords[i].x = max(0.0,min((face[i].x - contentExtent.low.x) / (contentExtent.XLength()),1.0));
                 uvCoords[i].y = max(0.0, min((face[i].y - contentExtent.low.y) / (contentExtent.YLength()), 1.0));
-                //if (uvCoords[i].x == 0.0) uvCoords[i].x = 0.004;
-                //if (uvCoords[i].y == 0.0) uvCoords[i].y = 0.004;
                 }
             indicesOfTexturedRegion.push_back(idx[0]);
             indicesOfTexturedRegion.push_back(idx[1]);
@@ -2871,7 +2924,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
                 diffsetPtr->Replace(&diffSet - &(*diffsetPtr->begin()), current);
                 }
             }
-
     }
 
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext)
@@ -3072,22 +3124,23 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
 
     if (pointsPtr->size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return true;
     bool found = false;
+    bvector<size_t> indices;
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
     for (auto it = diffSetPtr->begin(); it != diffSetPtr->end(); ++it)
         {
         if (it->clientID == clipId && it->toggledForID == setToggledWhenIdIsOn)
             {
-            diffSetPtr->erase(it-diffSetPtr->begin());
+            indices.push_back(it-diffSetPtr->begin());
             m_nbClips--;
             //if (m_nodeHeader.m_level < 7) PropagateDeleteClipImmediately(clipId);
             found = true;
-            it = diffSetPtr->begin();
             }
         else if (it->clientID == (uint64_t)-1)
             {
             const_cast<DifferenceSet&>(*it).upToDate = false;
             }
         }
+    diffSetPtr->erase(indices);
     return found;
     }
 

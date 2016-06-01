@@ -1936,6 +1936,32 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                                        clipDiffSet,
                                        centroid);
 
+                bool dbg = false;
+
+                if (dbg)
+                    {
+                    const wchar_t* s_path = L"E:\\output\\scmesh\\2016-05-31\\";
+                    bvector<DPoint3d> ptArray;
+                    for (size_t i = 0; i < toLoadNbPoints; ++i)
+                        ptArray.push_back(DPoint3d::From(toLoadPoints[i].x + centroid.x, toLoadPoints[i].y + centroid.y, toLoadPoints[i].z + centroid.z));
+                    WString name = WString(s_path) + L"fmeshduringdraw_";
+                    name.append(to_wstring(meshNode->GetBlockID().m_integerID).c_str());
+                    name.append(L"_");
+                    name.append(to_wstring(meshNode->m_nodeHeader.m_nodeExtent.low.x).c_str());
+                    name.append(L"_");
+                    name.append(to_wstring(meshNode->m_nodeHeader.m_nodeExtent.low.y).c_str());
+                    name.append(L".m");
+                    FILE* meshAfterClip = _wfopen(name.c_str(), L"wb");
+                    size_t ptCount = toLoadNbPoints;
+                    size_t faceCount = toLoadNbFaceIndexes;
+                    fwrite(&ptCount, sizeof(size_t), 1, meshAfterClip);
+                    fwrite(&ptArray[0], sizeof(DPoint3d), ptCount, meshAfterClip);
+                    fwrite(&faceCount, sizeof(size_t), 1, meshAfterClip);
+                    fwrite(toLoadFaceIndexes, sizeof(int32_t), faceCount, meshAfterClip);
+                    fclose(meshAfterClip);
+                    }
+
+
                 for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                     {
                     toLoadFaceIndexes[ind] -= 1;

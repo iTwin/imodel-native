@@ -198,6 +198,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
 
     for (; binInd < m_nbBins; binInd++)
         {
+        itemInd = 0;
         for (; itemInd < (uint64_t)m_memPoolItems[binInd].size(); itemInd++)
             {
                 {   
