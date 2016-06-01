@@ -25,7 +25,7 @@ struct FileStorage
         std::shared_ptr<ValueIncrementor> m_folderNameIncrementor;
 
     private:
-        BeFileName CreateNewRelativeCachedFilePath(BeFileNameCR currentFilePath, bool isPersistent);
+        BeFileName CreateNewRelativeCachedFilePath(BeFileNameCR currentFilePath, FileCache location);
         static BeFileName CreateNewFilePath(BeFileNameCR oldFilePath, Utf8String newFileName);
 
         static BentleyStatus CreateNewCachedFileFolderName(Utf8StringR folderNameOut);
@@ -36,7 +36,7 @@ struct FileStorage
     public:
         FileStorage(ECDbAdapter& dbAdapter, ECSqlStatementCache& statementCache, CacheEnvironmentCR environment);
 
-        BentleyStatus SetFileCacheLocation(FileInfo& info, FileCache cacheLocation);
+        BentleyStatus SetFileCacheLocation(FileInfo& info, FileCache cacheLocation, BeFileNameCR externalRelativePath = BeFileName());
         BentleyStatus CacheFile(
             FileInfo& info,
             BeFileNameCR suppliedFilePath,
@@ -49,7 +49,7 @@ struct FileStorage
         static BentleyStatus DeleteFileCacheDirectories(CacheEnvironmentCR fullEnvironment);
         static CacheEnvironment CreateCacheEnvironment(BeFileNameCR cacheFilePath, CacheEnvironmentCR inputEnvironment);
 
-        BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath);
+        BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath);
         BentleyStatus RemoveContainingFolder(BeFileNameCR filePath);
         BentleyStatus CleanupCachedFile(BeFileNameCR filePath);
         BentleyStatus RenameCachedFile(FileInfoR info, Utf8StringCR newFileName);

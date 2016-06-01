@@ -1312,7 +1312,7 @@ BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCac
 FileCache DataSourceCache::GetFileCacheLocation(ObjectIdCR objectId)
     {
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
-    return info.IsFilePersistent() ? FileCache::Persistent : FileCache::Temporary;
+    return info.GetLocation();
     }
 
 /*--------------------------------------------------------------------------------------+
