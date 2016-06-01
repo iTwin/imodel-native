@@ -6,21 +6,17 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__BENTLEY_INTERNAL_ONLY__
 
+#include <Bentley/Bentley.h>
 #include <DgnClientFx/DgnClientFxL10N.h>
 #include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
-#include <BeSQLite/BeSQLite.h>
-#include <BeSQLite/L10N.h>
-#include <WebServices/Client/WSClient.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
-#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/IMS/SolrClient.h>
-#include <WebServices/Connect/ImsClient.h>
-#include <WebServices/ConnectC/CWSCCPublic.h>
+#include <WebServices/ConnectC/CWSCC.h>
+#include "WSLocalState.h"
 
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
