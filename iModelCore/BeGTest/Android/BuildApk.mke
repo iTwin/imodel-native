@@ -35,17 +35,15 @@ always:
 # --------------------------------------------------------
 # Prepare for building with gradle
 # --------------------------------------------------------
-sdkroot = $[@subst / \\\\ $(ANDROID_SDK_ROOT)]
-ndkroot = $[@subst / \\\\ $(ANDROID_NDK_ROOT)]
 
-always:
-    >$(outputDir)project/local.properties
-    sdk.dir=$(sdkroot)
-    ndk.dir=$(ndkroot)
-    <
+#--------------------------------------------------------------------------------------
+#   Build library
+#--------------------------------------------------------------------------------------
+DGNCLIENT_APP_ProjectRoot = ${outputDir}/project/
+GRADLE_TASKS = build assembleAndroidTest
 
-_gradleCmd = ${GRADLE_HOME}/bin/gradle build assembleAndroidTest
-_gradleOptions = --project-dir ${outputDir}/project/
+%warn BuildContext = $(BuildContext)
+%include $(BuildContext)SubParts\AndroidTools\gradleBuild.mki
 
 # --------------------------------------------------------
 # Build the .class files and the .APK files
