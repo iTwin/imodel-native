@@ -905,6 +905,7 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
+    m_viewedNodes.clear();
     m_scmIndexPtr = 0;
 
     if(m_smSQLitePtr != nullptr)

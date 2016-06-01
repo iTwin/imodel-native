@@ -1084,9 +1084,12 @@ class NewQueryStartingNodeProcessor
 
         void ClearNodeInfo()
             {
-            m_lowerResOverviewNodes.clear();
-            m_requiredMeshNodes.clear();
-            m_toLoadNodes.clear();
+            for (size_t i = 0; i < m_numWorkingThreads; ++i)
+                {
+                m_lowerResOverviewNodes[i].clear();
+                m_requiredMeshNodes[i].clear();
+                m_toLoadNodes[i].clear();
+                }
             }
 
         void QueryThread(/*DgnPlatformLib::Host* hostToAdopt,*/ size_t threadId, IScalableMeshPtr& scalableMeshPtr)
