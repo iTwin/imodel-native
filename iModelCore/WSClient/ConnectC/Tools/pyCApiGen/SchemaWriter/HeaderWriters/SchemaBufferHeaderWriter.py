@@ -57,6 +57,8 @@ class SchemaBufferHeaderWriter(SchemaHeaderWriter):
         self._write_spacing()
         self.__write_string_functions()
         self._write_spacing()
+        self.__write_string_datetime_functions()
+        self._write_spacing()
         self.__write_guid_functions()
         self._write_spacing()
         self.__write_bool_functions()
@@ -76,6 +78,9 @@ class SchemaBufferHeaderWriter(SchemaHeaderWriter):
             self._write_spacing()
         if self._ecschema.has_ecclass_with_property_type('StringLength'):
             self._file.write(self._ecschema.get_buffer_accessor_function_definition('StringLength'))
+            self._write_spacing()
+        if self._ecschema.has_ecclass_with_property_type('dateTime'):
+            self._file.write(self._ecschema.get_buffer_accessor_function_definition('dateTime'))
             self._write_spacing()
         if self._ecschema.has_ecclass_with_property_type('guid'):
             self._file.write(self._ecschema.get_buffer_accessor_function_definition('guid'))
@@ -114,6 +119,16 @@ class SchemaBufferHeaderWriter(SchemaHeaderWriter):
                     self._file.write(self.__COMMENT_Function.format('String length'))
                     is_first = False
                 self._file.write(ecclass.get_buffer_accessor_function_definition('StringLength'))
+                self._write_spacing()
+
+    def __write_string_datetime_functions(self):
+        ecclasses_with_datetime_property = []
+        for ecclass in self._ecschema.get_classes():
+            if ecclass.does_contain_datetime() and not ecclass.should_exclude_entire_class():
+                if len(ecclasses_with_datetime_property) == 0:
+                    self._file.write(self.__COMMENT_Function.format('DateTime'))
+                    ecclasses_with_datetime_property.append(ecclass)
+                self._file.write(ecclass.get_buffer_accessor_function_definition('dateTime'))
                 self._write_spacing()
 
     def __write_guid_functions(self):

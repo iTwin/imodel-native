@@ -20,9 +20,12 @@
 
 #define BUFF_TYPE_ORGANIZATION 1
 #define BUFF_TYPE_PROJECT 2
-#define BUFF_TYPE_PROJECTFAVORITE 3
-#define BUFF_TYPE_PROJECTMRU 4
-#define BUFF_TYPE_PROJECTMRUDETAIL 5
+#define BUFF_TYPE_PROJECT_V2 3
+#define BUFF_TYPE_PROJECTFAVORITE 4
+#define BUFF_TYPE_PROJECTFAVORITE_V2 5
+#define BUFF_TYPE_PROJECTMRU 6
+#define BUFF_TYPE_PROJECTMRUDETAIL 7
+#define BUFF_TYPE_PROJECTMRUDETAIL_V2 8
 
 /*--------------------------------------------------------------------------------------+
 | Schema-level free functions
@@ -53,6 +56,16 @@ HCWSCCBUFFER buf,
 int16_t bufferProperty,
 uint32_t index,
 size_t* outStringSize
+);
+
+CallStatus GlobalSchema_GetDatetimeProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP dateTime
 );
 
 CallStatus GlobalSchema_GetGuidProperty
@@ -125,7 +138,27 @@ uint32_t strLength,
 WCharP str
 );
 
+CallStatus Project_V2_GetStringProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP str
+);
+
 CallStatus ProjectFavorite_GetStringProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP str
+);
+
+CallStatus ProjectFavorite_V2_GetStringProperty
 (
 LPCWSCC api,
 HCWSCCBUFFER buf,
@@ -146,6 +179,16 @@ WCharP str
 );
 
 CallStatus ProjectMRUDetail_GetStringProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP str
+);
+
+CallStatus ProjectMRUDetail_V2_GetStringProperty
 (
 LPCWSCC api,
 HCWSCCBUFFER buf,
@@ -176,7 +219,25 @@ uint32_t index,
 size_t* outStringSize
 );
 
+CallStatus Project_V2_GetStringLength
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+size_t* outStringSize
+);
+
 CallStatus ProjectFavorite_GetStringLength
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+size_t* outStringSize
+);
+
+CallStatus ProjectFavorite_V2_GetStringLength
 (
 LPCWSCC api,
 HCWSCCBUFFER buf,
@@ -201,6 +262,49 @@ HCWSCCBUFFER buf,
 int16_t bufferProperty,
 uint32_t index,
 size_t* outStringSize
+);
+
+CallStatus ProjectMRUDetail_V2_GetStringLength
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+size_t* outStringSize
+);
+
+
+/*--------------------------------------------------------------------------------------+
+| DateTime functions
++--------------------------------------------------------------------------------------*/
+CallStatus Project_V2_GetDatetimeProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP dateTime
+);
+
+CallStatus ProjectFavorite_V2_GetDatetimeProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP dateTime
+);
+
+CallStatus ProjectMRUDetail_V2_GetDatetimeProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP dateTime
 );
 
 
@@ -230,6 +334,15 @@ uint32_t index,
 bool* boolean
 );
 
+CallStatus Project_V2_GetBooleanProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+bool* boolean
+);
+
 CallStatus ProjectFavorite_GetBooleanProperty
 (
 LPCWSCC api,
@@ -239,7 +352,25 @@ uint32_t index,
 bool* boolean
 );
 
+CallStatus ProjectFavorite_V2_GetBooleanProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+bool* boolean
+);
+
 CallStatus ProjectMRUDetail_GetBooleanProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+bool* boolean
+);
+
+CallStatus ProjectMRUDetail_V2_GetBooleanProperty
 (
 LPCWSCC api,
 HCWSCCBUFFER buf,
@@ -261,6 +392,15 @@ uint32_t index,
 int32_t* integer
 );
 
+CallStatus Project_V2_GetIntProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+int32_t* integer
+);
+
 CallStatus ProjectFavorite_GetIntProperty
 (
 LPCWSCC api,
@@ -270,7 +410,25 @@ uint32_t index,
 int32_t* integer
 );
 
+CallStatus ProjectFavorite_V2_GetIntProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+int32_t* integer
+);
+
 CallStatus ProjectMRUDetail_GetIntProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+int32_t* integer
+);
+
+CallStatus ProjectMRUDetail_V2_GetIntProperty
 (
 LPCWSCC api,
 HCWSCCBUFFER buf,
@@ -292,7 +450,25 @@ uint32_t index,
 double* pDouble
 );
 
+CallStatus Project_V2_GetDoubleProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+double* pDouble
+);
+
 CallStatus ProjectFavorite_GetDoubleProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+double* pDouble
+);
+
+CallStatus ProjectFavorite_V2_GetDoubleProperty
 (
 LPCWSCC api,
 HCWSCCBUFFER buf,
@@ -310,11 +486,29 @@ uint32_t index,
 double* pDouble
 );
 
+CallStatus ProjectMRUDetail_V2_GetDoubleProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+double* pDouble
+);
+
 
 /*--------------------------------------------------------------------------------------+
 | Long functions
 +--------------------------------------------------------------------------------------*/
 CallStatus ProjectMRUDetail_GetLongProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+int64_t* pLong
+);
+
+CallStatus ProjectMRUDetail_V2_GetLongProperty
 (
 LPCWSCC api,
 HCWSCCBUFFER buf,
@@ -358,11 +552,38 @@ typedef struct _CWSCC_PROJECT_BUFFER
     WString RegisteredDate;
     WString TimeZoneLocation;
     int32_t Status;
+    WString Data_Location_Guid;
     } CWSCCPROJECTBUFFER, *LPCWSCCPROJECTBUFFER;
 
 void Project_BufferStuffer
 (
 LPCWSCCPROJECTBUFFER projectBuf,
+RapidJsonValueCR properties
+);
+
+typedef struct _CWSCC_PROJECT_V2_BUFFER 
+    {
+    bmap<WString, bool> IsSet;
+    WString Name;
+    WString Number;
+    WString OrganizationId;
+    WString Industry;
+    WString AssetType;
+    WString LastModified;
+    WString Location;
+    double Latitude;
+    double Longitude;
+    bool LocationIsUsingLatLong;
+    WString RegisteredDate;
+    WString TimeZoneLocation;
+    int32_t Status;
+    WString Data_Location_Guid;
+    WString Country_Code;
+    } CWSCCPROJECT_V2BUFFER, *LPCWSCCPROJECT_V2BUFFER;
+
+void Project_V2_BufferStuffer
+(
+LPCWSCCPROJECT_V2BUFFER project_v2Buf,
 RapidJsonValueCR properties
 );
 
@@ -384,11 +605,38 @@ typedef struct _CWSCC_PROJECTFAVORITE_BUFFER
     WString RegisteredDate;
     WString TimeZoneLocation;
     int32_t Status;
+    WString Data_Location_Guid;
     } CWSCCPROJECTFAVORITEBUFFER, *LPCWSCCPROJECTFAVORITEBUFFER;
 
 void ProjectFavorite_BufferStuffer
 (
 LPCWSCCPROJECTFAVORITEBUFFER projectfavoriteBuf,
+RapidJsonValueCR properties
+);
+
+typedef struct _CWSCC_PROJECTFAVORITE_V2_BUFFER 
+    {
+    bmap<WString, bool> IsSet;
+    WString Name;
+    WString Number;
+    WString OrganizationId;
+    WString Industry;
+    WString AssetType;
+    WString LastModified;
+    WString Location;
+    double Latitude;
+    double Longitude;
+    bool LocationIsUsingLatLong;
+    WString RegisteredDate;
+    WString TimeZoneLocation;
+    int32_t Status;
+    WString Data_Location_Guid;
+    WString Country_Code;
+    } CWSCCPROJECTFAVORITE_V2BUFFER, *LPCWSCCPROJECTFAVORITE_V2BUFFER;
+
+void ProjectFavorite_V2_BufferStuffer
+(
+LPCWSCCPROJECTFAVORITE_V2BUFFER projectfavorite_v2Buf,
 RapidJsonValueCR properties
 );
 
@@ -411,13 +659,13 @@ typedef struct _CWSCC_PROJECTMRUDETAIL_BUFFER
     bmap<WString, bool> IsSet;
     bool IsFavorite;
     int64_t LastAccessedByUser;
+    WString OrganizationId;
     bool eBBacked;
     WString LinkToAssetType;
     WString LinkToIndustry;
     WString LinkToIndustryAssets;
     WString Name;
     WString Number;
-    WString OrganizationId;
     bool Active;
     WString Industry;
     WString AssetType;
@@ -429,11 +677,40 @@ typedef struct _CWSCC_PROJECTMRUDETAIL_BUFFER
     WString RegisteredDate;
     WString TimeZoneLocation;
     int32_t Status;
+    WString Data_Location_Guid;
     } CWSCCPROJECTMRUDETAILBUFFER, *LPCWSCCPROJECTMRUDETAILBUFFER;
 
 void ProjectMRUDetail_BufferStuffer
 (
 LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf,
+RapidJsonValueCR properties
+);
+
+typedef struct _CWSCC_PROJECTMRUDETAIL_V2_BUFFER 
+    {
+    bmap<WString, bool> IsSet;
+    bool IsFavorite;
+    int64_t LastAccessedByUser;
+    WString OrganizationId;
+    WString Name;
+    WString Number;
+    WString Industry;
+    WString AssetType;
+    WString LastModified;
+    WString Location;
+    double Latitude;
+    double Longitude;
+    bool LocationIsUsingLatLong;
+    WString RegisteredDate;
+    WString TimeZoneLocation;
+    int32_t Status;
+    WString Data_Location_Guid;
+    WString Country_Code;
+    } CWSCCPROJECTMRUDETAIL_V2BUFFER, *LPCWSCCPROJECTMRUDETAIL_V2BUFFER;
+
+void ProjectMRUDetail_V2_BufferStuffer
+(
+LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf,
 RapidJsonValueCR properties
 );
 

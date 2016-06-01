@@ -264,7 +264,8 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int32_t* Status
+int32_t* Status,
+WCharCP Data_Location_Guid
 )
     {
     VERIFY_API
@@ -288,6 +289,7 @@ int32_t* Status
     if (RegisteredDate != nullptr) propertiesJson["RegisteredDate"] = Utf8String(RegisteredDate);
     if (TimeZoneLocation != nullptr) propertiesJson["TimeZoneLocation"] = Utf8String(TimeZoneLocation);
     if (Status != nullptr) propertiesJson["Status"] = *Status;
+    if (Data_Location_Guid != nullptr) propertiesJson["Data_Location_Guid"] = Utf8String(Data_Location_Guid);
     if (propertiesJson.size() == 0)
         {
         api->SetStatusMessage("Invalid parameter passed to function");
@@ -398,7 +400,8 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int32_t* Status
+int32_t* Status,
+WCharCP Data_Location_Guid
 )
     {
     VERIFY_API
@@ -418,6 +421,7 @@ int32_t* Status
     if (RegisteredDate != nullptr) propertiesJson["RegisteredDate"] = Utf8String(RegisteredDate);
     if (TimeZoneLocation != nullptr) propertiesJson["TimeZoneLocation"] = Utf8String(TimeZoneLocation);
     if (Status != nullptr) propertiesJson["Status"] = *Status;
+    if (Data_Location_Guid != nullptr) propertiesJson["Data_Location_Guid"] = Utf8String(Data_Location_Guid);
     if (propertiesJson.size() == 0)
         {
         api->SetStatusMessage("Invalid parameter passed to function");
@@ -479,6 +483,307 @@ WCharCP projectId
 
     api->SetStatusMessage("Successful operation");
     api->SetStatusDescription("ConnectWebServicesClientC_DeleteProject completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_ReadProject_V2List
+(
+CWSCCHANDLE apiHandle,
+CWSCCDATABUFHANDLE* project_v2Buffer
+)
+    {
+    VERIFY_API
+
+    if (project_v2Buffer == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("project_v2Buffer is a nullptr.");
+        return INVALID_PARAMETER;
+        }
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendQueryRequest(WSQuery("GlobalSchema", "Project_V2"))->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    CWSCCBUFFER* buf = (CWSCCBUFFER*) calloc(1, sizeof(CWSCCBUFFER));
+    if (buf == nullptr)
+        {
+        free(buf);
+        api->SetStatusMessage("Memory failed to initialize interally.");
+        api->SetStatusDescription("Failed to calloc memory for CWSCCBUFFER.");
+        return INTERNAL_MEMORY_ERROR;
+        }
+
+    for (WSObjectsReader::Instance instance : result.GetValue().GetInstances())
+        {
+        LPCWSCCPROJECT_V2BUFFER bufToFill = new CWSCCPROJECT_V2BUFFER;
+        Project_V2_BufferStuffer(bufToFill, instance.GetProperties());
+        buf->lItems.push_back(bufToFill);
+        }
+
+    buf->lCount = buf->lItems.size();
+    buf->lClassType = BUFF_TYPE_PROJECT_V2;
+    buf->lSchemaType = SCHEMA_TYPE_GLOBALSCHEMA;
+    *project_v2Buffer = (CWSCCDATABUFHANDLE) buf;
+
+    api->SetObjectsResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_ReadProject_V2List completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_CreateProject_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP Name,
+WCharCP Number,
+WCharCP OrganizationId,
+WCharCP Industry,
+WCharCP AssetType,
+WCharCP LastModified,
+WCharCP Location,
+double* Latitude,
+double* Longitude,
+bool* LocationIsUsingLatLong,
+WCharCP RegisteredDate,
+WCharCP TimeZoneLocation,
+int32_t* Status,
+WCharCP Data_Location_Guid,
+WCharCP Country_Code
+)
+    {
+    VERIFY_API
+
+    Json::Value instance;
+    instance["schemaName"] = "GlobalSchema";
+    instance["className"] = "Project_V2";
+
+    Json::Value propertiesJson;
+    if (Name != nullptr) propertiesJson["Name"] = Utf8String(Name);
+    if (Number != nullptr) propertiesJson["Number"] = Utf8String(Number);
+    if (OrganizationId != nullptr) propertiesJson["OrganizationId"] = Utf8String(OrganizationId);
+    if (Industry != nullptr) propertiesJson["Industry"] = Utf8String(Industry);
+    if (AssetType != nullptr) propertiesJson["AssetType"] = Utf8String(AssetType);
+    if (LastModified != nullptr) propertiesJson["LastModified"] = Utf8String(LastModified);
+    if (Location != nullptr) propertiesJson["Location"] = Utf8String(Location);
+    if (Latitude != nullptr) propertiesJson["Latitude"] = *Latitude;
+    if (Longitude != nullptr) propertiesJson["Longitude"] = *Longitude;
+    if (LocationIsUsingLatLong != nullptr) propertiesJson["LocationIsUsingLatLong"] = *LocationIsUsingLatLong;
+    if (RegisteredDate != nullptr) propertiesJson["RegisteredDate"] = Utf8String(RegisteredDate);
+    if (TimeZoneLocation != nullptr) propertiesJson["TimeZoneLocation"] = Utf8String(TimeZoneLocation);
+    if (Status != nullptr) propertiesJson["Status"] = *Status;
+    if (Data_Location_Guid != nullptr) propertiesJson["Data_Location_Guid"] = Utf8String(Data_Location_Guid);
+    if (Country_Code != nullptr) propertiesJson["Country_Code"] = Utf8String(Country_Code);
+    if (propertiesJson.size() == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("There were not any valid Project_V2 properties passed in.");
+        return INVALID_PARAMETER;
+        }
+    instance["properties"] = propertiesJson;
+
+    Json::Value objectCreationJson;
+    objectCreationJson["instance"] = instance;
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendCreateObjectRequest(objectCreationJson)->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    api->SetCreatedObjectResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_CreateProject_V2 completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_ReadProject_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP project_v2Id,
+CWSCCDATABUFHANDLE* project_v2Buffer
+)
+    {
+    VERIFY_API
+
+    if (project_v2Buffer == nullptr || project_v2Id == nullptr || wcslen(project_v2Id) == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("project_v2Buffer is a nullptr or project_v2Id is nullptr or empty.");
+        return INVALID_PARAMETER;
+        }
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendGetObjectRequest({"GlobalSchema", "Project_V2", Utf8String(project_v2Id)})->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    LPCWSCCPROJECT_V2BUFFER project_v2Buf = new CWSCCPROJECT_V2BUFFER;
+    Project_V2_BufferStuffer(project_v2Buf, (*result.GetValue().GetInstances().begin()).GetProperties());
+
+    CWSCCBUFFER* buf = (CWSCCBUFFER*) calloc(1, sizeof(CWSCCBUFFER));
+    if (buf == nullptr)
+        {
+        free(project_v2Buf);
+        api->SetStatusMessage("Memory failed to initialize interally.");
+        api->SetStatusDescription("Failed to calloc memory for CWSCCBUFFER.");
+        return INTERNAL_MEMORY_ERROR;
+        }
+
+    buf->lCount = 1;
+    buf->lClassType = BUFF_TYPE_PROJECT_V2;
+    buf->lSchemaType = SCHEMA_TYPE_GLOBALSCHEMA;
+    buf->lItems = {project_v2Buf};
+    *project_v2Buffer = (CWSCCDATABUFHANDLE) buf;
+
+    api->SetObjectsResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_ReadProject_V2 completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_UpdateProject_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP project_v2Id,
+WCharCP Name,
+WCharCP Number,
+WCharCP OrganizationId,
+WCharCP Industry,
+WCharCP AssetType,
+WCharCP LastModified,
+WCharCP Location,
+double* Latitude,
+double* Longitude,
+bool* LocationIsUsingLatLong,
+WCharCP RegisteredDate,
+WCharCP TimeZoneLocation,
+int32_t* Status,
+WCharCP Data_Location_Guid,
+WCharCP Country_Code
+)
+    {
+    VERIFY_API
+
+    Json::Value propertiesJson;
+    if (Name != nullptr) propertiesJson["Name"] = Utf8String(Name);
+    if (Number != nullptr) propertiesJson["Number"] = Utf8String(Number);
+    if (OrganizationId != nullptr) propertiesJson["OrganizationId"] = Utf8String(OrganizationId);
+    if (Industry != nullptr) propertiesJson["Industry"] = Utf8String(Industry);
+    if (AssetType != nullptr) propertiesJson["AssetType"] = Utf8String(AssetType);
+    if (LastModified != nullptr) propertiesJson["LastModified"] = Utf8String(LastModified);
+    if (Location != nullptr) propertiesJson["Location"] = Utf8String(Location);
+    if (Latitude != nullptr) propertiesJson["Latitude"] = *Latitude;
+    if (Longitude != nullptr) propertiesJson["Longitude"] = *Longitude;
+    if (LocationIsUsingLatLong != nullptr) propertiesJson["LocationIsUsingLatLong"] = *LocationIsUsingLatLong;
+    if (RegisteredDate != nullptr) propertiesJson["RegisteredDate"] = Utf8String(RegisteredDate);
+    if (TimeZoneLocation != nullptr) propertiesJson["TimeZoneLocation"] = Utf8String(TimeZoneLocation);
+    if (Status != nullptr) propertiesJson["Status"] = *Status;
+    if (Data_Location_Guid != nullptr) propertiesJson["Data_Location_Guid"] = Utf8String(Data_Location_Guid);
+    if (Country_Code != nullptr) propertiesJson["Country_Code"] = Utf8String(Country_Code);
+    if (propertiesJson.size() == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("There were not any valid Project_V2 properties passed in.");
+        return INVALID_PARAMETER;
+        }
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendUpdateObjectRequest({"GlobalSchema", "Project_V2", Utf8String(project_v2Id)}, propertiesJson)->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_UpdateProject_V2 completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_DeleteProject_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP project_v2Id
+)
+    {
+    VERIFY_API
+
+    if (project_v2Id == nullptr || wcslen(project_v2Id) == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+         api->SetStatusDescription("project_v2Id is a nullptr or empty.");
+        return INVALID_PARAMETER;
+        }
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendDeleteObjectRequest({"GlobalSchema", "Project_V2", Utf8String(project_v2Id)})->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_DeleteProject_V2 completed successfully.");
     return SUCCESS;
     }
 
@@ -635,6 +940,162 @@ WCharCP projectfavoriteId
 
     api->SetStatusMessage("Successful operation");
     api->SetStatusDescription("ConnectWebServicesClientC_DeleteProjectFavorite completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_ReadProjectFavorite_V2List
+(
+CWSCCHANDLE apiHandle,
+CWSCCDATABUFHANDLE* projectfavorite_v2Buffer
+)
+    {
+    VERIFY_API
+
+    if (projectfavorite_v2Buffer == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("projectfavorite_v2Buffer is a nullptr.");
+        return INVALID_PARAMETER;
+        }
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendQueryRequest(WSQuery("GlobalSchema", "ProjectFavorite_V2"))->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    CWSCCBUFFER* buf = (CWSCCBUFFER*) calloc(1, sizeof(CWSCCBUFFER));
+    if (buf == nullptr)
+        {
+        free(buf);
+        api->SetStatusMessage("Memory failed to initialize interally.");
+        api->SetStatusDescription("Failed to calloc memory for CWSCCBUFFER.");
+        return INTERNAL_MEMORY_ERROR;
+        }
+
+    for (WSObjectsReader::Instance instance : result.GetValue().GetInstances())
+        {
+        LPCWSCCPROJECTFAVORITE_V2BUFFER bufToFill = new CWSCCPROJECTFAVORITE_V2BUFFER;
+        ProjectFavorite_V2_BufferStuffer(bufToFill, instance.GetProperties());
+        buf->lItems.push_back(bufToFill);
+        }
+
+    buf->lCount = buf->lItems.size();
+    buf->lClassType = BUFF_TYPE_PROJECTFAVORITE_V2;
+    buf->lSchemaType = SCHEMA_TYPE_GLOBALSCHEMA;
+    *projectfavorite_v2Buffer = (CWSCCDATABUFHANDLE) buf;
+
+    api->SetObjectsResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_ReadProjectFavorite_V2List completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_ReadProjectFavorite_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP projectfavorite_v2Id,
+CWSCCDATABUFHANDLE* projectfavorite_v2Buffer
+)
+    {
+    VERIFY_API
+
+    if (projectfavorite_v2Buffer == nullptr || projectfavorite_v2Id == nullptr || wcslen(projectfavorite_v2Id) == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("projectfavorite_v2Buffer is a nullptr or projectfavorite_v2Id is nullptr or empty.");
+        return INVALID_PARAMETER;
+        }
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendGetObjectRequest({"GlobalSchema", "ProjectFavorite_V2", Utf8String(projectfavorite_v2Id)})->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    LPCWSCCPROJECTFAVORITE_V2BUFFER projectfavorite_v2Buf = new CWSCCPROJECTFAVORITE_V2BUFFER;
+    ProjectFavorite_V2_BufferStuffer(projectfavorite_v2Buf, (*result.GetValue().GetInstances().begin()).GetProperties());
+
+    CWSCCBUFFER* buf = (CWSCCBUFFER*) calloc(1, sizeof(CWSCCBUFFER));
+    if (buf == nullptr)
+        {
+        free(projectfavorite_v2Buf);
+        api->SetStatusMessage("Memory failed to initialize interally.");
+        api->SetStatusDescription("Failed to calloc memory for CWSCCBUFFER.");
+        return INTERNAL_MEMORY_ERROR;
+        }
+
+    buf->lCount = 1;
+    buf->lClassType = BUFF_TYPE_PROJECTFAVORITE_V2;
+    buf->lSchemaType = SCHEMA_TYPE_GLOBALSCHEMA;
+    buf->lItems = {projectfavorite_v2Buf};
+    *projectfavorite_v2Buffer = (CWSCCDATABUFHANDLE) buf;
+
+    api->SetObjectsResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_ReadProjectFavorite_V2 completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_DeleteProjectFavorite_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP projectfavorite_v2Id
+)
+    {
+    VERIFY_API
+
+    if (projectfavorite_v2Id == nullptr || wcslen(projectfavorite_v2Id) == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+         api->SetStatusDescription("projectfavorite_v2Id is a nullptr or empty.");
+        return INVALID_PARAMETER;
+        }
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendDeleteObjectRequest({"GlobalSchema", "ProjectFavorite_V2", Utf8String(projectfavorite_v2Id)})->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_DeleteProjectFavorite_V2 completed successfully.");
     return SUCCESS;
     }
 
@@ -924,6 +1385,124 @@ CWSCCDATABUFHANDLE* projectmrudetailBuffer
     api->SetObjectsResponse(result.GetValue());
     api->SetStatusMessage("Successful operation");
     api->SetStatusDescription("ConnectWebServicesClientC_ReadProjectMRUDetail completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_ReadProjectMRUDetail_V2List
+(
+CWSCCHANDLE apiHandle,
+CWSCCDATABUFHANDLE* projectmrudetail_v2Buffer
+)
+    {
+    VERIFY_API
+
+    if (projectmrudetail_v2Buffer == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("projectmrudetail_v2Buffer is a nullptr.");
+        return INVALID_PARAMETER;
+        }
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendQueryRequest(WSQuery("GlobalSchema", "ProjectMRUDetail_V2"))->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    CWSCCBUFFER* buf = (CWSCCBUFFER*) calloc(1, sizeof(CWSCCBUFFER));
+    if (buf == nullptr)
+        {
+        free(buf);
+        api->SetStatusMessage("Memory failed to initialize interally.");
+        api->SetStatusDescription("Failed to calloc memory for CWSCCBUFFER.");
+        return INTERNAL_MEMORY_ERROR;
+        }
+
+    for (WSObjectsReader::Instance instance : result.GetValue().GetInstances())
+        {
+        LPCWSCCPROJECTMRUDETAIL_V2BUFFER bufToFill = new CWSCCPROJECTMRUDETAIL_V2BUFFER;
+        ProjectMRUDetail_V2_BufferStuffer(bufToFill, instance.GetProperties());
+        buf->lItems.push_back(bufToFill);
+        }
+
+    buf->lCount = buf->lItems.size();
+    buf->lClassType = BUFF_TYPE_PROJECTMRUDETAIL_V2;
+    buf->lSchemaType = SCHEMA_TYPE_GLOBALSCHEMA;
+    *projectmrudetail_v2Buffer = (CWSCCDATABUFHANDLE) buf;
+
+    api->SetObjectsResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_ReadProjectMRUDetail_V2List completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_ReadProjectMRUDetail_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP projectmrudetail_v2Id,
+CWSCCDATABUFHANDLE* projectmrudetail_v2Buffer
+)
+    {
+    VERIFY_API
+
+    if (projectmrudetail_v2Buffer == nullptr || projectmrudetail_v2Id == nullptr || wcslen(projectmrudetail_v2Id) == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("projectmrudetail_v2Buffer is a nullptr or projectmrudetail_v2Id is nullptr or empty.");
+        return INVALID_PARAMETER;
+        }
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendGetObjectRequest({"GlobalSchema", "ProjectMRUDetail_V2", Utf8String(projectmrudetail_v2Id)})->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf = new CWSCCPROJECTMRUDETAIL_V2BUFFER;
+    ProjectMRUDetail_V2_BufferStuffer(projectmrudetail_v2Buf, (*result.GetValue().GetInstances().begin()).GetProperties());
+
+    CWSCCBUFFER* buf = (CWSCCBUFFER*) calloc(1, sizeof(CWSCCBUFFER));
+    if (buf == nullptr)
+        {
+        free(projectmrudetail_v2Buf);
+        api->SetStatusMessage("Memory failed to initialize interally.");
+        api->SetStatusDescription("Failed to calloc memory for CWSCCBUFFER.");
+        return INTERNAL_MEMORY_ERROR;
+        }
+
+    buf->lCount = 1;
+    buf->lClassType = BUFF_TYPE_PROJECTMRUDETAIL_V2;
+    buf->lSchemaType = SCHEMA_TYPE_GLOBALSCHEMA;
+    buf->lItems = {projectmrudetail_v2Buf};
+    *projectmrudetail_v2Buffer = (CWSCCDATABUFHANDLE) buf;
+
+    api->SetObjectsResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_ReadProjectMRUDetail_V2 completed successfully.");
     return SUCCESS;
     }
 

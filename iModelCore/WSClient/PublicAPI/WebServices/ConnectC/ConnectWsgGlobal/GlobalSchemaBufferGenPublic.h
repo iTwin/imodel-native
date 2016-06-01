@@ -48,7 +48,30 @@ typedef enum
     PROJECT_BUFF_REGISTEREDDATE                 = 12, /**< \b RegisteredDate. */
     PROJECT_BUFF_TIMEZONELOCATION               = 13, /**< \b TimeZoneLocation. */
     PROJECT_BUFF_STATUS                         = 14, /**< \b Status. */
+    PROJECT_BUFF_DATA_LOCATION_GUID             = 15, /**< \b Data_Location_Guid. */
     } PROJECT_BUFF_PROPERTY;
+
+/**
+* \brief Project_V2 
+*/
+typedef enum
+    {
+    PROJECT_V2_BUFF_NAME                           = 1, /**< \b Name. */
+    PROJECT_V2_BUFF_NUMBER                         = 2, /**< \b Number. */
+    PROJECT_V2_BUFF_ORGANIZATIONID                 = 3, /**< \b OrganizationId. */
+    PROJECT_V2_BUFF_INDUSTRY                       = 4, /**< \b Industry. */
+    PROJECT_V2_BUFF_ASSETTYPE                      = 5, /**< \b AssetType. */
+    PROJECT_V2_BUFF_LASTMODIFIED                   = 6, /**< \b LastModified. */
+    PROJECT_V2_BUFF_LOCATION                       = 7, /**< \b Location. */
+    PROJECT_V2_BUFF_LATITUDE                       = 8, /**< \b Latitude. */
+    PROJECT_V2_BUFF_LONGITUDE                      = 9, /**< \b Longitude. */
+    PROJECT_V2_BUFF_LOCATIONISUSINGLATLONG         = 10, /**< \b LocationIsUsingLatLong. */
+    PROJECT_V2_BUFF_REGISTEREDDATE                 = 11, /**< \b RegisteredDate. */
+    PROJECT_V2_BUFF_TIMEZONELOCATION               = 12, /**< \b TimeZoneLocation. */
+    PROJECT_V2_BUFF_STATUS                         = 13, /**< \b Status. */
+    PROJECT_V2_BUFF_DATA_LOCATION_GUID             = 14, /**< \b Data_Location_Guid. */
+    PROJECT_V2_BUFF_COUNTRY_CODE                   = 15, /**< \b Country_Code. */
+    } PROJECT_V2_BUFF_PROPERTY;
 
 /**
 * \brief ProjectFavorite 
@@ -70,7 +93,30 @@ typedef enum
     PROJECTFAVORITE_BUFF_REGISTEREDDATE                 = 13, /**< \b RegisteredDate. */
     PROJECTFAVORITE_BUFF_TIMEZONELOCATION               = 14, /**< \b TimeZoneLocation. */
     PROJECTFAVORITE_BUFF_STATUS                         = 15, /**< \b Status. */
+    PROJECTFAVORITE_BUFF_DATA_LOCATION_GUID             = 16, /**< \b Data_Location_Guid. */
     } PROJECTFAVORITE_BUFF_PROPERTY;
+
+/**
+* \brief ProjectFavorite_V2 
+*/
+typedef enum
+    {
+    PROJECTFAVORITE_V2_BUFF_NAME                           = 1, /**< \b Name. */
+    PROJECTFAVORITE_V2_BUFF_NUMBER                         = 2, /**< \b Number. */
+    PROJECTFAVORITE_V2_BUFF_ORGANIZATIONID                 = 3, /**< \b OrganizationId. */
+    PROJECTFAVORITE_V2_BUFF_INDUSTRY                       = 4, /**< \b Industry. */
+    PROJECTFAVORITE_V2_BUFF_ASSETTYPE                      = 5, /**< \b AssetType. */
+    PROJECTFAVORITE_V2_BUFF_LASTMODIFIED                   = 6, /**< \b LastModified. */
+    PROJECTFAVORITE_V2_BUFF_LOCATION                       = 7, /**< \b Location. */
+    PROJECTFAVORITE_V2_BUFF_LATITUDE                       = 8, /**< \b Latitude. */
+    PROJECTFAVORITE_V2_BUFF_LONGITUDE                      = 9, /**< \b Longitude. */
+    PROJECTFAVORITE_V2_BUFF_LOCATIONISUSINGLATLONG         = 10, /**< \b LocationIsUsingLatLong. */
+    PROJECTFAVORITE_V2_BUFF_REGISTEREDDATE                 = 11, /**< \b RegisteredDate. */
+    PROJECTFAVORITE_V2_BUFF_TIMEZONELOCATION               = 12, /**< \b TimeZoneLocation. */
+    PROJECTFAVORITE_V2_BUFF_STATUS                         = 13, /**< \b Status. */
+    PROJECTFAVORITE_V2_BUFF_DATA_LOCATION_GUID             = 14, /**< \b Data_Location_Guid. */
+    PROJECTFAVORITE_V2_BUFF_COUNTRY_CODE                   = 15, /**< \b Country_Code. */
+    } PROJECTFAVORITE_V2_BUFF_PROPERTY;
 
 /**
 * \brief ProjectMRU 
@@ -89,13 +135,13 @@ typedef enum
     {
     PROJECTMRUDETAIL_BUFF_ISFAVORITE                     = 1, /**< \b IsFavorite. */
     PROJECTMRUDETAIL_BUFF_LASTACCESSEDBYUSER             = 2, /**< \b LastAccessedByUser. */
-    PROJECTMRUDETAIL_BUFF_EBBACKED                       = 3, /**< \b eBBacked. */
-    PROJECTMRUDETAIL_BUFF_LINKTOASSETTYPE                = 4, /**< \b LinkToAssetType. */
-    PROJECTMRUDETAIL_BUFF_LINKTOINDUSTRY                 = 5, /**< \b LinkToIndustry. */
-    PROJECTMRUDETAIL_BUFF_LINKTOINDUSTRYASSETS           = 6, /**< \b LinkToIndustryAssets. */
-    PROJECTMRUDETAIL_BUFF_NAME                           = 7, /**< \b Name. */
-    PROJECTMRUDETAIL_BUFF_NUMBER                         = 8, /**< \b Number. */
-    PROJECTMRUDETAIL_BUFF_ORGANIZATIONID                 = 9, /**< \b OrganizationId. */
+    PROJECTMRUDETAIL_BUFF_ORGANIZATIONID                 = 3, /**< \b OrganizationId. */
+    PROJECTMRUDETAIL_BUFF_EBBACKED                       = 4, /**< \b eBBacked. */
+    PROJECTMRUDETAIL_BUFF_LINKTOASSETTYPE                = 5, /**< \b LinkToAssetType. */
+    PROJECTMRUDETAIL_BUFF_LINKTOINDUSTRY                 = 6, /**< \b LinkToIndustry. */
+    PROJECTMRUDETAIL_BUFF_LINKTOINDUSTRYASSETS           = 7, /**< \b LinkToIndustryAssets. */
+    PROJECTMRUDETAIL_BUFF_NAME                           = 8, /**< \b Name. */
+    PROJECTMRUDETAIL_BUFF_NUMBER                         = 9, /**< \b Number. */
     PROJECTMRUDETAIL_BUFF_ACTIVE                         = 10, /**< \b Active. */
     PROJECTMRUDETAIL_BUFF_INDUSTRY                       = 11, /**< \b Industry. */
     PROJECTMRUDETAIL_BUFF_ASSETTYPE                      = 12, /**< \b AssetType. */
@@ -107,7 +153,32 @@ typedef enum
     PROJECTMRUDETAIL_BUFF_REGISTEREDDATE                 = 18, /**< \b RegisteredDate. */
     PROJECTMRUDETAIL_BUFF_TIMEZONELOCATION               = 19, /**< \b TimeZoneLocation. */
     PROJECTMRUDETAIL_BUFF_STATUS                         = 20, /**< \b Status. */
+    PROJECTMRUDETAIL_BUFF_DATA_LOCATION_GUID             = 21, /**< \b Data_Location_Guid. */
     } PROJECTMRUDETAIL_BUFF_PROPERTY;
+
+/**
+* \brief ProjectMRUDetail_V2 
+*/
+typedef enum
+    {
+    PROJECTMRUDETAIL_V2_BUFF_ISFAVORITE                     = 1, /**< \b IsFavorite. */
+    PROJECTMRUDETAIL_V2_BUFF_LASTACCESSEDBYUSER             = 2, /**< \b LastAccessedByUser. */
+    PROJECTMRUDETAIL_V2_BUFF_ORGANIZATIONID                 = 3, /**< \b OrganizationId. */
+    PROJECTMRUDETAIL_V2_BUFF_NAME                           = 4, /**< \b Name. */
+    PROJECTMRUDETAIL_V2_BUFF_NUMBER                         = 5, /**< \b Number. */
+    PROJECTMRUDETAIL_V2_BUFF_INDUSTRY                       = 6, /**< \b Industry. */
+    PROJECTMRUDETAIL_V2_BUFF_ASSETTYPE                      = 7, /**< \b AssetType. */
+    PROJECTMRUDETAIL_V2_BUFF_LASTMODIFIED                   = 8, /**< \b LastModified. */
+    PROJECTMRUDETAIL_V2_BUFF_LOCATION                       = 9, /**< \b Location. */
+    PROJECTMRUDETAIL_V2_BUFF_LATITUDE                       = 10, /**< \b Latitude. */
+    PROJECTMRUDETAIL_V2_BUFF_LONGITUDE                      = 11, /**< \b Longitude. */
+    PROJECTMRUDETAIL_V2_BUFF_LOCATIONISUSINGLATLONG         = 12, /**< \b LocationIsUsingLatLong. */
+    PROJECTMRUDETAIL_V2_BUFF_REGISTEREDDATE                 = 13, /**< \b RegisteredDate. */
+    PROJECTMRUDETAIL_V2_BUFF_TIMEZONELOCATION               = 14, /**< \b TimeZoneLocation. */
+    PROJECTMRUDETAIL_V2_BUFF_STATUS                         = 15, /**< \b Status. */
+    PROJECTMRUDETAIL_V2_BUFF_DATA_LOCATION_GUID             = 16, /**< \b Data_Location_Guid. */
+    PROJECTMRUDETAIL_V2_BUFF_COUNTRY_CODE                   = 17, /**< \b Country_Code. */
+    } PROJECTMRUDETAIL_V2_BUFF_PROPERTY;
 
 /** \} */
 

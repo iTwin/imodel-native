@@ -43,6 +43,8 @@ class SchemaBufferSourceWriter(SchemaSourceWriter):
             self._write_spacing()
             if self.__write_schema_buffer_accessor('StringLength'):
                 self._write_spacing()
+        if self.__write_schema_buffer_accessor('dateTime'):
+            self._write_spacing()
         if self.__write_schema_buffer_accessor('guid'):
             self._write_spacing()
         if self.__write_schema_buffer_accessor('boolean'):
@@ -66,6 +68,8 @@ class SchemaBufferSourceWriter(SchemaSourceWriter):
             self._write_spacing()
             if self.__write_class_buffer_accessors("StringLength") > 0:
                 self._write_spacing()
+        if self.__write_class_buffer_accessors("dateTime") > 0:
+            self._write_spacing()
         if self.__write_class_buffer_accessors("guid") > 0:
             self._write_spacing()
         if self.__write_class_buffer_accessors("boolean") > 0:

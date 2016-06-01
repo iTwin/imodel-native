@@ -11,10 +11,6 @@
         <ECProperty propertyName="OrganizationGuid" typeName="guid" />
         <ECProperty propertyName="OrganizationName" typeName="string" />
     </ECClass>
-    <ECClass typeName="Organization_SQLAzure_PoC" isDomainClass="True">
-        <ECProperty propertyName="OrganizationGuid" typeName="guid" />
-        <ECProperty propertyName="OrganizationName" typeName="string" />
-    </ECClass>
     <ECClass typeName="Project" isDomainClass="True">
         <ECProperty propertyName="Name" typeName="string" />
         <ECProperty propertyName="Number" typeName="string" />
@@ -35,27 +31,28 @@
         <ECProperty propertyName="LinkToIndustry" typeName="string" readOnly="True" />
         <ECProperty propertyName="LinkToIndustryAssets" typeName="string" readOnly="True" />
         <ECProperty propertyName="PWDMInvitationId" typeName="string" />
+        <ECProperty propertyName="Data_Location_Guid" typeName="string" />
     </ECClass>
-    <ECClass typeName="Project_SQLAzure_PoC" isDomainClass="True">
-        <ECProperty propertyName="eBBacked" typeName="boolean" readOnly="True" />
-        <ECProperty propertyName="LinkToAssetType" typeName="string" readOnly="True" />
-        <ECProperty propertyName="LinkToIndustry" typeName="string" readOnly="True" />
-        <ECProperty propertyName="LinkToIndustryAssets" typeName="string" readOnly="True" />
-        <ECProperty propertyName="PWDMInvitationId" typeName="string" />
+    <ECClass typeName="Project_V2" isDomainClass="True">
         <ECProperty propertyName="Name" typeName="string" />
         <ECProperty propertyName="Number" typeName="string" />
         <ECProperty propertyName="OrganizationId" typeName="string" />
-        <ECProperty propertyName="Active" typeName="boolean" />
         <ECProperty propertyName="Industry" typeName="string" />
         <ECProperty propertyName="AssetType" typeName="string" />
-        <ECProperty propertyName="LastModified" typeName="string" />
+        <ECProperty propertyName="LastModified" typeName="dateTime" />
         <ECProperty propertyName="Location" typeName="string" />
         <ECProperty propertyName="Latitude" typeName="double" />
         <ECProperty propertyName="Longitude" typeName="double" />
         <ECProperty propertyName="LocationIsUsingLatLong" typeName="boolean" />
-        <ECProperty propertyName="RegisteredDate" typeName="string" />
+        <ECProperty propertyName="RegisteredDate" typeName="dateTime" />
         <ECProperty propertyName="TimeZoneLocation" typeName="string" />
         <ECProperty propertyName="Status" typeName="int" />
+        <ECProperty propertyName="LinkToAssetType" typeName="string" readOnly="True" />
+        <ECProperty propertyName="LinkToIndustry" typeName="string" readOnly="True" />
+        <ECProperty propertyName="LinkToIndustryAssets" typeName="string" readOnly="True" />
+        <ECProperty propertyName="PWDMInvitationId" typeName="string" />
+        <ECProperty propertyName="Data_Location_Guid" typeName="string" />
+        <ECProperty propertyName="Country_Code" typeName="string" />
     </ECClass>
     <ECClass typeName="ProjectFavorite" isDomainClass="True">
         <ECProperty propertyName="eBBacked" typeName="boolean" readOnly="True" />
@@ -74,31 +71,27 @@
         <ECProperty propertyName="TimeZoneLocation" typeName="string" />
         <ECProperty propertyName="Status" typeName="int" />
         <ECProperty propertyName="PWDMInvitationId" typeName="string" />
+        <ECProperty propertyName="Data_Location_Guid" typeName="string" />
     </ECClass>
-    <ECClass typeName="ProjectFavorite_SQLAzure_PoC" isDomainClass="True">
-        <ECProperty propertyName="eBBacked" typeName="boolean" readOnly="True" />
-        <ECProperty propertyName="PWDMInvitationId" typeName="string" />
+    <ECClass typeName="ProjectFavorite_V2" isDomainClass="True">
         <ECProperty propertyName="Name" typeName="string" />
         <ECProperty propertyName="Number" typeName="string" />
         <ECProperty propertyName="OrganizationId" typeName="string" />
-        <ECProperty propertyName="Active" typeName="boolean" />
         <ECProperty propertyName="Industry" typeName="string" />
         <ECProperty propertyName="AssetType" typeName="string" />
-        <ECProperty propertyName="LastModified" typeName="string" />
+        <ECProperty propertyName="LastModified" typeName="dateTime" />
         <ECProperty propertyName="Location" typeName="string" />
         <ECProperty propertyName="Latitude" typeName="double" />
         <ECProperty propertyName="Longitude" typeName="double" />
         <ECProperty propertyName="LocationIsUsingLatLong" typeName="boolean" />
-        <ECProperty propertyName="RegisteredDate" typeName="string" />
+        <ECProperty propertyName="RegisteredDate" typeName="dateTime" />
         <ECProperty propertyName="TimeZoneLocation" typeName="string" />
         <ECProperty propertyName="Status" typeName="int" />
+        <ECProperty propertyName="PWDMInvitationId" typeName="string" />
+        <ECProperty propertyName="Data_Location_Guid" typeName="string" />
+        <ECProperty propertyName="Country_Code" typeName="string" />
     </ECClass>
     <ECClass typeName="ProjectMRU" isDomainClass="True">
-        <ECProperty propertyName="ProjectGuid" typeName="string" />
-        <ECProperty propertyName="ProjectName" typeName="string" />
-        <ECProperty propertyName="LastModified" typeName="string" />
-    </ECClass>
-    <ECClass typeName="ProjectMRU_SQLAzure_Poc" isDomainClass="True">
         <ECProperty propertyName="ProjectGuid" typeName="string" />
         <ECProperty propertyName="ProjectName" typeName="string" />
         <ECProperty propertyName="LastModified" typeName="string" />
@@ -106,35 +99,11 @@
     <ECClass typeName="ProjectMRUDetail" isDomainClass="True">
         <ECProperty propertyName="IsFavorite" typeName="boolean" />
         <ECProperty propertyName="LastAccessedByUser" typeName="long" />
-        <ECProperty propertyName="eBBacked" typeName="boolean" readOnly="True" />
-        <ECProperty propertyName="LinkToAssetType" typeName="string" readOnly="True" />
-        <ECProperty propertyName="LinkToIndustry" typeName="string" readOnly="True" />
-        <ECProperty propertyName="LinkToIndustryAssets" typeName="string" readOnly="True" />
-        <ECProperty propertyName="Name" typeName="string" />
-        <ECProperty propertyName="Number" typeName="string" />
-        <ECProperty propertyName="OrganizationId" typeName="string" />
-        <ECProperty propertyName="Active" typeName="boolean" />
-        <ECProperty propertyName="Industry" typeName="string" />
-        <ECProperty propertyName="AssetType" typeName="string" />
-        <ECProperty propertyName="LastModified" typeName="string" />
-        <ECProperty propertyName="Location" typeName="string" />
-        <ECProperty propertyName="Latitude" typeName="double" />
-        <ECProperty propertyName="Longitude" typeName="double" />
-        <ECProperty propertyName="LocationIsUsingLatLong" typeName="boolean" />
-        <ECProperty propertyName="RegisteredDate" typeName="string" />
-        <ECProperty propertyName="TimeZoneLocation" typeName="string" />
-        <ECProperty propertyName="Status" typeName="int" />
-        <ECProperty propertyName="PWDMInvitationId" typeName="string" />
-    </ECClass>
-    <ECClass typeName="ProjectMRUDetail_SQLAzure_PoC" isDomainClass="True">
-        <ECProperty propertyName="IsFavorite" typeName="boolean" />
-        <ECProperty propertyName="LastAccessedByUser" typeName="long" />
         <ECProperty propertyName="OrganizationId" typeName="string" readOnly="True" />
         <ECProperty propertyName="eBBacked" typeName="boolean" readOnly="True" />
         <ECProperty propertyName="LinkToAssetType" typeName="string" readOnly="True" />
         <ECProperty propertyName="LinkToIndustry" typeName="string" readOnly="True" />
         <ECProperty propertyName="LinkToIndustryAssets" typeName="string" readOnly="True" />
-        <ECProperty propertyName="PWDMInvitationId" typeName="string" />
         <ECProperty propertyName="Name" typeName="string" />
         <ECProperty propertyName="Number" typeName="string" />
         <ECProperty propertyName="Active" typeName="boolean" />
@@ -148,29 +117,35 @@
         <ECProperty propertyName="RegisteredDate" typeName="string" />
         <ECProperty propertyName="TimeZoneLocation" typeName="string" />
         <ECProperty propertyName="Status" typeName="int" />
+        <ECProperty propertyName="PWDMInvitationId" typeName="string" />
+        <ECProperty propertyName="Data_Location_Guid" typeName="string" />
+    </ECClass>
+    <ECClass typeName="ProjectMRUDetail_V2" isDomainClass="True">
+        <ECProperty propertyName="IsFavorite" typeName="boolean" />
+        <ECProperty propertyName="LastAccessedByUser" typeName="long" />
+        <ECProperty propertyName="OrganizationId" typeName="string" readOnly="True" />
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Number" typeName="string" />
+        <ECProperty propertyName="Industry" typeName="string" />
+        <ECProperty propertyName="AssetType" typeName="string" />
+        <ECProperty propertyName="LastModified" typeName="dateTime" />
+        <ECProperty propertyName="Location" typeName="string" />
+        <ECProperty propertyName="Latitude" typeName="double" />
+        <ECProperty propertyName="Longitude" typeName="double" />
+        <ECProperty propertyName="LocationIsUsingLatLong" typeName="boolean" />
+        <ECProperty propertyName="RegisteredDate" typeName="dateTime" />
+        <ECProperty propertyName="TimeZoneLocation" typeName="string" />
+        <ECProperty propertyName="Status" typeName="int" />
+        <ECProperty propertyName="PWDMInvitationId" typeName="string" />
+        <ECProperty propertyName="Data_Location_Guid" typeName="string" />
+        <ECProperty propertyName="Country_Code" typeName="string" />
     </ECClass>
     <ECClass typeName="ProjectProperties" isDomainClass="True">
         <ECProperty propertyName="Key" typeName="string" />
         <ECProperty propertyName="DisplayName" typeName="string" />
     </ECClass>
-    <ECClass typeName="ProjectTemplate" isDomainClass="True">
-        <ECProperty propertyName="Name" typeName="string" />
-        <ECProperty propertyName="Number" typeName="string" />
-        <ECProperty propertyName="OrganizationId" typeName="string" />
-        <ECProperty propertyName="Active" typeName="boolean" />
-        <ECProperty propertyName="Industry" typeName="string" />
-        <ECProperty propertyName="AssetType" typeName="string" />
-        <ECProperty propertyName="LastModified" typeName="string" />
-        <ECProperty propertyName="Location" typeName="string" />
-        <ECProperty propertyName="Latitude" typeName="double" />
-        <ECProperty propertyName="Longitude" typeName="double" />
-        <ECProperty propertyName="LocationIsUsingLatLong" typeName="boolean" />
-        <ECProperty propertyName="RegisteredDate" typeName="string" />
-        <ECProperty propertyName="TimeZoneLocation" typeName="string" />
-        <ECProperty propertyName="Status" typeName="int" />
-        <ECProperty propertyName="eBBacked" typeName="boolean" readOnly="True" />
-        <ECProperty propertyName="LinkToAssetType" typeName="string" readOnly="True" />
-        <ECProperty propertyName="LinkToIndustry" typeName="string" readOnly="True" />
-        <ECProperty propertyName="LinkToIndustryAssets" typeName="string" readOnly="True" />
+    <ECClass typeName="ProjectProperties_V2" isDomainClass="True">
+        <ECProperty propertyName="Key" typeName="string" />
+        <ECProperty propertyName="DisplayName" typeName="string" />
     </ECClass>
 </ECSchema>

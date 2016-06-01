@@ -96,6 +96,9 @@ class Writer(object):
             comment_str += "* \param[out] str Pointer to buffer to store string property\n"
         elif property_type == "StringLength":
             comment_str += "* \param[out] outStringSize Pointer to store the string length\n"
+        elif property_type == "dateTime":
+            comment_str += "* \param[in] strLength buffer length\n"
+            comment_str += "* \param[out] str Pointer to buffer to store dateTime property\n"
         elif property_type == "guid":
             comment_str += "* \param[in] strLength guid-buffer length\n"
             comment_str += "* \param[out] guid Pointer to buffer to store GUID property\n"
@@ -128,6 +131,9 @@ class Writer(object):
             accessor_str += "WCharP str\n"
         elif property_type == "StringLength":
             accessor_str += "size_t* outStringSize\n"
+        elif property_type == "dateTime":
+            accessor_str += "uint32_t strLength,\n"
+            accessor_str += "WCharP dateTime\n"
         elif property_type == "guid":
             accessor_str += "uint32_t strLength,\n"
             accessor_str += "WCharP guid\n"
@@ -171,6 +177,8 @@ class Writer(object):
                 accessor_str += "(api, buf, bufferProperty, index, strLength, str);\n"
             elif property_type == "StringLength":
                 accessor_str += "(api, buf, bufferProperty, index, outStringSize);\n"
+            elif property_type == "dateTime":
+                accessor_str += "(api, buf, bufferProperty, index, strLength, dateTime);\n"
             elif property_type == "guid":
                 accessor_str += "(api, buf, bufferProperty, index, strLength, guid);\n"
             elif property_type == "boolean":

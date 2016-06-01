@@ -100,6 +100,9 @@ class ECClass(object):
     def does_contain_long(self):
         return self.does_contain_property_type('long')
 
+    def does_contain_datetime(self):
+        return self.does_contain_property_type('dateTime')
+
     def __get_read_class_list_funtion_def(self):
         get_request_str = "CallStatus {0}_Read{1}List\n".format(self.__api.get_api_name(), self.get_name())
         get_request_str += "(\n"
@@ -397,6 +400,8 @@ class ECClass(object):
             property_type = ecproperty.type
             if property_type == "string":
                 property_str += "WCharCP "
+            elif property_type == "dateTime":
+                property_str += "WCharCP "
             elif property_type == "guid":
                 property_str += "WCharCP "
             elif property_type == "boolean":
@@ -420,6 +425,9 @@ class ECClass(object):
             properties_str += "    if ({0} != nullptr) ".format(ecproperty.name)
             property_type = ecproperty.type
             if property_type == "guid":
+                properties_str += 'propertiesJson["{0}"] = Utf8String({0});\n' \
+                    .format(ecproperty.name)
+            elif property_type == "dateTime":
                 properties_str += 'propertiesJson["{0}"] = Utf8String({0});\n' \
                     .format(ecproperty.name)
             elif property_type == "string":
@@ -452,6 +460,9 @@ class ECClass(object):
             accessor_str += "WCharP str\n"
         elif property_type == "StringLength":
             accessor_str += "size_t* outStringSize\n"
+        elif property_type == "dateTime":
+            accessor_str += "uint32_t strLength,\n"
+            accessor_str += "WCharP dateTime\n"
         elif property_type == "guid":
             accessor_str += "uint32_t strLength,\n"
             accessor_str += "WCharP guid\n"
@@ -479,6 +490,8 @@ class ECClass(object):
             accessor_str += " || str == nullptr || strLength == 0"
         elif property_type == "StringLength":
             accessor_str += " || outStringSize == nullptr"
+        elif property_type == "dateTime":
+            accessor_str += " || dateTime == nullptr || strLength == 0"
         elif property_type == "guid":
             accessor_str += " || guid == nullptr || strLength == 0"
         elif property_type == "boolean":
@@ -529,6 +542,8 @@ class ECClass(object):
                     property_access_str += '            str = nullptr;\n'
                 elif property_type == "StringLength":
                     property_access_str += '            outStringSize = nullptr;\n'
+                elif property_type == "dateTime":
+                    property_access_str += '            dateTime = nullptr;\n'
                 elif property_type == "guid":
                     property_access_str += '            guid = nullptr;\n'
                 elif property_type == "boolean":
@@ -548,6 +563,8 @@ class ECClass(object):
                     property_access_str += "        BeStringUtilities::Wcsncpy(str, strLength, {0}Buf->{1}.c_str());\n"
                 elif property_type == "StringLength":
                     property_access_str += "        *outStringSize = {0}Buf->{1}.length();\n"
+                elif property_type == "dateTime":
+                    property_access_str += "        BeStringUtilities::Wcsncpy(dateTime, strLength, {0}Buf->{1}.c_str());\n"
                 elif property_type == "guid":
                     property_access_str += "        BeStringUtilities::Wcsncpy(guid, strLength, {0}Buf->{1}.c_str());\n"
                 elif property_type == "boolean":
@@ -594,6 +611,8 @@ class ECClass(object):
             if ecproperty.should_be_excluded:
                 continue
             if ecproperty.type == "string":
+                struct_str += "    WString "
+            elif ecproperty.type == "dateTime":
                 struct_str += "    WString "
             elif ecproperty.type == "guid":
                 struct_str += "    WString "
@@ -643,6 +662,13 @@ class ECClass(object):
             if ecproperty.should_be_excluded:
                 continue
             if ecproperty.type == "string":
+                stuffer_str += '    if(properties.HasMember("{0}") && properties["{0}"].IsString())\n' \
+                    .format(ecproperty.name)
+                stuffer_str += '        {0}Buf->{1} = WString(properties["{1}"].GetString(), true);\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = (properties.HasMember("{1}") && properties["{1}"].IsString());\n' \
+                    .format(self.get_lower_name(), ecproperty.name)
+            elif ecproperty.type == "dateTime":
                 stuffer_str += '    if(properties.HasMember("{0}") && properties["{0}"].IsString())\n' \
                     .format(ecproperty.name)
                 stuffer_str += '        {0}Buf->{1} = WString(properties["{1}"].GetString(), true);\n' \
