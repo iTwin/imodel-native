@@ -169,10 +169,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
 
 protected:
     bool m_noQuery = false;
+    bool m_loading = false;
     mutable bool m_abortQuery = false;
     Utf8String m_viewSQL;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
+    mutable double m_queryElementPerSecond = 10000;
     SceneMembersPtr m_scene;
     SpecialElements m_special;
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones

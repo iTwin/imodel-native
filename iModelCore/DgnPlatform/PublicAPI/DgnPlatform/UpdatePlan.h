@@ -158,8 +158,8 @@ struct UpdatePlan
         double m_frustumScale = 1.0;
         bool m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
-        uint32_t m_minElements = 3;
-        uint32_t m_maxElements = 50000;
+        uint32_t m_minElements = 300;
+        uint32_t m_maxElements = 30000;
         mutable uint32_t m_delayAfter = 0;
         mutable uint32_t m_targetNumElements = 0;
 
@@ -225,7 +225,7 @@ public:
 //=======================================================================================
 struct DynamicUpdatePlan : UpdatePlan
     {
-    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
+    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate); SetCreateSceneTimeout(10); /*m_query.SetMaxElements(5000);*/}
     };
 
 //=======================================================================================
