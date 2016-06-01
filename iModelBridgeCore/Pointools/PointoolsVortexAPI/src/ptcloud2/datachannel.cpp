@@ -28,10 +28,10 @@ using namespace pt;
 
 DataChannel::DataChannel(DataType native, DataType storeas, int multiple, double *offs, double *scal, const void *samples, uint num_samples)
 {
-	_storeas = storeas;
-	_native = native;
-	_typesize = dataTypeSize(storeas);
-	_multiple = multiple;
+	_storeas = (ushort) storeas;
+	_native = (ushort) native;
+	_typesize = (ushort) dataTypeSize(storeas);
+	_multiple = (ushort) multiple;
 
 	_data = 0;
 	_count = 0;
@@ -374,7 +374,6 @@ void DataChannel::computeRange()
 {
 	if (!_data) return;
 
-	int i=0;
 	switch (_storeas)
 	{
 	case Float32:

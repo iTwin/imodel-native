@@ -34,7 +34,7 @@ namespace pcloud
 bool PointStreamFilter::createFilterGrid(const mmatrix4d &trans, const pt::BoundingBox &gridBoundingBox, unsigned int cellsX, unsigned int cellsY, unsigned int cellsZ, float overlapX, float overlapY, float overlapZ)
 {
 															// Create a new grid node
-	SpatialPartitioner::Container	*	root;
+	SpatialPartitioner::Container	*	root = nullptr;
 	NodeGrid	*	grid;
 															// If a filter hierarchy exists already, delete it
 	if(spatialPartitionGraph.isEmpty() == false)

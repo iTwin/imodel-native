@@ -247,7 +247,7 @@ namespace PTRMI
 		{
 			for(i = 0; i < numDigits; i++)
 			{
-				setSubValue(i, values[i]);
+				setSubValue((Index)i, (IPSubValue)values[i]);
 			}
 
 			setIPDefined(true);
@@ -282,7 +282,7 @@ namespace PTRMI
 
 		for(t = 0; t < numDigits; t++)
 		{
-			setSubValue(t, DEFAULT_SUBVALUE);
+			setSubValue((Index)t, DEFAULT_SUBVALUE);
 		}
 
 		setIPDefined(false);

@@ -38,7 +38,6 @@ EditNodeDef *EditNodeDef::findNodeDef( const char *n )
 {
 	detail::EditNodeDefs::iterator i = detail::_editNodeDefs.find( String(n) );
 	return (i==detail::_editNodeDefs.end()) ? 0 : i->second;
-	return 0;
 }
 bool EditNodeDef::applyByName( const char *nm )
 {

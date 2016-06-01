@@ -54,8 +54,9 @@ DataSize GUID::getMaxWriteSize(void)
 	DataBuffer::DataSize maxSize = static_cast<DataBuffer::DataSize>(sizeof(bool) + PTRMI::Array<const unsigned char>::getMaxWriteSize(sizeof(::GUID)));
 
 	return maxSize;
+#else
+    return 0;
 #endif
-return 0;
 }
 
 

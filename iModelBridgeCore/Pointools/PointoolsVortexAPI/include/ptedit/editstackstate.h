@@ -41,11 +41,24 @@ struct LeafID
 	static pcloud::Voxel * voxelFromID( LeafID lid );
 };
 
-//&&ep del this ?
+/* &&ep - del this on iOS ? (not needed on Winx640
+
+// clang finds that this operator is unused, but it is a false error because it is actually required by ../include/c++/v1/__functional_base
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 static bool operator < ( const LeafID &a, const LeafID &b )
 {
 	return ( a.pc < b.pc || a.leafIndex < b.leafIndex ) ? true : false;
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
+*/
 
 //-----------------------------------------------------------------------------
 struct LeafStateInfo

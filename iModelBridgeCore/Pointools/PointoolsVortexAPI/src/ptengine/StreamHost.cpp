@@ -622,7 +622,7 @@ bool StreamHost::loadMultiReadSetVoxelData(void)
 	DataSourceMultiReadSet::MultiReadIndex		t;
 	DataSourceMultiRead						*	multiRead;
 	DataSource::Data						*	source;
-	DataSourceReadSet						*	readSet;
+	DataSourceReadSet						*	readSet = nullptr;
 
 															// Get MultiReadSet buffer
 	source = multiReadSetBuffer.getBuffer();
@@ -713,6 +713,7 @@ bool StreamHost::streamRoundTrip(void)
 		{
 			analyzer.beginRead(1, 1, 0);
             ptds::DataSource::Size r = dataSource->readBytes(buffer, STREAM_HOST_ROUND_TRIP_DATA_SIZE);
+            UNUSED_VARIABLE(r);
 			analyzer.endRead(1, 1, 0);
 
 			return true;

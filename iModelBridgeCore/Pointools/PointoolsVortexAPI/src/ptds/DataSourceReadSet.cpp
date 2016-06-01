@@ -217,7 +217,7 @@ DataSource::DataPointer DataSourceReadSet::getFinalDataPointer(void)
 ptds::DataSize DataSourceReadSet::transferVoxelData(DataSource::Data *source)
 {
 	DataSourceRead					*	read;
-	pcloud::Voxel					*	voxel;
+	pcloud::Voxel					*	voxel = nullptr;
 	DataSource::Data				*	dest;
 	unsigned int						numReads;
 	ReadIndex							t;

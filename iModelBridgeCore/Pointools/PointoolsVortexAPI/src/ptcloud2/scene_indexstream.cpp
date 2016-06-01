@@ -829,6 +829,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 					GlobalMemoryStatusEx(&mem);
 					int64_t aval = mem.ullAvailVirtual;	
                     int writebuffsizeMB = static_cast<int>(aval / (1024 * 1024));
+                    UNUSED_VARIABLE(writebuffsizeMB);
 
 					PTTRACEOUT << aval << "Mb available in this processes virtual memory space";
 #endif

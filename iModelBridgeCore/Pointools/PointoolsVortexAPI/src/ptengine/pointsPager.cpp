@@ -568,6 +568,7 @@ PointsPager::MemMode determineMemoryMode( int64_t &available )
 	MEMORYSTATUS mem;
 	GlobalMemoryStatus(&mem);
 	uint memload = mem.dwMemoryLoad;
+    UNUSED_VARIABLE(memload);
 	available = _MEMAVAL;
 
 	/* auto mem target management */ 
@@ -661,7 +662,6 @@ void PointsPager::Pager::processRequests(pointsengine::StreamManager &streamMana
 	//pcloud::Voxel	*vox;
 	//int				lod, req;
 	int64_t			memAval;
-	bool			loading = false;
 
 	/* timer */ 
 	pt::TimeStamp	t0;
@@ -1041,6 +1041,7 @@ int VoxelLoader::loadVoxel(pcloud::Voxel *vox, float lodRead, bool full, bool lo
 
 		{
 			float save_req = vox->getRequestLOD();
+            UNUSED_VARIABLE(save_req);
 
 			if (full)
 			{
@@ -1058,6 +1059,7 @@ int VoxelLoader::loadVoxel(pcloud::Voxel *vox, float lodRead, bool full, bool lo
 					continue;
 
 				pcloud::Channel ch = pcloud::channel(c);
+                UNUSED_VARIABLE(ch);
 				
 				/*reallocate voxel data channels*/ 
 				int64_t pos = vox->filePointer() + prev_channel_size;
@@ -1186,8 +1188,6 @@ int VoxelLoader::unloadVoxel(pcloud::Voxel *vox, float amount, bool lock )
 		pcloud::DataChannel *dc = const_cast<pcloud::DataChannel*>(vox->channel(c));
 		if (!dc) continue;
 		
-		uint currsize = dc->bytesize();
-
 		int points;
 		uint bytes, offset;
 		
@@ -1207,7 +1207,7 @@ int PointsPager::Pager::loadVoxel(pcloud::Voxel *vox, float lodRead, bool lock)
 
 	// weighted load metric
 
-	uint numPoints = vox->getNumPointsAtLOD(lodRead) - vox->getNumPointsAtLOD(lod) ;
+	int64_t numPoints = vox->getNumPointsAtLOD(lodRead) - vox->getNumPointsAtLOD(lod) ;
 
 //	uint numPoints = (lodRead - lod) * vox->fullPointCount();
 

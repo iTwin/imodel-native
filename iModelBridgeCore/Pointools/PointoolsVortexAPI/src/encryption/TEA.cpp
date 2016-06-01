@@ -106,7 +106,7 @@ void CTEA::EncryptBlock(unsigned char const* pucIn, unsigned char* pucOut)
 	unsigned int w[2];
 	BytesToWord(&pucIn[0], v[0]);
 	BytesToWord(&pucIn[4], v[1]);
-	register unsigned int y=v[0], z=v[1], sum=0, delta=0x9E3779B9, n=32;
+	unsigned int y=v[0], z=v[1], sum=0, delta=0x9E3779B9, n=32;
 	while(n-->0)
 	{
 		y += (z << 4 ^ z >> 5) + z ^ sum + m_auiKey[sum&3];
@@ -125,7 +125,7 @@ void CTEA::DecryptBlock(unsigned char const* pucIn, unsigned char* pucOut)
 	unsigned int w[2];
 	BytesToWord(&pucIn[0], v[0]);
 	BytesToWord(&pucIn[4], v[1]);
-	register unsigned int y=v[0], z=v[1], sum=0xC6EF3720, delta=0x9E3779B9, n=32;
+	unsigned int y=v[0], z=v[1], sum=0xC6EF3720, delta=0x9E3779B9, n=32;
 	while(n-->0)
 	{
 		z -= (y << 4 ^ y >> 5) + y ^ sum + m_auiKey[sum>>11 & 3];

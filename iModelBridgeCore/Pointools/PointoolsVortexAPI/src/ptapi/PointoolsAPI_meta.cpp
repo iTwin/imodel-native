@@ -105,7 +105,6 @@ FileMeta *extractSceneMeta( const pcloud::Scene *scene, bool inGraph )
 PThandle PTAPI	ptReadPODMeta( const PTstr filepath )
 {
 	/* open the file and read the meta */ 
-	int error = 0;
 
 	ptds::FilePath path( filepath );
 	pcloud::Scene *scene = pcloud::Scene::createFromFile(path);

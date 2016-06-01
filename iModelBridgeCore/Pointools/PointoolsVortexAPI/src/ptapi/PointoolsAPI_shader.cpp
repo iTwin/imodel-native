@@ -420,8 +420,9 @@ PTbool PTAPI ptIsEnabled(PTenum option)
 	case PT_ADAPTIVE_POINT_SIZE:return g_shaders[g_currentViewport].adaptivePntSize;
 	case PT_FRONT_BIAS:			return g_shaders[g_currentViewport].frontBias;
 	default:
-		debugAssertM(0, "Unsupported ptIsEnabled option"); return PT_TRUE;
+		debugAssertM(0, "Unsupported ptIsEnabled option"); 
 		setLastErrorCode( PTV_INVALID_OPTION );
+        return PT_TRUE;
 	}	
 }
 //-------------------------------------------------------------------------------
@@ -546,7 +547,7 @@ PTres	PTAPI ptShaderOptioni(PTenum shader_option, PTint value)
 	{
 	case PT_INTENSITY_SHADER_RAMP:
 
-		for (i; i<numRamps; i++)
+		for (; i<numRamps; i++)
 		{
 			ptRampInfo(i, &type);
 
@@ -563,7 +564,7 @@ PTres	PTAPI ptShaderOptioni(PTenum shader_option, PTint value)
 
 	case PT_PLANE_SHADER_RAMP:
 
-		for (i; i<numRamps; i++)
+		for (; i<numRamps; i++)
 		{
 			ptRampInfo(i, &type);
 		

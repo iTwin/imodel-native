@@ -77,7 +77,7 @@ struct NodeWriteVisitor
 {
 	void operator() (const NodeID &nid, const Node *node)
 	{	
-		uint8 type_index = node->typeId();
+		uint8 type_index = (uint8)node->typeId();
 
 		/*identifier	*/ 
 		fwrite(&nid, NODE_ID_SIZE, 1, _file); 

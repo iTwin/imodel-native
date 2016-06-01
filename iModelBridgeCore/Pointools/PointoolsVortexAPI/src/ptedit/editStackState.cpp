@@ -14,6 +14,14 @@ using namespace pointsengine;
 using namespace ptedit;
 using namespace pcloud;
 
+namespace ptedit
+{
+    static bool operator < ( const LeafID &a, const LeafID &b )
+    {
+	    return ( a.pc < b.pc || a.leafIndex < b.leafIndex ) ? true : false;
+    }
+}
+
 //static
 Voxel * LeafID::voxelFromID( LeafID lid )
 {
@@ -492,8 +500,6 @@ bool EvaluatedOpStack::Apply( const ptds::FilePath &path )
 		/* gather voxels to write */ 
 		EvaluatedOpStackHeader::LeafNodeStates::iterator i = 
 			header.m_leafNodeStates.begin();
-
-		int filePtrIndex = 0;
 
 		while (i != header.m_leafNodeStates.end() )
 		{

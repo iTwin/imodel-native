@@ -335,6 +335,7 @@ namespace ptds
 
 										Series							(void);
 										Series							(const wchar_t *entityName) : GraphEntity(entityName) {}
+        virtual                        ~Series                          () {};
 
 		void							add								(Point &point);
 		Point							get								(Index index);
@@ -864,7 +865,7 @@ namespace ptds
 		Point delta = maximum - minimum;
 
 		unsigned int	phase = 0;
-		typename Point::Type		val;
+		typename Point::Type		val = 0;
 
 		for(t = 0; t < numPoints; t++)
 		{

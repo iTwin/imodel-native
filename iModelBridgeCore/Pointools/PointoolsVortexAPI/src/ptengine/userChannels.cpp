@@ -15,7 +15,7 @@ using namespace pointsengine;
 VoxelChannelData::VoxelChannelData( uint num_points, uint bytesPerPnt, uint full_num_points, ubyte setup_flags, uint user_0, uint user_1 ) : 
 		data(0), uniform_value(0), min_value(0), max_value(0), numPoints( num_points ), 
 			bytesPerPoint( (ubyte)bytesPerPnt ), filepos(PT_NULL_FILE_POS), flags(setup_flags),
-			fullNumPoints(full_num_points), user0(user_0), user1(user_1)
+			fullNumPoints(full_num_points), user0((ubyte)user_0), user1((ubyte)user_1)
 		{
 		}
 // if OOC
@@ -278,7 +278,7 @@ UserChannel::UserChannel(UserChannel *sourceChannel, const pt::String &destName,
 	}
 
 	/* iterate clouds and enter this in */ 
-	CopyChannelsVisitor v(*sourceChannel, *this, m_bitsize, m_multiple, m_defaultValue, destFlags);
+	CopyChannelsVisitor v(*sourceChannel, *this, m_bitsize, m_multiple, m_defaultValue, (ubyte)destFlags);
 
 	thePointsScene().visitPointClouds( &v );
 }
@@ -600,7 +600,6 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 
 	int version = 0;
 	//int hasVal;
-	int numCHD = 0;
 	int num_clouds = 0;
 
 	// Meta Data
@@ -650,7 +649,7 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 
 		// create the per-cloud structure
 		CloudChannelData * ccd = new CloudChannelData( 0, userChannel->m_bitsize, userChannel->m_multiple, 
-			userChannel->m_defaultValue, userChannel->m_flags );
+			userChannel->m_defaultValue, (ubyte)userChannel->m_flags );
 		
 		//add using guid as key
 		userChannel->m_data.insert( MapByCloud::value_type( guid, ccd ) );
@@ -674,10 +673,10 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 			leaf->getNode( "user1", u1 );
 			
 			// add this to the cloud channel
-			ccd->data.push_back( VoxelChannelData(numPoints, bytesPerPoint, fullNumPoints, flags/*, u0, u1*/) );
+			ccd->data.push_back( VoxelChannelData(numPoints, bytesPerPoint, fullNumPoints, (ubyte)flags/*, u0, u1*/) );
 			VoxelChannelData &chd = ccd->data.back();
-			chd.setUser0( u0 );
-			chd.setUser1( u1 );
+			chd.setUser0( (ubyte) u0 );
+			chd.setUser1( (ubyte) u1 );
 
 			// read uniforms, min and max
 			const pt::datatree::Blob *uniform_val = leaf->getBlob("uniform");

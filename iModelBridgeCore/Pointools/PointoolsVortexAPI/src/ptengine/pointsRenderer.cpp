@@ -693,9 +693,9 @@ void PointsRenderer::computeActualColour(ubyte *col, const double *pnt, const sh
 	}
 
 	/* assign and clamp */ 
-	col[0] = pcol[0];
-	col[1] = pcol[1];
-	col[2] = pcol[2];
+	col[0] = (ubyte)pcol[0];
+	col[1] = (ubyte)pcol[1];
+	col[2] = (ubyte)pcol[2];
 }
 
 #ifdef HAVE_OPENGL

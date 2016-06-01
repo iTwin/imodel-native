@@ -929,7 +929,6 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
     pt::vector3 _n, _o, _n1, _origin(0,0,0);
 #endif
 
-	unsigned int errors =0 ;
 #ifdef _VERBOSE
 	std::cout << "Calculating Normals (" << ci->ibound << "x" << ci->jbound << ")...";
 #endif

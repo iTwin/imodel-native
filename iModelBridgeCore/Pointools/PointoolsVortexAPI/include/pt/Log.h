@@ -38,7 +38,14 @@ private:
 
     static Log*             commonLog;
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
     int                     stripFromStackBottom;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
     /**
      Prints the time & stack trace.

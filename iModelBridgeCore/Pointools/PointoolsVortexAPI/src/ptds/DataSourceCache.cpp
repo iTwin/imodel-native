@@ -610,8 +610,6 @@ bool DataSourceCache::setAutoCacheFilePath(const wchar_t *serverFilePath, PTRMI:
 	default:
 		return setAutoCacheFilePathServerFilePath(getCacheFolderPath(), serverFilePath);
 	}
-															// Error (shouldn't happen)
-	return false;
 }
 
 

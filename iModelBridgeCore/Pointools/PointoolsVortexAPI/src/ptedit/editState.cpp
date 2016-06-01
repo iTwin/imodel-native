@@ -21,16 +21,7 @@ ubyte		g_lockedLayers	= 0;
 uint		g_editApplyMode		= EditNormal;
 uint		g_editWorkingMode	= EditWorkOnAll;
 }
-/* layer mask to point layer mask 			*/ 
-/* point layers are shifted left one bit 	*/ 
-static ubyte pointLayerMask( ubyte layerMask )
-{
-	ubyte pntLyr = (layerMask << 1);
-	pntLyr &= ~1;
-	pntLyr &= ~128;
 
-	return pntLyr;
-}
 //
 GlobalState::GlobalState() : layer(1,1,0,1)
 {

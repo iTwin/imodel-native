@@ -41,6 +41,8 @@ protected:
 
 public:
 
+    virtual                            ~StreamScheduler                 () {};
+
 	virtual void						clear							(void);
 
 	virtual void						clearActive						(void);

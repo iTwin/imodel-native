@@ -155,19 +155,6 @@ struct Pix
 	ubyte b;
 };
 //
-static float pix_overlap(double x, double y, double xd, double yd)
-{
-	double xc = (x < xd) ? (x + 0.5) - (xd - 0.5):
-							(x - 0.5) - (xd + 0.5);
-	double yc = (y < yd) ? (y + 0.5) - (yd - 0.5):
-							(y - 0.5) - (yd + 0.5);
-	return (xc * yc) > 0 ? static_cast<float>(xc * yc) : 0.0f;
-}
-//
-static int indices [] = {	-1,1,	0,1,	1,1,
-							-1,0,	0,0,	1,0,
-							-1,-1,	0,-1,	1,-1 };
-//
 struct Img
 {
 	Img(int w, int h, ubyte *data)

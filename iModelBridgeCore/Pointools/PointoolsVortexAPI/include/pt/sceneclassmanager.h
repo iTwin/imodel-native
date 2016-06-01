@@ -82,7 +82,7 @@ private:
 		if (m_objectInfoTail) m_objectInfoTail->next = info; 
 		m_objectInfoTail = info; 
 		if (!m_objectInfo) m_objectInfo = info; 
-		info->level = m_infolevel;
+		info->level = (ubyte)m_infolevel;
 
 		m_objectInfoUpdated = true;
 		dirtyInfo();

@@ -115,7 +115,7 @@ namespace pod
 		bool visitNode(const Node*node)
 		{			
 			/*write out node data*/ 
-			ubyte depth = node->depth();
+			ubyte depth = (ubyte)node->depth();
 			  
 			int children[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
 			int parent = -1;
@@ -158,7 +158,7 @@ namespace pod
 			ptr += sizeof(pt::BoundingBox)-48;	// TEST ON 64BIT BUILD
 
 			//8 bytes spare where we squeeze in qt value without killing fwd compat
-			ubyte qt = node->quadTreeAxis() + 1;	// quadtree spec
+			ubyte qt = (ubyte)node->quadTreeAxis() + 1;	// quadtree spec
 			ubyte hasQT = 133;
 
 			// just a code
@@ -950,7 +950,8 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 	if (!skip) job.scene->setIdentifier(ws.c_str());
 	pos += 64;
 
-	uint num_clouds, num_scanpos;
+	uint num_clouds;
+    uint num_scanpos = 0;
 	rb.read(num_clouds);
 	pos += sizeof(uint);
 
@@ -1247,7 +1248,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 
 			if (nodetype)
 			{
-				Voxel*vox;
+				Voxel*vox = nullptr;
 
 				if (!skip)
 				{
