@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
+
 #include<Bentley/Bentley.h>
 
 BEGIN_BENTLEY_NAMESPACE
