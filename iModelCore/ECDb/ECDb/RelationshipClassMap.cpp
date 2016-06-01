@@ -1254,7 +1254,7 @@ MappingStatus RelationshipClassLinkTableMap::_MapPart2(SchemaImportContext& cont
         return MappingStatus::Error;
         }
 
-    BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have caught already in ClassMapInfo");
+    BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have been caught already in ClassMapInfo");
 
     if (GetPrimaryTable().GetType() != DbTable::Type::Existing)
         {
