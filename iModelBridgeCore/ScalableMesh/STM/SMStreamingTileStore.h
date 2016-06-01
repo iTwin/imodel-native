@@ -1292,7 +1292,6 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         virtual bool StoreMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
             {
-            //SMPointTaggedTileStore::StoreMasterHeader(indexHeader, headerSize);
             if (indexHeader != NULL && indexHeader->m_rootNodeBlockID.IsValid())
                 {
                 Json::Value masterHeader;
@@ -1301,6 +1300,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 masterHeader["rootNodeBlockID"] = ConvertBlockID(indexHeader->m_rootNodeBlockID);
                 masterHeader["splitThreshold"] = indexHeader->m_SplitTreshold;
                 masterHeader["singleFile"] = false;
+                masterHeader["isTerrain"] = true;
 
                 // Write to file
                 auto filename = (m_path + L"..\\MasterHeader.sscm").c_str();
@@ -1390,6 +1390,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         indexHeader->m_SplitTreshold = oldMasterHeader.m_SplitTreshold;
                         indexHeader->m_balanced = oldMasterHeader.m_balanced;
                         indexHeader->m_depth = oldMasterHeader.m_depth;
+                        indexHeader->m_isTerrain = oldMasterHeader.m_isTerrain;
                         indexHeader->m_singleFile = oldMasterHeader.m_singleFile;
                         assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
 
@@ -1419,7 +1420,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             //assert(group_size <= s_max_number_nodes_in_group);
 
                             auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(group_id, group_numNodes, group_totalSizeOfHeaders));
-							// NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
+                            // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
                             group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_", m_stream_store);
                             m_nodeHeaderGroups.push_back(group);
 
@@ -1459,6 +1460,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
                     indexHeader->m_balanced = masterHeader["balanced"].asBool();
                     indexHeader->m_depth = masterHeader["depth"].asUInt();
+                    indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
                     indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
                     assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
 
@@ -1487,6 +1489,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
                         indexHeader->m_balanced = masterHeader["balanced"].asBool();
                         indexHeader->m_depth = masterHeader["depth"].asUInt();
+                        indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
 
                         auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
                         indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
