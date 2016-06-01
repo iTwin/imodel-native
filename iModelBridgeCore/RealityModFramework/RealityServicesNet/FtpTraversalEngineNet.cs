@@ -246,21 +246,43 @@ namespace FtpTraversalEngineNet
             FtpStatusWrapper status = FtpStatusWrapper.UnknownError;
 
             // Connect.
-            FtpClientWrapper client = FtpClientWrapper.ConnectTo(args[0]);
-            if(client == null)            
+            FtpClientWrapper client = null;
+            try
                 {
-                Console.WriteLine("Could not connect to" + args[0]);
+                client = FtpClientWrapper.ConnectTo(args[0]);
+                }
+            catch (System.Exception ex)
+                {
+                Console.WriteLine("Could not connect to" + args[0] + " : " + ex.Message);
                 Console.WriteLine("Press any key to exit.");
                 Console.ReadKey();
 
                 return;
                 }
+            
+            if(client == null)            
+                {
+                Console.WriteLine("Could not connect to" + args[0] + " : Client is null.");
+                Console.WriteLine("Press any key to exit.");
+                Console.ReadKey();                
+                }
             Console.WriteLine("Connected to " + args[0] + ". Retrieving data...");
               
-            // Get data.
-            FtpExplorerObserver observer = new FtpExplorerObserver();
-            client.SetObserver(observer);  
-            status = client.GetData();
+            // Get data.            
+            try
+                {
+                client.SetObserver(new FtpExplorerObserver());
+                status = client.GetData();
+                }
+            catch (System.Exception ex)
+                {
+                Console.WriteLine("FAILED: " + ex.Message);
+                Console.WriteLine("Press any key to exit.");
+                Console.ReadKey();
+
+                return;
+                }
+            
             if (status != FtpStatusWrapper.Success)
                 {
                 Console.WriteLine("FAILED: " + status);

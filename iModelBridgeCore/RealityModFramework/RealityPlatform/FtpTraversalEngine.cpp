@@ -46,8 +46,9 @@ static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
     }
 
 
-// Client repository mapping init.
+// Static FtpClient members initialization.
 FtpClient::RepositoryMapping FtpClient::m_dataRepositories = FtpClient::RepositoryMapping();
+int FtpClient::m_retryCount = 0;
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
@@ -259,7 +260,18 @@ void FtpClient::ConstructRepositoryMapping(int index, void *pClient, int ErrorCo
         Utf8String filename(pEntry->filename);
 
         m_dataRepositories.push_back(make_bpair(url.c_str(), filename.c_str()));
+
+        m_retryCount = 0;
         }
+    else
+        {
+        // Download failed. RealityDataDownload will retry 25 times. 
+        // Add a longer sleep between each tentative so that the server have a better chance to respond. For example:
+        // Retry count: 0,  Sleep time: 0.002 second.
+        // Retry count: 4,  Sleep time: 1 second.
+        // Retry count: 24, Sleep time: 5 seconds.
+        Sleep(++m_retryCount * 200);
+        }    
     }
 
 //-------------------------------------------------------------------------------------

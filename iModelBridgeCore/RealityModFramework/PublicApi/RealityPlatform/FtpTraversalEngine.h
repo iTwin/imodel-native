@@ -99,6 +99,7 @@ struct FtpClient : public RefCountedBase
         FtpServerPtr m_pServer;         
         IFtpTraversalObserver* m_pObserver;        
         static RepositoryMapping m_dataRepositories;
+        static int m_retryCount;
     };
 
 //=====================================================================================
