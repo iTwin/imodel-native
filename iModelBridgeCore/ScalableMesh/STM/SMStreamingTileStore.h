@@ -1234,7 +1234,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             :m_path(path),
             m_pathToHeaders(headers_path),
             m_use_node_header_grouping(areNodeHeadersGrouped),
-            m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
+            m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;BlobEndpoint=https://scalablemesh.azureedge.net;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
+            //m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
             m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")
             {
             if (s_stream_from_disk)
@@ -1340,7 +1341,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 if (m_use_node_header_grouping || s_stream_from_grouped_store)
                     {
                     wstringstream ss;
-                    ss << m_path << L"..//MasterHeaderWithGroups.bin"; // Azure requires double slashes for parent url to work
+                    ss << m_path << L"../MasterHeaderWithGroups.bin";
                     auto filename = ss.str();
                     if (m_nodeHeaderGroups.empty())
                         {

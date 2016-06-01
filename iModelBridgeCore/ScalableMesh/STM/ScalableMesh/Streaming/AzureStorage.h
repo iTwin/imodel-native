@@ -283,10 +283,10 @@ namespace scalable_mesh
                 s_consoleMutex.unlock();
 #endif
                 point_buffer_type2 buffer;
-                auto block_blob = this->GetBlockBlob(blob_name);
-                assert(block_blob.is_valid() && block_blob.exists());
                 try
                     {
+                    auto block_blob = this->GetBlockBlob(blob_name);
+                    assert(block_blob.is_valid() && block_blob.exists());
                     block_blob.download_to_stream(concurrency::streams::ostream(buffer));
                     callback(buffer.collection());
                     }
