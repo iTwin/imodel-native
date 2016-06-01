@@ -481,24 +481,13 @@ bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipCla
     {
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     const size_t constraintClassCount = constraintClasses.size();
-    if (isAbstractRelClass)
+    if (!isAbstractRelClass && constraintClassCount == 0)
         {
-        if (constraintClassCount > 0)
-            {
-            //if rel is abstract, constraint must not have classes. if rel is not abstract, constraint must have classes
-            m_error->AddInconsistency(relClass, Error::Kind::IsAbstractAndConstraintsAreDefined);
-            return false;
-            }
+        //if rel is not abstract, constraint must have classes
+        m_error->AddInconsistency(relClass, Error::Kind::IncompleteConstraintDefinition);
+        return false;
         }
-    else
-        {
-        if (constraintClassCount == 0)
-            {
-            //if rel is not abstract, constraint must have classes
-            m_error->AddInconsistency(relClass, Error::Kind::IncompleteConstraintDefinition);
-            return false;
-            }
-        }
+        
 
     bool valid = true;
     for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
@@ -556,7 +545,6 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
         str.append("Relationship ").append(inconsistency.m_relationshipClass->GetFullName()).append(":");
         
         const Kind kind = inconsistency.m_kind;
-
         if (Enum::Contains(kind, Kind::HasAnyClassConstraint))
             str.append(" AnyClass must not be used as constraint.");
 
@@ -568,9 +556,6 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
 
         if (Enum::Contains(kind, Kind::IncompleteConstraintDefinition))
             str.append(" At least one constraint definition is not complete.");
-
-        if (Enum::Contains(kind, Kind::IsAbstractAndConstraintsAreDefined))
-            str.append(" The relationship class is abstract and therefore constraints must not be defined (as they are not inherited anyways).");
 
         isFirstItem = false;
         }

@@ -252,8 +252,7 @@ struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
                 None = 0,
                 HasAnyClassConstraint = 1,
                 HasRelationshipClassAsConstraint = 2,
-                IsAbstractAndConstraintsAreDefined = 4,
-                IncompleteConstraintDefinition = 8
+                IncompleteConstraintDefinition = 4
                 };
 
             private:
