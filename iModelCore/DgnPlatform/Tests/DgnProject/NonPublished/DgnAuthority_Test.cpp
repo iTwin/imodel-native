@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../TestFixture/BlankDgnDbTestFixture.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -14,8 +14,14 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnAuthoritiesTest : public BlankDgnDbTestFixture
+struct DgnAuthoritiesTest : public DgnDbTestFixture
     {
+    DgnDbR GetDb() { return *m_db; }
+
+    void SetupProject(WCharCP testProjFile)
+        {
+        DgnDbTestFixture::SetupProject(L"3dMetricGeneral.ibim", testProjFile, Db::OpenMode::ReadWrite);
+        }
 
     void Compare(DgnAuthorityId id, Utf8CP name)
         {
@@ -101,23 +107,22 @@ TEST_F(DgnAuthoritiesTest, IterateCodes)
     EXPECT_TRUE(CodeExists(pStyle->GetCode()));
     EXPECT_FALSE(CodeExists(originalStyleCode));
 
+    // Insert element with empty code
+    EXPECT_TRUE(InsertElement().IsValid());
+
     // Test with various options
-#ifdef TEST_EMPTY_CODES
     DgnCode emptyCode = DgnCode::CreateEmpty();
-#endif
     DgnCode modelCode = GetDb().GetDictionaryModel().GetCode();
     DgnCode elementCode = pStyle->GetCode();
 
     typedef DgnCode::Iterator::Include Include;
 
-#ifdef TEST_EMPTY_CODES
     EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(Include::Both, true)));
     EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Both, false)));
-    EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(Include::Models, true)));
+    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Models, true)));
     EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Models, false)));
     EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(Include::Elements, true)));
     EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Elements, false)));
-#endif
 
     EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Models, false)));
     EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Models, true)));
