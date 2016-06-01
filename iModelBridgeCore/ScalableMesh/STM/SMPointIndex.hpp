@@ -6697,178 +6697,6 @@ template<class POINT, class EXTENT> uint64_t SMPointIndexNode<POINT, EXTENT>::Ge
     }
 
 /**----------------------------------------------------------------------------
-This method serializes the node for streaming.
-
-@param
------------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SerializeHeaderToBinary(std::unique_ptr<Byte>& pi_pData, uint32_t& pi_pDataSize) const
-    {
-    assert(pi_pData == nullptr && pi_pDataSize == 0);
-
-    pi_pData.reset(new Byte[3000]);
-
-    const auto filtered = m_nodeHeader.m_filtered;
-    memcpy(pi_pData.get() + pi_pDataSize, &filtered, sizeof(filtered));
-    pi_pDataSize += sizeof(filtered);
-    const auto parentBlockID = m_nodeHeader.m_parentNodeID.IsValid() ? ConvertBlockID(m_nodeHeader.m_parentNodeID) : IDTMFile::GetNullNodeID();
-    memcpy(pi_pData.get() + pi_pDataSize, &parentBlockID, sizeof(parentBlockID));
-    pi_pDataSize += sizeof(parentBlockID);
-    const auto subNodeNoSplitID = m_nodeHeader.m_SubNodeNoSplitID.IsValid() ? ConvertBlockID(m_nodeHeader.m_SubNodeNoSplitID) : IDTMFile::GetNullNodeID();
-    memcpy(pi_pData.get() + pi_pDataSize, &subNodeNoSplitID, sizeof(subNodeNoSplitID));
-    pi_pDataSize += sizeof(subNodeNoSplitID);
-    const auto level = m_nodeHeader.m_level;
-    memcpy(pi_pData.get() + pi_pDataSize, &level, sizeof(level));
-    pi_pDataSize += sizeof(level);
-    const auto isBranched = m_nodeHeader.m_IsBranched;
-    memcpy(pi_pData.get() + pi_pDataSize, &isBranched, sizeof(isBranched));
-    pi_pDataSize += sizeof(isBranched);
-    const auto isLeaf = m_nodeHeader.m_IsLeaf;
-    memcpy(pi_pData.get() + pi_pDataSize, &isLeaf, sizeof(isLeaf));
-    pi_pDataSize += sizeof(isLeaf);
-    const auto splitThreshold = m_nodeHeader.m_SplitTreshold;
-    memcpy(pi_pData.get() + pi_pDataSize, &splitThreshold, sizeof(splitThreshold));
-    pi_pDataSize += sizeof(splitThreshold);
-    const auto totalCount = m_nodeHeader.m_totalCount;
-    memcpy(pi_pData.get() + pi_pDataSize, &totalCount, sizeof(totalCount));
-    pi_pDataSize += sizeof(totalCount);
-    const auto nodeCount = m_nodeHeader.m_nodeCount;
-    memcpy(pi_pData.get() + pi_pDataSize, &nodeCount, sizeof(nodeCount));
-    pi_pDataSize += sizeof(nodeCount);
-    const auto arePoints3d = m_nodeHeader.m_arePoints3d;
-    memcpy(pi_pData.get() + pi_pDataSize, &arePoints3d, sizeof(arePoints3d));
-    pi_pDataSize += sizeof(arePoints3d);
-    const auto nbFaceIndexes = m_nodeHeader.m_nbFaceIndexes;
-    memcpy(pi_pData.get() + pi_pDataSize, &nbFaceIndexes, sizeof(nbFaceIndexes));
-    pi_pDataSize += sizeof(nbFaceIndexes);
-    const auto graphID = m_nodeHeader.m_graphID.IsValid() ? ConvertBlockID(m_nodeHeader.m_graphID) : IDTMFile::GetNullNodeID();
-    memcpy(pi_pData.get() + pi_pDataSize, &graphID, sizeof(graphID));
-    pi_pDataSize += sizeof(graphID);
-
-    const auto xMin = ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent);
-    memcpy(pi_pData.get() + pi_pDataSize, &xMin, sizeof(xMin));
-    pi_pDataSize += sizeof(xMin);
-    const auto yMin = ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent);
-    memcpy(pi_pData.get() + pi_pDataSize, &yMin, sizeof(yMin));
-    pi_pDataSize += sizeof(yMin);
-    const auto zMin = ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent);
-    memcpy(pi_pData.get() + pi_pDataSize, &zMin, sizeof(zMin));
-    pi_pDataSize += sizeof(zMin);
-    const auto xMax = ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent);
-    memcpy(pi_pData.get() + pi_pDataSize, &xMax, sizeof(xMax));
-    pi_pDataSize += sizeof(xMax);
-    const auto yMax = ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent);
-    memcpy(pi_pData.get() + pi_pDataSize, &yMax, sizeof(yMax));
-    pi_pDataSize += sizeof(yMax);
-    const auto zMax = ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent);
-    memcpy(pi_pData.get() + pi_pDataSize, &zMax, sizeof(zMax));
-    pi_pDataSize += sizeof(zMax);
-
-    const auto contentExtentDefined = m_nodeHeader.m_contentExtentDefined;
-    memcpy(pi_pData.get() + pi_pDataSize, &contentExtentDefined, sizeof(contentExtentDefined));
-    pi_pDataSize += sizeof(contentExtentDefined);
-    if (contentExtentDefined)
-        {
-        const auto xMin = ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_contentExtent);
-        memcpy(pi_pData.get() + pi_pDataSize, &xMin, sizeof(xMin));
-        pi_pDataSize += sizeof(xMin);
-        const auto yMin = ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_contentExtent);
-        memcpy(pi_pData.get() + pi_pDataSize, &yMin, sizeof(yMin));
-        pi_pDataSize += sizeof(yMin);
-        const auto zMin = ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_contentExtent);
-        memcpy(pi_pData.get() + pi_pDataSize, &zMin, sizeof(zMin));
-        pi_pDataSize += sizeof(zMin);
-        const auto xMax = ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_contentExtent);
-        memcpy(pi_pData.get() + pi_pDataSize, &xMax, sizeof(xMax));
-        pi_pDataSize += sizeof(xMax);
-        const auto yMax = ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_contentExtent);
-        memcpy(pi_pData.get() + pi_pDataSize, &yMax, sizeof(yMax));
-        pi_pDataSize += sizeof(yMax);
-        const auto zMax = ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_contentExtent);
-        memcpy(pi_pData.get() + pi_pDataSize, &zMax, sizeof(zMax));
-        pi_pDataSize += sizeof(zMax);
-        }
-
-    /* Indice, UV and Texture IDs */
-    auto const nbIndiceID = (int)m_nodeHeader.m_ptsIndiceID.size();
-    memcpy(pi_pData.get() + pi_pDataSize, &nbIndiceID, sizeof(nbIndiceID));
-    pi_pDataSize += sizeof(nbIndiceID);
-    for (size_t i = 0; i < m_nodeHeader.m_ptsIndiceID.size(); i++)
-        {
-        const auto indice = m_nodeHeader.m_ptsIndiceID[i].IsValid() ? ConvertBlockID(m_nodeHeader.m_ptsIndiceID[i]) : IDTMFile::GetNullNodeID();
-        memcpy(pi_pData.get() + pi_pDataSize, &indice, sizeof(indice));
-        pi_pDataSize += sizeof(indice);
-        }
-    
-    const auto uvID = m_nodeHeader.m_uvID.IsValid() ? ConvertBlockID(m_nodeHeader.m_uvID) : IDTMFile::GetNullNodeID();
-    memcpy(pi_pData.get() + pi_pDataSize, &uvID, sizeof(uvID));
-    pi_pDataSize += sizeof(uvID);
-    const auto nbUVIDs = (int)m_nodeHeader.m_uvsIndicesID.size();
-    memcpy(pi_pData.get() + pi_pDataSize, &nbUVIDs, sizeof(nbUVIDs));
-    pi_pDataSize += sizeof(nbUVIDs);
-    for (size_t i = 0; i < m_nodeHeader.m_uvsIndicesID.size(); i++)
-        {
-        const auto uvIndice = m_nodeHeader.m_uvsIndicesID[i].IsValid() ? ConvertBlockID(m_nodeHeader.m_uvsIndicesID[i]) : IDTMFile::GetNullNodeID();
-        memcpy(pi_pData.get() + pi_pDataSize, &uvIndice, sizeof(uvIndice));
-        pi_pDataSize += sizeof(uvIndice);
-        }
-    
-    const auto nbTextureIDs = (int)m_nodeHeader.m_textureID.size();
-    memcpy(pi_pData.get() + pi_pDataSize, &nbTextureIDs, sizeof(nbTextureIDs));
-    pi_pDataSize += sizeof(nbTextureIDs);
-    for (size_t i = 0; i < m_nodeHeader.m_textureID.size(); i++)
-        {
-        const auto textureID = m_nodeHeader.m_textureID[i].IsValid() ? ConvertBlockID(m_nodeHeader.m_textureID[i]) : IDTMFile::GetNullNodeID();
-        memcpy(pi_pData.get() + pi_pDataSize, &textureID, sizeof(textureID));
-        pi_pDataSize += sizeof(textureID);
-        }
-    
-    /* Mesh components and clips */
-    const auto numberOfMeshComponents = m_nodeHeader.m_numberOfMeshComponents;
-    memcpy(pi_pData.get() + pi_pDataSize, &numberOfMeshComponents, sizeof(numberOfMeshComponents));
-    pi_pDataSize += sizeof(numberOfMeshComponents);
-    for (size_t componentIdx = 0; componentIdx < m_nodeHeader.m_numberOfMeshComponents; componentIdx++)
-        {
-        const auto component = m_nodeHeader.m_meshComponents[componentIdx];
-        memcpy(pi_pData.get() + pi_pDataSize, &component, sizeof(component));
-        pi_pDataSize += sizeof(component);
-        }
-    
-    const auto nbClipSetsIDs = (uint32_t)m_nodeHeader.m_clipSetsID.size();
-    memcpy(pi_pData.get() + pi_pDataSize, &nbClipSetsIDs, sizeof(nbClipSetsIDs));
-    pi_pDataSize += sizeof(nbClipSetsIDs);
-    for (size_t i = 0; i < nbClipSetsIDs; ++i)
-        {
-        const auto clip = ConvertNeighborID(m_nodeHeader.m_clipSetsID[i]);
-        memcpy(pi_pData.get() + pi_pDataSize, &clip, sizeof(clip));
-        pi_pDataSize += sizeof(clip);
-        }
-    
-    /* Children and Neighbors */
-    const auto nbChildren = isLeaf || (!isBranched  && !m_nodeHeader.m_SubNodeNoSplitID.IsValid()) ? 0 : (!isBranched ? 1 : m_nodeHeader.m_numberOfSubNodesOnSplit);
-    memcpy(pi_pData.get() + pi_pDataSize, &nbChildren, sizeof(nbChildren));
-    pi_pDataSize += sizeof(nbChildren);
-    for (size_t childInd = 0; childInd < nbChildren; childInd++)
-        {
-        const auto id = ConvertChildID(m_nodeHeader.m_apSubNodeID[childInd]);
-        memcpy(pi_pData.get() + pi_pDataSize, &id, sizeof(id));
-        pi_pDataSize += sizeof(id);
-        }
-
-    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
-        {
-        const auto numNeighbors = m_nodeHeader.m_apNeighborNodeID[neighborPosInd].size();
-        memcpy(pi_pData.get() + pi_pDataSize, &numNeighbors, sizeof(numNeighbors));
-        pi_pDataSize += sizeof(numNeighbors);
-        for (size_t neighborInd = 0; neighborInd < numNeighbors; neighborInd++)
-            {
-            const auto nodeId = ConvertNeighborID(m_nodeHeader.m_apNeighborNodeID[neighborPosInd][neighborInd]);
-            memcpy(pi_pData.get() + pi_pDataSize, &nodeId, sizeof(nodeId));
-            pi_pDataSize += sizeof(nodeId);
-            }
-        }
-    }
-
-/**----------------------------------------------------------------------------
 This method adds a group in the Open Group map. Will overwrite an existing value.
 
 @param
@@ -6897,7 +6725,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
         }
     }
 
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyData(HFCPtr<StreamingPointStoreType> pi_pPointStore)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
     pi_pPointStore->StoreHeader(&m_nodeHeader, this->GetBlockID());
@@ -6914,31 +6742,27 @@ This method saves the node for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
-                                                                                             HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
-                                                                                             HFCPtr<StreamingUVStoreType> pi_pUVStore,
-                                                                                             HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
-                                                                                             HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointsToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore)
     {
-    assert(!pi_pIndiceStore && !pi_pUVStore && !pi_pUVIndiceStore && !pi_pTextureStore);
+    assert(pi_pPointStore != nullptr);
 
     if (!IsLoaded())
         Load();
 
-    this->SaveCloudReadyData(pi_pPointStore);
+    this->SavePointDataToCloud(pi_pPointStore);
 
     // Save children nodes
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SavePointsToCloud(pi_pPointStore);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SavePointsToCloud(pi_pPointStore);
                 }
             }
         }
@@ -6949,8 +6773,8 @@ This method saves the node for streaming using the grouping strategy.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyNode(SMNodeGroup* pi_pGroup,
-                                                                                             SMNodeGroupMasterHeader* pi_pGroupsHeader) const
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup,
+                                                                                                 SMNodeGroupMasterHeader* pi_pGroupsHeader)
     {
     if (!IsLoaded())
         Load();
@@ -6958,12 +6782,12 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCl
     // Add node header data
     uint32_t headerSize = 0;
     std::unique_ptr<Byte> headerData = nullptr;
-    this->SerializeHeaderToBinary(headerData, headerSize);
+    this->GetPointsStore()->SerializeHeaderToBinary(&this->m_nodeHeader, headerData, headerSize);
     pi_pGroup->AddNode(ConvertBlockID(GetBlockID()), headerData, headerSize);
     delete[] headerData.release();
     
     auto groupID = pi_pGroup->GetID();
-    pi_pGroupsHeader->AddNodeToGroup(groupID, ConvertBlockID(GetBlockID()));
+    pi_pGroupsHeader->AddNodeToGroup(groupID, ConvertBlockID(GetBlockID()), headerSize);
 
     if (pi_pGroup->IsFull() || pi_pGroup->IsCommonAncestorTooFar(this->GetLevel()))
         {
@@ -6991,13 +6815,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCl
 
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(nextGroup, pi_pGroupsHeader);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(nextGroup, pi_pGroupsHeader);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
                 }
             }
 
@@ -7888,86 +7712,102 @@ template<class POINT, class EXTENT> ISMPointIndexFilter<POINT, EXTENT>* SMPointI
     return(m_filter);
     }
 
-
 /**----------------------------------------------------------------------------
-This method saves the mesh for streaming.
+This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveCloudReady(const WString pi_pOutputDirPath, bool groupNodeHeaders, bool pi_pCompress) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, bool pi_pCompress) const
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
+    HFCPtr<SMNodeGroup> group = new SMNodeGroup(pi_pOutputDirPath, 0, 0);
+
+    HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
+    SMPointIndexHeader<EXTENT> oldMasterHeader;
+    this->GetPointsStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
+    // Force multi file (in case the originating dataset is single file)
+    oldMasterHeader.m_singleFile = false;
+    groupMasterHeader->SetOldMasterHeaderData(oldMasterHeader);
+
+    // Add first group
+    groupMasterHeader->AddGroup(0);
+
     auto rootNode = GetRootNode();
-    if (groupNodeHeaders)
+    rootNode->AddOpenGroup(0, group);
+
+    rootNode->SaveGroupedNodeHeaders(group, groupMasterHeader);
+
+    // Handle all open groups 
+    rootNode->SaveAllOpenGroups();
+
+    // Save group info file which contains info about all the generated groups (groupID and blockID)
+    groupMasterHeader->SaveToFile(pi_pOutputDirPath + L"../");
+
+    return SUCCESS;
+    }
+/**----------------------------------------------------------------------------
+This method saves the points for streaming.
+
+@param
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(const WString& pi_pOutputDirPath, bool pi_pCompress) const
+    {
+    if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
-        HFCPtr<SMNodeGroup> group = new SMNodeGroup(pi_pOutputDirPath, 0, 0);
-
-        HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
-        SMPointIndexHeader<EXTENT> oldMasterHeader;
-        this->GetPointsStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
-        groupMasterHeader->SetOldMasterHeaderData(oldMasterHeader);
-        
-        // Add first group
-        groupMasterHeader->AddGroup(0);
-
-        rootNode->AddOpenGroup(0, group);
-
-        rootNode->SaveCloudReadyNode(group, groupMasterHeader);
-
-        // Handle all open groups 
-        rootNode->SaveAllOpenGroups();
-
-        // Save group info file which contains info about all the generated groups (groupID and blockID)
-        groupMasterHeader->SaveToFile(pi_pOutputDirPath);
+        if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
-    else 
+
+    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(pi_pOutputDirPath + L"point_store\\", L"", pi_pCompress);
+
+    this->GetRootNode()->SavePointsToCloud(pointStore);
+
+    this->SaveMasterHeaderToCloud(pi_pOutputDirPath);
+
+    return SUCCESS;
+    }
+/**----------------------------------------------------------------------------
+This method saves the points for streaming.
+
+@param
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(const WString& pi_pOutputDirPath) const
+    {
+    Json::Value masterHeader;
+    masterHeader["balanced"] = this->IsBalanced();
+    masterHeader["depth"] = (uint32_t)this->GetDepth();
+    masterHeader["rootNodeBlockID"] = this->GetRootNode()->GetBlockID().m_integerID;
+    masterHeader["splitThreshold"] = this->GetSplitTreshold();
+    masterHeader["singleFile"] = false;
+
+    auto filename = (pi_pOutputDirPath + L"MasterHeader.sscm").c_str();
+    BeFile file;
+    uint64_t buffer_size;
+    auto jsonWriter = [&file, &buffer_size](BeFile& file, Json::Value& object) {
+
+        Json::StyledWriter writer;
+        auto buffer = writer.write(object);
+        buffer_size = buffer.size();
+        file.Write(NULL, buffer.c_str(), buffer_size);
+        };
+    if (BeFileStatus::Success == OPEN_FILE(file, filename, BeFileAccess::Write))
         {
-        HFCPtr<StreamingPointStoreType> pPointStore;
-        HFCPtr<StreamingIndiceStoreType> pIndiceStore;
-        HFCPtr<StreamingUVStoreType> pUVStore;
-        HFCPtr<StreamingIndiceStoreType> pUVIndiceStore;
-        HFCPtr<StreamingTextureTileStoreType> pTextureStore;
-        this->GetCloudFormatStores(pi_pOutputDirPath, pi_pCompress, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
-
-        rootNode->SaveCloudReadyNode(pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
-
-        // Save master header for cloud
-        Json::Value masterHeader;
-        masterHeader["balanced"] = this->IsBalanced();
-        masterHeader["depth"] = (uint32_t)this->GetDepth();
-        masterHeader["rootNodeBlockID"] = rootNode->GetBlockID().m_integerID;
-        masterHeader["splitThreshold"] = this->GetSplitTreshold();
-        masterHeader["singleFile"] = false;
-
-        // Write to file
-        auto filename = (pi_pOutputDirPath + L"MasterHeader.sscm").c_str();
-        BeFile file;
-        uint64_t buffer_size;
-        auto jsonWriter = [&file, &buffer_size](BeFile& file, Json::Value& object) {
-
-            Json::StyledWriter writer;
-            auto buffer = writer.write(object);
-            buffer_size = buffer.size();
-            file.Write(NULL, buffer.c_str(), buffer_size);
-            };
-        if (BeFileStatus::Success == OPEN_FILE(file, filename, BeFileAccess::Write))
-            {
-            jsonWriter(file, masterHeader);
-            }
-        else if (BeFileStatus::Success == file.Create(filename))
-            {
-            jsonWriter(file, masterHeader);
-            }
-        else
-            {
-            HASSERT(!"Problem creating master header file");
-            }
-        file.Close();
+        jsonWriter(file, masterHeader);
         }
+    else if (BeFileStatus::Success == file.Create(filename))
+        {
+        jsonWriter(file, masterHeader);
+        }
+    else
+        {
+        HASSERT(!"Problem saving master header file to cloud");
+        return ERROR;
+        }
+    file.Close();
+
     return SUCCESS;
     }
 

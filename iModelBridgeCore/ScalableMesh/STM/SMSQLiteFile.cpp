@@ -393,7 +393,7 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     nodeHeader.m_numberOfSubNodesOnSplit = nodeHeader.m_apSubNodeID.size();
     int64_t texIdx = stmt->GetValueInt64(14);
     nodeHeader.m_isTextured = stmt->GetValueInt(15) ? true : false;
-    if (texIdx != SQLiteNodeHeader::NO_NODEID && nodeHeader.m_isTextured)
+    if (/*texIdx != SQLiteNodeHeader::NO_NODEID &&*/ nodeHeader.m_isTextured)
         {
         nodeHeader.m_textureID.resize(1);
         nodeHeader.m_textureID[0] = texIdx;

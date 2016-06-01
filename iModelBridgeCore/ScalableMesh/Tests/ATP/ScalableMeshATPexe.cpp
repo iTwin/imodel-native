@@ -111,7 +111,7 @@ BentleyStatus MyImageppLibAdmin::_GetLocalCacheDirPath(BeFileName& tempPath, boo
 BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(WStringR gdalDataPath) const
     {
     BeFileName path = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    path.AppendToPath(L"GDalData");
+    path.AppendToPath(L"GDal_Data");
 
     // Convert BeFileName to WString
     BeFileName::BuildName(gdalDataPath, path.GetDevice().c_str(), path.GetDirectoryWithoutDevice().c_str(), path.GetFileNameWithoutExtension().c_str(), path.GetExtension().c_str());

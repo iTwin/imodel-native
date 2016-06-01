@@ -159,9 +159,8 @@ public:
         size_t uncompressedSize = 0;
         m_smSQLiteFile->GetTexture(blockID.m_integerID, ptData, uncompressedSize);
         assert(ptData.size() < maxCountData*sizeof(uint8_t));
-        memcpy(DataTypeArray, &uncompressedSize, sizeof(uncompressedSize));
-        memcpy(DataTypeArray + sizeof(uncompressedSize), ptData.data(), ptData.size());
-        return ptData.size() + sizeof(uncompressedSize);
+        memcpy(DataTypeArray, ptData.data(), ptData.size());
+        return ptData.size();
         }
 
     virtual bool DestroyBlock(HPMBlockID blockID)

@@ -569,11 +569,11 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     assert(m_displayDataPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     }
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
-                                                                                            HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
-                                                                                            HFCPtr<StreamingUVStoreType> pi_pUVStore,
-                                                                                            HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
-                                                                                            HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore)
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMeshToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+                                                                                         HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
+                                                                                         HFCPtr<StreamingUVStoreType> pi_pUVStore,
+                                                                                         HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
+                                                                                         HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore)
     {
     assert(pi_pPointStore != nullptr && pi_pIndiceStore != nullptr);
     assert(!m_nodeHeader.m_isTextured || (m_nodeHeader.m_isTextured && pi_pUVStore != nullptr && pi_pUVIndiceStore != nullptr && pi_pTextureStore != nullptr));
@@ -582,7 +582,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveClo
         Load();
 
     // Save header and points
-    this->SaveCloudReadyData(pi_pPointStore);
+    this->SavePointsToCloud(pi_pPointStore);
 
     // Save indices
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(GetPtsIndicePtr());
@@ -595,18 +595,18 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveClo
         // Save UVs
         RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(GetUVCoordsPtr());
         
-        if (uvCoordsPtr.IsValid()) 
+        if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
             {
-            assert(uvCoordsPtr->size() > 0);
+            //assert(uvCoordsPtr->size() > 0);
             pi_pUVStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), GetBlockID());
             }
 
         // Save UVIndices
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(GetUVsIndicesPtr());
             
-        if (uvIndicePtr.IsValid())
+        if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
             {
-            assert(uvIndicePtr->size() > 0);
+            //assert(uvIndicePtr->size() > 0);
             pi_pUVIndiceStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), GetBlockID());    
             }
         
@@ -616,7 +616,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveClo
         auto countTextureData = textureStore->GetBlockDataCount(GetBlockID());
         if (countTextureData > 0)
             {
-            uint8_t* textureData = new uint8_t[countTextureData + sizeof(size_t)];
+            uint8_t* textureData = new uint8_t[countTextureData];
             size_t newCount = textureStore->LoadCompressedBlock(textureData, countTextureData, GetBlockID());
             pi_pTextureStore->StoreCompressedBlock(textureData, newCount, GetBlockID());
             }           
@@ -624,11 +624,11 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveClo
 
     if (m_pSubNodeNoSplit != nullptr)
         {
-        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(pi_pPointStore,
-                                                                                                pi_pIndiceStore,
-                                                                                                pi_pUVStore,
-                                                                                                pi_pUVIndiceStore,
-                                                                                                pi_pTextureStore);
+        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveMeshToCloud(pi_pPointStore,
+                                                                                             pi_pIndiceStore,
+                                                                                             pi_pUVStore,
+                                                                                             pi_pUVIndiceStore,
+                                                                                             pi_pTextureStore);
         }
     else
         {
@@ -636,11 +636,11 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveClo
             {
             if (m_apSubNodes[indexNode] != nullptr)
                 {
-                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(pi_pPointStore,
-                                                                                                              pi_pIndiceStore,
-                                                                                                              pi_pUVStore,
-                                                                                                              pi_pUVIndiceStore,
-                                                                                                              pi_pTextureStore);
+                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveMeshToCloud(pi_pPointStore,
+                                                                                                           pi_pIndiceStore,
+                                                                                                           pi_pUVStore,
+                                                                                                           pi_pUVIndiceStore,
+                                                                                                           pi_pTextureStore);
                 }
             }
         }
@@ -2827,6 +2827,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         const_cast<DifferenceSet&>(*(diffSetPtr->begin() + (diffSetPtr->size() - 1))).upToDate = true;
         m_nbClips++;
         }
+    assert(m_nbClips > 0 || diffSetPtr->size() == 0);
     //std::cout << "Merged clips for " << GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
 #endif
     }
@@ -3455,7 +3456,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
         m_pRootNode->Unload();
 
     m_pRootNode = NULL;
-
+    m_createdNodeMap.clear();
     }
 
 
@@ -3613,20 +3614,45 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFor
                                                                                           HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const
     {
     // Set paths
-    WString point_store_path = pi_pOutputDirPath + L"point_store\\";
-    WString indice_store_path = pi_pOutputDirPath + L"indice_store\\";
-    WString uv_store_path = pi_pOutputDirPath + L"uv_store\\";
-    WString uvIndice_store_path = pi_pOutputDirPath + L"uvIndice_store\\";
-    WString texture_store_path = pi_pOutputDirPath + L"texture_store\\";
+    WString point_store_path = pi_pOutputDirPath + L"points\\";
+    WString indice_store_path = pi_pOutputDirPath + L"indices\\";
+    WString uv_store_path = pi_pOutputDirPath + L"uvs\\";
+    WString uvIndice_store_path = pi_pOutputDirPath + L"uvindices\\";
+    WString texture_store_path = pi_pOutputDirPath + L"textures\\";
 
-    // Create streaming stores
-    po_pPointStore = new StreamingPointStoreType(point_store_path, L"", pi_pCompress);
-    po_pIndiceStore = new StreamingIndiceStoreType(indice_store_path, L"", pi_pCompress);
-    po_pUVStore = new StreamingUVStoreType(uv_store_path, L"", pi_pCompress);
-    po_pUVIndiceStore = new StreamingIndiceStoreType(uvIndice_store_path, L"", pi_pCompress);
+    // Create streaming stores (only the point store will manage the headers
+    po_pPointStore = new StreamingPointStoreType(point_store_path, pi_pCompress, true);
+    po_pIndiceStore = new StreamingIndiceStoreType(indice_store_path, pi_pCompress);
+    po_pUVStore = new StreamingUVStoreType(uv_store_path, pi_pCompress);
+    po_pUVIndiceStore = new StreamingIndiceStoreType(uvIndice_store_path);
     po_pTextureStore = new StreamingTextureTileStoreType(texture_store_path.c_str());
 
     }
+
+/**----------------------------------------------------------------------------
+Save cloud ready format
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(const WString& pi_pOutputDirPath, const bool& pi_pCompress)
+    {
+    if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
+        {
+        if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
+        }
+
+    HFCPtr<StreamingPointStoreType> pPointStore;
+    HFCPtr<StreamingIndiceStoreType> pIndiceStore;
+    HFCPtr<StreamingUVStoreType> pUVStore;
+    HFCPtr<StreamingIndiceStoreType> pUVIndiceStore;
+    HFCPtr<StreamingTextureTileStoreType> pTextureStore;
+    this->GetCloudFormatStores(pi_pOutputDirPath, pi_pCompress, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
+
+    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->SaveMeshToCloud(pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
+
+    this->SaveMasterHeaderToCloud(pi_pOutputDirPath);
+
+    return SUCCESS;
+    }
+
 /**----------------------------------------------------------------------------
 Stitch
 Stitch the data.

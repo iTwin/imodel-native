@@ -83,6 +83,8 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     GeoCoords::GCS                      m_sourceGCS;
     DRange3d                            m_contentExtent;
 
+    WString                             m_baseExtraFilesPath;
+
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
     const WString                  m_path; 
@@ -213,6 +215,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         static IScalableMeshPtr       Open                           (SMSQLiteFilePtr& smSQLiteFile,
                                                                         const WString&             filePath,
+                                                                        const Utf8String&     baseEditsFilePath,
                                                                         StatusInt&                      status);
 
 
@@ -307,8 +310,10 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override; 
-        virtual int                    _GroupNodeHeaders(const WString& pi_pOutputDirPath) const override;
+        virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override;
 #endif
+
+        virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
 
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
@@ -412,9 +417,11 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
         virtual int                    _ConvertToCloud(const WString& pi_pOutputDirPath) const override { return ERROR; }
 
+        virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
+
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override {return ERROR;}
-        virtual int                    _GroupNodeHeaders(const WString& pi_pOutputDirPath) const override { return ERROR; }
+        virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override { return ERROR; }
 #endif
            
     };

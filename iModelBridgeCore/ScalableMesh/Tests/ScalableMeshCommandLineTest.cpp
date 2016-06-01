@@ -24,7 +24,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 void SortPoints(bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
     {
-    std::map<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-6, 0));
+    std::map<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
     bvector<DPoint3d> sortedVerts = allVerts;
     std::sort(sortedVerts.begin(), sortedVerts.end(), [] (const DPoint3d&a, const DPoint3d&b)
         {
@@ -34,7 +34,7 @@ void SortPoints(bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
         else if (a.y > b.y) return false;
         else return a.z < b.z;
         });
-    for (auto& v : sortedVerts) mapOfPoints.insert(std::make_pair(v, (int)(&v - &sortedVerts.front())));
+    for (auto& v : sortedVerts) mapOfPoints[v] = (int)(&v - &sortedVerts.front());
     for (auto& idx : allIndices) idx = mapOfPoints[allVerts[idx - 1]] + 1;
     allVerts = sortedVerts;
     }

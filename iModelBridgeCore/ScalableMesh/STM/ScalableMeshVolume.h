@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct ScalableMeshVolume : IDTMVolume
     {
     private:
-        IScalableMeshPtr m_scmPtr;
+        IScalableMesh* m_scmPtr;
         bool hasRestrictions;
         uint64_t m_restrictedId;
 

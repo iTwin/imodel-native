@@ -349,6 +349,12 @@ void IScalableMesh::SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>&
     return _SetCurrentlyViewedNodes(nodes);
     }
 
+
+void IScalableMesh::SetEditFilesBasePath(const Utf8String& path)
+    {
+    return _SetEditFilesBasePath(path);
+    }
+
 bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     {
     return _RemoveSkirt(clipID);
@@ -366,9 +372,9 @@ int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     return _LoadAllNodeHeaders(nbLoadedNodes);
     }
 
-int IScalableMesh::GroupNodeHeaders(const WString& pi_pOutputDirPath) const
+int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
     {
-    return _GroupNodeHeaders(pi_pOutputDirPath);
+    return _SaveGroupedNodeHeaders(pi_pOutputDirPath);
     }
 #endif
 
@@ -412,6 +418,7 @@ AccessMode GetAccessModeFor(bool                    openReadOnly,
 +----------------------------------------------------------------------------*/
 
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
+                                       const Utf8String&      baseEditsFilePath,
     bool                    openReadOnly,
     bool                    openShareable,
     StatusInt&              status)
@@ -432,10 +439,16 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
 
         return 0; // Error opening file
     }
-    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, status);
+    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, baseEditsFilePath, status);
 }
 
-
+IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
+                                       bool                    openReadOnly,
+                                       bool                    openShareable,
+                                       StatusInt&              status)
+    {
+    return GetFor(filePath, Utf8String(filePath), openReadOnly, openShareable, status);
+    }
 
 /*----------------------------------------------------------------------------+
 |IScalableMesh::GetFor
@@ -445,8 +458,21 @@ IScalableMeshPtr IScalableMesh::GetFor   (const WChar*          filePath,
                             bool                    openShareable)
     {
     StatusInt status;
-    return GetFor(filePath, openReadOnly, openShareable, status);
+    return GetFor(filePath, Utf8String(filePath), openReadOnly, openShareable, status);
     }
+
+/*----------------------------------------------------------------------------+
+|IScalableMesh::GetFor
++----------------------------------------------------------------------------*/
+IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
+                                       const Utf8String&      baseEditsFilePath,
+                                       bool                    openReadOnly,
+                                       bool                    openShareable)
+    {
+    StatusInt status;
+    return GetFor(filePath, baseEditsFilePath, openReadOnly, openShareable, status);
+    }
+
 
 
 /*----------------------------------------------------------------------------+
@@ -468,6 +494,7 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
     : m_workingLayer(DEFAULT_WORKING_LAYER),
     m_sourceGCS(GetDefaultGCS()),
     m_path(filePath),
+    m_baseExtraFilesPath(filePath),
     m_smSQLitePtr(smSQliteFile)
 {
     memset(&m_contentExtent, 0, sizeof(m_contentExtent));
@@ -656,11 +683,12 @@ template <class POINT> Count ScalableMesh<POINT>::_GetCountInRange (const DRange
 template <class POINT>
 IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
                                     const WString&     filePath,
+                                    const Utf8String&     baseEditsFilePath,
                                     StatusInt&              status)
 {
      ScalableMesh<POINT>* scmPtr = new ScalableMesh<POINT>(smSQLiteFile, filePath);
     IScalableMeshPtr scmP(scmPtr);
-
+    scmP->SetEditFilesBasePath(baseEditsFilePath);
     status = scmPtr->Open();
     return (BSISUCCESS == status ? scmP : 0);
 }
@@ -720,21 +748,21 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     auto position = m_path.find_last_of(L".stm");
                     auto filenameWithoutExtension = m_path.substr(0, position - 3);
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"quebeccity\\");
+                    WString azureDatasetName(L"quebeccityvg\\");
                     // NEEDS_WORK_SM - Check existence of the following directories
-                    WString streamingFilePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream\\" : L"");
-                    WString groupedStreamingFilePath = (s_stream_from_disk ? streamingFilePath + L"groupedNodeHeaders\\" : azureDatasetName + L"headers\\");
-                    WString point_store_path = (s_stream_from_disk ? streamingFilePath + L"point_store\\" : azureDatasetName + L"points\\");
-                    WString indice_store_path = (s_stream_from_disk ? streamingFilePath + L"indice_store\\" : azureDatasetName + L"indices\\");
-                    WString uv_store_path = (s_stream_from_disk ? streamingFilePath + L"uv_store\\" : azureDatasetName + L"uvs\\");
-                    WString uvIndice_store_path = (s_stream_from_disk ? streamingFilePath + L"uvIndice_store\\" : azureDatasetName + L"uvIndices\\");
-                    WString texture_store_path = (s_stream_from_disk ? streamingFilePath + L"texture_store\\" : azureDatasetName + L"textures\\");
+                    WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream\\" : azureDatasetName);
+                    WString groupedStreamingFilePath = streamingSourcePath + L"headers\\";
+                    WString point_store_path         = streamingSourcePath + L"points\\";
+                    WString indice_store_path        = streamingSourcePath + L"indices\\";
+                    WString uv_store_path            = streamingSourcePath + L"uvs\\";
+                    WString uvIndice_store_path      = streamingSourcePath + L"uvindices\\";
+                    WString texture_store_path       = streamingSourcePath + L"textures\\";
 
                     // NEEDS_WORK_SM - Need to stream textures as well
-                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, groupedStreamingFilePath, s_stream_from_grouped_store, AreDataCompressed());
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingUVTileStore = new StreamingUVStoreType(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, AreDataCompressed(), true, groupedStreamingFilePath, s_stream_from_grouped_store);
+                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(indice_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
+                    pStreamingUVTileStore = new StreamingUVStoreType(uv_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
+                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(uvIndice_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
                     pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
                     m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
@@ -783,7 +811,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                        0);  
                     }          
 
-            WString clipFilePath = m_path;
+            WString clipFilePath = m_baseExtraFilesPath;
             clipFilePath.append(L"_clips"); 
            // IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
             HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
@@ -792,7 +820,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             m_scmIndexPtr->SetClipStore(store);
       //      auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
       //      m_scmIndexPtr->SetClipPool(pool);
-            WString clipFileDefPath = m_path;
+            WString clipFileDefPath = m_baseExtraFilesPath;
             clipFileDefPath.append(L"_clipDefinitions");
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
             m_scmIndexPtr->SetClipRegistry(registry);
@@ -1786,6 +1814,11 @@ template <class POINT> void ScalableMesh<POINT>::_SetCurrentlyViewedNodes(const 
     m_viewedNodes = nodes;
     }
 
+template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
+    {
+    m_baseExtraFilesPath = WString(path.c_str(), BentleyCharEncoding::Utf8);
+    }
+
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_RemoveClip
@@ -1902,7 +1935,10 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
-    return m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath, false);
+    s_stream_from_disk = true;
+    s_stream_from_grouped_store = false;
+
+    return m_scmIndexPtr->SaveMeshToCloud(pi_pOutputDirPath, false);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -1918,9 +1954,15 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLo
 /*----------------------------------------------------------------------------+
 |MrDTM::_GroupNodeHeaders
 +----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMesh<POINT>::_GroupNodeHeaders(const WString& pi_pOutputDirPath) const
+template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
     {
-    m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath, true);
+    if (m_scmIndexPtr == nullptr) return ERROR;
+    if (m_smSQLitePtr->IsSingleFile()) return ERROR;
+
+    s_stream_from_disk = true;
+    s_stream_from_grouped_store = false;
+
+    m_scmIndexPtr->SaveGroupedNodeHeaders(pi_pOutputDirPath, true);
     return SUCCESS;
     }
 #endif
