@@ -8,7 +8,7 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include <Bentley/RefCounted.h>
-#include "Nullable.h"
+#include <Bentley/Nullable.h>
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //#define KIND_OF_QUANTITY_SUPPORT
