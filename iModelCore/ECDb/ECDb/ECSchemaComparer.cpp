@@ -2341,7 +2341,7 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(ECPropertyVa
         if (v->HasChildren())
             continue;
 
-        std::vector<Utf8String> path = ECSchemaComparer::Split(v->GetAccessString());
+        std::vector<Utf8String> path = ECSchemaComparer::Split(v->GetAccessString(), true);
         for (std::unique_ptr<Rule> const& rule : rules)
             {
             if (rule->Match(path))
