@@ -233,7 +233,7 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
 
     JsonUtil::DeepCopy(propertiesRapidJson, instanceRapidJson);
 
-    if (SUCCESS != m_instanceCacheHelper.UpdateExistingInstanceData(info, propertiesRapidJson))
+    if (SUCCESS != m_instanceCacheHelper.UpdateExistingInstanceData(info, instanceRapidJson))
         {
         return ERROR;
         }

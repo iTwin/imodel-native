@@ -56,6 +56,14 @@ DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(RepositoryInfo
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
+DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken) const
+    {
+    return ConnectToRepository (RepositoryInfo(m_serverUrl, repositoryId), cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
 DgnDbClient::DgnDbClient(ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler)
     : m_clientInfo(clientInfo), m_authenticationHandler(authenticationHandler)
     {
