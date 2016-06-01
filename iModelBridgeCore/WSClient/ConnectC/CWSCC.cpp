@@ -153,6 +153,20 @@ IHTTPHANDLERPTR customHandler
     return nullptr;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_FreeApi(CWSCCHANDLE apiHandle)
+    {
+    if (nullptr == apiHandle)
+        return INVALID_PARAMETER;
+
+    LPCWSCC api = (LPCWSCC) apiHandle;
+    delete api;
+    return SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

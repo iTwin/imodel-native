@@ -1,32 +1,23 @@
 from xml.dom import minidom
 from openpyxl import load_workbook
 
-from HeaderWriters.CBufferHeaderWriter import CBufferHeaderWriter
-from HeaderWriters.CPublicApiHeaderWriter import CallStatus
-from HeaderWriters.CPublicApiHeaderWriter import CPublicApiHeaderWriter
-from HeaderWriters.CPublicBufferHeaderWriter import CPublicBufferHeaderWriter
-from SourceWriters.CApiSourceWriter import CApiSourceWriter
-from SourceWriters.CBufferSourceWriter import CBufferSourceWriter
-from Writer import Api
-from ExcludedECClass import ExcludedECClass
+from SchemaWriter.Helpers.Api import Api
+from SchemaWriter.Helpers.ECSchema import ECSchema
+from SchemaWriter.HeaderWriters.SchemaApiPublicHeaderWriter import CallStatus
+from SchemaWriter.HeaderWriters.SchemaApiPublicHeaderWriter import SchemaApiPublicHeaderWriter
+from SchemaWriter.SourceWriters.SchemaApiSourceWriter import SchemaApiSourceWriter
+from SchemaWriter.HeaderWriters.SchemaBufferHeaderWriter import SchemaBufferHeaderWriter
+from SchemaWriter.HeaderWriters.SchemaBufferPublicHeaderWriter import SchemaBufferPublicHeaderWriter
+from SchemaWriter.SourceWriters.SchemaBufferSourceWriter import SchemaBufferSourceWriter
+from BufferHeaderWriter import BufferHeaderWriter
+from BufferPublicHeaderWriter import BufferPublicHeaderWriter
+from BufferSourceWriter import BufferSourceWriter
 
 ###########################################################################################################
 # ------------------------------------------------------------------------------------------------------- #
-# -----------------------------     Configuration Variables    ------------------------------------------ #
+# -------------------------------------  pyCApiGen Configuration  --------------------------------------- #
 # ------------------------------------------------------------------------------------------------------- #
 ###########################################################################################################
-xmldoc = minidom.parse('N~3AGlobalSchema.01.00.xml')
-ecclasses = xmldoc.getElementsByTagName('ECClass')
-api = Api('CWSCC', 'ConnectWebServicesClientC', 'ConnectWsgGlobal', 'BentleyCONNECT.Global--CONNECT.GLOBAL')
-
-#############################################
-# ------------ Excluded Classes ----------- #
-#############################################
-workbook = load_workbook('autoGenFilter.xlsx', use_iterators=True)
-worksheet = workbook.get_sheet_by_name('autoGenFilter')
-excluded_classes = {}
-for row in worksheet.iter_rows(range_string=worksheet.calculate_dimension(), row_offset=1):
-    excluded_classes[row[0].value] = (ExcludedECClass(row))
 
 #############################################
 # ------------- Status Codes -------------- #
@@ -56,49 +47,104 @@ status_codes = {
     'NO_CLIENT_LICENSE': CallStatus(-214, 'A client license was not found.'),
     'TO_MANY_BAD_LOGIN_ATTEMPTS': CallStatus(-215, 'To many unsuccessful login attempts have happened.'),
 }
+
+############################################
+# -------- Schemafile Parsing ------------ #
+############################################
+api = Api('CWSCC', 'ConnectWebServicesClientC')
+workbook = load_workbook('autoGenClasses.xlsx', use_iterators=True)
+worksheet = workbook.get_sheet_by_name('autoGenClasses')
+unique_ecschemas = {}
+for row in worksheet.iter_rows(range_string=worksheet.calculate_dimension(), row_offset=2):
+    if row[0].value is None or row[1].value is None or row[2].value is None:
+        break
+    if row[0].value + row[1].value + row[2].value + row[3].value not in unique_ecschemas:
+        unique_ecschemas[row[0].value + row[1].value + row[2].value + row[3].value] = \
+            ECSchema(row[0].value, row[1].value, row[2].value, row[3].value, api, status_codes)
+    unique_ecschemas[row[0].value + row[1].value + row[2].value + row[3].value].add_ecclass(row)
+
+for ecschema in unique_ecschemas.values():
+    xmldoc = minidom.parse(ecschema.get_filename())
+    ecschemasXml = xmldoc.getElementsByTagName('ECSchema')
+    for ecschemaXml in ecschemasXml:
+        if ecschemaXml.attributes['schemaName'].value == ecschema.get_name():
+            if ecschemaXml.attributes['xmlns'].value != 'http://www.bentley.com/schemas/Bentley.ECXML.2.0':
+                raise IOError("{0} file's xmlns is not support. This tool only supports the "
+                              "'http://www.bentley.com/schemas/Bentley.ECXML.2.0' format"
+                              .format(ecschema.get_name()))
+            ecschema.init_xml(ecschemaXml)
+            break
+
+#############################################
+# ------------ Autogeneration ------------- #
+#############################################
 srcDir = "../../"
-publicApiDir = srcDir + "../PublicAPI/WebServices/ConnectC/"
+publicApiDir = srcDir + "../PublicApi/WebServices/ConnectC/"
+for ecschema in unique_ecschemas.values():
+    ####################################################################
+    # -----------------------------------------------------------------#
+    # -----------------------SCHEMA-LEVEL------------------------------#
+    # ----------------------------API----------------------------------#
+    ####################################################################
+    schemaApiPublicHeaderWriter = SchemaApiPublicHeaderWriter(ecschema,
+                                                              publicApiDir + '{0}/{1}GenPublic.h'
+                                                              .format(ecschema.get_url_descriptor(), ecschema.get_name()),
+                                                              api,
+                                                              status_codes)
+    schemaApiPublicHeaderWriter.write_header()
+
+    schemaApiSourceWriter = SchemaApiSourceWriter(ecschema,
+                                                  srcDir + '{0}/{1}Gen.cpp'
+                                                  .format(ecschema.get_url_descriptor(), ecschema.get_name()),
+                                                  api,
+                                                  status_codes)
+    schemaApiSourceWriter.write_source()
+
+    ####################################################################
+    # -----------------------------------------------------------------#
+    # -----------------------SCHEMA-LEVEL------------------------------#
+    # ---------------------------BUFFER--------------------------------#
+    ####################################################################
+    schemaBufferHeaderWriter = SchemaBufferHeaderWriter(ecschema,
+                                                        srcDir + '{0}/{1}BufferGen.h'
+                                                        .format(ecschema.get_url_descriptor(), ecschema.get_name()),
+                                                        api,
+                                                        status_codes)
+    schemaBufferHeaderWriter.write_header()
+
+    schemaBufferPublicHeaderWriter = SchemaBufferPublicHeaderWriter(ecschema,
+                                                                    publicApiDir + '{0}/{1}BufferGenPublic.h'
+                                                                    .format(ecschema.get_url_descriptor(), ecschema.get_name()),
+                                                                    api,
+                                                                    status_codes)
+    schemaBufferPublicHeaderWriter.write_header()
+
+    schemaBufferSourceWriter = SchemaBufferSourceWriter(ecschema,
+                                                        srcDir + '{0}/{1}BufferGen.cpp'
+                                                        .format(ecschema.get_url_descriptor(), ecschema.get_name()),
+                                                        api,
+                                                        status_codes)
+    schemaBufferSourceWriter.write_source()
 
 ####################################################################
 # -----------------------------------------------------------------#
-# ---------------------------C-API---------------------------------#
+# --------------------------API-LEVEL------------------------------#
 # -----------------------------------------------------------------#
 ####################################################################
-publicApiHeaderWriter = CPublicApiHeaderWriter('GlobalSchema',
-                                               ecclasses,
-                                               publicApiDir + '{0}GenPublic.h'.format(api.get_api_acronym()),
-                                               api,
-                                               status_codes,
-                                               excluded_classes)
-publicApiHeaderWriter.write_header()
-apiSourceWriter = CApiSourceWriter('GlobalSchema',
-                                   ecclasses,
-                                   srcDir + '{0}Gen.cpp'.format(api.get_api_acronym()),
-                                   api,
-                                   status_codes,
-                                   excluded_classes)
-apiSourceWriter.write_source()
+bufferHeaderWriter = BufferHeaderWriter(unique_ecschemas.values(),
+                                        srcDir + '{0}BufferGen.h'.format(api.get_upper_api_acronym()),
+                                        api,
+                                        status_codes)
+bufferHeaderWriter.write_header()
 
-####################################################################
-# -----------------------------------------------------------------#
-# --------------------------C-Buffer-------------------------------#
-# -----------------------------------------------------------------#
-####################################################################
-publicBufferHeaderWriter = CPublicBufferHeaderWriter(ecclasses,
-                                                     publicApiDir + '{0}GenBufferPublic.h'.format(api.get_api_acronym()),
-                                                     api,
-                                                     status_codes,
-                                                     excluded_classes)
-publicBufferHeaderWriter.write_header()
-headerWriter = CBufferHeaderWriter(ecclasses,
-                                   srcDir + '{0}GenBuffer.h'.format(api.get_api_acronym()),
-                                   api,
-                                   status_codes,
-                                   excluded_classes)
-headerWriter.write_header()
-sourceWriter = CBufferSourceWriter(ecclasses,
-                                   srcDir + '{0}GenBuffer.cpp'.format(api.get_api_acronym()),
-                                   api,
-                                   status_codes,
-                                   excluded_classes)
-sourceWriter.write_source()
+bufferPublicHeaderWriter = BufferPublicHeaderWriter(unique_ecschemas.values(),
+                                                    publicApiDir + '{0}BufferGenPublic.h'.format(api.get_upper_api_acronym()),
+                                                    api,
+                                                    status_codes)
+bufferPublicHeaderWriter.write_header()
+
+bufferSourceWriter = BufferSourceWriter(unique_ecschemas.values(),
+                                        srcDir + '{0}BufferGen.cpp'.format(api.get_upper_api_acronym()),
+                                        api,
+                                        status_codes)
+bufferSourceWriter.write_source()

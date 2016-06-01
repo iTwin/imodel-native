@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://D:/dev/dgndb0601dev/src/WSClient/ConnectC/Tools/pyCApiGen/.idea/pyCApiGen.iml" filepath="D:/dev/dgndb0601dev/src/WSClient/ConnectC/Tools/pyCApiGen/.idea/pyCApiGen.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/pyCApiGen.iml" filepath="$PROJECT_DIR$/.idea/pyCApiGen.iml" />
     </modules>
   </component>
 </project>

@@ -1,7 +1,7 @@
-from Writer import Writer
+from SchemaWriter.SchemaWriter import SchemaWriter
 
 
-class HeaderWriter(Writer):
+class SchemaHeaderWriter(SchemaWriter):
     _COMMENT_GroupStart = "/************************************************************************************//**\n" \
                            "* \defgroup {0} {1}\n"                                                                     \
                            "* \{{\n"                                                                                    \
@@ -23,5 +23,5 @@ class HeaderWriter(Writer):
 
     _COMMENT_GroupEnd = "/** \} */\n"
 
-    def __init__(self, ecclasses, filename, api, status_codes, excluded_classes):
-        super(HeaderWriter, self).__init__(ecclasses, filename, api, status_codes, excluded_classes)
+    def __init__(self, ecschema, filename, api, status_codes):
+        super(SchemaHeaderWriter, self).__init__(ecschema, filename, api, status_codes)

@@ -8,10 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <WebServices/ConnectC/CWSCCGenPublic.h>
-#include <WebServices/ConnectC/CWSCCGenBufferPublic.h>
-
-typedef void* IHTTPHANDLERPTR;
+#include <WebServices/ConnectC/CWSCC.h>
 
 /************************************************************************************//**
 * \addtogroup ConnectWebServicesClientCAPIFunctions ConnectWebServicesClientC API Function Declarations
@@ -79,6 +76,13 @@ WCharCP proxyUsername,
 WCharCP proxyPassword,
 IHTTPHANDLERPTR customHandler
 );
+
+/************************************************************************************//**
+* \brief API handle free function
+* \param[in] apiHandle API object
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_FreeApi(CWSCCHANDLE apiHandle);
 
 /************************************************************************************//**
 * \brief Create a new projectfavorite
