@@ -140,7 +140,10 @@
     <ClCompile Include="Client\WSChangeset.cpp" />
     <ClCompile Include="Configuration\BuddiClient.cpp" />
     <ClCompile Include="Configuration\BuddiError.cpp" />
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp" />
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaGen.cpp" />
     <ClCompile Include="ConnectC\CWSCC.cpp" />
+    <ClCompile Include="ConnectC\CWSCCBufferGen.cpp" />
     <ClCompile Include="ConnectC\CWSCCGen.cpp" />
     <ClCompile Include="ConnectC\CWSCCGenBuffer.cpp" />
     <ClCompile Include="ConnectC\CWSCCInternal.cpp" />
@@ -242,6 +245,8 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h" />
     <ClInclude Include="Cache\Schemas.h" />
+    <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
+    <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\Util\StringHelper.h" />
@@ -257,6 +262,10 @@
     <ClInclude Include="ConnectC\CWSCCPrivate.h" />
     <ClInclude Include="ConnectC\WSLocalState.h" />
     <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenBufferPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h" />
