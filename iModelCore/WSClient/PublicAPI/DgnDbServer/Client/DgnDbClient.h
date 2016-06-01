@@ -46,12 +46,11 @@ private:
 
     DgnDbClient (ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
-    DgnDbRepositoryConnectionTaskPtr    ConnectToRepository     (RepositoryInfoCR repository, ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerRepositoryTaskPtr        InitializeRepository    (IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
                                                                  ObjectId repositoryObjectId, HttpRequest::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
     AsyncTaskPtr<WSRepositoriesResult>  GetRepositoriesByPlugin (Utf8StringCR pluginId, ICancellationTokenPtr cancellationToken) const;
-    DgnDbServerStatusTaskPtr              DownloadBriefcase       (DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
+    DgnDbServerStatusTaskPtr            DownloadBriefcase       (DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
                                                                  Utf8StringCR url, bool doSync = true, HttpRequest::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -73,6 +72,14 @@ public:
 
     //! Credentials used to authenticate to the on-premise server.
     DGNDBSERVERCLIENT_EXPORT void                           SetCredentials          (CredentialsCR credentials);
+
+    //! Creates a connection to a repository. Use this method if you need to access repository information without acquirying a briefcase.
+    //! If you already have a briefcase, please use DgnDbBriefcase.GetRepositoryConnection()
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionTaskPtr  ConnectToRepository(RepositoryInfoCR repository, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Creates a connection to a repository. Use this method if you need to access repository information without acquirying a briefcase.
+    //! If you already have a briefcase, please use DgnDbBriefcase.GetRepositoryConnection()
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionTaskPtr  ConnectToRepository(Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get list of available repostiories for this client.
     //! @param[in] cancellationToken

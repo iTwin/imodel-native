@@ -1,15 +1,16 @@
-from Writer import Writer
 import datetime
 
+from SchemaWriter.SchemaWriter import SchemaWriter
 
-class SourceWriter(Writer):
+
+class SchemaSourceWriter(SchemaWriter):
     _COMMENT_BsiMethod = "/*---------------------------------------------------------------------------------**//**\n" \
                          "* @bsimethod                                                                    {0}\n"       \
                          "+---------------+---------------+---------------+---------------+---------------+------*/\n" \
         .format(datetime.date.today().strftime('%m/%Y'))
 
-    def __init__(self, ecclasses, filename, api, status_codes, excluded_classes):
-        super(SourceWriter, self).__init__(ecclasses, filename, api, status_codes, excluded_classes)
+    def __init__(self, ecschema, filename, api, status_codes):
+        super(SchemaSourceWriter, self).__init__(ecschema, filename, api, status_codes)
 
     def _write_string_to_wstring_function(self):
         self._file.write(self._COMMENT_BsiMethod)
