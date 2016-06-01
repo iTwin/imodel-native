@@ -977,7 +977,14 @@ TEST_F(UnitsTests, TestEveryUnitIsAddedToItsPhenomenon)
         ASSERT_NE(nullptr, unitPhenomenon) << "Unit " << unit->GetName() << " does not have phenomenon";
         auto it = find_if(unitPhenomenon->GetUnits().begin(), unitPhenomenon->GetUnits().end(),
                        [&unit] (UnitCP unitInPhenomenon) { return 0 == strcmp(unitInPhenomenon->GetName(), unit->GetName()); });
-        ASSERT_NE(unitPhenomenon->GetUnits().end(), it) << "Unit " << unit->GetName() << " is not registered with it's phenomenon";
+        
+        T_Utf8StringVector unitNames;
+        if (unitPhenomenon->GetUnits().end() == it)
+            {
+            for (auto const& phenUnit : unitPhenomenon->GetUnits())
+                unitNames.push_back(phenUnit->GetName());
+            }
+        ASSERT_NE(unitPhenomenon->GetUnits().end(), it) << "Unit " << unit->GetName() << " is not registered with it's phenomenon: " << unitPhenomenon->GetName() << "Registered units are: " << BeStringUtilities::Join(unitNames, ", ");
         }
     }
 

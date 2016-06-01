@@ -34,7 +34,7 @@
         </Bindings>
     </Part>
 
-  <Part Name="UnitsConversionData" BentleyBuildMakeFile="Tests/ConversionData.prewire.mke">
+  <Part Name="UnitsConversionData" BentleyBuildMakeFile="tests/ConversionData.prewire.mke">
     <Bindings>
       <Files SubPartDirectory="ConversionData" ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ConversionData"> Delivery/ConversionData/*csv </Files>
     </Bindings>
@@ -86,7 +86,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
     
-	<Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+	<Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="TestDependencies"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Units/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
@@ -97,7 +97,7 @@
 		<SubPart PartName="UnitTests-NonPublished" />
     </Part>
 
-    <Part Name="TestDependencies" BentleyBuildMakeFile="Tests/Prewire.mke">
+    <Part Name="TestDependencies" BentleyBuildMakeFile="tests/Prewire.mke">
         <SubPart PartName="UnitsNative" />
         <SubPart PartName="UnitsConversionData" />
         <Bindings>
