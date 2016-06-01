@@ -489,21 +489,22 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
                                             &LocationIsUsingLatLong,
                                             nullptr,
                                             nullptr,
-                                            0);
+                                            0,
+                                            nullptr);
 
     ASSERT_TRUE (status == SUCCESS);
 
     auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
-    ASSERT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
 
     WString wInstanceId;
     wInstanceId.AssignUtf8 (instanceId);
     CWSCCDATABUFHANDLE project;
     status = ConnectWebServicesClientC_ReadProject (api, wInstanceId.c_str(), &project);
-    ASSERT_TRUE (status == SUCCESS);
+    EXPECT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, project);
-    ASSERT_TRUE (status == SUCCESS);
+    EXPECT_TRUE (status == SUCCESS);
 
     BeGuid newGuid(true);
     WPrintfString NewName(L"CWSCCTest%s", newGuid.ToString().c_str());
@@ -522,8 +523,9 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
                                                       nullptr,
                                                       nullptr,
                                                       nullptr,
+                                                      nullptr,
                                                       nullptr);
-    ASSERT_TRUE (status == SUCCESS);
+    EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DeleteProject (api, wInstanceId.c_str ());
     ASSERT_TRUE (status == SUCCESS);
@@ -559,7 +561,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessfu
     ****************************************************************************************/
     //WPrintfString Name (L"CWSCCTest%s", to_wstring (random_generator ()()).c_str ());
     //WString OrganizationGuid (to_wstring (random_generator()()).c_str ());
-    //NOTE: Creation works fine, but deletion doesn't, so I don't want to endless create organizations
+    //NOTE: Creation works fine, but deletion doesn't, so I don't want to create endless organizations
     //CallStatus status = ConnectWebServicesClientC_CreateOrganization(api, 
     //                                                                 OrganizationGuid.c_str (),
     //                                                                 Name.c_str ());
@@ -644,7 +646,8 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteFunctions_CRUDsSucces
                                             &LocationIsUsingLatLong,
                                             nullptr,
                                             nullptr,
-                                            0);
+                                            0,
+                                            nullptr);
 
     ASSERT_TRUE (status == SUCCESS);
 
@@ -656,16 +659,17 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteFunctions_CRUDsSucces
     
     status = ConnectWebServicesClientC_CreateProjectFavorite(api, 
                                             wInstanceId.c_str());
+    ASSERT_TRUE(status == SUCCESS);
 
     CWSCCDATABUFHANDLE projectFavorite;
     status = ConnectWebServicesClientC_ReadProjectFavorite (api, wInstanceId.c_str(), &projectFavorite);
-    ASSERT_TRUE (status == SUCCESS);
+    EXPECT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, projectFavorite);
-    ASSERT_TRUE (status == SUCCESS);
+    EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DeleteProjectFavorite (api, wInstanceId.c_str ());
-    ASSERT_TRUE (status == SUCCESS);
+    EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DeleteProject (api, wInstanceId.c_str ());
     ASSERT_TRUE (status == SUCCESS);
@@ -737,12 +741,12 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
                                             &LocationIsUsingLatLong,
                                             nullptr,
                                             nullptr,
-                                            0);
-
+                                            0,
+                                            nullptr);
     ASSERT_TRUE (status == SUCCESS);
 
     auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
-    ASSERT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
 
     WString wProjectInstanceId;
     wProjectInstanceId.AssignUtf8 (instanceId);
@@ -759,26 +763,27 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
                                                         wProjectInstanceId.c_str (),
                                                         Name.c_str (),
                                                         nullptr);
+    ASSERT_TRUE(status == SUCCESS);
 
     instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
-    ASSERT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
 
     WString wProjectMRUInstanceId;
     wProjectMRUInstanceId.AssignUtf8 (instanceId);
 
     CWSCCDATABUFHANDLE projectMRU;
     status = ConnectWebServicesClientC_ReadProjectMRU (api, wProjectMRUInstanceId.c_str (), &projectMRU);
-    ASSERT_TRUE (status == SUCCESS);
+    EXPECT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, projectMRU);
-    ASSERT_TRUE (status == SUCCESS);
+    EXPECT_TRUE(status == SUCCESS);
 
     CWSCCDATABUFHANDLE projectMRUDetail;
     status = ConnectWebServicesClientC_ReadProjectMRUDetail (api, wProjectInstanceId.c_str (), &projectMRUDetail);
-    ASSERT_TRUE (status == SUCCESS);
+    EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, projectMRUDetail);
-    ASSERT_TRUE (status == SUCCESS);
+    EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DeleteProject (api, wProjectInstanceId.c_str ());
     ASSERT_TRUE (status == SUCCESS);

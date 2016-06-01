@@ -91,6 +91,7 @@ CWSCCDATABUFHANDLE* projectBuffer
 * \param[in] RegisteredDate
 * \param[in] TimeZoneLocation
 * \param[in] Status
+* \param[in] Data_Location_Guid
 * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
 CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateProject
@@ -109,7 +110,8 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int32_t* Status
+int32_t* Status,
+WCharCP Data_Location_Guid
 );
 
 /************************************************************************************//**
@@ -144,6 +146,7 @@ CWSCCDATABUFHANDLE* projectBuffer
 * \param[in] RegisteredDate
 * \param[in] TimeZoneLocation
 * \param[in] Status
+* \param[in] Data_Location_Guid
 * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
 CWSCC_EXPORT CallStatus ConnectWebServicesClientC_UpdateProject
@@ -163,7 +166,8 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int32_t* Status
+int32_t* Status,
+WCharCP Data_Location_Guid
 );
 
 /************************************************************************************//**
@@ -176,6 +180,126 @@ CWSCC_EXPORT CallStatus ConnectWebServicesClientC_DeleteProject
 (
 CWSCCHANDLE apiHandle,
 WCharCP projectId
+);
+
+/************************************************************************************//**
+* \brief Query WSG to get list of project_v2s
+* \param[in] apiHandle API object
+* \param[out] project_v2Buffer Buffer of Project_V2 data
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_ReadProject_V2List
+(
+CWSCCHANDLE apiHandle,
+CWSCCDATABUFHANDLE* project_v2Buffer
+);
+
+/************************************************************************************//**
+* \brief Create a new project_v2
+* \param[in] apiHandle API object
+* \param[in] Name
+* \param[in] Number
+* \param[in] OrganizationId
+* \param[in] Industry
+* \param[in] AssetType
+* \param[in] LastModified
+* \param[in] Location
+* \param[in] Latitude
+* \param[in] Longitude
+* \param[in] LocationIsUsingLatLong
+* \param[in] RegisteredDate
+* \param[in] TimeZoneLocation
+* \param[in] Status
+* \param[in] Data_Location_Guid
+* \param[in] Country_Code
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateProject_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP Name,
+WCharCP Number,
+WCharCP OrganizationId,
+WCharCP Industry,
+WCharCP AssetType,
+WCharCP LastModified,
+WCharCP Location,
+double* Latitude,
+double* Longitude,
+bool* LocationIsUsingLatLong,
+WCharCP RegisteredDate,
+WCharCP TimeZoneLocation,
+int32_t* Status,
+WCharCP Data_Location_Guid,
+WCharCP Country_Code
+);
+
+/************************************************************************************//**
+* \brief Get project_v2 information buffer
+* \param[in] apiHandle API object
+* \param[in] project_v2Id Project_V2 ID to select
+* \param[out] project_v2Buffer Project_V2 data buffer
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_ReadProject_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP project_v2Id,
+CWSCCDATABUFHANDLE* project_v2Buffer
+);
+
+/************************************************************************************//**
+* \brief Update an existing project_v2
+* \param[in] apiHandle API object
+* \param[in] project_v2Id Project_V2 ID to update
+* \param[in] Name
+* \param[in] Number
+* \param[in] OrganizationId
+* \param[in] Industry
+* \param[in] AssetType
+* \param[in] LastModified
+* \param[in] Location
+* \param[in] Latitude
+* \param[in] Longitude
+* \param[in] LocationIsUsingLatLong
+* \param[in] RegisteredDate
+* \param[in] TimeZoneLocation
+* \param[in] Status
+* \param[in] Data_Location_Guid
+* \param[in] Country_Code
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_UpdateProject_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP project_v2Id,
+WCharCP Name,
+WCharCP Number,
+WCharCP OrganizationId,
+WCharCP Industry,
+WCharCP AssetType,
+WCharCP LastModified,
+WCharCP Location,
+double* Latitude,
+double* Longitude,
+bool* LocationIsUsingLatLong,
+WCharCP RegisteredDate,
+WCharCP TimeZoneLocation,
+int32_t* Status,
+WCharCP Data_Location_Guid,
+WCharCP Country_Code
+);
+
+/************************************************************************************//**
+* \brief Delete a project_v2
+* \param[in] apiHandle API object
+* \param[in] project_v2Id Project_V2 ID to remove
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_DeleteProject_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP project_v2Id
 );
 
 /************************************************************************************//**
@@ -214,6 +338,44 @@ CWSCC_EXPORT CallStatus ConnectWebServicesClientC_DeleteProjectFavorite
 (
 CWSCCHANDLE apiHandle,
 WCharCP projectfavoriteId
+);
+
+/************************************************************************************//**
+* \brief Query WSG to get list of projectfavorite_v2s
+* \param[in] apiHandle API object
+* \param[out] projectfavorite_v2Buffer Buffer of ProjectFavorite_V2 data
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_ReadProjectFavorite_V2List
+(
+CWSCCHANDLE apiHandle,
+CWSCCDATABUFHANDLE* projectfavorite_v2Buffer
+);
+
+/************************************************************************************//**
+* \brief Get projectfavorite_v2 information buffer
+* \param[in] apiHandle API object
+* \param[in] projectfavorite_v2Id ProjectFavorite_V2 ID to select
+* \param[out] projectfavorite_v2Buffer ProjectFavorite_V2 data buffer
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_ReadProjectFavorite_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP projectfavorite_v2Id,
+CWSCCDATABUFHANDLE* projectfavorite_v2Buffer
+);
+
+/************************************************************************************//**
+* \brief Delete a projectfavorite_v2
+* \param[in] apiHandle API object
+* \param[in] projectfavorite_v2Id ProjectFavorite_V2 ID to remove
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_DeleteProjectFavorite_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP projectfavorite_v2Id
 );
 
 /************************************************************************************//**
@@ -282,6 +444,32 @@ CWSCC_EXPORT CallStatus ConnectWebServicesClientC_ReadProjectMRUDetail
 CWSCCHANDLE apiHandle,
 WCharCP projectmrudetailId,
 CWSCCDATABUFHANDLE* projectmrudetailBuffer
+);
+
+/************************************************************************************//**
+* \brief Query WSG to get list of projectmrudetail_v2s
+* \param[in] apiHandle API object
+* \param[out] projectmrudetail_v2Buffer Buffer of ProjectMRUDetail_V2 data
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_ReadProjectMRUDetail_V2List
+(
+CWSCCHANDLE apiHandle,
+CWSCCDATABUFHANDLE* projectmrudetail_v2Buffer
+);
+
+/************************************************************************************//**
+* \brief Get projectmrudetail_v2 information buffer
+* \param[in] apiHandle API object
+* \param[in] projectmrudetail_v2Id ProjectMRUDetail_V2 ID to select
+* \param[out] projectmrudetail_v2Buffer ProjectMRUDetail_V2 data buffer
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_ReadProjectMRUDetail_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP projectmrudetail_v2Id,
+CWSCCDATABUFHANDLE* projectmrudetail_v2Buffer
 );
 
 /** \} */

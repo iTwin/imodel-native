@@ -53,7 +53,9 @@ class ECSchema(object):
         for ecclass in self.__ecclasses:
             if ecclass.get_name() == name:
                 return ecclass
-        raise NameError("The name passed into __get_ecclass_from_name does not exists in the ecclass array")
+        raise NameError("The name passed into __get_ecclass_from_name does not exist in the ecclasses array. Please make sure that all"
+                        " ecclasses which are to be generated from the schemaFile ({0}), exist as a row in the autoGenClasses.xlsx file."
+                        .format(self.get_name()))
 
     def __get_buffer_accessor_function_def(self, property_type):
         if property_type is 'StringLength':
@@ -69,6 +71,9 @@ class ECSchema(object):
             accessor_str += "WCharP str\n"
         elif property_type == "StringLength":
             accessor_str += "size_t* outStringSize\n"
+        elif property_type == "dateTime":
+            accessor_str += "uint32_t strLength,\n"
+            accessor_str += "WCharP dateTime\n"
         elif property_type == "guid":
             accessor_str += "uint32_t strLength,\n"
             accessor_str += "WCharP guid\n"
@@ -106,6 +111,8 @@ class ECSchema(object):
                 accessor_str += "(api, buf, bufferProperty, index, strLength, str);\n"
             elif property_type == "StringLength":
                 accessor_str += "(api, buf, bufferProperty, index, outStringSize);\n"
+            elif property_type == "dateTime":
+                accessor_str += "(api, buf, bufferProperty, index, strLength, dateTime);\n"
             elif property_type == "guid":
                 accessor_str += "(api, buf, bufferProperty, index, strLength, guid);\n"
             elif property_type == "boolean":

@@ -55,10 +55,22 @@ HCWSCCBUFFER buf
                     delete projectBuf;
                     }
                     break;
+                case BUFF_TYPE_PROJECT_V2:
+                    {
+                    LPCWSCCPROJECT_V2BUFFER project_v2Buf = (LPCWSCCPROJECT_V2BUFFER) buf->lItems[index];
+                    delete project_v2Buf;
+                    }
+                    break;
                 case BUFF_TYPE_PROJECTFAVORITE:
                     {
                     LPCWSCCPROJECTFAVORITEBUFFER projectfavoriteBuf = (LPCWSCCPROJECTFAVORITEBUFFER) buf->lItems[index];
                     delete projectfavoriteBuf;
+                    }
+                    break;
+                case BUFF_TYPE_PROJECTFAVORITE_V2:
+                    {
+                    LPCWSCCPROJECTFAVORITE_V2BUFFER projectfavorite_v2Buf = (LPCWSCCPROJECTFAVORITE_V2BUFFER) buf->lItems[index];
+                    delete projectfavorite_v2Buf;
                     }
                     break;
                 case BUFF_TYPE_PROJECTMRU:
@@ -71,6 +83,12 @@ HCWSCCBUFFER buf
                     {
                     LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf = (LPCWSCCPROJECTMRUDETAILBUFFER) buf->lItems[index];
                     delete projectmrudetailBuf;
+                    }
+                    break;
+                case BUFF_TYPE_PROJECTMRUDETAIL_V2:
+                    {
+                    LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf = (LPCWSCCPROJECTMRUDETAIL_V2BUFFER) buf->lItems[index];
+                    delete projectmrudetail_v2Buf;
                     }
                     break;
                 default:
@@ -107,9 +125,17 @@ WCharP str
             {
             return Project_GetStringProperty(api, buf, bufferProperty, index, strLength, str);
             }
+        case BUFF_TYPE_PROJECT_V2:
+            {
+            return Project_V2_GetStringProperty(api, buf, bufferProperty, index, strLength, str);
+            }
         case BUFF_TYPE_PROJECTFAVORITE:
             {
             return ProjectFavorite_GetStringProperty(api, buf, bufferProperty, index, strLength, str);
+            }
+        case BUFF_TYPE_PROJECTFAVORITE_V2:
+            {
+            return ProjectFavorite_V2_GetStringProperty(api, buf, bufferProperty, index, strLength, str);
             }
         case BUFF_TYPE_PROJECTMRU:
             {
@@ -118,6 +144,10 @@ WCharP str
         case BUFF_TYPE_PROJECTMRUDETAIL:
             {
             return ProjectMRUDetail_GetStringProperty(api, buf, bufferProperty, index, strLength, str);
+            }
+        case BUFF_TYPE_PROJECTMRUDETAIL_V2:
+            {
+            return ProjectMRUDetail_V2_GetStringProperty(api, buf, bufferProperty, index, strLength, str);
             }
         default:
             api->SetStatusMessage("Invalid parameter passed to function");
@@ -148,9 +178,17 @@ size_t* outStringSize
             {
             return Project_GetStringLength(api, buf, bufferProperty, index, outStringSize);
             }
+        case BUFF_TYPE_PROJECT_V2:
+            {
+            return Project_V2_GetStringLength(api, buf, bufferProperty, index, outStringSize);
+            }
         case BUFF_TYPE_PROJECTFAVORITE:
             {
             return ProjectFavorite_GetStringLength(api, buf, bufferProperty, index, outStringSize);
+            }
+        case BUFF_TYPE_PROJECTFAVORITE_V2:
+            {
+            return ProjectFavorite_V2_GetStringLength(api, buf, bufferProperty, index, outStringSize);
             }
         case BUFF_TYPE_PROJECTMRU:
             {
@@ -159,6 +197,44 @@ size_t* outStringSize
         case BUFF_TYPE_PROJECTMRUDETAIL:
             {
             return ProjectMRUDetail_GetStringLength(api, buf, bufferProperty, index, outStringSize);
+            }
+        case BUFF_TYPE_PROJECTMRUDETAIL_V2:
+            {
+            return ProjectMRUDetail_V2_GetStringLength(api, buf, bufferProperty, index, outStringSize);
+            }
+        default:
+            api->SetStatusMessage("Invalid parameter passed to function");
+            api->SetStatusDescription("The buffer type passed in is invalid.");
+            return INVALID_PARAMETER;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus GlobalSchema_GetDatetimeProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP dateTime
+)
+    {
+    switch (buf->lClassType)
+        {
+        case BUFF_TYPE_PROJECT_V2:
+            {
+            return Project_V2_GetDatetimeProperty(api, buf, bufferProperty, index, strLength, dateTime);
+            }
+        case BUFF_TYPE_PROJECTFAVORITE_V2:
+            {
+            return ProjectFavorite_V2_GetDatetimeProperty(api, buf, bufferProperty, index, strLength, dateTime);
+            }
+        case BUFF_TYPE_PROJECTMRUDETAIL_V2:
+            {
+            return ProjectMRUDetail_V2_GetDatetimeProperty(api, buf, bufferProperty, index, strLength, dateTime);
             }
         default:
             api->SetStatusMessage("Invalid parameter passed to function");
@@ -211,13 +287,25 @@ bool* boolean
             {
             return Project_GetBooleanProperty(api, buf, bufferProperty, index, boolean);
             }
+        case BUFF_TYPE_PROJECT_V2:
+            {
+            return Project_V2_GetBooleanProperty(api, buf, bufferProperty, index, boolean);
+            }
         case BUFF_TYPE_PROJECTFAVORITE:
             {
             return ProjectFavorite_GetBooleanProperty(api, buf, bufferProperty, index, boolean);
             }
+        case BUFF_TYPE_PROJECTFAVORITE_V2:
+            {
+            return ProjectFavorite_V2_GetBooleanProperty(api, buf, bufferProperty, index, boolean);
+            }
         case BUFF_TYPE_PROJECTMRUDETAIL:
             {
             return ProjectMRUDetail_GetBooleanProperty(api, buf, bufferProperty, index, boolean);
+            }
+        case BUFF_TYPE_PROJECTMRUDETAIL_V2:
+            {
+            return ProjectMRUDetail_V2_GetBooleanProperty(api, buf, bufferProperty, index, boolean);
             }
         default:
             api->SetStatusMessage("Invalid parameter passed to function");
@@ -244,13 +332,25 @@ int32_t* integer
             {
             return Project_GetIntProperty(api, buf, bufferProperty, index, integer);
             }
+        case BUFF_TYPE_PROJECT_V2:
+            {
+            return Project_V2_GetIntProperty(api, buf, bufferProperty, index, integer);
+            }
         case BUFF_TYPE_PROJECTFAVORITE:
             {
             return ProjectFavorite_GetIntProperty(api, buf, bufferProperty, index, integer);
             }
+        case BUFF_TYPE_PROJECTFAVORITE_V2:
+            {
+            return ProjectFavorite_V2_GetIntProperty(api, buf, bufferProperty, index, integer);
+            }
         case BUFF_TYPE_PROJECTMRUDETAIL:
             {
             return ProjectMRUDetail_GetIntProperty(api, buf, bufferProperty, index, integer);
+            }
+        case BUFF_TYPE_PROJECTMRUDETAIL_V2:
+            {
+            return ProjectMRUDetail_V2_GetIntProperty(api, buf, bufferProperty, index, integer);
             }
         default:
             api->SetStatusMessage("Invalid parameter passed to function");
@@ -277,13 +377,25 @@ double* pDouble
             {
             return Project_GetDoubleProperty(api, buf, bufferProperty, index, pDouble);
             }
+        case BUFF_TYPE_PROJECT_V2:
+            {
+            return Project_V2_GetDoubleProperty(api, buf, bufferProperty, index, pDouble);
+            }
         case BUFF_TYPE_PROJECTFAVORITE:
             {
             return ProjectFavorite_GetDoubleProperty(api, buf, bufferProperty, index, pDouble);
             }
+        case BUFF_TYPE_PROJECTFAVORITE_V2:
+            {
+            return ProjectFavorite_V2_GetDoubleProperty(api, buf, bufferProperty, index, pDouble);
+            }
         case BUFF_TYPE_PROJECTMRUDETAIL:
             {
             return ProjectMRUDetail_GetDoubleProperty(api, buf, bufferProperty, index, pDouble);
+            }
+        case BUFF_TYPE_PROJECTMRUDETAIL_V2:
+            {
+            return ProjectMRUDetail_V2_GetDoubleProperty(api, buf, bufferProperty, index, pDouble);
             }
         default:
             api->SetStatusMessage("Invalid parameter passed to function");
@@ -309,6 +421,10 @@ int64_t* pLong
         case BUFF_TYPE_PROJECTMRUDETAIL:
             {
             return ProjectMRUDetail_GetLongProperty(api, buf, bufferProperty, index, pLong);
+            }
+        case BUFF_TYPE_PROJECTMRUDETAIL_V2:
+            {
+            return ProjectMRUDetail_V2_GetLongProperty(api, buf, bufferProperty, index, pLong);
             }
         default:
             api->SetStatusMessage("Invalid parameter passed to function");
@@ -495,6 +611,155 @@ WCharP str
             }
         BeStringUtilities::Wcsncpy(str, strLength, projectBuf->TimeZoneLocation.c_str());
         }
+    else if (PROJECT_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (projectBuf->IsSet.find(WString("Data_Location_Guid", true)) == projectBuf->IsSet.end() || projectBuf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectBuf->Data_Location_Guid.c_str());
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus Project_V2_GetStringProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP str
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || str == nullptr || strLength == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECT_V2BUFFER project_v2Buf = (LPCWSCCPROJECT_V2BUFFER) buf->lItems[index];
+    if (PROJECT_V2_BUFF_NAME == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Name", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Name", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Name property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, project_v2Buf->Name.c_str());
+        }
+    else if (PROJECT_V2_BUFF_NUMBER == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Number", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Number", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Number property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, project_v2Buf->Number.c_str());
+        }
+    else if (PROJECT_V2_BUFF_ORGANIZATIONID == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("OrganizationId", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("OrganizationId", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("OrganizationId property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, project_v2Buf->OrganizationId.c_str());
+        }
+    else if (PROJECT_V2_BUFF_INDUSTRY == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Industry", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Industry", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Industry property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, project_v2Buf->Industry.c_str());
+        }
+    else if (PROJECT_V2_BUFF_ASSETTYPE == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("AssetType", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("AssetType", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("AssetType property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, project_v2Buf->AssetType.c_str());
+        }
+    else if (PROJECT_V2_BUFF_LOCATION == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Location", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Location", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Location property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, project_v2Buf->Location.c_str());
+        }
+    else if (PROJECT_V2_BUFF_TIMEZONELOCATION == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("TimeZoneLocation", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("TimeZoneLocation", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("TimeZoneLocation property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, project_v2Buf->TimeZoneLocation.c_str());
+        }
+    else if (PROJECT_V2_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Data_Location_Guid", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, project_v2Buf->Data_Location_Guid.c_str());
+        }
+    else if (PROJECT_V2_BUFF_COUNTRY_CODE == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Country_Code", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Country_Code", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Country_Code property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, project_v2Buf->Country_Code.c_str());
+        }
     else
         {
         api->SetStatusMessage("Invalid parameter passed to function");
@@ -633,6 +898,155 @@ WCharP str
             }
         BeStringUtilities::Wcsncpy(str, strLength, projectfavoriteBuf->TimeZoneLocation.c_str());
         }
+    else if (PROJECTFAVORITE_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (projectfavoriteBuf->IsSet.find(WString("Data_Location_Guid", true)) == projectfavoriteBuf->IsSet.end() || projectfavoriteBuf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectfavoriteBuf->Data_Location_Guid.c_str());
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectFavorite_V2_GetStringProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP str
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || str == nullptr || strLength == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTFAVORITE_V2BUFFER projectfavorite_v2Buf = (LPCWSCCPROJECTFAVORITE_V2BUFFER) buf->lItems[index];
+    if (PROJECTFAVORITE_V2_BUFF_NAME == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Name", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Name", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Name property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectfavorite_v2Buf->Name.c_str());
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_NUMBER == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Number", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Number", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Number property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectfavorite_v2Buf->Number.c_str());
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_ORGANIZATIONID == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("OrganizationId", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("OrganizationId", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("OrganizationId property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectfavorite_v2Buf->OrganizationId.c_str());
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_INDUSTRY == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Industry", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Industry", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Industry property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectfavorite_v2Buf->Industry.c_str());
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_ASSETTYPE == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("AssetType", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("AssetType", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("AssetType property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectfavorite_v2Buf->AssetType.c_str());
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_LOCATION == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Location", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Location", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Location property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectfavorite_v2Buf->Location.c_str());
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_TIMEZONELOCATION == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("TimeZoneLocation", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("TimeZoneLocation", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("TimeZoneLocation property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectfavorite_v2Buf->TimeZoneLocation.c_str());
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Data_Location_Guid", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectfavorite_v2Buf->Data_Location_Guid.c_str());
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_COUNTRY_CODE == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Country_Code", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Country_Code", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Country_Code property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectfavorite_v2Buf->Country_Code.c_str());
+        }
     else
         {
         api->SetStatusMessage("Invalid parameter passed to function");
@@ -744,7 +1158,18 @@ WCharP str
         }
 
     LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf = (LPCWSCCPROJECTMRUDETAILBUFFER) buf->lItems[index];
-    if (PROJECTMRUDETAIL_BUFF_LINKTOASSETTYPE == bufferProperty)
+    if (PROJECTMRUDETAIL_BUFF_ORGANIZATIONID == bufferProperty)
+        {
+        if (projectmrudetailBuf->IsSet.find(WString("OrganizationId", true)) == projectmrudetailBuf->IsSet.end() || projectmrudetailBuf->IsSet[WString("OrganizationId", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("OrganizationId property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetailBuf->OrganizationId.c_str());
+        }
+    else if (PROJECTMRUDETAIL_BUFF_LINKTOASSETTYPE == bufferProperty)
         {
         if (projectmrudetailBuf->IsSet.find(WString("LinkToAssetType", true)) == projectmrudetailBuf->IsSet.end() || projectmrudetailBuf->IsSet[WString("LinkToAssetType", true)] == false)
             {
@@ -798,17 +1223,6 @@ WCharP str
             return PROPERTY_HAS_NOT_BEEN_SET;
             }
         BeStringUtilities::Wcsncpy(str, strLength, projectmrudetailBuf->Number.c_str());
-        }
-    else if (PROJECTMRUDETAIL_BUFF_ORGANIZATIONID == bufferProperty)
-        {
-        if (projectmrudetailBuf->IsSet.find(WString("OrganizationId", true)) == projectmrudetailBuf->IsSet.end() || projectmrudetailBuf->IsSet[WString("OrganizationId", true)] == false)
-            {
-            str = nullptr;
-            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
-            api->SetStatusDescription("OrganizationId property is not set, so it can not be retrieved.");
-            return PROPERTY_HAS_NOT_BEEN_SET;
-            }
-        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetailBuf->OrganizationId.c_str());
         }
     else if (PROJECTMRUDETAIL_BUFF_INDUSTRY == bufferProperty)
         {
@@ -875,6 +1289,155 @@ WCharP str
             return PROPERTY_HAS_NOT_BEEN_SET;
             }
         BeStringUtilities::Wcsncpy(str, strLength, projectmrudetailBuf->TimeZoneLocation.c_str());
+        }
+    else if (PROJECTMRUDETAIL_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (projectmrudetailBuf->IsSet.find(WString("Data_Location_Guid", true)) == projectmrudetailBuf->IsSet.end() || projectmrudetailBuf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetailBuf->Data_Location_Guid.c_str());
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectMRUDetail_V2_GetStringProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP str
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || str == nullptr || strLength == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf = (LPCWSCCPROJECTMRUDETAIL_V2BUFFER) buf->lItems[index];
+    if (PROJECTMRUDETAIL_V2_BUFF_ORGANIZATIONID == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("OrganizationId", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("OrganizationId", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("OrganizationId property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetail_v2Buf->OrganizationId.c_str());
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_NAME == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Name", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Name", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Name property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetail_v2Buf->Name.c_str());
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_NUMBER == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Number", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Number", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Number property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetail_v2Buf->Number.c_str());
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_INDUSTRY == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Industry", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Industry", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Industry property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetail_v2Buf->Industry.c_str());
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_ASSETTYPE == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("AssetType", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("AssetType", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("AssetType property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetail_v2Buf->AssetType.c_str());
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_LOCATION == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Location", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Location", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Location property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetail_v2Buf->Location.c_str());
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_TIMEZONELOCATION == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("TimeZoneLocation", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("TimeZoneLocation", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("TimeZoneLocation property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetail_v2Buf->TimeZoneLocation.c_str());
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Data_Location_Guid", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetail_v2Buf->Data_Location_Guid.c_str());
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_COUNTRY_CODE == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Country_Code", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Country_Code", true)] == false)
+            {
+            str = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Country_Code property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(str, strLength, projectmrudetail_v2Buf->Country_Code.c_str());
         }
     else
         {
@@ -1063,6 +1626,154 @@ size_t* outStringSize
             }
         *outStringSize = projectBuf->TimeZoneLocation.length();
         }
+    else if (PROJECT_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (projectBuf->IsSet.find(WString("Data_Location_Guid", true)) == projectBuf->IsSet.end() || projectBuf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectBuf->Data_Location_Guid.length();
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus Project_V2_GetStringLength
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+size_t* outStringSize
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || outStringSize == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECT_V2BUFFER project_v2Buf = (LPCWSCCPROJECT_V2BUFFER) buf->lItems[index];
+    if (PROJECT_V2_BUFF_NAME == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Name", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Name", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Name property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = project_v2Buf->Name.length();
+        }
+    else if (PROJECT_V2_BUFF_NUMBER == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Number", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Number", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Number property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = project_v2Buf->Number.length();
+        }
+    else if (PROJECT_V2_BUFF_ORGANIZATIONID == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("OrganizationId", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("OrganizationId", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("OrganizationId property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = project_v2Buf->OrganizationId.length();
+        }
+    else if (PROJECT_V2_BUFF_INDUSTRY == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Industry", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Industry", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Industry property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = project_v2Buf->Industry.length();
+        }
+    else if (PROJECT_V2_BUFF_ASSETTYPE == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("AssetType", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("AssetType", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("AssetType property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = project_v2Buf->AssetType.length();
+        }
+    else if (PROJECT_V2_BUFF_LOCATION == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Location", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Location", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Location property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = project_v2Buf->Location.length();
+        }
+    else if (PROJECT_V2_BUFF_TIMEZONELOCATION == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("TimeZoneLocation", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("TimeZoneLocation", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("TimeZoneLocation property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = project_v2Buf->TimeZoneLocation.length();
+        }
+    else if (PROJECT_V2_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Data_Location_Guid", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = project_v2Buf->Data_Location_Guid.length();
+        }
+    else if (PROJECT_V2_BUFF_COUNTRY_CODE == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Country_Code", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Country_Code", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Country_Code property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = project_v2Buf->Country_Code.length();
+        }
     else
         {
         api->SetStatusMessage("Invalid parameter passed to function");
@@ -1200,6 +1911,154 @@ size_t* outStringSize
             }
         *outStringSize = projectfavoriteBuf->TimeZoneLocation.length();
         }
+    else if (PROJECTFAVORITE_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (projectfavoriteBuf->IsSet.find(WString("Data_Location_Guid", true)) == projectfavoriteBuf->IsSet.end() || projectfavoriteBuf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectfavoriteBuf->Data_Location_Guid.length();
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectFavorite_V2_GetStringLength
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+size_t* outStringSize
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || outStringSize == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTFAVORITE_V2BUFFER projectfavorite_v2Buf = (LPCWSCCPROJECTFAVORITE_V2BUFFER) buf->lItems[index];
+    if (PROJECTFAVORITE_V2_BUFF_NAME == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Name", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Name", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Name property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectfavorite_v2Buf->Name.length();
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_NUMBER == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Number", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Number", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Number property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectfavorite_v2Buf->Number.length();
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_ORGANIZATIONID == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("OrganizationId", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("OrganizationId", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("OrganizationId property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectfavorite_v2Buf->OrganizationId.length();
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_INDUSTRY == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Industry", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Industry", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Industry property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectfavorite_v2Buf->Industry.length();
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_ASSETTYPE == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("AssetType", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("AssetType", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("AssetType property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectfavorite_v2Buf->AssetType.length();
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_LOCATION == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Location", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Location", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Location property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectfavorite_v2Buf->Location.length();
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_TIMEZONELOCATION == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("TimeZoneLocation", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("TimeZoneLocation", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("TimeZoneLocation property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectfavorite_v2Buf->TimeZoneLocation.length();
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Data_Location_Guid", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectfavorite_v2Buf->Data_Location_Guid.length();
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_COUNTRY_CODE == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Country_Code", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Country_Code", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Country_Code property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectfavorite_v2Buf->Country_Code.length();
+        }
     else
         {
         api->SetStatusMessage("Invalid parameter passed to function");
@@ -1309,7 +2168,18 @@ size_t* outStringSize
         }
 
     LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf = (LPCWSCCPROJECTMRUDETAILBUFFER) buf->lItems[index];
-    if (PROJECTMRUDETAIL_BUFF_LINKTOASSETTYPE == bufferProperty)
+    if (PROJECTMRUDETAIL_BUFF_ORGANIZATIONID == bufferProperty)
+        {
+        if (projectmrudetailBuf->IsSet.find(WString("OrganizationId", true)) == projectmrudetailBuf->IsSet.end() || projectmrudetailBuf->IsSet[WString("OrganizationId", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("OrganizationId property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetailBuf->OrganizationId.length();
+        }
+    else if (PROJECTMRUDETAIL_BUFF_LINKTOASSETTYPE == bufferProperty)
         {
         if (projectmrudetailBuf->IsSet.find(WString("LinkToAssetType", true)) == projectmrudetailBuf->IsSet.end() || projectmrudetailBuf->IsSet[WString("LinkToAssetType", true)] == false)
             {
@@ -1363,17 +2233,6 @@ size_t* outStringSize
             return PROPERTY_HAS_NOT_BEEN_SET;
             }
         *outStringSize = projectmrudetailBuf->Number.length();
-        }
-    else if (PROJECTMRUDETAIL_BUFF_ORGANIZATIONID == bufferProperty)
-        {
-        if (projectmrudetailBuf->IsSet.find(WString("OrganizationId", true)) == projectmrudetailBuf->IsSet.end() || projectmrudetailBuf->IsSet[WString("OrganizationId", true)] == false)
-            {
-            outStringSize = nullptr;
-            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
-            api->SetStatusDescription("OrganizationId property is not set, so it can not be retrieved.");
-            return PROPERTY_HAS_NOT_BEEN_SET;
-            }
-        *outStringSize = projectmrudetailBuf->OrganizationId.length();
         }
     else if (PROJECTMRUDETAIL_BUFF_INDUSTRY == bufferProperty)
         {
@@ -1440,6 +2299,338 @@ size_t* outStringSize
             return PROPERTY_HAS_NOT_BEEN_SET;
             }
         *outStringSize = projectmrudetailBuf->TimeZoneLocation.length();
+        }
+    else if (PROJECTMRUDETAIL_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (projectmrudetailBuf->IsSet.find(WString("Data_Location_Guid", true)) == projectmrudetailBuf->IsSet.end() || projectmrudetailBuf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetailBuf->Data_Location_Guid.length();
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectMRUDetail_V2_GetStringLength
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+size_t* outStringSize
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || outStringSize == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf = (LPCWSCCPROJECTMRUDETAIL_V2BUFFER) buf->lItems[index];
+    if (PROJECTMRUDETAIL_V2_BUFF_ORGANIZATIONID == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("OrganizationId", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("OrganizationId", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("OrganizationId property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetail_v2Buf->OrganizationId.length();
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_NAME == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Name", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Name", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Name property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetail_v2Buf->Name.length();
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_NUMBER == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Number", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Number", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Number property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetail_v2Buf->Number.length();
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_INDUSTRY == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Industry", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Industry", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Industry property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetail_v2Buf->Industry.length();
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_ASSETTYPE == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("AssetType", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("AssetType", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("AssetType property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetail_v2Buf->AssetType.length();
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_LOCATION == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Location", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Location", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Location property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetail_v2Buf->Location.length();
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_TIMEZONELOCATION == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("TimeZoneLocation", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("TimeZoneLocation", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("TimeZoneLocation property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetail_v2Buf->TimeZoneLocation.length();
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_DATA_LOCATION_GUID == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Data_Location_Guid", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Data_Location_Guid", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Data_Location_Guid property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetail_v2Buf->Data_Location_Guid.length();
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_COUNTRY_CODE == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Country_Code", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Country_Code", true)] == false)
+            {
+            outStringSize = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Country_Code property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *outStringSize = projectmrudetail_v2Buf->Country_Code.length();
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus Project_V2_GetDatetimeProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP dateTime
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || dateTime == nullptr || strLength == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECT_V2BUFFER project_v2Buf = (LPCWSCCPROJECT_V2BUFFER) buf->lItems[index];
+    if (PROJECT_V2_BUFF_LASTMODIFIED == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("LastModified", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("LastModified", true)] == false)
+            {
+            dateTime = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("LastModified property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(dateTime, strLength, project_v2Buf->LastModified.c_str());
+        }
+    else if (PROJECT_V2_BUFF_REGISTEREDDATE == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("RegisteredDate", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("RegisteredDate", true)] == false)
+            {
+            dateTime = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("RegisteredDate property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(dateTime, strLength, project_v2Buf->RegisteredDate.c_str());
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectFavorite_V2_GetDatetimeProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP dateTime
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || dateTime == nullptr || strLength == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTFAVORITE_V2BUFFER projectfavorite_v2Buf = (LPCWSCCPROJECTFAVORITE_V2BUFFER) buf->lItems[index];
+    if (PROJECTFAVORITE_V2_BUFF_LASTMODIFIED == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("LastModified", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("LastModified", true)] == false)
+            {
+            dateTime = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("LastModified property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(dateTime, strLength, projectfavorite_v2Buf->LastModified.c_str());
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_REGISTEREDDATE == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("RegisteredDate", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("RegisteredDate", true)] == false)
+            {
+            dateTime = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("RegisteredDate property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(dateTime, strLength, projectfavorite_v2Buf->RegisteredDate.c_str());
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectMRUDetail_V2_GetDatetimeProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+uint32_t strLength,
+WCharP dateTime
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || dateTime == nullptr || strLength == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf = (LPCWSCCPROJECTMRUDETAIL_V2BUFFER) buf->lItems[index];
+    if (PROJECTMRUDETAIL_V2_BUFF_LASTMODIFIED == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("LastModified", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("LastModified", true)] == false)
+            {
+            dateTime = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("LastModified property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(dateTime, strLength, projectmrudetail_v2Buf->LastModified.c_str());
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_REGISTEREDDATE == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("RegisteredDate", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("RegisteredDate", true)] == false)
+            {
+            dateTime = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("RegisteredDate property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        BeStringUtilities::Wcsncpy(dateTime, strLength, projectmrudetail_v2Buf->RegisteredDate.c_str());
         }
     else
         {
@@ -1567,6 +2758,55 @@ bool* boolean
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus Project_V2_GetBooleanProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+bool* boolean
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || boolean == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECT_V2BUFFER project_v2Buf = (LPCWSCCPROJECT_V2BUFFER) buf->lItems[index];
+    if (PROJECT_V2_BUFF_LOCATIONISUSINGLATLONG == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("LocationIsUsingLatLong", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("LocationIsUsingLatLong", true)] == false)
+            {
+            boolean = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("LocationIsUsingLatLong property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *boolean = project_v2Buf->LocationIsUsingLatLong;
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ProjectFavorite_GetBooleanProperty
 (
 LPCWSCC api,
@@ -1623,6 +2863,55 @@ bool* boolean
             return PROPERTY_HAS_NOT_BEEN_SET;
             }
         *boolean = projectfavoriteBuf->LocationIsUsingLatLong;
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectFavorite_V2_GetBooleanProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+bool* boolean
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || boolean == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTFAVORITE_V2BUFFER projectfavorite_v2Buf = (LPCWSCCPROJECTFAVORITE_V2BUFFER) buf->lItems[index];
+    if (PROJECTFAVORITE_V2_BUFF_LOCATIONISUSINGLATLONG == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("LocationIsUsingLatLong", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("LocationIsUsingLatLong", true)] == false)
+            {
+            boolean = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("LocationIsUsingLatLong property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *boolean = projectfavorite_v2Buf->LocationIsUsingLatLong;
         }
     else
         {
@@ -1717,6 +3006,66 @@ bool* boolean
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectMRUDetail_V2_GetBooleanProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+bool* boolean
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || boolean == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf = (LPCWSCCPROJECTMRUDETAIL_V2BUFFER) buf->lItems[index];
+    if (PROJECTMRUDETAIL_V2_BUFF_ISFAVORITE == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("IsFavorite", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("IsFavorite", true)] == false)
+            {
+            boolean = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("IsFavorite property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *boolean = projectmrudetail_v2Buf->IsFavorite;
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_LOCATIONISUSINGLATLONG == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("LocationIsUsingLatLong", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("LocationIsUsingLatLong", true)] == false)
+            {
+            boolean = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("LocationIsUsingLatLong property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *boolean = projectmrudetail_v2Buf->LocationIsUsingLatLong;
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    06/2016
@@ -1755,6 +3104,55 @@ int32_t* integer
             return PROPERTY_HAS_NOT_BEEN_SET;
             }
         *integer = projectBuf->Status;
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus Project_V2_GetIntProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+int32_t* integer
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECT_V2BUFFER project_v2Buf = (LPCWSCCPROJECT_V2BUFFER) buf->lItems[index];
+    if (PROJECT_V2_BUFF_STATUS == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Status", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Status", true)] == false)
+            {
+            integer = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Status property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *integer = project_v2Buf->Status;
         }
     else
         {
@@ -1819,6 +3217,55 @@ int32_t* integer
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectFavorite_V2_GetIntProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+int32_t* integer
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTFAVORITE_V2BUFFER projectfavorite_v2Buf = (LPCWSCCPROJECTFAVORITE_V2BUFFER) buf->lItems[index];
+    if (PROJECTFAVORITE_V2_BUFF_STATUS == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Status", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Status", true)] == false)
+            {
+            integer = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Status property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *integer = projectfavorite_v2Buf->Status;
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ProjectMRUDetail_GetIntProperty
 (
 LPCWSCC api,
@@ -1853,6 +3300,55 @@ int32_t* integer
             return PROPERTY_HAS_NOT_BEEN_SET;
             }
         *integer = projectmrudetailBuf->Status;
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectMRUDetail_V2_GetIntProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+int32_t* integer
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf = (LPCWSCCPROJECTMRUDETAIL_V2BUFFER) buf->lItems[index];
+    if (PROJECTMRUDETAIL_V2_BUFF_STATUS == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Status", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Status", true)] == false)
+            {
+            integer = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Status property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *integer = projectmrudetail_v2Buf->Status;
         }
     else
         {
@@ -1929,6 +3425,66 @@ double* pDouble
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus Project_V2_GetDoubleProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+double* pDouble
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || pDouble == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECT_V2BUFFER project_v2Buf = (LPCWSCCPROJECT_V2BUFFER) buf->lItems[index];
+    if (PROJECT_V2_BUFF_LATITUDE == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Latitude", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Latitude", true)] == false)
+            {
+            pDouble = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Latitude property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *pDouble = project_v2Buf->Latitude;
+        }
+    else if (PROJECT_V2_BUFF_LONGITUDE == bufferProperty)
+        {
+        if (project_v2Buf->IsSet.find(WString("Longitude", true)) == project_v2Buf->IsSet.end() || project_v2Buf->IsSet[WString("Longitude", true)] == false)
+            {
+            pDouble = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Longitude property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *pDouble = project_v2Buf->Longitude;
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ProjectFavorite_GetDoubleProperty
 (
 LPCWSCC api,
@@ -1974,6 +3530,66 @@ double* pDouble
             return PROPERTY_HAS_NOT_BEEN_SET;
             }
         *pDouble = projectfavoriteBuf->Longitude;
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectFavorite_V2_GetDoubleProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+double* pDouble
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || pDouble == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTFAVORITE_V2BUFFER projectfavorite_v2Buf = (LPCWSCCPROJECTFAVORITE_V2BUFFER) buf->lItems[index];
+    if (PROJECTFAVORITE_V2_BUFF_LATITUDE == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Latitude", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Latitude", true)] == false)
+            {
+            pDouble = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Latitude property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *pDouble = projectfavorite_v2Buf->Latitude;
+        }
+    else if (PROJECTFAVORITE_V2_BUFF_LONGITUDE == bufferProperty)
+        {
+        if (projectfavorite_v2Buf->IsSet.find(WString("Longitude", true)) == projectfavorite_v2Buf->IsSet.end() || projectfavorite_v2Buf->IsSet[WString("Longitude", true)] == false)
+            {
+            pDouble = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Longitude property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *pDouble = projectfavorite_v2Buf->Longitude;
         }
     else
         {
@@ -2046,6 +3662,66 @@ double* pDouble
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectMRUDetail_V2_GetDoubleProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+double* pDouble
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || pDouble == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf = (LPCWSCCPROJECTMRUDETAIL_V2BUFFER) buf->lItems[index];
+    if (PROJECTMRUDETAIL_V2_BUFF_LATITUDE == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Latitude", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Latitude", true)] == false)
+            {
+            pDouble = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Latitude property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *pDouble = projectmrudetail_v2Buf->Latitude;
+        }
+    else if (PROJECTMRUDETAIL_V2_BUFF_LONGITUDE == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("Longitude", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("Longitude", true)] == false)
+            {
+            pDouble = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("Longitude property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *pDouble = projectmrudetail_v2Buf->Longitude;
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    06/2016
@@ -2084,6 +3760,55 @@ int64_t* pLong
             return PROPERTY_HAS_NOT_BEEN_SET;
             }
         *pLong = projectmrudetailBuf->LastAccessedByUser;
+        }
+    else
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The bufferProperty is invalid. It did not match up with any of the buffer's properties.");
+        return INVALID_PARAMETER;
+        }
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("The property retrieval function completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ProjectMRUDetail_V2_GetLongProperty
+(
+LPCWSCC api,
+HCWSCCBUFFER buf,
+int16_t bufferProperty,
+uint32_t index,
+int64_t* pLong
+)
+    {
+    if (buf == nullptr || bufferProperty == 0 || pLong == nullptr)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("An invalid buffer pointer or invalid property pointer was passed into the get property function.");
+        return INVALID_PARAMETER;
+        }
+
+    if(index >= buf->lCount)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("The index parameter passed into the get property function is out of bounds.");
+        return INVALID_PARAMETER;
+        }
+
+    LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf = (LPCWSCCPROJECTMRUDETAIL_V2BUFFER) buf->lItems[index];
+    if (PROJECTMRUDETAIL_V2_BUFF_LASTACCESSEDBYUSER == bufferProperty)
+        {
+        if (projectmrudetail_v2Buf->IsSet.find(WString("LastAccessedByUser", true)) == projectmrudetail_v2Buf->IsSet.end() || projectmrudetail_v2Buf->IsSet[WString("LastAccessedByUser", true)] == false)
+            {
+            pLong = nullptr;
+            api->SetStatusMessage("The buffer property passed to function has not been set in the buffer");
+            api->SetStatusDescription("LastAccessedByUser property is not set, so it can not be retrieved.");
+            return PROPERTY_HAS_NOT_BEEN_SET;
+            }
+        *pLong = projectmrudetail_v2Buf->LastAccessedByUser;
         }
     else
         {
@@ -2165,6 +3890,64 @@ RapidJsonValueCR properties
     if(properties.HasMember("Status") && properties["Status"].IsInt())
         projectBuf->Status = properties["Status"].GetInt();
     projectBuf->IsSet[WString("Status", true)] = (properties.HasMember("Status") && properties["Status"].IsInt());
+    if(properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString())
+        projectBuf->Data_Location_Guid = WString(properties["Data_Location_Guid"].GetString(), true);
+    projectBuf->IsSet[WString("Data_Location_Guid", true)] = (properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Project_V2_BufferStuffer
+(
+LPCWSCCPROJECT_V2BUFFER project_v2Buf,
+RapidJsonValueCR properties
+)
+    {
+    if(properties.HasMember("Name") && properties["Name"].IsString())
+        project_v2Buf->Name = WString(properties["Name"].GetString(), true);
+    project_v2Buf->IsSet[WString("Name", true)] = (properties.HasMember("Name") && properties["Name"].IsString());
+    if(properties.HasMember("Number") && properties["Number"].IsString())
+        project_v2Buf->Number = WString(properties["Number"].GetString(), true);
+    project_v2Buf->IsSet[WString("Number", true)] = (properties.HasMember("Number") && properties["Number"].IsString());
+    if(properties.HasMember("OrganizationId") && properties["OrganizationId"].IsString())
+        project_v2Buf->OrganizationId = WString(properties["OrganizationId"].GetString(), true);
+    project_v2Buf->IsSet[WString("OrganizationId", true)] = (properties.HasMember("OrganizationId") && properties["OrganizationId"].IsString());
+    if(properties.HasMember("Industry") && properties["Industry"].IsString())
+        project_v2Buf->Industry = WString(properties["Industry"].GetString(), true);
+    project_v2Buf->IsSet[WString("Industry", true)] = (properties.HasMember("Industry") && properties["Industry"].IsString());
+    if(properties.HasMember("AssetType") && properties["AssetType"].IsString())
+        project_v2Buf->AssetType = WString(properties["AssetType"].GetString(), true);
+    project_v2Buf->IsSet[WString("AssetType", true)] = (properties.HasMember("AssetType") && properties["AssetType"].IsString());
+    if(properties.HasMember("LastModified") && properties["LastModified"].IsString())
+        project_v2Buf->LastModified = WString(properties["LastModified"].GetString(), true);
+    project_v2Buf->IsSet[WString("LastModified", true)] = (properties.HasMember("LastModified") && properties["LastModified"].IsString());
+    if(properties.HasMember("Location") && properties["Location"].IsString())
+        project_v2Buf->Location = WString(properties["Location"].GetString(), true);
+    project_v2Buf->IsSet[WString("Location", true)] = (properties.HasMember("Location") && properties["Location"].IsString());
+    if(properties.HasMember("Latitude") && properties["Latitude"].IsDouble())
+        project_v2Buf->Latitude = properties["Latitude"].GetDouble();
+    project_v2Buf->IsSet[WString("Latitude", true)] = (properties.HasMember("Latitude") && properties["Latitude"].IsDouble());
+    if(properties.HasMember("Longitude") && properties["Longitude"].IsDouble())
+        project_v2Buf->Longitude = properties["Longitude"].GetDouble();
+    project_v2Buf->IsSet[WString("Longitude", true)] = (properties.HasMember("Longitude") && properties["Longitude"].IsDouble());
+    if(properties.HasMember("LocationIsUsingLatLong") && properties["LocationIsUsingLatLong"].IsBool())
+        project_v2Buf->LocationIsUsingLatLong = properties["LocationIsUsingLatLong"].GetBool();
+    project_v2Buf->IsSet[WString("LocationIsUsingLatLong", true)] = (properties.HasMember("LocationIsUsingLatLong") && properties["LocationIsUsingLatLong"].IsBool());
+    if(properties.HasMember("RegisteredDate") && properties["RegisteredDate"].IsString())
+        project_v2Buf->RegisteredDate = WString(properties["RegisteredDate"].GetString(), true);
+    project_v2Buf->IsSet[WString("RegisteredDate", true)] = (properties.HasMember("RegisteredDate") && properties["RegisteredDate"].IsString());
+    if(properties.HasMember("TimeZoneLocation") && properties["TimeZoneLocation"].IsString())
+        project_v2Buf->TimeZoneLocation = WString(properties["TimeZoneLocation"].GetString(), true);
+    project_v2Buf->IsSet[WString("TimeZoneLocation", true)] = (properties.HasMember("TimeZoneLocation") && properties["TimeZoneLocation"].IsString());
+    if(properties.HasMember("Status") && properties["Status"].IsInt())
+        project_v2Buf->Status = properties["Status"].GetInt();
+    project_v2Buf->IsSet[WString("Status", true)] = (properties.HasMember("Status") && properties["Status"].IsInt());
+    if(properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString())
+        project_v2Buf->Data_Location_Guid = WString(properties["Data_Location_Guid"].GetString(), true);
+    project_v2Buf->IsSet[WString("Data_Location_Guid", true)] = (properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString());
+    if(properties.HasMember("Country_Code") && properties["Country_Code"].IsString())
+        project_v2Buf->Country_Code = WString(properties["Country_Code"].GetString(), true);
+    project_v2Buf->IsSet[WString("Country_Code", true)] = (properties.HasMember("Country_Code") && properties["Country_Code"].IsString());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    06/2016
@@ -2220,6 +4003,64 @@ RapidJsonValueCR properties
     if(properties.HasMember("Status") && properties["Status"].IsInt())
         projectfavoriteBuf->Status = properties["Status"].GetInt();
     projectfavoriteBuf->IsSet[WString("Status", true)] = (properties.HasMember("Status") && properties["Status"].IsInt());
+    if(properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString())
+        projectfavoriteBuf->Data_Location_Guid = WString(properties["Data_Location_Guid"].GetString(), true);
+    projectfavoriteBuf->IsSet[WString("Data_Location_Guid", true)] = (properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ProjectFavorite_V2_BufferStuffer
+(
+LPCWSCCPROJECTFAVORITE_V2BUFFER projectfavorite_v2Buf,
+RapidJsonValueCR properties
+)
+    {
+    if(properties.HasMember("Name") && properties["Name"].IsString())
+        projectfavorite_v2Buf->Name = WString(properties["Name"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("Name", true)] = (properties.HasMember("Name") && properties["Name"].IsString());
+    if(properties.HasMember("Number") && properties["Number"].IsString())
+        projectfavorite_v2Buf->Number = WString(properties["Number"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("Number", true)] = (properties.HasMember("Number") && properties["Number"].IsString());
+    if(properties.HasMember("OrganizationId") && properties["OrganizationId"].IsString())
+        projectfavorite_v2Buf->OrganizationId = WString(properties["OrganizationId"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("OrganizationId", true)] = (properties.HasMember("OrganizationId") && properties["OrganizationId"].IsString());
+    if(properties.HasMember("Industry") && properties["Industry"].IsString())
+        projectfavorite_v2Buf->Industry = WString(properties["Industry"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("Industry", true)] = (properties.HasMember("Industry") && properties["Industry"].IsString());
+    if(properties.HasMember("AssetType") && properties["AssetType"].IsString())
+        projectfavorite_v2Buf->AssetType = WString(properties["AssetType"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("AssetType", true)] = (properties.HasMember("AssetType") && properties["AssetType"].IsString());
+    if(properties.HasMember("LastModified") && properties["LastModified"].IsString())
+        projectfavorite_v2Buf->LastModified = WString(properties["LastModified"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("LastModified", true)] = (properties.HasMember("LastModified") && properties["LastModified"].IsString());
+    if(properties.HasMember("Location") && properties["Location"].IsString())
+        projectfavorite_v2Buf->Location = WString(properties["Location"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("Location", true)] = (properties.HasMember("Location") && properties["Location"].IsString());
+    if(properties.HasMember("Latitude") && properties["Latitude"].IsDouble())
+        projectfavorite_v2Buf->Latitude = properties["Latitude"].GetDouble();
+    projectfavorite_v2Buf->IsSet[WString("Latitude", true)] = (properties.HasMember("Latitude") && properties["Latitude"].IsDouble());
+    if(properties.HasMember("Longitude") && properties["Longitude"].IsDouble())
+        projectfavorite_v2Buf->Longitude = properties["Longitude"].GetDouble();
+    projectfavorite_v2Buf->IsSet[WString("Longitude", true)] = (properties.HasMember("Longitude") && properties["Longitude"].IsDouble());
+    if(properties.HasMember("LocationIsUsingLatLong") && properties["LocationIsUsingLatLong"].IsBool())
+        projectfavorite_v2Buf->LocationIsUsingLatLong = properties["LocationIsUsingLatLong"].GetBool();
+    projectfavorite_v2Buf->IsSet[WString("LocationIsUsingLatLong", true)] = (properties.HasMember("LocationIsUsingLatLong") && properties["LocationIsUsingLatLong"].IsBool());
+    if(properties.HasMember("RegisteredDate") && properties["RegisteredDate"].IsString())
+        projectfavorite_v2Buf->RegisteredDate = WString(properties["RegisteredDate"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("RegisteredDate", true)] = (properties.HasMember("RegisteredDate") && properties["RegisteredDate"].IsString());
+    if(properties.HasMember("TimeZoneLocation") && properties["TimeZoneLocation"].IsString())
+        projectfavorite_v2Buf->TimeZoneLocation = WString(properties["TimeZoneLocation"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("TimeZoneLocation", true)] = (properties.HasMember("TimeZoneLocation") && properties["TimeZoneLocation"].IsString());
+    if(properties.HasMember("Status") && properties["Status"].IsInt())
+        projectfavorite_v2Buf->Status = properties["Status"].GetInt();
+    projectfavorite_v2Buf->IsSet[WString("Status", true)] = (properties.HasMember("Status") && properties["Status"].IsInt());
+    if(properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString())
+        projectfavorite_v2Buf->Data_Location_Guid = WString(properties["Data_Location_Guid"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("Data_Location_Guid", true)] = (properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString());
+    if(properties.HasMember("Country_Code") && properties["Country_Code"].IsString())
+        projectfavorite_v2Buf->Country_Code = WString(properties["Country_Code"].GetString(), true);
+    projectfavorite_v2Buf->IsSet[WString("Country_Code", true)] = (properties.HasMember("Country_Code") && properties["Country_Code"].IsString());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    06/2016
@@ -2255,6 +4096,9 @@ RapidJsonValueCR properties
     if(properties.HasMember("LastAccessedByUser") && properties["LastAccessedByUser"].IsInt())
         projectmrudetailBuf->LastAccessedByUser = properties["LastAccessedByUser"].GetInt();
     projectmrudetailBuf->IsSet[WString("LastAccessedByUser", true)] = (properties.HasMember("LastAccessedByUser") && properties["LastAccessedByUser"].IsInt());
+    if(properties.HasMember("OrganizationId") && properties["OrganizationId"].IsString())
+        projectmrudetailBuf->OrganizationId = WString(properties["OrganizationId"].GetString(), true);
+    projectmrudetailBuf->IsSet[WString("OrganizationId", true)] = (properties.HasMember("OrganizationId") && properties["OrganizationId"].IsString());
     if(properties.HasMember("eBBacked") && properties["eBBacked"].IsBool())
         projectmrudetailBuf->eBBacked = properties["eBBacked"].GetBool();
     projectmrudetailBuf->IsSet[WString("eBBacked", true)] = (properties.HasMember("eBBacked") && properties["eBBacked"].IsBool());
@@ -2273,9 +4117,6 @@ RapidJsonValueCR properties
     if(properties.HasMember("Number") && properties["Number"].IsString())
         projectmrudetailBuf->Number = WString(properties["Number"].GetString(), true);
     projectmrudetailBuf->IsSet[WString("Number", true)] = (properties.HasMember("Number") && properties["Number"].IsString());
-    if(properties.HasMember("OrganizationId") && properties["OrganizationId"].IsString())
-        projectmrudetailBuf->OrganizationId = WString(properties["OrganizationId"].GetString(), true);
-    projectmrudetailBuf->IsSet[WString("OrganizationId", true)] = (properties.HasMember("OrganizationId") && properties["OrganizationId"].IsString());
     if(properties.HasMember("Active") && properties["Active"].IsBool())
         projectmrudetailBuf->Active = properties["Active"].GetBool();
     projectmrudetailBuf->IsSet[WString("Active", true)] = (properties.HasMember("Active") && properties["Active"].IsBool());
@@ -2309,4 +4150,68 @@ RapidJsonValueCR properties
     if(properties.HasMember("Status") && properties["Status"].IsInt())
         projectmrudetailBuf->Status = properties["Status"].GetInt();
     projectmrudetailBuf->IsSet[WString("Status", true)] = (properties.HasMember("Status") && properties["Status"].IsInt());
+    if(properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString())
+        projectmrudetailBuf->Data_Location_Guid = WString(properties["Data_Location_Guid"].GetString(), true);
+    projectmrudetailBuf->IsSet[WString("Data_Location_Guid", true)] = (properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ProjectMRUDetail_V2_BufferStuffer
+(
+LPCWSCCPROJECTMRUDETAIL_V2BUFFER projectmrudetail_v2Buf,
+RapidJsonValueCR properties
+)
+    {
+    if(properties.HasMember("IsFavorite") && properties["IsFavorite"].IsBool())
+        projectmrudetail_v2Buf->IsFavorite = properties["IsFavorite"].GetBool();
+    projectmrudetail_v2Buf->IsSet[WString("IsFavorite", true)] = (properties.HasMember("IsFavorite") && properties["IsFavorite"].IsBool());
+    if(properties.HasMember("LastAccessedByUser") && properties["LastAccessedByUser"].IsInt())
+        projectmrudetail_v2Buf->LastAccessedByUser = properties["LastAccessedByUser"].GetInt();
+    projectmrudetail_v2Buf->IsSet[WString("LastAccessedByUser", true)] = (properties.HasMember("LastAccessedByUser") && properties["LastAccessedByUser"].IsInt());
+    if(properties.HasMember("OrganizationId") && properties["OrganizationId"].IsString())
+        projectmrudetail_v2Buf->OrganizationId = WString(properties["OrganizationId"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("OrganizationId", true)] = (properties.HasMember("OrganizationId") && properties["OrganizationId"].IsString());
+    if(properties.HasMember("Name") && properties["Name"].IsString())
+        projectmrudetail_v2Buf->Name = WString(properties["Name"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("Name", true)] = (properties.HasMember("Name") && properties["Name"].IsString());
+    if(properties.HasMember("Number") && properties["Number"].IsString())
+        projectmrudetail_v2Buf->Number = WString(properties["Number"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("Number", true)] = (properties.HasMember("Number") && properties["Number"].IsString());
+    if(properties.HasMember("Industry") && properties["Industry"].IsString())
+        projectmrudetail_v2Buf->Industry = WString(properties["Industry"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("Industry", true)] = (properties.HasMember("Industry") && properties["Industry"].IsString());
+    if(properties.HasMember("AssetType") && properties["AssetType"].IsString())
+        projectmrudetail_v2Buf->AssetType = WString(properties["AssetType"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("AssetType", true)] = (properties.HasMember("AssetType") && properties["AssetType"].IsString());
+    if(properties.HasMember("LastModified") && properties["LastModified"].IsString())
+        projectmrudetail_v2Buf->LastModified = WString(properties["LastModified"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("LastModified", true)] = (properties.HasMember("LastModified") && properties["LastModified"].IsString());
+    if(properties.HasMember("Location") && properties["Location"].IsString())
+        projectmrudetail_v2Buf->Location = WString(properties["Location"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("Location", true)] = (properties.HasMember("Location") && properties["Location"].IsString());
+    if(properties.HasMember("Latitude") && properties["Latitude"].IsDouble())
+        projectmrudetail_v2Buf->Latitude = properties["Latitude"].GetDouble();
+    projectmrudetail_v2Buf->IsSet[WString("Latitude", true)] = (properties.HasMember("Latitude") && properties["Latitude"].IsDouble());
+    if(properties.HasMember("Longitude") && properties["Longitude"].IsDouble())
+        projectmrudetail_v2Buf->Longitude = properties["Longitude"].GetDouble();
+    projectmrudetail_v2Buf->IsSet[WString("Longitude", true)] = (properties.HasMember("Longitude") && properties["Longitude"].IsDouble());
+    if(properties.HasMember("LocationIsUsingLatLong") && properties["LocationIsUsingLatLong"].IsBool())
+        projectmrudetail_v2Buf->LocationIsUsingLatLong = properties["LocationIsUsingLatLong"].GetBool();
+    projectmrudetail_v2Buf->IsSet[WString("LocationIsUsingLatLong", true)] = (properties.HasMember("LocationIsUsingLatLong") && properties["LocationIsUsingLatLong"].IsBool());
+    if(properties.HasMember("RegisteredDate") && properties["RegisteredDate"].IsString())
+        projectmrudetail_v2Buf->RegisteredDate = WString(properties["RegisteredDate"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("RegisteredDate", true)] = (properties.HasMember("RegisteredDate") && properties["RegisteredDate"].IsString());
+    if(properties.HasMember("TimeZoneLocation") && properties["TimeZoneLocation"].IsString())
+        projectmrudetail_v2Buf->TimeZoneLocation = WString(properties["TimeZoneLocation"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("TimeZoneLocation", true)] = (properties.HasMember("TimeZoneLocation") && properties["TimeZoneLocation"].IsString());
+    if(properties.HasMember("Status") && properties["Status"].IsInt())
+        projectmrudetail_v2Buf->Status = properties["Status"].GetInt();
+    projectmrudetail_v2Buf->IsSet[WString("Status", true)] = (properties.HasMember("Status") && properties["Status"].IsInt());
+    if(properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString())
+        projectmrudetail_v2Buf->Data_Location_Guid = WString(properties["Data_Location_Guid"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("Data_Location_Guid", true)] = (properties.HasMember("Data_Location_Guid") && properties["Data_Location_Guid"].IsString());
+    if(properties.HasMember("Country_Code") && properties["Country_Code"].IsString())
+        projectmrudetail_v2Buf->Country_Code = WString(properties["Country_Code"].GetString(), true);
+    projectmrudetail_v2Buf->IsSet[WString("Country_Code", true)] = (properties.HasMember("Country_Code") && properties["Country_Code"].IsString());
     }
