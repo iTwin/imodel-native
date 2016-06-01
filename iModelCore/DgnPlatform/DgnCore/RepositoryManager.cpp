@@ -45,7 +45,8 @@ private:
             states.insert(DgnCodeInfo(code)).first->SetReserved(bcId);
         return RepositoryStatus::Success;
         }
-
+    virtual RepositoryStatus _PrepareForElementOperation(Request&, DgnElementCR, BeSQLite::DbOpcode, DgnElementCP) override { return RepositoryStatus::Success; }
+    virtual RepositoryStatus _PrepareForModelOperation(Request&, DgnModelCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
 public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new MasterBriefcaseManager(db); }
 };
@@ -78,6 +79,14 @@ private:
     virtual void _OnCommit(TxnManager& mgr) override { Save(mgr); }
     virtual void _OnReversedChanges(TxnManager& mgr) override { Save(mgr); }
     virtual void _OnUndoRedo(TxnManager& mgr, TxnAction) override { Save(mgr); }
+    virtual RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op, DgnElementCP orig) override
+        {
+        return el.PopulateRequest(req, op, orig);
+        }
+    virtual RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op) override
+        {
+        return model.PopulateRequest(req, op);
+        }
 
     BriefcaseManager(DgnDbR db) : IBriefcaseManager(db), m_localDbState(DbState::New)
         {
@@ -1099,11 +1108,8 @@ static DgnDbStatus toDgnDbStatus_TEMP(RepositoryStatus repoStatus)
 static DgnDbStatus processElementOperation_TEMP(IBriefcaseManager& mgr, DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP pre = nullptr)
     {
     // ###TODO: This goes away soon...we will require tools / application code to explicitly acquire locks/codes before performing persistence operations.
-    if (!mgr.LocksRequired())
-        return DgnDbStatus::Success;
-
     IBriefcaseManager::Request req;
-    RepositoryStatus status = el.PopulateRequest(req, opcode, pre);
+    RepositoryStatus status = mgr.PrepareForElementOperation(req, el, opcode, pre);
     if (RepositoryStatus::Success == status)
         status = mgr.ProcessRequest(req).Result(); // mgr.AreResourcesHeld(req.Locks().GetLockSet(), req.Codes(), &status);
 
@@ -1115,16 +1121,39 @@ static DgnDbStatus processElementOperation_TEMP(IBriefcaseManager& mgr, DgnEleme
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbStatus processModelOperation_TEMP(IBriefcaseManager& mgr, DgnModelCR model, BeSQLite::DbOpcode opcode)
     {
-    if (!mgr.LocksRequired())
-        return DgnDbStatus::Success;
-
     // ###TODO: This goes away soon...we will require tools / application code to explicitly acquire locks/codes before performing persistence operations.
     IBriefcaseManager::Request req;
-    RepositoryStatus status = model.PopulateRequest(req, opcode);
+    RepositoryStatus status = mgr.PrepareForModelOperation(req, model, opcode);
     if (RepositoryStatus::Success == status)
         status = mgr.ProcessRequest(req).Result(); // mgr.AreResourcesHeld(req.Locks().GetLockSet(), req.Codes(), &status);
 
     return toDgnDbStatus_TEMP(status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus IBriefcaseManager::PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op, DgnElementCP orig)
+    {
+    return LocksRequired() ? _PrepareForElementOperation(req, el, op, orig) : RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus IBriefcaseManager::PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op)
+    {
+    return LocksRequired() ? _PrepareForModelOperation(req, model, op) : RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus IBriefcaseManager::PrepareForElementUpdate(Request& req, DgnElementCR el)
+    {
+    auto orig = GetDgnDb().Elements().GetElement(el.GetElementId());
+    BeAssert(orig.IsValid());
+    return PrepareForElementOperation(req, el, BeSQLite::DbOpcode::Update, orig.get());
     }
 
 /*---------------------------------------------------------------------------------**//**

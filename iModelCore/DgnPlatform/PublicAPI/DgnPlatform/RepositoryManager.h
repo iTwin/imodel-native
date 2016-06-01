@@ -121,6 +121,8 @@ protected:
     virtual RepositoryStatus _Demote(DgnLockSet& locks, DgnCodeSet const& codes) = 0;
     virtual RepositoryStatus _Relinquish(Resources which) = 0;
     virtual bool _AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* status) = 0;
+    virtual RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP original) = 0;
+    virtual RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode opcode) = 0;
 
     // Codes
     virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
@@ -138,9 +140,13 @@ protected:
     virtual void _OnDgnDbDestroyed() { }
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
-public:
     DGNPLATFORM_EXPORT bool LocksRequired() const;
+public:
     DgnDbR GetDgnDb() const { return m_db; } //!< The DgnDb managed by this object
+
+    // ###TODO: REMOVE ME...
+    DGNPLATFORM_EXPORT RepositoryStatus PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP original=nullptr);
+    DGNPLATFORM_EXPORT RepositoryStatus PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode opcode);
 
     //! @name Managing both Locks and Codes
     //@{
@@ -170,6 +176,24 @@ public:
     //! @return True if the operation completed successfully, all of the locks are held at or above the desired level, and all of the codes are reserved.
     //! @remarks The sets of locks and codes may be modified.
     bool AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* status=nullptr) { return _AreResourcesHeld(locks, codes, status); }
+
+    //! Populates the request with the locks + codes required to insert the specified element into the DgnDb
+    RepositoryStatus PrepareForElementInsert(Request& request, DgnElementCR el) { return PrepareForElementOperation(request, el, BeSQLite::DbOpcode::Insert); }
+
+    //! Populates the request with the locks + codes required to update the specified element in the DgnDb
+    DGNPLATFORM_EXPORT RepositoryStatus PrepareForElementUpdate(Request& request, DgnElementCR el);
+
+    //! Populates the request with the locks + codes required to delete the specified element from the DgnDb
+    RepositoryStatus PrepareForElementDelete(Request& request, DgnElementCR el) { return PrepareForElementOperation(request, el, BeSQLite::DbOpcode::Delete); }
+
+    //! Populates the request with the locks + codes required to insert the specified model into the DgnDb
+    RepositoryStatus PrepareForModelInsert(Request& request, DgnModelCR model) { return PrepareForModelOperation(request, model, BeSQLite::DbOpcode::Insert); }
+
+    //! Populates the request with the locks + codes required to update the specified model in the DgnDb
+    RepositoryStatus PrepareForModelUpdate(Request& request, DgnModelCR model) { return PrepareForModelOperation(request, model, BeSQLite::DbOpcode::Update); }
+
+    //! Populates the request with the locks + codes required to delete the specified model from the DgnDb
+    RepositoryStatus PrepareForModelDelete(Request& request, DgnModelCR model) { return PrepareForModelOperation(request, model, BeSQLite::DbOpcode::Delete); }
     //@}
 
     //! @name Managing Locks
