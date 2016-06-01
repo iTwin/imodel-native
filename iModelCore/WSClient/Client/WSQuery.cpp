@@ -130,7 +130,7 @@ size_t maxIdsInFilter,
 size_t maxFilterLength
 )
     {
-    int objectCountInFilter = 0;
+    size_t objectCountInFilter = 0;
 
     Utf8String filter = "$id+in+[";
 
