@@ -81,13 +81,13 @@
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DataHandlerTool.exe</Assemblies>
         </Bindings>
     </Part>
-
-    
-   
+	
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
+		<SubPart PartName="S3MXECPlugin"/>
+		<SubPart PartName="S3MXECPluginC"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <SubPart PartName="DataHandlerTool" />
@@ -112,6 +112,27 @@
         <SubPart PartName="IdentityModel"       PartFile="${SrcRoot}bsicommon/CvsPartFiles\identitymodel"    Repository="BCC-IdentityModel" />
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPluginC.dll</Assemblies>
+        </Bindings>
+    </Part>
+	
+	<Part Name="S3MXECPlugin" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ECServices"      	PartFile="ecf"            Repository="ecf" />
+		<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
+		<RequiredRepository>Microsoft.Azure.KeyVault.Core</RequiredRepository>
+		<RequiredRepository>Microsoft.Data.Edm</RequiredRepository>
+		<RequiredRepository>Microsoft.Data.OData</RequiredRepository>
+		<RequiredRepository>Microsoft.Data.Services.Client</RequiredRepository>
+		<RequiredRepository>System.Spatial</RequiredRepository>
+		<RequiredRepository>WindowsAzure.Storage</RequiredRepository>
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.S3MXECPlugin.dll</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="S3MXECPluginC" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.S3MXECPluginC.dll</Assemblies>
         </Bindings>
     </Part>
     
