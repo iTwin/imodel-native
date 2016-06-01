@@ -37,8 +37,8 @@ TEST_F (ConnectWebServicesClientCTests, Ctor_InvalidProxyUrl_ApiIsNull)
     //NOTE: If Fiddler is running, and has been running for previous tests, this test will fail.
     //      To successfully run this test, restart Fiddler, or close out Fiddler entirely.
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -59,8 +59,8 @@ TEST_F (ConnectWebServicesClientCTests, Ctor_InvalidProxyCredentialsWhenProxyCre
     //      To successfully run this test, restart Fiddler AND make sure to Require Proxy Authentication!
     //This test is meant to ensure that a proxy, requiring authentication, will only successfully complete if authentication is correct.
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -81,8 +81,8 @@ TEST_F (ConnectWebServicesClientCTests, Ctor_InvalidProxyCredentialsWhenProxyCre
 TEST_F(ConnectWebServicesClientCTests, Ctor_ValidParameters_SuccessfulInitialization)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str(),
-        m_password.c_str(),
+        (m_pmUsername.c_str(),
+        m_pmPassword.c_str(),
         s_temporaryDirectory.c_str(),
         s_assetsRootDirectory.c_str(),
         m_applicationName.c_str(),
@@ -104,7 +104,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidCredentialsAndValidProductId_
     {
     WCharP password = L"password";
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str(),
+        (m_pmUsername.c_str(),
         password,
         s_temporaryDirectory.c_str(),
         s_assetsRootDirectory.c_str(),
@@ -123,8 +123,8 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidCredentialsAndValidProductId_
 TEST_F(ConnectWebServicesClientCTests, Ctor_ValidCredentialsAndInvalidProductId_ApiIsNull)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str(),
-        m_password.c_str(),
+        (m_pmUsername.c_str(),
+        m_pmPassword.c_str(),
         s_temporaryDirectory.c_str(),
         s_assetsRootDirectory.c_str(),
         m_applicationName.c_str(),
@@ -142,8 +142,8 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_ValidCredentialsAndInvalidProductId_
 TEST_F (ConnectWebServicesClientCTests, Ctor_NoProxyUrlOrCredentials_ApiIsNotNull)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -164,8 +164,8 @@ TEST_F (ConnectWebServicesClientCTests, Ctor_NoProxyUrlOrCredentials_ApiIsNotNul
 TEST_F (ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetreival)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -179,7 +179,7 @@ TEST_F (ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetr
         );
     ASSERT_TRUE (api != nullptr);
 
-    WCharP instanceId = L"8faf2677-4540-40d3-964d-252826089c7f";
+    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
     CallStatus status = ConnectWebServicesClientC_ReadProject (api, instanceId, &project);
     ASSERT_TRUE (status == SUCCESS);
@@ -194,8 +194,8 @@ TEST_F (ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetr
 TEST_F (ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -209,7 +209,7 @@ TEST_F (ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCo
         );
     ASSERT_TRUE (api != nullptr);
 
-    WCharP instanceId = L"8faf2677-4540-40d3-964d-252826089c7f";
+    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CallStatus status = ConnectWebServicesClientC_ReadProject (api, instanceId, nullptr);
     ASSERT_TRUE (status == INVALID_PARAMETER);
 
@@ -220,8 +220,8 @@ TEST_F (ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCo
 TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned_SuccessfulRetreival)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -235,7 +235,7 @@ TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned
         );
     ASSERT_TRUE (api != nullptr);
 
-    WCharP instanceId = L"8faf2677-4540-40d3-964d-252826089c7f";
+    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
     CallStatus status = ConnectWebServicesClientC_ReadProject(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
@@ -252,8 +252,8 @@ TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturnedWithFulfilledProjectProperties_SuccessfulRetreivalOfProperties)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -267,7 +267,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturned
         );
     ASSERT_TRUE (api != nullptr);
 
-    WCharP instanceId = L"8faf2677-4540-40d3-964d-252826089c7f";
+    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
     CallStatus status = ConnectWebServicesClientC_ReadProject(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
@@ -277,11 +277,11 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturned
     wchar_t stringBuf[4096];
     status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, project, PROJECT_BUFF_NAME, 0, 4096, stringBuf);
     ASSERT_TRUE(status == SUCCESS);
-    ASSERT_STREQ(stringBuf, L"Davids New QA Project");
+    ASSERT_STREQ(stringBuf, L"cwsccDEV_pm1_testproject");
 
     status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, project, PROJECT_BUFF_NUMBER, 0, 4096, stringBuf);
     ASSERT_TRUE(status == SUCCESS);
-    ASSERT_STREQ(stringBuf, L"-1234567890-0987654321");
+    ASSERT_STREQ(stringBuf, L"cwsccDEV_pm1_testproject");
 
     double longitude;
     status = ConnectWebServicesClientC_DataBufferGetDoubleProperty(api, project, PROJECT_BUFF_LONGITUDE, 0, &longitude);
@@ -297,8 +297,8 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturned
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_NULLBuffer_AppropriateStatusCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -343,8 +343,8 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_NULLBuffer_Appropriate
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeButInvalidPropertyType_AppropriateStatusCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -358,7 +358,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeB
         );
     ASSERT_TRUE (api != nullptr);
 
-    WCharP instanceId = L"8faf2677-4540-40d3-964d-252826089c7f";
+    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
     CallStatus status = ConnectWebServicesClientC_ReadProject(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
@@ -379,8 +379,8 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeB
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeAndValidPropertyTypeButInvalidProperty_AppropriateStatusCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -394,7 +394,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeA
         );
     ASSERT_TRUE (api != nullptr);
 
-    WCharP instanceId = L"8faf2677-4540-40d3-964d-252826089c7f";
+    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
     CallStatus status = ConnectWebServicesClientC_ReadProject(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
@@ -429,8 +429,8 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeA
 TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -535,8 +535,8 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
 TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -584,8 +584,8 @@ TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessfu
 TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
@@ -677,8 +677,8 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteFunctions_CRUDsSucces
 TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
-        (m_username.c_str (),
-        m_password.c_str (),
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
         s_temporaryDirectory.c_str (),
         s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
