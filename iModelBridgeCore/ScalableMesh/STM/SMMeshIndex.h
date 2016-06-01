@@ -347,6 +347,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void SplitNodeBasedOnImageRes();
     void SplitMeshForChildNodes();
 
+    void UpdateNodeFromBcDTM();
+
     //NEEDS_WORK_SM: refactor all meshIndex recursive calls into something more like a visitor pattern
     //NEEDS_WORK_SM: move clip and raster support to point index
 
