@@ -1430,7 +1430,7 @@ TEST_F(ECDbMappingTestFixture, JoinedTableCATests)
                                    "        <BaseClass>ClassA</BaseClass>"
                                    "        <ECProperty propertyName='Cost' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "JoinedTable on a class without any property is expected to be not successful"));
+                                   "</ECSchema>", true, "JoinedTable on a class without any property is expected to be successful"));
 
     AssertSchemaImport(testItems, "joinedtablecatests.ecdb");
     }
