@@ -183,7 +183,7 @@ protected:
 
     void QueryModelExtents(FitContextR);
     void QueueQuery(DgnViewportR, UpdatePlan::Query const&);
-    void AddtoSceneQuick(SceneContextR context, QueryResults& results);
+    void AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>&);
     bool AbortRequested() const {return m_abortQuery;} //!< @private
     void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
     DgnQueryViewCP _ToQueryView() const override {return this;}
