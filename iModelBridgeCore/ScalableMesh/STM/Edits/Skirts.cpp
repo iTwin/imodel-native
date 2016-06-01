@@ -122,9 +122,11 @@ void BuildSkirt(PolyfaceHeaderPtr& skirt, bvector<DPoint3d> polylineToSkirt, Ter
     for (size_t ptInd = 0; ptInd < polylineToSkirt.size() - 1; ptInd++)
         {
         TerrainModel::DTMDrapedLinePtr drapedLinePP;
-        DTMStatusInt status = draping->DrapeLinear(drapedLinePP, &polylineToSkirt[ptInd], 2);
+        DTMStatusInt status = draping->DrapeLinear(drapedLinePP, &polylineToSkirt[ptInd], 2);        
         assert(status == DTM_SUCCESS);
-        drapedSegments.push_back(drapedLinePP);
+        if (drapedLinePP.IsValid())
+            drapedSegments.push_back(drapedLinePP);
+        
         }
 
     bool wasInExternalHole = false;
