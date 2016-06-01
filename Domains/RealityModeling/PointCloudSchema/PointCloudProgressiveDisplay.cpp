@@ -11,12 +11,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
-// These pragma are necessary because of the "DEBUG_PRINTF" macro. With clang, they cause a "-Wunused-value" error.
-#ifdef __APPLE__
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wunused-value"
-#endif
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
@@ -253,9 +247,4 @@ bool PointCloudProgressiveDisplay::ShouldDrawInContext(Dgn::RenderContextR conte
 
     return true;
     }
-
-#ifdef __APPLE__
-#   pragma clang diagnostic pop
-#endif
-
 
