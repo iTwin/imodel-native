@@ -19,9 +19,6 @@ private:
     virtual Response _ProcessRequest(Request&) override { return Response(RepositoryStatus::Success); }
     virtual RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _Relinquish(Resources) override { return RepositoryStatus::Success; }
-    virtual DgnDbStatus _LockElement(DgnElementCR, DgnCodeCR, DgnModelId) override { return DgnDbStatus::Success; }
-    virtual DgnDbStatus _LockModel(DgnModelCR, LockLevel, DgnCodeCR) override { return DgnDbStatus::Success; }
-    virtual DgnDbStatus _LockDb(LockLevel, DgnCodeCR) override { return DgnDbStatus::Success; }
     virtual RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) override { level = LockLevel::Exclusive; return RepositoryStatus::Success; }
     virtual RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
@@ -1075,14 +1072,70 @@ void BriefcaseManager::_OnModelInserted(DgnModelId id)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus toDgnDbStatus_TEMP(RepositoryStatus repoStatus)
+    {
+    switch (repoStatus)
+        {
+        case RepositoryStatus::Success:
+            return DgnDbStatus::Success;
+        case RepositoryStatus::LockAlreadyHeld:
+        case RepositoryStatus::LockUsed:
+            return DgnDbStatus::LockNotHeld;
+        case RepositoryStatus::CodeUnavailable:
+        case RepositoryStatus::CodeNotReserved:
+            return DgnDbStatus::CodeNotReserved;
+        case RepositoryStatus::CodeUsed:
+            return DgnDbStatus::DuplicateCode;
+        default:
+            return DgnDbStatus::LockNotHeld;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus processElementOperation_TEMP(IBriefcaseManager& mgr, DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP pre = nullptr)
+    {
+    // ###TODO: This goes away soon...we will require tools / application code to explicitly acquire locks/codes before performing persistence operations.
+    if (!mgr.LocksRequired())
+        return DgnDbStatus::Success;
+
+    IBriefcaseManager::Request req;
+    RepositoryStatus status = el.PopulateRequest(req, opcode, pre);
+    if (RepositoryStatus::Success == status)
+        status = mgr.ProcessRequest(req).Result(); // mgr.AreResourcesHeld(req.Locks().GetLockSet(), req.Codes(), &status);
+
+    return toDgnDbStatus_TEMP(status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus processModelOperation_TEMP(IBriefcaseManager& mgr, DgnModelCR model, BeSQLite::DbOpcode opcode)
+    {
+    if (!mgr.LocksRequired())
+        return DgnDbStatus::Success;
+
+    // ###TODO: This goes away soon...we will require tools / application code to explicitly acquire locks/codes before performing persistence operations.
+    IBriefcaseManager::Request req;
+    RepositoryStatus status = model.PopulateRequest(req, opcode);
+    if (RepositoryStatus::Success == status)
+        status = mgr.ProcessRequest(req).Result(); // mgr.AreResourcesHeld(req.Locks().GetLockSet(), req.Codes(), &status);
+
+    return toDgnDbStatus_TEMP(status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus IBriefcaseManager::OnElementInsert(DgnElementCR el) { return _LockModel(*el.GetModel(), LockLevel::Shared, el.GetCode()); }
-DgnDbStatus IBriefcaseManager::OnElementUpdate(DgnElementCR el, DgnModelId originalModelId) { return LockElement(el, el.GetCode(), originalModelId); }
-DgnDbStatus IBriefcaseManager::OnElementDelete(DgnElementCR el) { return LockElement(el, DgnCode()); }
-DgnDbStatus IBriefcaseManager::OnModelInsert(DgnModelCR model) { return _LockDb(LockLevel::Shared, model.GetCode()); }
-DgnDbStatus IBriefcaseManager::OnModelUpdate(DgnModelCR model) { return _LockModel(model, LockLevel::Exclusive, model.GetCode()); }
-DgnDbStatus IBriefcaseManager::OnModelDelete(DgnModelCR model) { return _LockModel(model, LockLevel::Exclusive, DgnCode()); }
+DgnDbStatus IBriefcaseManager::OnElementInsert(DgnElementCR el) { return processElementOperation_TEMP(*this, el, BeSQLite::DbOpcode::Insert); }
+DgnDbStatus IBriefcaseManager::OnElementUpdate(DgnElementCR el, DgnElementCR pre) { return processElementOperation_TEMP(*this, el, BeSQLite::DbOpcode::Update, &pre); }
+DgnDbStatus IBriefcaseManager::OnElementDelete(DgnElementCR el) { return processElementOperation_TEMP(*this, el, BeSQLite::DbOpcode::Delete); }
+DgnDbStatus IBriefcaseManager::OnModelInsert(DgnModelCR model) { return processModelOperation_TEMP(*this, model, BeSQLite::DbOpcode::Insert); }
+DgnDbStatus IBriefcaseManager::OnModelUpdate(DgnModelCR model) { return processModelOperation_TEMP(*this, model, BeSQLite::DbOpcode::Update); }
+DgnDbStatus IBriefcaseManager::OnModelDelete(DgnModelCR model) { return processModelOperation_TEMP(*this, model, BeSQLite::DbOpcode::Delete); }
 void IBriefcaseManager::OnElementInserted(DgnElementId id) { _OnElementInserted(id); }
 void IBriefcaseManager::OnModelInserted(DgnModelId id) { _OnModelInserted(id); }
 
@@ -1126,36 +1179,6 @@ template<typename T> static DgnDbStatus processRequest(T const& obj, LockLevel l
         default:
             return response.LockStates().empty() ? DgnDbStatus::CodeNotReserved : DgnDbStatus::LockNotHeld;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus IBriefcaseManager::_LockElement(DgnElementCR el, DgnCodeCR code, DgnModelId originalModelId)
-    {
-    if (!LocksRequired())
-        return DgnDbStatus::Success;
-
-    if (originalModelId.IsValid() && originalModelId == el.GetModelId())
-        originalModelId = DgnModelId();
-
-    return processRequest(el, LockLevel::Exclusive, code, *this, originalModelId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus IBriefcaseManager::_LockModel(DgnModelCR model, LockLevel level, DgnCodeCR code)
-    {
-    return LocksRequired() ? processRequest(model, level, code, *this) : DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus IBriefcaseManager::_LockDb(LockLevel level, DgnCodeCR code)
-    {
-    return LocksRequired() ? processRequest(GetDgnDb(), level, code, *this) : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

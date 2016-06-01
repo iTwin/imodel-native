@@ -121,10 +121,6 @@ protected:
     virtual RepositoryStatus _Demote(DgnLockSet& locks, DgnCodeSet const& codes) = 0;
     virtual RepositoryStatus _Relinquish(Resources which) = 0;
     virtual bool _AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* status) = 0;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _LockElement(DgnElementCR el, DgnCodeCR code, DgnModelId originalModelId);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _LockModel(DgnModelCR model, LockLevel level, DgnCodeCR code);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _LockDb(LockLevel level, DgnCodeCR code);
-    DgnDbStatus LockElement(DgnElementCR el, DgnCodeCR code, DgnModelId originalModelId=DgnModelId()) { return _LockElement(el, code, originalModelId); }
 
     // Codes
     virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
@@ -142,8 +138,8 @@ protected:
     virtual void _OnDgnDbDestroyed() { }
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
-    DGNPLATFORM_EXPORT bool LocksRequired() const;
 public:
+    DGNPLATFORM_EXPORT bool LocksRequired() const;
     DgnDbR GetDgnDb() const { return m_db; } //!< The DgnDb managed by this object
 
     //! @name Managing both Locks and Codes
@@ -282,7 +278,7 @@ public:
     //@}
 
     DgnDbStatus OnElementInsert(DgnElementCR el); //!< @private
-    DgnDbStatus OnElementUpdate(DgnElementCR el, DgnModelId originalModelId); //!< @private
+    DgnDbStatus OnElementUpdate(DgnElementCR el, DgnElementCR pre); //!< @private
     DgnDbStatus OnElementDelete(DgnElementCR el); //!< @private
     DgnDbStatus OnModelInsert(DgnModelCR model); //!< @private
     DgnDbStatus OnModelUpdate(DgnModelCR model); //!< @private

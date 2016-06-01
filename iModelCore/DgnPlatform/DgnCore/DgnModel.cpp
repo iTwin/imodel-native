@@ -856,6 +856,35 @@ void DgnModel::_OnDeleted()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeSQLite::DbOpcode op) const
+    {
+    BeAssert(m_code.IsValid() && !m_code.IsEmpty());
+    switch (op)
+        {
+        case BeSQLite::DbOpcode::Insert:
+            req.Codes().insert(m_code);
+            req.Locks().Insert(GetDgnDb(), LockLevel::Shared);
+            break;
+        case BeSQLite::DbOpcode::Delete:
+            req.Locks().Insert(*this, LockLevel::Exclusive);
+            break;
+        case BeSQLite::DbOpcode::Update:
+            {
+            req.Locks().Insert(*this, LockLevel::Exclusive);
+            DgnCode originalCode;
+            if (SUCCESS == GetDgnDb().Models().GetModelCode(originalCode, GetModelId()) && originalCode != m_code)
+                req.Codes().insert(m_code);
+            
+            break;
+            }
+        }
+
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnInsert()

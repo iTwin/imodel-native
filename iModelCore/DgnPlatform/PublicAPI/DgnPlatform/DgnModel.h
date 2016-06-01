@@ -400,6 +400,13 @@ protected:
     //! @note The implementation should start by calling the superclass implementation.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
 
+    //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this model.
+    //! @param[in]      request  Request to populate
+    //! @param[in]      opcode   The operation to be performed
+    //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
+    //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
+    DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const;
+
     //! Generate the CreateParams to use for _CloneForImport
     //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
     //! @return CreateParams initialized with the model's current data, remapped to the destination DgnDb.
@@ -630,6 +637,13 @@ public:
 
     //! Creates a DgnCode for a model with the given name, associated with the default DgnAuthority for models.
     static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="") { return ModelAuthority::CreateModelCode(modelName, nameSpace); }
+
+    //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this model.
+    //! @param[in]      request  Request to populate
+    //! @param[in]      opcode   The operation to be performed
+    //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
+    //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
+    RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const { return _PopulateRequest(request, opcode); }
 };
 
 //=======================================================================================
