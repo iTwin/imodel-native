@@ -247,9 +247,10 @@ BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchema
     if (CompareECEnumerations(change.Enumerations(), a.GetEnumerations(), b.GetEnumerations()) != SUCCESS)
         return ERROR;
 
-    //if (CompareKindOfQuantities(change.KindOfQuantities(), a.GetKindOfQuantities(), b.GetKindOfQuantities()) != SUCCESS)
-    //    return ERROR;
-    
+#ifdef KIND_OF_QUANTITY_SUPPORT
+    if (CompareKindOfQuantities(change.KindOfQuantities(), a.GetKindOfQuantities(), b.GetKindOfQuantities()) != SUCCESS)
+        return ERROR;
+#endif
     if (CompareReferences(change.References(), a.GetReferencedSchemas(), b.GetReferencedSchemas()) != SUCCESS)
         return ERROR;
 
@@ -660,46 +661,47 @@ BentleyStatus ECSchemaComparer::CompareECEnumerations(ECEnumerationChanges& chan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-//BentleyStatus ECSchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
-//    {
-//    std::map<Utf8CP, KindOfQuantityCP, CompareIUtf8> aMap, bMap, cMap;
-//    for (KindOfQuantityCP enumCP : a)
-//        aMap[enumCP->GetName().c_str()] = enumCP;
-//
-//    for (KindOfQuantityCP enumCP : b)
-//        bMap[enumCP->GetName().c_str()] = enumCP;
-//
-//    cMap.insert(aMap.cbegin(), aMap.cend());
-//    cMap.insert(bMap.cbegin(), bMap.cend());
-//
-//    for (auto& u : cMap)
-//        {
-//        auto itorA = aMap.find(u.first);
-//        auto itorB = bMap.find(u.first);
-//
-//        bool existInA = itorA != aMap.end();
-//        bool existInB = itorB != bMap.end();
-//        if (existInA && existInB)
-//            {
-//            auto& kindOfQuantityChange = changes.Add(ChangeState::Modified, u.first);
-//            if (CompareKindOfQuantity(kindOfQuantityChange, *itorA->second, *itorB->second) == ERROR)
-//                return ERROR;
-//            }
-//        else if (existInA && !existInB)
-//            {
-//            if (AppendKindOfQuantity(changes, *itorA->second, ValueId::Deleted) == ERROR)
-//                return ERROR;
-//            }
-//        else if (!existInA && existInB)
-//            {
-//            if (AppendKindOfQuantity(changes, *itorB->second, ValueId::New) == ERROR)
-//                return ERROR;
-//            }
-//        }
-//
-//    return SUCCESS;
-//    }
+#ifdef KIND_OF_QUANTITY_SUPPORT
+BentleyStatus ECSchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
+    {
+    std::map<Utf8CP, KindOfQuantityCP, CompareIUtf8Ascii> aMap, bMap, cMap;
+    for (KindOfQuantityCP enumCP : a)
+        aMap[enumCP->GetName().c_str()] = enumCP;
 
+    for (KindOfQuantityCP enumCP : b)
+        bMap[enumCP->GetName().c_str()] = enumCP;
+
+    cMap.insert(aMap.cbegin(), aMap.cend());
+    cMap.insert(bMap.cbegin(), bMap.cend());
+
+    for (auto& u : cMap)
+        {
+        auto itorA = aMap.find(u.first);
+        auto itorB = bMap.find(u.first);
+
+        bool existInA = itorA != aMap.end();
+        bool existInB = itorB != bMap.end();
+        if (existInA && existInB)
+            {
+            auto& kindOfQuantityChange = changes.Add(ChangeState::Modified, u.first);
+            if (CompareKindOfQuantity(kindOfQuantityChange, *itorA->second, *itorB->second) == ERROR)
+                return ERROR;
+            }
+        else if (existInA && !existInB)
+            {
+            if (AppendKindOfQuantity(changes, *itorA->second, ValueId::Deleted) == ERROR)
+                return ERROR;
+            }
+        else if (!existInA && existInB)
+            {
+            if (AppendKindOfQuantity(changes, *itorB->second, ValueId::New) == ERROR)
+                return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -753,10 +755,6 @@ BentleyStatus ECSchemaComparer::AppendCustomAttribute(ECInstanceChanges& changes
     std::map<Utf8String, ECValue> map;
     if (ConvertECInstanceToValueMap(map, v) != SUCCESS)
         return ERROR;
-
-
-    if (map.empty())
-        return SUCCESS;
 
     auto& change = changes.Add(state, v.GetClass().GetFullName());
     for (auto& key : map)
@@ -943,54 +941,56 @@ BentleyStatus ECSchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-//BentleyStatus ECSchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b)
-//    {
-//    if (a.GetName() != b.GetName())
-//        change.GetName().SetValue(a.GetName(), b.GetName());
-//
-//    if (a.GetDisplayLabel() != b.GetDisplayLabel())
-//        change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
-//
-//    if (a.GetDescription() != b.GetDescription())
-//        change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
-//
-//    if (a.GetPersistenceUnit() != b.GetPersistenceUnit())
-//        change.GetPersistenceUnit().SetValue(a.GetPersistenceUnit(), b.GetPersistenceUnit());
-//
-//    if (a.GetPrecision() != b.GetPrecision())
-//        change.GetPrecision().SetValue(a.GetPrecision(), b.GetPrecision());
-//
-//    if (a.GetDefaultPresentationUnit() != b.GetDefaultPresentationUnit())
-//        change.GetDefaultPresentationUnit().SetValue(a.GetDefaultPresentationUnit(), b.GetDefaultPresentationUnit());
-//
-//
-//    std::set<Utf8CP, CompareUtf8> aMap, bMap, cMap;
-//    for (Utf8StringCR unit : a.GetAlternativePresentationUnitList())
-//        aMap.insert(unit.c_str());
-//
-//    for (Utf8StringCR unit : b.GetAlternativePresentationUnitList())
-//        bMap.insert(unit.c_str());
-//
-//    cMap.insert(aMap.cbegin(), aMap.cend());
-//    cMap.insert(bMap.cbegin(), bMap.cend());
-//
-//    for (auto u : cMap)
-//        {
-//        auto itorA = aMap.find(u);
-//        auto itorB = bMap.find(u);
-//
-//        bool existInA = itorA != aMap.end();
-//        bool existInB = itorB != bMap.end();
-//        if (existInA && existInB)
-//            {
-//            }
-//        else if (existInA && !existInB)
-//            change.GetAlternativePresentationUnitList().Add(ChangeState::Deleted).SetValue(ValueId::Deleted, *itorA);
-//        else if (!existInA && existInB)
-//            change.GetAlternativePresentationUnitList().Add(ChangeState::New).SetValue(ValueId::New, *itorB);
-//        }
-//    return SUCCESS;
-//    }
+#ifdef KIND_OF_QUANTITY_SUPPORT
+BentleyStatus ECSchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b)
+    {
+    if (a.GetName() != b.GetName())
+        change.GetName().SetValue(a.GetName(), b.GetName());
+
+    if (a.GetDisplayLabel() != b.GetDisplayLabel())
+        change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
+
+    if (a.GetDescription() != b.GetDescription())
+        change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
+
+    if (a.GetPersistenceUnit() != b.GetPersistenceUnit())
+        change.GetPersistenceUnit().SetValue(a.GetPersistenceUnit(), b.GetPersistenceUnit());
+
+    if (a.GetPrecision() != b.GetPrecision())
+        change.GetPrecision().SetValue(a.GetPrecision(), b.GetPrecision());
+
+    if (a.GetDefaultPresentationUnit() != b.GetDefaultPresentationUnit())
+        change.GetDefaultPresentationUnit().SetValue(a.GetDefaultPresentationUnit(), b.GetDefaultPresentationUnit());
+
+
+    std::set<Utf8CP, CompareUtf8> aMap, bMap, cMap;
+    for (Utf8StringCR unit : a.GetAlternativePresentationUnitList())
+        aMap.insert(unit.c_str());
+
+    for (Utf8StringCR unit : b.GetAlternativePresentationUnitList())
+        bMap.insert(unit.c_str());
+
+    cMap.insert(aMap.cbegin(), aMap.cend());
+    cMap.insert(bMap.cbegin(), bMap.cend());
+
+    for (auto u : cMap)
+        {
+        auto itorA = aMap.find(u);
+        auto itorB = bMap.find(u);
+
+        bool existInA = itorA != aMap.end();
+        bool existInB = itorB != bMap.end();
+        if (existInA && existInB)
+            {
+            }
+        else if (existInA && !existInB)
+            change.GetAlternativePresentationUnitList().Add(ChangeState::Deleted).SetValue(ValueId::Deleted, *itorA);
+        else if (!existInA && existInB)
+            change.GetAlternativePresentationUnitList().Add(ChangeState::New).SetValue(ValueId::New, *itorB);
+        }
+    return SUCCESS;
+    }
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1084,10 +1084,11 @@ BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchem
         if (AppendECEnumeration(change.Enumerations(), *enumerationCP, appendType) == ERROR)
             return ERROR;
 
-    //for (KindOfQuantityCP kindOfQuantityCP : v.GetKindOfQuantities())
-    //    if (AppendKindOfQuantity(change.KindOfQuantities(), *kindOfQuantityCP, appendType) == ERROR)
-    //        return ERROR;
-
+#ifdef KIND_OF_QUANTITY_SUPPORT
+    for (KindOfQuantityCP kindOfQuantityCP : v.GetKindOfQuantities())
+        if (AppendKindOfQuantity(change.KindOfQuantities(), *kindOfQuantityCP, appendType) == ERROR)
+            return ERROR;
+#endif
     if (AppendReferences(change.References(), v.GetReferencedSchemas(), appendType) != SUCCESS)
         return ERROR;
 
@@ -1212,24 +1213,25 @@ BentleyStatus ECSchemaComparer::AppendECEnumeration(ECEnumerationChanges& change
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-//BentleyStatus ECSchemaComparer::AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType)
-//    {
-//    ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
-//    KindOfQuantityChange& kindOfQuantityChange = changes.Add(state, v.GetName().c_str());
-//    kindOfQuantityChange.GetName().SetValue(appendType, v.GetName());
-//    kindOfQuantityChange.GetDisplayLabel().SetValue(appendType, v.GetDisplayLabel());
-//    kindOfQuantityChange.GetDescription().SetValue(appendType, v.GetDescription());
-//    kindOfQuantityChange.GetPersistenceUnit().SetValue(appendType, v.GetPersistenceUnit());
-//    kindOfQuantityChange.GetPrecision().SetValue(appendType, v.GetPrecision());
-//    kindOfQuantityChange.GetDefaultPresentationUnit().SetValue(appendType, v.GetDefaultPresentationUnit());
-//    for (Utf8StringCR unitstr : v.GetAlternativePresentationUnitList())
-//        {
-//        kindOfQuantityChange.GetAlternativePresentationUnitList().Add(state).SetValue(appendType, unitstr);
-//        }
-//
-//    return SUCCESS;
-//    }
+#ifdef KIND_OF_QUANTITY_SUPPORT
+BentleyStatus ECSchemaComparer::AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType)
+    {
+    ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
+    KindOfQuantityChange& kindOfQuantityChange = changes.Add(state, v.GetName().c_str());
+    kindOfQuantityChange.GetName().SetValue(appendType, v.GetName());
+    kindOfQuantityChange.GetDisplayLabel().SetValue(appendType, v.GetDisplayLabel());
+    kindOfQuantityChange.GetDescription().SetValue(appendType, v.GetDescription());
+    kindOfQuantityChange.GetPersistenceUnit().SetValue(appendType, v.GetPersistenceUnit());
+    kindOfQuantityChange.GetPrecision().SetValue(appendType, v.GetPrecision());
+    kindOfQuantityChange.GetDefaultPresentationUnit().SetValue(appendType, v.GetDefaultPresentationUnit());
+    for (Utf8StringCR unitstr : v.GetAlternativePresentationUnitList())
+        {
+        kindOfQuantityChange.GetAlternativePresentationUnitList().Add(state).SetValue(appendType, unitstr);
+        }
 
+    return SUCCESS;
+    }
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1355,8 +1357,23 @@ BentleyStatus ECSchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
+std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path , bool stripArrayIndex)
     {
+    auto stripArrayIndexIfRequired = [&stripArrayIndex] (Utf8String str)
+        {
+        if (stripArrayIndex)
+            {
+            auto i = str.find("[");
+            if (i == Utf8String::npos)
+                {
+                return str;
+                }
+
+            str = str.substr(0, i);
+            }
+        return str;
+        };
+
     std::vector<Utf8String> axis;
     size_t b = 0;
     size_t i = 0;
@@ -1364,13 +1381,14 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
         {
         if (path[i] == '.')
             {
-            axis.push_back(path.substr(b, i - b));
+         
+            axis.push_back(stripArrayIndexIfRequired(path.substr(b, i - b)));
             b = i + 1;
             }
         }
 
     if (b < i)
-        axis.push_back(path.substr(b , i - b ));
+        axis.push_back(stripArrayIndexIfRequired(path.substr(b , i - b )));
 
     return axis;
     }

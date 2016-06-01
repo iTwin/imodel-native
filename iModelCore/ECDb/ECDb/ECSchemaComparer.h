@@ -11,7 +11,7 @@
 #include "Nullable.h"
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
+//#define KIND_OF_QUANTITY_SUPPORT
 #define INDENT_SIZE 3
 
 struct ECSchemaChange;
@@ -25,6 +25,9 @@ struct ECEnumeratorChange;
 struct ECPropertyValueChange;
 struct ECObjectChange;
 struct ClassTypeChange;
+#ifdef KIND_OF_QUANTITY_SUPPORT
+struct KindOfQuantityChange;
+#endif
 //=======================================================================================
 // @bsienum                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
@@ -389,16 +392,19 @@ struct ECEnumerationChanges : ECChangeArray<ECEnumerationChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-//struct ECKindOfQuantityChanges : ECChangeArray<KindOfQuantityChange>
-//    {
-//    public:
-//        ECKindOfQuantityChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-//            : ECChangeArray<KindOfQuantityChange>(state, SystemId::KINDOFQUANTITIES, parent, customId, SystemId::KINDOFQUANTITY)
-//            {
-//            BeAssert(systemId == GetSystemId());
-//            }
-//        virtual ~ECKindOfQuantityChanges() {}
-//    };
+#ifdef KIND_OF_QUANTITY_SUPPORT
+struct ECKindOfQuantityChanges : ECChangeArray<KindOfQuantityChange>
+    {
+    public:
+        ECKindOfQuantityChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<KindOfQuantityChange>(state, SystemId::KindOfQuantities, parent, customId, SystemId::KindOfQuantity)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        virtual ~ECKindOfQuantityChanges() {}
+    };
+#endif
+
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
@@ -623,36 +629,6 @@ struct ECPrimitiveChange : ECChange
             m_new = std::move(valueNew);
             return SUCCESS;
             }
-        ////---------------------------------------------------------------------------------------
-        //// @bsimethod                                                    Affan.Khan  03/2016
-        ////+---------------+---------------+---------------+---------------+---------------+------
-        //BentleyStatus SetValue(Nullable<T> const&& valueOld, nullptr_t valueNew)
-        //    {
-        //    if (GetState() != ChangeState::Modified)
-        //        {
-        //        BeAssert(false && "Cannot set both OLD and NEW for change that is not makred as MODIFIED");
-        //        return ERROR;
-        //        }
-
-        //    m_old = std::move(valueOld);
-        //    m_new = nullptr;
-        //    return SUCCESS;
-        //    }
-        ////---------------------------------------------------------------------------------------
-        //// @bsimethod                                                    Affan.Khan  03/2016
-        ////+---------------+---------------+---------------+---------------+---------------+------
-        //BentleyStatus SetValue(nullptr_t valueOld, Nullable<T> const&& valueNew)
-        //    {
-        //    if (GetState() != ChangeState::Modified)
-        //        {
-        //        BeAssert(false && "Cannot set both OLD and NEW for change that is not makred as MODIFIED");
-        //        return ERROR;
-        //        }
-
-        //    m_old = nullptr;
-        //    m_new = std::move(valueNew);
-        //    return SUCCESS;
-        //    }
     };
 
 //=======================================================================================
@@ -877,8 +853,10 @@ struct ECSchemaChange : ECObjectChange
         ReferenceChanges& References() { return Get<ReferenceChanges>(SystemId::References); }
         ECClassChanges& Classes() { return Get<ECClassChanges>(SystemId::Classes); }
         ECEnumerationChanges& Enumerations() { return Get<ECEnumerationChanges>(SystemId::Enumerations); }
-        //ECKindOfQuantityChanges& KindOfQuantities() { return Get<ECKindOfQuantityChanges>(SystemId::KINDOFQUANTITIES); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
+#ifdef KIND_OF_QUANTITY_SUPPORT
+        ECKindOfQuantityChanges& KindOfQuantities() { return Get<ECKindOfQuantityChanges>(SystemId::KindOfQuantities); }
+#endif
     };
 
 //=======================================================================================
@@ -1081,23 +1059,28 @@ struct ECPropertyValueChange : ECChange
         virtual ~ECPropertyValueChange() {}
     };
 
-//struct KindOfQuantityChange :ECObjectChange
-//    {
-//    public:
-//        KindOfQuantityChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-//            : ECObjectChange(state, SystemId::KINDOFQUANTITY, parent, customId)
-//            {
-//            BeAssert(systemId == GetSystemId());
-//            }
-//        virtual ~KindOfQuantityChange() {}
-//        StringChange& GetName() { return Get<StringChange>(SystemId::NAME); }
-//        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DISPLAYLABEL); }
-//        StringChange& GetDescription() { return Get<StringChange>(SystemId::DESCRIPTION); }
-//        StringChange& GetDefaultPresentationUnit() { return Get<StringChange>(SystemId::DEFAULTPRESENTATIONUNIT); }
-//        StringChange& GetPersistenceUnit() { return Get<StringChange>(SystemId::PERSISTENCEUNIT); }
-//        UInt32Change& GetPrecision() { return Get<UInt32Change>(SystemId::PRECISION); }
-//        StringChanges& GetAlternativePresentationUnitList() { return Get<StringChanges>(SystemId::ALTERNATIVEPRESENTATIONUNITLIST); }
-//    };
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+#ifdef KIND_OF_QUANTITY_SUPPORT
+struct KindOfQuantityChange :ECObjectChange
+    {
+    public:
+        KindOfQuantityChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECObjectChange(state, SystemId::KindOfQuantity, parent, customId)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        virtual ~KindOfQuantityChange() {}
+        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
+        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
+        StringChange& GetDefaultPresentationUnit() { return Get<StringChange>(SystemId::DefaultPresentationUnit); }
+        StringChange& GetPersistenceUnit() { return Get<StringChange>(SystemId::PersistenceUnit); }
+        UInt32Change& GetPrecision() { return Get<UInt32Change>(SystemId::Precision); }
+        StringChanges& GetAlternativePresentationUnitList() { return Get<StringChanges>(SystemId::AlternativePresentationUnitList); }
+    };
+#endif
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -1296,16 +1279,16 @@ struct ECSchemaComparer
         BentleyStatus AppendReferences(ReferenceChanges& changes, ECSchemaReferenceListCR v, ValueId appendType);
         BentleyStatus ConvertECInstanceToValueMap(std::map<Utf8String, ECValue>& map, IECInstanceCR instance);
         BentleyStatus ConvertECValuesCollectionToValueMap(std::map<Utf8String, ECValue>& map, ECValuesCollectionCR values);
-        //BentleyStatus AppendECInstance(ECPropertyValueChange& changes, IECInstanceCR v, ValueId appendType);        
-        //BentleyStatus AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType);
-        //BentleyStatus CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b);
-        //BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b);
-
+#ifdef KIND_OF_QUANTITY_SUPPORT
+        BentleyStatus AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType);
+        BentleyStatus CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b);
+        BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b);
+#endif
     public:
         ECSchemaComparer(){}
         ~ECSchemaComparer(){}
         BentleyStatus Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
-        static std::vector<Utf8String> Split(Utf8StringCR path);
+        static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
         static Utf8String Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
     };
 

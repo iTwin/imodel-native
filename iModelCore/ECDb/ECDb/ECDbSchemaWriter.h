@@ -73,12 +73,12 @@ private:
     BentleyStatus UpdateECSchemaReferences(ReferenceChanges& referenceChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
     BentleyStatus UpdateECClasses(ECClassChanges& classChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
     BentleyStatus UpdateECEnumerations(ECEnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
+    BentleyStatus UpdateECProperties(ECPropertyChanges&, ECClassCR oldClass, ECClassCR newClass);
 
     BentleyStatus DeleteECClass(ECClassChange& classChange, ECClassCR deletedClass);
     BentleyStatus DeleteECProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty);
     BentleyStatus DeleteECCustomAttributes(ECContainerId id, ECContainerType type);
     BentleyStatus DeleteECInstances(ECClassCR deletedClass);
-    BentleyStatus DeleteECClassEntry(ECClassCR deletedClass);
     bool IsSpecifiedInECRelationshipConstraint(ECClassCR deletedClass) const;
     BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const;
 
@@ -87,6 +87,7 @@ private:
 public:
     explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb)
         {
+        m_customAttributeValidator.Accept("ECDbMap:ClassMap.Indexes.Name");
         m_customAttributeValidator.Accept("ECDbMap:ClassMap.MapStrategy.MinimumSharedColumnCount");
         m_customAttributeValidator.Reject("ECDbMap:*");
         }
