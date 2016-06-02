@@ -52,7 +52,7 @@ AuthenticationHandlerPtr   authenticationHandler
     {
     m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, authenticationHandler);
     m_wsRepositoryClient->SetCredentials(credentials);
-    m_eventServiceClient = nullptr;
+    //m_eventServiceClient = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -63,6 +63,8 @@ void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageCli
     m_azureClient = azureClient;
     }
 
+EventServiceClient* DgnDbRepositoryConnection::m_eventServiceClient = nullptr;
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            03/2016
 //---------------------------------------------------------------------------------------
@@ -71,18 +73,16 @@ bool DgnDbRepositoryConnection::SetEventServiceClient(ICancellationTokenPtr canc
     //Get Event Service SASToken and Set EventService Client
     if (m_eventServiceClient == nullptr)
         {
-        EventServiceConnectionTaskPtr taskPtr1, taskPtr2;
-        taskPtr1 = GetEventServiceSAS(cancellationToken);
-        if (!taskPtr1->GetResult().IsSuccess())
+        //EventServiceConnectionTaskPtr taskPtr1, taskPtr2;
+        auto sasToken = GetEventServiceSAS(cancellationToken)->GetResult();
+        if (!sasToken.IsSuccess())
             return false;
-        taskPtr2 = GetEventServiceSubscriptionId(cancellationToken);
-        if (!taskPtr2->GetResult().IsSuccess())
+        auto subscriptionId = GetEventServiceSubscriptionId(cancellationToken)->GetResult();
+        if (!subscriptionId.IsSuccess())
             return false;
 
-        EventServiceClient *eventServiceClient = new EventServiceClient(taskPtr1->GetResult().GetValue()->GetNamespace(), 
-                                                                        m_repositoryInfo.GetId(),
-                                                                        taskPtr2->GetResult().GetValue()->GetSubscriptionId());
-        eventServiceClient->UpdateSASToken(taskPtr1->GetResult().GetValue()->GetSasToken());
+        EventServiceClient *eventServiceClient = new EventServiceClient(sasToken.GetValue()->GetNamespace(), m_repositoryInfo.GetId(), subscriptionId.GetValue()->GetSubscriptionId());
+        eventServiceClient->UpdateSASToken(sasToken.GetValue()->GetSasToken());
         m_eventServiceClient = eventServiceClient;
         }
     return true;
@@ -157,9 +157,9 @@ AuthenticationHandlerPtr authenticationHandler
         //if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
-        //Set EventServiceClient --> For now directly initializing in the ReceiveEvents method
-        /*if (!repositoryConnection->SetEventServiceClient(repository))
-            return DgnDbRepositoryConnectionResult::Error(result.GetError());*/
+        //Set EventServiceClient
+        if (!repositoryConnection->SetEventServiceClient(cancellationToken))
+            return DgnDbRepositoryConnectionResult::Error(result.GetError());
 
         return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
         });
@@ -463,28 +463,29 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             05/2016
+//@bsimethod									Arvind.Venkateswaran            05/2016
+//@bsimethod									Caleb.Shafer					06/2016
 //---------------------------------------------------------------------------------------
-EventServiceReceiveTaskPtr DgnDbRepositoryConnection::ReceiveEventsFromEventService
-(
-bool longPolling,
-ICancellationTokenPtr cancellationToken
-) 
+EventServiceReceiveTaskPtr DgnDbRepositoryConnection::GetEvents (bool longPolling, ICancellationTokenPtr cancellationToken)
     {
-    //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
-    //EventServiceReceiveResult::Error(DgnDbServerError());
-    //return EventServiceReceiveResult::Success(EventServiceReceive::Create(rtnVal, msg));
-    //return result->SetSuccess(EventServiceReceive::Create(rtnVal, msg));
-    //EventServiceReceiveResultPtr result = std::make_shared<EventServiceReceiveResult>();
+	if (m_eventServiceClient == nullptr)
+		{
+		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InternalServerError));
+		}
 
-    bool rtnVal = false;
-    Utf8String msg = "";
-    if (
-        true == (rtnVal = SetEventServiceClient(cancellationToken)) &&
-        true == (rtnVal = m_eventServiceClient->Receive(msg, longPolling))
-        )
-        return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Success(EventServiceReceive::Create(rtnVal, msg)));    
-    return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InternalServerError));
+	Utf8String msg = "";
+	bool rtnVal = m_eventServiceClient->Receive(msg, longPolling);
+    
+	if (!rtnVal)
+		{
+		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InternalServerError));
+		}
+	if (msg.empty())
+		{
+		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::NoEventsFound));
+		}
+
+	return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Success(EventServiceReceive::Create(rtnVal, msg)));    
     }
 
 //---------------------------------------------------------------------------------------

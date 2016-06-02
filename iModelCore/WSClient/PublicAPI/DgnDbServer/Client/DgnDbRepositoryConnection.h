@@ -74,7 +74,7 @@ private:
     RepositoryInfo                          m_repositoryInfo;
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
-    EventServiceClient         *m_eventServiceClient;
+    static EventServiceClient*         m_eventServiceClient;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
@@ -222,7 +222,7 @@ public:
 
 
     //! Receive Events from EventService
-    DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr    ReceiveEventsFromEventService(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr    GetEvents (bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Receive Events from EventService
     DGNDBSERVERCLIENT_EXPORT bool                       SendEventsToEventService(Utf8String msg, ICancellationTokenPtr cancellationToken = nullptr);  //Temporary, for testing

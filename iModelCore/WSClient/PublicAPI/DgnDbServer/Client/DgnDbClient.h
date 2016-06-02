@@ -143,9 +143,6 @@ public:
     //! Returns DgnDbServer RepositoryManager.
     DGNDBSERVERCLIENT_EXPORT IRepositoryManager*            GetRepositoryManagerP   ();
 
-    //! Receive Events from Event Service
-    DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr          ReceiveEventsFromEventService(Utf8String repoId, bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
-
     //! Receive Events from EventService
     DGNDBSERVERCLIENT_EXPORT bool                       SendEventsToEventService(Utf8String repoId, Utf8String msg, ICancellationTokenPtr cancellationToken = nullptr);  //Temporary, for testing
 };
