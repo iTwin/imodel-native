@@ -94,6 +94,7 @@ enum class DgnDbStatus : int
     NoMultiTxnOperation,
     InvalidCodeAuthority,
     CodeNotReserved,
+    RepositoryManagerError,
     };
 
 //! Status Values for DgnViewport methods

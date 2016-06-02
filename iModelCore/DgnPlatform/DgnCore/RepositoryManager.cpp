@@ -1083,132 +1083,127 @@ void BriefcaseManager::_OnModelInserted(DgnModelId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus toDgnDbStatus_TEMP(RepositoryStatus repoStatus)
+DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Request const& req)
     {
     switch (repoStatus)
         {
         case RepositoryStatus::Success:
             return DgnDbStatus::Success;
+        case RepositoryStatus::InvalidRequest:
+            return DgnDbStatus::BadRequest;
+        case RepositoryStatus::RevisionRequired:
+            return req.Codes().IsEmpty() ? DgnDbStatus::LockNotHeld : DgnDbStatus::CodeNotReserved;
         case RepositoryStatus::LockAlreadyHeld:
-        case RepositoryStatus::LockUsed:
             return DgnDbStatus::LockNotHeld;
         case RepositoryStatus::CodeUnavailable:
         case RepositoryStatus::CodeNotReserved:
             return DgnDbStatus::CodeNotReserved;
         case RepositoryStatus::CodeUsed:
             return DgnDbStatus::DuplicateCode;
+        case RepositoryStatus::ServerUnavailable:
+        case RepositoryStatus::SyncError:
+        case RepositoryStatus::InvalidResponse:
+            return DgnDbStatus::RepositoryManagerError;
+        case RepositoryStatus::PendingTransactions:
+        case RepositoryStatus::LockUsed:
+        case RepositoryStatus::CannotCreateRevision:
         default:
-            return DgnDbStatus::LockNotHeld;
+            // These are impossible return codes in the context in which this function is used
+            return DgnDbStatus::RepositoryManagerError;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus processElementOperation_TEMP(IBriefcaseManager& mgr, DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP pre = nullptr)
+DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP pre)
     {
-    // ###TODO: This goes away soon...we will require tools / application code to explicitly acquire locks/codes before performing persistence operations.
-    IBriefcaseManager::Request req;
-    RepositoryStatus status = mgr.PrepareForElementOperation(req, el, opcode, pre);
+    Request req;
+    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, IBriefcaseManager::PrepareAction::Acquire/*###TODO: Verify, not Acquire*/, pre), req);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus IBriefcaseManager::OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode)
+    {
+    Request req;
+    return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, IBriefcaseManager::PrepareAction::Acquire/*###TODO: Verify, not Acquire*/), req);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus IBriefcaseManager::PerformAction(Request& req, PrepareAction action)
+    {
+    auto status = RepositoryStatus::Success;
+    if (!req.IsEmpty())
+        {
+        switch (action)
+            {
+            case PrepareAction::Verify:
+                AreResourcesHeld(req.Locks().GetLockSet(), req.Codes(), &status);
+                break;
+            case PrepareAction::Acquire:
+                status = ProcessRequest(req).Result();
+                break;
+            }
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus IBriefcaseManager::PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op, PrepareAction action, DgnElementCP orig)
+    {
+    if (!LocksRequired())
+        return RepositoryStatus::Success;
+
+    auto status = _PrepareForElementOperation(req, el, op, orig);
     if (RepositoryStatus::Success == status)
-        status = mgr.ProcessRequest(req).Result(); // mgr.AreResourcesHeld(req.Locks().GetLockSet(), req.Codes(), &status);
+        status = PerformAction(req, action);
 
-    return toDgnDbStatus_TEMP(status);
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus processModelOperation_TEMP(IBriefcaseManager& mgr, DgnModelCR model, BeSQLite::DbOpcode opcode)
+RepositoryStatus IBriefcaseManager::PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op, PrepareAction action)
     {
-    // ###TODO: This goes away soon...we will require tools / application code to explicitly acquire locks/codes before performing persistence operations.
-    IBriefcaseManager::Request req;
-    RepositoryStatus status = mgr.PrepareForModelOperation(req, model, opcode);
+    if (!LocksRequired())
+        return RepositoryStatus::Success;
+
+    auto status = _PrepareForModelOperation(req, model, op);
     if (RepositoryStatus::Success == status)
-        status = mgr.ProcessRequest(req).Result(); // mgr.AreResourcesHeld(req.Locks().GetLockSet(), req.Codes(), &status);
+        status = PerformAction(req, action);
 
-    return toDgnDbStatus_TEMP(status);
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus IBriefcaseManager::PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op, DgnElementCP orig)
-    {
-    return LocksRequired() ? _PrepareForElementOperation(req, el, op, orig) : RepositoryStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus IBriefcaseManager::PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op)
-    {
-    return LocksRequired() ? _PrepareForModelOperation(req, model, op) : RepositoryStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus IBriefcaseManager::PrepareForElementUpdate(Request& req, DgnElementCR el)
+RepositoryStatus IBriefcaseManager::PrepareForElementUpdate(Request& req, DgnElementCR el, PrepareAction action)
     {
     auto orig = GetDgnDb().Elements().GetElement(el.GetElementId());
     BeAssert(orig.IsValid());
-    return PrepareForElementOperation(req, el, BeSQLite::DbOpcode::Update, orig.get());
+    return PrepareForElementOperation(req, el, BeSQLite::DbOpcode::Update, action, orig.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus IBriefcaseManager::OnElementInsert(DgnElementCR el) { return processElementOperation_TEMP(*this, el, BeSQLite::DbOpcode::Insert); }
-DgnDbStatus IBriefcaseManager::OnElementUpdate(DgnElementCR el, DgnElementCR pre) { return processElementOperation_TEMP(*this, el, BeSQLite::DbOpcode::Update, &pre); }
-DgnDbStatus IBriefcaseManager::OnElementDelete(DgnElementCR el) { return processElementOperation_TEMP(*this, el, BeSQLite::DbOpcode::Delete); }
-DgnDbStatus IBriefcaseManager::OnModelInsert(DgnModelCR model) { return processModelOperation_TEMP(*this, model, BeSQLite::DbOpcode::Insert); }
-DgnDbStatus IBriefcaseManager::OnModelUpdate(DgnModelCR model) { return processModelOperation_TEMP(*this, model, BeSQLite::DbOpcode::Update); }
-DgnDbStatus IBriefcaseManager::OnModelDelete(DgnModelCR model) { return processModelOperation_TEMP(*this, model, BeSQLite::DbOpcode::Delete); }
+DgnDbStatus IBriefcaseManager::OnElementInsert(DgnElementCR el) { return OnElementOperation(el, BeSQLite::DbOpcode::Insert); }
+DgnDbStatus IBriefcaseManager::OnElementUpdate(DgnElementCR el, DgnElementCR pre) { return OnElementOperation(el, BeSQLite::DbOpcode::Update, &pre); }
+DgnDbStatus IBriefcaseManager::OnElementDelete(DgnElementCR el) { return OnElementOperation(el, BeSQLite::DbOpcode::Delete); }
+DgnDbStatus IBriefcaseManager::OnModelInsert(DgnModelCR model) { return OnModelOperation(model, BeSQLite::DbOpcode::Insert); }
+DgnDbStatus IBriefcaseManager::OnModelUpdate(DgnModelCR model) { return OnModelOperation(model, BeSQLite::DbOpcode::Update); }
+DgnDbStatus IBriefcaseManager::OnModelDelete(DgnModelCR model) { return OnModelOperation(model, BeSQLite::DbOpcode::Delete); }
 void IBriefcaseManager::OnElementInserted(DgnElementId id) { _OnElementInserted(id); }
 void IBriefcaseManager::OnModelInserted(DgnModelId id) { _OnModelInserted(id); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static DgnDbStatus processRequest(T const& obj, LockLevel level, DgnCodeCR code, IBriefcaseManagerR mgr, DgnModelId originalModelId=DgnModelId())
-    {
-    IBriefcaseManager::Request req;
-    req.Locks().Insert(obj, level);
-    bool wantCode = code.IsValid() && !code.IsEmpty();
-    if (wantCode)
-        {
-        req.SetOptions(IBriefcaseManager::ResponseOptions::LockState);
-        req.Codes().insert(code);
-        }
-
-    if (originalModelId.IsValid())
-        {
-        // An element update operation which moved the element from one model to another...
-        DgnModelPtr originalModel = mgr.GetDgnDb().Models().GetModel(originalModelId);
-        if (originalModel.IsValid())
-            req.Locks().Insert(*originalModel, LockLevel::Shared);
-        }
-
-    auto response = mgr.ProcessRequest(req);
-    if (RepositoryStatus::Success == response.Result())
-        return DgnDbStatus::Success;
-    else if (!wantCode)
-        return DgnDbStatus::LockNotHeld;
-
-    switch (response.Result())
-        {
-        case RepositoryStatus::LockAlreadyHeld:
-        case RepositoryStatus::LockUsed:
-            return DgnDbStatus::LockNotHeld;
-        case RepositoryStatus::CodeUnavailable:
-        case RepositoryStatus::CodeNotReserved:
-        case RepositoryStatus::CodeUsed:
-            return DgnDbStatus::CodeNotReserved;
-        default:
-            return response.LockStates().empty() ? DgnDbStatus::CodeNotReserved : DgnDbStatus::LockNotHeld;
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
