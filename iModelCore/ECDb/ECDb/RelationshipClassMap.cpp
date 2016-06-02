@@ -1138,13 +1138,6 @@ MappingStatus RelationshipClassLinkTableMap::_MapPart1(SchemaImportContext& cont
     auto const& sourceConstraint = relationshipClass.GetSource();
     auto const& targetConstraint = relationshipClass.GetTarget();
 
-    if (HasKeyProperties(sourceConstraint) || HasKeyProperties(targetConstraint))
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "The ECRelationshipClass '%s' is mapped to a link table. One of its constraints has Key properties which is only supported for foreign key type relationships.",
-                                                                        relationshipClass.GetFullName());
-        return MappingStatus::Error;
-        }
-
     //**** Constraint columns and prop maps
     bool addSourceECClassIdColumnToTable = false;
     ECClassId defaultSourceECClassId;
@@ -1578,21 +1571,6 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(std::set<ClassMap const*>& lo
     m_targetConstraintMap.SetECClassIdPropMap(targetECClassIdPropMap.get());
 
     return BentleyStatus::SUCCESS;
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                10/2015
-//+---------------+---------------+---------------+---------------+---------------+-
-//static
-bool RelationshipClassLinkTableMap::HasKeyProperties(ECN::ECRelationshipConstraint const& constraint)
-    {
-    for (ECRelationshipConstraintClassCP constraintClass : constraint.GetConstraintClasses())
-        {
-        if (!constraintClass->GetKeys().empty())
-            return true;
-        }
-
-    return false;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

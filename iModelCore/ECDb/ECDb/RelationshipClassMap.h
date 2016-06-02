@@ -208,7 +208,6 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
         DbColumn* ConfigureForeignECClassIdKey(RelationshipMappingInfo const&, ECN::ECRelationshipEnd relationshipEnd);
 
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
-        static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
     public:
         ~RelationshipClassLinkTableMap() {}
         static ClassMapPtr Create(ECN::ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap(ecRelClass, ecDbMap, mapStrategy, setIsDirty); }

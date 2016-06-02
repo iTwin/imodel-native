@@ -501,16 +501,26 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
     if (SUCCESS != ClassMappingInfo::_InitializeFromSchema())
         return ERROR;
 
-    //TODO: This might be enforced by ECObjects eventually
-    if (m_ecClass.GetBaseClasses().size() > 1)
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has more than one base class which is not supported for ECRelationshipClasses.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
-
     ECRelationshipClass const* relClass = m_ecClass.GetRelationshipClassCP();
     BeAssert(relClass != nullptr);
+
+    //TODO: This might be enforced by ECObjects eventually
+    if (m_ecClass.HasBaseClasses())
+        {
+        if (m_ecClass.GetBaseClasses().size() > 1)
+            {
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has more than one base class which is not supported for ECRelationshipClasses.",
+                            m_ecClass.GetFullName());
+            return ERROR;
+            }
+
+        if (HasKeyProperties(relClass->GetSource()) || HasKeyProperties(relClass->GetTarget()))
+            {
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has a base class, and at least one of its constraint classes defines a Key property. This is only allowed for ECRelationshipClasses which don't have any base classes.",
+                            m_ecClass.GetFullName());
+            return ERROR;
+            }
+        }
 
     ECDbForeignKeyRelationshipMap foreignKeyRelMap;
     const bool hasForeignKeyRelMap = ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(foreignKeyRelMap, *relClass);
@@ -519,7 +529,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
 
     if (hasForeignKeyRelMap && hasLinkTableRelMap)
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It can only have either the ForeignKeyRelationshipMap or the LinkTableRelationshipMap custom attribute but not both.",
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has a base class and therefore must not define Key properties on its constraints.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
@@ -724,7 +734,15 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(UserECDbMapStra
         return ERROR;
         }
 
-    if (m_ecClass.GetRelationshipClassCP()->GetStrength() == StrengthType::Embedding)
+    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
+    if (HasKeyProperties(relClass->GetSource()) || HasKeyProperties(relClass->GetTarget()))
+        {
+        Issues().Report(ECDbIssueSeverity::Error, "The ECRelationshipClass '%s' is mapped to a link table. One of its constraints has Key properties which is only supported for foreign key type relationships.",
+                        m_ecClass.GetFullName());
+        return ERROR;
+        }
+
+    if (relClass->GetStrength() == StrengthType::Embedding)
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship, and link table relationships with strength 'Embedding' is not supported. See API docs for details on the mapping rules.",
                         m_ecClass.GetFullName());
@@ -951,6 +969,22 @@ BentleyStatus RelationshipMappingInfo::RetrieveEndTables(EndTablesOptimizationOp
 
     return m_sourceTables.empty() || m_targetTables.empty() ? ERROR : SUCCESS;
     }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                10/2015
+//+---------------+---------------+---------------+---------------+---------------+-
+//static
+bool RelationshipMappingInfo::HasKeyProperties(ECN::ECRelationshipConstraint const& constraint)
+    {
+    for (ECRelationshipConstraintClassCP constraintClass : constraint.GetConstraintClasses())
+        {
+        if (!constraintClass->GetKeys().empty())
+            return true;
+        }
+
+    return false;
+    }
+
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2016

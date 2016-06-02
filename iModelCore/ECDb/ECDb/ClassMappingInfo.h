@@ -171,7 +171,9 @@ private:
     void DetermineCardinality();
     BentleyStatus RetrieveEndTables(EndTablesOptimizationOptions sourceOptions, EndTablesOptimizationOptions targetOptions);
 
+
     bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
+    static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
 
 public:
     RelationshipMappingInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMap const& ecdbMap) : ClassMappingInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
