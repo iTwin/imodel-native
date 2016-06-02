@@ -294,7 +294,7 @@ struct StructPropertyMap : PropertyMap
     {
 private:
     StructPropertyMap(ECN::StructECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
-    StructPropertyMap(ECDbMapCR ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap);
+    StructPropertyMap(ECDbMap const& ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap);
 
     virtual void _GetColumns(std::vector<DbColumn const*>& columns) const override;
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) override;
@@ -308,7 +308,7 @@ private:
 public:
     ~StructPropertyMap() {}
     static PropertyMapPtr Create(ClassMapLoadContext&, ECDbCR, ECN::StructECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
-    static PropertyMapPtr Clone(ECDbMapCR ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap) { return new StructPropertyMap(ecdbMap, proto, clonedBy, parentPropertyMap); }
+    static PropertyMapPtr Clone(ECDbMap const& ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR clonedBy, PropertyMap const* parentPropertyMap) { return new StructPropertyMap(ecdbMap, proto, clonedBy, parentPropertyMap); }
     };
 
 //=======================================================================================
@@ -399,7 +399,7 @@ public:
     static PropertyMapPtr Create(ClassMapLoadContext&, ECDbCR, ECN::ECClassCR, ECN::NavigationECPropertyCR, Utf8CP propertyAccessString);
     static PropertyMapPtr Clone(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, ECN::ECClassCR targetClass) { return new NavigationPropertyMap(ctx, proto, targetClass); }
 
-    BentleyStatus Postprocess(ECDbMapCR);
+    BentleyStatus Postprocess(ECDbMap const&);
 
     bool IsSupportedInECSql(bool logIfNotSupported = false, ECDbCP ecdb = nullptr) const;
 
@@ -424,6 +424,6 @@ public:
     static PropertyMapPtr CreatePropertyMap(ClassMapLoadContext&, ECDbCR, ECN::ECClassCR, ECN::ECPropertyCR, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap);
     
     //only called during schema import
-    static PropertyMapPtr ClonePropertyMap(ECDbMapCR, PropertyMapCR, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap);
+    static PropertyMapPtr ClonePropertyMap(ECDbMap const&, PropertyMapCR, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

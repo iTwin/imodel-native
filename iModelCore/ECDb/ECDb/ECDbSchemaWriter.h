@@ -79,7 +79,7 @@ private:
     bool IsSpecifiedInECRelationshipConstraint(ECClassCR deletedClass) const;
     BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const;
 
-    IssueReporter const& GetIssueReporter() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
+    IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
 public:
     explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb)

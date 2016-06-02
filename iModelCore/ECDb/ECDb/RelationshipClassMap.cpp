@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassMap::RelationshipClassMap(Type type, ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
+RelationshipClassMap::RelationshipClassMap(Type type, ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
     : ClassMap(type, ecRelClass, ecDbMap, mapStrategy, setIsDirty),
     m_sourceConstraintMap(ecDbMap.GetECDb().Schemas(), ecRelClass.GetSource()),
     m_targetConstraintMap(ecDbMap.GetECDb().Schemas(), ecRelClass.GetTarget())
@@ -262,7 +262,7 @@ Utf8CP const RelationshipClassEndTableMap::DEFAULT_FKCOLUMNNAME_PREFIX = "Foreig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
+RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
     : RelationshipClassMap(Type::RelationshipEndTable, ecRelClass, ecDbMap, mapStrategy, setIsDirty), m_autogenerateForeignKeyColumns(true)
     {}
 
@@ -398,8 +398,8 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
                 //FK col is only allowed to exist if the table has MapStrategy "ExistingTable"
                 if (foreignEndTable->IsOwnedByECDb())
                     {
-                    GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the foreign key end table %s.",
-                                                                                    relationshipClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
+                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the foreign key end table %s.",
+                                    relationshipClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
                     return MappingStatus::Error;
                     }
 
@@ -429,12 +429,11 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
 
     if (!referencedTablePrimaryKeyCols.empty())
         {
-        GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                                        "Failed to map ECRelationshipClass '%s' because a KeyProperty is defined on the %s constraint. "
-                                                                        "A KeyProperty can only be specified on the foreign key end constraint of the ECRelationshipClass (here: %s constraint)",
-                                                                        relationshipClass.GetFullName(),
-                                                                        GetReferencedEnd() == ECRelationshipEnd_Source ? "source" : "target",
-                                                                        GetForeignEnd() == ECRelationshipEnd_Source ? "source" : "target");
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s' because a KeyProperty is defined on the %s constraint. "
+                        "A KeyProperty can only be specified on the foreign key end constraint of the ECRelationshipClass (here: %s constraint)",
+                        relationshipClass.GetFullName(),
+                        GetReferencedEnd() == ECRelationshipEnd_Source ? "source" : "target",
+                        GetForeignEnd() == ECRelationshipEnd_Source ? "source" : "target");
 
         return MappingStatus::Error;
         }
@@ -534,13 +533,12 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
             if (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade ||
                 (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::NotSpecified && relationshipClass.GetStrength() == StrengthType::Embedding))
                 {
-                IssueReporter const& issues = GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter();
                 if (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade)
-                    issues.Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its ForeignKeyRelationshipMap custom attribute specifies the OnDelete action 'Cascade'. "
+                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its ForeignKeyRelationshipMap custom attribute specifies the OnDelete action 'Cascade'. "
                                   "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
                                   relationshipClass.GetFullName());
                 else
-                    issues.Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its strength is 'Embedding' which implies the OnDelete action 'Cascade'. "
+                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its strength is 'Embedding' which implies the OnDelete action 'Cascade'. "
                                   "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
                                   relationshipClass.GetFullName());
 
@@ -553,11 +551,10 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
             {
             if (fkCol->IsShared())
                 {
-                GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
-                                                                                "The ECRelationshipClass '%s' implies a foreign key constraint. ECDb cannot create it though for the "
-                                                                                "column '%s' in table '%s' because the column is used by other properties. Consider disabling column sharing "
-                                                                                "(via ClassMap custom attribute) or redesigning the ECRelationshipClass without using a Key property.",
-                                                                                relationshipClass.GetFullName(), fkCol->GetName().c_str(), fkTable.GetName().c_str());
+                Issues().Report(ECDbIssueSeverity::Warning, "The ECRelationshipClass '%s' implies a foreign key constraint. ECDb cannot create it though for the "
+                                "column '%s' in table '%s' because the column is used by other properties. Consider disabling column sharing "
+                                "(via ClassMap custom attribute) or redesigning the ECRelationshipClass without using a Key property.",
+                                relationshipClass.GetFullName(), fkCol->GetName().c_str(), fkTable.GetName().c_str());
                 }
             else
                 {
@@ -789,7 +786,7 @@ BentleyStatus RelationshipClassEndTableMap::ValidateForeignKeyColumn(DbColumn co
             error = "Failed to map ECRelationshipClass '%s'. It is mapped to an existing foreign key column which is not nullable "
             "although the relationship's cardinality implies that the column is nullable. Please modify the cardinality accordingly.";
 
-        GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, error, GetRelationshipClass().GetFullName());
+        Issues().Report(ECDbIssueSeverity::Error, error, GetRelationshipClass().GetFullName());
         return ERROR;
         }
 
@@ -911,14 +908,14 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<DbC
             if (keyPropertyName.empty())
                 continue;
 
-            LogKeyPropertyRetrievalError(GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter(), "ECRelationshipConstraint Key properties must be specified on all classes of the constraint or on none.",
+            LogKeyPropertyRetrievalError(Issues(), "ECRelationshipConstraint Key properties must be specified on all classes of the constraint or on none.",
                                          relClass, constraintEnd);
             return ERROR;
             }
 
         if (keyCount > 1 || keys[0].empty())
             {
-            LogKeyPropertyRetrievalError(GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter(), "ECDb does not support ECRelationshipConstraint Keys that are empty or made up of multiple properties.",
+            LogKeyPropertyRetrievalError(Issues(), "ECDb does not support ECRelationshipConstraint Keys that are empty or made up of multiple properties.",
                                          relClass, constraintEnd);
             return ERROR;
             }
@@ -929,7 +926,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<DbC
             {
             if (keyPropertyName != keys.front())
                 {
-                LogKeyPropertyRetrievalError(GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter(), "ECDb does not support ECRelationshipConstraint Keys with different accessStrings. All Key properties in constraint must have same name",
+                LogKeyPropertyRetrievalError(Issues(), "ECDb does not support ECRelationshipConstraint Keys with different accessStrings. All Key properties in constraint must have same name",
                                              relClass, constraintEnd);
                 return ERROR;
                 }
@@ -948,7 +945,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<DbC
             {
             Utf8String error;
             error.Sprintf("Key property '%s' does not exist or is not mapped.", keyPropAccessString);
-            LogKeyPropertyRetrievalError(GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter(), error.c_str(), relClass, constraintEnd);
+            LogKeyPropertyRetrievalError(Issues(), error.c_str(), relClass, constraintEnd);
             return ERROR;
             }
 
@@ -957,7 +954,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<DbC
             {
             Utf8String error;
             error.Sprintf("Unsupported data type of Key property '%s'. ECDb only supports Key properties that have an integral or string data type.", keyPropAccessString);
-            LogKeyPropertyRetrievalError(GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter(), error.c_str(), relClass, constraintEnd);
+            LogKeyPropertyRetrievalError(Issues(), error.c_str(), relClass, constraintEnd);
             return ERROR;
             }
 
@@ -1118,7 +1115,7 @@ BentleyStatus RelationshipClassEndTableMap::TryDetermineForeignKeyColumnPosition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
+RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
     : RelationshipClassMap(Type::RelationshipLinkTable, ecRelClass, ecDbMap, mapStrategy, setIsDirty)
     {}
 
@@ -1143,7 +1140,7 @@ MappingStatus RelationshipClassLinkTableMap::_MapPart1(SchemaImportContext& cont
 
     if (HasKeyProperties(sourceConstraint) || HasKeyProperties(targetConstraint))
         {
-        GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "The ECRelationshipClass '%s' is mapped to a link table. One of its constraints has Key properties which is only supported for foreign key type relationships.",
+        Issues().Report(ECDbIssueSeverity::Error, "The ECRelationshipClass '%s' is mapped to a link table. One of its constraints has Key properties which is only supported for foreign key type relationships.",
                                                                         relationshipClass.GetFullName());
         return MappingStatus::Error;
         }
@@ -1247,8 +1244,7 @@ MappingStatus RelationshipClassLinkTableMap::_MapPart2(SchemaImportContext& cont
         else
             constraintStr = "target constraint is";
 
-        GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                                        "The ECRelationshipClass '%s' is mapped to a link table, but the %s mapped to more than one table, which is not supported for link tables.",
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. It is mapped to a link table, but the %s mapped to more than one table, which is not supported for link tables.",
                                                                         GetRelationshipClass().GetFullName(), constraintStr);
 
         return MappingStatus::Error;

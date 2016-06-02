@@ -50,7 +50,7 @@ public:
 
     int TrackECSqlParameter(ParameterExp& parameterExp);
 
-    IssueReporter const& GetIssueReporter() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
+    IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
     ECDbSchemaManagerCR Schemas() const { return m_ecdb.Schemas(); }
     ECDbCR GetECDb() const { return m_ecdb; }
     };
@@ -186,7 +186,7 @@ private:
     BentleyStatus ParseValuesOrQuerySpec(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
 
-    IssueReporter const& GetIssueReporter() const { BeAssert(m_context != nullptr); return m_context->GetIssueReporter(); }
+    IssueReporter const& GetIssueReporter() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
 
     static Utf8CP DataTypeTokenIdToString(sal_uInt32 tokenId);
 

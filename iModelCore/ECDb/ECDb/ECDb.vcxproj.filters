@@ -384,6 +384,9 @@
       <Filter>ECDbMap</Filter>
     </ClInclude>
     <ClInclude Include="DebugWriter.h" />
+    <ClInclude Include="IssueReporter.h">
+      <Filter>ECDb</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -704,6 +707,9 @@
     </ClCompile>
     <ClCompile Include="ECDbMapDebugInfo.cpp" />
     <ClCompile Include="DebugWriter.cpp" />
+    <ClCompile Include="IssueReporter.cpp">
+      <Filter>ECDb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">

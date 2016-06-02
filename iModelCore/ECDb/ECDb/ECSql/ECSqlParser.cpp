@@ -2853,9 +2853,9 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
     if (resolvedClass == nullptr)
         {
         if (Utf8String::IsNullOrEmpty(schemaNameOrPrefix))
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECClass '%s' does not exist. Try using fully qualified class name: <schema name>.<class name>.", className);
+            Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s' does not exist. Try using fully qualified class name: <schema name>.<class name>.", className);
         else
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix, className);
+            Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix, className);
 
         return ERROR;
         }

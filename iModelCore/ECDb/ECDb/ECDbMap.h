@@ -10,6 +10,8 @@
 #include "ClassMap.h"
 #include "SchemaImportContext.h"
 #include "DbSchema.h"
+#include "IssueReporter.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct StorageDescription;
@@ -61,12 +63,12 @@ struct ECDbMap :NonCopyableClass
                     bool m_relationshipPerTableLoaded : 4;
                     } m_loadedFlags;
 
-                ECDbMapCR m_map;
+                ECDbMap const& m_map;
                 void LoadHorizontalPartitions() const;
                 void LoadClassIdsPerTable() const;
                 void LoadRelationshipCache() const;
             public:
-                explicit LightweightCache(ECDbMapCR map);
+                explicit LightweightCache(ECDbMap const& map);
                 ~LightweightCache() {}
                 std::vector<ECN::ECClassId> const& GetClassesForTable(DbTable const&) const;
                 std::vector<ECN::ECClassId> const& GetNonAbstractClassesForTable(DbTable const&) const;
@@ -135,6 +137,7 @@ struct ECDbMap :NonCopyableClass
         DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }
         LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
         ECDbCR GetECDb() const { return m_ecdb; }
+        IssueReporter const& Issues() const;
         std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, bool ignoreJoinedTables) const;
     };
 

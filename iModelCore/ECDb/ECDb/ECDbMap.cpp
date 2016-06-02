@@ -132,7 +132,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
         const bool allowDbSchemaChange = briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId();
         if (!allowDbSchemaChange)
             {
-            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
                                                                "This is only allowed for standalone briefcases or the master briefcase. Briefcase id: %" PRIu32, briefcaseId.GetValue());
             return ERROR;
             }
@@ -819,7 +819,7 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
                 continue;
                 }
 
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "The cardinality of the ECRelationshipClass '%s' "
+            Issues().Report(ECDbIssueSeverity::Warning, "The cardinality of the ECRelationshipClass '%s' "
                                                             "would imply the foreign key column to be 'not nullable'. ECDb cannot enforce that though for the "
                                                             "foreign key column '%s' in table '%s' because other classes not involved in the ECRelationshipClass map to that table. "
                                                             "Therefore the column is created without NOT NULL constraint.",
@@ -1221,9 +1221,9 @@ std::set<DbTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipCon
     return finalListOfTables[PersistenceType::Persisted];
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Affan Khan                          08/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
 void ECDbMap::ClearCache()
     {
     BeMutexHolder lock(m_mutex);
@@ -1232,9 +1232,9 @@ void ECDbMap::ClearCache()
     m_lightweightCache.Reset();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Affan Khan                          08/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbMap::SaveDbSchema() const
     {
     BeMutexHolder lock(m_mutex);
@@ -1250,7 +1250,7 @@ BentleyStatus ECDbMap::SaveDbSchema() const
             i++;
             if (SUCCESS != classMap.Save(doneList))
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to save mapping for ECClass %s: %s", ecClass.GetFullName(), m_ecdb.GetLastError().c_str());
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to save mapping for ECClass %s: %s", ecClass.GetFullName(), m_ecdb.GetLastError().c_str());
                 return ERROR;
                 }
             }
@@ -1265,6 +1265,12 @@ BentleyStatus ECDbMap::SaveDbSchema() const
     LOG.debugv("Saving ECDbMap for %d ECClasses took %.4lf msecs.", i, stopWatch.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                      06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+IssueReporter const& ECDbMap::Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
+
 
 
 //************************************************************************************
@@ -1475,7 +1481,7 @@ void ECDbMap::LightweightCache::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::LightweightCache(ECDbMapCR map) : m_map(map) { Reset(); }
+ECDbMap::LightweightCache::LightweightCache(ECDbMap const& map) : m_map(map) { Reset(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015

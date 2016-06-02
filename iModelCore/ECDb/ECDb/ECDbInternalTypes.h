@@ -14,7 +14,6 @@
 #include "ECDbLogger.h"
 #include <type_traits>
 
-ECDB_TYPEDEFS(ECDbMap);
 ECDB_TYPEDEFS_PTR(ClassMap);
 ECDB_TYPEDEFS_PTR(PropertyMap);
 ECDB_TYPEDEFS(RelationshipClassMap);

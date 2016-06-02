@@ -63,7 +63,7 @@ PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, E
 // @bsimethod                                                Affan.Khan          10/2015
 //---------------------------------------------------------------------------------------
 //static
-PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMapCR ecdbMap, PropertyMapCR proto, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap)
+PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMap const& ecdbMap, PropertyMapCR proto, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap)
     {
     if (ecdbMap.GetSchemaImportContext() == nullptr)
         {
@@ -558,7 +558,7 @@ StructPropertyMap::StructPropertyMap (ECN::StructECPropertyCR ecProperty, Utf8CP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-StructPropertyMap::StructPropertyMap(ECDbMapCR ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap)
+StructPropertyMap::StructPropertyMap(ECDbMap const& ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap)
     : PropertyMap(proto, parentPropertyMap)
     {
     for (PropertyMap const* protoChild : proto.m_children)
@@ -1062,7 +1062,7 @@ NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, Navigatio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
+BentleyStatus NavigationPropertyMap::Postprocess(ECDbMap const& ecdbMap)
     {
     m_columns.clear();
     if (m_relClassMap != nullptr)

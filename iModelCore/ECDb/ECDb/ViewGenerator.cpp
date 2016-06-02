@@ -44,7 +44,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;
-    ECDbMapCR map = ecdb.GetECDbImplR().GetECDbMap();
+    ECDbMap const& map = ecdb.GetECDbImplR().GetECDbMap();
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
@@ -114,7 +114,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;
-    ECDbMapCR map = ecdb.GetECDbImplR().GetECDbMap();
+    ECDbMap const& map = ecdb.GetECDbImplR().GetECDbMap();
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
@@ -262,7 +262,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
     if (classMap.GetMapStrategy().IsNotMapped() || classMap.IsRelationshipClassMap())
         return ERROR;
 
-    ECDbMapCR ecdbMap = classMap.GetECDbMap();
+    ECDbMap const& ecdbMap = classMap.GetECDbMap();
     StorageDescription const& descr = classMap.GetStorageDescription();
     std::vector<Partition> const& partitions = descr.GetHorizontalPartitions();
     Partition const& rootPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
@@ -833,7 +833,7 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBui
     {
     if (classMap._RequiresJoin(endPoint))
         {
-        ECDbMapCR ecdbMap = classMap.GetECDbMap();
+        ECDbMap const& ecdbMap = classMap.GetECDbMap();
         ECClassIdRelationshipConstraintPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
         ECInstanceIdRelationshipConstraintPropertyMap const* ecInstanceIdPropertyMap = static_cast<ECInstanceIdRelationshipConstraintPropertyMap const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
         size_t tableCount = ecdbMap.GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());

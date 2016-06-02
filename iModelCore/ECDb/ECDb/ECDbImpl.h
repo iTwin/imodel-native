@@ -11,33 +11,9 @@
 #include "ECDbMap.h"
 #include "BeBriefcaseBasedIdSequence.h"
 #include "ECDbProfileManager.h"
+#include "IssueReporter.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      09/2015
-//+===============+===============+===============+===============+===============+======
-struct IssueReporter : NonCopyableClass
-    {
-private:
-    mutable BeMutex m_mutex;
-    ECDbCR m_ecdb;
-    ECDb::IIssueListener const* m_issueListener;
-
-public:
-    explicit IssueReporter(ECDbCR ecdb) : m_ecdb(ecdb), m_issueListener(nullptr) {}
-    ~IssueReporter() {}
-
-    BentleyStatus AddListener(ECDb::IIssueListener const&);
-    void RemoveListener();
-
-    bool IsSeverityEnabled(ECDbIssueSeverity) const;
-
-    void Report(ECDbIssueSeverity, Utf8CP message, ...) const;
-    void ReportSqliteIssue(ECDbIssueSeverity, DbResult, Utf8CP messageHeader = nullptr) const;
-
-    static NativeLogging::SEVERITY ToLogSeverity(ECDbIssueSeverity sev) { return sev == ECDbIssueSeverity::Warning ? NativeLogging::LOG_WARNING : NativeLogging::LOG_ERROR; }
-    };
 
 //=======================================================================================
 //! ECDb::Impl is the private implementation of ECDb hidden from the public headers

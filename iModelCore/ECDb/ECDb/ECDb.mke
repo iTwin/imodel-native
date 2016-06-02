@@ -34,6 +34,7 @@ ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
                 $(baseDir)ECDbInternalTypes.h \
                 $(baseDir)ECDbLogger.h \
+                $(baseDir)IssueReporter.h \
                 $(baseDir)MapStrategy.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)BeBriefcaseBasedIdSequence.h \
@@ -157,31 +158,33 @@ $(o)MapStrategy$(oext):									    $(baseDir)MapStrategy.cpp $(ECDbAllHeaders) 
 
 $(o)ClassMappingInfo$(oext):                                $(baseDir)ClassMappingInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ClassMap$(oext):										$(baseDir)ClassMap.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ClassMap$(oext):										$(baseDir)ClassMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)RelationshipClassMap$(oext):							$(baseDir)RelationshipClassMap.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)RelationshipClassMap$(oext):							$(baseDir)RelationshipClassMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PropertyMap$(oext):										$(baseDir)PropertyMap.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PropertyMap$(oext):										$(baseDir)PropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)SystemPropertyMap$(oext):								$(baseDir)SystemPropertyMap.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SystemPropertyMap$(oext):								$(baseDir)SystemPropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
  
-$(o)ECDbImpl$(oext):										$(baseDir)ECDbImpl.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbImpl$(oext):										$(baseDir)ECDbImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDb$(oext):											$(baseDir)ECDb.cpp                          $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDb$(oext):											$(baseDir)ECDb.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECInstanceId$(oext):									$(baseDir)ECInstanceId.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)IssueReporter$(oext):     								$(baseDir)IssueReporter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaPersistenceHelper$(oext):                     $(baseDir)ECDbSchemaPersistenceHelper.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECInstanceId$(oext):									$(baseDir)ECInstanceId.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaReader$(oext):								$(baseDir)ECDbSchemaReader.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSchemaPersistenceHelper$(oext):                     $(baseDir)ECDbSchemaPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaWriter$(oext):								$(baseDir)ECDbSchemaWriter.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSchemaReader$(oext):								$(baseDir)ECDbSchemaReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaManager$(oext):								$(baseDir)ECDbSchemaManager.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSchemaWriter$(oext):								$(baseDir)ECDbSchemaWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)SchemaImportContext$(oext):								$(baseDir)SchemaImportContext.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSchemaManager$(oext):								$(baseDir)ECDbSchemaManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSchemaValidator$(oext):								$(baseDir)ECSchemaValidator.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SchemaImportContext$(oext):								$(baseDir)SchemaImportContext.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECSchemaValidator$(oext):								$(baseDir)ECSchemaValidator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbPolicyManager$(oext):								$(baseDir)ECDbPolicyManager.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
-ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
+ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
     : m_type(type), m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_mapStrategy(mapStrategy), 
     m_isDirty(setIsDirty), m_columnFactory(*this), m_isECInstanceIdAutogenerationDisabled(false)
     {
@@ -119,7 +119,7 @@ MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, Clas
             BeAssert(primaryTable != nullptr);
             }
 
-        DbTable* table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(&schemaImportContext, mapInfo.GetTableName(), tableType,
+        DbTable* table = const_cast<ECDbMap&>(m_ecDbMap).FindOrCreateTable(&schemaImportContext, mapInfo.GetTableName(), tableType,
             mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName(), primaryTable);
 
         if (table == nullptr)
@@ -154,7 +154,7 @@ MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, Clas
         {
         if (SUCCESS != GetJoinedTable().SetMinimumSharedColumnCount(mapInfo.GetMapStrategy().GetMinimumSharedColumnCount()))
             {
-            m_ecDbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+            Issues().Report(ECDbIssueSeverity::Error,
                      "Only one ECClass per table can specify a minimum shared column count. Found duplicate definition on ECClass '%s'.",
                       m_ecClass.GetFullName());
             return MappingStatus::Error;
@@ -252,7 +252,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
 
     if (currentTimeStampColumn->IsShared())
         {
-        m_ecDbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
+        Issues().Report(ECDbIssueSeverity::Warning,
                    "ECProperty '%s' in ECClass '%s' has the ClassHasCurrentTimeStampProperty custom attribute but is mapped to a shared column. "
                    "ECDb therefore does not create the current timestamp trigger for this property.",
                            currentTimeStampProp.GetName().c_str(), currentTimeStampProp.GetClass().GetFullName());
@@ -380,7 +380,6 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
 BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImportContext, std::vector<IndexMappingInfoPtr> const& indexInfoList) const
     {
     int i = 0;
-    IssueReporter const& issues = m_ecDbMap.GetECDb().GetECDbImplR().GetIssueReporter();
     for (IndexMappingInfoPtr const& indexInfo : indexInfoList)
         {
         i++;
@@ -394,7 +393,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             PropertyMapCP propertyMap = GetPropertyMap(propertyAccessString.c_str());
             if (propertyMap == nullptr)
                 {
-                issues.Report(ECDbIssueSeverity::Error, 
+                Issues().Report(ECDbIssueSeverity::Error,
                    "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
                    "The specified ECProperty '%s' does not exist or is not mapped.",
                               i, GetClass().GetFullName(), propertyAccessString.c_str());
@@ -405,7 +404,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
             if (!prop.GetIsPrimitive() && (navProp == nullptr || navProp->IsMultiple()))
                 {
-                issues.Report(ECDbIssueSeverity::Error,
+                Issues().Report(ECDbIssueSeverity::Error,
                               "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
                               "The specified ECProperty '%s' is not of a primitive type.",
                               i, GetClass().GetFullName(), propertyAccessString.c_str());
@@ -424,7 +423,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 {
                 if (column->GetTable().GetPersistenceType() == PersistenceType::Persisted && column->GetPersistenceType() == PersistenceType::Virtual)
                     {
-                    issues.Report(ECDbIssueSeverity::Error,
+                    Issues().Report(ECDbIssueSeverity::Error,
                                   "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
                                   "The specified ECProperty '%s' is mapped to a virtual column.",
                                   i, GetClass().GetFullName(), propertyAccessString.c_str());
@@ -436,7 +435,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                     {
                     if (Enum::Intersects(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
                         {
-                        issues.Report(ECDbIssueSeverity::Error,
+                        Issues().Report(ECDbIssueSeverity::Error,
                                       "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
                                       "The properties that make up the index are mapped to different tables because the MapStrategy option '" USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS 
                                       "' is applied to this class hierarchy.",
@@ -444,7 +443,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                         }
                     else
                         {
-                        issues.Report(ECDbIssueSeverity::Error,
+                        Issues().Report(ECDbIssueSeverity::Error,
                                       "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
                                       "The properties that make up the index are mapped to different tables.",
                                       i, GetClass().GetFullName());
@@ -545,10 +544,12 @@ bool ClassMap::TryGetECInstanceIdPropertyMap(PropertyMapPtr& ecInstanceIdPropert
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-ECDbSchemaManagerCR ClassMap::Schemas() const
-    {
-    return GetECDbMap().GetECDb ().Schemas();
-    }
+ECDbSchemaManagerCR ClassMap::Schemas() const { return m_ecDbMap.GetECDb().Schemas(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  06/2016
+//---------------------------------------------------------------------------------------
+IssueReporter const& ClassMap::Issues() const { return m_ecDbMap.Issues(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                           07/2012
@@ -904,7 +905,7 @@ DbColumn* ColumnFactory::CreateColumn(PropertyMapCR propMap, Utf8CP requestedCol
         // Shared column does not support NOT NULL constraint -> omit NOT NULL and issue warning
         if (addNotNullConstraint || addUniqueConstraint || collation != DbColumn::Constraints::Collation::Default)
             {
-            m_classMap.GetECDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. It is mapped "
+            m_classMap.GetECDbMap().Issues().Report(ECDbIssueSeverity::Warning, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. It is mapped "
                                                           "to a column though shared with other ECProperties. Therefore ECDb cannot enforce any of these constraints. "
                                                           "The column is created without constraints.",
                                                           propMap.GetProperty().GetName().c_str(), propMap.GetProperty().GetClass().GetFullName());
@@ -1124,7 +1125,7 @@ DbTable& ColumnFactory::GetTable() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    01/2016
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapLoadContext::Postprocess(ECDbMapCR ecdbMap) 
+BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
     {
     for (ECN::ECClassCP constraintClass : m_constraintClasses)
         {
