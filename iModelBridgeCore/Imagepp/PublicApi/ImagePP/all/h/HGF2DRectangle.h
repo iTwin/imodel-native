@@ -185,7 +185,8 @@ public:
     IMAGEPP_EXPORT virtual void          PrintState(ostream& po_rOutput) const;
 
 
-    virtual HFCPtr<HGF2DShape>           AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DShape> 
+                                        AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
 
 protected:
 
