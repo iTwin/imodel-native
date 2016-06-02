@@ -1545,7 +1545,7 @@ namespace querydetail
 			ugrid = 0;
 			stats.m_numPoints = 0;
 			stats.m_queryID = h;
-			strcpy_s(stats.m_queryType, sizeof(stats.m_queryType), Condition::name());
+            BeStringUtilities::Strncpy(stats.m_queryType, sizeof(stats.m_queryType), Condition::name());
 		}
 		//---------------------------------------------------------------------
 		ConditionQuery<Condition>()
@@ -1555,7 +1555,7 @@ namespace querydetail
 			ugrid = 0; 
 			stats.m_numPoints = 0;
 			stats.m_queryID = 0;
-			strcpy_s(stats.m_queryType, sizeof(stats.m_queryType), Condition::name());
+            BeStringUtilities::Strncpy(stats.m_queryType, sizeof(stats.m_queryType), Condition::name());
 		}
 		//---------------------------------------------------------------------
 		void setUpStats()
@@ -1563,7 +1563,7 @@ namespace querydetail
 			stats.m_density = Query::getDensityType();
 			stats.m_densityVal = Query::getDensityCoeff();
 			stats.m_numPoints = 0;
-			strcpy_s( stats.m_queryType, sizeof(stats.m_queryType), Condition::name() );
+            BeStringUtilities::Strncpy( stats.m_queryType, sizeof(stats.m_queryType), Condition::name() );
 		}
 		//---------------------------------------------------------------------
 		void createGrid()
@@ -4340,7 +4340,7 @@ struct FrustumQuery : public Query
 
 		stats.m_numPoints = 0;
 		stats.m_queryID = id;
-		strcpy_s( stats.m_queryType, sizeof(stats.m_queryType), "FRUSTUM" );
+        BeStringUtilities::Strncpy( stats.m_queryType, sizeof(stats.m_queryType), "FRUSTUM" );
 
 		if (g_currentViewParams)
 			theVisibilityEngine().setViewParameters( *g_currentViewParams );

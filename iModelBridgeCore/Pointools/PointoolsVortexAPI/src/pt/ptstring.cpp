@@ -47,18 +47,18 @@ String::~String()
 //
 // comparision
 //
-bool String::operator >  (const String &s) const	{	return lstrcmpW(_wbuffer, s.c_wstr()) > 0;	}
-bool String::operator >= (const String &s) const	{	return lstrcmpW(_wbuffer, s.c_wstr()) >= 0;	}
-bool String::operator <  (const String &s) const	{	return lstrcmpW(_wbuffer, s.c_wstr()) < 0;	}
-bool String::operator <= (const String &s) const	{	return lstrcmpW(_wbuffer, s.c_wstr()) <= 0;	}
-bool String::operator == (const String &s) const	{	return lstrcmpW(_wbuffer, s.c_wstr()) == 0;	}
-bool String::operator != (const String &s) const	{	return lstrcmpW(_wbuffer, s.c_wstr()) != 0;	}
+bool String::operator >  (const String &s) const	{	return wcscmp(_wbuffer, s.c_wstr()) > 0;	}
+bool String::operator >= (const String &s) const	{	return wcscmp(_wbuffer, s.c_wstr()) >= 0;	}
+bool String::operator <  (const String &s) const	{	return wcscmp(_wbuffer, s.c_wstr()) < 0;	}
+bool String::operator <= (const String &s) const	{	return wcscmp(_wbuffer, s.c_wstr()) <= 0;	}
+bool String::operator == (const String &s) const	{	return wcscmp(_wbuffer, s.c_wstr()) == 0;	}
+bool String::operator != (const String &s) const	{	return wcscmp(_wbuffer, s.c_wstr()) != 0;	}
 
 
 int String::length() const
 {
 	if (!_wbuffer) return 0;
-	return static_cast<int>(wcsnlen(_wbuffer, _wbuffsize));
+	return static_cast<int>(wcslen(_wbuffer));
 }
 //
 // Assignment operator
@@ -93,7 +93,7 @@ String &String::operator = (const String &s)
 		{
 			size_t size = strlen(s._abuffer) + 1;
 			_abuffer = new char[size];
-			strcpy_s(_abuffer, size, s._abuffer);
+            BeStringUtilities::Strncpy(_abuffer, size, s._abuffer);
 			_encoding = s._encoding;
 		}
 		else

@@ -23,7 +23,7 @@ std::wofstream &pt::FileTrace::file()
 	{
 		__logfs = new std::wofstream();
 
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
+#if defined NEEDS_WORK_VORTEX_DGNDB 
 		wchar_t trace_path[260];
 		wchar_t full_path[260];
 		int success = ::GetEnvironmentVariableW(L"VORTEX_TRACE_PATH", trace_path, 260);

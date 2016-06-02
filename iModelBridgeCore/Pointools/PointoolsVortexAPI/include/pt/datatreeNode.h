@@ -28,7 +28,7 @@ public:
 											
 	NodeID(const char *id, int index)			// append an index to the id, ie "viewport1"
 												{			
-													sprintf_s(_id, NODE_ID_LENGTH, "%s%i", id, index);
+                                                BeStringUtilities::Snprintf(_id, NODE_ID_LENGTH, "%s%i", id, index);
 												}
 	NodeID()									{ clear(); }
 

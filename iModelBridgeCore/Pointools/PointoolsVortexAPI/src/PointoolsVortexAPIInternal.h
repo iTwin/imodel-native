@@ -59,22 +59,15 @@
         #undef GetCurrentTime
     #endif
 #else
-    // NEEDS_WORK_VORTEX_DGNDB
-    #define wcscpy_s(d, ds, s)              BeStringUtilities::Wcsncpy (d, ds, s, BeStringUtilities::AsManyAsPossible);
-    #define wcsncpy_s(d, ds, s, ss)         BeStringUtilities::Wcsncpy (d, ds, s, ss);
-    #define lstrcmpW                        wcscmp
-    #define wcsnlen(str,size)               wcslen(str)
-    #define strcpy_s(dest, destSize, src)   BeStringUtilities::Strncpy(dest, destSize, src, BeStringUtilities::AsManyAsPossible);
-    #define swscanf_s                       swscanf
-    #define sprintf_s                       BeStringUtilities::Snprintf
-
-    #define LOBYTE(w)           ((uint8_t)(((uintptr_t)(w)) & 0xff))    
-    #define GetRValue(rgb)      (LOBYTE(rgb))
-    #define GetGValue(rgb)      (LOBYTE(((uint16_t)(rgb)) >> 8))
-    #define GetBValue(rgb)      (LOBYTE((rgb)>>16))
-    #define RGB(r,g,b)          ((uint32_t)(((uint8_t)(r)|((uint16_t)((uint8_t)(g))<<8))|(((uint16_t)(uint8_t)(b))<<16)))
+    
+#define LOBYTE(w)           ((uint8_t)(((uintptr_t)(w)) & 0xff))    
+#define GetRValue(rgb)      (LOBYTE(rgb))
+#define GetGValue(rgb)      (LOBYTE(((uint16_t)(rgb)) >> 8))
+#define GetBValue(rgb)      (LOBYTE((rgb)>>16))
+#define RGB(r,g,b)          ((uint32_t)(((uint8_t)(r)|((uint16_t)((uint8_t)(g))<<8))|(((uint16_t)(uint8_t)(b))<<16)))
 
 #endif
+
 
 #ifdef _DEBUG
 #define FILE_TRACE 1

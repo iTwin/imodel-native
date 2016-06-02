@@ -144,7 +144,7 @@ PTres	PTAPI ptGetChannelInfo(PThandle handle, PTstr name, PTenum& typesize, PTui
 
 		if(name)
 		{
-			wcscpy_s(name, 128, channel->name().c_wstr()); 
+        BeStringUtilities::Wcsncpy(name, 128, channel->name().c_wstr(), BeStringUtilities::AsManyAsPossible);
 		}
 
 		typesize = channel->bitsPerValue() / 8;

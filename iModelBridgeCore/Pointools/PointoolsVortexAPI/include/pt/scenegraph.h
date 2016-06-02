@@ -156,7 +156,7 @@ public:
 	inline const wchar_t* identifier() const { return m_identifier; }
 	
 	void setIdentifier(const wchar_t*id) { 
-        wcsncpy_s(m_identifier, PT_IDENTIFIER_LENGTH, id, PT_IDENTIFIER_LENGTH-1);
+        BeStringUtilities::Wcsncpy(m_identifier, PT_IDENTIFIER_LENGTH, id, PT_IDENTIFIER_LENGTH-1);
 		m_identifier[PT_IDENTIFIER_LENGTH-1] = L'\0';
 	}
 
