@@ -380,9 +380,6 @@
     <ClInclude Include="DbSchemaPersistenceManager.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="Nullable.h">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClInclude>
     <ClInclude Include="ClassMappingInfo.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>

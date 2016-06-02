@@ -8,7 +8,7 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include <Bentley/RefCounted.h>
-#include "Nullable.h"
+#include <Bentley/Nullable.h>
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //#define KIND_OF_QUANTITY_SUPPORT
@@ -1289,7 +1289,7 @@ struct ECSchemaComparer
         ECSchemaComparer(){}
         ~ECSchemaComparer(){}
         BentleyStatus Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
-        static std::vector<Utf8String> Split(Utf8StringCR path);
+        static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
         static Utf8String Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
     };
 
