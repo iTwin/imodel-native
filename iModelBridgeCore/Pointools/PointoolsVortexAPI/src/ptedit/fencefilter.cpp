@@ -192,15 +192,15 @@ bool FenceSelect::generateHullPlanes()
 
             if (isPerspective)
             {
-                p30.set(p0.x*-1,p0.y*-1, -1.0);
-                p31.set(p1.x*-1,p1.y*-1,-1.0);
-                p32.set(p1.x*-3.0f,p1.y*-3.0f,-3.0);
+                p30.set((float)(p0.x)*-1.0f,(float)(p0.y)*-1.0f, -1.0f);
+                p31.set((float)(p1.x)*-1.0f,(float)(p1.y)*-1.0f, -1.0f);
+                p32.set((float)(p1.x)*-3.0f,(float)(p1.y)*-3.0f, -3.0f);
             }
             else
             {
-                p30.set(p0.x, p0.y, -0.5);
-                p31.set(p1.x, p1.y, -0.5);
-                p32.set(p1.x, p1.y, -1.0);
+                p30.set((float)p0.x, (float)p0.y, -0.5f);
+                p31.set((float)p1.x, (float)p1.y, -0.5f);
+                p32.set((float)p1.x, (float)p1.y, -1.0f);
             }
             invmdl.vec3_multiply_mat4(p30);
             invmdl.vec3_multiply_mat4(p31);

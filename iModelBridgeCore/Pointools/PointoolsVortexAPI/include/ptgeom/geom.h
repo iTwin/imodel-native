@@ -5,11 +5,20 @@
 
 #define ERROR        0
 #define I_MAX        2147483647
+#ifdef PI
+#undef PI
+#endif
 #define PI           3.14159265358979323846264338327950288419716939937510
 #define SUCCESS      1
 
 #define DEG_TO_RAD   ( PI / 180.0 )
+#ifdef MAX
+#undef MAX
+#endif
 #define MAX(a,b) ( (a)>(b) ? (a) : (b) ) 
+#ifdef MIN
+#undef MIN
+#endif
 #define MIN(a,b) ( (a)>(b) ? (b) : (a) )
 #define RAD_TO_DEG   ( 180.0 / PI )
 

@@ -21,6 +21,12 @@
 
 namespace pt
 {
+
+#ifdef BENTLEY_WIN32
+#pragma warning( push )
+#pragma warning( disable : 4251 )
+#endif
+
 class MODM_API ModulesManager
 {
 public:
@@ -41,5 +47,9 @@ protected:
 private:
 	std::vector<_Module*>	m_modules;
 };
+
+#ifdef BENTLEY_WIN32
+#pragma warning( pop ) 
+#endif
 }
 #endif
