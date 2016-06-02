@@ -70,6 +70,9 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
             MergeError,
             RevisionManagerError,
 
+			//Event Errors
+			NoEventsFound,
+			
             AzureError,
             DgnDbError
             };

@@ -255,6 +255,21 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate (ICancellationTokenPt
         });
     }
 
+EventServiceReceiveTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken) const
+	{
+	BeAssert (DgnDbServerHost::IsInitialized ());
+//    if (!m_db.IsValid () || !m_db->IsDbOpen ())
+//        {
+//        return CreateCompletedAsyncTask<EventServiceReceiveResultPtr> (EventServiceReceiveResult::Error (DgnDbServerError::Id::FileNotFound));
+//        }
+//    if (!m_repositoryConnection)
+//        {
+//        return CreateCompletedAsyncTask<DgnDbServerBoolResult> (DgnDbServerBoolResult::Error (DgnDbServerError::Id::InvalidRepositoryConnection));
+//        }
+
+	return m_repositoryConnection->GetEvents(longPolling, cancellationToken);
+	}
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------

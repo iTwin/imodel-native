@@ -582,43 +582,6 @@ Dgn::IRepositoryManager* DgnDbClient::GetRepositoryManagerP()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Arvind.Venkateswaran           05/2016
 //---------------------------------------------------------------------------------------
-EventServiceReceiveTaskPtr DgnDbClient::ReceiveEventsFromEventService
-(
-Utf8String repoId, 
-bool longPolling, 
-ICancellationTokenPtr cancellationToken
-)
-    {
-
-    /*auto connectToRepoTask = ConnectToRepository(RepositoryInfo(m_serverUrl, repoId))->GetResult();;
-    auto receiveTask = connectToRepoTask.GetValue()->ReceiveEventsFromEventService(longPolling);
-    bset<std::shared_ptr<AsyncTask>> tasks;
-    tasks.insert(receiveTask);
-    return AsyncTask::WhenAll(tasks)->Then<EventServiceReceiveTaskPtr>([=] ()
-        {
-        if (!connectToRepoTask.IsSuccess())
-            return EventServiceReceiveResult::Error(connectToRepoTask.GetError());
-        return EventServiceReceiveResult::Success(receiveTask->GetResult().GetValue());
-        });*/
-
-    EventServiceReceiveResultPtr result = std::make_shared<EventServiceReceiveResult>();
-    return ConnectToRepository(RepositoryInfo(m_serverUrl, repoId), cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
-        {
-        if (!connectionResult.IsSuccess())
-            {
-            return result->SetError(connectionResult.GetError());
-            }
-        EventServiceReceiveTaskPtr taskPtr = connectionResult.GetValue()->ReceiveEventsFromEventService(longPolling, cancellationToken);
-        return result->SetSuccess(taskPtr->GetResult().GetValue());
-        })->Then<EventServiceReceiveResult>([=] ()
-            {
-            return *result;
-            });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Arvind.Venkateswaran           05/2016
-//---------------------------------------------------------------------------------------
 bool DgnDbClient::SendEventsToEventService
 (
 Utf8String repoId, 
