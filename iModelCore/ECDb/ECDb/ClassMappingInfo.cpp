@@ -182,7 +182,10 @@ BentleyStatus ClassMappingInfo::DoEvaluateMapStrategy(bool& baseClassesNotMapped
 
     // ClassMappingRule: If exactly 1 ancestor ECClass is using SharedTable (AppliesToSubclasses), use this
     if (polymorphicSharedTableClassMaps.size() == 1)
+        {
+        m_parentClassMap = parentClassMap; //only need to hold the parent class map for shared table case
         return EvaluateSharedTableMapStrategy(*parentClassMap, userStrategy);
+        }
 
     // ClassMappingRule: If one or more parent is using OwnClass-polymorphic, use OwnClass-polymorphic mapping
     if (polymorphicOwnTableClassMaps.size() > 0)
@@ -200,8 +203,6 @@ BentleyStatus ClassMappingInfo::DoEvaluateMapStrategy(bool& baseClassesNotMapped
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& parentClassMap, UserECDbMapStrategy const& userStrategy)
     {
-    //we only need to hold on to the parent class map for the shared table case
-    m_parentClassMap = &parentClassMap;
     ECDbMapStrategy const& parentStrategy = parentClassMap.GetMapStrategy();
     BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
 
@@ -676,6 +677,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         if (!ValidateChildStrategy(*baseStrategy, *userStrategy))
             return MappingStatus::Error;
 
+        m_parentClassMap = baseClassMap;
         if (baseClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
             if (m_customMapType == CustomMapType::LinkTable)
@@ -1044,8 +1046,8 @@ BentleyStatus IndexMappingInfo::CreateFromIdSpecificationCAs(std::vector<IndexMa
 BentleyStatus IndexMappingInfoCache::TryGetIndexInfos(std::vector<IndexMappingInfoPtr> const*& indexInfos, ClassMapCR classMap) const
     {
     //first look in class map info cache
-    auto classMapInfoCacheIt = m_schemaImportContext.GetClassMapInfoCache().find(&classMap);
-    if (classMapInfoCacheIt != m_schemaImportContext.GetClassMapInfoCache().end())
+    auto classMapInfoCacheIt = m_schemaImportContext.GetClassMappingInfoCache().find(&classMap);
+    if (classMapInfoCacheIt != m_schemaImportContext.GetClassMappingInfoCache().end())
         {
         indexInfos = &classMapInfoCacheIt->second->GetIndexInfos();
         return SUCCESS;

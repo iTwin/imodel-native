@@ -52,7 +52,6 @@ private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
     std::vector<IndexMappingInfoPtr> m_dbIndexes;
-    ClassMap const* m_parentClassMap;
     bool m_isMapToVirtualTable;
     ECN::ECPropertyCP m_classHasCurrentTimeStampProperty;
 
@@ -60,6 +59,7 @@ protected:
     ECDbMapCR m_ecdbMap;
     ECN::ECClassCR m_ecClass;
     ECDbMapStrategy m_resolvedStrategy;
+    ClassMap const* m_parentClassMap;
 
 private:
     BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);

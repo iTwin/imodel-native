@@ -75,7 +75,7 @@ UserECDbMapStrategy* SchemaImportContext::GetUserStrategyP(ECClassCR ecclass, EC
 //---------------------------------------------------------------------------------------
 void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMappingInfo>& info)
     {
-    m_classMapInfoCache[&classMap] = std::move(info);
+    m_classMappingInfoCache[&classMap] = std::move(info);
     }
 
 /*---------------------------------------------------------------------------------------

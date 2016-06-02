@@ -371,7 +371,7 @@ MappingStatus ECDbMap::DoMapSchemas()
         return MappingStatus::Error;
 
     BeAssert(status != MappingStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
-    for (auto& kvpair : GetSchemaImportContext()->GetClassMapInfoCache())
+    for (auto& kvpair : GetSchemaImportContext()->GetClassMappingInfoCache())
         {
         if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(*GetSchemaImportContext(), kvpair.second->GetIndexInfos()))
             return MappingStatus::Error;
