@@ -14,18 +14,6 @@ BEGIN_UNNAMED_NAMESPACE
     static int s_progressiveTarget;
 END_UNNAMED_NAMESPACE
 
-#define RENDER_LOGGING 1
-
-#ifdef RENDER_LOGGING
-#   define DEBUG_PRINTF THREADLOG.debugv
-#   define ERROR_PRINTF THREADLOG.errorv
-#   define WARN_PRINTF THREADLOG.warningv
-#else
-#   define DEBUG_PRINTF(fmt, ...)
-#   define ERROR_PRINTF(fmt, ...)
-#   define WARN_PRINTF(fmt, ...)
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -190,7 +178,9 @@ void Render::Task::Perform(StopWatch& timer)
     else if (m_elapsedTime>.125)
         WARN_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
     else
-        DEBUG_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        {
+//        DEBUG_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

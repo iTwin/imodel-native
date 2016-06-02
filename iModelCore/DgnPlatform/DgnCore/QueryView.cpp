@@ -8,17 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <Bentley/BeSystemInfo.h>
 
-#define DEBUG_LOGGING
-#if defined (DEBUG_LOGGING)
-#   define DEBUG_PRINTF THREADLOG.debugv
-#   define WARN_PRINTF THREADLOG.debugv
-#   define ERROR_PRINTF THREADLOG.errorv
-#else
-#   define DEBUG_PRINTF(...) 
-#   define WARN_PRINTF(...)
-#   define ERROR_PRINTF(...)
-#endif
-
 #ifdef DEBUG_HEAL
 #   define HEAL_PRINTF DEBUG_PRINTF
 #else
@@ -31,7 +20,6 @@
 #else
 #   define PROGRESSIVE_PRINTF(fmt, ...)
 #endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -387,10 +375,7 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, QueryResults& results,
         {
         DgnElementCPtr el = pool.FindElement(thisScore.second);
         if (!el.IsValid())
-            {
-//            DEBUG_PRINTF("not loaded");
             continue;
-            }
 
         GeometrySourceCP geomElem = el->ToGeometrySource();
         if (nullptr == geomElem)
@@ -440,7 +425,10 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     {
     DgnDb::VerifyClientThread();
 
+#if defined (DEBUG_LOGGING)
     StopWatch watch(true);
+#endif
+
     DEBUG_PRINTF("Begin create scene");
 
     QueryResultsPtr results;
@@ -458,6 +446,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
 
     bvector<DgnElementId> missing;
     AddtoSceneQuick(context, *results, missing);
+    DEBUG_PRINTF("Done create quick time=%lf", watch.GetCurrentSeconds());
 
     // Next, allow external data models to draw or schedule external data. Note: Do this even if we're already aborted
     auto& models = m_dgndb.Models();
@@ -469,11 +458,12 @@ void DgnQueryView::_CreateScene(SceneContextR context)
             geomModel->_AddSceneGraphics(context);
         }
 
+    uint32_t missingCount = (uint32_t) missing.size();
     if (!missing.empty())
         {
         DgnElements& pool = m_dgndb.Elements();
 
-        DEBUG_PRINTF("Begin create scene with load");
+        DEBUG_PRINTF("Begin create scene with load, missing=%d", missingCount);
         BeAssert(false==m_loading);
         AutoRestore<bool> loadFlag(&m_loading,true);
 
@@ -488,24 +478,30 @@ void DgnQueryView::_CreateScene(SceneContextR context)
 
             GeometrySourceCP geomElem = el->ToGeometrySource();
             if (nullptr == geomElem)
+                {
+                BeAssert(false);
                 continue;
+                }
 
             if (SUCCESS == context.VisitGeometry(*geomElem))
-                m_scene->Insert(*it, el);
-            
-            if (context.CheckStop())
                 {
-                ERROR_PRINTF("Create Scene aborted on element %ld", it->GetValue());
+                --missingCount;
+                m_scene->Insert(*it, el);
+                }
+
+            if (context.WasAborted())
+                {
+                WARN_PRINTF("Create Scene aborted on element %ld", it->GetValue());
                 break;
                 }
             }
         }
 
     BeAssert(m_scene->GetCount() <= results->GetCount());
-    m_scene->m_complete = !results->m_incomplete && (m_scene->size() == results->GetCount());
+    m_scene->m_complete = !results->m_incomplete && (0 == missingCount);
     if (!m_scene->m_complete)
         {
-        DEBUG_PRINTF("schedule progressive");
+        DEBUG_PRINTF("schedule progressive, incomplete=%d, still missing=%d", results->m_incomplete, missingCount);
         vp.ScheduleElementProgressiveTask(*new ProgressiveTask(*this, vp));
         }
 
@@ -776,7 +772,7 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
     m_minScore = 0.0;
     m_hitLimit = m_plan.GetTargetNumElements();
 
-    if (m_hitLimit > m_view.m_queryElementPerSecond)
+    if (endTime && m_hitLimit > m_view.m_queryElementPerSecond)
         {
         m_hitLimit = (uint32_t) (m_view.m_queryElementPerSecond);
         DEBUG_PRINTF("limiting to =%d", m_hitLimit);
@@ -784,16 +780,15 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
 
     BeAssert(m_hitLimit>0);
 
-    DgnElementId thisId;
     while (true)
         {
         while (m_view.m_loading)
             {
-            DEBUG_PRINTF("pause, loading", m_hitLimit);
-            BeThreadUtilities::BeSleep(50);
+            DEBUG_PRINTF("pause, loading");
+            BeThreadUtilities::BeSleep(20);
             }
 
-        thisId = StepRtree();
+        DgnElementId thisId = StepRtree();
         if (!thisId.IsValid())
             break;
 

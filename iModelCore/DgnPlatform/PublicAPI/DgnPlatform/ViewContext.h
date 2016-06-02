@@ -388,7 +388,7 @@ struct RenderListContext : RenderContext
 protected:
     bool m_wantStroke = true;
     int32_t m_checkStopInterval;
-    int32_t m_checkStopElementSkip = 1;
+    int32_t m_checkStopElementSkip = 10;
     int32_t m_checkStopElementCount = 0;
     uint64_t m_nextCheckStop;
     Render::GraphicListPtr m_list;
