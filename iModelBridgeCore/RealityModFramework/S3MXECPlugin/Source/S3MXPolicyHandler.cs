@@ -10,7 +10,6 @@ namespace S3MXECPlugin.Source
 
             builder .SetPolicyAssertionSupport<PersistenceServicePolicy>(PersistenceServicePolicy.PolicyAssertionNames.Updateable, ApplyUpdatableAssertion)
                     .SetPolicyAssertionSupport<PersistenceServicePolicy>(PersistenceServicePolicy.PolicyAssertionNames.StreamBackable, ApplyStreambackableAssertion);
-
             }
 
         private static void ApplyStreambackableAssertion (DefaultPolicyModule sender, PersistenceServicePolicy policy, ECPolicyContext context)

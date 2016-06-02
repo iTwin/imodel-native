@@ -115,13 +115,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Source\S3MXAzureBlobApi.cs" />
-    <Compile Include="Source\IndexPolicyHandler.cs" />
     <Compile Include="Source\Log.cs" />
     <Compile Include="Source\S3MXECPlugin.cs" />
-    <Compile Include="Source\IndexFileRetrievalController.cs" />
-    <Compile Include="Source\IndexNavigationModule.cs" />
-    <Compile Include="Source\models.cs" />
     <Compile Include="Source\S3MXNavigationModule.cs" />
+    <Compile Include="Source\S3MXPolicyHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

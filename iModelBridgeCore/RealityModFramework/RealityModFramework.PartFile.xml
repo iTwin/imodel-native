@@ -87,7 +87,6 @@
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
 		<SubPart PartName="S3MXECPlugin"/>
-		<SubPart PartName="S3MXECPluginC"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <SubPart PartName="DataHandlerTool" />
@@ -115,24 +114,21 @@
         </Bindings>
     </Part>
 	
-	<Part Name="S3MXECPlugin" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ECServices"      	PartFile="ecf"            Repository="ecf" />
-		<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
+	<Part Name="S3MXRequiredNuget" BentleyBuildMakeFile="S3MXECPlugin.prewire.mke">
 		<RequiredRepository>Microsoft.Azure.KeyVault.Core</RequiredRepository>
 		<RequiredRepository>Microsoft.Data.Edm</RequiredRepository>
 		<RequiredRepository>Microsoft.Data.OData</RequiredRepository>
 		<RequiredRepository>Microsoft.Data.Services.Client</RequiredRepository>
 		<RequiredRepository>System.Spatial</RequiredRepository>
 		<RequiredRepository>WindowsAzure.Storage</RequiredRepository>
+	</Part>
+	
+	<Part Name="S3MXECPlugin" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ECServices"      	PartFile="ecf"            Repository="ecf" />
+		<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
+		<SubPart PartName="S3MXRequiredNuget" />
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.S3MXECPlugin.dll</Assemblies>
-        </Bindings>
-    </Part>
-    
-    <Part Name="S3MXECPluginC" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
-        <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.S3MXECPluginC.dll</Assemblies>
         </Bindings>
     </Part>
     

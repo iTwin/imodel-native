@@ -114,8 +114,9 @@ namespace S3MX.Source
                     IECClass classFolder = schema.GetClass("Folder");
                     IECInstance instanceFolder = classFolder.CreateInstance();
                     instanceFolder.InstanceId = directory.Prefix;
-                    NavNode NavNodeFolder = new NavNode(instanceFolder);
-                    navNodes.Add(NavNodeFolder);
+                    NavNode navNodeFolder = new NavNode(instanceFolder);
+                    navNodeFolder.Description = extractLastSegmentOfUri(directory.Prefix, '/');
+                    navNodes.Add(navNodeFolder);
                 }
             }
 

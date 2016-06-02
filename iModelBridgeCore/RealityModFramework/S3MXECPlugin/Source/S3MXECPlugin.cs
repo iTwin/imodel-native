@@ -25,21 +25,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Reflection;
 using Bentley.ECSystem.Configuration;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage;
 using S3MX.Source;
 
 #if !IMSOFF
-using Microsoft.IdentityModel.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.IdentityModel.Web;
 #endif
 
 namespace S3MXECPlugin.Source
-    {
+{
     /*====================================================================================**/
     /// <summary>
     /// Demonstrates how to create a file info ECPlugin using the ECPluginBuilder.

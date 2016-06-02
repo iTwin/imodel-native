@@ -14,20 +14,8 @@
 appName     = RealityModFramework.prewire
 %include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
-DestInc		= $(OutRoot)/Winx64/BuildContexts/RealityModFramework/SubParts/Assemblies/
-MicrosoftAzureKeyVaultCoreSrc 		= $(SrcRoot)nuget/Microsoft.Azure.KeyVault.Core.1.0.0/lib/portable-net45+wp8+wpa81+win/
-MicrosoftDataEdmSrc					= $(SrcRoot)nuget/Microsoft.Data.Edm.5.7.0/lib/portable-net45+wp8+win8+wpa/
-MicrosoftDataODataSrc				= $(SrcRoot)nuget/Microsoft.Data.OData.5.7.0/lib/portable-net45+wp8+win8+wpa/
-MicrosoftDataServicesClientSrc		= $(SrcRoot)nuget/Microsoft.Data.Services.Client.5.7.0/lib/portable-net45+wp8+win8+wpa/
-MicrosoftWindowsAzureStorageSrc		= $(SrcRoot)nuget/WindowsAzure.Storage.6.2.0/lib/net40/
-
 # Wire in my own public header files.
 always:
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPackage=$(RealityPackagePublicAPISrc)"
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPlatform=$(RealityPlatformPublicAPISrc)"
-   ~linkfile        "$(DestInc)Microsoft.Azure.KeyVault.Core.dll=${MicrosoftAzureKeyVaultCoreSrc}/Microsoft.Azure.KeyVault.Core.dll"
-   ~linkfile        "$(DestInc)Microsoft.Data.Edm.dll=${MicrosoftDataEdmSrc}/Microsoft.Data.Edm.dll"
-   ~linkfile        "$(DestInc)Microsoft.Data.OData.dll=${MicrosoftDataODataSrc}/Microsoft.Data.OData.dll"
-   ~linkfile        "$(DestInc)Microsoft.Data.Services.Client.dll=${MicrosoftDataServicesClientSrc}/Microsoft.Data.Services.Client.dll"
-   ~linkfile        "$(DestInc)Microsoft.WindowsAzure.Storage.dll=${MicrosoftWindowsAzureStorageSrc}/Microsoft.WindowsAzure.Storage.dll"
 
