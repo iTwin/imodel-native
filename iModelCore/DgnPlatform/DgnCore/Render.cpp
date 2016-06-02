@@ -23,7 +23,7 @@ void Render::Target::Debug::SaveSceneTarget(int val) {s_sceneTarget=val; Show();
 void Render::Target::Debug::SaveProgressiveTarget(int val) {s_progressiveTarget=val; Show();}
 void Render::Target::Debug::Show()
     {
-#if defined (RENDER_LOGGING) 
+#if defined (DEBUG_LOGGING) 
     NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, PD=%d", s_gps, s_sceneTarget, s_progressiveTarget);
 #endif
     }

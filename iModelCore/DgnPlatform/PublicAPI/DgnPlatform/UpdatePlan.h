@@ -228,7 +228,7 @@ public:
 //=======================================================================================
 struct DynamicUpdatePlan : UpdatePlan
     {
-    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate); SetCreateSceneTimeout(50); /*m_query.SetMaxElements(5000);*/}
+    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate); SetCreateSceneTimeout(50);}
     };
 
 //=======================================================================================

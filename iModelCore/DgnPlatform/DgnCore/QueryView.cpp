@@ -465,7 +465,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
 
         DEBUG_PRINTF("Begin create scene with load, missing=%d", missingCount);
         BeAssert(false==m_loading);
-        AutoRestore<bool> loadFlag(&m_loading,true);
+        AutoRestore<bool> loadFlag(&m_loading,true); // this tells the query thread to pause temporarily so we don't fight over the SQLite mutex
 
         for (auto it = missing.rbegin(), ritEnd = missing.rend(); it != ritEnd; ++it)
             {
@@ -498,7 +498,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
         }
 
     BeAssert(m_scene->GetCount() <= results->GetCount());
-    m_scene->m_complete = !results->m_incomplete && (0 == missingCount);
+    m_scene->m_complete = (0 == missingCount) && !results->m_incomplete;
     if (!m_scene->m_complete)
         {
         DEBUG_PRINTF("schedule progressive, incomplete=%d, still missing=%d", results->m_incomplete, missingCount);
