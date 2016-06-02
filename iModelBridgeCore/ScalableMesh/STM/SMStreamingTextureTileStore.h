@@ -70,6 +70,14 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     m_TextureCV.notify_all();
                     }
 
+                void Unload()
+                    {
+                    m_IsLoaded = false;
+                    m_IsLoading = false;
+                    m_TextureCV.notify_all();
+                    this->clear();
+                    }
+
                 size_t GetWidth() { return m_Width; }
                 size_t GetHeight() { return m_Height; }
                 size_t GetNbChannels() { return m_NbChannels; }
@@ -226,7 +234,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     texture.Load(blockID.m_integerID);
                     }
                 }
-            assert(texture.IsLoaded());
+            assert(texture.IsLoaded() && !texture.empty());
             return texture;
             }
 
@@ -363,13 +371,14 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
         virtual size_t LoadBlock(uint8_t* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
             auto& texture = this->GetTexture(blockID);
-            assert(!texture.empty());
+            auto textureSize = texture.size();
             ((int*)DataTypeArray)[0] = (int)texture.GetWidth();
             ((int*)DataTypeArray)[1] = (int)texture.GetHeight();
             ((int*)DataTypeArray)[2] = (int)texture.GetNbChannels();
-            memcpy(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
+            memmove(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
             //return texture.size() + 3 * sizeof(int);
-            return std::min(texture.size() + 3 * sizeof(int), maxCountData);
+            texture.Unload();
+            return std::min(textureSize + 3 * sizeof(int), maxCountData);
             }
 
         virtual bool DestroyBlock(HPMBlockID blockID)

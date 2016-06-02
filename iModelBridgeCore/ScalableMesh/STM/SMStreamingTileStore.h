@@ -77,6 +77,12 @@ public:
             }
         assert(this->IsLoaded());
         }
+    void UnLoad()
+        {
+        m_pIsLoaded = false;
+        m_pIsLoading = false;
+        this->clear();
+        }
     void SetLoaded()
         {
         m_pIsLoaded = true;
@@ -1223,7 +1229,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 block.SetStore(m_stream_store);
                 block.Load();
                 }
-            assert(block.IsLoaded());
+            assert(block.IsLoaded() && !block.empty());
             return block;
             }
 
@@ -1852,8 +1858,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (s_stream_from_grouped_store)
                 {
                 auto group = this->GetGroup(blockID);
-                auto node_header = group->GetNodeHeader(ConvertBlockID(blockID));
+                auto node_header = group->GetNodeHeader(blockID.m_integerID);
                 ReadNodeHeaderFromBinary(header, group->GetRawHeaders(node_header.offset), node_header.size);
+                //group->removeNodeData(blockID.m_integerID);
                 }
             else {
                 //auto nodeHeader = this->GetNodeHeaderJSON(blockID);
@@ -1869,10 +1876,12 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         virtual size_t LoadBlock(POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
             auto& block = this->GetBlock(blockID);
+            auto blockSize = block.size();
             assert(block.size() <= maxCountData * sizeof(POINT));
-            memcpy(DataTypeArray, block.data(), block.size());
+            memmove(DataTypeArray, block.data(), block.size());
+            block.UnLoad();
 
-            return block.size();
+            return blockSize;
             }
 
         virtual bool DestroyBlock(HPMBlockID blockID)
