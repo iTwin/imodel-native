@@ -243,6 +243,9 @@ DgnDbStatus DgnElement::_OnInsert()
             return DgnDbStatus::InvalidName;
         }
 
+    if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
+        return DgnDbStatus::DuplicateCode;
+
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnInsert(*this);
@@ -365,6 +368,10 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     auto parentId = GetParentId();
     if (parentId.IsValid() && parentId != original.GetParentId() && parentCycleExists(parentId, GetElementId(), GetDgnDb()))
         return DgnDbStatus::InvalidParent;
+
+    auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+    if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
+        return DgnDbStatus::DuplicateCode;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
@@ -548,7 +555,7 @@ DgnDbStatus DgnElement::_InsertInDb()
     auto stmtResult = statement->Step();
     if (BE_SQLITE_DONE != stmtResult)
         {
-        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        // SQLite doesn't tell us which constraint failed - check if it's the Code. (NOTE: We should catch this in _OnInsert())
         auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
         return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
         }
@@ -583,7 +590,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
     auto stmtResult = stmt->Step();
     if (BE_SQLITE_DONE != stmtResult)
         {
-        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        // SQLite doesn't tell us which constraint failed - check if it's the Code. (NOTE: We should catch this in _OnInsert())
         auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
         if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
             return DgnDbStatus::DuplicateCode;

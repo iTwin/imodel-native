@@ -868,8 +868,39 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
             req.Locks().Insert(GetDgnDb(), LockLevel::Shared);
             break;
         case BeSQLite::DbOpcode::Delete:
+            {
             req.Locks().Insert(*this, LockLevel::Exclusive);
+
+            // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue.
+            Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+            stmt.BindId(1, m_modelId);
+            auto& elements = m_dgndb.Elements();
+            while (BE_SQLITE_ROW == stmt.Step())
+                {
+                DgnElementCPtr el = elements.GetElement(stmt.GetValueId<DgnElementId>(0));
+                BeAssert(el.IsValid());
+                if (el.IsValid())
+                    {
+                    auto stat = el->PopulateRequest(req, BeSQLite::DbOpcode::Delete, nullptr);
+                    if (RepositoryStatus::Success != stat)
+                        return stat;
+                    }
+                }
+
+            // and we must delete all of its views
+            for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options(GetModelId())))
+                {
+                auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
+                if (view.IsValid())
+                    {
+                    auto stat = view->PopulateRequest(req, BeSQLite::DbOpcode::Delete, nullptr);
+                    if (RepositoryStatus::Success != stat)
+                        return stat;
+                    }
+                }
+
             break;
+            }
         case BeSQLite::DbOpcode::Update:
             {
             req.Locks().Insert(*this, LockLevel::Exclusive);

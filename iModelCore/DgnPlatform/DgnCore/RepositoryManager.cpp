@@ -1129,13 +1129,26 @@ DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Reques
         }
     }
 
+// ##TODO: temporary, until tool framework enhanced to handle explicitly acquiring requisite locks/codes
+// Can be disabled for tests for now.
+static bool s_acquireAutomatically = true;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void IBriefcaseManager::BackDoor_SetAutomaticAcquisition(bool acquireAutomatically)
+    {
+    s_acquireAutomatically = acquireAutomatically;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP pre)
     {
     Request req;
-    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, IBriefcaseManager::PrepareAction::Verify, pre), req);
+    auto action = s_acquireAutomatically ? PrepareAction::Acquire : PrepareAction::Verify;
+    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, action, pre), req);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1144,7 +1157,8 @@ DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbO
 DgnDbStatus IBriefcaseManager::OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode)
     {
     Request req;
-    return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, IBriefcaseManager::PrepareAction::Verify), req);
+    auto action = s_acquireAutomatically ? PrepareAction::Acquire : PrepareAction::Verify;
+    return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, action), req);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1159,10 +1173,25 @@ RepositoryStatus IBriefcaseManager::PerformAction(Request& req, PrepareAction ac
             {
             case PrepareAction::Verify:
                 AreResourcesHeld(req.Locks().GetLockSet(), req.Codes(), &status);
+#ifdef DEBUG_LOCKS
+                {
+                Json::Value locksJson;
+                req.Locks().ToJson(locksJson);
+                printf("Locks not held: %s\n", Json::FastWriter::ToString(locksJson).c_str());
+                }
+#endif
                 break;
             case PrepareAction::Acquire:
-                status = ProcessRequest(req).Result();
+                {
+                auto response = ProcessRequest(req);
+#ifdef DEBUG_LOCKS
+                Json::Value json;
+                response.ToJson(json);
+                printf("%s\n", Json::FastWriter::ToString(json).c_str());
+#endif
+                status = response.Result();
                 break;
+                }
             }
         }
 

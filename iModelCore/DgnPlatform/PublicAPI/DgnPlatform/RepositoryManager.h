@@ -210,6 +210,16 @@ public:
 
     //! Populates the request with the locks + codes required to delete the specified model from the DgnDb
     RepositoryStatus PrepareForModelDelete(Request& request, DgnModelCR model, PrepareAction action=PrepareAction::Populate) { return PrepareForModelOperation(request, model, BeSQLite::DbOpcode::Delete, action); }
+
+    //! Convenience function to acquire all locks and codes required for element insertion. Prefer batch operations instead where possible.
+    RepositoryStatus AcquireForElementInsert(DgnElementCR el) { Request req; return PrepareForElementInsert(req, el, PrepareAction::Acquire); }
+
+    //! Convenience function to acquire all locks and codes required for element update. Prefer batch operations instead where possible.
+    RepositoryStatus AcquireForElementUpdate(DgnElementCR el) { Request req; return PrepareForElementUpdate(req, el, PrepareAction::Acquire); }
+
+    //! Convenience function to acquire all locks and codes required for element deletion. Prefer batch operations instead where possible.
+    RepositoryStatus AcquireForElementDelete(DgnElementCR el) { Request req; return PrepareForElementDelete(req, el, PrepareAction::Acquire); }
+
     //@}
 
     //! @name Managing Locks
@@ -327,6 +337,8 @@ public:
     DgnDbStatus OnModelUpdate(DgnModelCR model); //!< @private
     DgnDbStatus OnModelDelete(DgnModelCR model); //!< @private
     void OnDgnDbDestroyed() { _OnDgnDbDestroyed(); } //!< @private
+
+    DGNPLATFORM_EXPORT static void BackDoor_SetAutomaticAcquisition(bool acquireAutomatically); //!< @private TEMPORARY
 };
 
 /*=====================================================================================*/

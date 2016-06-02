@@ -921,10 +921,12 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
     RepositoryManagerTest()
         {
         RegisterServer();
+        IBriefcaseManager::BackDoor_SetAutomaticAcquisition(false);
         }
 
     ~RepositoryManagerTest()
         {
+        IBriefcaseManager::BackDoor_SetAutomaticAcquisition(true);
         UnregisterServer();
         }
 
@@ -1223,10 +1225,11 @@ TEST_F(SingleBriefcaseLocksTest, RelinquishLocks)
     {
     SetupDb(L"RelinquishLocks.bim", m_bcId);
 
-    // Create a new element, implicitly locking the dictionary model + the db
+    // Create a new element - requires locking the dictionary model + the db
     DgnDbR db = *m_db;
     auto txnPos = db.Txns().GetCurrentTxnId();
     DgnTrueColor color(DgnTrueColor::CreateParams(db, ColorDef(1,2,3), "la", "lala"));
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(color));
     EXPECT_TRUE(color.Insert().IsValid());
 
     // Cannot relinquish locks with uncommitted changes
@@ -1538,7 +1541,9 @@ TEST_F(DoubleBriefcaseTest, Contention)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Operations on elements and models automatically acquire locks.
+* Operations on elements and models USED TO automatically acquire locks.
+* Now, they do NOT - they only verify that the requisite locks were acquired prior to the
+* operation. Caller must explicitly acquire those locks.
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DoubleBriefcaseTest, AutomaticLocking)
@@ -1564,8 +1569,11 @@ TEST_F(DoubleBriefcaseTest, AutomaticLocking)
     // Deleting a model requires exclusive ownership
     DgnModelPtr modelA2d = GetModel(dbA, true);
     ExpectLevel(*modelA2d, LockLevel::None);
-    EXPECT_EQ(DgnDbStatus::Success, modelA2d->Delete());
+    EXPECT_EQ(DgnDbStatus::LockNotHeld, modelA2d->Delete());
+    IBriefcaseManager::Request req;
+    EXPECT_EQ(RepositoryStatus::Success, dbA.BriefcaseManager().PrepareForModelDelete(req, *modelA2d, IBriefcaseManager::PrepareAction::Acquire));
     ExpectLevel(*modelA2d, LockLevel::Exclusive);
+    EXPECT_EQ(DgnDbStatus::Success, modelA2d->Delete());
     DgnModelPtr modelA3d = GetModel(dbA, false);
     ExpectLevel(*modelA3d, LockLevel::None);
     EXPECT_EQ(DgnDbStatus::LockNotHeld, modelA3d->Delete()); // because B has a shared lock on it
@@ -1599,13 +1607,22 @@ TEST_F(DoubleBriefcaseTest, AutomaticLocking)
 
     DgnElementCPtr cpElemB3d = GetElement(dbB, Elem3dId1());
     ExpectLevel(*cpElemB3d, LockLevel::None);
-    EXPECT_EQ(DgnDbStatus::Success, cpElemB3d->Delete());
+    EXPECT_EQ(DgnDbStatus::LockNotHeld, cpElemB3d->Delete());
+    LockRequest lockReq;
+    lockReq.Insert(*cpElemB3d, LockLevel::Exclusive);
+    EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().AcquireLocks(lockReq).Result());
     ExpectLevel(*cpElemB3d, LockLevel::Exclusive);
+    EXPECT_EQ(DgnDbStatus::Success, cpElemB3d->Delete());
 
     DgnElementPtr pElemB3d2 = GetElement(dbB, Elem3dId2())->CopyForEdit();
     ExpectLevel(*pElemB3d2, LockLevel::None);
-    EXPECT_TRUE(pElemB3d2->Update(&status).IsValid());
+    EXPECT_FALSE(pElemB3d2->Update(&status).IsValid());
+    EXPECT_EQ(DgnDbStatus::LockNotHeld, status);
+    lockReq.Clear();
+    lockReq.Insert(*pElemB3d2, LockLevel::Exclusive);
+    EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().AcquireLocks(lockReq).Result());
     ExpectLevel(*pElemB3d2, LockLevel::Exclusive);
+    EXPECT_TRUE(pElemB3d2->Update(&status).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1954,6 +1971,8 @@ TEST_F(ExtractLocksTest, UsedLocks)
         auto pEl = cpEl->CopyForEdit();
         DgnCode newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
+        IBriefcaseManager::Request bcreq;
+        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(bcreq, *pEl, IBriefcaseManager::PrepareAction::Acquire));
         cpEl = pEl->Update();
         ASSERT_TRUE(cpEl.IsValid());
 
@@ -2069,12 +2088,12 @@ struct CodesManagerTest : RepositoryManagerTest
 
     Utf8String CommitRevision(DgnDbR db);
 
-    static DgnDbStatus InsertStyle(Utf8CP name, DgnDbR db)
+    static DgnDbStatus InsertStyle(Utf8CP name, DgnDbR db, bool expectSuccess = true)
         {
         AnnotationTextStyle style(db);
         style.SetName(name);
         IBriefcaseManager::Request req;
-        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementInsert(req, style, IBriefcaseManager::PrepareAction::Acquire));
+        EXPECT_EQ(expectSuccess, RepositoryStatus::Success == db.BriefcaseManager().PrepareForElementInsert(req, style, IBriefcaseManager::PrepareAction::Acquire));
         DgnDbStatus status;
         style.DgnElement::Insert(&status);
         return status;
@@ -2160,8 +2179,9 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
 
 /*---------------------------------------------------------------------------------**//**
 * Test that any INSERT or UPDATE will fail if the object's code has not been reserved.
-* (If we don't explicitly reserve it prior to insert/update, an attempt will be made to
-* reserve it for us).
+* NOTE: Previously, insert/update would attempt to reserve the code automatically for us.
+* That is no longer the case - if we don't explicitly reserve it prior to insert/update,
+* the operation will fail with DgnDbStatus::CodeNotReserved.
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, AutoReserveCodes)
@@ -2183,11 +2203,16 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     ExpectState(MakeReserved(MakeStyleCode("MyStyle", db), db), db);
 
     // An attempt to insert an element with the same code as an already-used code will fail
-    EXPECT_EQ(DgnDbStatus::CodeNotReserved, InsertStyle(existingStyleCode.GetValue().c_str(), db));
+    EXPECT_EQ(DgnDbStatus::CodeNotReserved, InsertStyle(existingStyleCode.GetValue().c_str(), db, false));
 
-    // Updating an element and changing its code will reserve the new code if we haven't done so already
+    // Updating an element and changing its code will NOT reserve the new code if we haven't done so already
     auto pStyle = AnnotationTextStyle::Get(db, "MyStyle")->CreateCopy();
+    DgnDbStatus status;
     pStyle->SetName("MyRenamedStyle");
+    EXPECT_FALSE(pStyle->DgnElement::Update(&status).IsValid());
+    EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
+    // Explicitly reserve the code
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCode(pStyle->GetCode()));
     EXPECT_TRUE(pStyle->Update().IsValid());
     EXPECT_EQ(2, GetReservedCodes(db).size());
     ExpectState(MakeReserved(pStyle->GetCode(), db), db);
@@ -2196,7 +2221,6 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     // Attempting to change code to an already-used code will fail on update
     pStyle = AnnotationTextStyle::Get(db, "MyRenamedStyle")->CreateCopy();
     pStyle->SetName(existingStyleCode.GetValue().c_str());
-    DgnDbStatus status;
     EXPECT_TRUE(pStyle->DgnElement::Update(&status).IsNull());
     EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
 
