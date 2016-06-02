@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "DataSource.h"
 #include "include\DataSource.h"
-
+#include "DataSourceAccount.h"
 
 DataSource::DataSource(DataSourceAccount *sourceAccount)
 {
@@ -10,10 +10,24 @@ DataSource::DataSource(DataSourceAccount *sourceAccount)
 	setAccount(sourceAccount);
 
 	setTimeout(DataSource::Timeout(0));
+
+	if (sourceAccount)
+	{
+		setPrefixPath(sourceAccount->getPrefixPath());
+	}
 }
 
 DataSource::~DataSource(void)
 {
+}
+
+DataSourceStatus DataSource::open(const DataSourceURL & sourceURL, DataSourceMode sourceMode)
+{
+	setSubPath(sourceURL);
+
+	setMode(sourceMode);
+
+	return DataSourceStatus();
 }
 
 bool DataSource::isValid(void)

@@ -27,8 +27,6 @@ protected:
 	AzureBlobClient						blobClient;
 	AzureConnectionString				connectionString;
 
-	AzureContainer						container;
-
 protected:
 
 	AzureConnectionString				createConnectionString			(AccountIdentifier identifier, AccountKey key);
@@ -42,9 +40,6 @@ protected:
 	void								setBlobClient					(const AzureBlobClient &client);
 	AzureBlobClient					&	getBlobClient					(void);
 
-	void								setContainer					(const AzureContainer &newContainer);
-	AzureContainer					&	getContainer					(void);
-
 public:
 
 										DataSourceAccountAzure			(const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
@@ -54,10 +49,9 @@ public:
 		DataSource					*	createDataSource				(void);
 		DataSourceStatus				destroyDataSource				(DataSource *dataSource);
 
-		DataSourceStatus				initializeContainer				(const DataSourceURL &containerName, DataSourceMode mode);
+		AzureContainer					initializeContainer				(const DataSourceURL &containerName, DataSourceMode mode);
 
-		DataSourceStatus				download						(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
-
+		DataSourceStatus				downloadBlobSync				(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
 		DataSourceStatus				downloadBlobSync				(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
 		DataSourceStatus				uploadBlobSync					(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 };

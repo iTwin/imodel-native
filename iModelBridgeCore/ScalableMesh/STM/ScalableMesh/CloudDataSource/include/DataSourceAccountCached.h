@@ -28,8 +28,5 @@ public:
 		void					setCacheAccount				(DataSourceAccount *account);
 		DataSourceAccount	*	getCacheAccount				(void);
 
-		void					setCacheRootURL				(const DataSourceURL &root);
-		const DataSourceURL	*	getCacheRootURL				(void);
-
-		DataSourceStatus		getFullCacheURL				(const DataSourceURL & sourceURL, DataSourceURL & cacheURL);
+		DataSourceStatus		getFormattedCacheURL				(const DataSourceURL & sourceURL, DataSourceURL & cacheURL);
 };

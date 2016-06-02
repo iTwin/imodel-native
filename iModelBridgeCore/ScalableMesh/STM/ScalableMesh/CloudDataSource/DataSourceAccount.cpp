@@ -126,14 +126,14 @@ DataSource * DataSourceAccount::getOrCreateThreadDataSource(bool *created)
 }
 
 
-void DataSourceAccount::setPathPrefix(const DataSourceURL & prefix)
+void DataSourceAccount::setPrefixPath(const DataSourceURL & prefix)
 {
-	pathPrefix = prefix;
+	prefixPath = prefix;
 }
 
-const DataSourceURL DataSourceAccount::getPathPrefix(void) const
+const DataSourceURL DataSourceAccount::getPrefixPath(void) const
 {
-	return pathPrefix;
+	return prefixPath;
 }
 
 DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
@@ -155,7 +155,7 @@ DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
 	return DataSourceStatus();
 }
 
-DataSourceStatus DataSourceAccount::download(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
+DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
 {
 	(void) dataSource;
 	(void) dest;
@@ -206,21 +206,7 @@ DataSourceAccount * DataSourceAccount::getCacheAccount(void)
 	return nullptr;
 }
 
-void DataSourceAccount::setCacheRootURL(const DataSourceURL & root)
-{
-	(void) root;
-
-	DataSourceStatus status(DataSourceStatus::Status_Error_Not_Supported);
-}
-
-const DataSourceURL * DataSourceAccount::getCacheRootURL(void)
-{
-	DataSourceStatus status(DataSourceStatus::Status_Error_Not_Supported);
-
-	return nullptr;
-}
-
-DataSourceStatus DataSourceAccount::getFullCacheURL(const DataSourceURL &sourceURL, DataSourceURL &fullCacheURL)
+DataSourceStatus DataSourceAccount::getFormattedCacheURL(const DataSourceURL &sourceURL, DataSourceURL &fullCacheURL)
 {
 	(void) sourceURL;
 	(void) fullCacheURL;

@@ -56,16 +56,6 @@ DataSourceAccountAzure::AzureBlobClient &DataSourceAccountAzure::getBlobClient(v
 	return blobClient;
 }
 
-void DataSourceAccountAzure::setContainer(const AzureContainer & newContainer)
-{
-	container = newContainer;
-}
-
-DataSourceAccountAzure::AzureContainer & DataSourceAccountAzure::getContainer(void)
-{
-	return container;
-}
-
 DataSource * DataSourceAccountAzure::createDataSource(void)
 {
 	return new DataSourceAzure(this);
@@ -82,21 +72,6 @@ DataSourceStatus DataSourceAccountAzure::destroyDataSource(DataSource *dataSourc
 	}
 
 	return DataSourceStatus(DataSourceStatus::Status_Error);
-}
-
-DataSourceStatus DataSourceAccountAzure::initializeContainer(const DataSourceURL & containerName, DataSourceMode mode)
-{
-	if (getContainer().is_valid())
-		return DataSourceStatus();
-
-	setContainer(getBlobClient().get_container_reference(containerName));
-
-	if (mode == DataSourceMode::DataSourceMode_Write)
-	{
-		getContainer().create_if_not_exists();
-	}
-
-	return DataSourceStatus();
 }
 
 
@@ -122,20 +97,43 @@ DataSourceStatus DataSourceAccountAzure::setAccount(const AccountName & account,
 }
 
 
-DataSourceStatus DataSourceAccountAzure::download(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize)
+DataSourceAccountAzure::AzureContainer DataSourceAccountAzure::initializeContainer(const DataSourceURL & containerName, DataSourceMode mode)
 {
-	return downloadBlobSync(dataSource.getSubPath(), dest, readSize, destSize);
+	AzureContainer container = getBlobClient().get_container_reference(containerName);
+
+	if (mode == DataSourceMode::DataSourceMode_Write)
+	{
+		container.create_if_not_exists();
+	}
+
+	return container;
 }
 
-DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL & blobPath, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
-{
-	if(getContainer().is_valid() == false)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
 
-	azure::storage::cloud_block_blob	blockBlob = getContainer().get_block_blob_reference(blobPath);
+DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize)
+{
+	DataSourceURL	url;
+
+	dataSource.getURL(url);
+
+	return downloadBlobSync(url, dest, readSize, destSize);
+}
+
+DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+{
+	DataSourceStatus	status;
+	DataSourceURL		containerName;
+	DataSourceURL		blobPath;
+
+															// Get first directory as Container and the remainder as the blob's virtual path
+	if ((status = url.getContainerAndBlob(containerName, blobPath)).isFailed())
+		return status;
+															// Make sure container exists
+	AzureContainer container = initializeContainer(containerName, DataSourceMode::DataSourceMode_Read);
+
+	azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(blobPath);
 	if (blockBlob.is_valid() == false)
 		return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
-
 
 	std::streampos p;
 
@@ -163,10 +161,18 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL & 
 	return DataSourceStatus();
 }
 
-DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
 {
+	DataSourceURL		containerName;
+	DataSourceURL		blobPath;
+	DataSourceStatus	status;
+															// Get first directory as Container and the remainder as the blob's virtual path
+	if ((status = url.getContainerAndBlob(containerName, blobPath)).isFailed())
+		return status;
+															// Make sure container exists
+	AzureContainer container = initializeContainer(containerName, DataSourceMode::DataSourceMode_Read);
 
-	azure::storage::cloud_block_blob	blockBlob = getContainer().get_block_blob_reference(blobPath);
+	azure::storage::cloud_block_blob	blockBlob = container.get_block_blob_reference(blobPath);
 	if (blockBlob.is_valid() == false)
 		return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
 

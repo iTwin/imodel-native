@@ -31,24 +31,18 @@ DataSource *DataSourceAccountCached::getCacheDataSource(void)
 	return cacheDataSource;
 }
 
-DataSourceStatus DataSourceAccountCached::getFullCacheURL(const DataSourceURL & sourceURL, DataSourceURL & cacheURL)
+DataSourceStatus DataSourceAccountCached::getFormattedCacheURL(const DataSourceURL & sourceURL, DataSourceURL & cacheURL)
 {
-	if (getCacheRootURL() == nullptr)
-		return DataSourceStatus(DataSourceStatus::Status_Error);
-
 															// Construct cache path based on <CacheRootPath>\\<AccountName>\\<SourceURL>
 	DataSourceURL	dataPath;
 	DataSourceURL	dataPathCollapsed;
 
-	cacheURL = *getCacheRootURL();
-
 	dataPath = getAccountName();
-	dataPath.append(getPathPrefix());
+	dataPath.append(getPrefixPath());
 	dataPath.append(sourceURL);
 	dataPath.collapseDirectories(dataPathCollapsed);
 
-	cacheURL.append(dataPathCollapsed);
-
+	cacheURL = dataPathCollapsed;
 
 	return DataSourceStatus();
 }
@@ -82,12 +76,3 @@ DataSourceAccount * DataSourceAccountCached::getCacheAccount(void)
 	return cacheAccount;
 }
 
-void DataSourceAccountCached::setCacheRootURL(const DataSourceURL & root)
-{
-	cacheRoot = root;
-}
-
-const DataSourceURL * DataSourceAccountCached::getCacheRootURL(void)
-{
-	return &cacheRoot;
-}

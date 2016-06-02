@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "DataSourceLocator.h"
+#include "include\DataSourceLocator.h"
 
 DataSourceLocator::DataSourceLocator(void)
 {
@@ -9,19 +10,18 @@ DataSourceLocator::DataSourceLocator(void)
 
 DataSourceLocator::DataSourceLocator(DataSourceLocator & locator)
 {
-	url			= locator.getURL();
-	service		= locator.getService();
-	account		= locator.getAccount();
+	setPrefixPath(locator.getPrefixPath());
+	setSubPath(locator.getSubPath());
+	setService(locator.getService());
+	setAccount(locator.getAccount());
 }
 
-void DataSourceLocator::setURL(DataSourceURL & newURL)
-{
-	url = newURL;
-}
 
-const DataSourceURL & DataSourceLocator::getURL(void)
+void DataSourceLocator::getURL(DataSourceURL &url)
 {
-	return url;
+	url = getPrefixPath();
+
+	url.append(getSubPath());
 }
 
 void DataSourceLocator::setService(DataSourceService * newService)
@@ -44,22 +44,22 @@ DataSourceAccount * DataSourceLocator::getAccount(void) const
 	return account;
 }
 
-void DataSourceLocator::setContainerName(DataSourceURL & name)
+void DataSourceLocator::setPrefixPath(const DataSourceURL & path)
 {
-	containerName = name;
+	prefixPath = path;
 }
 
-const DataSourceURL & DataSourceLocator::getContainerName(void) const
+const DataSourceURL & DataSourceLocator::getPrefixPath(void)
 {
-	return containerName;
+	return prefixPath;
 }
 
-void DataSourceLocator::setSubPath(DataSourceURL & path)
+void DataSourceLocator::setSubPath(const DataSourceURL & path)
 {
 	subPath = path;
 }
 
-const DataSourceURL &DataSourceLocator::getSubPath(void) const
+const DataSourceURL & DataSourceLocator::getSubPath(void)
 {
 	return subPath;
 }
@@ -85,7 +85,7 @@ DataSourceMode DataSourceLocator::getMode(void) const
 	return mode;
 }
 
-
+/*
 void DataSourceLocator::getFullSubPath(DataSourceURL &dest) const
 {
 	dest = getSubPath();
@@ -95,3 +95,4 @@ void DataSourceLocator::getFullSubPath(DataSourceURL &dest) const
 		dest += getSegmentName();
 	}
 }
+*/

@@ -125,7 +125,7 @@ DataSourceStatus DataSourceCached::open(const DataSourceURL & sourceURL, DataSou
 		if (getAccount())
 		{
 															// Generate the full URL of the cache file
-			if ((status = getAccount()->getFullCacheURL(sourceURL, fullCacheURL)).isFailed())
+			if ((status = getAccount()->getFormattedCacheURL(sourceURL, fullCacheURL)).isFailed())
 				return status;
 															// Set the full cache URL
 			setCacheURL(fullCacheURL);

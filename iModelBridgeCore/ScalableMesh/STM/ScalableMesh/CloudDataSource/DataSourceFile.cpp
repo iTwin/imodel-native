@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "DataSourceFile.h"
+#include "DataSourceAccount.h"
 
 
 DataSourceFile::DataSourceFile(DataSourceAccount *sourceAccount) : DataSource(sourceAccount)
@@ -15,11 +16,21 @@ DataSourceFile::~DataSourceFile(void)
 
 DataSourceStatus DataSourceFile::open(const DataSourceURL & sourceURL, DataSourceMode sourceMode)
 {
+	DataSourceURL				url;
+	std::wstring				filePath;
 	std::ios_base::open_mode	streamMode = std::ios_base::binary;
+	DataSourceStatus			status;
 
-	std::wstring filePath;
+	status = Super::open(sourceURL, sourceMode);
+	if (status.isFailed())
+		return status;
+
+	if(getAccount() == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
+
+	getURL(url);
 	
-	sourceURL.getFilePath(filePath);
+	url.getFilePath(filePath);
 
 	switch (sourceMode)
 	{

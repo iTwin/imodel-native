@@ -5,6 +5,10 @@
 
 class DataSourceFile : public DataSource
 {
+public:
+
+		typedef DataSource			Super;
+
 protected:
 
 		std::fstream				stream;

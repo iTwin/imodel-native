@@ -571,12 +571,14 @@ DataSourceStatus ScalableMeshBase::initializeAzureTest(void)
 															// Create an account on the file service for caching
 	if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
 		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Set prefix for caching account data sources
+	accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
 
-	accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+//	accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
 															// Set up local file based caching
 	accountAzure->setCaching(*accountCaching, DataSourceURL());
 															// Set up default container
-	accountAzure->setPathPrefix(DataSourceURL(L"scalablemeshtest"));
+	accountAzure->setPrefixPath(DataSourceURL(L"scalablemeshtest"));
 
 
 	return status;

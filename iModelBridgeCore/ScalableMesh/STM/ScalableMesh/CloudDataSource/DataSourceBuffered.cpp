@@ -82,7 +82,7 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
 	else
 	{
 																// Download unknown size
-		status = account->download(*this, dest, destSize, readSize);
+		status = account->downloadBlobSync(*this, dest, destSize, readSize);
 	}
 
 																// Return status
@@ -128,10 +128,7 @@ DataSourceStatus DataSourceBuffered::initializeBuffer(DataSourceBuffer::BufferSi
 
 DataSourceStatus DataSourceBuffered::open(const DataSourceURL & sourceURL, DataSourceMode sourceMode)
 {
-	(void) sourceURL;
-	(void) sourceMode;
-
-	return DataSourceStatus();
+	return Super::open(sourceURL, sourceMode);
 }
 
 DataSourceStatus DataSourceBuffered::flush(void)

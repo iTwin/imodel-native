@@ -35,6 +35,7 @@ public:
 				   			   ~DataSourceAzure			(void);
 
 	DataSourceStatus			open					(const DataSourceURL &sourceURL, DataSourceMode mode);
+	DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size);
 	DataSourceStatus			close					(void);
 };
 

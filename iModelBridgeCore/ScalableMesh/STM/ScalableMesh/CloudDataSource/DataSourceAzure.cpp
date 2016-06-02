@@ -15,36 +15,14 @@ DataSourceAzure::~DataSourceAzure(void)
 
 DataSourceStatus DataSourceAzure::open(const DataSourceURL & sourceURL, DataSourceMode sourceMode)
 {
-	DataSourceStatus			status;
-	DataSourceURL				containerName;
-	DataSourceURL				blobPathName;
-	DataSourceAccountAzure *	azureAccount;
-	DataSourceURL				path;
+	return Super::open(sourceURL, sourceMode);
+}
 
 
-	setMode(sourceMode);
-															// Attempt to open in superclasses
-	if ((status = Super::open(sourceURL, sourceMode)).isFailed())
-		return status;
-
-															// Get account
-	if((azureAccount = dynamic_cast<DataSourceAccountAzure *>(getAccount())) == nullptr)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Not_Initialized);
-
-	path = azureAccount->getPathPrefix();
-	path.append(sourceURL);
-
-															// Get first directory as Container and the remainder as the blob's virtual path
-	if ((status = path.getContainerAndBlob(containerName, blobPathName)).isFailed())
-		return status;
-															// Set the name of the root container
-	setContainerName(containerName);
-															// Set blob's name within the root container
-	setSubPath(blobPathName);
-															// Make sure container exists
-	status = azureAccount->initializeContainer(containerName, DataSourceMode(DataSourceMode_Write));
-
-	return status;
+DataSourceStatus DataSourceAzure::read(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size)
+{
+															// Pass to superclass for read (Note: Real reads are down through download calls)
+	return Super::read(dest, destSize, readSize, size);
 }
 
 DataSourceStatus DataSourceAzure::close(void)

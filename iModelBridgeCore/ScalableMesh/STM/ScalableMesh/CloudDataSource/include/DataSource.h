@@ -70,7 +70,7 @@ public:
 
 	DataSourceService						*	getService			(void);
 
-	virtual			DataSourceStatus			open				(const DataSourceURL & sourceURL, DataSourceMode sourceMode) = 0;
+	virtual			DataSourceStatus			open				(const DataSourceURL & sourceURL, DataSourceMode sourceMode);
 	virtual			DataSourceStatus			close				(void) = 0;
 
 	virtual			DataSourceStatus			read				(Buffer *dest,   DataSize destSize, DataSize &readSize, DataSize size = 0) = 0;

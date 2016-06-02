@@ -196,7 +196,7 @@ DataSourceStatus DataSourceManagerTest::testDataSourceAzure(void)
 	if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"FileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
 		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
 
-	accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+	accountAzure->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
 															// Set up local file based caching
 	accountAzure->setCaching(*accountCaching, DataSourceURL());
 															// Enable caching for this DataSource

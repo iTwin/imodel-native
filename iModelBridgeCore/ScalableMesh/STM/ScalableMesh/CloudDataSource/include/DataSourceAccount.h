@@ -27,7 +27,7 @@ protected:
 	AccountName						accountName;
 	AccountIdentifier				accountIdentifier;
 	AccountKey						accountKey;
-	DataSourceURL					pathPrefix;
+	DataSourceURL					prefixPath;
 
 	DataSourceTransferScheduler		transferScheduler;
 
@@ -70,8 +70,7 @@ public:
 	DataSourceStatus				uploadSegments				(DataSource &dataSource);
 	DataSourceStatus				downloadSegments			(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size);
 
-	virtual DataSourceStatus		download					(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
-
+	virtual DataSourceStatus		downloadBlobSync			(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
 	virtual DataSourceStatus		downloadBlobSync			(const DataSourceURL &blobPath, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
 	virtual DataSourceStatus		uploadBlobSync				(const DataSourceURL &blobPath, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
 
@@ -81,12 +80,9 @@ public:
 	virtual	void					setCacheAccount				(DataSourceAccount *account);
 	virtual DataSourceAccount	*	getCacheAccount				(void);
 
-	virtual void					setCacheRootURL				(const DataSourceURL &root);
-	virtual const DataSourceURL	*	getCacheRootURL				(void);
+	void							setPrefixPath				(const DataSourceURL &url);
+	const	DataSourceURL			getPrefixPath				(void) const;
 
-	void							setPathPrefix				(const DataSourceURL &url);
-	const	DataSourceURL			getPathPrefix				(void) const;
-
-	virtual DataSourceStatus		getFullCacheURL				(const DataSourceURL &sourceURL, DataSourceURL &fullCacheURL);
+	virtual DataSourceStatus		getFormattedCacheURL		(const DataSourceURL &sourceURL, DataSourceURL &fullCacheURL);
 
 };

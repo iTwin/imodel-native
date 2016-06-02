@@ -100,8 +100,11 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
 			}
 
 			DataSourceLocator &locator = buffer->getLocator();
+
+			DataSourceURL	url;
+			locator.getURL(url);
 															// Segment name is blob name with index
-			DataSourceURL segmentName = locator.getSubPath() + DataSourceURL(L"-" + std::to_wstring(segmentIndex));
+			DataSourceURL segmentName = url + DataSourceURL(L"-" + std::to_wstring(segmentIndex));
 
 															// Get the Account
 			if((account = locator.getAccount()) == nullptr)
