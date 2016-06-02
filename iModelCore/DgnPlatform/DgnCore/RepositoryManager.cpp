@@ -52,6 +52,13 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
+* Maintains a local state Db containing:
+*   - Locks held by this briefcase
+*   - Codes reserved by this briefcase
+*   - Locks held by other briefcases - strictly to be used for queries which
+*     need to be fast (avoid contacting server) and can tolerate potentially becoming
+*     out of date with server state. e.g., for tools which want to reject elements which
+*     are believed to be locked by another briefcase.
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BriefcaseManager : IBriefcaseManager, TxnMonitor
@@ -101,6 +108,9 @@ private:
     DbR GetLocalDb();
     bool Validate(RepositoryStatus* status=nullptr);
     RepositoryStatus Initialize();
+    bool UseExistingLocalDb(BeFileNameCR filename);
+    bool InitializeLocalDb();
+    bool CreateLocksTable(Utf8CP tableName);
     RepositoryStatus Refresh();
     RepositoryStatus Pull();
     DbResult Save()
@@ -135,7 +145,9 @@ private:
         return filename;
         }
 
-    static PropSpec GetCreationDatePropSpec() { return PropSpec("DgnDbCreationDate"); }
+    static PropSpec GetCreationDatePropSpec() { return PropSpec("BriefcaseLocalStateDbCreationDate"); }
+    static PropSpec GetVersionPropSpec() { return PropSpec("BriefcaseLocalStateDbVersion"); }
+    static Utf8CP GetCurrentVersion() { return "1"; }
 public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new BriefcaseManager(db); }
 };
@@ -190,6 +202,7 @@ IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseMana
 enum CodeColumn { AuthorityId=0, NameSpace, Value };
 
 #define TABLE_Locks "Locks"
+#define TABLE_UnavailableLocks "UnavailableLocks"
 #define LOCK_Type "Type"
 #define LOCK_Id "Id"
 #define LOCK_Level "Level"
@@ -239,6 +252,65 @@ bool BriefcaseManager::Validate(RepositoryStatus* pStatus)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BriefcaseManager::UseExistingLocalDb(BeFileNameCR filename)
+    {
+    // To support temporarily-offline workflows: if local state db already exists, AND server unavailable, AND pass verification checks, reuse existing.
+    if (!filename.DoesPathExist() || nullptr != GetRepositoryManager() || BE_SQLITE_OK != m_localDb.OpenBeSQLiteDb(filename, Db::OpenParams(Db::OpenMode::ReadWrite)))
+        return false;
+
+    // Reject if local state db schema has changed
+    Utf8String storedVersion;
+    if (BE_SQLITE_ROW != m_localDb.QueryProperty(storedVersion, GetVersionPropSpec()) || !storedVersion.Equals(GetCurrentVersion()))
+        return false;
+
+    // Reject if the DgnDb has been replaced since local state db was created
+    DateTime storedCreationDate, currentCreationDate;
+    Utf8String creationDateString;
+    if (BE_SQLITE_ROW != m_localDb.QueryProperty(creationDateString, GetCreationDatePropSpec()) || BSISUCCESS != DateTime::FromString(storedCreationDate, creationDateString.c_str())
+        || BE_SQLITE_ROW != GetDgnDb().QueryCreationDate(currentCreationDate) || storedCreationDate != currentCreationDate)
+        {
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BriefcaseManager::InitializeLocalDb()
+    {
+    // Save an identifier for the current schema version for later verification in offline mode...
+    m_localDb.SavePropertyString(GetVersionPropSpec(), GetCurrentVersion());
+
+    // Save the DgnDb creation date for later verification in offline mode...
+    DateTime dgnDbCreationDate;
+    if (BE_SQLITE_ROW == GetDgnDb().QueryCreationDate(dgnDbCreationDate))
+        m_localDb.SavePropertyString(GetCreationDatePropSpec(), dgnDbCreationDate.ToUtf8String());
+
+    // Set up the required tables
+    auto result = m_localDb.CreateTable(TABLE_Codes,    CODE_AuthorityId " INTEGER,"
+                                                        CODE_NameSpace " TEXT,"
+                                                        CODE_Value " TEXT,"
+                                                        "PRIMARY KEY" CODE_Values);
+
+    return BE_SQLITE_OK == result && CreateLocksTable(TABLE_Locks) && CreateLocksTable(TABLE_UnavailableLocks);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BriefcaseManager::CreateLocksTable(Utf8CP tableName)
+    {
+    return BE_SQLITE_OK == m_localDb.CreateTable(tableName,   LOCK_Type " INTEGER,"
+                                                LOCK_Id " INTEGER,"
+                                                LOCK_Level " INTEGER,"
+                                                "PRIMARY KEY(" LOCK_Type "," LOCK_Id ")");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus BriefcaseManager::Initialize()
@@ -251,16 +323,10 @@ RepositoryStatus BriefcaseManager::Initialize()
     BeFileName filename = GetLocalDbFileName();
 
     // To support temporarily-offline workflows: if local state db already exists, AND server unavailable, AND pass verification checks, reuse existing.
-    if (filename.DoesPathExist() && nullptr == GetRepositoryManager() && BE_SQLITE_OK == m_localDb.OpenBeSQLiteDb(filename, Db::OpenParams(Db::OpenMode::ReadWrite)))
+    if (UseExistingLocalDb(filename))
         {
-        DateTime storedCreationDate, currentCreationDate;
-        Utf8String creationDateString;
-        if (BE_SQLITE_ROW == m_localDb.QueryProperty(creationDateString, GetCreationDatePropSpec()) && BSISUCCESS == DateTime::FromString(storedCreationDate, creationDateString.c_str())
-            && BE_SQLITE_ROW == GetDgnDb().QueryCreationDate(currentCreationDate) && storedCreationDate == currentCreationDate)
-            {
-            m_localDbState = DbState::Ready;
-            return RepositoryStatus::Success;
-            }
+        m_localDbState = DbState::Ready;
+        return RepositoryStatus::Success;
         }
 
     // Delete existing, if any, and create new
