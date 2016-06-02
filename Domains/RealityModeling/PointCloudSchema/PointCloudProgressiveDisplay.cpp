@@ -79,6 +79,20 @@ struct MyPointCloudDraw : Render::PointCloudDraw    //NEEDS_WORK_CONTINUOUS_REND
     // can we pre-allocate qv graphic and assigned directly in qv buffer.
     // Performance difference between qvi_displayPoints and qv_addPoints/qvi_displayElement ?
 
+    //&&MM Pointools query optimization
+    //      - A query that doesn't use global var. and that we can resume. ex: ptViewport
+    //      - A query that will return all points without having to restart over over.
+    //      - Query that return points in floats with an origin. local to the query and not a global setting.
+    //      - Can it supports multiple query? Will it affect ptsTolLoad and loaded voxel?
+    //          ex: full density is started
+    //              full density pause
+    //              low density start and complete
+    //              resume full density.
+    //          
+    //          Same scenario may occurs with multiple viewports. i.e. alternating between 2 queries of a different region.
+    //              
+
+
     uint32_t m_ptCount;
     DPoint3dCP m_ptCP;
     ColorDef const* m_pRgb;

@@ -90,18 +90,6 @@ private:
     Dgn::Render::Graphic* GetLowDensityGraphicP(DgnViewportCR) const;
     void SaveLowDensityGraphic(DgnViewportCR, Dgn::Render::Graphic*);
 
-
-    // POINTCLOUD_WIP_GR06_Json - To remove this, we could move JsonUtils.h to PublicApi and then delete this struct and associated methods.
-    struct JsonUtils
-        {
-        static void DPoint3dToJson(JsonValueR outValue, DPoint3dCR point);
-        static void DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue);
-        static void TransformRowFromJson(double* row, JsonValueCR inValue);
-        static void TransformRowToJson(JsonValueR outValue, double const* row);
-        static void TransformFromJson(TransformR trans, JsonValueCR inValue);
-        static void TransformToJson(JsonValueR outValue, TransformCR trans);
-        };
-
 protected:
     friend struct PointCloudModelHandler;
     friend struct PointCloudProgressiveDisplay;

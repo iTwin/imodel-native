@@ -19,6 +19,7 @@
 #include <DgnPlatform/ImageUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/image.h>
+#include <DgnPlatform/JsonUtils.h>
 #include <Imagepp/h/ImageppAPI.h>
 
 #ifdef GetCurrentTime

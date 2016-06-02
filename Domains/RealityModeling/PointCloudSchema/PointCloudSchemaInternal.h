@@ -14,6 +14,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnDomain.h>
+#include <DgnPlatform/JsonUtils.h>
 
 #include <BePointCloud/BePointCloudApi.h>
 #include <BePointCloud/PointCloudTypes.h>

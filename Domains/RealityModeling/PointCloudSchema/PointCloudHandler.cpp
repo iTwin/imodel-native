@@ -24,66 +24,6 @@ static Utf8CP PROPERTYJSON_Color = "Color";
 static Utf8CP PROPERTYJSON_Weight = "Weight";
 
 //----------------------------------------------------------------------------------------
-//                                  PointCloudModel::JsonUtils
-//----------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
-//----------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::DPoint3dToJson(JsonValueR outValue, DPoint3dCR point)
-    {
-    outValue[0] = point.x;
-    outValue[1] = point.y;
-    outValue[2] = point.z;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
-//----------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue)
-    {
-    point.x = inValue[0].asDouble();
-    point.y = inValue[1].asDouble();
-    point.z = inValue[2].asDouble();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::TransformRowFromJson(double* row, JsonValueCR inValue)
-    {
-    for (int y = 0; y < 4; ++y)
-        row[y] = inValue[y].asDouble();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::TransformRowToJson(JsonValueR outValue, double const* row)
-    {
-    for (int y = 0; y < 4; ++y)
-        outValue[y] = row[y];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::TransformFromJson(TransformR trans, JsonValueCR inValue)
-    {
-    for (int x = 0; x < 3; ++x)
-        TransformRowFromJson(trans.form3d[x], inValue[x]);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::TransformToJson(JsonValueR outValue, TransformCR trans)
-    {
-    for (int x = 0; x < 3; ++x)
-        TransformRowToJson(outValue[x], trans.form3d[x]);
-    }
-
-//----------------------------------------------------------------------------------------
 //                                  PointCloudModelHandler
 //----------------------------------------------------------------------------------------
 
