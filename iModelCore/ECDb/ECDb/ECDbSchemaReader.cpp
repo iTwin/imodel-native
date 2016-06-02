@@ -517,7 +517,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
 
     Utf8CP schemaName = stmt->GetValueText(0);
     Utf8CP displayLabel = stmt->IsColumnNull(1) ? nullptr : stmt->GetValueText(1);
-    Utf8CP description = stmt->GetValueText(2);
+    Utf8CP description = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(2);
     Utf8CP nsprefix = stmt->GetValueText(3);
     uint32_t versionMajor = (uint32_t) stmt->GetValueInt(4);
     uint32_t versionWrite = (uint32_t) stmt->GetValueInt(5);
