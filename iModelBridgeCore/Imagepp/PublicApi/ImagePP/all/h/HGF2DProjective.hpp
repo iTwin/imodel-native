@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DProjective.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 BEGIN_IMAGEPP_NAMESPACE
@@ -23,7 +23,7 @@ inline HGF2DDisplacement HGF2DProjective::GetTranslation () const
     {
     HINVARIANTS;
 
-    return (HGF2DDisplacement(m_M02, m_M12));
+    return (HGF2DDisplacement(m_D02, m_D12));
     }
 
 
