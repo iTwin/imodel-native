@@ -58,7 +58,7 @@ PersistentObjectRef			&PersistentObjectRef::operator = ( const PersistentObjectR
 	m_file = ref.m_file;
 	m_identifier = ref.m_identifier;
 	m_key = ref.m_key;
-	wcscpy_s(m_dataType,48, ref.m_dataType);
+    BeStringUtilities::Wcsncpy(m_dataType,48, ref.m_dataType, BeStringUtilities::AsManyAsPossible);
 
 	for (int i=0; i<8; i++)
 		m_index[i] = ref.m_index[i];

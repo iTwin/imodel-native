@@ -294,7 +294,7 @@ namespace PTRMI
 		Port	initPort = 0;
 		size_t	pos;
 
-		if(swscanf_s(&(string[*readPos]), L"%d", &initPort) == 1)
+		if(swscanf(&(string[*readPos]), L"%d", &initPort) == 1)
 		{
 			if(initPort > 0)
 			{
@@ -332,7 +332,7 @@ namespace PTRMI
 
 		if(numDigits == 4)
 		{
-			if(swscanf_s(&(string[pos]), L"%d.%d.%d.%d", &(values[0]), &(values[1]), &(values[2]), &(values[3])) == 4)
+			if(swscanf(&(string[pos]), L"%d.%d.%d.%d", &(values[0]), &(values[1]), &(values[2]), &(values[3])) == 4)
 			{
 				found = true;
 			}
@@ -340,7 +340,7 @@ namespace PTRMI
 		else
 		if(numDigits == 6)
 		{
-			if(swscanf_s(&(string[pos]), L"%d.%d.%d.%d.%d.%d", &(values[0]), &(values[1]), &(values[2]), &(values[3]), &(values[4]), &(values[5])) == 4)
+			if(swscanf(&(string[pos]), L"%d.%d.%d.%d.%d.%d", &(values[0]), &(values[1]), &(values[2]), &(values[3]), &(values[4]), &(values[5])) == 4)
 			{
 				found = true;
 			}

@@ -1270,7 +1270,7 @@ int ShaderObject::load(const char* filename, const char *preprocessor)
 	unsigned int pplen = 0;
 
 	// put in version number first, ATI enforces this
-	sprintf_s(ppbuffer, 256, "#version %s\n\r%s", GLSL_VERSION_NUM, preprocessor ? preprocessor : " ");
+    BeStringUtilities::Snprintf(ppbuffer, 256, "#version %s\n\r%s", GLSL_VERSION_NUM, preprocessor ? preprocessor : " ");
 	pplen = strlen(ppbuffer);
 
 	shaderSource = (GLubyte*) new char[len*2+pplen];

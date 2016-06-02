@@ -19,7 +19,7 @@ public:
 
 protected:
 
-#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	::GUID		guid;
 #endif
 	bool		generated;

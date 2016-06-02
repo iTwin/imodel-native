@@ -590,7 +590,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 		voxels.push(pc->voxels()[i]);
 
 	/* check how much memory is available */ 
-#if defined (BENTLEY_WIN32) 
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
 	MEMORYSTATUSEX mem;
 	mem.dwLength = sizeof(MEMORYSTATUSEX);
 #endif
@@ -603,7 +603,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 		PTTRACE_LINE
 
 		char mess[256];
-#if defined (BENTLEY_WIN32) 	
+#if defined (BENTLEY_WIN32) 	    //NEEDS_WORK_VORTEX_DGNDB
 		GlobalMemoryStatusEx(&mem);		
         writebuffsize = static_cast<uint64_t>(mem.ullAvailVirtual * 0.75); /* leave space for read / write block allocations */
 #else
@@ -612,7 +612,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 		
         int writebuffsizeMB = static_cast<int>(writebuffsize / (1024 * 1024));
 		
-		sprintf_s(mess, "Gathering data for POD file : iteration %d using up to %dMb for buffer", ++iteration, writebuffsizeMB);
+        BeStringUtilities::Snprintf(mess, "Gathering data for POD file : iteration %d using up to %dMb for buffer", ++iteration, writebuffsizeMB);
 		ptapp::CmdProgress writeprogress(mess, 0, (buildInfo->endCloud - buildInfo->startCloud)+1);
 
 		/* the voxels that will be processed in this iteration */ 

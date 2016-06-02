@@ -9,12 +9,14 @@
 #define PT_DESCRIPTOR_SIZE 64
 #define PT_PATH_SIZE 260
 
-#ifdef POINTOOLS_API_INCLUDE
-    #ifdef BENTLEY_WIN32
-        #undef debugAssertM
-        #define debugAssertM(a,b) if(!a) OutputDebugStringA("assertion failed!!")
-    #endif
-#endif
+#ifdef NEEDS_WORK_VORTEX_DGNDB
+ #ifdef POINTOOLS_API_INCLUDE
+     #ifdef BENTLEY_WIN32
+         #undef debugAssertM
+         #define debugAssertM(a,b) if(!a) OutputDebugStringA("assertion failed!!")
+     #endif
+ #endif
+ #endif
 
 struct ptstr
 {
