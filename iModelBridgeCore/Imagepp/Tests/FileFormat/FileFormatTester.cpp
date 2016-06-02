@@ -95,7 +95,7 @@ static vector<std::wstring> s_GetFileNameVector()
     for (auto& actualName : fileList)
         {
         if (actualName.IsDirectory() ||
-            actualName.ContainsI(L"thumb.db") ||                         // Ignore thumnail windows files.
+            actualName.ContainsI(L"thumb.db") ||                                    // Ignore thumnail windows files.
             actualName.ContainsI(L"NITF\\PasSupportees") ||
             actualName.ContainsI(L"ErdasImg\\ImagesInvalides") ||
             actualName.ContainsI(L"iTIFF\\xFileNotSupported") ||
@@ -109,7 +109,10 @@ static vector<std::wstring> s_GetFileNameVector()
             actualName.ContainsI(L"Images\\MultiChannel_(XCH)\\Flashpix") ||
             actualName.ContainsI(L"Images\\jpeg\\Jpeg_InvalidWorldFiles") ||
             actualName.ContainsI(L"Images\\ECW\\TooBigImage") ||
-            actualName.ContainsI(L"Images\\ECW\\TC31T1\\2005_mosaic_colour.ecw")  // too big for .itiff
+            actualName.ContainsI(L"Images\\ECW\\TC31T1\\2005_mosaic_colour.ecw") ||                         // too big for .itiff
+            actualName.ContainsI(L"Images\\MrSid\\Group_East_Color.sid") ||                                 // too big for .itiff
+            actualName.ContainsI(L"Images\\MrSid\\TC00T1\\3185375_1760645.sid") ||                          // too big for .itiff
+            actualName.ContainsI(L"Images\\Jpeg2000\\J2K_W_Infrared")                                       // Not supported
             )
             continue;
 
@@ -384,7 +387,7 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         //N.B. We set the 4th parameter ScanCreatorIfNotFound = true because some files do not have the good extension. 
         //Hence we cannot rely only on the extension to find the appropriate creator.
         //>>> &&MM turning it OFF for now. It is slow. fill fix file extention once we have validated the baseline.
-        bool scanCreator = true;
+        bool scanCreator = false;
         HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, scanCreator, false);
         if (pSrcCreator == nullptr)
             return;

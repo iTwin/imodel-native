@@ -12,38 +12,39 @@ RleEditorTester.MaxRleRunSetPixels
 #*ExportTester.ExportToiTiffBestOptions/162*
 
 
+# All exception in comment  //DMx
 #Really painfully long exports
-*ExportTester.ExportToiTiffBestOptions/302
-*ExportTester.ExportToiTiffBestOptions/2434
-*ExportTester.ExportToiTiffBestOptions/2482
-*ExportTester.ExportToiTiffBestOptions/2733
-*ExportTester.ExportToiTiffBestOptions/2759
-*ExportTester.ExportToiTiffBestOptions/2768
-*ExportTester.ExportToiTiffBestOptions/2781
-*ExportTester.ExportToiTiffBestOptions/2833
-*ExportTester.ExportToiTiffBestOptions/2848
+#*ExportTester.ExportToiTiffBestOptions/302
+#*ExportTester.ExportToiTiffBestOptions/2434
+#*ExportTester.ExportToiTiffBestOptions/2482
+#*ExportTester.ExportToiTiffBestOptions/2733
+#*ExportTester.ExportToiTiffBestOptions/2759
+#*ExportTester.ExportToiTiffBestOptions/2768
+#*ExportTester.ExportToiTiffBestOptions/2781
+#*ExportTester.ExportToiTiffBestOptions/2833
+#*ExportTester.ExportToiTiffBestOptions/2848
 
 #Intersect Shape error. See special failing test coded HVE2DShapeTester.IntersectFailWithComplexLinear
 #Email sent to Alain Robert about this on 21 april 2016
-*ExportTester.ExportToiTiffBestOptions/2421
+#*ExportTester.ExportToiTiffBestOptions/2421
 HVEShapeTester.IntersectFailWithComplexLinear
 
 #ValidateLineIntegrity assertion failed
-*ExportTester.ExportToiTiffBestOptions/1599
-*ExportTester.ExportToiTiffBestOptions/1603
-*ExportTester.ExportToiTiffBestOptions/1611
-*ExportTester.ExportToiTiffBestOptions/1612
-*ExportTester.ExportToiTiffBestOptions/1613
-*ExportTester.ExportToiTiffBestOptions/1614
-*ExportTester.ExportToiTiffBestOptions/1615
-*ExportTester.ExportToiTiffBestOptions/4475
+#*ExportTester.ExportToiTiffBestOptions/1599
+#*ExportTester.ExportToiTiffBestOptions/1603
+#*ExportTester.ExportToiTiffBestOptions/1611
+#*ExportTester.ExportToiTiffBestOptions/1612
+#*ExportTester.ExportToiTiffBestOptions/1613
+#*ExportTester.ExportToiTiffBestOptions/1614
+#*ExportTester.ExportToiTiffBestOptions/1615
+#*ExportTester.ExportToiTiffBestOptions/4475
 
 #Too big images HTIFFStream::Write ERROR_IO_PENDING. It may be that we cannot write file over ~4 Go.
-*ExportTester.ExportToiTiffBestOptions/398
-*ExportTester.ExportToiTiffBestOptions/388
+#*ExportTester.ExportToiTiffBestOptions/398
+#*ExportTester.ExportToiTiffBestOptions/388
 
 #Assert break in HRAImageSurface.cpp (440) we try to copy a strip larger than the actual number of pixel.
 #There would be some empty pixels
-*ExportTester.ExportToiTiffBestOptions/1905
-*ExportTester.ExportToiTiffBestOptions/4146
+#*ExportTester.ExportToiTiffBestOptions/1905
+#*ExportTester.ExportToiTiffBestOptions/4146
 
