@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -23,7 +24,7 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="finalBaseClass">The specified final base class to have its table joined</param>
         /// <param name="sqlQueryBuilder">The SQLQueryBuilder used to create the query</param>
         /// <param name="tac">The table alias creator used with the query</param>
-        /// <param name="modifyTablePropertyName">Indicates the name of the property used to indicate which table to use. 
+        /// <param name="mimicTablePropertyName">Indicates the name of the property used to indicate which table to use. 
         /// <param name="uniqueIdColumn">Indicates the name of the property containing the uniqueId Column used link the derived and base tables.</param>
         ///   The property is located in SQLEntity custom attribute. The default property used is FromTableName</param>
         /// <returns>The final class' table descriptor</returns>
@@ -33,7 +34,7 @@ namespace IndexECPlugin.Source.Helpers
              IECClass finalBaseClass, 
              SQLQueryBuilder sqlQueryBuilder, 
              TableAliasCreator tac, 
-             string modifyTablePropertyName = null,
+             string mimicTablePropertyName = null,
              string uniqueIdColumn = null)
             {
             if ( queriedClass != finalBaseClass )
@@ -83,13 +84,13 @@ namespace IndexECPlugin.Source.Helpers
 
                     //We have to join the two different tables
                     TableDescriptor newTable;
-                    if ( modifyTablePropertyName == null )
+                    if ( mimicTablePropertyName == null )
                         {
                         newTable = new TableDescriptor(baseClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue, tac.GetNewTableAlias());
                         }
                     else
                         {
-                        newTable = new TableDescriptor(baseClass.GetCustomAttributes("SQLEntity").GetPropertyValue(modifyTablePropertyName).StringValue, tac.GetNewTableAlias());
+                        newTable = new TableDescriptor(baseClass.GetCustomAttributes("SQLEntity").GetPropertyValue(mimicTablePropertyName).StringValue, tac.GetNewTableAlias());
                         }
 
                     newTable.SetTableJoined(tempTable1, derivedClassKeyColumn, baseClassKeyColumn);
@@ -99,16 +100,16 @@ namespace IndexECPlugin.Source.Helpers
                     if ( !joinSuccessful )
                         {
                         //tempTable1 = similarTable;
-                        return JoinBaseTables(baseClass, similarTable, finalBaseClass, sqlQueryBuilder, tac, modifyTablePropertyName);
+                        return JoinBaseTables(baseClass, similarTable, finalBaseClass, sqlQueryBuilder, tac, mimicTablePropertyName);
                         }
                     else
                         {
                         //tempTable1 = newTable;
-                        return JoinBaseTables(baseClass, newTable, finalBaseClass, sqlQueryBuilder, tac, modifyTablePropertyName);
+                        return JoinBaseTables(baseClass, newTable, finalBaseClass, sqlQueryBuilder, tac, mimicTablePropertyName);
                         }
                     }
 
-                return JoinBaseTables(baseClass, tempTable1, finalBaseClass, sqlQueryBuilder, tac, modifyTablePropertyName);
+                return JoinBaseTables(baseClass, tempTable1, finalBaseClass, sqlQueryBuilder, tac, mimicTablePropertyName);
                 }
 
             return tempTable1;
@@ -118,9 +119,10 @@ namespace IndexECPlugin.Source.Helpers
         static public List<IECInstance> QueryDbForInstances 
             (string sqlCommandString, 
             DataReadingHelper dataReadingHelper, 
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap, 
+            IParamNameValueMap paramNameValueMap, 
             IECClass ecClass, IEnumerable<IECProperty> propertyList, 
             IDbConnection dbConnection, 
+            IEnumerable<string> nonInstanceDataColumnList = null,
             bool createDefaultThumbnail = true)
             {
             List<IECInstance> instanceList = new List<IECInstance>();
@@ -134,14 +136,8 @@ namespace IndexECPlugin.Source.Helpers
                 dbCommand.CommandType = CommandType.Text;
                 dbCommand.Connection = dbConnection;
 
-                foreach ( KeyValuePair<string, Tuple<string, DbType>> paramNameValue in paramNameValueMap )
-                    {
-                    IDbDataParameter param = dbCommand.CreateParameter();
-                    param.DbType = paramNameValue.Value.Item2;
-                    param.ParameterName = paramNameValue.Key;
-                    param.Value = paramNameValue.Value.Item1;
-                    dbCommand.Parameters.Add(param);
-                    }
+                SetDbCommandParameters(paramNameValueMap, dbCommand);
+
 
                 using ( IDataReader reader = dbCommand.ExecuteReader() )
                     {
@@ -183,6 +179,19 @@ namespace IndexECPlugin.Source.Helpers
                             instance.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("relInstID", relatedInstanceId));
                             }
 
+                        if (nonInstanceDataColumnList != null)
+                            {
+                            foreach ( string columnName in nonInstanceDataColumnList )
+                                {
+                                int? nonInstanceDataColumn = dataReadingHelper.getNonPropertyDataColumn(columnName);
+                                if (nonInstanceDataColumn.HasValue)
+                                    {
+                                    object columnData = reader[nonInstanceDataColumn.Value];
+                                    instance.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>(columnName, columnData));
+                                    }
+                                }
+                            }
+
                         foreach ( IECProperty prop in propertyList )
                             {
                             if ( ecClass.Contains(prop.Name) )
@@ -190,21 +199,23 @@ namespace IndexECPlugin.Source.Helpers
                                 IECPropertyValue instancePropertyValue = instance[prop.Name];
                                 IECInstance dbColumn = prop.GetCustomAttributes("DBColumn");
 
-                                if ( dbColumn == null )
-                                    {
-                                    //This is not a column in the sql table. We skip it...
-                                    continue;
-                                    }
+                                //if ( dbColumn == null )
+                                //    {
+                                //    //This is not a column in the sql table. We skip it...
+                                //    continue;
+                                //    }
 
                                 int? columnNumber = dataReadingHelper.getInstanceDataColumn(prop);
 
                                 if ( !columnNumber.HasValue )
                                     {
-                                    throw new ProgrammerException("There should have been a column number.");
+                                    // We did not query this property. We skip it...
+                                    continue;
+                                    //throw new ProgrammerException("There should have been a column number.");
                                     }
 
-                                var isSpatial = dbColumn["IsSpatial"];
-                                if ( isSpatial.IsNull || isSpatial.StringValue.ToLower() == "false" )
+                                IECPropertyValue isSpatial = dbColumn != null ? dbColumn["IsSpatial"] : null;
+                                if ( isSpatial == null || isSpatial.IsNull || isSpatial.StringValue.ToLower() == "false" )
                                     {
 
                                     if ( !reader.IsDBNull(columnNumber.Value) )
@@ -247,6 +258,90 @@ namespace IndexECPlugin.Source.Helpers
                 }
             dbConnection.Close();
             return instanceList;
+            }
+
+        static public int ExecuteNonQueryInDb
+            (string sqlCommandString,
+            IParamNameValueMap paramNameValueMap, 
+            IDbConnection dbConnection
+            )
+            {
+            dbConnection.Open();
+
+            int result;
+            using ( IDbCommand dbCommand = dbConnection.CreateCommand() )
+                {
+
+                dbCommand.CommandText = sqlCommandString;
+                dbCommand.CommandType = CommandType.Text;
+                dbCommand.Connection = dbConnection;
+
+                SetDbCommandParameters(paramNameValueMap, dbCommand);
+
+                result = dbCommand.ExecuteNonQuery();
+                }
+
+            dbConnection.Close();
+            return result;
+
+            }
+
+        private static void SetDbCommandParameters (IParamNameValueMap paramNameValueMap, IDbCommand dbCommand)
+            {
+            if ( paramNameValueMap is GenericParamNameValueMap )
+                {
+
+                GenericParamNameValueMap genericParamNameValueMap = paramNameValueMap as GenericParamNameValueMap;
+
+                foreach ( KeyValuePair<string, Tuple<object, DbType>> paramNameValue in genericParamNameValueMap )
+                    {
+                    IDbDataParameter param = dbCommand.CreateParameter();
+                    param.DbType = paramNameValue.Value.Item2;
+                    param.ParameterName = paramNameValue.Key;
+                    if ( paramNameValue.Value.Item1 != null )
+                        {
+                        param.Value = paramNameValue.Value.Item1;
+                        }
+                    else
+                        {
+                        param.Value = DBNull.Value;
+                        }
+                    dbCommand.Parameters.Add(param);
+                    }
+                }
+            else if ( paramNameValueMap is SqlServerParamNameValueMap )
+                {
+                SqlCommand sqlCommand = dbCommand as SqlCommand;
+                if ( sqlCommand == null )
+                    {
+                    throw new ProgrammerException("SqlServerParamNameValueMap should only be used with SqlCommand");
+                    }
+                SqlServerParamNameValueMap sqlServerParamNameValueMap = paramNameValueMap as SqlServerParamNameValueMap;
+
+                foreach ( KeyValuePair<string, Tuple<object, SqlDbType>> paramNameValue in sqlServerParamNameValueMap )
+                    {
+                    SqlParameter param = sqlCommand.CreateParameter();
+                    param.SqlDbType = paramNameValue.Value.Item2;
+                    if ( param.SqlDbType == SqlDbType.Udt )
+                        {
+                        param.UdtTypeName = "GEOMETRY";
+                        }
+                    param.ParameterName = paramNameValue.Key;
+                    if ( paramNameValue.Value.Item1 != null )
+                        {
+                        param.Value = paramNameValue.Value.Item1;
+                        }
+                    else
+                        {
+                        param.Value = DBNull.Value;
+                        }
+                    sqlCommand.Parameters.Add(param);
+                    }
+                }
+            else
+                {
+                throw new NotImplementedException("This type of IParamNameValueMap is not implemented yet.");
+                }
             }
 
         }

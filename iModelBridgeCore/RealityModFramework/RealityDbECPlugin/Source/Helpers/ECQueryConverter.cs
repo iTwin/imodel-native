@@ -54,7 +54,7 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="dataReadingHelper">The helper for reading the data from the DataReader</param>
         /// <param name="paramNameValueMap">The mapping of the parameters names and values for the parameterized query</param>
         public void CreateSqlCommandStringFromQuery (out string sqlCommandString, out string sqlCountString, out DataReadingHelper dataReadingHelper, 
-                                                     out Dictionary<string, Tuple<string, DbType>> paramNameValueMap)
+                                                     out IParamNameValueMap paramNameValueMap)
             {
             //For now, we only query on one class. To be completed one day
             SearchClass searchClass = m_query.SearchClasses.First();
@@ -199,70 +199,6 @@ namespace IndexECPlugin.Source.Helpers
 
                 }
             }
-
-        ///// <summary>
-        ///// This method's purpose is to join recursively all tables in the hierarchy of a class, up to a specified base class
-        ///// </summary>
-        ///// <param name="queriedClass">The derived class of which we need the base class table joined</param>
-        ///// <param name="tempTable1">The table descriptor of the queried class</param>
-        ///// <param name="finalBaseClass">The specified final base class to have its table joined</param>
-        ///// <returns>The final class' table descriptor</returns>
-        //private TableDescriptor JoinBaseTables (IECClass queriedClass, TableDescriptor tempTable1, IECClass finalBaseClass)
-        //    {
-        //    if ( queriedClass != finalBaseClass )
-        //        {
-        //        if ( queriedClass.BaseClasses.Count() != 1 )
-        //            {
-        //            throw new ProgrammerException("IndexECPlugin only supports classes that have at most one base class.");
-        //            }
-
-        //        IECClass baseClass = queriedClass.BaseClasses[0];
-        //        if ( queriedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue !=
-        //            baseClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue )
-        //            {
-        //            string baseClassKeyPropertyName;
-        //            string derivedClassKeyPropertyName;
-
-        //            if ( queriedClass.GetCustomAttributes("DerivedClassLinker") != null )
-        //                {
-        //                baseClassKeyPropertyName = queriedClass.GetCustomAttributes("DerivedClassLinker").GetPropertyValue("BaseClassKeyProperty").StringValue;
-        //                derivedClassKeyPropertyName = queriedClass.GetCustomAttributes("DerivedClassLinker").GetPropertyValue("DerivedClassKeyProperty").StringValue;
-        //                }
-
-        //            else
-        //                {
-        //                baseClassKeyPropertyName = baseClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
-        //                derivedClassKeyPropertyName = queriedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
-        //                }
-
-        //            //We have to join the two different tables
-        //            TableDescriptor newTable = new TableDescriptor(baseClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue, GetNewTableAlias());
-
-        //            string baseClassKeyColumn = baseClass[baseClassKeyPropertyName].GetCustomAttributes("DBColumn")["ColumnName"].StringValue;
-        //            string derivedClassKeyColumn = queriedClass[derivedClassKeyPropertyName].GetCustomAttributes("DBColumn")["ColumnName"].StringValue;
-
-        //            newTable.SetTableJoined(tempTable1, derivedClassKeyColumn, baseClassKeyColumn);
-
-        //            TableDescriptor similarTable;
-        //            bool joinSuccessful = m_sqlQueryBuilder.AddLeftJoinClause(newTable, out similarTable);
-        //            if ( !joinSuccessful )
-        //                {
-        //                //tempTable1 = similarTable;
-        //                return JoinBaseTables(baseClass, similarTable, finalBaseClass);
-        //                }
-        //            else
-        //                {
-        //                //tempTable1 = newTable;
-        //                return JoinBaseTables(baseClass, newTable, finalBaseClass);
-        //                }
-        //            }
-
-        //        return JoinBaseTables(baseClass, tempTable1, finalBaseClass);
-        //        }
-
-        //    return tempTable1;
-
-        //    }
 
         /// <summary>
         /// This method's purpose is to join recursively all tables in the hierarchy of a class, down to a specified derived class
@@ -444,7 +380,7 @@ namespace IndexECPlugin.Source.Helpers
                     //var isSpatial = dbColumn["IsSpatial"];
                     //if (isSpatial.IsNull || isSpatial.StringValue == "false")
                     //{
-                    m_sqlQueryBuilder.AddWhereClause(propertyTable.Alias, columnName, propertyExpression.Operator, propertyExpression.RightSideString, ECToSQLMap.ECTypeToSQL(property.Type));
+                    m_sqlQueryBuilder.AddWhereClause(propertyTable.Alias, columnName, propertyExpression.Operator, propertyExpression.RightSideString, ECToSQLMap.ECTypeToDbType(property.Type));
                     //}
                     //else
                     //{
@@ -514,7 +450,7 @@ namespace IndexECPlugin.Source.Helpers
                             {
                             m_sqlQueryBuilder.AddOperatorToWhereClause(LogicalOperator.OR);
                             }
-                        m_sqlQueryBuilder.AddWhereClause(table.Alias, dbColumnName, RelationalOperator.EQ, instanceIDExpression.InstanceIdSet[j], ECToSQLMap.ECTypeToSQL(ecType));
+                        m_sqlQueryBuilder.AddWhereClause(table.Alias, dbColumnName, RelationalOperator.EQ, instanceIDExpression.InstanceIdSet[j], ECToSQLMap.ECTypeToDbType(ecType));
 
                         }
                     m_sqlQueryBuilder.EndOfInnerWhereClause();

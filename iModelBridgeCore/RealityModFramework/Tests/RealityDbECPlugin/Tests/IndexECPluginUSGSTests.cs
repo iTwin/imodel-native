@@ -17,6 +17,8 @@ using Bentley.ECObjects.Schema;
 using Bentley.EC.Persistence;
 using System.Reflection;
 using Bentley.ECObjects.XML;
+using Bentley.ECObjects.Instance;
+using Bentley.EC.Persistence.Operations;
 
 namespace IndexECPlugin.Tests
     {
@@ -25,34 +27,29 @@ namespace IndexECPlugin.Tests
         {
         IUSGSDataFetcher m_usgsDataFetcherMock;
         IECSchema m_schema;
+        IInstanceCacheManager m_instanceCacheManager;
+        MockRepository m_mock;
+        JObject m_scienceBaseJson;
+        XmlDocument m_doc;
+        USGSRequestBundle m_testBundle;
         //ECQuery m_query;
 
         [SetUp]
         public void SetUp ()
             {
+            m_mock = new MockRepository();
+
             CreateFetcherMock();
 
-            PrepareSchema();
+            m_instanceCacheManager = (IInstanceCacheManager) m_mock.StrictMock(typeof(IInstanceCacheManager));
 
+            PrepareSchema();
             }
 
         private void PrepareSchema ()
             {
-            //m_query = new ECQuery()
-
-            //ECSession session = SessionManager.CreateSession();
-            //RepositoryConnectionService connectionService = RepositoryConnectionServiceFactory.GetService();
-            //RepositoryConnection connection = CreateRepositoryConnection(session, connectionService);
-            //PersistenceService persistenceService = PersistenceServiceFactory.GetService();
-            ;
-
             ECSchemaXmlStreamReader schemaReader = new ECSchemaXmlStreamReader(Assembly.GetAssembly(typeof(IndexECPlugin.Source.IndexECPlugin)).GetManifestResourceStream("ECSchemaDB.xml"));
             m_schema = schemaReader.Deserialize();
-
-            //m_schema = GetFirstSchema(connection, persistenceService);
-
-            //connectionService.Close(connection, null);
-
             }
 
         private RepositoryConnection CreateRepositoryConnection (ECSession session, RepositoryConnectionService connectionService)
@@ -70,13 +67,210 @@ namespace IndexECPlugin.Tests
             return schema;
             }
 
+        private void CreateBasicInstanceCacheManager()
+            {
+            //MockRepository mock = new MockRepository();
+            m_instanceCacheManager = (IInstanceCacheManager) m_mock.StrictMock(typeof(IInstanceCacheManager));
+
+            //using ( mock.Record() )
+                //{
+                //Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Return(instanceList);
+                //SetupResult.For(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).IgnoreArguments().Return(instanceList);
+                //SetupResult.For(m_instanceCacheManager.QuerySpatialInstancesFromCache(null, null, null, null, null)).IgnoreArguments().Return(instanceList);
+                //Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Return(instanceList);
+                //Expect.Call(delegate
+                    //{
+                        //m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                        //LastCall.On(m_instanceCacheManager).Repeat.Any();
+                    //});
+                //SetupResult.For(delegate
+                //    {
+                //        m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                //    });
+                //}
+            }
+
+        private IECInstance CreateParentSEWDV()
+            {
+            IECInstance instance = m_schema.GetClass("SpatialEntityWithDetailsView").CreateInstance();
+            instance.InstanceId = "543e6b86e4b0fd76af69cf4c";
+
+            instance["Id"].StringValue = "543e6b86e4b0fd76af69cf4c";
+
+            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
+            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "4f552e93e4b018de15819c51");
+            instance.ExtendedDataValueSetter.Add("Complete", true);
+
+            return instance;
+            }
+
+
+        private IECInstance CreateParentSED()
+            {
+            IECInstance instance = m_schema.GetClass("SpatialEntityDataset").CreateInstance();
+            instance.InstanceId = "543e6b86e4b0fd76af69cf4c";
+
+            instance["Id"].StringValue = "543e6b86e4b0fd76af69cf4c";
+
+            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
+            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "4f552e93e4b018de15819c51");
+            instance.ExtendedDataValueSetter.Add("Complete", true);
+
+            return instance;
+            }
+        private IECInstance CreateSEWDV(bool complete)
+            {
+            IECInstance instance = m_schema.GetClass("SpatialEntityWithDetailsView").CreateInstance();
+            instance.InstanceId = "553690bfe4b0b22a15807df2";
+
+            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
+
+            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
+            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "543e6b86e4b0fd76af69cf4c");
+            instance.ExtendedDataValueSetter.Add("Complete", complete);
+
+            return instance;
+            }
+
+        private IECInstance CreateSEB (bool complete)
+            {
+            IECInstance instance = m_schema.GetClass("SpatialEntityBase").CreateInstance();
+            instance.InstanceId = "553690bfe4b0b22a15807df2";
+            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
+            instance["Footprint"].StringValue = "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }";
+            instance["Name"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015";
+            instance["Keywords"].StringValue = "elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States";
+            instance["AssociateFile"].SetToNull();
+            instance["ProcessingDescription"].SetToNull();
+            instance["DataSourceTypesAvailable"].StringValue = "IMG";
+            instance["AccuracyResolutionDensity"].SetToNull();
+            instance["DataProvider"].StringValue = "USGS";
+            instance["DataProviderName"].StringValue = "United States Geological Survey";
+            instance["Date"].SetToNull();
+            instance["Classification"].StringValue = "Terrain";
+
+            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
+            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "543e6b86e4b0fd76af69cf4c");
+            instance.ExtendedDataValueSetter.Add("Complete", complete);
+            return instance;
+            }
+
+        private IECInstance CreateSpatialEntity (bool complete)
+            {
+            IECInstance instance = m_schema.GetClass("SpatialEntity").CreateInstance();
+            instance.InstanceId = "553690bfe4b0b22a15807df2";
+            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
+            instance["Footprint"].StringValue = "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }";
+            instance["Name"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015";
+            instance["Keywords"].StringValue = "elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States";
+            instance["AssociateFile"].SetToNull();
+            instance["ProcessingDescription"].SetToNull();
+            instance["DataSourceTypesAvailable"].StringValue = "IMG";
+            instance["AccuracyResolutionDensity"].SetToNull();
+            instance["DataProvider"].StringValue = "USGS";
+            instance["DataProviderName"].StringValue = "United States Geological Survey";
+            instance["Date"].SetToNull();
+            instance["Classification"].StringValue = "Terrain";
+
+            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
+            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "543e6b86e4b0fd76af69cf4c");
+            instance.ExtendedDataValueSetter.Add("Complete", complete);
+            return instance;
+            }
+
+        private IECInstance CreateMetadata (bool complete)
+            {
+            IECInstance instance = m_schema.GetClass("Metadata").CreateInstance();
+            instance.InstanceId = "553690bfe4b0b22a15807df2";
+            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
+            instance["RawMetadata"].SetToNull();
+            instance["RawMetadataFormat"].StringValue = "FGDC";
+            instance["DisplayStyle"].SetToNull();
+            instance["Description"].StringValue = "CachedValueTest";
+            instance["ContactInformation"].SetToNull();
+            instance["Keywords"].StringValue = "CachedValueTest";
+            instance["Legal"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015 courtesy of the U.S. Geological Survey";
+            instance["Lineage"].SetToNull();
+            instance["Provenance"].SetToNull();
+
+            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
+            instance.ExtendedDataValueSetter.Add("Complete", complete);
+            return instance;
+            }
+
+        private IECInstance CreateThumbnail (bool complete)
+            {
+            IECInstance instance = m_schema.GetClass("Thumbnail").CreateInstance();
+            instance.InstanceId = "553690bfe4b0b22a15807df2";
+            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
+            instance["ThumbnailProvenance"].SetToNull();
+            instance["ThumbnailFormat"].StringValue = "jpg";
+            instance["ThumbnailWidth"].SetToNull();
+            instance["ThumbnailHeight"].SetToNull();
+            instance["ThumbnailStamp"].SetToNull();
+            instance["ThumbnailGenerationDetails"].SetToNull();
+
+            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
+            instance.ExtendedDataValueSetter.Add("Complete", complete);
+            return instance;
+            }
+
+        private IECInstance CreateSDS (bool complete)
+            {
+            IECInstance instance = m_schema.GetClass("SpatialDataSource").CreateInstance();
+            instance.InstanceId = "553690bfe4b0b22a15807df2";
+            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
+            instance["MainURL"].StringValue = "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015.zip";
+            instance["CompoundType"].StringValue = "USGS";
+            instance["LocationInCompound"].StringValue = "Unknown";
+            instance["DataSourceType"].StringValue = "IMG";
+            instance["SisterFiles"].SetToNull();
+            instance["FileSize"].StringValue = "256093";
+            instance["Metadata"].StringValue = "https://www.sciencebase.gov/catalog/file/get/553690bfe4b0b22a15807df2?f=__disk__d0%2F20%2Fa5%2Fd020a57f42c6a948f52f567a25858aa87b4e7f50";
+
+            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
+            instance.ExtendedDataValueSetter.Add("Complete", complete);
+            return instance;
+            }
+
+        private IECInstance CreateServer (bool complete)
+            {
+            IECInstance instance = m_schema.GetClass("Server").CreateInstance();
+            instance.InstanceId = "553690bfe4b0b22a15807df2";
+            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
+            instance["CommunicationProtocol"].StringValue = "ftp";
+            instance["Name"].SetToNull();
+            instance["URL"].StringValue = "ftp://rockyftp.cr.usgs.gov";
+            instance["ServerContactInformation"].SetToNull();
+            instance["Fees"].StringValue = "None. No fees are applicable for obtaining the data set.";
+            instance["Legal"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015 courtesy of the U.S. Geological Survey";
+            instance["AccessConstraints"].SetToNull();
+            instance["Online"].SetToNull();
+            instance["LastCheck"].SetToNull();
+            instance["LastTimeOnline"].SetToNull();
+            instance["Latency"].SetToNull();
+            instance["MeanReachabilityStats"].SetToNull();
+            instance["State"].SetToNull();
+            instance["Type"].SetToNull();
+
+            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
+            instance.ExtendedDataValueSetter.Add("Complete", complete);
+            return instance;
+            }
+
+        private JObject GetParentScienceBaseJson()
+            {
+            var scienceBaseJsonStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ScienceBaseJsonParent.txt"));
+
+            string scienceBaseJsonString = scienceBaseJsonStreamReader.ReadToEnd();
+
+            return JObject.Parse(scienceBaseJsonString);
+            }
+
         private void CreateFetcherMock ()
             {
-            MockRepository mock = new MockRepository();
 
-            //var usgsDataFetcherMock = MockRepository.GenerateStub<IUSGSDataFetcher>();
-
-            m_usgsDataFetcherMock = (IUSGSDataFetcher) mock.StrictMock(typeof(IUSGSDataFetcher));
+            m_usgsDataFetcherMock = (IUSGSDataFetcher) m_mock.StrictMock(typeof(IUSGSDataFetcher));
 
             List<UsgsAPICategory> categoryTable = new List<UsgsAPICategory> 
             { 
@@ -87,47 +281,29 @@ namespace IndexECPlugin.Tests
 
             var jObject = JObject.Parse(@"{""items"":[{""title"":""USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015"",""sourceId"":""553690bfe4b0b22a15807df2"",""sourceName"":""ScienceBase"",""sourceOriginId"":""7085222"",""sourceOriginName"":""gda"",""metaUrl"":""https://www.sciencebase.gov/catalog/item/553690bfe4b0b22a15807df2"",""publicationDate"":""2015-03-19"",""lastUpdated"":""2015-04-21"",""dateCreated"":""2015-04-21"",""sizeInBytes"":262239745,""extent"":""10000 x 10000 meter"",""format"":""IMG"",""downloadURL"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015.zip"",""previewGraphicURL"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_thumb.jpg"",""datasets"":[""Digital Elevation Model (DEM) 1 meter""],""boundingBox"":{""minX"":-90.1111928012935,""maxX"":-89.9874229095346,""minY"":41.32950370684,""maxY"":41.4227313251356},""bestFitIndex"":0.0,""prettyFileSize"":""250.09 MB""}]}");
 
-            USGSRequestBundle testBundle = new USGSRequestBundle()
+            m_testBundle = new USGSRequestBundle()
             {
                 jtokenList = jObject["items"], Classification = "Terrain", Dataset = "Digital Elevation Model (DEM) 1 meter", DatasetId = "543e6b86e4b0fd76af69cf4c"
             };
 
-            //usgsDataFetcherMock.Stub(x => x.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything))
-            //    //.IgnoreArguments()
-            //                   .Return(new List<USGSRequestBundle> { testBundle });
-
             var scienceBaseJsonStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ScienceBaseJsonNED.txt"));
-
-            //            string scienceBaseJsonString = @"{""link"":{""rel"":""self"",""url"":""https://www.sciencebase.gov/catalog/item/553690bfe4b0b22a15807df2""},""relatedItems"":{""link"":{""url"":""https://www.sciencebase.gov/catalog/itemLinks?itemId=553690bfe4b0b22a15807df2"",""rel"":""related""}},""id"":""553690bfe4b0b22a15807df2"",""identifiers"":[{""type"":""id"",""scheme"":""gda"",""key"":""7085222""},{""type"":null,""scheme"":""processingUrl"",""key"":""http://thor-f5.er.usgs.gov/ngtoc/metadata/waf/elevation/1_meter/img/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml""}],""title"":""USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015"",""summary"":""This is a tile of the National Elevation Dataset (NED) and is one meter resolution. Data in this layer represent a bare earth surface. The National Elevation Dataset (NED) serves as the elevation layer of The National Map, and provides basic elevation information for earth science studies and mapping applications in the United States. Scientists and resource managers use NED data for global change research, hydrologic modeling, resource monitoring, mapping and visualization, and many other applications. The NED is an elevation dataset that consists of seamless layers and non-seamless high resolution layers. Each of the seamless layers are composed of the best available raster elevation data of the conterminous United States, Alaska, [...]"",""body"":""This is a tile of the National Elevation Dataset (NED) and is one meter resolution. Data in this layer represent a bare earth surface. The National Elevation Dataset (NED) serves as the elevation layer of The National Map, and provides basic elevation information for earth science studies and mapping applications in the United States. Scientists and resource managers use NED data for global change research, hydrologic modeling, resource monitoring, mapping and visualization, and many other applications. The NED is an elevation dataset that consists of seamless layers and non-seamless high resolution layers. Each of the seamless layers are composed of the best available raster elevation data of the conterminous United States, Alaska, Hawaii, territorial islands, Mexico and Canada. The NED is updated continually as new data become available. All NED data are in the public domain. The NED is derived from diverse source data that are processed to a common coordinate system and unit of vertical measure. The spatial reference used for tiles of the one meter layer within the conterminous United States (CONUS) is Universal Transverse Mercator (UTM) in units of meters, and in conformance with the North American Datum of 1983 (NAD83). All bare earth elevation values are in meters and are referenced to the North American Vertical Datum of 1988 (NAVD88). Each tile is distributed in the UTM Zone in which it lies. If a tile crosses two UTM Zones, it is delivered in both zones. Only source data of one meter resolution or finer are used to produce the NED standard one meter layer"",
-            //                                           ""purpose"":""The NED serves as the elevation layer of The National Map, and provides basic elevation information for earth science studies and mapping applications in the United States. The data are utilized by the scientific and resource management communities for global change research, hydrologic modeling, resource monitoring, mapping and visualization, and many other applications."",""provenance"":{""html"":""Added to Sciencebase on Tue Apr 21 12:02:33 MDT 2015 by processing URL \n<b>USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml<\u002fb> in item \n<a href=\""https://www.sciencebase.gov/catalog/item/543e6b86e4b0fd76af69cf4c\"">https://www.sciencebase.gov/catalog/item/543e6b86e4b0fd76af69cf4c<\u002fa>\n<br />"",""dataSource"":""Link Processing"",""linkProcess"":{""itemReference"":""543e6b86e4b0fd76af69cf4c"",""linkReference"":""http://thor-f5.er.usgs.gov/ngtoc/metadata/waf/elevation/1_meter/img/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml"",""dateProcessed"":""2015-04-21T18:02:33Z"",""processedBy"":""wgillman@usgs.gov"",""processType"":""WebAccessibleFolder""},""dateCreated"":""2015-04-21T18:02:39Z"",""lastUpdated"":""2015-04-21T18:02:39Z""},""hasChildren"":false,""parentId"":""543e6b86e4b0fd76af69cf4c"",""contacts"":[{""name"":""U.S. Geological Survey"",""type"":""Distributor"",""hours"":""Monday through Friday 8:00 AM to 4:00 PM Eastern Time Zone USA"",""instructions"":""Please visit http://www.usgs.gov/ask/ to contact us."",""primaryLocation"":{""officePhone"":""1-888-ASK-USGS (1-888-275-8747)"",""mailAddress"":{""line1"":""USGS National Geospatial Program Office"",""line2"":""12201 Sunrise Valley Drive"",""city"":""Reston"",""state"":""VA"",""zip"":""20192"",""country"":""USA""}}},{""name"":""U.S. Geological Survey"",""type"":""Metadata Contact"",""hours"":""Monday through Friday 8:00 AM to 4:00 PM Eastern Time Zone USA"",""instructions"":""Please visit http://www.usgs.gov/ask/ to contact us."",""primaryLocation"":{""officePhone"":""1-888-ASK-USGS (1-888-275-8747)"",""mailAddress"":{""line1"":""USGS National Geospatial Program Office"",""line2"":""12201 Sunrise Valley Drive"",""city"":""Reston"",""state"":""VA"",""zip"":""20192"",""country"":""USA""}}},{""name"":""U.S. Geological Survey"",""type"":""Originator""}],""webLinks"":[{""type"":""Online Link"",""uri"":""http://ned.usgs.gov/"",""rel"":""related"",""hidden"":false},{""type"":""Online Link"",""uri"":""http://nationalmap.gov/viewer.html"",""rel"":""related"",""hidden"":false},{""type"":""browseImage"",""uri"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_thumb.jpg"",""rel"":""related"",""title"":""Thumbnail JPG image"",""hidden"":false},
-            //                                           {""type"":""download"",""uri"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015.zip"",""rel"":""related"",""title"":""IMG"",""hidden"":false,""length"":262239745}],""tags"":[{""type"":""Theme"",""scheme"":""ISO 19115 Topic Category"",""name"":""elevation""},{""type"":""Theme"",""scheme"":""NGDA Portfolio Themes"",""name"":""Elevation""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""National Elevation Dataset""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""NED""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Elevation""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Light Detection and Ranging""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""LIDAR""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""High Resolution""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Topographic Surface""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Topography""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Bare Earth""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Hydro-Flattened""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Terrain Elevation""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Cartography""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""DEM""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Digital Elevation Model""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Digital Mapping""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Digital Terrain Model""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Geodata""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""GIS""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Mapping""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""Raster""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""USGS""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""U.S. Geological Survey""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""10,000 meter DEM""},{""type"":""Theme"",""scheme"":""National Elevation Dataset (NED)"",""name"":""1 meter DEM""},{""type"":""Theme"",""scheme"":""The National Map Type Thesaurus"",
-            //                                           ""name"":""Downloadable Data""},{""type"":""Theme"",""scheme"":""The National Map Theme Thesaurus"",""name"":""Elevation""},{""type"":""Theme"",""scheme"":""The National Map Collection Thesaurus"",""name"":""Digital Elevation Model (DEM) 1 meter""},{""type"":""Theme"",""scheme"":""The National Map Product Extent Thesaurus"",""name"":""10000 x 10000 meter""},{""type"":""Theme"",""scheme"":""The National Map Product Format Thesaurus"",""name"":""IMG""},{""type"":""Place"",""scheme"":""Geographic Names Information System"",""name"":""US""},{""type"":""Place"",""scheme"":""Geographic Names Information System"",""name"":""United States""}],""dates"":[{""type"":""Publication"",""dateString"":""2015-03-19"",""label"":""Publication Date""},{""type"":""Start"",""dateString"":""2009-05-12"",""label"":""""},{""type"":""End"",""dateString"":""2009-05-12"",""label"":""""},{""type"":""Info"",""dateString"":""2015-04-21 09:51:00"",""label"":""File Modification Date""}],""spatial"":{""boundingBox"":{""minX"":-90.1111928012935,""maxX"":-89.9874229095346,""minY"":41.32950370684,""maxY"":41.4227313251356}},""files"":[{""name"":""USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml"",""title"":null,""contentType"":""application/fgdc+xml"",""contentEncoding"":null,""pathOnDisk"":""__disk__74/bb/91/74bb9105fd15f0129423afefeae7144279edf5ec"",""processed"":null,""processToken"":null,""imageWidth"":null,""imageHeight"":null,""size"":13686,""dateUploaded"":""2015-04-21T18:02:39Z"",""originalMetadata"":true,""useForPreview"":null,""itemS3File"":null,""url"":""https://www.sciencebase.gov/catalog/file/get/553690bfe4b0b22a15807df2?f=__disk__74%2Fbb%2F91%2F74bb9105fd15f0129423afefeae7144279edf5ec""}],""distributionLinks"":[{""uri"":""https://www.sciencebase.gov/catalog/file/get/553690bfe4b0b22a15807df2"",""title"":""Download Attached Files"",""type"":""downloadLink"",""typeLabel"":""Download Link"",""rel"":""alternate"",""name"":""USGSNEDonemeter.zip"",""files"":[{""name"":""USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml"",""title"":null,""contentType"":""application/fgdc+xml""}]}],""previewImage"":{""thumbnail"":{""uri"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_thumb.jpg"",""title"":""Thumbnail JPG image""},""small"":{""uri"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_thumb.jpg"",""title"":""Thumbnail JPG image""},""from"":""webLinks""}}";
 
             string scienceBaseJsonString = scienceBaseJsonStreamReader.ReadToEnd();
 
-            var scienceBaseJson = JObject.Parse(scienceBaseJsonString);
+            m_scienceBaseJson = JObject.Parse(scienceBaseJsonString);
 
-            //usgsDataFetcherMock.Stub(x => x.GetSciencebaseJson(Arg<String>.Is.Equal("553690bfe4b0b22a15807df2")))
-            //usgsDataFetcherMock.Stub(x => x.GetSciencebaseJson(Arg<String>.Is.Anything))
-            //    //.IgnoreArguments()
-            //                   .Return(scienceBaseJson);
-
-            XmlDocument doc = new XmlDocument();
+            m_doc = new XmlDocument();
             using ( StreamReader metadataFileStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml")) )
                 {
-                doc.LoadXml(metadataFileStreamReader.ReadToEnd());
+                m_doc.LoadXml(metadataFileStreamReader.ReadToEnd());
                 }
 
-            //usgsDataFetcherMock.Stub(x => x.GetXmlDocFromURL(Arg<String>.Is.Equal(@"http://thor-f5.er.usgs.gov/ngtoc/metadata/waf/elevation/1_meter/img/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml")))
-            //usgsDataFetcherMock.Stub(x => x.GetXmlDocFromURL(Arg<String>.Is.Anything))
-            //                   .Return(doc);
-
-            using ( mock.Record() )
-                {
-                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Return(new List<USGSRequestBundle> { testBundle });
-                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Return(scienceBaseJson);
-                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Return(doc);
-                }
+            //using ( mock.Record() )
+            //    {
+                //Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Return(new List<USGSRequestBundle> { m_testBundle });
+                //Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Return(m_scienceBaseJson);
+                //Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Return(m_doc);
+                //}
 
 
             }
@@ -136,176 +312,1156 @@ namespace IndexECPlugin.Tests
         public void SpatialEntityWithDetailsViewTest ()
             {
 
-            ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
-            query.SelectClause.SelectAllProperties = true;
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
 
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-            UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock);
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Never();
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Times(3);
 
-            var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+                }
+            using ( m_mock.Playback() )
+                {
 
-            //m_usgsDataFetcherMock.AssertWasCalled(x => x.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything));
-            Assert.AreEqual(1, instanceList.Count());
-            Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue);
-            Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015", instanceList.First().GetPropertyValue("Name").StringValue);
-            Assert.AreEqual(true, (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
-                                  (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
-                                  (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356]], \"coordinate_system\" : \"4326\" }")) ||
-                                  (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356]], \"coordinate_system\" : \"4326\" }")));
-            Assert.AreEqual("ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_thumb.jpg", instanceList.First().GetPropertyValue("ThumbnailURL").StringValue);
-            Assert.AreEqual("https://www.sciencebase.gov/catalog/item/553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("MetadataURL").StringValue);
-            Assert.AreEqual("https://www.sciencebase.gov/catalog/item/download/553690bfe4b0b22a15807df2?format=fgdc", instanceList.First().GetPropertyValue("RawMetadataURL").StringValue);
-            Assert.AreEqual("FGDC", instanceList.First().GetPropertyValue("RawMetadataFormat").StringValue);
-            Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("SubAPI").StringValue);
-            Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("DataProvider").StringValue);
-            Assert.AreEqual("United States Geological Survey", instanceList.First().GetPropertyValue("DataProviderName").StringValue);
-            Assert.AreEqual("2015-03-19T00:00:00", instanceList.First().GetPropertyValue("Date").StringValue);
-            Assert.AreEqual("1.0m", instanceList.First().GetPropertyValue("AccuracyResolutionDensity").StringValue);
-            Assert.AreEqual("1.0x1.0", instanceList.First().GetPropertyValue("ResolutionInMeters").StringValue);
-            Assert.AreEqual("Terrain", instanceList.First().GetPropertyValue("Classification").StringValue);
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
+                query.SelectClause.SelectAllProperties = true;
 
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                //m_usgsDataFetcherMock.AssertWasCalled(x => x.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything));
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue);
+                Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015", instanceList.First().GetPropertyValue("Name").StringValue);
+                Assert.AreEqual(true, (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356]], \"coordinate_system\" : \"4326\" }")), "The content of the instance was not set properly.");
+                Assert.AreEqual("ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_thumb.jpg", instanceList.First().GetPropertyValue("ThumbnailURL").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("https://www.sciencebase.gov/catalog/item/553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("MetadataURL").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("https://www.sciencebase.gov/catalog/item/download/553690bfe4b0b22a15807df2?format=fgdc", instanceList.First().GetPropertyValue("RawMetadataURL").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("FGDC", instanceList.First().GetPropertyValue("RawMetadataFormat").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("SubAPI").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("DataProvider").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("United States Geological Survey", instanceList.First().GetPropertyValue("DataProviderName").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("2015-03-19T00:00:00", instanceList.First().GetPropertyValue("Date").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("1.0m", instanceList.First().GetPropertyValue("AccuracyResolutionDensity").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("1.0x1.0", instanceList.First().GetPropertyValue("ResolutionInMeters").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("Terrain", instanceList.First().GetPropertyValue("Classification").StringValue, "The content of the instance was not set properly.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SEWDVUsgsFailureTest ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateSEWDV(false)};
+
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Throw(new OperationFailedException());//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();//Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Never();//Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+                query.ExtendedDataValueSetter.Add("polygon", "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }");
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should come from the cache.");
+                }
             }
 
         [Test]
         public void SpatialEntityBaseTest ()
             {
+            //CreateBasicInstanceCacheManager(null);
+            List<IECInstance> cachedInstanceList = new List<IECInstance>();
 
-            ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
-            query.SelectClause.SelectAllProperties = true;
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
 
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
 
-            UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock);
+                }
 
-            var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+            using ( m_mock.Playback() )
+                {
 
-            Assert.AreEqual(1, instanceList.Count());
-            Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue);
-            Assert.AreEqual(true, (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
-                                  (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
-                                  (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356]], \"coordinate_system\" : \"4326\" }")) ||
-                                  (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356]], \"coordinate_system\" : \"4326\" }")));
-            Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015", instanceList.First().GetPropertyValue("Name").StringValue);
-            Assert.AreEqual("elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States", instanceList.First().GetPropertyValue("Keywords").StringValue);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("AssociateFile").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("ProcessingDescription").IsNull);
-            Assert.AreEqual("IMG", instanceList.First().GetPropertyValue("DataSourceTypesAvailable").StringValue);
-            //Assert.AreEqual("1.0m", instanceList.First().GetPropertyValue("AccuracyResolutionDensity").StringValue);
-            Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("DataProvider").StringValue);
-            Assert.AreEqual("United States Geological Survey", instanceList.First().GetPropertyValue("DataProviderName").StringValue);
-            //Assert.AreEqual("2015-03-19T00:00:00", instanceList.First().GetPropertyValue("Date").StringValue);
-            Assert.AreEqual("Terrain", instanceList.First().GetPropertyValue("Classification").StringValue);
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
+                query.SelectClause.SelectAllProperties = true;
 
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
 
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356]], \"coordinate_system\" : \"4326\" }")), "The content of the instance was not set properly.");
+                Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015", instanceList.First().GetPropertyValue("Name").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States", instanceList.First().GetPropertyValue("Keywords").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("AssociateFile").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("ProcessingDescription").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("IMG", instanceList.First().GetPropertyValue("DataSourceTypesAvailable").StringValue, "The content of the instance was not set properly.");
+                //Assert.AreEqual("1.0m", instanceList.First().GetPropertyValue("AccuracyResolutionDensity").StringValue);
+                Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("DataProvider").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("United States Geological Survey", instanceList.First().GetPropertyValue("DataProviderName").StringValue, "The content of the instance was not set properly.");
+                //Assert.AreEqual("2015-03-19T00:00:00", instanceList.First().GetPropertyValue("Date").StringValue);
+                Assert.AreEqual("Terrain", instanceList.First().GetPropertyValue("Classification").StringValue, "The content of the instance was not set properly.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SpatialEntityTest ()
+            {
+            //CreateBasicInstanceCacheManager(null);
+            List<IECInstance> cachedInstanceList = new List<IECInstance>();
+
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+
+                }
+
+            using ( m_mock.Playback() )
+                {
+
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntity"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356]], \"coordinate_system\" : \"4326\" }")), "The content of the instance was not set properly.");
+                Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015", instanceList.First().GetPropertyValue("Name").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States", instanceList.First().GetPropertyValue("Keywords").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("AssociateFile").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("ProcessingDescription").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("IMG", instanceList.First().GetPropertyValue("DataSourceTypesAvailable").StringValue, "The content of the instance was not set properly.");
+                //Assert.AreEqual("1.0m", instanceList.First().GetPropertyValue("AccuracyResolutionDensity").StringValue);
+                Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("DataProvider").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("United States Geological Survey", instanceList.First().GetPropertyValue("DataProviderName").StringValue, "The content of the instance was not set properly.");
+                //Assert.AreEqual("2015-03-19T00:00:00", instanceList.First().GetPropertyValue("Date").StringValue);
+                Assert.AreEqual("Terrain", instanceList.First().GetPropertyValue("Classification").StringValue, "The content of the instance was not set properly.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
             }
 
         [Test]
         public void ThumbnailTest ()
             {
 
-            ECQuery query = new ECQuery(m_schema.GetClass("Thumbnail"));
-            query.SelectClause.SelectAllProperties = true;
+            List<IECInstance> cachedInstanceList = new List<IECInstance>();
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
 
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
 
-            UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock);
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("Thumbnail"));
+                query.SelectClause.SelectAllProperties = true;
 
-            var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
 
-            Assert.AreEqual(1, instanceList.Count());
-            Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailProvenance").IsNull);
-            Assert.AreEqual("jpg", instanceList.First().GetPropertyValue("ThumbnailFormat").StringValue);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailWidth").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailHeight").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailStamp").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailGenerationDetails").IsNull);
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailProvenance").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("jpg", instanceList.First().GetPropertyValue("ThumbnailFormat").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailWidth").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailHeight").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailStamp").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailGenerationDetails").IsNull, "The content of the instance was not set properly.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
             }
 
         [Test]
         public void MetadataTest ()
             {
 
-            ECQuery query = new ECQuery(m_schema.GetClass("Metadata"));
-            query.SelectClause.SelectAllProperties = true;
+            List<IECInstance> cachedInstanceList = new List<IECInstance>();
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
 
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
 
-            UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock);
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("Metadata"));
+                query.SelectClause.SelectAllProperties = true;
 
-            var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
 
-            Assert.AreEqual(1, instanceList.Count());
-            Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("RawMetadata").IsNull);
-            Assert.AreEqual("FGDC", instanceList.First().GetPropertyValue("RawMetadataFormat").StringValue);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("DisplayStyle").IsNull);
-            Assert.AreEqual("This is a tile of the National Elevation Dataset (NED) and is one meter resolution. Data in this layer represent a bare earth surface. The National Elevation Dataset (NED) serves as the elevation layer of The National Map, and provides basic elevation information for earth science studies and mapping applications in the United States. Scientists and resource managers use NED data for global change research, hydrologic modeling, resource monitoring, mapping and visualization, and many other applications. The NED is an elevation dataset that consists of seamless layers and non-seamless high resolution layers. Each of the seamless layers are composed of the best available raster elevation data of the conterminous United States, Alaska, [...]", instanceList.First().GetPropertyValue("Description").StringValue);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("ContactInformation").IsNull);
-            Assert.AreEqual("elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States", instanceList.First().GetPropertyValue("Keywords").StringValue);
-            Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015 courtesy of the U.S. Geological Survey", instanceList.First().GetPropertyValue("Legal").StringValue);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("Lineage").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("Provenance").IsNull);
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("RawMetadata").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("FGDC", instanceList.First().GetPropertyValue("RawMetadataFormat").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("DisplayStyle").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("This is a tile of the National Elevation Dataset (NED) and is one meter resolution. Data in this layer represent a bare earth surface. The National Elevation Dataset (NED) serves as the elevation layer of The National Map, and provides basic elevation information for earth science studies and mapping applications in the United States. Scientists and resource managers use NED data for global change research, hydrologic modeling, resource monitoring, mapping and visualization, and many other applications. The NED is an elevation dataset that consists of seamless layers and non-seamless high resolution layers. Each of the seamless layers are composed of the best available raster elevation data of the conterminous United States, Alaska, [...]", instanceList.First().GetPropertyValue("Description").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("ContactInformation").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States", instanceList.First().GetPropertyValue("Keywords").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015 courtesy of the U.S. Geological Survey", instanceList.First().GetPropertyValue("Legal").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("Lineage").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("Provenance").IsNull, "The content of the instance was not set properly.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
             }
 
         [Test]
         public void SpatialDataSourceTest ()
             {
 
-            ECQuery query = new ECQuery(m_schema.GetClass("SpatialDataSource"));
-            query.SelectClause.SelectAllProperties = true;
+            List<IECInstance> cachedInstanceList = new List<IECInstance>();
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
 
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
 
-            UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock);
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialDataSource"));
+                query.SelectClause.SelectAllProperties = true;
 
-            var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
 
-            Assert.AreEqual(1, instanceList.Count());
-            Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue);
-            Assert.AreEqual("ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015.zip", instanceList.First().GetPropertyValue("MainURL").StringValue);
-            Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("CompoundType").StringValue);
-            Assert.AreEqual("Unknown", instanceList.First().GetPropertyValue("LocationInCompound").StringValue);
-            Assert.AreEqual("IMG", instanceList.First().GetPropertyValue("DataSourceType").StringValue);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("SisterFiles").IsNull);
-            Assert.AreEqual("256093", instanceList.First().GetPropertyValue("FileSize").StringValue);
-            Assert.AreEqual("https://www.sciencebase.gov/catalog/file/get/553690bfe4b0b22a15807df2?f=__disk__74%2Fbb%2F91%2F74bb9105fd15f0129423afefeae7144279edf5ec", instanceList.First().GetPropertyValue("Metadata").StringValue);
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015.zip", instanceList.First().GetPropertyValue("MainURL").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("CompoundType").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("Unknown", instanceList.First().GetPropertyValue("LocationInCompound").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("IMG", instanceList.First().GetPropertyValue("DataSourceType").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("SisterFiles").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("256093", instanceList.First().GetPropertyValue("FileSize").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("https://www.sciencebase.gov/catalog/file/get/553690bfe4b0b22a15807df2?f=__disk__74%2Fbb%2F91%2F74bb9105fd15f0129423afefeae7144279edf5ec", instanceList.First().GetPropertyValue("Metadata").StringValue, "The content of the instance was not set properly.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
             }
 
         [Test]
         public void ServerTest ()
             {
 
-            ECQuery query = new ECQuery(m_schema.GetClass("Server"));
-            query.SelectClause.SelectAllProperties = true;
+            List<IECInstance> cachedInstanceList = new List<IECInstance>();
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Once().Return(m_doc);
 
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
 
-            UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock);
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("Server"));
+                query.SelectClause.SelectAllProperties = true;
 
-            var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
 
-            Assert.AreEqual(1, instanceList.Count());
-            Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue);
-            Assert.AreEqual("ftp", instanceList.First().GetPropertyValue("CommunicationProtocol").StringValue);
-            Assert.AreEqual("ftp://rockyftp.cr.usgs.gov", instanceList.First().GetPropertyValue("URL").StringValue);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("Name").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("ServerContactInformation").IsNull);
-            Assert.AreEqual("None. No fees are applicable for obtaining the data set.", instanceList.First().GetPropertyValue("Fees").StringValue);
-            Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015 courtesy of the U.S. Geological Survey", instanceList.First().GetPropertyValue("Legal").StringValue);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("AccessConstraints").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("Online").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("LastCheck").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("LastTimeOnline").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("Latency").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("MeanReachabilityStats").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("State").IsNull);
-            Assert.AreEqual(true, instanceList.First().GetPropertyValue("Type").IsNull);
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("ftp", instanceList.First().GetPropertyValue("CommunicationProtocol").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("ftp://rockyftp.cr.usgs.gov", instanceList.First().GetPropertyValue("URL").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("Name").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("ServerContactInformation").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual("None. No fees are applicable for obtaining the data set.", instanceList.First().GetPropertyValue("Fees").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015 courtesy of the U.S. Geological Survey", instanceList.First().GetPropertyValue("Legal").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("AccessConstraints").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("Online").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("LastCheck").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("LastTimeOnline").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("Latency").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("MeanReachabilityStats").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("State").IsNull, "The content of the instance was not set properly.");
+                Assert.AreEqual(true, instanceList.First().GetPropertyValue("Type").IsNull, "The content of the instance was not set properly.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SpatialEntityBaseCompleteCacheTest ()
+            {
+
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateSEB(true)};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SpatialEntityCompleteCacheTest ()
+            {
+
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSpatialEntity(true) };
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Equal(m_schema.GetClass("SpatialEntity")), Arg<IECClass>.Is.Equal(m_schema.GetClass("SpatialEntityBase")), Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntity"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SpatialDataSourceCompleteCacheTest ()
+            {
+
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateSDS(true)};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialDataSource"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should come from the cache.");
+                }
+            }
+
+        [Test]
+        public void MetadataCompleteCacheTest ()
+            {
+
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateMetadata(true)};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("Metadata"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should come from the cache.");
+                }
+            }
+
+        [Test]
+        public void ThumbnailCompleteCacheTest ()
+            {
+
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateThumbnail(true)};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("Thumbnail"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should come from the cache.");
+                }
+            }
+
+        [Test]
+        public void ServerCompleteCacheTest ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateServer(true)};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("Server"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SpatialEntityBaseIncompleteCacheTest ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateSEB(false)};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SpatialDataSourceIncompleteCacheTest ()
+            {
+
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSDS(false) };
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialDataSource"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void MetadataIncompleteCacheTest ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateMetadata(false)};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("Metadata"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void ThumbnailIncompleteCacheTest ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateThumbnail(false)};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("Thumbnail"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void ServerIncompleteCacheTest ()
+            {
+
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateServer(false)};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Once().Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("Server"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void IncompleteCacheUSGSFailureTest ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSEB(false) };
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Throw(new OperationFailedException());
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
+                query.SelectClause.SelectAllProperties = true;
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SEWDVCachedAndParentCachedTest ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSEWDV(false) };
+            List<IECInstance> cachedParent = new List<IECInstance>() { CreateParentSEWDV() };
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Throw(new OperationFailedException());//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();//Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedParent);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+
+            using ( m_mock.Playback() )
+                {
+                IECRelationshipClass relClass = m_schema.GetClass("DetailsViewToChildren") as IECRelationshipClass;
+
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityWithDetailsView")), false);
+
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
+                query.SelectClause.SelectedRelatedInstances.Add(relCrit);
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+                query.ExtendedDataValueSetter.Add("polygon", "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }");
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should only be one instance returned.");
+                Assert.AreEqual(1, instanceList.First().GetRelationshipInstances().Count, "There should be only one related instance.");
+
+                IECRelationshipInstance relationshipInst = instanceList.First().GetRelationshipInstances().First();
+                IECInstance relInst = relationshipInst.Source;
+
+                Assert.IsTrue(instanceList.First().InstanceId == "553690bfe4b0b22a15807df2", "There should only be one instance returned.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The spatialEntityBase should come from the cache.");
+                Assert.IsTrue(relInst.InstanceId == "543e6b86e4b0fd76af69cf4c", "The parent does not have the expected ID.");
+                Assert.IsTrue(relInst.ExtendedData.ContainsKey("IsFromCacheTest"), "The parent should come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SEWDVCachedAndParentNotCachedTest ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSEWDV(false) };
+            List<IECInstance> emptyList = new List<IECInstance>() {};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Throw(new OperationFailedException());//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(GetParentScienceBaseJson());
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(emptyList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Times(3);
+
+                }
+
+            using ( m_mock.Playback() )
+                {
+                IECRelationshipClass relClass = m_schema.GetClass("DetailsViewToChildren") as IECRelationshipClass;
+
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityWithDetailsView")), false);
+
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
+                query.SelectClause.SelectedRelatedInstances.Add(relCrit);
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+                query.ExtendedDataValueSetter.Add("polygon", "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }");
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should only be one instance returned.");
+                Assert.AreEqual(1, instanceList.First().GetRelationshipInstances().Count, "There should be only one related instance.");
+                IECRelationshipInstance relationshipInst = instanceList.First().GetRelationshipInstances().First();
+                IECInstance relInst = relationshipInst.Source;
+
+
+                Assert.IsTrue(instanceList.First().InstanceId == "553690bfe4b0b22a15807df2", "There should only be one instance returned.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The spatialEntityBase should come from the cache.");
+                Assert.IsTrue(relInst.InstanceId == "543e6b86e4b0fd76af69cf4c", "The parent does not have the expected ID.");
+                Assert.IsFalse(relInst.ExtendedData.ContainsKey("IsFromCacheTest"), "The parent should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SpatialEntityBaseCachedAndParentCached ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSEB(true) };
+            List<IECInstance> cachedParent = new List<IECInstance>() { CreateParentSED() };
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedParent);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToSpatialEntityBase") as IECRelationshipClass;
+
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
+                query.SelectClause.SelectAllProperties = true;
+                query.SelectClause.SelectedRelatedInstances.Add(relCrit);
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should only be one instance returned.");
+                Assert.AreEqual(1, instanceList.First().GetRelationshipInstances().Count, "There should be only one related instance.");
+
+                IECRelationshipInstance relationshipInst = instanceList.First().GetRelationshipInstances().First();
+                IECInstance relInst = relationshipInst.Source;
+
+                Assert.IsTrue(instanceList.First().InstanceId == "553690bfe4b0b22a15807df2", "The spatialEntityBase does not have the expected ID.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The spatialEntityBase should come from the cache.");
+                Assert.IsTrue(relInst.InstanceId == "543e6b86e4b0fd76af69cf4c", "The parent does not have the expected ID.");
+                Assert.IsTrue(relInst.ExtendedData.ContainsKey("IsFromCacheTest"), "The parent should come from the cache.");
+                }
+            }
+        [Test]
+        public void SpatialEntityBaseCachedAndParentNotCached ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSEB(true) };
+            List<IECInstance> cachedParent = new List<IECInstance>() {};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(GetParentScienceBaseJson());
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedParent);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToSpatialEntityBase") as IECRelationshipClass;
+
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
+                query.SelectClause.SelectAllProperties = true;
+                query.SelectClause.SelectedRelatedInstances.Add(relCrit);
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should only be one instance returned.");
+                Assert.AreEqual(1, instanceList.First().GetRelationshipInstances().Count, "There should be only one related instance.");
+
+                IECRelationshipInstance relationshipInst = instanceList.First().GetRelationshipInstances().First();
+                IECInstance relInst = relationshipInst.Source;
+
+                Assert.IsTrue(instanceList.First().InstanceId == "553690bfe4b0b22a15807df2", "The spatialEntityBase does not have the expected ID.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The spatialEntityBase should come from the cache.");
+                Assert.IsTrue(relInst.InstanceId == "543e6b86e4b0fd76af69cf4c", "The parent does not have the expected ID.");
+                Assert.IsFalse(relInst.ExtendedData.ContainsKey("IsFromCacheTest"), "The parent should not come from the cache.");
+                }
+            }
+        [Test]
+        public void SpatialEntityBaseNotCachedAndParentNotCached ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() {};
+            List<IECInstance> cachedParent = new List<IECInstance>()
+            {
+            };
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(GetParentScienceBaseJson());
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedParent);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToSpatialEntityBase") as IECRelationshipClass;
+
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
+                query.SelectClause.SelectAllProperties = true;
+                query.SelectClause.SelectedRelatedInstances.Add(relCrit);
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should only be one instance returned.");
+                Assert.AreEqual(1, instanceList.First().GetRelationshipInstances().Count, "There should be only one related instance.");
+
+                IECRelationshipInstance relationshipInst = instanceList.First().GetRelationshipInstances().First();
+                IECInstance relInst = relationshipInst.Source;
+
+                Assert.IsTrue(instanceList.First().InstanceId == "553690bfe4b0b22a15807df2", "The spatialEntityBase does not have the expected ID.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The spatialEntityBase should not come from the cache.");
+                Assert.IsTrue(relInst.InstanceId == "543e6b86e4b0fd76af69cf4c", "The parent does not have the expected ID.");
+                Assert.IsFalse(relInst.ExtendedData.ContainsKey("IsFromCacheTest"), "The parent should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SpatialEntityBaseNotCachedAndParentCached ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>()
+            {
+            };
+            List<IECInstance> cachedParent = new List<IECInstance>(){CreateParentSED()};
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedParent);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+
+                }
+            using ( m_mock.Playback() )
+                {
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToSpatialEntityBase") as IECRelationshipClass;
+
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
+                query.SelectClause.SelectAllProperties = true;
+                query.SelectClause.SelectedRelatedInstances.Add(relCrit);
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should only be one instance returned.");
+                Assert.AreEqual(1, instanceList.First().GetRelationshipInstances().Count, "There should be only one related instance.");
+
+                IECRelationshipInstance relationshipInst = instanceList.First().GetRelationshipInstances().First();
+                IECInstance relInst = relationshipInst.Source;
+
+                Assert.IsTrue(instanceList.First().InstanceId == "553690bfe4b0b22a15807df2", "The spatialEntityBase does not have the expected ID." );
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The spatialEntityBase should come from the cache.");
+                Assert.IsTrue(relInst.InstanceId == "543e6b86e4b0fd76af69cf4c", "The parent does not have the expected ID");
+                Assert.IsTrue(relInst.ExtendedData.ContainsKey("IsFromCacheTest"), "The parent should come from the cache");
+                }
+            }
+
+        [Test]
+        public void MetadataToSpatialEntityToParent ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>()
+            {
+            };
+
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(GetParentScienceBaseJson());
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Times(3).Return(cachedInstanceList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Times(2);
+
+                }
+            using ( m_mock.Playback() )
+                {
+                IECRelationshipClass relClassMetadata = m_schema.GetClass("SpatialEntityBaseToMetadata") as IECRelationshipClass;
+                IECRelationshipClass relClassParent = m_schema.GetClass("SpatialEntityDatasetToSpatialEntityBase") as IECRelationshipClass;
+
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClassMetadata, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityBase")), false);
+                RelatedInstanceSelectCriteria relCrit2 = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClassParent, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                ECQuery query = new ECQuery(m_schema.GetClass("Metadata"));
+                query.SelectClause.SelectAllProperties = true;
+                relCrit.SelectedRelatedInstances.Add(relCrit2);
+                query.SelectClause.SelectedRelatedInstances.Add(relCrit);
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("553690bfe4b0b22a15807df2"));
+
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should only be one instance");
+                Assert.AreEqual(1, instanceList.First().GetRelationshipInstances().Count, "There should only be one related instances to the metadata");
+
+                IECRelationshipInstance relationshipInst = instanceList.First().GetRelationshipInstances().First(inst => inst.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
+                IECInstance relInst = relationshipInst.Source;
+
+                Assert.AreEqual(2, relInst.GetRelationshipInstances().Count, "There should be two related instances to the SpatialEntityBase");
+
+                IECRelationshipInstance relationshipInst2 = relInst.GetRelationshipInstances().First(inst => inst.ClassDefinition.Name == "SpatialEntityDatasetToSpatialEntityBase");
+                IECInstance relInst2 = relationshipInst2.Source;
+
+                Assert.IsTrue(instanceList.First().InstanceId == "553690bfe4b0b22a15807df2", "The metadata does not have the expected ID.");
+                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The metadata should not come from the cache.");
+                Assert.IsTrue(relInst.InstanceId == "553690bfe4b0b22a15807df2", "The spatialEntityBase does not have the expected ID.");
+                Assert.IsFalse(relInst.ExtendedData.ContainsKey("IsFromCacheTest"), "The spatialEntityBase should not come from the cache.");
+                Assert.IsTrue(relInst2.InstanceId == "543e6b86e4b0fd76af69cf4c", "The parent does not have the expected ID.");
+                Assert.IsFalse(relInst2.ExtendedData.ContainsKey("IsFromCacheTest"), "The parent should not come from the cache.");
+                }
             }
         }
     }

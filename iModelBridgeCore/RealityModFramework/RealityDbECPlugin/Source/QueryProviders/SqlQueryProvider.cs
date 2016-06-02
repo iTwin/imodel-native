@@ -99,17 +99,13 @@ namespace IndexECPlugin.Source.QueryProviders
                     {
                     throw new UserFriendlyException("The polygon format is not valid.");
                     }
-                int polygonSRID;
-                if ( !int.TryParse(model.coordinate_system, out polygonSRID) )
-                    {
-                    throw new UserFriendlyException("The polygon format is not valid.");
-                    }
+
                 string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
 
                 m_polygonDescriptor = new PolygonDescriptor
                 {
                     WKT = polygonWKT,
-                    SRID = polygonSRID
+                    SRID = model.coordinate_system
                 };
 
 
@@ -118,11 +114,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
         public IEnumerable<IECInstance> CreateInstanceList ()
             {
-            //In the future, it might be a good idea to use a DbConnectionFactory instead of using this connection directly
-
             Log.Logger.info("Fetching Index results for query " + m_query.ID);
-
-            
 
             string sqlCommandString;
             string sqlCountString;
@@ -131,7 +123,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             DataReadingHelper dataReadingHelper;
 
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+            IParamNameValueMap paramNameValueMap;
 
             IECClass ecClass = m_query.SearchClasses.First().Class;
 
@@ -203,7 +195,7 @@ namespace IndexECPlugin.Source.QueryProviders
                             relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
                             }
                         //relationshipInst.InstanceId = "test";
-                        instance.GetRelationshipInstances().Add(relationshipInst);
+                        //instance.GetRelationshipInstances().Add(relationshipInst);
                         }
                     }
                 }

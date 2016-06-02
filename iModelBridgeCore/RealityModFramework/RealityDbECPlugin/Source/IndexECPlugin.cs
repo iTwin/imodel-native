@@ -77,7 +77,13 @@ namespace IndexECPlugin.Source
         /// <remarks>This is only made public to simplify testing.</remarks>
         public const string PLUGIN_NAME = "IndexECPlugin";
 
-        private string m_connectionString = ConfigurationRoot.GetAppSetting("RECPConnectionString");
+        private string ConnectionString
+            {
+            get
+                {
+                return ConfigurationRoot.GetAppSetting("RECPConnectionString");
+                }
+            }
 
         /// <summary>
         /// Make plugin available to contract tests.
@@ -177,29 +183,27 @@ namespace IndexECPlugin.Source
             //foreach (SearchClass searchClass in query.SearchClasses)
             try
                 {
+                string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
+                IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
                 SearchClass searchClass = query.SearchClasses.First();
                     {
                     Log.Logger.info("Executing query " + query.ID + " : " + query.ToECSqlString(0) + ", custom parameters : " + String.Join(",", query.ExtendedData.Select(x => x.ToString())));
 
-                    //PATCH FOR STREAM BACKED PACKAGE REQUEST: Ask if it is possible to map stream backed instance retrievals to 
                     if ( (querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && (searchClass.Class.Name == "PreparedPackage") )
                         {
                         IECInstance packageInstance = searchClass.Class.CreateInstance();
                         ECInstanceIdExpression exp = query.WhereClause[0] as ECInstanceIdExpression;
                         packageInstance.InstanceId = exp.RightSideString;
-                        PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, m_connectionString);
+                        PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, ConnectionString);
                         return new List<IECInstance> { packageInstance };
                         }
 
-                    IECQueryProvider helper/* = new SqlQueryProvider(query)*/;
+                    IECQueryProvider helper;
 
                     if ( searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull )
                         {
-                        //Log.Logger.error(String.Format("Query {1} aborted. The class {0} cannot be queried.", searchClass.Class.Name, query.ID));
                         throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
                         }
-
-                    //string queryType = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
 
                     string source;
 
@@ -212,32 +216,28 @@ namespace IndexECPlugin.Source
                         //TODO : We should rename queryType, as it has taken the role of a default parameter
                         source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
                         }
-                    //IEnumerable<IECInstance> instanceList;
 
                     InstanceOverrider instanceOverrider = new InstanceOverrider();
                     InstanceComplement instanceComplement = new InstanceComplement();
-                    using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
+                    using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
                         {
                         switch ( source.ToLower() )
                             {
                             case "index":
                                     {
-                                    string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
-                                    IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
                                     helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
                                     IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                    instanceOverrider.Modify(instances, DataSource.Index, sqlConnection, querySettings);
-                                    instanceComplement.Modify(instances, DataSource.Index, sqlConnection, querySettings);
+                                    instanceOverrider.Modify(instances, DataSource.Index, sqlConnection);
+                                    instanceComplement.Modify(instances, DataSource.Index, sqlConnection);
                                     return instances;
                                     }
 
                             case "usgsapi":
                                     {
-
-                                    helper = new UsgsAPIQueryProvider(query, querySettings);
+                                    helper = new UsgsAPIQueryProvider(query, querySettings, sqlConnection, schema);
                                     IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                    instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
-                                    instanceComplement.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
+                                    instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                                    instanceComplement.Modify(instances, DataSource.USGS, sqlConnection);
                                     return instances;
                                     }
                             case "all":
@@ -245,17 +245,15 @@ namespace IndexECPlugin.Source
 
                                     List<IECInstance> instanceList = new List<IECInstance>();
                                         {
-                                        string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
-                                        IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
                                         helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
                                         instanceList = helper.CreateInstanceList().ToList();
-                                        instanceOverrider.Modify(instanceList, DataSource.Index, sqlConnection, querySettings);
-                                        instanceComplement.Modify(instanceList, DataSource.Index, sqlConnection, querySettings);
+                                        instanceOverrider.Modify(instanceList, DataSource.Index, sqlConnection);
+                                        instanceComplement.Modify(instanceList, DataSource.Index, sqlConnection);
 
-                                        helper = new UsgsAPIQueryProvider(query, querySettings);
+                                        helper = new UsgsAPIQueryProvider(query, querySettings, sqlConnection, schema);
                                         IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                        instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
-                                        instanceComplement.Modify(instances, DataSource.USGS, sqlConnection, querySettings);
+                                        instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                                        instanceComplement.Modify(instances, DataSource.USGS, sqlConnection);
                                         instanceList.AddRange(instances);
                                         return instanceList;
                                         }
@@ -307,7 +305,6 @@ namespace IndexECPlugin.Source
 
                 if ( fileHolderAttribute == null )
                     {
-                    //Log.Logger.error("There is no file associate to instances of the class " + instanceClass.Name + ". Aborting retrieval operation.");
                     throw new UserFriendlyException(String.Format("There is no file associated to the {0} class", instanceClass.Name));
                     }
 
@@ -321,7 +318,7 @@ namespace IndexECPlugin.Source
                         //FileBackedDescriptorAccessor.SetIn(instance, new FileBackedDescriptor(""));
                         //var packageRetrievalController = new PackageRetrievalController(instance, resourceManager, operation, m_packagesLocation, m_connectionString);
                         //packageRetrievalController.Run();
-                        PackageStreamRetrievalController.SetStreamRetrieval(instance, m_connectionString);
+                        PackageStreamRetrievalController.SetStreamRetrieval(instance, ConnectionString);
 
                         break;
                     case "SQLThumbnail":
@@ -335,18 +332,8 @@ namespace IndexECPlugin.Source
                         break;
                     default:
 
-                        //Log.Logger.error(String.Format("Retrieval of instance {0} aborted. The file holder attribute {1} is not supported. Correct the ECSchema or the plugin.", instance.InstanceId, fileHolderAttribute["Type"].StringValue));
                         throw new ProgrammerException(String.Format("The retrieval of files of type {0} is not supported.", fileHolderAttribute["Type"].StringValue));
                     }
-
-                //if (instance.ClassDefinition.Name == "BentleyFile")
-                //{
-
-                //}
-                //else
-                //{
-                //    throw new UserFriendlyException("Only BentleyFile instances are backed by files");
-                //}
                 }
             catch ( Exception e )
                 {
@@ -522,7 +509,7 @@ namespace IndexECPlugin.Source
 
         private void UploadPackageInDatabase (IECInstance instance)
             {
-            using ( DbConnection sqlConnection = new SqlConnection(m_connectionString) )
+            using ( DbConnection sqlConnection = new SqlConnection(ConnectionString) )
                 {
                 sqlConnection.Open();
                 using ( DbCommand dbCommand = sqlConnection.CreateCommand() )

@@ -61,39 +61,62 @@ namespace IndexECPlugin.Source.Helpers
                 }
             }
 
-        static internal DbType ECTypeToSQL (IECType ecType)
+        static internal DbType ECTypeToDbType (IECType ecType)
             {
             if ( ECTypeHelper.IsString(ecType) )
                 {
-                //instancePropertyValue.StringValue = reader.GetString(i);
                 return DbType.String;
                 }
             if ( ECTypeHelper.IsDouble(ecType) )
                 {
-                //instancePropertyValue.DoubleValue = reader.GetDouble(i);
                 return DbType.Double;
                 }
             if ( ECTypeHelper.IsBoolean(ecType) )
                 {
-                //instancePropertyValue.NativeValue = reader.GetBoolean(i);
                 return DbType.Boolean;
                 }
             if ( ECTypeHelper.IsInteger(ecType) )
                 {
-                //instancePropertyValue.IntValue = reader.GetInt32(i);
                 return DbType.Int32;
                 }
             if ( ECTypeHelper.IsLong(ecType) )
                 {
-                //instancePropertyValue.NativeValue = reader.GetInt64(i);
                 return DbType.Int64;
                 }
             if ( ECTypeHelper.IsDateTime(ecType) )
                 {
-                //instancePropertyValue.NativeValue = reader.GetDateTime(i);
                 return DbType.DateTime;
                 }
             throw new ProgrammerException(String.Format("The ECType {0} is not bound to any SQL type. Please modify the ECSchema", ecType.Name));
+            }
+
+        static internal SqlDbType ECTypeToSqlDbType (IECType ecType)
+            {
+            if ( ECTypeHelper.IsString(ecType) )
+                {
+                return SqlDbType.NVarChar;
+                }
+            if ( ECTypeHelper.IsDouble(ecType) )
+                {
+                return SqlDbType.Float;
+                }
+            if ( ECTypeHelper.IsBoolean(ecType) )
+                {
+                return SqlDbType.Bit;
+                }
+            if ( ECTypeHelper.IsInteger(ecType) )
+                {
+                return SqlDbType.Int;
+                }
+            if ( ECTypeHelper.IsLong(ecType) )
+                {
+                return SqlDbType.BigInt;
+                }
+            if ( ECTypeHelper.IsDateTime(ecType) )
+                {
+                return SqlDbType.DateTime;
+                }
+            throw new ProgrammerException(String.Format("The ECType {0} is not bound to any SQL Server type. Please modify the ECSchema", ecType.Name));
             }
 
         static internal void SQLReaderToECProperty (IECPropertyValue instancePropertyValue, IDataReader reader, int i)

@@ -25,11 +25,11 @@ namespace IndexECPlugin.Source.Helpers
 
         public static DataSource StringToSource (string sourceStr)
             {
-            switch ( sourceStr )
+            switch ( sourceStr.ToLower() )
                 {
                 case "index":
                     return DataSource.Index;
-                case "usgsAPI":
+                case "usgsapi":
                     return DataSource.USGS;
                 case "all":
                     return DataSource.All;

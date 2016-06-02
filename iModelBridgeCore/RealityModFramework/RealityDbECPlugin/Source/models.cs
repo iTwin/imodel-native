@@ -36,7 +36,7 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// TO BE DONE
         /// </summary>
-        public string coordinate_system
+        public int coordinate_system
             {
             get;
             set;

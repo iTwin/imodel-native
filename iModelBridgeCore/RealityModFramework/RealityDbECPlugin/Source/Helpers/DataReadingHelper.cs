@@ -21,6 +21,8 @@ namespace IndexECPlugin.Source.Helpers
         private Dictionary<IECProperty, int> instanceDataColumnList = new Dictionary<IECProperty, int>();
         private int? m_relatedInstanceIdColumn = null;
 
+        private Dictionary<string, int> nonInstanceDataColumnList = new Dictionary<string, int>();
+
         /// <summary>
         /// Gets the collection of all properties requested. This includes instanceData and SpatialInstanceData.
         /// </summary>
@@ -31,7 +33,7 @@ namespace IndexECPlugin.Source.Helpers
             }
 
         /// <summary>
-        /// This method must be called each time a new row is added the the sql query, in the same order as in the query
+        /// This method must be called to add a new "property related" column to the sql query.
         /// </summary>
         /// <param name="columnCategory">The category of the column. This will decide which rows will be accessible by which Get methods</param>
         /// <param name="property">The property associated with the data. Only used for instanceData and spatialInstanceData categories. Otherwise, can be null</param>
@@ -43,7 +45,7 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 instanceDataColumnList.Add(property, m_currentIndex);
                 }
-            if ( columnCategory == ColumnCategory.streamData )
+            else if ( columnCategory == ColumnCategory.streamData )
                 {
                 if ( m_streamDataColumn == null )
                     {
@@ -54,7 +56,7 @@ namespace IndexECPlugin.Source.Helpers
                     throw new ProgrammerException("This method should be called only once for the streamData category.");
                     }
                 }
-            if ( columnCategory == ColumnCategory.relatedInstanceId )
+            else if ( columnCategory == ColumnCategory.relatedInstanceId )
                 {
                 if ( m_relatedInstanceIdColumn == null )
                     {
@@ -66,6 +68,16 @@ namespace IndexECPlugin.Source.Helpers
                     }
                 }
             m_currentIndex += numberOfColumn;
+            }
+
+        /// <summary>
+        /// This method must be called to add a new non-"property related" column to the sql query.
+        /// </summary>
+        /// <param name="columnName">The name of the column in the database</param>
+        public void AddNonPropertyDataColumn(string columnName)
+            {
+            nonInstanceDataColumnList.Add(columnName, m_currentIndex);
+            m_currentIndex++;
             }
 
         /// <summary>
@@ -98,6 +110,16 @@ namespace IndexECPlugin.Source.Helpers
         public int? getRelatedInstanceIdColumn ()
             {
             return m_relatedInstanceIdColumn;
+            }
+
+        /// <summary>
+        /// Returns the index of a column that is not linked to an ECProperty
+        /// </summary>
+        /// <param name="columnName">The name of the column</param>
+        /// <returns>The index of the related column, if it was requested. If not, null is returned.</returns>
+        public int? getNonPropertyDataColumn(string columnName)
+            {
+            return nonInstanceDataColumnList[columnName];
             }
         }
     }

@@ -103,12 +103,16 @@
     <Compile Include="Source\FileRetrievalControllers\SQLThumbnailRetrievalController.cs" />
     <Compile Include="Source\FileRetrievalControllers\USGSThumbnailRetrievalController.cs" />
     <Compile Include="Source\Helpers\DataReadingHelper.cs" />
+    <Compile Include="Source\Helpers\DbConnectionHelper.cs" />
     <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
     <Compile Include="Source\Helpers\ECQueryConverter.cs" />
     <Compile Include="Source\Helpers\ECToSQLMap.cs" />
+    <Compile Include="Source\Helpers\InstanceCacheManager.cs" />
     <Compile Include="Source\Helpers\InstanceComplement.cs" />
     <Compile Include="Source\Helpers\InstanceModifier.cs" />
     <Compile Include="Source\Helpers\InstanceOverrider.cs" />
+    <Compile Include="Source\Helpers\MimicTableAccessor.cs" />
+    <Compile Include="Source\Helpers\MimicTableWriter.cs" />
     <Compile Include="Source\Helpers\SchemaHelper.cs" />
     <Compile Include="Source\Helpers\IUSGSDataExtractor.cs" />
     <Compile Include="Source\Helpers\IUSGSDataFetcher.cs" />
@@ -126,8 +130,13 @@
     <Compile Include="Source\IndexNavigationModule.cs" />
     <Compile Include="Source\models.cs" />
     <Compile Include="Source\QueryProviders\IECQueryProvider.cs" />
+    <Compile Include="Source\SQLQueryBuilder\GenericSQLDeleteStatementBuilder.cs" />
+    <Compile Include="Source\SQLQueryBuilder\IParamNameValueMap.cs" />
+    <Compile Include="Source\SQLQueryBuilder\ISQLDeleteStatementBuilder.cs" />
+    <Compile Include="Source\SQLQueryBuilder\ISQLInsertStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\PagedSQLQueryBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\SQLQueryBuilder.cs" />
+    <Compile Include="Source\SQLQueryBuilder\SQLServerInsertStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\StandardSQLQueryBuilder.cs" />
     <Compile Include="Source\QueryProviders\UsgsAPIQueryProvider.cs" />
   </ItemGroup>

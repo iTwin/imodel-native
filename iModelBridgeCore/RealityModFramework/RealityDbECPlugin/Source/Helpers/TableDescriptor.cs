@@ -8,7 +8,7 @@ namespace IndexECPlugin.Source.Helpers
     {
     //
     /// <summary>
-    /// Simply a type to describe a table and the alias given to it in the from/join statement.
+    /// A Type to describe a table and the alias given to it in the from/join statement.
     /// </summary>
     public class TableDescriptor
         {
