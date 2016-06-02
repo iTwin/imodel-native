@@ -1423,6 +1423,8 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
         DPoint2d uvCoords[3];
         if (!faceToUVMap.GetFacet(&indices[i], uvCoords))
             {
+            if (poly->Param().size() == 0)
+                poly->Param().push_back(DPoint2d::From(0.0, 0.0));
             nFaceMisses++;
             poly->PointIndex().push_back(allPts[indices[i]] + 1);
             poly->PointIndex().push_back(allPts[indices[i + 1]] + 1);

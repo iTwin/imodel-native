@@ -1716,7 +1716,9 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
                 if (d.addedUvIndices.size() > 0)
                     {
+                    if (i + j > d.addedUvIndices.size()) newUvIndices[newNIndexes] = 1;
                     newUvIndices[newNIndexes] = d.addedUvIndices[i + j] + (int32_t)inUvCount;
+                    assert(newUvIndices[newNIndexes] <= inUvCount + d.addedUvs.size());
                     }
                 newNIndexes++;
                 }
