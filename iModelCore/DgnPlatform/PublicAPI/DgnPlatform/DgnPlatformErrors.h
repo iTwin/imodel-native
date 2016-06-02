@@ -134,6 +134,7 @@ enum class RepositoryStatus : int
     CodeUnavailable, //!< A requested DgnCode is reserved by another briefcase or in use
     CodeNotReserved, //!< A DgnCode cannot be released because it has not been reserved by the requesting briefcase
     CodeUsed, //!< A DgnCode cannot be relinquished because it has been used locally
+    LockNotHeld, //!< A required lock is not held by this briefcase
 };
 
 //! Status codes for the Revision API

@@ -265,6 +265,9 @@ public:
     //! @param[in]      response The response to the original request, containing the sets of locks and codes which could not be obtained
     //! @remarks This method is only effective if the original request specified ResponseOptions::LockState and ResponseOptions::CodeState
     DGNPLATFORM_EXPORT void ReformulateRequest(Request& req, Response const& response) const;
+
+    //! Acquire a shared or exclusive lock on the DgnDb.
+    Response LockDb(LockLevel level) { Request req; req.Locks().Insert(GetDgnDb(), level); return ProcessRequest(req); }
     //@}
 
     //! @name Managing Codes

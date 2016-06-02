@@ -1069,14 +1069,22 @@ struct LocksManagerTest : RepositoryManagerTest
         {
         DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
         SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(db, classId, DgnModel::CreateModelCode(name)));
+        IBriefcaseManager::Request req;
+        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForModelInsert(req, *model, IBriefcaseManager::PrepareAction::Acquire));
         auto status = model->Insert();
         EXPECT_EQ(DgnDbStatus::Success, status);
         return DgnDbStatus::Success == status ? model : nullptr;
         }
 
-    DgnElementCPtr CreateElement(DgnModelR model)
+    DgnElementCPtr CreateElement(DgnModelR model, bool acquireLocks=true)
         {
         auto elem = model.Is3d() ? Create3dElement(model) : Create2dElement(model);
+        if (acquireLocks)
+            {
+            IBriefcaseManager::Request req;
+            EXPECT_EQ(RepositoryStatus::Success, model.GetDgnDb().BriefcaseManager().PrepareForElementInsert(req, *elem, IBriefcaseManager::PrepareAction::Acquire));
+            }
+
         auto persistentElem = elem->Insert();
         return persistentElem;
         }
@@ -1254,14 +1262,13 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
     DgnModelPtr model = db.Models().GetModel(m_modelId);
     DgnElementCPtr elem = db.Elements().GetElement(m_elemId);
 
-    // Create a new model
+    // Create a new model.
     DgnModelPtr newModel = CreateModel("NewModel");
 
     ExpectLevel(db, LockLevel::Shared);
     ExpectLevel(*newModel, LockLevel::Exclusive);
     ExpectLevel(*model, LockLevel::None);
     ExpectLevel(*elem, LockLevel::None);
-
 
     // Our exclusive locks are only known locally, because they refer to elements not known to the server
     // If we refresh our local locks from server, we will need to re-obtain them.
@@ -1567,7 +1574,7 @@ TEST_F(DoubleBriefcaseTest, AutomaticLocking)
     // Adding an element to a model requires shared ownership
     DgnModelPtr modelB2d = GetModel(dbB, true);
     ExpectLevel(*modelB2d, LockLevel::None);
-    DgnElementCPtr newElemB2d = CreateElement(*modelB2d);
+    DgnElementCPtr newElemB2d = CreateElement(*modelB2d, false);
     EXPECT_TRUE(newElemB2d.IsNull());   // no return status to check...
     ExpectLevel(*modelB2d, LockLevel::None);
 
@@ -2066,6 +2073,8 @@ struct CodesManagerTest : RepositoryManagerTest
         {
         AnnotationTextStyle style(db);
         style.SetName(name);
+        IBriefcaseManager::Request req;
+        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementInsert(req, style, IBriefcaseManager::PrepareAction::Acquire));
         DgnDbStatus status;
         style.DgnElement::Insert(&status);
         return status;
@@ -2256,7 +2265,13 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     // Ugh except you are not allowed to delete text styles...rename it again instead
     pStyle = AnnotationTextStyle::Get(db, "Unused")->CreateCopy();
     pStyle->SetName("Deleted");
-    EXPECT_TRUE(pStyle->Update().IsValid());
+    // Will fail because we haven't reserved code...
+    DgnDbStatus status;
+    EXPECT_FALSE(pStyle->DgnElement::Update(&status).IsValid());
+    EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCode(MakeStyleCode("Deleted", db)));
+    EXPECT_TRUE(pStyle->DgnElement::Update(&status).IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, status);
     pStyle = nullptr;
 
     // Cannot release codes if transactions are pending

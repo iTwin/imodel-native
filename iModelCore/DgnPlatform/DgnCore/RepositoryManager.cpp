@@ -391,7 +391,7 @@ void BriefcaseManager::Cull(DgnCodeSet& codes)
     stmt->BindVirtualSet(1, vset);
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        DgnCode code(stmt->GetValueId<DgnAuthorityId>(CodeColumn::AuthorityId), stmt->GetValueText(CodeColumn::NameSpace), stmt->GetValueText(CodeColumn::Value));
+        DgnCode code(stmt->GetValueId<DgnAuthorityId>(CodeColumn::AuthorityId), stmt->GetValueText(CodeColumn::Value), stmt->GetValueText(CodeColumn::NameSpace));
         codes.erase(code);
         }
 
@@ -972,7 +972,22 @@ bool BriefcaseManager::_AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, R
     Cull(locks);
     Cull(codes);
 
-    return locks.empty() && codes.empty();
+    if (!locks.empty())
+        {
+        if (nullptr != pStatus)
+            *pStatus = RepositoryStatus::LockNotHeld;
+
+        return false;
+        }
+    else if (!codes.empty())
+        {
+        if (nullptr != pStatus)
+            *pStatus = RepositoryStatus::CodeNotReserved;
+
+        return false;
+        }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1092,8 +1107,9 @@ DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Reques
         case RepositoryStatus::InvalidRequest:
             return DgnDbStatus::BadRequest;
         case RepositoryStatus::RevisionRequired:
-            return req.Codes().IsEmpty() ? DgnDbStatus::LockNotHeld : DgnDbStatus::CodeNotReserved;
+            return req.Codes().empty() ? DgnDbStatus::LockNotHeld : DgnDbStatus::CodeNotReserved;
         case RepositoryStatus::LockAlreadyHeld:
+        case RepositoryStatus::LockNotHeld:
             return DgnDbStatus::LockNotHeld;
         case RepositoryStatus::CodeUnavailable:
         case RepositoryStatus::CodeNotReserved:
@@ -1119,7 +1135,7 @@ DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Reques
 DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP pre)
     {
     Request req;
-    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, IBriefcaseManager::PrepareAction::Acquire/*###TODO: Verify, not Acquire*/, pre), req);
+    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, IBriefcaseManager::PrepareAction::Verify, pre), req);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1128,7 +1144,7 @@ DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbO
 DgnDbStatus IBriefcaseManager::OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode)
     {
     Request req;
-    return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, IBriefcaseManager::PrepareAction::Acquire/*###TODO: Verify, not Acquire*/), req);
+    return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, IBriefcaseManager::PrepareAction::Verify), req);
     }
 
 /*---------------------------------------------------------------------------------**//**
