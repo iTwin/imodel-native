@@ -640,8 +640,6 @@ BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::ExtractRelatio
 
         for (RelationshipPathInfo const& pathInfo : iter->second)
             {
-            // UNUSED pathInfo.m_derivedClasses;
-
             Utf8String basePathStr = relationshipPathStr;
             
             basePathStr.append(".");
