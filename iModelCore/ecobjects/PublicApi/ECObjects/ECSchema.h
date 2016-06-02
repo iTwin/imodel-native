@@ -367,6 +367,11 @@ public:
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
 
+    //! Removes a custom attribute from the container
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
+    //! @param[in]  className   Name of the class of the custom attribute to remove
+    ECOBJECTS_EXPORT bool               RemoveSupplementedCustomAttribute(Utf8StringCR schemaName, Utf8StringCR className);
+
     //! Removes a supplemented custom attribute from the container
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveSupplementedCustomAttribute(ECClassCR classDefinition);

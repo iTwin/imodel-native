@@ -43,3 +43,8 @@ ClassTests.CheckAbstractness # Not yet implemented
 ClassTests.CheckClassTypeForStandAloneInstances # Not yet implemented
 
 ClassTests.DerivedClassTypesOfAbstractClass # Not yet implemented
+
+# Temp Disabled until we're ready to enable unit conversion on this branch.
+SchemaVersionConversionTests.SchemaWithOldUnitSpecifications
+UnitsTest.TestConvertingUnitSpecifications
+
