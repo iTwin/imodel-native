@@ -41,7 +41,7 @@ RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8Stri
 RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR fileId, Utf8StringCR fileUrl,
                                Utf8StringCR fileName, Utf8StringCR description, Utf8StringCR mergedRevisionId, Utf8StringCR user, DateTimeCR date)
     : m_serverUrl(serverUrl), m_id(id), m_name(name), m_fileId(fileId), m_fileUrl(fileUrl), m_fileName(fileName), m_description(description),
-    m_mergedRevisionId(mergedRevisionId), m_userUploaded(user), m_uploadedDate(date)
+    m_mergedRevisionId(mergedRevisionId), m_userCreated(user), m_createdDate(date)
     {
     }
 
@@ -120,17 +120,17 @@ Utf8StringCR RepositoryInfo::GetMergedRevisionId() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-Utf8StringCR RepositoryInfo::GetUserUploaded() const
+Utf8StringCR RepositoryInfo::GetUserCreated() const
     {
-    return m_userUploaded;
+    return m_userCreated;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DateTimeCR RepositoryInfo::GetUploadedDate() const
+DateTimeCR RepositoryInfo::GetCreatedDate() const
     {
-    return m_uploadedDate;
+    return m_createdDate;
     }
 
 //---------------------------------------------------------------------------------------
