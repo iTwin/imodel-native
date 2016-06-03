@@ -33,14 +33,14 @@ pointCloudSchemaDepends         = $(_MakeFileSpec)                              
                                   $(SrcPointCloudSchema)PointCloudGcsFacility.h                    \
                                   $(SrcPointCloudSchema)PointCloudViewport.h                       \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudViewSettings.h          \
-                                  $(SrcPointCloudSchema)PointCloudRamps.h                          \
                                   $(SrcPointCloudSchema)PointCloudRenderer.h                       \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaCommon.h          \
                                   $(PointCloudSchemaPublicApiSrc)IPointCloudViewSettings.h         \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaTypes.h           \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudDrawBuffer.h            \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudHandler.h               \
-                                  $(SrcPointCloudSchema)PointCloudProgressiveDisplay.h              \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudRamps.h                 \
+                                  $(SrcPointCloudSchema)PointCloudProgressiveDisplay.h             \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudDomain.h                \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaApi.h             \
                                   

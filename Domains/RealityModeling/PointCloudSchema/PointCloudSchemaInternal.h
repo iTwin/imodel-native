@@ -35,8 +35,8 @@
 #include <PointCloudSchema/PointCloudDrawBuffer.h>
 #include <PointCloudSchema/PointCloudHandler.h>
 #include <PointCloudSchema/PointCloudDomain.h>
+#include <PointCloudSchema/PointCloudRamps.h>
 
-#include "PointCloudRamps.h"
 #include "VisualizationManager.h"
 #include "PointCloudGcsFacility.h"
 #include "PointCloudViewport.h"
