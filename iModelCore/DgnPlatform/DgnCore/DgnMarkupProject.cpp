@@ -1487,6 +1487,7 @@ DgnViewId DgnMarkupProject::CreateRedlineModelView(DgnDbStatus* createStatusIn, 
 
     if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
+        BeAssert(false && "Markup domain not registered");
         createStatus = DgnDbStatus::MissingDomain;
         return DgnViewId();
         }
@@ -1642,7 +1643,7 @@ SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(Spatial
 
     if (nullptr == model.GetDgnMarkupProject()->Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
-        BeAssert(false);
+        BeAssert(false && "Markup domain not registered");
         //createStatus = DgnDbStatus::MissingDomain;
         return nullptr;
         }
@@ -1670,6 +1671,7 @@ DgnViewId DgnMarkupProject::CreateSpatialRedlineModelView(SpatialRedlineModelR m
 
     if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
+        BeAssert(false && "Markup domain not registered");
         createStatus = DgnDbStatus::MissingDomain;
         return nullptr;
         }
@@ -1715,6 +1717,7 @@ RedlineModelP DgnMarkupProject::CreateRedlineModel(DgnDbStatus* createStatusIn, 
 
     if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
+        BeAssert(false && "Markup domain not registered");
         createStatus = DgnDbStatus::MissingDomain;
         return nullptr;
         }
@@ -1750,6 +1753,7 @@ SpatialRedlineModelP DgnMarkupProject::CreateSpatialRedlineModel(DgnDbStatus* cr
 
     if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
+        BeAssert(false && "Markup domain not registered");
         createStatus = DgnDbStatus::MissingDomain;
         return nullptr;
         }
