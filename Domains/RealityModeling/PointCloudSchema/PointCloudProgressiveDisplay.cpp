@@ -40,7 +40,7 @@ PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel cons
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-PointCloudProgressiveDisplay::~PointCloudProgressiveDisplay() 
+PointCloudProgressiveDisplay::~PointCloudProgressiveDisplay()
     {
     }
 
@@ -52,7 +52,7 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
     PointCloudVortex::SetViewport(m_ptViewport->GetId());
     VisualizationManager::SetViewportInfo(context, m_model.GetSceneToWorld(), m_sceneRangeWorld);
 
-    // Changing the global density has no effect once points have been loaded. Instead, alter the display query density 
+    // Changing the global density has no effect once points have been loaded. Instead, alter the display query density
     PointCloudVortex::GlobalDensity(1.0f);
 
     auto spatial = context.GetViewport()->GetViewController()._ToSpatialView();
@@ -71,6 +71,7 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
     PointCloudVortex::SetEnabledState(PtEnable::PLANE_SHADER, settings.GetUsePlane());
     }
 
+#if defined (NEEDS_WORK_POINT_CLOUD)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
 //----------------------------------------------------------------------------------------
@@ -90,6 +91,7 @@ struct MyPointCloudDraw : Render::PointCloudDraw    //NEEDS_WORK_CONTINUOUS_REND
     virtual DPoint3dCP _GetDPoints() { return m_ptCP; }
     virtual FPoint3dCP _GetFPoints() { return nullptr; }
     };
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
@@ -104,22 +106,22 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
     // POINTCLOUD_WIP_GR06_PointCloudDisplay - to do change density(or whatever they did in v8i) when DrawPurpose::UpdateDynamic.
     //PtVortex::DynamicFrameRate(displayParams.fps);
     PointCloudVortex::SetQueryDensity(queryHandle->GetHandle(), densityType, density);
-    
+
     uint32_t channelFlags = (uint32_t) PointCloudChannelId::Xyz;
     if (m_model.GetPointCloudSceneP()->_HasRGBChannel())
         channelFlags |= (uint32_t) PointCloudChannelId::Rgb;
-    
+
     RefCountedPtr<PointCloudQueryBuffers> queryBuffers = PointCloudQueryBuffers::Create(DRAW_QUERYCAPACITY, channelFlags);
 
     bool queryCompleted = true;
     m_lastTentativeStopped = false;
 
-    auto pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()));
+    auto graphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()));
     Render::GraphicParams graphicParams;
     graphicParams.SetLineColor(m_model.GetColor());
     graphicParams.SetFillColor(m_model.GetColor());
     graphicParams.SetWidth(context.GetViewport()->GetIndexedLineWidth(m_model.GetWeight()));
-    pGraphic->ActivateGraphicParams(graphicParams);
+    graphic->ActivateGraphicParams(graphicParams);
 
     uint32_t buffersCount = 0;
 
@@ -137,15 +139,18 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
         if (numQueryPoints == 0)
             break;
 
-        // NEEDS_WORK_CONTINUOUS_RENDER temporary
         if(queryBuffers->HasXyz())
-            {          
+            {
+#if defined (NEEDS_WORK_POINT_CLOUD)
+            graphic->AddPointCloud(queryBuffers->GetNumPoints(), queryBuffers->GetXyzChannel()->GetChannelBuffer(), queryBuffers->HasRgb() ? queryBuffers->GetRgbChannel()->GetChannelBuffer() : nullptr);
+
             MyPointCloudDraw pointCloudDraw;
             pointCloudDraw.m_ptCP = queryBuffers->GetXyzChannel()->GetChannelBuffer();
             pointCloudDraw.m_pRgb = queryBuffers->HasRgb() ? (ColorDef const*) queryBuffers->GetRgbChannel()->GetChannelBuffer() : nullptr;
             pointCloudDraw.m_ptCount = queryBuffers->GetNumPoints();
 
-            pGraphic->AddPointCloud(&pointCloudDraw);
+            graphic->AddPointCloud(&pointCloudDraw);
+#endif
             ++buffersCount;
             }
         }
@@ -156,10 +161,10 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
         // From observation, we need to recompute ptsToload otherwise the count is not [always?] updated.
         pointsToLoad = PointCloudVortex::PtsToLoadInViewport(m_model.GetPointCloudSceneP()->GetSceneHandle(), true/*recompute*/);
         }
-        
+
     PointCloudVortex::EndDrawFrameMetrics();
 
-    context.OutputGraphic(*pGraphic, nullptr);
+    context.OutputGraphic(*graphic, nullptr);
     DEBUG_PRINTF("DrawPointCloud outputting %d, ptToload =%ld", buffersCount, pointsToLoad);
 
     return queryCompleted;
@@ -174,12 +179,12 @@ void PointCloudProgressiveDisplay::DrawView (Dgn::RenderContextR context)
     BeAssert(nullptr != m_model.GetPointCloudSceneP());
 
     // **********************************
-    // *** NB: This method must be fast. 
+    // *** NB: This method must be fast.
     // **********************************
-    // Do not try to read from SQLite or allocate huge amounts of memory in here. 
+    // Do not try to read from SQLite or allocate huge amounts of memory in here.
     // Defer time-consuming tasks to progressive display
-        
-    // Our first draw call must be fast and is considered a dynamic so we draw with a low density 
+
+    // Our first draw call must be fast and is considered a dynamic so we draw with a low density
     // and do the full density update in the progressive display callback.
     static float density = 0.05f;
     static PtQueryDensity densityType = PtQueryDensity::QUERY_DENSITY_VIEW; // Get only points in memory for a view representation. Point still on disk will get loaded at a later time.
@@ -206,7 +211,7 @@ void PointCloudProgressiveDisplay::DrawView (Dgn::RenderContextR context)
 //----------------------------------------------------------------------------------------
 ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::ProgressiveContext& context, WantShow& wantShow)
     {
-    // NEEDS_WORK_CONTINUOUS_RENDER:  Can we do something better than a nextRetryTime?  
+    // NEEDS_WORK_CONTINUOUS_RENDER:  Can we do something better than a nextRetryTime?
     //  ex: if accurate we could use pointsToLoad and PtsLoadedInViewportSinceLastDraw to detect that
     //      we need to redraw.
     if (!m_lastTentativeStopped && BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
@@ -215,7 +220,7 @@ ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::Pr
         return Completion::Aborted;
         }
 
-    ++m_tentativeId;   
+    ++m_tentativeId;
 
     int64_t loadedSinceLastDraw = PointCloudVortex::PtsLoadedInViewportSinceLastDraw(m_model.GetPointCloudSceneP()->GetSceneHandle());
     DEBUG_PRINTF("(%d)Begin _DoProgressive loadedSinceDraw                        (%ld)", m_tentativeId, loadedSinceLastDraw);
@@ -229,12 +234,12 @@ ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::Pr
     if (!DrawPointCloud(pointsToLoad, context, densityType, density, true/*checkStop*/) || pointsToLoad > 0)
         {
         m_waitTime = (uint64_t)(m_waitTime * 1.33);
-        m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;  
+        m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
 
         DEBUG_PRINTF("(%d)Aborted _DoProgressive pointsToLoad=%ld", m_tentativeId, pointsToLoad);
         return ProgressiveTask::Completion::Aborted;
         }
-    
+
     DEBUG_PRINTF("(%d)Finished _DoProgressive", m_tentativeId);
     return ProgressiveTask::Completion::Finished;
     }

@@ -8,6 +8,7 @@
 #pragma once
 
 //__BENTLEY_INTERNAL_ONLY__
+#if defined (NEEDS_WORK_POINT_CLOUD)
 
 BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 
@@ -55,3 +56,6 @@ struct PointCloudDrawParams : public Dgn::Render::PointCloudDraw
 
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+
+
+#endif

@@ -19,6 +19,7 @@ PointCloudNormalChannelPool     PointCloudNormalChannel::m_pool(VIEW_POOL_MAX_BU
 PointCloudByteChannelPool       PointCloudByteChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
 
 
+#if defined (NEEDS_WORK_POINT_CLOUD)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -93,4 +94,5 @@ RefCountedPtr<PointCloudDrawParams> PointCloudDrawParams::Create(PointCloudXyzCh
     {
     return new PointCloudDrawParams(pXyzChannel, pRgbChannel);
     }
+#endif
 
