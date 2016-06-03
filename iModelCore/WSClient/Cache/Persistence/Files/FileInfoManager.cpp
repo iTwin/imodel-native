@@ -138,9 +138,9 @@ BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName FileInfoManager::GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const
+BeFileName FileInfoManager::GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath) const
     {
-    return m_fileStorage.GetAbsoluteFilePath(isPersistent, relativePath);
+    return m_fileStorage->GetAbsoluteFilePath(location, relativePath);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -190,16 +190,8 @@ BeFileName FileInfoManager::ReadFilePath(CachedInstanceKeyCR cachedKey)
     FileInfo fileInfo = ReadInfo(cachedKey);
     BeFileName path = fileInfo.GetFilePath();
 
-    if (path.empty())
-        {
-        return path;
-        }
-
-    if (!path.DoesPathExist())
-        {
+    if (!path.empty() && !path.DoesPathExist())
         path.clear();
-        return path;
-        }
 
     return path;
     }

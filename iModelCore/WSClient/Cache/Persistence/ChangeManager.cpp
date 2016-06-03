@@ -344,7 +344,8 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
     info.SetChangeStatus(ChangeStatus::Modified);
     info.SetSyncStatus(syncStatus);
 
-    if (SUCCESS != m_fileStorage.CacheFile(info, filePath, nullptr, FileCache::Persistent, DateTime::GetCurrentTimeUtc(), copyFile) ||
+    FileCache location = info.GetLocation(FileCache::Persistent);
+    if (SUCCESS != m_fileStorage->CacheFile(info, filePath, nullptr, location, DateTime::GetCurrentTimeUtc(), copyFile) ||
         SUCCESS != m_fileInfoManager.SaveInfo(info))
         {
         BeAssert(false);
@@ -1026,11 +1027,8 @@ BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
         }
 
     info.ClearChangeInfo();
-    if (SUCCESS != m_fileStorage.SetFileCacheLocation(info, FileCache::Temporary) ||
-        SUCCESS != m_fileInfoManager.SaveInfo(info))
-        {
+    if (SUCCESS != m_fileInfoManager->SaveInfo(info))
         return ERROR;
-        }
 
     return SUCCESS;
     }

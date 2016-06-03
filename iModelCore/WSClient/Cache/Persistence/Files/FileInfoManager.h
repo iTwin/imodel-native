@@ -75,7 +75,7 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         BeFileName ReadFilePath(CachedInstanceKeyCR cachedKey);
 
         // FileInfo::IAbsolutePathProvider
-        BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const override;
+        BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath) const override;
 
         //! IECDbAdapter::DeleteListener
         BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut) override;

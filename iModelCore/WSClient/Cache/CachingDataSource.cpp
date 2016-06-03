@@ -1053,10 +1053,12 @@ ICancellationTokenPtr ct
             return;
             }
 
+        auto txn = StartCacheTransaction();
+        auto cacheLocation = txn.GetCache().GetFileCacheLocation(objectId, FileCache::Temporary);
+
         // check cache for object
         if (DataOrigin::CachedData == origin || DataOrigin::CachedOrRemoteData == origin)
             {
-            auto txn = StartCacheTransaction();
             Json::Value file;
             txn.GetCache().ReadInstance(objectId, file);
             BeFileName cachedFilePath;
@@ -1079,14 +1081,7 @@ ICancellationTokenPtr ct
         bset<ObjectId> filesToDownload;
         filesToDownload.insert(objectId);
 
-        auto task = std::make_shared<DownloadFilesTask>
-            (
-            shared_from_this(),
-            std::move(filesToDownload),
-            FileCache::ExistingOrTemporary,
-            std::move(onProgress),
-            ct
-            );
+        auto task = std::make_shared<DownloadFilesTask>(shared_from_this(), std::move(filesToDownload), cacheLocation, std::move(onProgress), ct);
 
         m_cacheAccessThread->Push(task);
 
