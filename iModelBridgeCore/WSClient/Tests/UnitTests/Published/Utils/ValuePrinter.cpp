@@ -67,9 +67,6 @@ std::ostream& operator << (std::ostream &o, FileCache location)
     {
     static std::map<FileCache, Utf8String> names
         {
-        TO_VALUE_STRING_PAIR(FileCache::Existing),
-        TO_VALUE_STRING_PAIR(FileCache::ExistingOrPersistent),
-        TO_VALUE_STRING_PAIR(FileCache::ExistingOrTemporary),
         TO_VALUE_STRING_PAIR(FileCache::Persistent),
         TO_VALUE_STRING_PAIR(FileCache::Temporary)
         };
@@ -458,6 +455,11 @@ void PrintTo(const Utf8String& value, ::std::ostream* os)
     }
 
 void PrintTo(const WString& value, ::std::ostream* os)
+    {
+    PrintTo(Utf8String(value), os);
+    }
+
+void PrintTo(const BeFileName& value, ::std::ostream* os)
     {
     PrintTo(Utf8String(value), os);
     }

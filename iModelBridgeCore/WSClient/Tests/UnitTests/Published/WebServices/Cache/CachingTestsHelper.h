@@ -137,3 +137,11 @@ ECInstanceKey StubCreatedObjectInCache(IDataSourceCache& cache, Utf8StringCR cla
 ECInstanceKey StubCreatedObjectInCache(IDataSourceCache& cache, IChangeManager::SyncStatus status, Utf8StringCR classKey = "TestSchema.TestClass");
 
 CachedResponseKey StubCachedResponseKey(IDataSourceCache& cache, Utf8StringCR name = "TestQuery");
+
+ObjectId StubFileInCache(
+    IDataSourceCache& cache,
+    FileCache location = FileCache::Temporary,
+    ObjectIdCR objectId = ObjectId("TestSchema.TestClass", "Foo"),
+    BeFileNameCR path = StubFile());
+
+ObjectId StubFileInCache(IDataSourceCache& cache, BeFileNameCR path);

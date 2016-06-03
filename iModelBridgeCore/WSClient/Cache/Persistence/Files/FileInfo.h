@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Files/FileInfo.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,7 @@
 
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
+#include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>
 #include "../Changes/ChangeInfo.h"
 #include "../Instances/ObjectInfo.h"
 
@@ -23,19 +24,15 @@ struct FileInfo : public ChangeInfo
     public:
         struct IAbsolutePathProvider;
 
-    public:
-        static const int PersistentRootFolderId;
-        static const int TemporaryRootFolderId;
-
     private:
         CachedInstanceKey m_cachedInstanceKey;
         Json::Value m_externalFileInfoJson;
         IAbsolutePathProvider* m_pathProvider;
 
     private:
-        BeFileName GetRelativePath() const;
-        void SetRelativePath(BeFileNameCR path);
-        void SetIsPersistent(bool isPersistent);
+        void SetRelativePath(BeFileNameCR relativePath);
+        void SetFileName(Utf8StringCR fileName);
+        void SetLocation(FileCache location);
 
     public:
         FileInfo();
@@ -48,18 +45,25 @@ struct FileInfo : public ChangeInfo
             );
 
         bool IsValid() const;
-
-        // Get absolute file path
+            
+        //! Get name of the file. 
+        Utf8String GetFileName() const;
+        //! Get absolute file path
         BeFileName GetFilePath() const;
-        // Set file path
-        void SetFilePath(bool isPersistent, BeFileNameCR relativePath);
+        
+        //! Set file path. Set fileName to empty if file is not yet cached
+        void SetFilePath(FileCache location, BeFileNameCR relativePath, Utf8StringCR fileName);
+        //! Get relative path for the file
+        BeFileName GetRelativePath() const;
 
-        // Return cache tag if file is found on disk
+        //! Set cache location
+        FileCache GetLocation(FileCache defaultLocation = FileCache::Temporary) const;
+
+        //! Return cache tag if file is found on disk
         Utf8String GetFileCacheTag() const;
         void SetFileCacheTag(Utf8StringCR tag);
 
-        bool IsFilePersistent() const;
-
+        //! Get date when file was last synced
         DateTime GetFileCacheDate() const;
         void SetFileCacheDate(DateTimeCR utcDate);
 
@@ -74,9 +78,8 @@ struct FileInfo : public ChangeInfo
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct FileInfo::IAbsolutePathProvider
     {
-    ~IAbsolutePathProvider()
-        {};
-    virtual BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const = 0;
+    ~IAbsolutePathProvider() {};
+    virtual BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath) const = 0;
     };
 
 typedef FileInfo& FileInfoR;
