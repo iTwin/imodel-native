@@ -1395,13 +1395,13 @@ void DbMappings::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-void ClassDbMapping::GetPropertyMappings(std::vector<PropertyDbMapping const*>& propertyMaps, bool onlyLocal) const
+void ClassDbMapping::GetPropertyMappings(std::vector<PropertyDbMapping const*>& propertyMaps, bool includeBaseProperties) const
     {
-    if (!onlyLocal && m_baseClassMappingId.IsValid())
+    if (includeBaseProperties && m_baseClassMappingId.IsValid())
         {
         ClassDbMapping const* baseClassMapping = m_dbMappings.FindClassMapping(m_baseClassMappingId);
         BeAssert(baseClassMapping != nullptr);
-        baseClassMapping->GetPropertyMappings(propertyMaps, onlyLocal);
+        baseClassMapping->GetPropertyMappings(propertyMaps, includeBaseProperties);
         }
 
     propertyMaps.erase(
@@ -1424,7 +1424,7 @@ void ClassDbMapping::GetPropertyMappings(std::vector<PropertyDbMapping const*>& 
 PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const
     {
     std::vector<PropertyDbMapping const*> propMappings;
-    GetPropertyMappings(propMappings, false);
+    GetPropertyMappings(propMappings, true);
     for (PropertyDbMapping const* pm : propMappings)
         {
         if (pm->GetPropertyPath().GetRootPropertyId() == rootPropertyId && pm->GetPropertyPath().GetAccessString() == accessString)
@@ -1440,7 +1440,7 @@ PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(ECN::ECPropertyId r
 PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(Utf8CP accessString) const
     {
     std::vector<PropertyDbMapping const*> propMappings;
-    GetPropertyMappings(propMappings, false);
+    GetPropertyMappings(propMappings, true);
 
     for (PropertyDbMapping const* pm : propMappings)
         {

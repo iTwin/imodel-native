@@ -124,7 +124,7 @@ TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECEntityClass>"
                       "</ECSchema>",
-                      true, "Namespace prefix must not be empty - but ECObjects has a bug that does not enforce that yet. Once ECObjects is fixed, change true to false");
+                      false, "Namespace prefix must not be empty");
     AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
     }
 

@@ -92,6 +92,18 @@ PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMap const& ecdbMap, Prop
         return NavigationPropertyMap::Clone(ecdbMap.GetSchemaImportContext()->GetClassMapLoadContext(), *protoMap, targetClass);
         }
 
+    if (proto.IsSystemPropertyMap())
+        {
+        if (proto.IsECInstanceIdPropertyMap())
+            return ECInstanceIdPropertyMap::Clone(static_cast<ECInstanceIdPropertyMap const&>(proto));
+
+        if (auto protoMap = dynamic_cast<ECInstanceIdRelationshipConstraintPropertyMap const*>(&proto))
+            return ECInstanceIdRelationshipConstraintPropertyMap::Clone(*protoMap);
+
+        if (auto protoMap = proto.GetAsECClassIdRelationshipConstraintPropertyMap())
+            return ECClassIdRelationshipConstraintPropertyMap::Clone(*protoMap);
+        }
+
     BeAssert(false && "Case is not handled");
     return nullptr;
     }
@@ -169,14 +181,14 @@ bool PropertyMap::MapsToTable(DbTable const& candidateTable) const
     return false;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      01/2015
+//---------------------------------------------------------------------------------------
 PropertyMapCR PropertyMap::GetRoot() const
     {
     PropertyMapCP current = this;
-    while (current->m_parentPropertyMap != nullptr)
-        current = current->m_parentPropertyMap;
+    while (current->m_parent != nullptr)
+        current = current->m_parent;
 
     BeAssert(current != nullptr);
     return *current;

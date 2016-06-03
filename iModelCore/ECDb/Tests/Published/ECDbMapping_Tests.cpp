@@ -5950,10 +5950,8 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
-                    "    <Target cardinality='(0,1)' polymorphic='True'>"
-                    "      <Class class='B1'>"
-                    "        <Key><Property name='AId'/></Key>"
-                    "      </Class>"
+                    "    <Target cardinality='(1,1)' polymorphic='True'>"
+                    "      <Class class='B1'/>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>", true, "");

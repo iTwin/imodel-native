@@ -22,7 +22,6 @@ enum class TraversalFeedback
     Next //! if there is children of current node process them first and then go to next sibling
     };
 
-
 //=======================================================================================
 // Represents an iterable collection of property maps
 // @bsiclass                                                Krischan.Eberle      06/2013
@@ -77,9 +76,9 @@ struct PropertyMap : RefCountedBase, NonCopyableClass
     {
 protected:
     ECN::ECPropertyCR m_ecProperty;
-    PropertyMapCP m_parentPropertyMap;
     Utf8String m_propertyAccessString; // We need to own this for nested property in embedded struct as they are dynamically generated
     std::vector<DbTable const*> m_mappedTables;
+    PropertyMapCP m_parent;
     PropertyMapCollection m_children;
     mutable PropertyPathId m_propertyPathId;
 
@@ -121,13 +120,16 @@ private:
     virtual Utf8String _ToString() const = 0;
     virtual void _WriteDebugInfo(DebugWriter& writer) const;
 protected:
-    PropertyMap(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap) : m_ecProperty(ecProperty), m_propertyAccessString(propertyAccessString), m_parentPropertyMap(parentPropertyMap) {}
-    PropertyMap(PropertyMapCR rhs, PropertyMapCP parentPropertyMap) : m_ecProperty(rhs.m_ecProperty), m_parentPropertyMap(parentPropertyMap), m_propertyAccessString(rhs.m_propertyAccessString),
+    //!@param[in] parent Parent property map in terms of a property map node hierarchy. Nothing to do with inheritance.
+    //!E.g. a struct property map has a child property map for each of its members. The struct property map then is the parent
+    //!of each member property map
+    PropertyMap(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parent) : m_ecProperty(ecProperty), m_propertyAccessString(propertyAccessString), m_parent(parent) {}
+    PropertyMap(PropertyMapCR rhs, PropertyMapCP parentPropertyMap) : m_ecProperty(rhs.m_ecProperty), m_parent(parentPropertyMap), m_propertyAccessString(rhs.m_propertyAccessString),
         m_mappedTables(rhs.m_mappedTables), m_propertyPathId(rhs.m_propertyPathId)
         {}
 
+    //!Gets the root property map of the parent-child node hierarchy
     PropertyMapCR GetRoot() const;
-
     BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, ECDbCR ecdb) const { return DetermineColumnInfo(columnName, isNullable, isUnique, collation, ecdb, GetProperty(), GetPropertyAccessString()); }
 
 public:
@@ -229,7 +231,7 @@ private:
     virtual Utf8String _ToString() const override;
 
     PrimitivePropertyMap(ECN::PrimitiveECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap) : SingleColumnPropertyMap(ecProperty, propertyAccessString, parentPropertyMap) {}
-    PrimitivePropertyMap(PrimitivePropertyMap const& proto, PropertyMap const* parentPropertyMap) :SingleColumnPropertyMap(proto, parentPropertyMap) {}
+    PrimitivePropertyMap(PrimitivePropertyMap const& proto, PropertyMap const* parentPropertyMap) : SingleColumnPropertyMap(proto, parentPropertyMap) {}
 
     ECN::PrimitiveECPropertyCR GetPrimitiveProperty() const { BeAssert(GetProperty().GetIsPrimitive()); return *GetProperty().GetAsPrimitiveProperty(); }
 

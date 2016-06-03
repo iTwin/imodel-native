@@ -62,19 +62,19 @@ protected:
     ECDbMap const& m_ecdbMap;
     ECN::ECClassCR m_ecClass;
     ECDbMapStrategy m_resolvedStrategy;
-    ClassMap const* m_parentClassMap;
+    ClassMap const* m_baseClassMap;
 
 private:
     BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);
 
-    bool GatherBaseClassMaps(bvector<ClassMap const*>& baseClassMaps, bvector<ClassMap const*>& tphMaps, bvector<ClassMap const*>& tpcMaps, bvector<ClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
+    bool GatherBaseClassMaps(bvector<ClassMap const*>& baseClassMaps, bvector<ClassMap const*>& tphMaps, bvector<ClassMap const*>& tpcMaps, bvector<ClassMap const*>& nmhMaps, ECN::ECClassCR) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
     MappingStatus EvaluateMapStrategy();
     virtual MappingStatus _EvaluateMapStrategy();
 
 protected:
-    BentleyStatus EvaluateSharedTableMapStrategy(ClassMap const& parentClassMap, UserECDbMapStrategy const&);
+    BentleyStatus EvaluateSharedTableMapStrategy(ClassMap const& baseClassMap, UserECDbMapStrategy const&);
     bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
     virtual BentleyStatus _InitializeFromSchema();
 
@@ -94,7 +94,7 @@ public:
     Utf8CP GetTableName() const {return m_tableName.c_str();}
     Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
     ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
-    ClassMap const* GetParentClassMap () const { return m_parentClassMap; }
+    ClassMap const* GetBaseClassMap () const { return m_baseClassMap; }
 
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }

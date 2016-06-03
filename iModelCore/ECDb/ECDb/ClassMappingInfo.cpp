@@ -41,7 +41,7 @@ std::unique_ptr<ClassMappingInfo> ClassMappingInfoFactory::Create(MappingStatus&
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingInfo::ClassMappingInfo(ECClassCR ecClass, ECDbMap const& ecDbMap)
-    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(ecClass.GetClassModifier() == ECClassModifier::Abstract), m_classHasCurrentTimeStampProperty(nullptr), m_parentClassMap(nullptr)
+    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(ecClass.GetClassModifier() == ECClassModifier::Abstract), m_classHasCurrentTimeStampProperty(nullptr), m_baseClassMap(nullptr)
     {}
 
 //---------------------------------------------------------------------------------
@@ -181,7 +181,7 @@ BentleyStatus ClassMappingInfo::DoEvaluateMapStrategy(bool& baseClassesNotMapped
     // ClassMappingRule: If exactly 1 ancestor ECClass is using SharedTable (AppliesToSubclasses), use this
     if (polymorphicSharedTableClassMaps.size() == 1)
         {
-        m_parentClassMap = parentClassMap; //only need to hold the parent class map for shared table case
+        m_baseClassMap = parentClassMap; //only need to hold the parent class map for shared table case
         return EvaluateSharedTableMapStrategy(*parentClassMap, userStrategy);
         }
 
@@ -688,7 +688,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         if (!ValidateChildStrategy(*baseStrategy, *userStrategy))
             return MappingStatus::Error;
 
-        m_parentClassMap = baseClassMap;
+        m_baseClassMap = baseClassMap;
         if (baseClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
             if (SUCCESS != EvaluateForeignKeyStrategy(*userStrategy, baseClassMap))
@@ -735,13 +735,6 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(UserECDbMapStra
         }
 
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    if (HasKeyProperties(relClass->GetSource()) || HasKeyProperties(relClass->GetTarget()))
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "The ECRelationshipClass '%s' is mapped to a link table. One of its constraints has Key properties which is only supported for foreign key type relationships.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
-
     if (relClass->GetStrength() == StrengthType::Embedding)
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship, and link table relationships with strength 'Embedding' is not supported. See API docs for details on the mapping rules.",
@@ -756,15 +749,43 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(UserECDbMapStra
         return ERROR;
         }
 
-    //TODO: How should we handle this properly?
-    if (SUCCESS != RetrieveEndTables(EndTablesOptimizationOptions::PrimaryTables, EndTablesOptimizationOptions::PrimaryTables))
+    if (HasKeyProperties(relClass->GetSource()) || HasKeyProperties(relClass->GetTarget()))
         {
-        LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "Source or target constraint classes are abstract without subclasses.");
-        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
-        return SUCCESS;
+        Issues().Report(ECDbIssueSeverity::Error, "The ECRelationshipClass '%s' is mapped to a link table. One of its constraints has Key properties which is only supported for foreign key type relationships.",
+                        m_ecClass.GetFullName());
+        return ERROR;
         }
 
-    if (baseClassMap != nullptr)
+    if (baseClassMap == nullptr)
+        {
+        //Table retrieval is only needed for the root rel class. Subclasses will use the tables of its base class
+        //TODO: How should we handle this properly?
+        if (SUCCESS != RetrieveEndTables(EndTablesOptimizationOptions::PrimaryTables, EndTablesOptimizationOptions::PrimaryTables))
+            {
+            LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "Source or target constraint classes are abstract without subclasses.");
+            m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
+            return SUCCESS;
+            }
+
+        const size_t sourceTableCount = m_sourceTables.size();
+        const size_t targetTableCount = m_targetTables.size();
+        if (sourceTableCount > 1 || targetTableCount > 1)
+            {
+            Utf8CP constraintStr = nullptr;
+            if (sourceTableCount > 1 && targetTableCount > 1)
+                constraintStr = "source and target constraints are";
+            else if (sourceTableCount > 1)
+                constraintStr = "source constraint is";
+            else
+                constraintStr = "target constraint is";
+
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. It is mapped to a link table, but the %s mapped to more than one table, which is not supported for link tables.",
+                            m_ecClass.GetFullName(), constraintStr);
+
+            return ERROR;
+            }
+        }
+    else
         {
         if (baseClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable)
             return EvaluateSharedTableMapStrategy(*baseClassMap, userStrategy);
@@ -896,10 +917,15 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(UserECDbMapStr
         }
 
     BeAssert(resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable || resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable);
-    if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
-        RetrieveEndTables(EndTablesOptimizationOptions::Skip, EndTablesOptimizationOptions::PrimaryTables);
-    else if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable)
-        RetrieveEndTables(EndTablesOptimizationOptions::PrimaryTables, EndTablesOptimizationOptions::Skip);
+
+    if (baseClassMap == nullptr)
+        {
+        //table retrieval is only needed for root classes
+        if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
+            RetrieveEndTables(EndTablesOptimizationOptions::Skip, EndTablesOptimizationOptions::PrimaryTables);
+        else if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable)
+            RetrieveEndTables(EndTablesOptimizationOptions::PrimaryTables, EndTablesOptimizationOptions::Skip);
+        }
 
     //For relationship class the strategy must apply to subclasses, too. Subclasses cannot change the strategy
     return m_resolvedStrategy.Assign(resolvedStrategy, true);

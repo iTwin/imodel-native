@@ -83,13 +83,18 @@ void ClassMap::_WriteDebugInfo(DebugWriter& writer) const
 MappingStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
     {
     ECDbMapStrategy const& mapStrategy = GetMapStrategy();
-    ClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses()) ? mapInfo.GetParentClassMap() : nullptr;
+    //ClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses()) ? mapInfo.GetBaseClassMap() : nullptr;
 
-    auto stat = _MapPart1(schemaImportContext, mapInfo, effectiveParentClassMap);
+    BeAssert(mapInfo.GetBaseClassMap() == nullptr ||
+        mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable ||
+         mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable ||
+         mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable);
+
+    auto stat = _MapPart1(schemaImportContext, mapInfo, mapInfo.GetBaseClassMap());
     if (stat != MappingStatus::Success)
         return stat;
     
-    stat = _MapPart2(schemaImportContext, mapInfo, effectiveParentClassMap);
+    stat = _MapPart2(schemaImportContext, mapInfo, mapInfo.GetBaseClassMap());
     if (stat != MappingStatus::Success)
         return stat;
 
@@ -135,7 +140,7 @@ MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, Clas
         if (parentClassMap->GetMapStrategy().IsNotMapped())
             return MappingStatus::Error;
 
-        m_parentMapClassId = parentClassMap->GetClass().GetId();
+        m_baseClassId = parentClassMap->GetClass().GetId();
         SetTable(parentClassMap->GetPrimaryTable());
 
         if (tableType == DbTable::Type::Joined)
@@ -564,8 +569,7 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
 
     if (!GetId().IsValid())
         {
-        //auto baseClassMap = GetParentMapClassId () == 
-        auto baseClass = GetECDbMap().GetECDb().Schemas().GetECClass(GetParentMapClassId());
+        ECClassCP baseClass = Schemas().GetECClass(GetBaseClassId());
         ClassMap* baseClassMap = baseClass == nullptr ? nullptr : (ClassMap*) GetECDbMap().GetClassMap(*baseClass);
         if (baseClassMap != nullptr)
             {
@@ -600,11 +604,11 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* parentClassMap)
     {
-    if (parentClassMap)
-        m_parentMapClassId = parentClassMap->GetClass().GetId();
+    if (parentClassMap != nullptr)
+        m_baseClassId = parentClassMap->GetClass().GetId();
 
     std::vector<PropertyDbMapping const*> allPropertyMappings;
-    mapInfo.GetPropertyMappings(allPropertyMappings, false);
+    mapInfo.GetPropertyMappings(allPropertyMappings, true);
 
     std::set<Utf8CP, CompareIUtf8Ascii> localPropSet;
     for (auto property : GetClass().GetProperties(false))
@@ -739,7 +743,7 @@ BentleyStatus ClassMap::GetPathToParentOfJoinedTable(std::vector<ClassMap const*
     path.insert(path.begin(), current);
     do
         {
-        ECClassId nextParentId = current->GetParentMapClassId();
+        ECClassId nextParentId = current->GetBaseClassId();
         if (!nextParentId.IsValid())
             return SUCCESS;
 
@@ -775,7 +779,7 @@ ClassMap const* ClassMap::FindClassMapOfParentOfJoinedTable() const
         if (current->IsParentOfJoinedTable())
             return current;
 
-        auto nextParentId = current->GetParentMapClassId();
+        auto nextParentId = current->GetBaseClassId();
         if (!nextParentId.IsValid())
             return nullptr;
 
@@ -800,7 +804,7 @@ ClassMap const* ClassMap::FindSharedTableRootClassMap() const
     if (mapStrategy.GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && !mapStrategy.AppliesToSubclasses())
         return nullptr;
 
-    ECClassId parentId = GetParentMapClassId();
+    ECClassId parentId = GetBaseClassId();
     if (!parentId.IsValid())
         return this;
 
@@ -1156,7 +1160,7 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
 MappingStatus UnmappedClassMap::_MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap)
     {
     if (parentClassMap != nullptr)
-        m_parentMapClassId = parentClassMap->GetParentMapClassId();
+        m_baseClassId = parentClassMap->GetBaseClassId();
 
     DbTable const* nullTable = GetECDbMap().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));

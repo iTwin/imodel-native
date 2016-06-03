@@ -101,6 +101,16 @@ struct RelationshipClassMap : ClassMap
 struct RelationshipClassEndTableMap : RelationshipClassMap
     {
     private:
+        struct ColumnLists : NonCopyableClass
+            {
+            std::vector<DbColumn const*> m_fkTablesECInstanceIdColumns;
+            std::vector<DbColumn const*> m_fkTablesECClassIdColumns;
+            std::vector<DbColumn const*> m_fkTablesFkColumns;
+            //The referenced end class id cols are either from the FK table, or if the referenced table has its own class id column, that one is taken.
+            //WIP_FOR_AFFAN: Is this safe enough? Does consuming code know that the prop map has columns to another table??
+            std::vector<DbColumn const*> m_referencedEndECClassIdColumns;
+            };
+
         struct ForeignKeyColumnInfo : NonCopyableClass
             {
             private:
@@ -146,8 +156,11 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
 
         void AddIndexToRelationshipEnd(SchemaImportContext&, ClassMappingInfo const& mapInfo);
 
-        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap) override;
-        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap) override;
+        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* baseClassMap) override;
+        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* baseClassMap) override;
+
+        BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
+        BentleyStatus MapSubClass(RelationshipMappingInfo const&, ClassMap const& baseClassMap);
 
         //! Tries to retrieve the column to which the key property on the specified constraint is mapped to.
         //! @param[out] keyPropertyColumn found column or nullptr if no key property was defined on the constraint.
@@ -193,10 +206,10 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
             };
 
     private:
-        RelationshipClassLinkTableMap(ECN::ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
+        RelationshipClassLinkTableMap(ECN::ECRelationshipClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
 
-        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap) override;
-        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap) override;
+        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* baseClassMap) override;
+        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* baseClassMap) override;
 
         MappingStatus CreateConstraintPropMaps(RelationshipMappingInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 
@@ -210,9 +223,9 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
     public:
         ~RelationshipClassLinkTableMap() {}
-        static ClassMapPtr Create(ECN::ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap(ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
+        static ClassMapPtr Create(ECN::ECRelationshipClassCR relClass, ECDbMap const& ecdbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap(relClass, ecdbMap, mapStrategy, setIsDirty); }
 
-        bool GetConstraintECClassIdColumnName(Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, DbTable const& table) const;
+        bool GetConstraintECClassIdColumnName(Utf8StringR columnName, ECN::ECRelationshipEnd, DbTable const&) const;
         virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
     };
 

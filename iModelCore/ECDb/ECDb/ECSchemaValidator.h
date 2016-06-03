@@ -41,6 +41,7 @@ struct ECSchemaValidationRule
         //+===============+===============+===============+===============+===============+======
         enum Type
             {
+            SchemaNamespacePrefix,
             NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
             ValidRelationshipConstraints
             };
@@ -207,6 +208,40 @@ struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
     public:
         ValidRelationshipConstraintsRule();
         ~ValidRelationshipConstraintsRule() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      07/2015
+//+===============+===============+===============+===============+===============+======
+struct SchemaNamespacePrefixRule : ECSchemaValidationRule
+    {
+    private:
+        //=======================================================================================
+        // @bsiclass                                                Krischan.Eberle      07/2015
+        //+===============+===============+===============+===============+===============+======
+        struct Error : ECSchemaValidationRule::Error
+            {
+            private:
+                std::vector<ECN::ECSchemaCP> m_invalidNamespacePrefixes;
+
+                virtual Utf8String _ToString() const override;
+
+            public:
+                explicit Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
+                ~Error() {}
+
+                void AddInvalidPrefix(ECN::ECSchemaCR schema) { m_invalidNamespacePrefixes.push_back(&schema); }
+                bool HasInconsistencies() const { return !m_invalidNamespacePrefixes.empty(); }
+            };
+
+        mutable std::unique_ptr<Error> m_error;
+
+        virtual bool _ValidateSchemas(bvector<ECN::ECSchemaP> const&, ECN::ECSchemaCR) override;
+        virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+
+    public:
+        SchemaNamespacePrefixRule();
+        ~SchemaNamespacePrefixRule() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

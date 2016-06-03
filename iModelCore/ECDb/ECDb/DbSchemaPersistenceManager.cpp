@@ -440,7 +440,7 @@ BentleyStatus DbSchemaPersistenceManager::Save(ECDbCR ecdb, DbSchema const& dbSc
         {
         ClassDbMapping const& classMapping = *kvPair.second;
         std::vector<PropertyDbMapping const*> propMappings;
-        classMapping.GetPropertyMappings(propMappings, true);
+        classMapping.GetPropertyMappings(propMappings, false);
         for (PropertyDbMapping const* propertyMap : propMappings)
             {
             if (BE_SQLITE_OK != InsertPropertyMapping(ecdb, *propertyMap))

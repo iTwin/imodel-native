@@ -35,8 +35,12 @@
     <ECRelationshipClass typeName="BaseRelationshipClass" modifier="Abstract" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="MyIntegerMember" typeName="int" readOnly="false"/>
         <ECProperty propertyName="MyLongMember" typeName="long" readOnly="false"/>
-        <Source cardinality="(0,1)" polymorphic="true"/>
-        <Target cardinality="(0,1)" polymorphic="true"/>
+        <Source cardinality="(0,1)" roleLabel="source constraint2" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target cardinality="(0,1)" roleLabel="target constraint2" polymorphic="true">
+            <Class class="Test2Class"/>
+        </Target>
     </ECRelationshipClass>
     <ECStructClass typeName="Struct1" modifier="None">
         <ECProperty propertyName="Struct1BoolMember" typeName="boolean" readOnly="false"/>

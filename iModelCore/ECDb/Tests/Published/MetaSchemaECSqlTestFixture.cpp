@@ -85,7 +85,14 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, ECSq
                 ASSERT_TRUE(val.IsNull()) << "ECSchemaDef.DisplayLabel";
             }
         else if (colName.EqualsI("Description"))
-            ASSERT_STREQ(expectedSchema.GetDescription().c_str(), val.GetText()) << "ECSchemaDef.Description";
+            {
+            if (!expectedSchema.GetDescription().empty())
+                ASSERT_STREQ(expectedSchema.GetDescription().c_str(), val.GetText()) << "ECSchemaDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECSchemaDef.Description";
+
+            continue;
+            }
         else if (colName.EqualsI("NamespacePrefix"))
             ASSERT_STREQ(expectedSchema.GetNamespacePrefix().c_str(), val.GetText()) << "ECSchemaDef.NamespacePrefix";
         else if (colName.EqualsI("VersionMajor"))
@@ -176,7 +183,11 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
 
         if (colName.EqualsI("Description"))
             {
-            ASSERT_STREQ(expectedClass.GetDescription().c_str(), val.GetText()) << "ECClassDef.Description";
+            if (!expectedClass.GetDescription().empty())
+                ASSERT_STREQ(expectedClass.GetDescription().c_str(), val.GetText()) << "ECClassDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECClassDef.Description";
+
             continue;
             }
 
@@ -311,7 +322,11 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEn
 
         if (colName.EqualsI("Description"))
             {
-            ASSERT_STREQ(expectedEnum.GetDescription().c_str(), val.GetText()) << "ECEnumerationDef.Description";
+            if (!expectedEnum.GetDescription().empty())
+                ASSERT_STREQ(expectedEnum.GetDescription().c_str(), val.GetText()) << "ECEnumerationDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECEnumerationDef.Description";
+
             continue;
             }
 
@@ -485,7 +500,10 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
 
         if (colName.EqualsI("Description"))
             {
-            ASSERT_STREQ(expectedProp.GetDescription().c_str(), val.GetText()) << "ECPropertyDef.Description for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            if (!expectedProp.GetDescription().empty())
+                ASSERT_STREQ(expectedProp.GetDescription().c_str(), val.GetText()) << "ECPropertyDef.Description for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.Description";
             continue;
             }
 

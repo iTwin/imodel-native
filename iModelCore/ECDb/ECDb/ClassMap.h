@@ -103,7 +103,7 @@ struct ClassMap : RefCountedBase
         ColumnFactory m_columnFactory;
 
     protected:
-        ECN::ECClassId m_parentMapClassId;
+        ECN::ECClassId m_baseClassId;
 
     private:
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
@@ -114,12 +114,12 @@ struct ClassMap : RefCountedBase
     protected:
         ClassMap(Type, ECN::ECClassCR, ECDbMap const&, ECDbMapStrategy, bool setIsDirty);
 
-        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* parentClassMap);
-        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* parentClassMap);
-        virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* parentClassMap);
+        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* baseClassMap);
+        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* baseClassMap);
+        virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* baseClassMap);
         virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph);
-        virtual void _WriteDebugInfo(DebugWriter& writer) const;
-        MappingStatus AddPropertyMaps(ClassMapLoadContext&, ClassMap const* parentClassMap, ClassDbMapping const* loadInfo, ClassMappingInfo const* classMapInfo);
+        virtual void _WriteDebugInfo(DebugWriter&) const;
+        MappingStatus AddPropertyMaps(ClassMapLoadContext&, ClassMap const* baseClassMap, ClassDbMapping const*, ClassMappingInfo const*);
         void SetTable(DbTable& newTable, bool append = false);
         PropertyMapCollection& GetPropertyMapsR() { return m_propertyMaps; }
         ECDbSchemaManagerCR Schemas() const;
@@ -167,7 +167,7 @@ struct ClassMap : RefCountedBase
         std::vector<ClassMap const*> GetDerivedClassMaps() const;
 
         ECN::ECClassCR GetClass() const { return m_ecClass; }
-        ECN::ECClassId GetParentMapClassId() const { return m_parentMapClassId; }
+        ECN::ECClassId GetBaseClassId() const { return m_baseClassId; }
 
         ECDbMapStrategy const& GetMapStrategy() const { return m_mapStrategy; }
         ECDbMap const& GetECDbMap() const { return m_ecDbMap; }
