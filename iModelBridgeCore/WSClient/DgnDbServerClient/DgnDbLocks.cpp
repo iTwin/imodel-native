@@ -66,8 +66,9 @@ DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request const& req, DgnDbR db)
+IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request const& req, DgnDbR db, bool queryOnly)
     {
+    BeAssert(!queryOnly && "TODO: Implement query-only version of _ProcessRequest()");
     if (!m_connection)
         return Response (RepositoryStatus::ServerUnavailable);
 
