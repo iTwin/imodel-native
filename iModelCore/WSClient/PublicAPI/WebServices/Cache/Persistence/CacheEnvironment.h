@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Persistence/CacheEnvironment.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,6 +21,7 @@ struct CacheEnvironment
     {
     BeFileName persistentFileCacheDir;
     BeFileName temporaryFileCacheDir;
+    BeFileName externalFileCacheDir;
 
     WSCACHE_EXPORT CacheEnvironment();
     WSCACHE_EXPORT CacheEnvironment(BeFileNameCR persistentDir, BeFileNameCR temporaryDir);
@@ -29,6 +30,8 @@ struct CacheEnvironment
     WSCACHE_EXPORT static int GetPersistentRootFolderId();
     // For accessing cached files through ExternalFileInfo
     WSCACHE_EXPORT static int GetTemporaryRootFolderId();
+    // For accessing cached files through ExternalFileInfo
+    WSCACHE_EXPORT static int GetExternalRootFolderId();
     };
 
 typedef const CacheEnvironment& CacheEnvironmentCR;

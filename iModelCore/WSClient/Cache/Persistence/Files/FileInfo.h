@@ -29,8 +29,8 @@ struct FileInfo : public ChangeInfo
         IAbsolutePathProvider* m_pathProvider;
 
     private:
-        BeFileName GetRelativePath() const;
-        void SetRelativePath(BeFileNameCR path);
+        void SetRelativePath(BeFileNameCR relativePath);
+        void SetFileName(Utf8StringCR fileName);
         void SetLocation(FileCache location);
 
     public:
@@ -42,18 +42,25 @@ struct FileInfo : public ChangeInfo
             ECInstanceKeyCR instanceKey,
             IAbsolutePathProvider* pathProvider
             );
-
+            
+        //! Get name of the file. 
+        Utf8String GetFileName() const;
         //! Get absolute file path
         BeFileName GetFilePath() const;
-        //! Set file path
-        void SetFilePath(FileCache location, BeFileNameCR relativePath);
+        
+        //! Set file path. Set fileName to empty if file is not yet cached
+        void SetFilePath(FileCache location, BeFileNameCR relativePath, Utf8StringCR fileName);
+        //! Get relative path for the file
+        BeFileName GetRelativePath() const;
+
         //! Set cache location
-        FileCache GetLocation() const;
+        FileCache GetLocation(FileCache defaultLocation = FileCache::Temporary) const;
 
         //! Return cache tag if file is found on disk
         Utf8String GetFileCacheTag() const;
         void SetFileCacheTag(Utf8StringCR tag);
 
+        //! Get date when file was last synced
         DateTime GetFileCacheDate() const;
         void SetFileCacheDate(DateTimeCR utcDate);
 

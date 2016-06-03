@@ -1104,7 +1104,7 @@ ICancellationTokenPtr ct
             }
 
         auto txn = StartCacheTransaction();
-        auto cacheLocation = txn.GetCache().GetFileCacheLocation(objectId);
+        auto cacheLocation = txn.GetCache().GetFileCacheLocation(objectId, FileCache::Temporary);
 
         // check cache for object
         if (DataOrigin::CachedData == origin || DataOrigin::CachedOrRemoteData == origin)
