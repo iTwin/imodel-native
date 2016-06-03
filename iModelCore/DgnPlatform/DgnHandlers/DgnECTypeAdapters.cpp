@@ -3153,7 +3153,13 @@ bool ECUnitsTypeAdapter::_ConvertToString (Utf8StringR valueAsString, ECValueCR 
     ECPropertyCP ecprop = context.GetProperty();
     IECClassLocaterR unitsECClassLocater = context.GetUnitsECClassLocater();
 
-    if (v.IsNull() || NULL == ecprop || !Unit::GetUnitForECProperty (storedUnit, *ecprop, unitsECClassLocater))
+    if (v.IsNull() || NULL == ecprop)
+        {
+        valueAsString = "";
+        return true;
+        }
+
+    if(!Unit::GetUnitForECProperty (storedUnit, *ecprop, unitsECClassLocater))
         return false;
 
     if (context.GetDgnModel())
