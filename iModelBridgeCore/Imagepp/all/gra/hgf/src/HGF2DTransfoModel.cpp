@@ -834,8 +834,8 @@ void HGF2DTransfoModel::GetEquivalenceToOver (const HGF2DTransfoModel& pi_rModel
                 }
 
             // Compute difference
-            double DeltaX = fabs (CurrentX - TempX1);
-            double DeltaY = fabs (CurrentY - TempY1);
+            double DeltaX = fabs (TempX - TempX1);
+            double DeltaY = fabs (TempY - TempY1);
 
             // Add deltas
             StatSumX += DeltaX;
