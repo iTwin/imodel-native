@@ -760,7 +760,10 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(UserECDbMapStra
         {
         //Table retrieval is only needed for the root rel class. Subclasses will use the tables of its base class
         //TODO: How should we handle this properly?
-        if (SUCCESS != RetrieveEndTables(EndTablesOptimizationOptions::PrimaryTables, EndTablesOptimizationOptions::PrimaryTables))
+        m_sourceTables = GetECDbMap().GetTablesFromRelationshipEnd(relClass->GetSource(), true);
+        m_targetTables = GetECDbMap().GetTablesFromRelationshipEnd(relClass->GetTarget(), true);
+
+        if (m_sourceTables.empty() || m_targetTables.empty())
             {
             LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "Source or target constraint classes are abstract without subclasses.");
             m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
@@ -893,38 +896,32 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(UserECDbMapStr
                 return ERROR;
         }
 
-    //TODO: How should we handle this properly?
-    if (SUCCESS != RetrieveEndTables(EndTablesOptimizationOptions::JoinedTables, EndTablesOptimizationOptions::JoinedTables))
+    BeAssert(resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable || resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable);
+
+    //evaluate end tables
+    const bool foreignKeyEndIsSource = resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
+
+    //check that the referenced end tables (including joined tables) are 1 at most
+    std::set<DbTable const*> referencedTables = GetECDbMap().GetTablesFromRelationshipEnd(foreignKeyEndIsSource ? relClass->GetTarget() : relClass->GetSource(), false);
+    if (referencedTables.size() > 1)
+        {
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its foreign key end (%s) references more than one table (%s). See API docs for details on the mapping rules.",
+                        m_ecClass.GetFullName(), foreignKeyEndIsSource ? "Source" : "Target", foreignKeyEndIsSource ? "Target" : "Source");
+        return ERROR;
+        }
+
+    //For the foreign key end we want to include joined tables as we have to create FKs into them.
+    //For the referenced end we are just interested in the primary table and ignore joined tables.
+    const bool ignoreJoinedTableOnSource = !foreignKeyEndIsSource;
+    const bool ignoreJoinedTableOnTarget = foreignKeyEndIsSource;
+    m_sourceTables = GetECDbMap().GetTablesFromRelationshipEnd(relClass->GetSource(), ignoreJoinedTableOnSource);
+    m_targetTables = GetECDbMap().GetTablesFromRelationshipEnd(relClass->GetTarget(), ignoreJoinedTableOnTarget);
+    
+    if (m_sourceTables.empty() || m_targetTables.empty())
         {
         LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "Source or target constraint classes are abstract without subclasses.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
         return SUCCESS;
-        }
-
-    if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable && m_targetTables.size() > 1)
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its foreign key end (Source) references more than one table (Target). See API docs for details on the mapping rules.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
-
-    if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable && m_sourceTables.size() > 1)
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its foreign key end (Target) references more than one table (Source). See API docs for details on the mapping rules.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-
-        }
-
-    BeAssert(resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable || resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable);
-
-    if (baseClassMap == nullptr)
-        {
-        //table retrieval is only needed for root classes
-        if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
-            RetrieveEndTables(EndTablesOptimizationOptions::Skip, EndTablesOptimizationOptions::PrimaryTables);
-        else if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable)
-            RetrieveEndTables(EndTablesOptimizationOptions::PrimaryTables, EndTablesOptimizationOptions::Skip);
         }
 
     //For relationship class the strategy must apply to subclasses, too. Subclasses cannot change the strategy
@@ -979,21 +976,6 @@ void RelationshipMappingInfo::DetermineCardinality()
         m_cardinality = Cardinality::ManyToOne;
     else
         m_cardinality = Cardinality::OneToOne;
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                01 / 2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipMappingInfo::RetrieveEndTables(EndTablesOptimizationOptions source, EndTablesOptimizationOptions target)
-    {
-    ECRelationshipClassCP relationshipClass = m_ecClass.GetRelationshipClassCP();
-    if (source != EndTablesOptimizationOptions::Skip)
-        m_sourceTables = m_ecdbMap.GetTablesFromRelationshipEnd(relationshipClass->GetSource(), source == EndTablesOptimizationOptions::PrimaryTables);
-
-    if (target != EndTablesOptimizationOptions::Skip)
-        m_targetTables = m_ecdbMap.GetTablesFromRelationshipEnd(relationshipClass->GetTarget(), target == EndTablesOptimizationOptions::PrimaryTables);
-
-    return m_sourceTables.empty() || m_targetTables.empty() ? ERROR : SUCCESS;
     }
 
 //----------------------------------------------------------------------------------

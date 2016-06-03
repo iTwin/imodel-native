@@ -117,13 +117,6 @@ public:
     Utf8CP GetECClassIdColumnName() const { return m_ecClassIdColumnName.c_str(); }
     };
 
-enum class EndTablesOptimizationOptions
-    {
-    Skip, //!NOP or do nothing
-    PrimaryTables, //Select primary table over joined table
-    JoinedTables //select subset of joinedTable if possible instead of primary table.
-    };
-
 //======================================================================================
 //!This class grabs information from ForeignKeyRelationshipMap or LinkTableRelationshipMap ECCustomAttribute and evaluates
 //! it along with other standard metadata on the ECRelationshipClass
@@ -169,8 +162,6 @@ private:
     BentleyStatus EvaluateForeignKeyStrategy(UserECDbMapStrategy const&, ClassMap const* baseClassMap);
 
     void DetermineCardinality();
-    BentleyStatus RetrieveEndTables(EndTablesOptimizationOptions sourceOptions, EndTablesOptimizationOptions targetOptions);
-
 
     bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
     static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
