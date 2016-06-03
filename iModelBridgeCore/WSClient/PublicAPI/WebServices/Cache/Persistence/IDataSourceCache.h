@@ -285,8 +285,12 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         virtual CacheStatus RemoveInstance(ObjectIdCR objectId) = 0;
         //! Removes cached file from disk
         virtual BentleyStatus RemoveFile(ObjectIdCR objectId) = 0;
-        //! Removes files that are not linked to Full persistence roots. See SetupRoot for more info
-        virtual BentleyStatus RemoveFilesInTemporaryPersistence() = 0;
+        //! Removes files that are not linked to Full persistence roots. If not NULL, maxLastAccessDate
+        //! limits the deletion to files not accessed since then. See SetupRoot for more info
+        //! @param[in] maxLastAccessDate If non-null, determines the maximum access time value on files to
+        //! be deleted. Temporary files last accessed since the supplied DateTime will not be deleted.
+        //! Temporary files last accessed on or before the supplied DateTime will be deleted.
+        virtual BentleyStatus RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate = nullptr) = 0;
         //! Removes root and deletes linked instances that are not held by other roots
         virtual BentleyStatus RemoveRoot(Utf8StringCR rootName) = 0;
         //! Removes roots by prefix and deletes linked instances that are not held by other roots
