@@ -819,12 +819,6 @@ DgnMarkupProjectPtr DgnMarkupProject::CreateDgnDb(DbResult* result, BeFileNameCR
     {
     DbResult ALLOW_NULL_OUTPUT (stat, result);
 
-    if (nullptr == DgnDomain::FindDomain(MARKUP_SCHEMA_NAME))
-        {
-        stat = DgnDbStatus::MissingDomain;
-        return nullptr;
-        }
-
     DgnMarkupProjectPtr markupProject = new DgnMarkupProject();
 
     stat = markupProject->ConvertToMarkupProject(projectFileName, params);
@@ -1473,10 +1467,10 @@ DgnViewId DgnMarkupProject::CreateRedlineModelView(DgnDbStatus* createStatusIn, 
         return DgnViewId();
         }
 
-    if (nullptr == DgnDomain::FindDomain(MARKUP_SCHEMA_NAME))
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
-        stat = DgnDbStatus::MissingDomain;
-        return nullptr;
+        createStatus = DgnDbStatus::MissingDomain;
+        return DgnViewId();
         }
 
     auto controller = RedlineViewController::InsertView(&createStatus, model, templateView, projectViewRect, imageViewRect);
@@ -1644,9 +1638,9 @@ DgnViewId DgnMarkupProject::CreateSpatialRedlineModelView(SpatialRedlineModelR m
     if (CheckIsOpen() != BSISUCCESS)
         return DgnViewId();
 
-    if (nullptr == DgnDomain::FindDomain(MARKUP_SCHEMA_NAME))
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
-        stat = DgnDbStatus::MissingDomain;
+        createStatus = DgnDbStatus::MissingDomain;
         return nullptr;
         }
 
@@ -1689,9 +1683,9 @@ RedlineModelP DgnMarkupProject::CreateRedlineModel(DgnDbStatus* createStatusIn, 
         return nullptr;
         }
 
-    if (nullptr == DgnDomain::FindDomain(MARKUP_SCHEMA_NAME))
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
-        stat = DgnDbStatus::MissingDomain;
+        createStatus = DgnDbStatus::MissingDomain;
         return nullptr;
         }
 
@@ -1724,9 +1718,9 @@ SpatialRedlineModelP DgnMarkupProject::CreateSpatialRedlineModel(DgnDbStatus* cr
         return nullptr;
         }
 
-    if (nullptr == DgnDomain::FindDomain(MARKUP_SCHEMA_NAME))
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
         {
-        stat = DgnDbStatus::MissingDomain;
+        createStatus = DgnDbStatus::MissingDomain;
         return nullptr;
         }
 
