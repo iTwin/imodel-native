@@ -34,8 +34,8 @@ namespace scalable_mesh
         class Storage {
 
         public:
-            typedef std::vector<Byte> point_buffer_type;
-            typedef concurrency::streams::container_buffer<std::vector<Byte>> point_buffer_type2;
+            typedef std::vector<uint8_t> point_buffer_type;
+            typedef concurrency::streams::container_buffer<std::vector<uint8_t>> point_buffer_type2;
 
         private:
             account m_storage;
@@ -283,17 +283,17 @@ namespace scalable_mesh
                 s_consoleMutex.unlock();
 #endif
                 point_buffer_type2 buffer;
-                auto block_blob = this->GetBlockBlob(blob_name);
-                assert(block_blob.is_valid() && block_blob.exists());
                 try
                     {
+                    auto block_blob = this->GetBlockBlob(blob_name);
+                    assert(block_blob.is_valid() && block_blob.exists());
                     block_blob.download_to_stream(concurrency::streams::ostream(buffer));
                     callback(buffer.collection());
                     }
                 catch (const std::exception& e)
                     {
-                    assert(!"There is an error downloading from Azure");
                     std::wcout << U("Error: ") << e.what() << std::endl;
+                    assert(!"There is an error downloading from Azure");
                     }
 #ifdef DEBUG_AZURE
                 s_parallelCalls -= 1;

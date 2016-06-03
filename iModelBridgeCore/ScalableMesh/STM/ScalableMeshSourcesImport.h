@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:47:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,9 +66,15 @@ public:
 
     void                                AddSource                          (const Import::SourceRef&                sourceRef,
                                                                             const Import::ContentConfig&            contentConfig,
-                                                                            const Import::ImportConfig&             config,
+                                                                            const Import::ImportConfig*             config,
                                                                             const Import::ImportSequence&           sequence,
                                                                             SourceImportConfig&                     sourceImportConf);
+
+    void                                AddSDKSource(const Import::SourceRef&                sourceRef,
+                                                  const Import::ContentConfig&            contentConfig,
+                                                  const Import::ImportConfig*             config,
+                                                  const Import::ImportSequence&           sequence,
+                                                  SourceImportConfig&                     sourceImportConf);
 
     bool                                IsEmpty                            () const;
 

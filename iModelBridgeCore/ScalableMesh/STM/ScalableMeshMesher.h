@@ -58,7 +58,7 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
         size_t UpdateMeshNodeFromGraph(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, MTGGraph * meshGraphStitched, std::vector<DPoint3d>& stitchedPoints, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const;
         size_t UpdateMeshNodeFromGraphs(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, vector<MTGGraph *>& graphs, vector<std::vector<DPoint3d>>& pts, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const;
         size_t UpdateMeshNodeFromIndexLists(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, vector<vector<int32_t>>& indices, vector<std::vector<DPoint3d>>& pts, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const;
-        void   SimplifyMesh(vector<int32_t>& indices, vector<POINT>& points, std::string& s) const;
+        void   SimplifyMesh(vector<int32_t>& indices, vector<POINT>& points, HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, std::string& s) const;
     };
 
 
@@ -94,5 +94,8 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
         private:
             bool m_tetGen;
         };
+
+        void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons);
+        void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(const size_t i, const bvector<DPoint3d>& element)> choosePolygonInSet, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded);
 
 //#include "ScalableMeshMesher.hpp"

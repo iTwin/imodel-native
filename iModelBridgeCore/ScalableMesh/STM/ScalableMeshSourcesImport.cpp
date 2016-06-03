@@ -21,18 +21,73 @@
 
 #include <ScalableMesh/Import/DataTypeFamily.h>
 #include <ScalableMesh/Import/SourceReferenceVisitor.h>
+#include <STMInternal/GeoCoords/WKTUtils.h>
 
-#include <ScalableMesh/Import/ImportSequenceVisitor.h>
-#include <ScalableMesh/Import/Command/All.h>
+#include "Plugins\ScalableMeshIDTMFileTraits.h"
+#include <ScalableMesh/Memory/PacketAccess.h>
 
 #include "../Import/Sink.h"
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
-   
+#undef static_assert
+#include <DgnPlatform/DgnPlatformLib.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
      
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+struct TransmittedDataHeader
+    {
+    TransmittedDataHeader(bool arePoints, bool is3dData)
+        {
+        m_arePoints = arePoints;
+        m_is3dData = is3dData;
+        }
+
+    TransmittedDataHeader()
+        {
+        m_arePoints = true;
+        m_is3dData = false;
+        }
+
+    bool m_arePoints;
+    bool m_is3dData;
+    };
+
+struct  TransmittedPointsHeader : public TransmittedDataHeader
+    {
+    TransmittedPointsHeader(unsigned int nbOfPoints, bool is3dData)
+        : TransmittedDataHeader(true, is3dData)
+        {
+        m_nbOfPoints = nbOfPoints;
+        }
+
+    TransmittedPointsHeader()
+        {
+        m_nbOfPoints = 0;
+        }
+
+    unsigned int m_nbOfPoints;
+    };
+
+struct  TransmittedFeatureHeader : public TransmittedDataHeader
+    {
+    TransmittedFeatureHeader(unsigned int nbOfFeaturePoints, short featureType, bool is3dData)
+        : TransmittedDataHeader(false, is3dData)
+        {
+        m_nbOfFeaturePoints = nbOfFeaturePoints;
+        m_featureType = featureType;
+        }
+
+    TransmittedFeatureHeader()
+        {
+        m_nbOfFeaturePoints = 0;
+        m_featureType = 0;
+        }
+
+    short        m_featureType;
+    unsigned int m_nbOfFeaturePoints;
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -44,13 +99,13 @@ struct SourcesImporter::Impl
         {
         SourceRef                   m_sourceRef;
         ContentConfig               m_contentConfig;
-        ImportConfig                m_importConfig;
+        RefCountedPtr<const ImportConfig>                m_importConfig;
         ImportSequence              m_importSequence;
         SourceImportConfig*         m_sourceImportConf;
 
         explicit                    SourceItem                         (const SourceRef&                        sourceRef,
                                                                         const ContentConfig&                    contentConfig,
-                                                                        const ImportConfig&                     importConfig,
+                                                                        const ImportConfig*                     importConfig,
                                                                         const ImportSequence&                   importSequence,
                                                                         SourceImportConfig&                     sourceImportConf)
             :   m_sourceRef(sourceRef),
@@ -68,6 +123,14 @@ struct SourcesImporter::Impl
 
     typedef vector<SourceItem>      SourceList;
     SourceList                      m_sources;
+    SourceList                      m_sdkSources;
+
+    bool                     m_waitingHeader;
+    bool                     m_isReadingPoints;
+    TransmittedPointsHeader  m_pointsHeader;
+    TransmittedFeatureHeader m_featureHeader;
+    bvector<DPoint3d>         m_points;
+    size_t                   m_pointBufferPos;
 
     explicit                        Impl                               (const LocalFileSourceRef&               sinkSourceRef,
                                                                         const SinkPtr&                          sinkPtr)
@@ -79,6 +142,12 @@ struct SourcesImporter::Impl
 
     Status                          Import                             ();
 
+    Status                          ImportSDKSources                    ();
+
+    void                            ImportFromSDK                       (Utf8CP inputFileName);
+
+    void                            ParseFeatureOrPointBuffer           (unsigned char* buffer, size_t bufferSize);
+
     Status                          ImportSource                       (SourceItem&                       sourceItem,
                                                                         SourcesImporter&                        attachmentsImporter);
 
@@ -87,6 +156,7 @@ struct SourcesImporter::Impl
                                                                         SourcesImporter&                        attachmentsImporter);
 
     };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -108,13 +178,31 @@ SourcesImporter::~SourcesImporter ()
 
     }
 
+void SourcesImporter::AddSDKSource(const SourceRef&        sourceRef,
+                                   const ContentConfig&    contentConfig,
+                                   const ImportConfig*     config,
+                                   const ImportSequence&   sequence,
+                                   SourceImportConfig&     sourceImportConf)
+    {
+    ScalableMeshData data = sourceImportConf.GetReplacementSMData();
+
+    if (data.IsRepresenting3dData() == SMis3D::is3D)
+        {
+        m_implP->m_sdkSources.insert(m_implP->m_sdkSources.begin(), Impl::SourceItem(sourceRef, contentConfig, config, sequence, sourceImportConf));
+        }
+    else
+        {
+        m_implP->m_sdkSources.push_back(Impl::SourceItem(sourceRef, contentConfig, config, sequence, sourceImportConf));
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourcesImporter::AddSource    (const SourceRef&        sourceRef,
                                     const ContentConfig&    contentConfig,
-                                    const ImportConfig&     config,
+                                    const ImportConfig*     config,
                                     const ImportSequence&   sequence,
                                     SourceImportConfig&     sourceImportConf)
     {
@@ -145,6 +233,289 @@ SourcesImporter::Status SourcesImporter::Import () const
     return m_implP->Import();
     }
 
+void SourcesImporter::Impl::ParseFeatureOrPointBuffer(unsigned char* buffer, size_t bufferSize)
+    {
+    if (m_waitingHeader)
+        {
+        size_t nbPoints;
+
+        //The first byte should determine if the data are points or features
+        if (*((bool*)buffer) == true)
+            {
+            assert(sizeof(TransmittedPointsHeader) == bufferSize);
+            m_isReadingPoints = true;
+            memcpy(&m_pointsHeader, buffer, sizeof(TransmittedPointsHeader));
+            nbPoints = m_pointsHeader.m_nbOfPoints;
+            }
+        else
+            {
+            assert(sizeof(TransmittedFeatureHeader) == bufferSize);
+            m_isReadingPoints = false;
+            memcpy(&m_featureHeader, buffer, sizeof(TransmittedFeatureHeader));
+            nbPoints = m_featureHeader.m_nbOfFeaturePoints;
+            }
+
+        m_points.resize(nbPoints);
+
+        m_pointBufferPos = 0;
+        m_waitingHeader = false;
+        }
+    else
+        {
+        size_t remainingSize = (m_points.size() * sizeof(DPoint3d)) - m_pointBufferPos;
+        size_t copySize = min(remainingSize, bufferSize);
+
+        memcpy(((byte*)&m_points[0]) + m_pointBufferPos, buffer, copySize);
+
+        if (remainingSize > bufferSize)
+            {
+            m_pointBufferPos += copySize;
+            }
+        else
+            {
+            assert(remainingSize == bufferSize);
+
+            if (m_isReadingPoints)
+                {
+                PacketGroup dstPackets(PointTypeCreatorTrait<DPoint3d>::type().Create().GetDimensionOrgCount(), GetMemoryAllocator());
+                PODPacketProxy<DPoint3d> packet;
+                packet.AssignTo(dstPackets[0]);
+                packet.Reserve(m_points.size());
+                memcpy(packet.Edit(), &m_points[0], m_points.size()*sizeof(DPoint3d));
+                packet.SetSize(m_points.size());
+                const BackInserterPtr sinkInserterPtr = m_sinkPtr->CreateBackInserterFor(dstPackets,
+                                                                                         0, PointTypeCreatorTrait<DPoint3d>::type().Create(),
+                                                                                         GetLog());
+                sinkInserterPtr->Write();
+                }
+            else
+                {
+
+                PacketGroup dstPackets(LinearTypeCreatorTrait<DPoint3d>::type().Create().GetDimensionOrgCount(), GetMemoryAllocator());
+
+                PODPacketProxy<IDTMFile::FeatureHeader> headerPacket;
+                headerPacket.AssignTo(dstPackets[0]);
+                headerPacket.Reserve(1);
+                headerPacket.SetSize(1);
+                headerPacket.Edit()->type = m_featureHeader.m_featureType;
+                headerPacket.Edit()->offset = 0;
+                headerPacket.Edit()->size = (uint32_t)m_points.size();
+
+                PODPacketProxy<DPoint3d> packet;
+                packet.AssignTo(dstPackets[1]);
+                packet.Reserve(m_points.size());
+                memcpy(packet.Edit(), &m_points[0], m_points.size()*sizeof(DPoint3d));
+                packet.SetSize(m_points.size());
+                const BackInserterPtr sinkInserterPtr = m_sinkPtr->CreateBackInserterFor(dstPackets,
+                                                                                         0, LinearTypeCreatorTrait<DPoint3d>::type().Create(),
+                                                                                         GetLog());
+                sinkInserterPtr->Write();
+                }
+            m_pointBufferPos = 0;
+            m_waitingHeader = true;
+            }
+        }
+    }
+
+#define MAX_EXE_WAIT_TIME 60
+/*---------------------------------------------------------------------------------**//**
+* @description  
+* @bsimethod                                                  Elenie.Godzaridis   05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
+    {
+    STARTUPINFOA info = { sizeof(info) };
+
+    BeFileName sdkExePath(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    sdkExePath.AppendUtf8("ScalableMeshV8SDK\\");
+    BeFileName sdkExe(sdkExePath);
+    sdkExe.AppendUtf8("ScalableMeshSDKexe.exe");
+
+    Utf8PrintfString cmdStr("%s import -i=\"%s\" -o=test", sdkExe.GetNameUtf8(), inputFileName);
+
+    PROCESS_INFORMATION processInfo;
+
+
+    if (!CreateProcessA(NULL, (LPSTR)cmdStr.c_str(),
+        NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, (LPSTR)sdkExePath.GetNameUtf8().c_str(), &info, &processInfo))
+        {
+        DWORD lastError = GetLastError();
+        lastError = lastError;
+
+        return;
+        }
+
+
+    double totalWait = 0;
+    HANDLE pipe = INVALID_HANDLE_VALUE;
+
+    do
+        {
+        Sleep(500);
+        totalWait += 0.5;
+        pipe = CreateFile(
+            "\\\\.\\pipe\\test",
+            GENERIC_READ, // only need read access
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            NULL
+            );
+        }
+    while (pipe == INVALID_HANDLE_VALUE && totalWait < MAX_EXE_WAIT_TIME);
+
+
+        size_t bytes = 0;
+        unsigned char* buffer = new unsigned char[1024 * 1024];
+        bool dataLeftToRead = (pipe != INVALID_HANDLE_VALUE);
+
+        while (dataLeftToRead)
+            {
+            DWORD numBytesRead = 0;
+            dataLeftToRead = (ReadFile(
+                pipe,
+                buffer, // the data from the pipe will be put here
+                1024 * 1024, // number of bytes allocated            
+                &numBytesRead, // this will store number of bytes actually read
+                (bool)0 // not using overlapped IO
+                ) != 0);
+
+            if (numBytesRead == 0)
+                {
+                dataLeftToRead = false;
+                }
+            else
+                {
+                ParseFeatureOrPointBuffer(buffer, numBytesRead);
+                }
+
+            bytes += numBytesRead;
+            }
+
+        delete[] buffer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description  
+* @bsimethod                                                  Elenie.Godzaridis   05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SourcesImporter::Status SourcesImporter::Impl::ImportSDKSources()
+    {
+    BeFileName tempDir(T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName());
+    BeFileName tempSourcesToImportFile = tempDir;
+    tempSourcesToImportFile.AppendUtf8("tempTerrainSourceImport.xml");
+    FILE* pOutputFileStream = fopen(tempSourcesToImportFile.GetNameUtf8().c_str(), "w+");
+    DRange3d extent = DRange3d::NullRange();
+    char tempBuffer[100000];
+    int  nbChars;
+    char SourceBuffer[100000];
+    int  nbCharsSource = 0;
+    Utf8String gcsName;
+    for (SourceList::iterator sourceIt = m_sdkSources.begin(), sourcesEnd = m_sdkSources.end(); sourceIt != sourcesEnd; ++sourceIt)
+        {
+        auto& sourceRef = *sourceIt->m_sourceRef.m_basePtr.get();
+        const HVEClipShape* shape = sourceIt->m_importConfig->GetClipShape();
+        if (shape != nullptr && !shape->IsEmpty())
+            {
+            for (auto& clip : shape->m_clips)
+                {
+                if (clip.m_isClipMask) continue;
+                DRange3d ext = DRange3d::From(clip.m_pClipShape->GetExtent().GetXMin(), clip.m_pClipShape->GetExtent().GetYMin(), 0, clip.m_pClipShape->GetExtent().GetXMax(), clip.m_pClipShape->GetExtent().GetYMax(), 0);
+                extent.Extend(ext);
+                }
+            }
+        if (sourceIt->m_importConfig->HasDefaultTargetGCS())
+            {
+            GCS::Status wktCreateStatus;
+            WString extendedWktStr(sourceIt->m_importConfig->GetDefaultTargetGCS().GetWKT(wktCreateStatus).GetCStr());
+            auto bGCS = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS();
+            IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&extendedWktStr, extendedWktStr);
+
+            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;
+
+            MapWktFlavorEnum(baseGcsWktFlavor, fileWktFlavor);
+            bGCS->InitFromWellKnownText(nullptr, nullptr, baseGcsWktFlavor, extendedWktStr.c_str());
+            gcsName = Utf8String(bGCS->GetName());
+            }
+        auto* dgnLevelSourceRef = dynamic_cast<DGNLevelByNameSourceRef*>(&sourceRef);
+        if (dgnLevelSourceRef != nullptr)
+            {
+            string dataType("DTM");
+            nbCharsSource += sprintf(SourceBuffer + nbCharsSource, "<source dataType=\"%s\" path=\"%s\" model=\"%s\" level=\"%s\"/>\n", dataType.c_str(), Utf8String(dgnLevelSourceRef->GetDGNPathCStr()).c_str(), Utf8String(dgnLevelSourceRef->GetModelName().c_str()).c_str(), Utf8String(dgnLevelSourceRef->GetLevelName().c_str()).c_str());
+            }
+        }
+
+    nbChars = sprintf(tempBuffer, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+    size_t NbWrittenChars = fwrite(tempBuffer, 1, nbChars, pOutputFileStream);
+    assert(NbWrittenChars == nbChars);
+
+    nbChars = sprintf(tempBuffer, "<list gcsKeyName=\"%s\" ", gcsName.c_str());
+    NbWrittenChars = fwrite(tempBuffer, 1, nbChars, pOutputFileStream);
+    assert(NbWrittenChars == nbChars);
+
+    nbChars = sprintf(tempBuffer, "maxNbPointsToImport=\"%i\" ", 0);
+    NbWrittenChars = fwrite(tempBuffer, 1, nbChars, pOutputFileStream);
+    assert(NbWrittenChars == nbChars);
+
+    if (!extent.IsNull())
+        {
+        nbChars = sprintf(tempBuffer,
+                          "xmin=\"%.8f\" xmax=\"%.8f\" ymin=\"%.8f\" ymax=\"%.8f\" ",
+                          extent.low.x, extent.high.x, extent.low.y, extent.high.y);
+
+        NbWrittenChars = fwrite(tempBuffer, 1, nbChars, pOutputFileStream);
+
+        assert(NbWrittenChars == nbChars);
+        }
+
+    WString geoCoordDir = T_HOST.GetGeoCoordinationAdmin()._GetDataDirectory();
+    BeFileName userGeoCoordDir = BeFileName(geoCoordDir.c_str());
+    userGeoCoordDir.AppendSeparator();
+    userGeoCoordDir.AppendToPath(L"UserLibraries");
+    userGeoCoordDir.AppendSeparator();
+
+    nbChars = sprintf(tempBuffer,
+                      "systemDtyPath=\"%s\" ",
+                      BeFileName(geoCoordDir.c_str()).GetNameUtf8().c_str());
+
+    NbWrittenChars = fwrite(tempBuffer, 1, nbChars, pOutputFileStream);
+
+    assert(NbWrittenChars == nbChars);
+
+    nbChars = sprintf(tempBuffer,
+                      "customDtyPath=\"%s\" ",
+                      userGeoCoordDir.GetNameUtf8().c_str());
+
+    NbWrittenChars = fwrite(tempBuffer, 1, nbChars, pOutputFileStream);
+
+    assert(NbWrittenChars == nbChars);
+
+
+
+    nbChars = sprintf(tempBuffer,
+                      "tempPath=\"%s\">\n",
+                      tempDir.GetNameUtf8().c_str());
+
+    NbWrittenChars = fwrite(tempBuffer, 1, nbChars, pOutputFileStream);
+
+    assert(NbWrittenChars == nbChars);
+    nbChars = sprintf(tempBuffer, "<noDecimation/>");
+    NbWrittenChars = fwrite(tempBuffer, 1, nbChars, pOutputFileStream);
+    assert(NbWrittenChars == nbChars);
+
+    NbWrittenChars = fwrite(SourceBuffer, 1, nbCharsSource, pOutputFileStream);
+
+    nbChars = sprintf(tempBuffer, "</list>");
+    NbWrittenChars = fwrite(tempBuffer, 1, nbChars, pOutputFileStream);
+    assert(NbWrittenChars == nbChars);
+    fclose(pOutputFileStream);
+
+    ImportFromSDK(tempSourcesToImportFile.GetNameUtf8().c_str());
+
+    return S_SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
@@ -159,7 +530,8 @@ SourcesImporter::Status SourcesImporter::Impl::Import ()
         if (S_SUCCESS != status)
             return S_ERROR;
         }
-
+    if (S_SUCCESS != ImportSDKSources())
+        return S_ERROR;
     if (attachmentsImporter.IsEmpty())
         return S_SUCCESS;
 
@@ -198,7 +570,7 @@ SourcesImporter::Status SourcesImporter::Impl::ImportSource   (SourceItem&    so
         return S_ERROR;
 
     const Importer::Status importStatus = importerPtr->Import(sourceItem.m_importSequence, 
-                                                              sourceItem.m_importConfig);
+                                                              *sourceItem.m_importConfig);
 
     sourceItem.m_sourceImportConf = sourcePtr->GetSourceImportConfig();
 
@@ -221,99 +593,16 @@ namespace {
 ImportSequence              CreateAttachmentImportSequence                 (const ImportSequence&           sequence,
                                                                             uint32_t                            parentLayer)
     {
-    class CommandVisitor : public IImportSequenceVisitor
+    ImportSequence seq;
+    for (auto& command : sequence.GetCommands())
         {
-        const uint32_t                      m_parentLayer;
-        ImportSequence                  m_sequence;
-
-        virtual void                    _Visit                     (const ImportAllCommand&                     command) override
+        if (command.IsSourceLayerSet())
             {
-            m_sequence.push_back(command);
+            if (parentLayer == command.GetSourceLayer()) seq.push_back(command);
             }
-        virtual void                    _Visit                     (const ImportAllToLayerCommand&              command) override
-            {
-            m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportAllToLayerTypeCommand&          command) override
-            {
-            m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportAllToTypeCommand&               command) override
-            {
-            m_sequence.push_back(command);
-            }
-
-        virtual void                    _Visit                     (const ImportLayerCommand&                   command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportAllCommand());
-            }
-        virtual void                    _Visit                     (const ImportLayerToLayerCommand&            command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportAllToLayerCommand(command.GetTargetLayer()));
-            }
-        virtual void                    _Visit                     (const ImportLayerToLayerTypeCommand&        command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportAllToLayerTypeCommand(command.GetTargetLayer(), command.GetTargetType()));
-            }
-        virtual void                    _Visit                     (const ImportLayerToTypeCommand&             command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportAllToTypeCommand(command.GetTargetType()));
-            }
-
-        virtual void                    _Visit                     (const ImportLayerTypeCommand&               command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportTypeCommand(command.GetSourceType()));
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerCommand&        command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportTypeToLayerCommand(command.GetSourceType(), command.GetTargetLayer()));
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerTypeCommand&    command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportTypeToLayerTypeCommand(command.GetSourceType(), command.GetTargetLayer(), command.GetTargetType()));
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToTypeCommand&         command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportTypeToTypeCommand(command.GetSourceType(), command.GetTargetType()));
-            }
-
-        virtual void                    _Visit                     (const ImportTypeCommand&                    command) override
-            {
-            return m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportTypeToLayerCommand&             command) override
-            {
-            return m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportTypeToLayerTypeCommand&         command) override
-            {
-            return m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportTypeToTypeCommand&              command) override
-            {
-            return m_sequence.push_back(command);
-            }
-
-    public:
-        explicit                        CommandVisitor             (uint32_t                                        parentLayer)
-            :   m_parentLayer(parentLayer)
-            {
-            }
-
-        const ImportSequence&           GetSequence                () const { return m_sequence; }
-        };
-
-    CommandVisitor visitor(parentLayer);
-    sequence.Accept(visitor);
-    return visitor.GetSequence();
+        else seq.push_back(command);
+        }
+    return seq;
     }
 }
 
@@ -325,27 +614,6 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
                                             SourceItem&   sourceItem,
                                             SourcesImporter&    attachmentsImporter)
     {
-    struct LocalFileRefVisitor : SourceRefVisitor
-        {
-        const LocalFileSourceRef* m_sourceRefP;
-
-        explicit LocalFileRefVisitor() 
-            : m_sourceRefP(0) 
-            {
-            }
-
-        virtual void _Visit(const LocalFileSourceRef&   sourceRef) override
-            {
-            m_sourceRefP = &sourceRef;
-            }
-
-        virtual void _Visit(const DGNElementSourceRef&     sourceRef) override
-            {
-            const LocalFileSourceRef* localFileRefP = sourceRef.GetLocalFileP();
-            if (0 != localFileRefP)
-                m_sourceRefP = localFileRefP;
-            }
-        };
 
     // NTERAY: This is a bad way to do it. We should either let the importer import attachments or
     // visit the source's importSequence in order to generate the attachment's import sequence.
@@ -362,7 +630,7 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
         if (attachmentImportSequence.IsEmpty())
             continue; // Nothing to import
 
-        const AttachmentRecord& attachments = layerIt->GetAttachmentRecord();
+        const AttachmentRecord& attachments = (*layerIt)->GetAttachmentRecord();
 
         for (AttachmentRecord::const_iterator attachmentIt = attachments.begin(), attachmentsEnd = attachments.end();
              attachmentIt != attachmentsEnd;
@@ -371,14 +639,15 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
             using namespace rel_ops;
 
             // Make sure STM and source are not the same.
-            LocalFileRefVisitor visitor;
-            attachmentIt->GetSourceRef().Accept(visitor);
-            
-            if (0 != visitor.m_sourceRefP && 
-                *visitor.m_sourceRefP == m_sinkSourceRef)
+            //LocalFileRefVisitor visitor;
+            //attachmentIt->GetSourceRef().Accept(visitor);
+            LocalFileSourceRef* refP = dynamic_cast<LocalFileSourceRef*>(attachmentIt->GetSourceRef().m_basePtr.get());
+
+            if (0 != refP &&
+                *refP == m_sinkSourceRef)
                 continue;
 
-            attachmentsImporter.AddSource(attachmentIt->GetSourceRef(), sourceItem.m_contentConfig, sourceItem.m_importConfig, attachmentImportSequence, *sourceItem.m_sourceImportConf);
+            attachmentsImporter.AddSource(attachmentIt->GetSourceRef(), sourceItem.m_contentConfig, sourceItem.m_importConfig.get(), attachmentImportSequence, *sourceItem.m_sourceImportConf);
             }
         }
     }

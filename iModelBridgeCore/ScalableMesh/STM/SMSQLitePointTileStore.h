@@ -155,6 +155,7 @@ public:
     {
     if (header == nullptr) return 0;
     SQLiteNodeHeader nodeHeader;
+    if (header->m_meshComponents != nullptr) delete[] header->m_meshComponents;
     nodeHeader.m_nodeID = blockID.m_integerID;
     if (!m_smSQLiteFile->GetNodeHeader(nodeHeader)) return 1;
     //nodeHeader.m_nbPoints = GetBlockDataCount(blockID);

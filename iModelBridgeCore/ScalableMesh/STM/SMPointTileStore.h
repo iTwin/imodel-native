@@ -495,10 +495,12 @@ public:
     HPMBlockID  m_graphID;
     std::vector<HPMBlockID>  m_textureID;
     HPMBlockID  m_uvID;
+
+    //NEEDS_WORK_SM - should not be a vector.
     std::vector<HPMBlockID>  m_ptsIndiceID;
     std::vector<HPMBlockID>  m_uvsIndicesID;
     size_t      m_numberOfMeshComponents;
-    int*        m_meshComponents;
+    int*        m_meshComponents = nullptr;
     size_t m_nodeCount;
 
 
@@ -509,7 +511,7 @@ public:
 
     ~SMPointNodeHeader()
          {
-              //  if (nullptr != m_meshComponents) delete[] m_meshComponents;
+           if (nullptr != m_meshComponents) delete[] m_meshComponents;
          }
 
     SMPointNodeHeader<EXTENT>& operator=(const SQLiteNodeHeader& nodeHeader)

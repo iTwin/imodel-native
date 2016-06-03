@@ -192,9 +192,7 @@ public:
         {
         return false;
         }
-    
-    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > Clone() const;
-    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > Clone(const EXTENT& newNodeExtent) const;
+        
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChildVirtual() const;
@@ -226,12 +224,11 @@ public:
     virtual RefCountedPtr<SMMemoryPoolVectorItem<POINT>> GetPointsPtr(bool loadPts = true)
         {
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> poolMemVectorItemPtr;
-                
-        
-        if (!SMMemoryPool::GetInstance()->GetItem<POINT>(poolMemVectorItemPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points) && loadPts)
+                        
+        if (!SMMemoryPool::GetInstance()->GetItem<POINT>(poolMemVectorItemPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex) && loadPts)
             {                  
             //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<POINT>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<POINT>(GetBlockID().m_integerID, m_SMIndex->GetPointsStore().GetPtr(), SMPoolDataTypeDesc::Points));
+            RefCountedPtr<SMStoredMemoryPoolVectorItem<POINT>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<POINT>(GetBlockID().m_integerID, m_SMIndex->GetPointsStore().GetPtr(), SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex));
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
             m_pointsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
             assert(m_pointsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
@@ -594,19 +591,9 @@ public:
 
     virtual void         SaveAllOpenGroups() const;
 
-    virtual void         SerializeHeaderToBinary(std::unique_ptr<Byte>& pi_pData, uint32_t& pi_pDataSize) const;
-
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
-    typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
-    typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
-    typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
-    virtual void         SaveCloudReadyNode(DataSourceAccount *dataSourceAccount,
-											HFCPtr<StreamingPointStoreType> pi_pPointStore,
-                                            HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
-                                            HFCPtr<StreamingUVStoreType> pi_pUVStore,
-                                            HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
-                                            HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore);
-    virtual void         SaveCloudReadyNode(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader) const;
+    void                 SavePointsToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    virtual void         SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -723,6 +710,16 @@ public:
         //NEEDS_WORK_SM : Try do create something cleaner when doing storage factoring 
         //(i.e. : having count only in header automatically modified when storedpoolvector is modified).
         return m_nodeHeader.m_nodeCount;       
+        }
+
+    void LockPts()
+        {
+        m_ptsLock.lock();        
+        }
+
+    void UnlockPts()
+        {        
+        m_ptsLock.unlock();
         }
 
     /**----------------------------------------------------------------------------
@@ -888,7 +885,7 @@ public:
         };
 
     virtual void               ValidateInvariantsSoft() const
-        {
+        {            
 #ifdef __HMR_DEBUG
         // We only check invariants if the node is loaded ...
         if (IsLoaded())
@@ -1079,7 +1076,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    virtual void SaveCloudReadyData(HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    void SavePointDataToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1143,6 +1140,7 @@ protected:
         SMMemoryPoolItemId m_pointsPoolItemId;
         uint64_t           m_nodeId; 
         bool               m_isDirty;
+        std::mutex         m_ptsLock;
         
         static std::map<size_t, SMNodeGroup*> s_OpenGroups;
         static int s_GroupID;    
@@ -1317,30 +1315,10 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    StatusInt           SaveCloudReady(DataSourceAccount *dataSourceAccount, const WString pi_pOutputDirectoryName, bool groupNodeHeaders = true, bool pi_pCompress = true) const;
+    StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
+    StatusInt           SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
+    StatusInt           SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName) const;
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
-    typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
-    typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
-    typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
-    virtual void        GetCloudFormatStores(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath,
-                                             const bool& pi_pCompress,
-                                             HFCPtr<StreamingPointStoreType>& po_pPointStore,
-                                             HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
-                                             HFCPtr<StreamingUVStoreType>& po_pUVStore,
-                                             HFCPtr<StreamingIndiceStoreType>& po_pUVIndiceStore,
-                                             HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const
-        {
-        // Set paths
-        WString point_store_path = pi_pOutputDirPath + L"point_store\\";
-
-        // Create streaming stores
-        po_pPointStore = new StreamingPointStoreType(dataSourceAccount, point_store_path, L"", pi_pCompress);
-        po_pIndiceStore   = nullptr;
-        po_pUVStore       = nullptr;
-        po_pUVIndiceStore = nullptr;
-        po_pTextureStore  = nullptr;
-
-        }
 
 #ifdef INDEX_DUMPING_ACTIVATED    
     virtual void                DumpOctTree(char* pi_pOutputXMLFileName, bool pi_OnlyLoadedNode) const;

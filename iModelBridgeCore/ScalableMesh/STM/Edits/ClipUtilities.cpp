@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
-const wchar_t* s_path = L"E:\\output\\scmesh\\2016-4-11\\";
+const wchar_t* s_path = L"E:\\output\\scmesh\\2016-05-31\\";
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
@@ -1263,7 +1263,7 @@ DifferenceSetWithTracking Clipper::ClipPolygon2DDTM(const DPoint3d* poly, size_t
     if (m_nVertices < 2000 || polySize < 200 || polySize > 1000) return d;
     map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5,0));
     FaceLookupList l(m_nVertices+1);
-    s_number++;
+    s_number++;    
     vector<bool> faceRemoved(m_nIndices / 3, true);
 
     for (size_t i = 0; i < m_nVertices; ++i)
@@ -1444,10 +1444,8 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
             poly->ParamIndex().push_back(allUvs[uvCoords[uvI]]);
             }
         }
-    std::string s;
-    s+= " MISSES "+std::to_string(nFaceMisses);
-    assert(nFaceMisses <= (indices.size()*.75)/3 );
-#if SM_TRACE_CLIPS_GETMESH
+    //assert(nFaceMisses <= (indices.size()*.75)/3 );
+#if 0
     Utf8String nameBeforeClips = Utf8String(s_path) + "meshtaggeds_";
     nameBeforeClips.append(to_string(m_range.low.x).c_str());
     nameBeforeClips.append("_");

@@ -33,8 +33,8 @@ struct IDTMLocalFileSource;
 struct IDTMDgnLevelSource;
 struct IDTMDgnReferenceLevelSource;
 
-struct BinaryIStream;
-struct BinaryOStream;
+//struct BinaryIStream;
+//struct BinaryOStream;
 
 
 typedef RefCountedPtr<IDTMSource>           IDTMSourcePtr;
@@ -124,6 +124,9 @@ struct IDTMSource : public RefCountedBase
 
 /*__PUBLISH_SECTION_END__*/
     public:
+
+
+
         struct                              Impl;
 
         void                                RegisterEditListener       (EditListener&               listener);
@@ -138,6 +141,7 @@ struct IDTMSource : public RefCountedBase
         
         virtual void                        _Accept                    (IDTMSourceVisitor&          visitor) const = 0;
         virtual IDTMSource*                 _Clone                     () const = 0;
+
     protected:
         explicit                            IDTMSource                 (Impl*                       implP);
 
@@ -319,6 +323,14 @@ struct IDTMDgnLevelSource : public IDTMDgnModelSource
         BENTLEY_SM_EXPORT static IDTMDgnLevelSourcePtr 
                                             Create                     (DTMSourceDataType           sourceDataType, 
                                                                         const ILocalFileMonikerPtr& dgnFileMonikerPtr,
+                                                                        uint32_t                      modelID, 
+                                                                        const WChar*              modelName,
+                                                                        uint32_t                      levelID,
+                                                                        const WChar*              levelName);
+
+                BENTLEY_SM_EXPORT static IDTMDgnLevelSourcePtr 
+                                            Create                     (DTMSourceDataType           sourceDataType, 
+                                                                        const wchar_t* dgnFileMonikerPtr,
                                                                         uint32_t                      modelID, 
                                                                         const WChar*              modelName,
                                                                         uint32_t                      levelID,

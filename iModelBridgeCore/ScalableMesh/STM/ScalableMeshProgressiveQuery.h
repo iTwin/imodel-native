@@ -130,4 +130,5 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
     };
 
 
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE

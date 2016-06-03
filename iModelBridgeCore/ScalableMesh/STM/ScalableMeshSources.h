@@ -39,7 +39,9 @@ private:
   
     EditListener*                       m_editListenerP;
     DTMSourceDataType                   m_sourceDataType;        
-    Time                                m_lastModified;        
+    Time                                m_lastModified;   
+
+
 // TDORAY: Add a last modified check time
     SourceImportConfig                  m_config;
 
@@ -70,6 +72,7 @@ public:
     bool                                HasMoniker                     () const { return 0 != m_monikerPtr.get(); }*/
 
     WString                             GetPath                        () const { return m_path; }
+
 
     Time                                GetLastModified                () const;
     Time                                GetLastModifiedCheckTime       () const;
@@ -138,6 +141,11 @@ protected:
                                                                         uint32_t                          modelID, 
                                                                         const WChar*                  modelName);
 
+    explicit                            Impl(DTMSourceDataType               sourceDataType,
+                                             const wchar_t*                 filePath,
+                                             uint32_t                          modelID,
+                                             const WChar*                  modelName);
+
     uint32_t                              GetModelID                     () const { return m_modelID; }
     const WString&                 GetModelName                   () const { return m_modelName; }
 
@@ -205,6 +213,13 @@ protected:
                                                                         const WChar*                  modelName,
                                                                         uint32_t                          levelID,
                                                                         const WChar*                  levelName);
+
+    explicit                            Impl(DTMSourceDataType               sourceDataType,
+                                             const wchar_t*                 filePath,
+                                             uint32_t                          modelID,
+                                             const WChar*                  modelName,
+                                             uint32_t                          levelID,
+                                             const WChar*                  levelName);
 
     uint32_t                              GetLevelID                     () const { return m_levelID; }
     const WString&                 GetLevelName                   () const { return m_levelName; }

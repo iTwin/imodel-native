@@ -18,7 +18,7 @@
 
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSourceImporter.h>
-#include <ScalableMesh/IScalableMeshStream.h>
+
 
 
 #include "ScalableMeshSourcePersistance.h"
@@ -133,10 +133,10 @@ SourcesSaver::SourcesSaver(const DocumentEnv&  sourceEnv)
 bool SourcesSaver::SaveRoot(const IDTMSourceCollection&     sources,
                             SourcesDataSQLite&              sourcesData)
 {
-    sourcesData.SetSerializedSourceFormatVersion(CURRENT_FORMAT_VERSIONS.serializedSource);
+    /*sourcesData.SetSerializedSourceFormatVersion(CURRENT_FORMAT_VERSIONS.serializedSource);
     sourcesData.SetContentConfigFormatVersion(CURRENT_FORMAT_VERSIONS.contentConfig);
     sourcesData.SetImportSequenceFormatVersion(CURRENT_FORMAT_VERSIONS.importSequence);
-    sourcesData.SetImportConfigFormatVersion(CURRENT_FORMAT_VERSIONS.importConfig);
+    sourcesData.SetImportConfigFormatVersion(CURRENT_FORMAT_VERSIONS.importConfig);*/
 
     return Save(sources, sourcesData);
 }
@@ -157,6 +157,39 @@ bool SourcesSaver::SaveRoot    (const IDTMSourceCollection&     sources,
     return Save(sources, sourcesStorage);
     }
 
+//This saves the appropriate metadata for differently-reachable sources
+template <class SourceType> void SaveSourceMetadata(const SourceType& source, SourceDataSQLite& sourceData)   
+    {
+
+    sourceData.SetDTMSourceID(DTMSourceId::DTM_SOURCE_ID_LOCAL_FILE_V0);
+    }
+
+template <> void SaveSourceMetadata<IDTMDgnLevelSource>(const IDTMDgnLevelSource& source, SourceDataSQLite& sourceData)
+    {
+    sourceData.SetDTMSourceID(DTMSourceId::DTM_SOURCE_ID_DGN_LEVEL_V1);
+    sourceData.SetLevelID(source.GetLevelID());
+    sourceData.SetLevelName(source.GetLevelName());
+    }
+
+template <>void  SaveSourceMetadata<IDTMDgnModelSource>(const IDTMDgnModelSource& source, SourceDataSQLite& sourceData)
+    {
+    sourceData.SetModelID(source.GetModelID());
+    sourceData.SetModelName(source.GetModelName());
+    }
+
+template <>void SaveSourceMetadata<IDTMDgnReferenceSource>(const IDTMDgnReferenceSource& source, SourceDataSQLite& sourceData)
+    {
+    sourceData.SetRootToRefPersistentPath(source.GetRootToRefPersistentPath());
+    sourceData.SetReferenceName(source.GetReferenceName());
+    sourceData.SetReferenceModelName(source.GetReferenceModelName());
+    }
+
+template <> void SaveSourceMetadata<IDTMDgnReferenceLevelSource>(const IDTMDgnReferenceLevelSource& source, SourceDataSQLite& sourceData)
+    {
+    sourceData.SetDTMSourceID(DTMSourceId::DTM_SOURCE_ID_DGN_REFERENCE_LEVEL_V1);
+    sourceData.SetLevelID(source.GetLevelID());
+    sourceData.SetLevelName(source.GetLevelName());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @description 
@@ -171,7 +204,7 @@ bool SourcesSaver::Save(const IDTMSource& source,
 
 
     // Serializing source
-    {
+    /*{
         m_serializationStream.str(bstring());
         assert(m_serializationStream.good());
 
@@ -184,7 +217,29 @@ bool SourcesSaver::Save(const IDTMSource& source,
 
         m_serializedSource = m_serializationStream.str();
         m_serializedSourcePacket.Wrap(&m_serializedSource[0], m_serializedSource.size());
-    }
+    }*/
+    //common info
+    m_sourceData.SetSourceType(source.GetSourceType());
+    m_sourceData.SetMonikerString(source.GetPath());
+
+    SaveSourceMetadata(source, m_sourceData);
+
+    const IDTMDgnLevelSource* dgnLevelSource = dynamic_cast<const IDTMDgnLevelSource*>(&source);
+    if (nullptr != dgnLevelSource)
+        SaveSourceMetadata(*dgnLevelSource, m_sourceData);
+
+    const IDTMDgnModelSource* dgnModelSource = dynamic_cast<const IDTMDgnModelSource*>(&source);
+    if (nullptr != dgnModelSource)
+        SaveSourceMetadata(*dgnModelSource, m_sourceData);
+
+    const IDTMDgnReferenceSource* dgnRefSource = dynamic_cast<const IDTMDgnReferenceSource*>(&source);
+    if (nullptr != dgnRefSource)
+        SaveSourceMetadata(*dgnRefSource, m_sourceData);
+
+    const IDTMDgnReferenceLevelSource* dgnRefLSource = dynamic_cast<const IDTMDgnReferenceLevelSource*>(&source);
+    if (nullptr != dgnRefLSource)
+        SaveSourceMetadata(*dgnRefLSource, m_sourceData);
+
 
     // Serializing content config
     {
@@ -225,7 +280,7 @@ bool SourcesSaver::Save(const IDTMSource& source,
 
     sourceData = m_sourceData;
     sourceData.SetTimeLastModified(GetCTimeFor(lastModified));
-    //sourceData.AddSource(GetCTimeFor(lastModified), m_serializedSourcePacket, m_serializedContentConfigPacket, m_serializedImportSequencePacket);
+
     return success;
     }
 
@@ -538,20 +593,6 @@ SourcesLoader::SourcesLoader(const DocumentEnv&  sourceEnv)
 void SourcesLoader::LoadRoot(IDTMSourceCollection&   sources,
     SourcesDataSQLite&       sourcesData)
 {
-    // Load file format versions
-    m_fileFormatVersions.serializedSource = sourcesData.GetSerializedSourceFormatVersion();
-    m_fileFormatVersions.contentConfig = sourcesData.GetContentConfigFormatVersion();
-    m_fileFormatVersions.importSequence = sourcesData.GetImportSequenceFormatVersion();
-    m_fileFormatVersions.importConfig = sourcesData.GetImportConfigFormatVersion();
-
-    // Check that format versions found are anterior or equal to current driver's
-    if (CURRENT_FORMAT_VERSIONS.serializedSource < m_fileFormatVersions.serializedSource ||
-        CURRENT_FORMAT_VERSIONS.contentConfig < m_fileFormatVersions.contentConfig ||
-        CURRENT_FORMAT_VERSIONS.importSequence < m_fileFormatVersions.importSequence ||
-        CURRENT_FORMAT_VERSIONS.importConfig < m_fileFormatVersions.importConfig)
-    {
-        throw runtime_error("Found more recent format version. Driver cannot be forward compatible!");
-    }
 
     Load(sources, sourcesData);
 }
@@ -576,11 +617,11 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
     IDTMSourcePtr dataSourcePtr;
     // Deserialize source
     {
-        m_serializationStream.str(bstring());
+        /*m_serializationStream.str(bstring());
         assert(m_serializationStream.good());
 
         copy(m_serializedSourcePacket.Begin(), m_serializedSourcePacket.End(),
-            ostreambuf_iterator<byte>(m_serializationStream));
+            ostreambuf_iterator<byte>(m_serializationStream));*/
 
         static const SourceSerializer DESERIALIZER;
         dataSourcePtr = DESERIALIZER.Deserialize(sourceData, m_sourceEnv, m_fileFormatVersions.serializedSource);
@@ -595,10 +636,10 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
     // Deserialize content config
     //if (!m_serializedContentConfigPacket.IsEmpty())
     {
-        m_serializationStream.str(bstring());
+       /* m_serializationStream.str(bstring());
 
         copy(m_serializedContentConfigPacket.Begin(), m_serializedContentConfigPacket.End(),
-            ostreambuf_iterator<byte>(m_serializationStream));
+            ostreambuf_iterator<byte>(m_serializationStream));*/
 
         ContentConfig config;
 
@@ -612,10 +653,10 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
     // Deserialize import sequence
     //if (!m_serializedImportSequencePacket.IsEmpty())
     {
-        m_serializationStream.str(bstring());
+        /*m_serializationStream.str(bstring());
 
         copy(m_serializedImportSequencePacket.Begin(), m_serializedImportSequencePacket.End(),
-            ostreambuf_iterator<byte>(m_serializationStream));
+            ostreambuf_iterator<byte>(m_serializationStream));*/
 
         ImportSequence sequence;
 

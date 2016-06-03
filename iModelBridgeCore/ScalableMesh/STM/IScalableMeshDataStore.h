@@ -50,6 +50,16 @@ template <typename DataType, typename MasterHeaderType, typename TileHeaderType>
             return 0;
             }
 
+        /**----------------------------------------------------------------------------
+        This method serializes the node for streaming.
+
+        @param
+        -----------------------------------------------------------------------------*/
+        virtual void   SerializeHeaderToBinary(const TileHeaderType* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize, uint32_t pi_pMaxDataSize = 3000) const
+            {
+            HASSERT(false); // Not implemented;
+            }
+
         // IHPMPermanentStore implementation
 
         virtual bool StoreMasterHeader(MasterHeaderType* header, size_t headerSize) = 0;

@@ -1080,6 +1080,7 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
         double m_depth;
         bool m_is2d;
         size_t m_level;
+        bool m_useUnboundedRay;
 
         virtual void _SetDirection(DVec3d direction) override
             {
@@ -1115,6 +1116,15 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
             {
             return m_level;
             }
+
+        virtual void _SetUseUnboundedRay(bool useUnboundedRay) override
+            {
+            m_useUnboundedRay = useUnboundedRay;
+            }
+        virtual bool _GetUseUnboundedRay() const override
+            {
+            return m_useUnboundedRay;
+            }
     public:
         static const double INFINITE_DEPTH;
         ScalableMeshNodeRayQueryParams()
@@ -1123,6 +1133,7 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
             m_depth = INFINITE_DEPTH; 
             m_is2d = false;
             m_level = (size_t)-1;
+            m_useUnboundedRay = true;
             }
 
         virtual ~ScalableMeshNodeRayQueryParams()
@@ -1332,6 +1343,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool _HasClip(uint64_t clip) const override;
 
+        virtual bool _IsClippingUpToDate() const override;
+
         virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const override;
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const override;
@@ -1401,64 +1414,58 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
     private: 
 
-            SmCachedDisplayMesh*                m_cachedDisplayMesh;
-            SmCachedDisplayTexture*             m_cachedDisplayTexture;
-            IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
-            bool                                m_isLoaded;            
-
+            RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> m_cachedDisplayData;                        
 
     protected:         
                                     
             virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const override 
                 {                            
-                cachedMesh = m_cachedDisplayMesh;
-                return SUCCESS;                
+                if (m_cachedDisplayData.IsValid())
+                    {
+                    cachedMesh = m_cachedDisplayData->GetData()->GetCachedDisplayMesh();
+                    return SUCCESS;                
+                    }
+
+                return ERROR;                
                 }
 
             virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const override                 
                 {
-                cachedTexture = m_cachedDisplayTexture;
-                return SUCCESS;                            
+                if (m_cachedDisplayData.IsValid())
+                    {
+                    cachedTexture = m_cachedDisplayData->GetData()->GetCachedDisplayTexture();
+                    return SUCCESS;                
+                    }
+
+                return ERROR;                                    
                 }            
           
     public:             
+            
+            ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr);
 
-            ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
-            : ScalableMeshNode(nodePtr)
-                {                
-                m_isLoaded = false;
-                m_cachedDisplayMesh = 0;
-                m_cachedDisplayTexture = 0;
-
-                auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);                
-                }
-
-            ~ScalableMeshCachedDisplayNode()
-                {                                
-                if (m_cachedDisplayMesh != 0)
-                    {
-                    BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh); 
-                    assert(status == SUCCESS);                    
-                    }
-
-                if (m_cachedDisplayTexture != 0)
-                    {
-                    BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture); 
-                    assert(status == SUCCESS);                    
-                    }
-                }
-
+            virtual ~ScalableMeshCachedDisplayNode();
+                
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 
+            bool IsLoaded() const;
+                
+            bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
+
+            void RemoveDisplayDataFromCache();
+                
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
                 {
                 return new ScalableMeshCachedDisplayNode<POINT>(nodePtr);
                 }
 
+            typedef RefCountedPtr<ScalableMeshCachedDisplayNode<POINT>> Ptr;
     };
+
+
        
 
-//NEEDS_WORK_SM : Should inherit from ScalableMeshNode instead
+
 template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit, public ScalableMeshNode<POINT>
 
     {

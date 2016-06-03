@@ -22,7 +22,22 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "..\STM\LogUtils.h"
 #include <random>
 
-
+void SortPoints(bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
+    {
+    std::map<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
+    bvector<DPoint3d> sortedVerts = allVerts;
+    std::sort(sortedVerts.begin(), sortedVerts.end(), [] (const DPoint3d&a, const DPoint3d&b)
+        {
+        if (a.x < b.x) return true;
+        else if (a.x > b.x) return false;
+        else if (a.y < b.y) return true;
+        else if (a.y > b.y) return false;
+        else return a.z < b.z;
+        });
+    for (auto& v : sortedVerts) mapOfPoints[v] = (int)(&v - &sortedVerts.front());
+    for (auto& idx : allIndices) idx = mapOfPoints[allVerts[idx - 1]] + 1;
+    allVerts = sortedVerts;
+    }
 
 void MakeDTM(TerrainModel::BcDTMPtr& dtmP, bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
     {
@@ -43,6 +58,7 @@ void MakeDTM(TerrainModel::BcDTMPtr& dtmP, bvector<DPoint3d>& allVerts, bvector<
 
         triangle[3] = triangle[0];
 
+        int32_t myIndices[3] = { allIndices[t] - 1, allIndices[t + 1] - 1, allIndices[t + 2] - 1 };
         //colinearity test
         if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
         DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
@@ -70,7 +86,7 @@ void MakeDTM(TerrainModel::BcDTMPtr& dtmP, bvector<DPoint3d>& allVerts, bvector<
     status = bcdtmObject_triangulateStmTrianglesDtmObject(dtmP->GetTinHandle());
     assert(status == SUCCESS);
 
-    bvector<DTMFeatureId> listIds;
+    /*bvector<DTMFeatureId> listIds;
     DTMFeatureCallback browseVoids = [] (DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg) ->int
         {
         if (dtmFeatureType == DTMFeatureType::Void && numPoints <= 4)
@@ -81,7 +97,7 @@ void MakeDTM(TerrainModel::BcDTMPtr& dtmP, bvector<DPoint3d>& allVerts, bvector<
         };
 
     dtmP->BrowseFeatures(DTMFeatureType::Void, 20, &listIds, browseVoids);
-    for (auto& id : listIds) dtmP->DeleteFeatureById(id);
+    for (auto& id : listIds) dtmP->DeleteFeatureById(id);*/
     }
 
 
@@ -408,6 +424,24 @@ void RunDTMTriangulateTest()
     bcdtmWrite_toFileDtmObject(bcDtmP, str.c_str());
     }
 
+void RunDTMSTMTriangulateTest()
+    {
+    WString pathMeshes = L"E:\\makeTM\\mesh";
+    WString path = pathMeshes + WString(L".m");
+    FILE* mesh = _wfopen(path.c_str(), L"rb");
+    size_t nVerts = 0;
+    size_t nIndices = 0;
+    fread(&nVerts, sizeof(size_t), 1, mesh);
+    bvector<DPoint3d> allVerts(nVerts);
+    fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh);
+    fread(&nIndices, sizeof(size_t), 1, mesh);
+    bvector<int32_t> allIndices(nIndices);
+    fread(&allIndices[0], sizeof(int32_t), nIndices, mesh);
+    TerrainModel::BcDTMPtr bcdtm;
+    SortPoints(allVerts, allIndices);
+    MakeDTM(bcdtm, allVerts, allIndices);
+    }
+
 int wmain(int argc, wchar_t* argv[])
 {
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
@@ -578,12 +612,13 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
 #endif
 
-    WString stmFileName(argv[1]);
-    RunPrecisionTest(stmFileName);
+   /* WString stmFileName(argv[1]);
+    RunPrecisionTest(stmFileName);*/
 
 
     //RunDTMClipTest();
     //RunDTMTriangulateTest();
+    RunDTMSTMTriangulateTest();
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
     std::cout << "THE END" << std::endl;

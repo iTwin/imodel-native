@@ -14,6 +14,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 #include "Plugins\ScalableMeshTypeConversionFilterPlugins.h"
 #include "ScalableMeshFileMoniker.h"
+#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -36,6 +37,7 @@ void ScalableMeshLib::Host::Initialize()
     {
     BeAssert (NULL == m_scalableTerrainModelAdmin);   
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
+    InitializeProgressiveQueries();
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
     }
     
@@ -59,6 +61,7 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
                                 
     TERMINATE_HOST_OBJECT(m_scalableTerrainModelAdmin, onProgramExit);    
     t_scalableTerrainModelHost = NULL;
+    TerminateProgressiveQueries();
     }
 
 /*======================================================================+

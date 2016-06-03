@@ -538,6 +538,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool _HasClip(uint64_t id) const = 0;
 
+        virtual bool _IsClippingUpToDate() const = 0;
+
         virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const = 0;
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const = 0;
@@ -598,6 +600,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT void LoadHeader() const;
 
         BENTLEY_SM_EXPORT bool HasClip(uint64_t id) const;
+
+        BENTLEY_SM_EXPORT bool IsClippingUpToDate() const;
 
         BENTLEY_SM_EXPORT void GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const;
 
@@ -813,6 +817,9 @@ struct IScalableMeshNodeQueryParams abstract: RefCountedBase
 
         virtual size_t _GetLevel() const = 0;
         virtual void _SetLevel(size_t level) = 0;
+
+        virtual bool _GetUseUnboundedRay() const = 0;
+        virtual void _SetUseUnboundedRay(bool useUnboundedRay) = 0;
     public:
         BENTLEY_SM_EXPORT void SetDirection(DVec3d direction) { return _SetDirection(direction); }
         BENTLEY_SM_EXPORT DVec3d GetDirection() { return _GetDirection(); }
@@ -825,6 +832,9 @@ struct IScalableMeshNodeQueryParams abstract: RefCountedBase
 
         BENTLEY_SM_EXPORT void SetLevel(size_t level) { return _SetLevel(level); }
         BENTLEY_SM_EXPORT size_t GetLevel() { return _GetLevel(); }
+
+        BENTLEY_SM_EXPORT void SetUseUnboundedRay(bool useUnboundedRay) { return _SetUseUnboundedRay(useUnboundedRay); }
+        BENTLEY_SM_EXPORT bool GetUseUnboundedRay() { return _GetUseUnboundedRay(); }
 
         BENTLEY_SM_EXPORT static IScalableMeshNodeQueryParamsPtr CreateParams();
     };

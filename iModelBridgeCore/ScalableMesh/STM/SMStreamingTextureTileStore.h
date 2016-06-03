@@ -128,16 +128,18 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                 size_t GetWidth() { return m_Width; }
                 size_t GetHeight() { return m_Height; }
+                size_t GetNbChannels() { return m_NbChannels; }
 
             private:
 
                 void DecompressTexture(uint8_t* pi_CompressedTextureData, uint32_t pi_CompressedTextureSize, uint32_t pi_TextureSize, size_t pi_nOfChannels = 3)
                     {
+					assert(m_Width > 0 && m_Height > 0 && m_NbChannels > 0);
+					
                     HCDPacket uncompressedPacket, compressedPacket(pi_CompressedTextureData, pi_CompressedTextureSize, pi_CompressedTextureSize);
                     uncompressedPacket.SetDataSize(pi_TextureSize);
 
-                    m_Width = m_Height = (size_t)sqrt(pi_TextureSize / pi_nOfChannels);
-                    auto codec = new HCDCodecIJG(m_Width, m_Height, pi_nOfChannels * 8);// 24 bits per pixels
+                    auto codec = new HCDCodecIJG(m_Width, m_Height, m_NbChannels * 8);// m_NbChannels * 8 bits per pixels
                     codec->SetQuality(70);
                     codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
                     HFCPtr<HCDCodec> pCodec = codec;
@@ -166,22 +168,32 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                     assert(fileOpenStatus == BeFileStatus::Success);
 
-                    // Read Uncompressed texture size
-                    size_t textureSize = 0;
+                    // Read texture header
                     uint32_t bytesRead = 0;
-                    auto read_result = file.Read(&textureSize, &bytesRead, sizeof(textureSize));
+                    BeFileStatus read_result = BeFileStatus::Success;
+                    read_result = file.Read(&m_Width, &bytesRead, sizeof(m_Width));
                     assert(BeFileStatus::Success == read_result);
-                    assert(bytesRead == sizeof(textureSize));
+                    assert(bytesRead == sizeof(m_Width));
+                    read_result = file.Read(&m_Height, &bytesRead, sizeof(m_Height));
+                    assert(BeFileStatus::Success == read_result);
+                    assert(bytesRead == sizeof(m_Height));
+                    read_result = file.Read(&m_NbChannels, &bytesRead, sizeof(m_NbChannels));
+                    assert(BeFileStatus::Success == read_result);
+                    assert(bytesRead == sizeof(m_NbChannels));
+                    read_result = file.Read(&m_Format, &bytesRead, sizeof(m_Format));
+                    assert(BeFileStatus::Success == read_result);
+                    assert(bytesRead == sizeof(m_Format));
 
                     // Read compressed texture
+                    auto textureSize = m_Width*m_Height*m_NbChannels;
                     auto DataTypeArray = new uint8_t[textureSize];
                     read_result = file.Read((uint8_t*)DataTypeArray, &bytesRead, (uint32_t)textureSize);
                     assert(BeFileStatus::Success == read_result);
-                    assert(bytesRead <= textureSize);
+                    assert(bytesRead <= (uint32_t)textureSize);
 
                     uint64_t compressedSize = bytesRead;
 
-                    this->DecompressTexture(DataTypeArray, compressedSize, (uint32_t)textureSize);
+                    this->DecompressTexture(DataTypeArray, compressedSize, (uint32_t)textureSize, m_NbChannels);
 
                     file.Close();
                     }
@@ -193,12 +205,17 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     m_stream_store->DownloadBlob(m_pFilename.c_str(), [this, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
                     {
                     assert(!buffer.empty());
-                    size_t UncompressedSize = reinterpret_cast<size_t&>(buffer[0]);
-                    uint32_t compressedSize = (uint32_t)buffer.size() - sizeof(size_t);
 
-                    auto DataTypeArray = new uint8_t[UncompressedSize];
-                    memcpy(DataTypeArray, &buffer[0] + sizeof(size_t), compressedSize);
-                    this->DecompressTexture(DataTypeArray, compressedSize, (uint32_t)UncompressedSize);
+                    // Read texture header
+                    m_Width = reinterpret_cast<int&>(buffer[0]);
+                    m_Height = reinterpret_cast<int&>(buffer[sizeof(int)]);
+                    m_NbChannels = reinterpret_cast<int&>(buffer[2*sizeof(int)]);
+                    m_Format = reinterpret_cast<int&>(buffer[3* sizeof(int)]);
+
+                    auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
+                    uint32_t compressedSize = (uint32_t)buffer.size() - sizeof(4*sizeof(int));
+
+                    this->DecompressTexture(&buffer[0] + 4 * sizeof(int), compressedSize, textureSize);
                     blobDownloaded = true;
                     });
                     assert(blobDownloaded);
@@ -232,8 +249,10 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             private:
                 bool m_IsLoaded;
                 bool m_IsLoading;
-                size_t m_Width;
-                size_t m_Height;
+                int m_Width;
+                int m_Height;
+                int m_NbChannels;
+                int m_Format;
                 WString m_DataSource;
                 condition_variable m_TextureCV;
                 mutex m_TextureMutex;
@@ -355,14 +374,21 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             assert(blockID.IsValid());
             //if (!blockID.IsValid()) return StoreNewBlock(DataTypeArray, countData);
             HCDPacket pi_uncompressedPacket, pi_compressedPacket;
-            pi_uncompressedPacket.SetBuffer(DataTypeArray, countData);
-            pi_uncompressedPacket.SetDataSize(countData);
-            size_t w, h;
-            w = h = (size_t)sqrt(countData / 3);
-            WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, (int)w, (int)h, 3);
-            bvector<uint8_t> texData(pi_compressedPacket.GetDataSize() + sizeof(size_t));
-            reinterpret_cast<size_t&>(*texData.data()) = countData;
-            memcpy(&texData[0] + sizeof(size_t), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+            pi_uncompressedPacket.SetBuffer(DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int)); // The data block starts with 12 bytes of metadata, followed by pixel data
+            pi_uncompressedPacket.SetDataSize(countData - 3 * sizeof(int));
+            // Retrieve width, height and number of channels from the first 12 bytes of the data block
+            int w = ((int*)DataTypeArray)[0];
+            int h = ((int*)DataTypeArray)[1];
+            int nOfChannels = ((int*)DataTypeArray)[2];
+            int format = 0; // Keep an int to define the format and possible other options
+            WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, w, h, nOfChannels);
+            bvector<uint8_t> texData(4 * sizeof(int) + pi_compressedPacket.GetDataSize());
+            int *pHeader = (int*)(texData.data());
+            pHeader[0] = w;
+            pHeader[1] = h;
+            pHeader[2] = nOfChannels;
+            pHeader[3] = format;
+            memcpy(texData.data() + 4 * sizeof(int), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
             BeFile file;
             OpenOrCreateBeFile(file, blockID);
             file.Write(NULL, texData.data(), (uint32_t)(texData.size()));
@@ -401,30 +427,10 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
         virtual size_t LoadBlock(uint8_t* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
             auto& texture = this->GetTexture(blockID);
-            /*BeFile file;
-            wstringstream ss;
-            ss << L"file://"<<m_path << L"textureAfterLoad_" << blockID.m_integerID << L".jpeg";
-            auto filename = ss.str();
-            HFCPtr<HFCURL> fileUrl(HFCURL::Instanciate(filename.c_str()));
-            byte* pixelBuffer = new byte[1024 * 1024 * 3];
-            size_t t = 0;
-            for (size_t i = 0; i < 1024 * 1024 * 4; i += 4)
-                {
-                pixelBuffer[t] = *(texture.data() + i);
-                pixelBuffer[t + 1] = *(texture.data() + i + 1);
-                pixelBuffer[t + 2] = *(texture.data() + i + 2);
-                t += 3;
-                }
-            HFCPtr<HRPPixelType> pImageDataPixelType(new HRPPixelTypeV24B8G8R8());
-            HRFBmpCreator::CreateBmpFileFromImageData(fileUrl,
-                                                      1024,
-                                                      1024,
-                                                      pImageDataPixelType,
-                                                      pixelBuffer);
-            delete[] pixelBuffer;*/
+            assert(!texture.empty());
             ((int*)DataTypeArray)[0] = (int)texture.GetWidth();
             ((int*)DataTypeArray)[1] = (int)texture.GetHeight();
-            ((int*)DataTypeArray)[2] = 3;
+            ((int*)DataTypeArray)[2] = (int)texture.GetNbChannels();
             memcpy(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
             //return texture.size() + 3 * sizeof(int);
             return std::min(texture.size() + 3 * sizeof(int), maxCountData);

@@ -115,6 +115,7 @@ void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNo
                                                                                ray,
                                                                                true,
                                                                                DVec3d::FromStartEnd(m_polylineToDrape[segment], m_polylineToDrape[segment + 1]).Magnitude(),
+                                                                               true ,
                                                                                ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d,DRange3d>::RaycastOptions::ALL_INTERSECT);
         bvector<IScalableMeshNodePtr> outNodes;
         for (auto& node : inputNodes)
@@ -654,7 +655,7 @@ bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap
         return false;
         }
     }
-
+#if 0
 bool ScalableMeshDraping::_FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
     m_levelForDrapeLinear = std::min((size_t)5, m_scmPtr->GetTerrainDepth());
@@ -664,7 +665,7 @@ bool ScalableMeshDraping::_FastDrapeAlongVector(DPoint3d* endPt, double *slope, 
     m_nodeSelection.clear();
     return retval;
     }
-
+#endif
 void ScalableMeshDraping::QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>& nodes, const DPoint3d& testPt, const IScalableMeshNodeQueryParamsPtr& params)
     {
     if (m_nodeSelection.empty())
@@ -678,22 +679,31 @@ void ScalableMeshDraping::QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>&
 
         DRange3d range;
         m_scmPtr->GetRange(range);
-        ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
-                                                                               m_scmPtr->GetTerrainDepth(),
-                                                                               ray,
-                                                                               params->Get2d(),
-                                                                               params->GetDepth(),
-                                                                               ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
         for (auto& node : m_nodeSelection)
+            {
+            ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
+                                                                                   node->GetLevel(),
+                                                                                   ray,
+                                                                                   params->Get2d(),
+                                                                                   params->GetDepth(),
+                                                                                   params->GetUseUnboundedRay(),
+                                                                                   ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
             node->RunQuery(query, nodes);
+            }
         }
     }
 
 bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
+    if (m_type == DTMAnalysisType::Fast)
+        {
+        m_levelForDrapeLinear = std::min((size_t)5, m_scmPtr->GetTerrainDepth());
+        m_scmPtr->GetCurrentlyViewedNodes(m_nodeSelection);
+        }
     DVec3d vecDirection = DVec3d::FromXYAngleAndMagnitude(directionOfVector, 1);
     vecDirection.z = slopeOfVector;
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    params->SetUseUnboundedRay(false);
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
     params->SetLevel(m_levelForDrapeLinear);
 
@@ -712,14 +722,18 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
     for (auto& node : nodes)
         {
         BcDTMPtr dtmP = node->GetBcDTM();
+        assert(dtmP->GetPointCount() < 4 || dtmP->GetTrianglesCount() > 0);
         if (dtmP != nullptr && dtmP->GetDTMDraping()->DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, transformedPt, directionOfVector, slopeOfVector))
             {
             if (endPt != nullptr)
                 {
-                m_transform.Multiply(*endPt);
+                //if (node->GetContentExtent().IsContained(*endPt))
+                    {
+                    m_transform.Multiply(*endPt);
+                    ret = true;
+                    break;
+                    }
                 }
-            ret = true;
-            break;
             }
         }
     return ret;
@@ -735,7 +749,8 @@ size_t ScalableMeshDraping::ComputeLevelForTransform(const DMatrix4d& w2vMap)
     w2vTrans.InitFrom(w2vMap);
     w2vTrans.Multiply(range.low);
     w2vTrans.Multiply(range.high);
-    double maxLength = std::max(std::max(range.XLength(), range.YLength()), range.ZLength());
+    DRange3d newRange = DRange3d::From(range.low, range.high);
+    double maxLength = std::max(std::max(newRange.XLength(), newRange.YLength()), newRange.ZLength());
     size_t targetLevel = std::min(m_scmPtr->GetTerrainDepth(), (size_t)(ceil(log(maxLength / 20.0) / log(4))));
     return  targetLevel;
     }
@@ -793,7 +808,7 @@ int PickLineSegmentForProjectedPoint(DPoint3dCP line, int nPts, int beginning, D
         }
     return beginning;
     }
-
+#if 0
 DTMStatusInt ScalableMeshDraping::_FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
     /*IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
@@ -827,9 +842,14 @@ DTMStatusInt ScalableMeshDraping::_FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint
     m_nodeSelection.clear();
     return retval;
     }
-
+#endif
 DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
+    if (m_type == DTMAnalysisType::Fast)
+        {
+        m_levelForDrapeLinear = std::min((size_t)5, m_scmPtr->GetTerrainDepth());//params->GetLevel();
+        m_scmPtr->GetCurrentlyViewedNodes(m_nodeSelection);
+        }
     bvector<bvector<DPoint3d>> drapedPointsTemp(numPoints);
     //Trying to find point to start drape
 //    bool findTriangleAlongRay = false;

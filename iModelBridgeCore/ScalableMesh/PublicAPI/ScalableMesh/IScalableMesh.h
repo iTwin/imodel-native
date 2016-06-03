@@ -39,6 +39,13 @@ enum CountType { COUNTTYPE_POINTS, COUNTTYPE_LINEARS, COUNTTYPE_BOTH };
 
 struct Count;
 
+enum DTMAnalysisType
+    {
+    Precise =0,
+    Fast,
+    Qty
+    };
+
 /*=================================================================================**//**
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
@@ -52,8 +59,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
     /*__PUBLISH_CLASS_VIRTUAL__*/
     protected:                         
 
-        //Methods for the public interface.        
+        //Methods for the public interface.       
         virtual __int64          _GetPointCount() = 0;
+
+        virtual bool          _IsTerrain() = 0;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
 
@@ -85,9 +94,9 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const = 0;
 
-        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface() = 0;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DTMAnalysisType type) = 0;
 
-        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DMatrix4d& storageToUors) = 0;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) = 0;
 
         virtual const GeoCoords::GCS&               _GetGCS() const = 0;
 
@@ -114,7 +123,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes) const = 0; 
-        virtual int                                 _GroupNodeHeaders(const WString& pi_pOutputDirPath) const = 0;
+        virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const = 0;
 #endif
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
@@ -142,6 +151,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
 
         virtual void                               _TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP) = 0;
+
+        virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -153,6 +164,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         void TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP);
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
+
+        BENTLEY_SM_EXPORT bool          IsTerrain();
 
         BENTLEY_SM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
 
@@ -182,9 +195,9 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
 
-        BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface();
+        BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DTMAnalysisType type = DTMAnalysisType::Precise);
 
-        BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DMatrix4d& storageToUors);
+        BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type = DTMAnalysisType::Precise);
 
         BENTLEY_SM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&
                                            GetBaseGCS() const;
@@ -192,6 +205,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT const GeoCoords::GCS&  GetGCS() const;
         BENTLEY_SM_EXPORT StatusInt              SetGCS(const GeoCoords::GCS& gcs);
+
+        BENTLEY_SM_EXPORT void                   SetEditFilesBasePath(const Utf8String& path);
 
         BENTLEY_SM_EXPORT ScalableMeshState             GetState() const;
 
@@ -246,12 +261,23 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
                                                                                  bool                    openShareable,
                                                                                  StatusInt&              status);
 
+        BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
+                                                                const Utf8String&      baseEditsFilePath,
+                                                                bool                    openReadOnly,
+                                                                bool                    openShareable,
+                                                                StatusInt&              status);
+
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,
                                                                                  bool                    openShareable);
 
+        BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
+                                                                const Utf8String&      baseEditsFilePath,
+                                                                bool                    openReadOnly,
+                                                                bool                    openShareable);
+
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes) const; 
-        BENTLEY_SM_EXPORT int                     GroupNodeHeaders(const WString& pi_pOutputDirPath) const;
+        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const;
 
     };
 

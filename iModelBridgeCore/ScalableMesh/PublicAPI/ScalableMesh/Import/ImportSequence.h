@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 14:58:05 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,6 +14,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <ScalableMesh/Import/Definitions.h>
+#include <ScalableMesh/Import/DataTypeFamily.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
@@ -51,7 +52,8 @@ public:
     IMPORT_DLLE void                    push_back                      (const ImportCommand&                    command);
     IMPORT_DLLE void                    push_back                      (const ImportCommandBase&                command);
 
-    IMPORT_DLLE void                    Accept                         (IImportSequenceVisitor&                  visitor) const;
+
+    IMPORT_DLLE bvector<ImportCommand>&  GetCommands                   () const;
 
     IMPORT_DLLE bool                    IsEmpty                        () const;
     IMPORT_DLLE size_t                  GetCount                       () const;
@@ -69,8 +71,8 @@ private:
     typedef const std::type_info*           ClassID;
     typedef SharedPtrTypeTrait<const ImportCommandBase>::type       
                                             BaseCPtr;
-    BaseCPtr                                m_basePtr;
 public:
+    BaseCPtr                                m_basePtr;
     explicit                                ImportCommand                      (const ImportCommandBase&            command);
 
     IMPORT_DLLE                             ~ImportCommand                     ();
@@ -80,7 +82,20 @@ public:
 
     IMPORT_DLLE ClassID                     GetClassID                         () const;
 
-    IMPORT_DLLE void                        Accept                             (IImportSequenceVisitor&              visitor) const;
+
+
+    IMPORT_DLLE uint32_t                                 GetSourceLayer         () const;
+    IMPORT_DLLE uint32_t                                 GetTargetLayer() const;
+
+    IMPORT_DLLE const DataTypeFamily&                    GetSourceType()const;
+    IMPORT_DLLE const DataTypeFamily&                    GetTargetType()const;
+
+    IMPORT_DLLE bool                                 IsSourceLayerSet()const;
+    IMPORT_DLLE bool                                 IsTargetLayerSet()const;
+
+    IMPORT_DLLE bool                                 IsSourceTypeSet()const;
+    IMPORT_DLLE bool                                 IsTargetTypeSet()const;
+
 
     };
 

@@ -52,7 +52,7 @@ struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
 
 static void callHostOnAssert(WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType)
     {
-    //BeAssertFunctions::DefaultAssertionFailureHandler(_Message, _File, _Line);
+    BeAssertFunctions::DefaultAssertionFailureHandler(_Message, _File, _Line);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -111,7 +111,7 @@ BentleyStatus MyImageppLibAdmin::_GetLocalCacheDirPath(BeFileName& tempPath, boo
 BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(WStringR gdalDataPath) const
     {
     BeFileName path = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    path.AppendToPath(L"GDalData");
+    path.AppendToPath(L"GDal_Data");
 
     // Convert BeFileName to WString
     BeFileName::BuildName(gdalDataPath, path.GetDevice().c_str(), path.GetDirectoryWithoutDevice().c_str(), path.GetFileNameWithoutExtension().c_str(), path.GetExtension().c_str());
@@ -277,6 +277,7 @@ void ScalableMeshATPexe::Start()
 
 int wmain(int argc, wchar_t* argv[])
     {
+    _set_error_mode(_OUT_TO_MSGBOX);
     ScalableMeshATPexe::ScalableMeshATPexe app;
     if (SUCCESS != app.ParseCommandLine(argc, argv))
         return 1;
