@@ -201,17 +201,18 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
         if (comparer.Compare(m_changes, m_existingSchemaList, m_importedSchemaList, options) != SUCCESS)
             return ERROR;
         
-        /*
+#if 0
         Utf8String str;
         m_changes.WriteToString(str);
         printf("%s", str.c_str());
-        */
+#endif
+
         std::set<Utf8CP, CompareIUtf8Ascii> schemaOfInterest;
         if (m_changes.IsValid())
             {
             for (size_t i = 0; i < m_changes.Count(); i++)
                 {
-                schemaOfInterest.insert(m_changes.At(i).GetId());                
+                schemaOfInterest.insert(m_changes.At(i).GetId());
                 }
             }
         //Remove any none interesting schemas

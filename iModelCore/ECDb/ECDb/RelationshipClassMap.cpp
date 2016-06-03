@@ -548,7 +548,6 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
                 }
             }
 
-        //! Create Foreign Key constraint only if FK is not a virtual or existing table.
         if (fkTable.IsOwnedByECDb() && fkTable.GetPersistenceType() == PersistenceType::Persisted
             && referencedTable->GetPersistenceType() == PersistenceType::Persisted)
             {

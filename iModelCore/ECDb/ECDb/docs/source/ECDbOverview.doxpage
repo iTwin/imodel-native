@@ -237,6 +237,11 @@
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
     - @b ECProperties
         - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
+        - @b Delete an @ref BentleyApi::ECN::ECProperty "ECProperty" which is
+            - mapped to a shared column (see MapStrategy::Options @em SharedColumns, @em SharedColumnsForSubclasses in @ref CustomClassMapDescription)
+            - not used in an @ref BentleyApi::ECN::ECStructClass "ECStructClass"
+            - not used as @em Key property in an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass"
+            - not overridden
     - @b CustomAttributes on the ECClass
         - @b Add, @b delete, @b modify
 
@@ -405,10 +410,9 @@
     @section ECDbDefaultMappingRules ECDb Default Mapping Rules
     - Type of ECClasses that <b>are not mapped</b>.
         - CustomAttribute ECClasses
-        - Non-domain ECClasses
-    - Type of ECClasses that are mapped using the @b OwnTable strategy by default.
-        - Domain ECClasses
         - Struct ECClasses
+    - Type of ECClasses that are mapped using the @b OwnTable strategy by default.
+        - Entity ECClasses
     - ECRelationshipClasses are either mapped to the table of one of the constraint ends (ForeignKey mapping)
     or to a link table.
         - ECRelationshipClasses with cardinality 1:1 or 0:N
@@ -450,7 +454,7 @@
             - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
             The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
             <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
-        - <b>Options</b> (optional): The above values can be combined with these options:
+        - Property @b Options (optional): The above values can be combined with these options:
             - @c SharedColumns : This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
             This can reduce the number of columns (and cells with NULL values) in the table significantly.
             This can only be applied to @b SharedTable.
@@ -460,8 +464,8 @@
             column sharing was enabled on a base class. The property @em Strategy must not be set.
             - @c JoinedTablePerDirectSubclasses : This options tells ECDb that the properties of the subclasses are mapped to an extra table joined
             to the table of the root class. Each direct subclass of this class is mapped to its own joined table. Can only be used with @b SharedTable and @b AppliesToSubclasses being true.
-            - @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class.
-        If false (default), the MapStrategy only applies to this class.
+        - Property @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class.
+          If false (default), the MapStrategy only applies to this class.
     - @b TableName (optional, required for MapStrategies @em ExistingTable and <i>SharedTable (non-polymorphic)</i>):
     Specify a table name for this class (instead of letting ECDb choose a name)
     - @b Indexes (optional) : List of indexes to be created for properties of this class.
@@ -542,12 +546,15 @@
 
     - <b>ColumnName</b> (optional): Specifies the column name. If not specified, the ECProperty name is used. The column name must
     follow EC naming rules.
-    - <b>IsNullable</b> (optional): If false, values must not be NULL. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
-    - <b>IsUnique</b> (optional): If true, values must be unique for this ECProperty. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
+    - <b>IsNullable</b> (optional): If false, values must not be NULL.
+    - <b>IsUnique</b> (optional): If true, values must be unique for this ECProperty.
     - <b>Collation</b> (optional): Specifies the string comparison mode for this property. Possible values:
         - <CODE>Binary</CODE>: (default): bit to bit matching.
-        - <CODE>NoCase</CODE>: The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that is folds only ASCII not full UTF.
+        - <CODE>NoCase</CODE>: The same as binary, except that the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note it only folds ASCII characters.
         - <CODE>RTrim</CODE>: The same as binary, except that trailing space characters are ignored.​
+
+    @note Property constraints like @em IsNullable, @em IsUnique, and @em Collation are ignored if the ECProperty maps to a column shared with other ECProperties
+    (see MapStrategy::Options @b SharedColumns or @b SharedColumnsForSubclasses in section @ref CustomClassMapDescription). ECDb will log a warning in these cases.
 
     ###Examples
 
@@ -591,6 +598,16 @@
     @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" nor a @ref BentleyApi::ECN::ECRelationshipConstraintClass::GetKeys "Key property"
     is defined on the respective constraint class, because in that case the mapping of the Key property is considered. If this value is not set and
     neither a Key property nor a NavigationECProperty was specified, %ECDb generates a column with a default name.
+
+    @note ECDb by default creates a Foreign Key column with a Foreign Key constraint for the relationship and implies its NOT NULL and UNIQUE constraints 
+    from the ECRelationshipClass' cardinality. If, however, the ECRelationshipClass specifies to use an existing column (either via 
+    using the @em ForeignKeyColumn property or via defining @ref BentleyApi::ECN::ECRelationshipConstraintClass::GetKeys "Key properties"), the following
+    restrictions exist:
+        - the Foreign Key constraint will not be created and a warning will be logged.
+        - if the existing column is nullable but the relationship's cardinality implies it to be not nullable, or vice versa, the ECSchema import will fail.
+    
+    @note If the cardinality implies unique-ness of the foreign key column a @em partial unique index will be created that applies to the ECRelationshipClass' rows of the shared column
+    only.
 
     Description of the @b LinkTableRelationshipMap properties:
     - <b>SourceECInstanceIdColumn</b>: (optional) Defines the column to which the ECInstanceId of the source constraint is mapped to.

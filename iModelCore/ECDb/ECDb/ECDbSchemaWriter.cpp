@@ -439,9 +439,26 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
 
     if (classChange.GetClassModifier().IsValid())
         {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Changing the ECClassModifier on an ECClass is not supported.",
-                                  oldClass.GetFullName());
-        return ERROR;
+        ECClassModifier newValue = classChange.GetClassModifier().GetNew().Value();
+        if (newValue == ECClassModifier::Sealed)
+            {
+            if (!newClass.GetDerivedClasses().empty())
+                {
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Changing the 'Modifier' of ECClass to ECClassModifier::Sealed only acceptable if class has no derived classes",
+                                          oldClass.GetFullName());
+
+                return ERROR;
+                }
+            }
+        else if (newValue == ECClassModifier::Abstract)
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Changing the 'Modifier' of ECClass to ECClassModifier::Abstract is not supported",
+                                      oldClass.GetFullName());
+
+            return ERROR;
+            }
+
+        updater.Set("Modifier", Enum::ToInt(classChange.GetClassModifier().GetNew().Value()));
         }
 
     if (classChange.ClassType().IsValid())
@@ -869,6 +886,13 @@ BentleyStatus ECDbSchemaWriter::DeleteECCustomAttributes(ECContainerId id, ECDbS
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty)
     {
+    if (!IsMajorChangeAllowedForECSchema(deletedProperty.GetClass().GetSchema().GetId()))
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECProperty '%s.%s'. This schema include a major change but does not increment the MajorVersion for the schema. Bump up the major version for this schema and try again.",
+                                  deletedProperty.GetClass().GetSchema().GetFullSchemaName().c_str(), deletedProperty.GetClass().GetName().c_str(), deletedProperty.GetName().c_str());
+        return ERROR;
+        }
+
     ClassMapCP classMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(deletedProperty.GetClass());
     if (classMap == nullptr)
         {
@@ -1009,7 +1033,8 @@ BentleyStatus ECDbSchemaWriter::UpdateECClasses(ECClassChanges& classChanges, EC
                 return ERROR;
                 }
 
-            return DeleteECClass(change, *oldClass);
+            if (DeleteECClass(change, *oldClass) == ERROR)
+                return ERROR;
             }
         else if (change.GetState() == ChangeState::New)
             {
@@ -1022,8 +1047,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECClasses(ECClassChanges& classChanges, EC
 
             if (ImportECClass(*newClass) == ERROR)
                 return ERROR;
-
-            continue;
             }
         else if (change.GetState() == ChangeState::Modified)
             {
