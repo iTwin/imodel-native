@@ -166,6 +166,7 @@ namespace IndexECPlugin.Source.QueryProviders
             List<IECInstance> instancesRequestingParent = null;
             List<IECInstance> instanceList = new List<IECInstance>();
             List<IECInstance> cachedInstances = m_instanceCacheManager.QueryInstancesFromCache(instanceIdSet, ecClass, GetCacheBaseClass(ecClass), selectClause);
+            CompleteInstances(cachedInstances, ecClass);
             CreateCacheRelatedInstances(cachedInstances, selectClause.SelectedRelatedInstances);
             RelatedInstanceSelectCriteria parentCrit = null;
                     //We create the requested instances that were not in the cache
@@ -223,6 +224,46 @@ namespace IndexECPlugin.Source.QueryProviders
                         CreateParentRelationship(instancesRequestingParent, parentCrit, parentCrit.RelatedClassSpecifier.RelatedClass);
                         }
                     return instanceList;
+            }
+
+        /// <summary>
+        /// This method completes the cached instances fields that are not in the cache tables in the database
+        /// </summary>
+        /// <param name="cachedInstances">The cached instances</param>
+        /// <param name="ecClass">The class of the instances</param>
+        private void CompleteInstances (List<IECInstance> cachedInstances, IECClass ecClass)
+            {
+            switch ( ecClass.Name )
+                {
+                case "SpatialEntityBase":
+                case "SpatialEntityDataset":
+                case "SpatialEntity":
+                        {
+                        foreach (IECInstance inst in cachedInstances)
+                            {
+                            inst["DataProvider"].StringValue = "USGS";
+                            inst["DataProviderName"].StringValue = "United States Geological Survey";
+                            }
+                        break;
+                        }
+                case "SpatialEntityWithDetailsView":
+                        {
+                        foreach ( IECInstance inst in cachedInstances )
+                            {
+                            inst["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + inst.InstanceId;
+                            inst["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + inst.InstanceId + "?format=fgdc";
+                            inst["RawMetadataFormat"].StringValue = "FGDC";
+                            inst["SubAPI"].StringValue = "USGS";
+
+                            inst["DataProvider"].StringValue = "USGS";
+                            inst["DataProviderName"].StringValue = "United States Geological Survey";
+                            }
+                        break;
+                        }
+                default:
+                    //Do nothing
+                    break;
+                }
             }
 
         //We should replace isComplete by an extended data parameter in each of the instances.
@@ -291,6 +332,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 //    }
 
                 List<IECInstance> relInstances = m_instanceCacheManager.QueryInstancesFromCache(relInstIDs, relatedClass, GetCacheBaseClass(relatedClass), crit);
+                CompleteInstances(relInstances, relatedClass);
                 CreateCacheRelatedInstances(relInstances, crit.SelectedRelatedInstances);
                 foreach(IECInstance relInstance in relInstances)
                     {
@@ -1332,7 +1374,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 };
 
                 instanceList = m_instanceCacheManager.QuerySpatialInstancesFromCache(polyDesc, ecClass, ecClass, m_query.SelectClause, criteriaList);
-
+                CompleteInstances(instanceList, ecClass);
                 }
 
             if ( relCrit != null )

@@ -906,20 +906,6 @@ namespace IndexECPlugin.Source
             IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
             RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
 
-            //ECQuery query = new ECQuery(dataSourceClass);
-            //query.SelectClause.SelectAllProperties = false;
-            //query.SelectClause.SelectedProperties = new List<IECProperty>();
-            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "Metadata"));
-            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
-            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
-            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
-
-            //query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
-
-            //query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-
-            //var queriedSpatialDataSources = ExecuteQuery(queryModule, connection, query, null);
-
             ECQuery query = new ECQuery(spatialentityClass);
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties = new List<IECProperty>();
@@ -932,17 +918,6 @@ namespace IndexECPlugin.Source
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
 
             var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
-
-            //query = new ECQuery(metadataClass);
-            //query.SelectClause.SelectAllProperties = false;
-            //query.SelectClause.SelectedProperties = new List<IECProperty>();
-            //query.SelectClause.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
-
-            //query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
-
-            //query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-
-            //var queriedMetadatas = ExecuteQuery(queryModule, connection, query, null);
 
             foreach ( var entity in queriedSpatialEntities )
                 {
