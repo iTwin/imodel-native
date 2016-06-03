@@ -360,6 +360,7 @@ public:
     void OnDgnDbDestroyed() { _OnDgnDbDestroyed(); } //!< @private
 
     DGNPLATFORM_EXPORT static void BackDoor_SetAutomaticAcquisition(bool acquireAutomatically); //!< @private TEMPORARY
+    DGNPLATFORM_EXPORT static void BackDoor_SetSupportFastQuery(bool supportFastQuery); //!< @private TEMPORARY
 };
 
 /*=====================================================================================*/
@@ -382,7 +383,7 @@ protected:
     virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) = 0;
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) = 0;
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) = 0;
-    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) = 0;
+    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) = 0;
     virtual RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) = 0;
 public:
     //! Process a briefcase's request to acquire locks and/or reserve codes
@@ -425,7 +426,7 @@ public:
     //! @param[in]      db    The requesting briefcase
     //! @return Success, or an error status
     //! @remarks This method only returns resources tracked by the repository - e.g., excluding locks implicitly held for elements/models created locally by this briefcase and not yet committed to the repository
-    RepositoryStatus QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) { return _QueryHeldResources(locks, codes, db); }
+    RepositoryStatus QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) { return _QueryHeldResources(locks, codes, unavailableLocks, unavailableCodes, db); }
 
     //! Query the repository states of a set of codes
     //! @param[in]      states Upon successful return, holds the state of each specified code

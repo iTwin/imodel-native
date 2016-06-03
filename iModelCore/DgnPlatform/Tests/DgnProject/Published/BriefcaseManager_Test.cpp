@@ -33,7 +33,7 @@ private:
     virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
-    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) override;
+    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
     virtual RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
 
     DbResult CreateLocksTable();
@@ -42,6 +42,7 @@ private:
     // locks
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
     void GetDeniedLocks(DgnLockInfoSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
+    void GetUnavailableLocks(DgnLockSet& locks, BeBriefcaseId bcId);
     int32_t QueryLockCount(BeBriefcaseId bc);
     void Relinquish(DgnLockSet const&, DgnDbR);
     void Reduce(DgnLockSet const&, DgnDbR);
@@ -64,6 +65,7 @@ private:
     RepositoryStatus _ReleaseCodes(DgnCodeSet const&, DgnDbR);
     RepositoryStatus _RelinquishCodes(DgnDbR);
     RepositoryStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&);
+    void GetUnavailableCodes(DgnCodeSet& codes, BeBriefcaseId bcId);
 public:
     RepositoryManager();
 
@@ -349,13 +351,52 @@ RepositoryStatus RepositoryManager::_QueryStates(DgnLockInfoSet& lockStates, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus RepositoryManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db)
+RepositoryStatus RepositoryManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
     {
     auto stat = _QueryLocks(locks, db);
     if (RepositoryStatus::Success == stat)
         stat = _QueryCodes(codes, db);
 
+    GetUnavailableLocks(unavailableLocks, db.GetBriefcaseId());
+    GetUnavailableCodes(unavailableCodes, db.GetBriefcaseId());
+
     return stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryManager::GetUnavailableLocks(DgnLockSet& locks, BeBriefcaseId bcId)
+    {
+    // ###TODO: This should also include locks which were released in a revision not yet pulled by this briefcase...
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT " LOCK_Type "," LOCK_Id "," LOCK_Exclusive " FROM " TABLE_Locks " WHERE " LOCK_BcId " != ?");
+    bindBcId(stmt, 1, bcId);
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        LockableId id(static_cast<LockableType>(stmt.GetValueInt(0)), stmt.GetValueId<BeInt64Id>(1));
+        auto level = (0 != stmt.GetValueInt(2)) ? LockLevel::Exclusive : LockLevel::Shared;
+        locks.insert(DgnLock(id, level));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryManager::GetUnavailableCodes(DgnCodeSet& codes, BeBriefcaseId bcId)
+    {
+    // ###TODO: This should also include codes which became discarded or used in a revision not yet pulled by this briefcase...
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT " CODE_Authority "," CODE_NameSpace "," CODE_Value " FROM " TABLE_Codes
+                       " WHERE " CODE_State " = 1 AND " CODE_Briefcase " != ?");
+    bindBcId(stmt, 1, bcId);
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        DgnCode code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
+        codes.insert(code);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -937,10 +978,12 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
         {
         RegisterServer();
         IBriefcaseManager::BackDoor_SetAutomaticAcquisition(false);
+        IBriefcaseManager::BackDoor_SetSupportFastQuery(true);
         }
 
     ~RepositoryManagerTest()
         {
+        IBriefcaseManager::BackDoor_SetSupportFastQuery(false);
         IBriefcaseManager::BackDoor_SetAutomaticAcquisition(true);
         UnregisterServer();
         }
