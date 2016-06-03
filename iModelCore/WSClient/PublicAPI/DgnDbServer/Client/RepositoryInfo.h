@@ -31,8 +31,8 @@ private:
     Utf8String m_id;
     Utf8String m_fileId;
     Utf8String m_mergedRevisionId;
-    Utf8String m_userUploaded;
-    DateTime   m_uploadedDate;
+    Utf8String m_userCreated;
+    DateTime   m_createdDate;
  //__PUBLISH_SECTION_START__
 public:
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo();
@@ -56,7 +56,7 @@ public:
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetFileId() const; //!< Guid of the repository master file.
     DGNDBSERVERCLIENT_EXPORT Utf8String   GetWSRepositoryName() const; //!< Formatted WebServices repository id that is used in the address.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetMergedRevisionId() const; //!< Get Last Revision Id merged to the repository.
-    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetUserUploaded() const; //!< Name of the user that uploaded the master file.
-    DGNDBSERVERCLIENT_EXPORT DateTimeCR   GetUploadedDate() const; //!< Date when the file was uploaded.
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetUserCreated() const; //!< Name of the user that uploaded the master file.
+    DGNDBSERVERCLIENT_EXPORT DateTimeCR   GetCreatedDate() const; //!< Date when the file was uploaded.
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

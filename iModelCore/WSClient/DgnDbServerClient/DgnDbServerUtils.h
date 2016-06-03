@@ -53,14 +53,13 @@ namespace ServerSchema
         static Utf8CP FileId = "FileId";
         static Utf8CP Index = "Index";
         static Utf8CP Description = "Description";
-        static Utf8CP UserUploaded = "UserUploaded";
-        static Utf8CP UploadedDate = "UploadedDate";
+        static Utf8CP UserCreated = "UserCreated";
+        static Utf8CP CreatedDate = "CreatedDate";
         static Utf8CP FileSize = "FileSize";
         static Utf8CP BriefcaseId = "BriefcaseId";
         static Utf8CP ParentId = "ParentId";
         static Utf8CP MasterFileId = "MasterFileId";
         static Utf8CP MergedRevisionId = "MergedRevisionId";
-        static Utf8CP UserCreated = "UserCreated";
         static Utf8CP PushDate = "PushDate";
         static Utf8CP Published = "Published";
         static Utf8CP ObjectId = "ObjectId";
