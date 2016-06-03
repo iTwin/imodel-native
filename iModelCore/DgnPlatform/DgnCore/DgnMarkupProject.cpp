@@ -1123,6 +1123,12 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
 +---------------+---------------+---------------+---------------+---------------+------*/
 RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModelId)
     {
+    if (nullptr == markupProject.Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline model");
+        return nullptr;
+        }
+
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, "RedlineModel"));
     RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name), DPoint2d::FromZero()));
     if (!rdlModel.IsValid())
@@ -1146,6 +1152,12 @@ RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP nam
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, SpatialModelCR subjectViewTargetModel)
     {
+    if (nullptr == markupProject.Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline model");
+        return nullptr;
+        }
+
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
 
     SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name)));
@@ -1352,6 +1364,12 @@ ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, DgnDbR 
     if (markupProject == nullptr)
         {
         openStatus = DgnDbStatus::NotOpen;
+        return nullptr;
+        }
+
+    if (nullptr == markupProject->Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline view");
         return nullptr;
         }
 
@@ -1603,6 +1621,11 @@ ViewControllerPtr SpatialRedlineViewController::Create(DgnViewType viewType, Utf
     auto rdlModel = rdlView.IsValid() ? markupProject->OpenRedlineModel(rdlView.GetBaseModelId()) : nullptr;
     if (rdlModel == NULL)
         return NULL;
+    if (nullptr == rdlModel->GetDgnDb().Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline view");
+        return nullptr;
+        }
     return new SpatialRedlineViewController(*rdlModel, subjectViewController);
     }
 
@@ -1616,6 +1639,13 @@ SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(Spatial
     auto rc = model.GetDgnMarkupProject()->Views().InsertView(view);
     if (BE_SQLITE_OK != rc)
         return NULL;
+
+    if (nullptr == model.GetDgnMarkupProject()->Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false);
+        //createStatus = DgnDbStatus::MissingDomain;
+        return nullptr;
+        }
 
     auto controller = new SpatialRedlineViewController(model, subjectView, view.GetId());
 
