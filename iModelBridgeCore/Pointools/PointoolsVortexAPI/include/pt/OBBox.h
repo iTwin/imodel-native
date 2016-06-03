@@ -482,6 +482,7 @@ void OBBox<T>::merge( const OBBox<T>& box1 )
     // the slerp of the two input quaternions with t-value of 1/2.  The result
     // is converted back to a rotation matrix and its columns are selected as
     // the merged box axes.
+#ifdef HAVE_WILDMAGIC
 	Wm5::Quaternion<T> q0, q1;
     q0.FromRotationMatrix(m_axis);
     q1.FromRotationMatrix(box1.m_axis);
@@ -495,6 +496,11 @@ void OBBox<T>::merge( const OBBox<T>& box1 )
 	T invLength = Wm5::Math<T>::InvSqrt(q.Dot(q));
     q = invLength*q;
     q.ToRotationMatrix(&m_axis[0].x);
+#else
+    // &&RB TODO: replace wilmagic function with geomlibs function
+    //DPoint4d q0, q1;
+    // &&RB TODO: the following geomlibs function call must be tested
+#endif
 
     // Project the input box vertices onto the merged-box axes.  Each axis
     // D[i] containing the current center C has a minimum projected value
