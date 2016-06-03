@@ -153,8 +153,8 @@ struct MockDataSourceCache : public IDataSourceCache
             CacheStatus (ObjectIdCR objectId));
         MOCK_METHOD1 (RemoveFile,
             BentleyStatus (ObjectIdCR objectId));
-        MOCK_METHOD0 (RemoveFilesInTemporaryPersistence,
-            BentleyStatus ());
+        MOCK_METHOD1 (RemoveFilesInTemporaryPersistence,
+            BentleyStatus (DateTimeCP maxLastAccessDate));
         MOCK_METHOD1 (RemoveRoot,
             BentleyStatus (Utf8StringCR rootName));
         MOCK_METHOD1 (RemoveRootsByPrefix,

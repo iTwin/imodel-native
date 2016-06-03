@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileInfoManager.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -159,9 +159,37 @@ BeFileName FileInfoManager::GetAbsoluteFilePath(bool isPersistent, BeFileNameCR 
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Travis.Cobbs    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus FileInfoManager::CheckMaxLastAccessDate(BeFileNameCR fileName, DateTimeCP maxLastAccessDate, bool &shouldSkip)
+    {
+    shouldSkip = false;
+    if (nullptr == maxLastAccessDate || fileName.IsEmpty() || !fileName.DoesPathExist())
+        {
+        return SUCCESS;
+        }
+    time_t accessTime;
+    if (BeFileNameStatus::Success != fileName.GetFileTime(nullptr, &accessTime, nullptr))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    DateTime lastAccessDate;
+    if (SUCCESS != DateTime::FromUnixMilliseconds(lastAccessDate, accessTime * 1000))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    if (DateTime::Compare(lastAccessDate, *maxLastAccessDate) == DateTime::CompareResult::LaterThan)
+        {
+        shouldSkip = true;
+        }
+    return SUCCESS;
+    }
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKeyMultiMap& holdingInstances)
+BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKeyMultiMap& holdingInstances, DateTimeCP maxLastAccessDate)
     {
     auto statement = m_statementCache->GetPreparedStatement("FileInfoManager::DeleteFilesNotHeldByInstances", [&]
         {
@@ -174,6 +202,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKey
         });
 
     JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    BentleyStatus returnValue = SUCCESS;
 
     while (ECSqlStepStatus::HasRow == statement->Step())
         {
@@ -202,12 +231,24 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKey
             continue;
             }
 
+        bool shouldSkip;
+        if (SUCCESS != CheckMaxLastAccessDate(fileInfo.GetFilePath(), maxLastAccessDate, shouldSkip))
+            {
+            // Return error from the function when we eventually finish, but continue processing
+            // files anyway.
+            returnValue = ERROR;
+            }
+        if (shouldSkip)
+            {
+            continue;
+            }
+
         if (SUCCESS != m_fileStorage->CleanupCachedFile(fileInfo.GetFilePath()))
             {
             return ERROR;
             }
         }
-    return SUCCESS;
+    return returnValue;
     }
 
 /*--------------------------------------------------------------------------------------+
