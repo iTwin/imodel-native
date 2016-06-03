@@ -22,18 +22,16 @@ struct SimplifyGraphic : Render::Graphic, Render::IGraphicBuilder
     DEFINE_T_SUPER(Render::Graphic);
 
 protected:
-    IGeometryProcessorR     m_processor;
-    ViewContextR            m_context;
-    IFacetOptionsPtr        m_facetOptions;
-
-    DVec3d                  m_textAxes[2];
-    bool                    m_inPatternDraw;
-    bool                    m_inSymbolDraw;
-    bool                    m_inTextDraw;
-    bool                    m_isOpen = true;
-
-    Render::GraphicParams   m_currGraphicParams;
-    Render::GeometryParams  m_currGeometryParams;
+    IGeometryProcessorR m_processor;
+    ViewContextR m_context;
+    IFacetOptionsPtr m_facetOptions;
+    DVec3d m_textAxes[2];
+    bool m_inPatternDraw;
+    bool m_inSymbolDraw;
+    bool m_inTextDraw;
+    bool m_isOpen = true;
+    Render::GraphicParams m_currGraphicParams;
+    Render::GeometryParams m_currGeometryParams;
 
     DGNPLATFORM_EXPORT void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
     DGNPLATFORM_EXPORT void _AddLineString(int numPoints, DPoint3dCP points) override;
@@ -59,7 +57,7 @@ protected:
     DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR text, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override;
     DGNPLATFORM_EXPORT void _AddDgnOle(Render::DgnOleDraw*) override;
-    DGNPLATFORM_EXPORT void _AddPointCloud(Render::PointCloudDraw* drawParams) override;
+    DGNPLATFORM_EXPORT void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) override;
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR) const override;
 
