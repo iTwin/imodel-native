@@ -581,46 +581,53 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
     if (!IsLoaded())
         Load();
 
-    // Save header and points
-    this->SavePointsToCloud(pi_pPointStore);
-
-    // Save indices
-    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(GetPtsIndicePtr());
-
-    if (indicePtr->size() > 0)
-        pi_pIndiceStore->StoreBlock(const_cast<int*>(&(*indicePtr)[0]), indicePtr->size(), GetBlockID());    
-
-    if (m_nodeHeader.m_isTextured)
+    RunOnNextAvailableThread(std::bind([pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
         {
-        // Save UVs
-        RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(GetUVCoordsPtr());
-        
-        if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
-            {
-            //assert(uvCoordsPtr->size() > 0);
-            pi_pUVStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), GetBlockID());
-            }
 
-        // Save UVIndices
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(GetUVsIndicesPtr());
-            
-        if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
+        // Save header and points
+        node->SavePointDataToCloud(pi_pPointStore);
+
+        // Save indices
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
+
+        if (indicePtr->size() > 0)
+            pi_pIndiceStore->StoreBlock(const_cast<int*>(&(*indicePtr)[0]), indicePtr->size(), node->GetBlockID());
+
+        if (node->m_nodeHeader.m_isTextured)
             {
-            //assert(uvIndicePtr->size() > 0);
-            pi_pUVIndiceStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), GetBlockID());    
+            // Save UVs
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
+
+            if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
+                {
+                //assert(uvCoordsPtr->size() > 0);
+                pi_pUVStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), node->GetBlockID());
+                }
+
+            // Save UVIndices
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
+
+            if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
+                {
+                //assert(uvIndicePtr->size() > 0);
+                pi_pUVIndiceStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), node->GetBlockID());
+                }
+
+            // Save texture
+            auto textureStore = static_cast<IScalableMeshDataStore<uint8_t, float, float>*>(node->GetTextureStore());
+            assert(textureStore != nullptr);
+            auto countTextureData = textureStore->GetBlockDataCount(node->GetBlockID());
+            if (countTextureData > 0)
+                {
+                //uint8_t* textureData = new uint8_t[countTextureData];
+                bvector<uint8_t> textureData(countTextureData);
+                size_t newCount = textureStore->LoadCompressedBlock(textureData, countTextureData, node->GetBlockID());
+                pi_pTextureStore->StoreCompressedBlock(textureData.data(), newCount, node->GetBlockID());
+                //delete[] textureData;
+                }
             }
-        
-        // Save texture
-        auto textureStore = static_cast<IScalableMeshDataStore<uint8_t, float, float>*>(GetTextureStore());
-        assert(textureStore != nullptr);
-        auto countTextureData = textureStore->GetBlockDataCount(GetBlockID());
-        if (countTextureData > 0)
-            {
-            uint8_t* textureData = new uint8_t[countTextureData];
-            size_t newCount = textureStore->LoadCompressedBlock(textureData, countTextureData, GetBlockID());
-            pi_pTextureStore->StoreCompressedBlock(textureData, newCount, GetBlockID());
-            }           
-        }
+        SetThreadAvailableAsync(threadId);
+        }, this, std::placeholders::_1));
 
     if (m_pSubNodeNoSplit != nullptr)
         {
@@ -644,6 +651,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
                 }
             }
         }
+    if (m_nodeHeader.m_level == 0)
+        WaitForThreadStop();
     }
 #ifdef INDEX_DUMPING_ACTIVATED
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
