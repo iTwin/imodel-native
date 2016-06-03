@@ -121,6 +121,12 @@ public:
         DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
     };
         
+    //! Options for querying availability of locks and codes
+    enum class FastQuery
+    {
+        No, //!< Query the server. May be slow, but results will be up-to-date.
+        Yes //!< Query a local cache. Faster, but results may be out-of-date with server state.
+    };
 private:
     DgnDbR  m_db;
 
@@ -130,8 +136,15 @@ private:
 protected:
     explicit IBriefcaseManager(DgnDbR db) : m_db(db) { }
 
+    enum class RequestPurpose
+    {
+        Acquire,
+        Query,
+        FastQuery
+    };
+
     // Codes and Locks
-    virtual Response _ProcessRequest(Request& request) = 0;
+    virtual Response _ProcessRequest(Request& request, RequestPurpose purpose) = 0;
     virtual RepositoryStatus _Demote(DgnLockSet& locks, DgnCodeSet const& codes) = 0;
     virtual RepositoryStatus _Relinquish(Resources which) = 0;
     virtual bool _AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* status) = 0;
@@ -170,7 +183,15 @@ public:
     //! @param[in]      request The set of locks and/or codes to acquire, and options for customizing the response
     //! @return The response, containing the result and any additional details as specified by the request's ResponseOptions
     //! @remarks Note the contents of the request may be modified.
-    Response ProcessRequest(Request& request) { return _ProcessRequest(request); }
+    Response Acquire(Request& request) { return _ProcessRequest(request, RequestPurpose::Acquire); }
+
+    //! Query whether all of a set of locks and codes are available for acquisition by this briefcase.
+    //! @param[in]      request  The set of locks and/or codes to acquire, and options for customizing the response
+    //! @param[out]     response If supplied, populated with the results of the operation
+    //! @param[in]      fast     Whether to query the repository manager directly (slow but accurate) or local cache (fast but less accurate)
+    //! @return True if all locks and codes are available; LockAlreadyHeld or CodeUnavailable if some are not; or an error status if the operation failed.
+    //! @remarks Note the contents of the request may be modified.
+    DGNPLATFORM_EXPORT bool AreResourcesAvailable(Request& request, Response* response=nullptr, FastQuery fast=FastQuery::No);
 
     //! Demote the previously-acquired locks to the specified levels, and release the previously-reserved codes
     //! @param[in]      locks The set of locks to demote and their new levels
@@ -277,7 +298,7 @@ public:
     DGNPLATFORM_EXPORT void ReformulateRequest(Request& req, Response const& response) const;
 
     //! Acquire a shared or exclusive lock on the DgnDb.
-    Response LockDb(LockLevel level) { Request req; req.Locks().Insert(GetDgnDb(), level); return ProcessRequest(req); }
+    Response LockDb(LockLevel level) { Request req; req.Locks().Insert(GetDgnDb(), level); return Acquire(req); }
     //@}
 
     //! @name Managing Codes
@@ -358,7 +379,7 @@ struct IRepositoryManager
     typedef IBriefcaseManager::ResponseOptions ResponseOptions;
 protected:
     // Codes + Locks
-    virtual Response _ProcessRequest(Request const& req, DgnDbR db) = 0;
+    virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) = 0;
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) = 0;
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) = 0;
     virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) = 0;
@@ -368,7 +389,13 @@ public:
     //! @param[in]      req The set of desired codes and/or locks, and options for customizing what data is included in the response
     //! @param[in]      db  The requesting briefcase
     //! @return The response, customized according to the specified options
-    Response ProcessRequest(Request const& req, DgnDbR db) { return _ProcessRequest(req, db); }
+    Response Acquire(Request const& req, DgnDbR db) { return _ProcessRequest(req, db, false); }
+
+    //! Query whether a briefcase's request to acquire locks and/or reserve codes could be fulfilled, without actually fulfulling it
+    //! @param[in]      req The set of desired codes and/or locks, and options for customizing what data is included in the response
+    //! @param[in]      db  The requesting briefcase
+    //! @return The response, customized according to the specified options
+    Response QueryAvailability(Request const& req, DgnDbR db) { return _ProcessRequest(req, db, true); }
 
     //! Reduces the level at which a set of locks are held and/or releases a set of reserved codes
     //! @param[in]      locks The set of locks to demote and their new levels

@@ -30,7 +30,7 @@ private:
     Db  m_db;
 
     // impl
-    virtual Response _ProcessRequest(Request const& req, DgnDbR db) override;
+    virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
     virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) override;
@@ -60,7 +60,7 @@ private:
     RepositoryStatus ValidateRelinquish(DgnCodeInfoSet&, DgnDbR);
     void MarkDiscarded(DgnCodeInfoSet const& discarded);
     void MarkRevision(DgnCodeSet const& codes, bool discarded, Utf8StringCR revId);
-    void _ReserveCodes(Response& response, DgnCodeSet const& req, DgnDbR db, Options opts);
+    void _ReserveCodes(Response& response, DgnCodeSet const& req, DgnDbR db, Options opts, bool queryOnly);
     RepositoryStatus _ReleaseCodes(DgnCodeSet const&, DgnDbR);
     RepositoryStatus _RelinquishCodes(DgnDbR);
     RepositoryStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&);
@@ -282,12 +282,27 @@ static void bindBcId(Statement& stmt, int index, BeBriefcaseId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryManager::Response RepositoryManager::_ProcessRequest(Request const& req, DgnDbR db)
+RepositoryManager::Response RepositoryManager::_ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
     {
     Response response;
-    _AcquireLocks(response, req.Locks(), db, req.Options());
+    _ReserveCodes(response, req.Codes(), db, req.Options(), queryOnly);
+    auto prevStatus = response.Result();
+    if (queryOnly)
+        {
+        if (!AreLocksAvailable(req.Locks(), db.GetBriefcaseId()))
+            {
+            response.SetResult(RepositoryStatus::LockAlreadyHeld);
+            if (Options::None != (Options::LockState & req.Options()))
+                GetDeniedLocks(response.LockStates(), req.Locks(), db.GetBriefcaseId());
+            }
+        }
+    else
+        {
+        _AcquireLocks(response, req.Locks(), db, req.Options());
+        }
+
     if (RepositoryStatus::Success == response.Result())
-        _ReserveCodes(response, req.Codes(), db, req.Options());
+        response.SetResult(prevStatus);
 
     return response;
     }
@@ -675,7 +690,7 @@ struct VirtualCodeSet : VirtualSet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req, DgnDbR db, Options opts)
+void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req, DgnDbR db, Options opts, bool queryOnly)
     {
     VirtualCodeSet vset(req);
     Statement stmt;
@@ -731,7 +746,7 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
         }
 
     response.SetResult(status);
-    if (RepositoryStatus::Success != status)
+    if (RepositoryStatus::Success != status || queryOnly)
         return;
 
     auto bcId = static_cast<int>(db.GetBriefcaseId().GetValue());

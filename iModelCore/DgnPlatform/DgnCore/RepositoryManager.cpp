@@ -16,7 +16,7 @@ struct MasterBriefcaseManager : IBriefcaseManager
 private:
     MasterBriefcaseManager(DgnDbR db) : IBriefcaseManager(db) { }
 
-    virtual Response _ProcessRequest(Request&) override { return Response(RepositoryStatus::Success); }
+    virtual Response _ProcessRequest(Request&, RequestPurpose purpose) override { return Response(RepositoryStatus::Success); }
     virtual RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _Relinquish(Resources) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
@@ -69,7 +69,7 @@ private:
     Db      m_localDb;
     DbState m_localDbState;
 
-    virtual Response _ProcessRequest(Request&) override;
+    virtual Response _ProcessRequest(Request&, RequestPurpose purpose) override;
     virtual RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override;
     virtual RepositoryStatus _Relinquish(Resources which) override;
     virtual bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus*) override;
@@ -334,27 +334,8 @@ RepositoryStatus BriefcaseManager::Initialize()
     if (BE_SQLITE_OK != m_localDb.CreateNewDb(filename))
         return RepositoryStatus::SyncError;
 
-    // Save the DgnDb creation date for later verification in offline mode...
-    DateTime dgnDbCreationDate;
-    if (BE_SQLITE_ROW == GetDgnDb().QueryCreationDate(dgnDbCreationDate))
-        m_localDb.SavePropertyString(GetCreationDatePropSpec(), dgnDbCreationDate.ToUtf8String());
-
-    // Set up the required tables
-    DbResult result = m_localDb.CreateTable(TABLE_Codes,
-                                                     CODE_AuthorityId " INTEGER,"
-                                                     CODE_NameSpace " TEXT,"
-                                                     CODE_Value " TEXT,"
-                                                     "PRIMARY KEY" CODE_Values);
-    if (BE_SQLITE_OK == result)
-        {
-        result = m_localDb.CreateTable(TABLE_Locks,
-                                                LOCK_Type " INTEGER,"
-                                                LOCK_Id " INTEGER,"
-                                                LOCK_Level " INTEGER,"
-                                                "PRIMARY KEY(" LOCK_Type "," LOCK_Id ")");
-        }
-
-    return BE_SQLITE_OK == result ? Pull() : RepositoryStatus::SyncError;
+    // Set up the required tables and properties, then populate from server
+    return InitializeLocalDb() ? Pull() : RepositoryStatus::SyncError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -723,7 +704,7 @@ RepositoryStatus BriefcaseManager::AcquireLocks(LockRequestR locks, bool cull)
 
     Request req;
     std::swap(locks, req.Locks());
-    auto result = server->ProcessRequest(req, GetDgnDb()).Result();
+    auto result = server->Acquire(req, GetDgnDb()).Result();
     std::swap(locks, req.Locks());
 
     if (RepositoryStatus::Success == result)
@@ -781,7 +762,7 @@ void BriefcaseManager::Cull(DgnLockSet& locks)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req)
+IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req, RequestPurpose purpose)
     {
     RepositoryStatus stat;
     if (!Validate(&stat))
@@ -791,12 +772,18 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req)
     if (req.IsEmpty())
         return Response(RepositoryStatus::Success);
 
+    if (RequestPurpose::FastQuery == purpose)
+        {
+        // ###TODO: Respect FastQuery...
+        purpose = RequestPurpose::Query;
+        }
+
     auto mgr = GetRepositoryManager();
     if (nullptr == mgr)
         return Response(RepositoryStatus::ServerUnavailable);
 
-    auto response = mgr->ProcessRequest(req, GetDgnDb());
-    if (RepositoryStatus::Success == response.Result())
+    auto response = RequestPurpose::Acquire == purpose ? mgr->Acquire(req, GetDgnDb()) : mgr->QueryAvailability(req, GetDgnDb());
+    if (RequestPurpose::Acquire == purpose && RepositoryStatus::Success == response.Result())
         {
         Insert(req.Codes());
         Insert(req.Locks(), true);
@@ -1249,7 +1236,7 @@ RepositoryStatus IBriefcaseManager::PerformAction(Request& req, PrepareAction ac
                 break;
             case PrepareAction::Acquire:
                 {
-                auto response = ProcessRequest(req);
+                auto response = Acquire(req);
 #ifdef DEBUG_LOCKS
                 Json::Value json;
                 response.ToJson(json);
@@ -1341,7 +1328,7 @@ IBriefcaseManager::Response IBriefcaseManager::AcquireLocks(LockRequestR locks, 
     {
     Request req(options);
     std::swap(locks, req.Locks());
-    auto response = ProcessRequest(req);
+    auto response = Acquire(req);
     std::swap(locks, req.Locks());
     return response;
     }
@@ -1353,7 +1340,7 @@ IBriefcaseManager::Response IBriefcaseManager::ReserveCodes(DgnCodeSet& codes, R
     {
     Request req(options);
     std::swap(codes, req.Codes());
-    auto response = ProcessRequest(req);
+    auto response = Acquire(req);
     std::swap(codes, req.Codes());
     return response;
     }
@@ -1454,6 +1441,17 @@ void IBriefcaseManager::ReformulateRequest(Request& req, Response const& respons
     {
     ReformulateLockRequest(req.Locks(), response);
     ReformulateCodeRequest(req.Codes(), response);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IBriefcaseManager::AreResourcesAvailable(Request& req, Response* pResponse, FastQuery fast)
+    {
+    Response localResponse;
+    auto& response = nullptr != pResponse ? *pResponse : localResponse;
+    response = _ProcessRequest(req, FastQuery::Yes == fast ? RequestPurpose::FastQuery : RequestPurpose::Query);
+    return RepositoryStatus::Success == response.Result();
     }
 
 #define JSON_Status "Status"            // RepositoryStatus
