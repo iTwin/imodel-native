@@ -2207,13 +2207,13 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
     {
     s_nGetDTMs++;
     auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
+    std::lock_guard<std::mutex> m(m_meshNode->m_dtmLock);
     if (m_meshNode->m_tileBcDTM.get() != nullptr)
         return m_meshNode->m_tileBcDTM.get();
     else
         {
         s_nMissedDTMs++;
             {
-            std::lock_guard<std::mutex> m(m_meshNode->m_dtmLock);
             bvector<bool> clips;
             IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
             auto meshP = GetMesh(flags, clips);
