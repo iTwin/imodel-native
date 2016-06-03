@@ -367,10 +367,18 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //  Cached file managment
         //--------------------------------------------------------------------------------------------------------------------------------+
 
-        // Change or prepare instance file cache location. Will move file if location changed.
-        virtual BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation) = 0;
-        // Returns FileCache location that is setup for given instasnce - Temporary or Persistent
-        virtual FileCache     GetFileCacheLocation(ObjectIdCR objectId) = 0;
+        //! Change or prepare object file cache location. Will move file if location changed
+        //! @param objectId
+        //! @param cacheLocation - location where file should be stored. Aligns with cache CacheEnvironment 
+        //! @param externalRelativePath - only applies to FileCache::External and will fail with other locations as they manage paths automatically.
+        //! Examples:
+        //! "" - store file in the root of external directory
+        //! "FolderA/FolderB/", "FolderA/FolderB" - store file in subfolder of external directory
+        virtual BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativePath = BeFileName()) = 0;
+        //! Returns FileCache location that is setup for given object
+        //! @param objectId
+        //! @param defaultLocation - return value if object has no file cache location set
+        virtual FileCache     GetFileCacheLocation(ObjectIdCR objectId, FileCache defaultLocation = FileCache::Temporary) = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

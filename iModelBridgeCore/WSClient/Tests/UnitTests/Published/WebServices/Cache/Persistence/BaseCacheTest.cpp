@@ -241,12 +241,14 @@ void BaseCacheTest::SetUpTestCase()
     s_targetCacheFolderPath = GetTestsTempDir().AppendToPath(L"BaseCacheTest-TestCaches");
 
     s_seedCachePath = BeFileName(s_seedCacheFolderPath).AppendToPath(L"testcache.ecdb");
-    s_seedEnvironment.persistentFileCacheDir = BeFileName(s_seedCacheFolderPath).AppendToPath(L"persistent");
-    s_seedEnvironment.temporaryFileCacheDir = BeFileName(s_seedCacheFolderPath).AppendToPath(L"temporary");
+    s_seedEnvironment.persistentFileCacheDir = BeFileName(s_seedCacheFolderPath).AppendToPath(L"persistent/");
+    s_seedEnvironment.temporaryFileCacheDir = BeFileName(s_seedCacheFolderPath).AppendToPath(L"temporary/");
+    s_seedEnvironment.externalFileCacheDir = BeFileName(s_seedCacheFolderPath).AppendToPath(L"external/");
 
     s_targetCachePath = BeFileName(s_targetCacheFolderPath).AppendToPath(L"testcache.ecdb");
-    s_targetEnvironment.persistentFileCacheDir = BeFileName(s_targetCacheFolderPath).AppendToPath(L"persistent");
-    s_targetEnvironment.temporaryFileCacheDir = BeFileName(s_targetCacheFolderPath).AppendToPath(L"temporary");
+    s_targetEnvironment.persistentFileCacheDir = BeFileName(s_targetCacheFolderPath).AppendToPath(L"persistent/");
+    s_targetEnvironment.temporaryFileCacheDir = BeFileName(s_targetCacheFolderPath).AppendToPath(L"temporary/");
+    s_targetEnvironment.externalFileCacheDir = BeFileName(s_targetCacheFolderPath).AppendToPath(L"external/");
 
     if (s_seedCacheFolderPath.DoesPathExist())
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(s_seedCacheFolderPath));

@@ -242,16 +242,8 @@ BeFileName FileInfoManager::ReadFilePath(ECInstanceKeyCR instance)
     FileInfo fileInfo = ReadInfo(instance);
     BeFileName path = fileInfo.GetFilePath();
 
-    if (path.empty())
-        {
-        return path;
-        }
-
-    if (!path.DoesPathExist())
-        {
+    if (!path.empty() && !path.DoesPathExist())
         path.clear();
-        return path;
-        }
 
     return path;
     }

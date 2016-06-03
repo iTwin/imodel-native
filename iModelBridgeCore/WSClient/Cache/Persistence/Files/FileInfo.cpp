@@ -53,17 +53,18 @@ BeFileName FileInfo::GetFilePath() const
     {
     if (nullptr == m_pathProvider)
         return BeFileName();
-        
+
     return m_pathProvider->GetAbsoluteFilePath(GetLocation(), GetRelativePath());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FileInfo::SetFilePath(FileCache location, BeFileNameCR relativePath)
+void FileInfo::SetFilePath(FileCache location, BeFileNameCR relativePath, Utf8StringCR fileName)
     {
     SetLocation(location);
     SetRelativePath(relativePath);
+    SetFileName(fileName);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -77,10 +78,25 @@ BeFileName FileInfo::GetRelativePath() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FileInfo::SetRelativePath(BeFileNameCR path)
+void FileInfo::SetRelativePath(BeFileNameCR relativePath)
     {
-    m_externalFileInfoJson[CLASS_ExternalFileInfo_PROPERTY_RelativePath] = path.GetNameUtf8();
-    m_externalFileInfoJson[CLASS_FileInfo_PROPERTY_Name] = Utf8String(path.GetFileNameAndExtension());
+    m_externalFileInfoJson[CLASS_ExternalFileInfo_PROPERTY_RelativePath] = relativePath.GetNameUtf8();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String FileInfo::GetFileName() const
+    {
+    return m_externalFileInfoJson[CLASS_FileInfo_PROPERTY_Name].asString();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void FileInfo::SetFileName(Utf8StringCR fileName)
+    {
+    m_externalFileInfoJson[CLASS_FileInfo_PROPERTY_Name] = fileName;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -106,11 +122,11 @@ void FileInfo::SetFileCacheTag(Utf8StringCR tag)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-FileCache FileInfo::GetLocation() const
+FileCache FileInfo::GetLocation(FileCache defaultLocation) const
     {
     JsonValueCR idJson = m_externalFileInfoJson[CLASS_ExternalFileInfo_PROPERTY_RootFolder];
     if (!idJson.isInt())
-        return FileCache::Temporary;
+        return defaultLocation;
 
     return static_cast<FileCache>(idJson.asInt());
     }

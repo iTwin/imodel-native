@@ -41,3 +41,11 @@ int CacheEnvironment::GetTemporaryRootFolderId()
     {
     return static_cast<int>(FileCache::Temporary);
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+int CacheEnvironment::GetExternalRootFolderId()
+    {
+    return static_cast<int>(FileCache::External);
+    }
