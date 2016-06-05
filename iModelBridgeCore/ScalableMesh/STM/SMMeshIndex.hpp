@@ -2387,6 +2387,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Update
         existingPts->clear();
         existingPts->push_back(&newVertices[0], (int) newVertices.size());
         }
+    m_tileBcDTM = nullptr;
     }
 
 //=======================================================================================
@@ -2465,7 +2466,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     HRAClearOptions clearOptions;
 
    //green color when no texture is available
-    uint32_t green = 0x007700FF;
+    uint32_t green;
+
+    ((uint8_t*)&green)[0] = 0;
+    ((uint8_t*)&green)[1] = 0x77;
+    ((uint8_t*)&green)[2] = 0;
 
     clearOptions.SetRawDataValue(&green);
 

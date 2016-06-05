@@ -337,6 +337,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         {
             if (subNodes[indexNodes] != NULL)
                 {            
+                extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
                 // The value of 10 here is required. The alternative path use integer division (*3/4 +1) that will take all points anyway
                 // In reality starting at 9 not all points are used but let's gives us a little margin.
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
