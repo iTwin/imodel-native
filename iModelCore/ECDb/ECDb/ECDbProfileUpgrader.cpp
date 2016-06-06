@@ -13,6 +13,33 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3711::_Upgrade(ECDbCR ecdb) const
+    {
+    //ec_ClassHierarchy
+    DbResult stat = ecdb.ExecuteSql("CREATE TABLE ec_ClassHierarchy("
+                           "Id INTEGER PRIMARY KEY,"
+                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassHierarchy_ClassId_BaseClassId ON ec_ClassHasBaseClasses(ClassId,BaseClassId);"
+                           "CREATE INDEX ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHasBaseClasses(BaseClassId);");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ECDbSchemaManager::RebuildClassHiearchyTable(ecdb);
+    if (BE_SQLITE_DONE != stat)
+        return stat;
+
+    LOG.debug("ECDb profile upgrade: Added ec_ClassHierarchy table to store flat list of baseClasses");
+    return BE_SQLITE_OK;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3710::_Upgrade(ECDbCR ecdb) const
     {
     const int ecinstanceIdColKindInt = Enum::ToInt(DbColumn::Kind::ECInstanceId);

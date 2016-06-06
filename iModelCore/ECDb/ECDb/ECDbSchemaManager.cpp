@@ -22,6 +22,29 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb, ECDbMap& map) :m_ecdb(ecdb), m_map(map), m_schemaReader(new ECDbSchemaReader(ecdb))
     {}
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ECDbSchemaManager::RebuildClassHiearchyTable(ECDbCR ecdb)
+    {
+    StopWatch timer(true);
+    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_ClassHierarchy");
+    if (r != BE_SQLITE_DONE)
+        return r;
+
+    return ecdb.ExecuteSql("WITH RECURSIVE"
+                           "    BaseClassList(ClassId, BaseClassId) AS ("
+                           "        SELECT  Id, Id  FROM ec_Class"
+                           "        UNION"
+                           "        SELECT  DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
+                           "        INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
+                           "        ORDER BY 2"
+                           "        )"
+                           "    INSERT INTO ec_ClassHierarchy"
+                           "    SELECT  NULL Id, ClassId, BaseClassId FROM BaseClassList");
+    timer.Stop();
+    LOG.infov("RebuildClassHiearchyTable in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
 //---------------------------------------------------------------------------------------
@@ -305,6 +328,9 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
         if (SUCCESS != schemaWriter.Import(schemaPrepareContext, *schema))
             return ERROR;
         }
+
+    if (ECDbSchemaManager::RebuildClassHiearchyTable(GetECDb()) != BE_SQLITE_DONE)
+        return ERROR;
 
     return SUCCESS;
     }

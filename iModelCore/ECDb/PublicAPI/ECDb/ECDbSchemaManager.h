@@ -190,6 +190,9 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
         static ECN::ECSchemaId GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR, ECN::ECSchemaCR);
 
+        //! Rebuild fast access cache table for flatterned baseClass hiearchy
+        static  DbResult RebuildClassHiearchyTable(ECDbCR ecdb);
+
         void ClearCache() const;
         ECDbCR GetECDb() const;
 #endif
