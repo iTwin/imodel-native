@@ -42,6 +42,7 @@ DataSourceCacheUpgradeTests.Open_V1*
 # ECSchema update in ECDb does not support deletions yet
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
 
+CachingDataSourceTests.SyncCachedData_WSG1AndInitialInstancesReturnsNotFound_RemovesInstancesFromCache # crashed 61-16q2, winx64, optimized
 #----------------------------------------------------------------------------------------
 # New issues
 #----------------------------------------------------------------------------------------

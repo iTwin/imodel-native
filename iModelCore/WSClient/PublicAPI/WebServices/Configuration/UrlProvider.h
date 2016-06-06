@@ -50,9 +50,6 @@ struct UrlProvider
 
                 //! Retrieve cached, server configured or default URL if no connection exists.
                 WSCLIENT_EXPORT AsyncTaskPtr<Utf8String> GetAsync() const;
-
-                //! Retrieve default URL.
-                WSCLIENT_EXPORT Utf8String GetDefault() const;
             };
 
         WSCLIENT_EXPORT static int64_t DefaultTimeout;
