@@ -164,7 +164,9 @@
     <ClCompile Include="DgnDbServerClient\DgnDbLocks.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryConnection.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerLockEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerRevisionEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp" />
     <ClCompile Include="DgnDbServerClient\EventServiceConnection.cpp" />
     <ClCompile Include="DgnDbServerClient\EventServiceInfo.cpp" />
@@ -262,9 +264,12 @@
     <ClInclude Include="ConnectC\CWSCCPrivate.h" />
     <ClInclude Include="ConnectC\WSLocalState.h" />
     <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerLockEvent.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevisionEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceConnection.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceInfo.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceReceive.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\IDgnDbServerEvent.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenBufferPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h" />

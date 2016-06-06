@@ -579,16 +579,3 @@ Dgn::IRepositoryManager* DgnDbClient::GetRepositoryManagerP()
     return dynamic_cast<Dgn::IRepositoryManager*>(m_repositoryManager.get());
     }
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Arvind.Venkateswaran           05/2016
-//---------------------------------------------------------------------------------------
-bool DgnDbClient::SendEventsToEventService
-(
-Utf8String repoId, 
-Utf8String msg, 
-ICancellationTokenPtr cancellationToken
-)  //Temporary, for testing
-    {
-    return  ConnectToRepository(RepositoryInfo(m_serverUrl, repoId), cancellationToken)->GetResult().GetValue()->SendEventsToEventService(msg, cancellationToken);
-    }
-

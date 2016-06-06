@@ -74,7 +74,10 @@ public:
     //! @return Asynchronous task that returns success or an error.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerBoolTaskPtr             IsBriefcaseUpToDate     (ICancellationTokenPtr cancellationToken = nullptr) const;
 
-	DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr         GetEvents				(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr) const;
+	/*DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr         GetEvents				(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr) const;*/
+
+    DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventTaskPtr          GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventsTaskPtr         GetEvents(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR                        GetDgnDb                () const; //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR        GetRepositoryConnection () const; //!< Connection to a repository on server.

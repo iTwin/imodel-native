@@ -142,9 +142,6 @@ public:
 
     //! Returns DgnDbServer RepositoryManager.
     DGNDBSERVERCLIENT_EXPORT IRepositoryManager*            GetRepositoryManagerP   ();
-
-    //! Receive Events from EventService
-    DGNDBSERVERCLIENT_EXPORT bool                       SendEventsToEventService(Utf8String repoId, Utf8String msg, ICancellationTokenPtr cancellationToken = nullptr);  //Temporary, for testing
 };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE
