@@ -201,17 +201,17 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
             continue;
             }
 
-        bool shouldSkip;
-        if (SUCCESS != CheckMaxLastAccessDate(fileInfo.GetFilePath(), maxLastAccessDate, shouldSkip))
-            {
-            // Return error from the function when we eventually finish, but continue processing
-            // files anyway.
-            returnValue = ERROR;
-            }
-        if (shouldSkip)
-            {
-            continue;
-            }
+        //bool shouldSkip;
+        //if (SUCCESS != CheckMaxLastAccessDate(fileInfo.GetFilePath(), maxLastAccessDate, shouldSkip))
+        //    {
+        //    // Return error from the function when we eventually finish, but continue processing
+        //    // files anyway.
+        //    returnValue = ERROR;
+        //    }
+        //if (shouldSkip)
+        //    {
+        //    continue;
+        //    }
 
         Json::Value externalFileInfoJson;
         if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()) ||
