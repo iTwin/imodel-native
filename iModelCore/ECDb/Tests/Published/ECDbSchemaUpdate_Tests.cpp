@@ -182,7 +182,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECSchemaAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
     SetupECDb("schemaupdate.ecdb", schemaItem);
@@ -192,7 +192,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECSchemaAttributes)
     //Upgrade with some attributes and import schema
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.01' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
@@ -206,6 +206,12 @@ TEST_F(ECSchemaUpdateTests, UpdateECSchemaAttributes)
     ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
     CloseReOpenECDb();
+    ECSchemaCP schema = GetECDb().Schemas().GetECSchema("TestSchema");
+    ASSERT_EQ(schema->GetVersionMajor(), 1);
+    ASSERT_EQ(schema->GetVersionMinor(), 1);
+    ASSERT_STREQ("Modified Test Schema", schema->GetDisplayLabel().c_str());
+    ASSERT_STREQ("modified test schema", schema->GetDescription().c_str());
+    ASSERT_STREQ("ts_modified", schema->GetNamespacePrefix().c_str());
 #ifdef METASCHEMA
     //Verify attributes via ECSql using MataSchema
     ECSqlStatement statement;
