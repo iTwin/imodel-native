@@ -50,9 +50,8 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <!-- Base class for all relationships where the domain is unknown in order to avoid that they get persisted as foreign keys in the dgn_Element table
-         (Should actually be abstract (empty source/target definitions), but ECDb doesn't support inheriting MapStrategies from abstract classes yet)-->
-    <ECRelationshipClass typeName="ElementRefersToElement" strength="referencing">
+    <!-- Base class for all relationships where the domain is unknown in order to avoid that they get persisted as foreign keys in the dgn_Element table-->
+    <ECRelationshipClass typeName="ElementRefersToElement" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.01">
                 <MapStrategy>
@@ -86,7 +85,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="ElementOwnsMultiAspect" strength="embedding">
+    <ECRelationshipClass typeName="ElementOwnsMultiAspect" strength="embedding" modifier="Sealed">
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="dgn:Element"/>
         </Source>
