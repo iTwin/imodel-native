@@ -15,9 +15,6 @@ typedef DRTNodeP*                   DRTNodeH;
 typedef DgnRangeTree::LeafNode*     DRTLeafNodeP;
 typedef DgnRangeTree::InternalNode* DRTInternalNodeP;
 
-
-#define DEBUG_PRINTF(arg) 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -38,46 +35,6 @@ static inline double rangeExtentSquared(DRange3dCR range)
     return extentX * extentX + extentY * extentY + extentZ * extentZ;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-#ifdef UNUSED
-static inline double rangeExtentSquared(RTree3dValCR range)
-    {
-    double extentX = (double) range.m_maxx - range.m_minx;
-    double extentY = (double) range.m_maxy - range.m_miny;
-    double extentZ = (double) range.m_maxz - range.m_minz;
-    return extentX * extentX + extentY * extentY + extentZ * extentZ;
-    }
-#endif
-
-#ifdef UNUSED
-/*---------------------------------------------------------------------------------**//**
-* Optimized - no function calls, no nullptr tests etc. as in DRange3d::extentSquared.
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-static inline void extendRange(DRange3dR thisRange, DPoint3dCR point)
-    {
-    if (point.x < thisRange.low.x)
-        thisRange.low.x = point.x;
-
-    if (point.x > thisRange.high.x)
-        thisRange.high.x = point.x;
-
-    if (point.y < thisRange.low.y)
-        thisRange.low.y = point.y;
-
-    if (point.y > thisRange.high.y)
-        thisRange.high.y = point.y;
-
-    if (point.z < thisRange.low.z)
-        thisRange.low.z = point.z;
-
-    if (point.z > thisRange.high.z)
-        thisRange.high.z = point.z;
-    }
-#endif
-    
 /*---------------------------------------------------------------------------------**//**
 * Optimized - no function calls, no nullptr tests etc. as in DRange3d::extentSquared.
 * @bsimethod                                                    RayBentley      10/2009

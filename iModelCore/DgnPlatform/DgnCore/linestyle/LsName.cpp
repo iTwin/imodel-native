@@ -324,7 +324,7 @@ static void initializePoints(DPoint3d points[2], LsComponentR component, double 
         //  Apparently nothing is length dependent.
         length = component._GetMaxWidth(nullptr);
         if (length <  mgds_fc_epsilon)
-            length = 1.0;
+            length = 2048.00;
         }
 
     length *= scale;
@@ -406,14 +406,10 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     textureDescr.m_hasTextureWidth = false;
     textureDescr.m_textureWidth = 0;
 
+    //  We create the texture in the component's units.  Then to convert to the line style's units we set the true width to the component width times unitDef.
     double unitDef = GetUnitsDefinition();
     if (unitDef == 0)
-        {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        BeAssert(unitDef > mgds_fc_epsilon);
-#endif
         unitDef = 1.0;
-        }
 
     DgnViewportP vp = viewContext.GetViewport();
     if (vp == nullptr)
@@ -443,7 +439,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
         return BSIERROR;
         }
 
-    //  Get just the range of the components.  Don't let any scaling enter into this.
+    //  Get just the range of the components.  Don't let any scaling enter into this. We scale latter by multiplying by unitDef.
     DPoint3d  points[2];
     initializePoints(points, *m_lsComp, 1.0);
 
@@ -451,7 +447,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     LineStyleRangeCollector::Process(lsRange, *comp, points);
 
     uint32_t  scaleFactor = 1;
-    DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLength());
+    DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLengthForTexture());
 
     SymbologyQueryResults  symbologyResults;
     comp->_QuerySymbology(symbologyResults);
@@ -481,12 +477,15 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     textureDescr.m_texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, isColorBySymbol, false);
 
     double yRange = range2d.high.y - range2d.low.y;
+    BeAssert(0.0 != yRange);
     if (0.0 == yRange)
         yRange = 1;
 
     textureDescr.m_hasTextureWidth = true;
     textureDescr.m_textureWidth = yRange * unitDef;
 
+    BeAssert((range2d.high.y - range2d.low.y) * unitDef < 50);
+    BeAssert((range2d.high.x - range2d.low.x) * unitDef < 50);
     m_firstTextureInitialized = true;
 
     return BSISUCCESS;    

@@ -169,10 +169,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
 
 protected:
     bool m_noQuery = false;
+    bool m_loading = false;
     mutable bool m_abortQuery = false;
     Utf8String m_viewSQL;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
+    mutable double m_queryElementPerSecond = 10000;
     SceneMembersPtr m_scene;
     SpecialElements m_special;
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
@@ -181,7 +183,7 @@ protected:
 
     void QueryModelExtents(FitContextR);
     void QueueQuery(DgnViewportR, UpdatePlan::Query const&);
-    void AddtoSceneQuick(SceneContextR context, QueryResults& results);
+    void AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>&);
     bool AbortRequested() const {return m_abortQuery;} //!< @private
     void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
     DgnQueryViewCP _ToQueryView() const override {return this;}

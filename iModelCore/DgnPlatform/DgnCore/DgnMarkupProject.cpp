@@ -1121,6 +1121,12 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
 +---------------+---------------+---------------+---------------+---------------+------*/
 RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModelId)
     {
+    if (nullptr == markupProject.Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline model");
+        return nullptr;
+        }
+
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, "RedlineModel"));
     RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name), DPoint2d::FromZero()));
     if (!rdlModel.IsValid())
@@ -1144,6 +1150,12 @@ RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP nam
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, SpatialModelCR subjectViewTargetModel)
     {
+    if (nullptr == markupProject.Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline model");
+        return nullptr;
+        }
+
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
 
     SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name)));
@@ -1338,15 +1350,34 @@ void RedlineViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController* RedlineViewController::Create(DgnDbR project, DgnViewId viewId)
+ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, DgnDbR project, DgnViewId viewId)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(openStatus, openStatusIn);
+
     auto markupProject = dynamic_cast<DgnMarkupProject*>(&project);
-    if (markupProject == NULL)
-        return NULL;
+
+    if (markupProject == nullptr)
+        {
+        openStatus = DgnDbStatus::NotOpen;
+        return nullptr;
+        }
+
+    if (nullptr == markupProject->Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline view");
+        return nullptr;
+        }
+
     auto rdlView = ViewDefinition::QueryView(viewId, *markupProject);
-    auto rdlModel = rdlView.IsValid() ? markupProject->OpenRedlineModel(rdlView->GetBaseModelId()) : nullptr;
-    if (rdlModel == NULL)
-        return NULL;
+    if (!rdlView.IsValid())
+        {
+        openStatus = DgnDbStatus::ViewNotFound;
+        return nullptr;
+        }
+
+    auto rdlModel = markupProject->OpenRedlineModel(&openStatus, rdlView->GetBaseModelId());
+    if (rdlModel == nullptr)
+        return nullptr;
 
     return new RedlineViewController(*rdlModel, viewId);
     }
@@ -1354,18 +1385,21 @@ ViewController* RedlineViewController::Create(DgnDbR project, DgnViewId viewId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineViewControllerPtr RedlineViewController::InsertView(RedlineModelR rdlModel, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect)
+RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertStatusIn, RedlineModelR rdlModel, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(insertStatus, insertStatusIn);
+
     DgnMarkupProject* project = rdlModel.GetDgnMarkupProject();
     if (project == NULL)
         {
+        insertStatus = DgnDbStatus::NotOpen;
         BeAssert(false);
         return NULL;
         }
 
     RedlineViewDefinition view(RedlineViewDefinition::CreateParams(*project, rdlModel.GetCode().GetValue().c_str(),
                 ViewDefinition::Data(rdlModel.GetModelId(), DgnViewSource::Generated)));
-    if (!view.Insert().IsValid())
+    if (!view.Insert(&insertStatus).IsValid())
         return nullptr;
 
     auto controller = new RedlineViewController(rdlModel, view.GetViewId());
@@ -1436,15 +1470,27 @@ RedlineViewControllerPtr RedlineViewController::InsertView(RedlineModelR rdlMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId DgnMarkupProject::CreateRedlineModelView(RedlineModelR model, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect)
+DgnViewId DgnMarkupProject::CreateRedlineModelView(DgnDbStatus* createStatusIn, RedlineModelR model, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect)
     {
-    if (CheckIsOpen() != BSISUCCESS)
-        return DgnViewId();
+    DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, createStatusIn);
 
-    auto controller = RedlineViewController::InsertView(model, templateView, projectViewRect, imageViewRect);
+    if (CheckIsOpen() != BSISUCCESS)
+        {
+        createStatus = DgnDbStatus::NotOpen;
+        return DgnViewId();
+        }
+
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Markup domain not registered");
+        createStatus = DgnDbStatus::MissingDomain;
+        return DgnViewId();
+        }
+
+    auto controller = RedlineViewController::InsertView(&createStatus, model, templateView, projectViewRect, imageViewRect);
     if (!controller.IsValid())
         {
-        BeAssert(false && "We must always generate rdl views with unique names!");
+        BeAssert(false && "RedlineViewController::InsertView failed! This could be caused by using a duplicate name or by failing to register the Markup domain.");
         return  DgnViewId();
         }
 
@@ -1571,6 +1617,11 @@ ViewControllerPtr SpatialRedlineViewController::Create(DgnViewType viewType, Utf
     auto rdlModel = rdlView.IsValid() ? markupProject->OpenRedlineModel(rdlView.GetBaseModelId()) : nullptr;
     if (rdlModel == NULL)
         return NULL;
+    if (nullptr == rdlModel->GetDgnDb().Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline view");
+        return nullptr;
+        }
     return new SpatialRedlineViewController(*rdlModel, subjectViewController);
     }
 
@@ -1584,6 +1635,13 @@ SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(Spatial
     auto rc = model.GetDgnMarkupProject()->Views().InsertView(view);
     if (BE_SQLITE_OK != rc)
         return NULL;
+
+    if (nullptr == model.GetDgnMarkupProject()->Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Markup domain not registered");
+        //createStatus = DgnDbStatus::MissingDomain;
+        return nullptr;
+        }
 
     auto controller = new SpatialRedlineViewController(model, subjectView, view.GetId());
 
@@ -1605,6 +1663,13 @@ DgnViewId DgnMarkupProject::CreateSpatialRedlineModelView(SpatialRedlineModelR m
     {
     if (CheckIsOpen() != BSISUCCESS)
         return DgnViewId();
+
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Markup domain not registered");
+        createStatus = DgnDbStatus::MissingDomain;
+        return nullptr;
+        }
 
     auto controller = SpatialRedlineViewController::InsertView(model, dgnView);
     if (!controller.IsValid())
@@ -1635,16 +1700,33 @@ DgnViewId SpatialRedlineModel::GetViewId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineModelP DgnMarkupProject::CreateRedlineModel(Utf8CP name, DgnModelId templateModel)
+RedlineModelP DgnMarkupProject::CreateRedlineModel(DgnDbStatus* createStatusIn, Utf8CP name, DgnModelId templateModel)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, createStatusIn);
+
     if (CheckIsOpen() != BSISUCCESS)
+        {
+        createStatus = DgnDbStatus::NotOpen;
         return nullptr;
+        }
+
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Markup domain not registered");
+        createStatus = DgnDbStatus::MissingDomain;
+        return nullptr;
+        }
 
     RedlineModelPtr rdlModel = RedlineModel::Create(*this, name, templateModel);
     if (!rdlModel.IsValid())
+        {
+        createStatus = DgnDbStatus::BadArg; // must be a bad name
         return nullptr;
+        }
 
-    rdlModel->Insert(); // Takes ownership of the rdlModel, adding a reference to it.
+    createStatus = rdlModel->Insert(); // Takes ownership of the rdlModel, adding a reference to it.
+    if (DgnDbStatus::Success != createStatus)
+        return nullptr; 
 
     SaveChanges();
 
@@ -1654,17 +1736,34 @@ RedlineModelP DgnMarkupProject::CreateRedlineModel(Utf8CP name, DgnModelId templ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialRedlineModelP DgnMarkupProject::CreateSpatialRedlineModel(Utf8CP name, SpatialModelCR subjectViewTargetModel)
+SpatialRedlineModelP DgnMarkupProject::CreateSpatialRedlineModel(DgnDbStatus* createStatusIn, Utf8CP name, SpatialModelCR subjectViewTargetModel)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, createStatusIn);
+
     if (CheckIsOpen() != BSISUCCESS)
+        {
+        createStatus = DgnDbStatus::NotOpen;
         return nullptr;
+        }
+
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Markup domain not registered");
+        createStatus = DgnDbStatus::MissingDomain;
+        return nullptr;
+        }
 
     SpatialRedlineModelPtr rdlModel = SpatialRedlineModel::Create(*this, name, subjectViewTargetModel);
 
     if (!rdlModel.IsValid())
+        {
+        createStatus = DgnDbStatus::BadArg; // must be a bad name
         return nullptr;
+        }
 
-    rdlModel->Insert(); // Takes ownership of the rdlModel, adding a reference to it.
+    createStatus = rdlModel->Insert(); // Takes ownership of the rdlModel, adding a reference to it.
+    if (DgnDbStatus::Success != createStatus)
+        return nullptr;
 
     SaveChanges();
 
@@ -1674,14 +1773,22 @@ SpatialRedlineModelP DgnMarkupProject::CreateSpatialRedlineModel(Utf8CP name, Sp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineModelP DgnMarkupProject::OpenRedlineModel(DgnModelId mid)
+RedlineModelP DgnMarkupProject::OpenRedlineModel(DgnDbStatus* openStatusIn, DgnModelId mid)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(openStatus, openStatusIn);
+
     if (CheckIsOpen() != BSISUCCESS)
-        return NULL;
+        {
+        openStatus = DgnDbStatus::NotOpen;
+        return nullptr;
+        }
 
     RedlineModelPtr redlineModel = Models().Get<RedlineModel>(mid);
     if (!redlineModel.IsValid())
+        {
+        openStatus = DgnDbStatus::NotFound;
         return nullptr;
+        }
 
     //! Always fill a redline model. We never work with a subset of redline graphics.
     //! Note: even if redline model was previously loaded, it might have been emptied. So, make sure it's filled.
@@ -1693,14 +1800,22 @@ RedlineModelP DgnMarkupProject::OpenRedlineModel(DgnModelId mid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialRedlineModelP DgnMarkupProject::OpenSpatialRedlineModel(DgnModelId mid)
+SpatialRedlineModelP DgnMarkupProject::OpenSpatialRedlineModel(DgnDbStatus* openStatusIn, DgnModelId mid)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(openStatus, openStatusIn);
+
     if (CheckIsOpen() != BSISUCCESS)
-        return NULL;
+        {
+        openStatus = DgnDbStatus::NotOpen;
+        return nullptr;
+        }
 
     SpatialRedlineModelPtr redlineModel = Models().Get<SpatialRedlineModel>(mid);
     if (!redlineModel.IsValid())
+        {
+        openStatus = DgnDbStatus::NotFound;
         return nullptr;
+        }
 
     //! Always fill a redline model. We never work with a subset of redline graphics.
     //! Note: even if redline model was previously loaded, it might have been emptied. So, make sure it's filled.

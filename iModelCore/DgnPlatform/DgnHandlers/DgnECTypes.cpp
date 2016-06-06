@@ -657,7 +657,7 @@ IDgnECTypeAdapterR IDgnECTypeAdapter::GetForProperty (ECPropertyCR ecProperty)
             basicType = DgnECTypeRegistry::BasicType_BooleanDisplay;
         else if (PRIMITIVETYPE_Integer == primitiveType && ecProperty.IsDefined("StandardValues"))
             basicType = DgnECTypeRegistry::BasicType_StandardValues;
-        else if (ecProperty.IsDefined("UnitSpecification"))
+        else if (ecProperty.IsDefined("UnitSpecificationAttr"))
             basicType = DgnECTypeRegistry::BasicType_ECUnits;
         else
             {
@@ -689,7 +689,7 @@ IDgnECTypeAdapterR IDgnECTypeAdapter::GetForArrayMember (ECN::ArrayECPropertyCR 
     IDgnECTypeAdapterP adapter = NULL;
     if (NULL != extendType)
         adapter = extendType->GetTypeAdapter();
-    else if (arrayProperty.GetCustomAttribute ("UnitSpecification").IsValid())
+    else if (arrayProperty.GetCustomAttribute ("UnitSpecificationAttr").IsValid())
         adapter = &DgnECTypeRegistry::GetRegistry().GetBasicTypeAdapter (DgnECTypeRegistry::BasicType_ECUnits);
     
     if (NULL == adapter)

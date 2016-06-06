@@ -86,6 +86,7 @@ struct StopEvents
     bool m_sensor;
     bool m_abortUpdateRequest;
     bool m_touchMotion;          //  Ignored unless the motion exceeds range.
+    bool m_mouseMotion;
     bool m_anyEvent;
     uint32_t m_touchLimit;
     uint32_t m_numTouches;
@@ -106,7 +107,8 @@ struct StopEvents
         OnTouch       = 1<<9,
         OnAbortUpdate = 1<<10,
         OnSensor      = 1<<11,   //  GPS, Gyro
-        AnyEvent      = 1<<12,   //  includes all of the other events plus unknown events
+        OnMouseMotion = 1<<12,   //  any mouse movement
+        AnyEvent      = 1<<13,   //  includes all of the other events plus unknown events
 
         ForFullUpdate  = OnWheel | OnAbortUpdate | OnReset, // doesn't stop on keystrokes, data buttons, or touch
         ForQuickUpdate = ForFullUpdate | OnKeystrokes | OnButton | OnTouch,
@@ -115,7 +117,7 @@ struct StopEvents
     void Clear()
         {
         m_keystrokes = m_wheel = m_button = m_buttonUp = m_reset = m_resetUp = false;
-        m_paint = m_focus = m_modifierKeyTransition = m_sensor = m_abortUpdateRequest = m_touchMotion = m_anyEvent = false;
+        m_paint = m_focus = m_modifierKeyTransition = m_sensor = m_abortUpdateRequest = m_touchMotion = m_mouseMotion = m_anyEvent = false;
         m_touchLimit = 0;
         }
 
@@ -136,6 +138,7 @@ struct StopEvents
         m_sensor                = TO_BOOL(mask & OnSensor);
         m_abortUpdateRequest    = TO_BOOL(mask & OnAbortUpdate);
         m_touchMotion           = TO_BOOL(mask & OnTouch);
+        m_mouseMotion           = TO_BOOL(mask & OnMouseMotion);
         m_anyEvent              = TO_BOOL(mask & AnyEvent);
 
         m_touchLimit = 0;
@@ -158,7 +161,7 @@ struct UpdatePlan
         double m_frustumScale = 1.0;
         bool m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
-        uint32_t m_minElements = 3;
+        uint32_t m_minElements = 300;
         uint32_t m_maxElements = 50000;
         mutable uint32_t m_delayAfter = 0;
         mutable uint32_t m_targetNumElements = 0;
@@ -204,7 +207,7 @@ struct UpdatePlan
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
-    double      m_targetFPS = 10.0; // target Frames Per Second
+    double      m_targetFPS = 20.0; // target Frames Per Second
     uint32_t    m_timeout = 0; // in milliseconds
     Query       m_query;
     AbortFlags  m_abortFlags;
@@ -225,7 +228,7 @@ public:
 //=======================================================================================
 struct DynamicUpdatePlan : UpdatePlan
     {
-    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
+    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate); SetCreateSceneTimeout(50);}
     };
 
 //=======================================================================================

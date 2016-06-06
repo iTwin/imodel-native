@@ -84,8 +84,10 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     checkProjectAssociation (*dgnProject, *mproject);
 
     // Create a redline model
-    RedlineModelP rdlModel = mproject->CreateRedlineModel ("foo", seedModelId);
+    DgnDbStatus createStatus = DgnDbStatus::Success;
+    RedlineModelP rdlModel = mproject->CreateRedlineModel (&createStatus, "foo", seedModelId);
     ASSERT_TRUE( NULL != rdlModel );
+    ASSERT_EQ(DgnDbStatus::Success, createStatus);
 
     ASSERT_EQ( rdlModel->GetDgnMarkupProject(), mproject.get() );
 
@@ -131,7 +133,9 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     // Create a redline model view
     BSIRect rect;
     rect.Init (0,0, 1024, 768);
-    mproject->CreateRedlineModelView (*rdlModel, seedViewId, rect, rect);
+    createStatus = DgnDbStatus::Success;
+    mproject->CreateRedlineModelView (&createStatus, *rdlModel, seedViewId, rect, rect);
+    ASSERT_EQ(DgnDbStatus::Success, createStatus);
 
     // *** WIP Create association - to do that, we'd need a real ViewInfo
     // rdlModel->SetAssociation (*dgnProject, dgnProjectViewInfo);

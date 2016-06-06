@@ -431,6 +431,9 @@ private:
     DVec3d      m_endTangent;
     RotMatrix   m_planeByRows;
     TexturePtr  m_texture;
+    bool        m_useLinePixels;
+    uint32_t    m_linePixels;
+
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
@@ -498,6 +501,9 @@ public:
     void SetXElemPhase(double last) {m_xElemPhase = last; m_options.xElemPhaseSet=true;}
     void SetElementClosed(bool closed) {m_options.elementIsClosed = closed;}
     void SetIsCurve(bool isCurve) {m_options.isCurve = isCurve;}
+    bool UseLinePixels() const {return m_useLinePixels;}
+    uint32_t GetLinePixels() const {return m_linePixels;}
+    void SetUseLinePixels(uint32_t linePixels){m_linePixels = linePixels; m_useLinePixels = true;}
 
     bool ContinuationXElems() const {return m_options.continuationXElems;}
     DGNPLATFORM_EXPORT void ClearContinuationData();
