@@ -85,7 +85,7 @@ bool DgnDbRepositoryConnection::SetEventServiceClient(ICancellationTokenPtr canc
         eventServiceClient->UpdateSASToken(sasToken.GetValue()->GetSasToken());
         m_eventServiceClient = eventServiceClient;
         }
-    return true;
+    return true; 
     }
 
 //---------------------------------------------------------------------------------------
@@ -463,43 +463,201 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            05/2016
-//@bsimethod									Caleb.Shafer					06/2016
+//@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-EventServiceReceiveTaskPtr DgnDbRepositoryConnection::GetEvents (bool longPolling, ICancellationTokenPtr cancellationToken)
+bool DgnDbRepositoryConnection::GetEventServiceResponse(HttpResponseR returnResponse, bool longpolling)
     {
-	if (m_eventServiceClient == nullptr)
-		{
-		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InternalServerError));
-		}
-
-	Utf8String msg = "";
-	bool rtnVal = m_eventServiceClient->Receive(msg, longPolling);
-    
-	if (!rtnVal)
-		{
-		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InternalServerError));
-		}
-	if (msg.empty())
-		{
-		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::NoEventsFound));
-		}
-
-	return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Success(EventServiceReceive::Create(rtnVal, msg)));    
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-bool DgnDbRepositoryConnection::SendEventsToEventService(Utf8String msg, ICancellationTokenPtr cancellationToken)  //Temporary, for testing
-    {
-    if (
-        SetEventServiceClient(cancellationToken) &&
-        m_eventServiceClient->Send(msg)
-        )
+    HttpResponse response = m_eventServiceClient->Receive(longpolling);
+    HttpStatus status = response.GetHttpStatus();
+    if (status == HttpStatus::OK || status == HttpStatus::NoContent)
+        {
+        returnResponse = response;
         return true;
-    return false;
+        }
+    else
+        {
+        return false;
+        }
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbRepositoryConnection::GetEventServiceResponses(bvector<Json::Value>& responses, bvector<Utf8CP>& contentTypes, bool longpolling)
+    {
+    HttpResponse response = m_eventServiceClient->Receive(longpolling);
+    HttpStatus status = response.GetHttpStatus();
+    if (status == HttpStatus::NoContent)
+        {
+        return true;
+        }
+    else if (status == HttpStatus::OK)
+        {
+        responses.push_back(response.GetBody().AsJson());
+        contentTypes.push_back(response.GetHeaders().GetContentType());
+        return GetEventServiceResponses(responses, contentTypes, longpolling);
+        }
+    else
+        {
+        return false;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+bool EventServiceStringHelper(bmap<Utf8String, Utf8String>& entitymap, Utf8String original)
+    {
+    bmap<Utf8String, Utf8String>::iterator data = entitymap.begin();
+    int i = 0;
+    while (data != entitymap.end())
+        { 
+        Utf8String entity = data->first;
+        size_t entityPos = (0 == (BeStringUtilities::Stricmp("Date", entity.c_str()))) ? original.find_first_of(entity.c_str()) : original.rfind(entity.c_str());
+
+        if (Utf8String::npos == entityPos)
+            return false;
+        Utf8String sub1 = original.substr(entityPos, original.length());
+        size_t entityValueStart = sub1.find_first_of(':');
+        Utf8String sub2 = sub1.substr(entityValueStart + 2, sub1.length());
+        size_t entityValueStop = sub2.find_first_of('"');
+        Utf8String entityValue = sub2.substr(0, entityValueStop);
+        //size_t entityValueStop = remainder.find_first_of(',');
+        //Utf8String entityValue = remainder.substr(entityValueStart + 2, entityValueStop - entityValueStart - 3); // + 2 -> Account for ':' and '"', -2 to account for the same
+        data->second = entityValue;
+        ++data;
+        ++i;
+        }
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEventasString(Utf8CP contentType, Utf8String jsonString)
+    {
+    size_t jsonPart1 = jsonString.find_first_of('{');
+    size_t jsonPart2 = jsonString.find_last_of('}');
+    Utf8String actualJsonPart = jsonString.substr(jsonPart1, jsonPart2);
+    if (0 == (BeStringUtilities::Stricmp("Bentley.DgnDbServer.Common.LockEvent", contentType)))
+        {
+        bmap<Utf8String, Utf8String> entitymap;
+        entitymap.Insert("repoId", "");
+        entitymap.Insert("userId", "");
+        entitymap.Insert("LockId", "");
+        entitymap.Insert("LockType", "");
+        entitymap.Insert("Date", "");
+
+        if (!EventServiceStringHelper(entitymap, actualJsonPart))
+            return nullptr;
+        return DgnDbServerLockEvent::Create(entitymap["repoId"], entitymap["userId"], entitymap["LockId"], entitymap["LockType"], entitymap["Date"]);
+        }
+    else if (0 == (BeStringUtilities::Stricmp("Bentley.DgnDbServer.Common.RevisionEvent", contentType)))
+        {
+        bmap<Utf8String, Utf8String> entitymap;
+        entitymap.Insert("repoId", "");
+        entitymap.Insert("userId", "");
+        entitymap.Insert("RevisionId", "");
+        entitymap.Insert("Date", "");
+
+        if (!EventServiceStringHelper(entitymap, actualJsonPart))
+            return nullptr;
+        return DgnDbServerRevisionEvent::Create(entitymap["repoId"], entitymap["userId"], entitymap["RevisionId"], entitymap["Date"]);
+        }
+    else
+        {
+        return nullptr;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEvent(Utf8CP contentType, JsonValueCR jsonResponse)
+    {
+    if (0 == (BeStringUtilities::Stricmp("Bentley.DgnDbServer.Common.LockEvent", contentType)))
+        {
+        return DgnDbServerLockEvent::Create(jsonResponse["repoId"].asString(), jsonResponse["userid"].asString(), jsonResponse["LockId"].asString(), jsonResponse["LockType"].asString(), jsonResponse["Date"].asString());
+        }
+    else if (0 == (BeStringUtilities::Stricmp("Bentley.DgnDbServer.Common.RevisionEvent", contentType)))
+        {
+        return DgnDbServerRevisionEvent::Create(jsonResponse["repoId"].asString(), jsonResponse["userid"].asString(), jsonResponse["RevisionId"].asString(), jsonResponse["Date"].asString());
+        }
+    else
+        {
+        return nullptr;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+IDgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken)
+    {
+    HttpResponse response;
+    if (!GetEventServiceResponse(response, longPolling))
+        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
+    
+    if (HttpStatus::NoContent == response.GetHttpStatus())
+        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
+
+    //IDgnDbServerEventPtr ptr = BuildDgnDbServerEvent(response.GetHeaders().GetContentType(), response.GetBody().AsJson());
+    IDgnDbServerEventPtr ptr = BuildDgnDbServerEventasString(response.GetHeaders().GetContentType(), response.GetBody().AsString());
+    if (ptr == nullptr)
+        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
+    return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Success(ptr));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+//Not working yet. Json deserilaization not working yet. Need to do string manipulation for now
+IDgnDbServerEventsTaskPtr DgnDbRepositoryConnection::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken)
+    {
+    bvector<Json::Value> responses;
+    bvector<Utf8CP> contentTypes;
+    bvector<IDgnDbServerEventPtr> events;
+    if (!GetEventServiceResponses(responses, contentTypes, longPolling))
+        return CreateCompletedAsyncTask<IDgnDbServerEventsResult>(IDgnDbServerEventsResult::Error(DgnDbServerError::Id::InternalServerError));
+
+    for (int i = 0; i < responses.size(); i++)
+        {
+        IDgnDbServerEventPtr ptr = BuildDgnDbServerEvent(contentTypes[i], responses[i]);
+        if (ptr == nullptr)
+            continue;
+        events.push_back(ptr);
+        }
+
+    if (events.size()<1)
+        return CreateCompletedAsyncTask<IDgnDbServerEventsResult>(IDgnDbServerEventsResult::Error(DgnDbServerError::Id::NoEventsFound));
+    return CreateCompletedAsyncTask<IDgnDbServerEventsResult>(IDgnDbServerEventsResult::Success(events));
+    }
+
+////---------------------------------------------------------------------------------------
+////@bsimethod									Arvind.Venkateswaran            05/2016
+////@bsimethod									Caleb.Shafer					06/2016
+////---------------------------------------------------------------------------------------
+//EventServiceReceiveTaskPtr DgnDbRepositoryConnection::GetEvents (bool longPolling, ICancellationTokenPtr cancellationToken)
+//    {
+//	if (m_eventServiceClient == nullptr)
+//		{
+//		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InternalServerError));
+//		}
+//
+//	Utf8String msg = "";
+//	bool rtnVal = m_eventServiceClient->Receive(msg, longPolling);
+//    
+//	if (!rtnVal)
+//		{
+//		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InternalServerError));
+//		}
+//	if (msg.empty())
+//		{
+//		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::NoEventsFound));
+//		}
+//
+//	return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Success(EventServiceReceive::Create(rtnVal, msg)));    
+//    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
