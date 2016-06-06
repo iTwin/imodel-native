@@ -133,7 +133,6 @@ TEST_F(ECDbSchemaTests, LoadECSchemas)
 
     std::vector<Utf8CP> expectedSchemas;
     expectedSchemas.push_back("Bentley_Standard_CustomAttributes");
-    expectedSchemas.push_back("CoreCustomAttributes");
     expectedSchemas.push_back("ECDb_FileInfo");
     expectedSchemas.push_back("ECDb_System");
     expectedSchemas.push_back("ECDbMap");
