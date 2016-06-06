@@ -421,8 +421,10 @@ public:
     RepositoryStatus QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) { return _QueryStates(lockStates, codeStates, locks, codes); }
 
     //! Retrieves the set of resources held by a briefcase as recorded in the repository
-    //! @param[in]      locks The set of locks tracked by the repository and held by the briefcase
-    //! @param[in]      codes The set of codes tracked by the repository and held by the briefcase
+    //! @param[out]     locks The set of locks tracked by the repository and held by the briefcase
+    //! @param[out]     codes The set of codes tracked by the repository and held by the briefcase
+    //! @param[out]     unavailableLocks The set of locks tracked by the repository and unavailable for acquisition by this briefcase
+    //! @param[out]     unavailableCodes The set of codes tracked by the repository and unavailable for acquisition by this briefcase
     //! @param[in]      db    The requesting briefcase
     //! @return Success, or an error status
     //! @remarks This method only returns resources tracked by the repository - e.g., excluding locks implicitly held for elements/models created locally by this briefcase and not yet committed to the repository

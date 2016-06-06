@@ -2011,7 +2011,7 @@ struct FastQueryTest : DoubleBriefcaseTest
 
         for (auto const& aInfo : a)
             {
-            auto pbInfo = std::find_if(b.begin(), b.end(), [&](decltype(aInfo) const& arg) { return AreSameEntity(aInfo, arg); });
+            auto pbInfo = std::find_if(b.begin(), b.end(), [&](decltype(aInfo) arg) { return AreSameEntity(aInfo, arg); });
             EXPECT_FALSE(b.end() == pbInfo) << "Present in a only: " << ToString(aInfo).c_str();
             if (b.end() != pbInfo)
                 ExpectEqual(aInfo, *pbInfo);
@@ -2019,7 +2019,7 @@ struct FastQueryTest : DoubleBriefcaseTest
 
         for (auto const& bInfo : b)
             {
-            auto paInfo = std::find_if(a.begin(), a.end(), [&](decltype(bInfo) const& arg) { return AreSameEntity(bInfo, arg); });
+            auto paInfo = std::find_if(a.begin(), a.end(), [&](decltype(bInfo) arg) { return AreSameEntity(bInfo, arg); });
             EXPECT_FALSE(a.end() == paInfo) << "Present in b only: " << ToString(bInfo).c_str();
             }
         }
