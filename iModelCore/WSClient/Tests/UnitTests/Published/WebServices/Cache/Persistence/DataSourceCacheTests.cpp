@@ -116,7 +116,6 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassed_SuccessAndSchemasAccess
     EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema2"));
     }
 
-// WIP06
 TEST_F(DataSourceCacheTests, UpdateSchema_RootInstanceCreated_ShouldNotDeleteRootInstance)
     {
     DataSourceCache cache;
@@ -125,7 +124,7 @@ TEST_F(DataSourceCacheTests, UpdateSchema_RootInstanceCreated_ShouldNotDeleteRoo
     auto root1 = cache.FindOrCreateRoot("Foo");
     ASSERT_TRUE(root1.IsValid());
 
-    cache.GetECDb().SaveChanges(); // wsc_Node has row
+    cache.GetECDb().SaveChanges();
 
     auto schema = ParseSchema(R"xml(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
@@ -135,7 +134,7 @@ TEST_F(DataSourceCacheTests, UpdateSchema_RootInstanceCreated_ShouldNotDeleteRoo
         </ECSchema>)xml");
     ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
 
-    cache.GetECDb().SaveChanges(); // wsc_Node has no rows
+    cache.GetECDb().SaveChanges();
 
     EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
 
@@ -159,7 +158,6 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCac
     EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema2"));
     }
 
-// WIP06
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
     {
     DataSourceCache cache;
@@ -778,6 +776,22 @@ TEST_F(DataSourceCacheTests, RemoveRoot_InstanceLinkedToSeveralRoots_InstanceNot
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
+TEST_F(DataSourceCacheTests, RemoveRoot_RootContainsCachedQueryWithCyclicRelationshipToItsParent_QueryResultsAndParentDeleted)
+    {
+    auto cache = GetTestCache();
+
+    cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "CyclicParent"});
+    auto instanceA = cache->FindInstance({"TestSchema.TestClass", "CyclicParent"});
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "CyclicParent"});
+    cache->CacheResponse({instanceA, "TestQuery"}, instances.ToWSObjectsResponse());
+
+    cache->RemoveRoot(nullptr);
+
+    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "CyclicParent"}).IsInCache());
+    }
+
 TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_NoSuchRoots_ReturnsSuccess)
     {
     auto cache = GetTestCache();
@@ -1385,7 +1399,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFull
     EXPECT_EQ("TestValueB", instanceJson["TestProperty"].asString());
     }
 
-// WIP06 - deletion support
 TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPreviusly_RemovesOldQueryResults)
     {
     auto cache = GetTestCache();
@@ -1495,7 +1508,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResults_RemovesIn
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "ChildFoo"}).IsFullyCached());
     }
 
-// WIP06 relationship deletions
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewResults_RemovesCachedFile)
     {
     auto cache = GetTestCache();
@@ -2449,7 +2461,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyC
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-// WIP06
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelationshipToResults)
     {
     auto cache = GetTestCache();
@@ -2469,7 +2480,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelati
     EXPECT_THAT(ECDbHelper::IsInstanceInMultiMap(instanceKey, parentInstances), true);
     }
 
-// WIP06
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHaveHoldingRelationshipToResultsButHolderDoes)
     {
     auto cache = GetTestCache();
@@ -2858,7 +2868,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndDefaultPag
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     }
 
-// WIP06 - deletions
 TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndOnLastPage_SetsAsCached)
     {
     // Arrange
@@ -4206,7 +4215,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingFile_ChangesLocatio
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
 
-    cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Persistent);
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
     EXPECT_EQ(FileCache::Persistent, cache->GetFileCacheLocation(fileId));
     EXPECT_EQ(L"", cache->ReadFilePath(fileId));
 
@@ -4247,9 +4256,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToPersistent_M
     {
     auto cache = GetTestCache();
     ObjectId fileId = StubFileInCache(*cache, FileCache::Temporary);
-    cache->LinkInstanceToRoot("Root", fileId);
     BeFileName path1 = cache->ReadFilePath(fileId);
-    cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Temporary);
 
     ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
 
@@ -4488,6 +4495,15 @@ TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFileButIsDeletedFromDisk_Ret
     EXPECT_THAT(cache->ReadFileCacheTag(fileId), IsEmpty());
     }
 
+TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndNotCached_InvalidKey)
+    {
+    auto cache = GetTestCache();
+
+    ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
+
+    EXPECT_FALSE(instanceKey.IsValid());
+    }
+    
 TEST_F(DataSourceCacheTests, CacheFile_PersistentFileCached_CorrectECDbExternalFileInfoCreated)
     {
     auto cache = GetTestCache();
@@ -4737,7 +4753,6 @@ TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRe
     EXPECT_EQ(ObjectId({"TestSchema.TestRelationshipClass", "AB"}), cache->FindRelationship(relationship));
     }
 
-// WIP06 - cache structure seperation from data
 TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds)
     {
     auto cache = GetTestCache();

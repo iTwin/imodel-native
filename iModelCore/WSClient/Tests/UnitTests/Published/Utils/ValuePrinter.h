@@ -51,8 +51,6 @@ std::ostream& operator << (std::ostream &o, const ECInstanceKeyMultiMap::value_t
 std::ostream& operator << (std::ostream &o, SchemaReadStatus value);
 
 std::ostream& operator << (std::ostream &o, BeFileNameStatus value);
-
-std::ostream& operator << (std::ostream &o, BeFileNameStatus value);
 std::ostream& operator << (std::ostream &o, BeFileStatus value);
 
 namespace rapidjson

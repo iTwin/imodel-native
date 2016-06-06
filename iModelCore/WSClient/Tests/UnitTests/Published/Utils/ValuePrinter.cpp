@@ -131,7 +131,7 @@ std::ostream& operator << (std::ostream &o, DateTimeCR date)
 
 std::ostream& operator << (std::ostream &o, ECClassCR value)
     {
-    o << value.GetFullName();
+    o << Utf8String(value.GetFullName());
     return o;
     }
 
