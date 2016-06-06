@@ -23,8 +23,8 @@ DbResult ECDbProfileUpgrader_3711::_Upgrade(ECDbCR ecdb) const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassHierarchy_ClassId_BaseClassId ON ec_ClassHasBaseClasses(ClassId,BaseClassId);"
-                           "CREATE INDEX ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHasBaseClasses(BaseClassId);");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassHierarchy_ClassId_BaseClassId ON ec_ClassHierarchy(ClassId,BaseClassId);"
+                           "CREATE INDEX ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHierarchy(BaseClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
