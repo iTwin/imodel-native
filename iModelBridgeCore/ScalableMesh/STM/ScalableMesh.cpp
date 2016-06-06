@@ -905,6 +905,9 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
+    m_viewedNodes.clear();
+    ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Fast]->GetDTMDraping())->ClearNodes();
+    ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Precise]->GetDTMDraping())->ClearNodes();
     m_scmIndexPtr = 0;
 
     if(m_smSQLitePtr != nullptr)

@@ -21,32 +21,32 @@ size_t DifferenceSet::WriteToBinaryStream(void*& serialized)
     uint64_t arraySize = addedVertices.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    memcpy((uint8_t*)serialized + offset, &addedVertices[0], addedVertices.size()*sizeof(DPoint3d));
+    if (addedVertices.size() > 0) memcpy((uint8_t*)serialized + offset, &addedVertices[0], addedVertices.size()*sizeof(DPoint3d));
     offset += addedVertices.size()*sizeof(DPoint3d);
     arraySize = addedFaces.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    memcpy((uint8_t*)serialized + offset, &addedFaces[0], addedFaces.size()*sizeof(int32_t));
+   if(addedFaces.size() > 0) memcpy((uint8_t*)serialized + offset, &addedFaces[0], addedFaces.size()*sizeof(int32_t));
     offset += addedFaces.size()*sizeof(int32_t);
     arraySize = removedVertices.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    memcpy((uint8_t*)serialized + offset, &removedVertices[0], removedVertices.size()*sizeof(int32_t));
+    if (removedVertices.size() > 0)memcpy((uint8_t*)serialized + offset, &removedVertices[0], removedVertices.size()*sizeof(int32_t));
     offset += removedVertices.size()*sizeof(int32_t);
     arraySize = removedFaces.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    memcpy((uint8_t*)serialized + offset, &removedFaces[0], removedFaces.size()*sizeof(int32_t));
+    if (removedFaces.size() > 0) memcpy((uint8_t*)serialized + offset, &removedFaces[0], removedFaces.size()*sizeof(int32_t));
     offset += removedFaces.size()*sizeof(int32_t);
     arraySize = addedUvs.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    memcpy((uint8_t*)serialized + offset, &addedUvs[0], addedUvs.size()*sizeof(DPoint2d));
+    if (addedUvs.size() > 0) memcpy((uint8_t*)serialized + offset, &addedUvs[0], addedUvs.size()*sizeof(DPoint2d));
     offset += addedUvs.size()*sizeof(DPoint2d);
     arraySize = addedUvIndices.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    memcpy((uint8_t*)serialized + offset, &addedUvIndices[0], addedUvIndices.size()*sizeof(int32_t));
+    if (addedUvIndices.size() > 0) memcpy((uint8_t*)serialized + offset, &addedUvIndices[0], addedUvIndices.size()*sizeof(int32_t));
     offset += addedUvIndices.size()*sizeof(int32_t);
     memcpy((uint8_t*)serialized + offset, &toggledForID, sizeof(bool));
     offset += sizeof(bool);
@@ -94,24 +94,25 @@ void DifferenceSet::LoadFromBinaryStream(void* serialized, size_t ct)
     addedUvIndices.resize(size);
     memcpy(&addedUvIndices[0], (uint8_t*)serialized + offset + sizeof(uint64_t), size*sizeof(int32_t));
     offset += sizeof(uint64_t) + size*sizeof(int32_t);
-    memcpy(&toggledForID, (uint8_t*)serialized + offset + sizeof(uint64_t), sizeof(bool));
+    memcpy(&toggledForID, (uint8_t*)serialized + offset, sizeof(bool));
     offset += sizeof(bool);
     }
 
 
 void DifferenceSet::ApplySet(DifferenceSet& d, int firstIndx)
     {
+    assert(addedUvIndices.size() == 0 || addedFaces.size() == addedUvIndices.size());
     size_t firstId = addedVertices.size() + firstIndex;
-    uint64_t upperId = (d.clientID >> 32);
+ //   uint64_t upperId = (d.clientID >> 32);
    // if (upperId == 0) return;
     addedVertices.insert(addedVertices.end(), d.addedVertices.begin(), d.addedVertices.end());
-    if (upperId == 0) removedVertices.insert(removedVertices.end(), d.removedVertices.begin(), d.removedVertices.end());
+  //  if (upperId == 0) removedVertices.insert(removedVertices.end(), d.removedVertices.begin(), d.removedVertices.end());
     for (int32_t idx : d.removedFaces)
         {
         removedFaces.push_back(idx + firstIndx);
         }
-    vector<bool> targeted(d.firstIndex, false);
-    size_t nOfAddedFaces = addedFaces.size();
+    //vector<bool> targeted(d.firstIndex, false);
+    //size_t nOfAddedFaces = addedFaces.size();
     for (int32_t idx : d.addedFaces)
         {
         if (idx < d.firstIndex) addedFaces.push_back(idx + firstIndx);
@@ -126,8 +127,10 @@ void DifferenceSet::ApplySet(DifferenceSet& d, int firstIndx)
     for (size_t i = originalNUVIndices; i < addedUvIndices.size(); ++i)
         {
         addedUvIndices[i] += (int)originalNUVs;
+        assert(addedUvIndices[i] <= addedUvs.size());
         }
-    if (upperId != 0)
+    assert(addedUvIndices.size() == 0 || addedFaces.size() == addedUvIndices.size());
+ /*   if (upperId != 0)
         {
         for (size_t i = 0; i < d.removedVertices.size(); ++i) targeted[d.removedVertices[i]] = true;
         for (size_t i = 0; i < nOfAddedFaces; i += 3)
@@ -144,7 +147,7 @@ void DifferenceSet::ApplySet(DifferenceSet& d, int firstIndx)
                 }
 
             }
-        }
+        }*/
     }
 
 
@@ -509,7 +512,10 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
         size_t originalSize = d.addedUvIndices.size();
         d.addedUvIndices.insert(d.addedUvIndices.end(), polyMesh->GetParamIndexCP(), polyMesh->GetParamIndexCP() + (int)(d.addedFaces.size() - originalNFaces));
         for (size_t i = originalSize; i < d.addedUvIndices.size(); ++i)
+            {
             d.addedUvIndices[i] += (int)originalNUVs;
+            assert(d.addedUvs.size() >= d.addedUvIndices[i]);
+            }
         }
     return d;
     }
