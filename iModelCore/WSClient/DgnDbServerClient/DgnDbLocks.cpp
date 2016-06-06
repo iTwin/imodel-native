@@ -68,7 +68,6 @@ DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request const& req, DgnDbR db, bool queryOnly)
     {
-    BeAssert(!queryOnly && "TODO: Implement query-only version of _ProcessRequest()");
     if (!m_connection)
         return Response (RepositoryStatus::ServerUnavailable);
 
@@ -82,6 +81,18 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
     auto result = m_connection->AcquireLocks (req.Locks (), db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
+        if (queryOnly)
+            {
+            // NEEDSWORK_LOCKS: Handle queryOnly...this is a hack
+            DgnLockSet locks;
+            for (auto const& lock : req.Locks().GetLockSet())
+                locks.insert(DgnLock(lock.GetLockableId(), LockLevel::None));
+
+            auto retVal = _Demote(locks, req.Codes(), db);
+            BeAssert(RepositoryStatus::Success == retVal);
+            return IBriefcaseManager::Response(retVal);
+            }
+
         return IBriefcaseManager::Response (RepositoryStatus::Success);
         }
     else
