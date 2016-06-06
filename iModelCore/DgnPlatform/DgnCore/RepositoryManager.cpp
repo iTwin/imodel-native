@@ -916,7 +916,7 @@ RepositoryStatus BriefcaseManager::FastQueryLocks(Response& response, LockReques
 
     RepositoryStatus status = RepositoryStatus::Success;
     bool wantDetails = ResponseOptions::None != (ResponseOptions::LockState & options);
-    auto bcId = GetDgnDb().GetBriefcaseId();
+    BeBriefcaseId bcId(BeBriefcaseId::Standalone()); // a lie...
     while (BE_SQLITE_ROW == stmt->Step())
         {
         status = RepositoryStatus::LockAlreadyHeld;
