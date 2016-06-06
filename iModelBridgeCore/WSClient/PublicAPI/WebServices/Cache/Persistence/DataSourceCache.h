@@ -209,7 +209,7 @@ struct DataSourceCache : public IDataSourceCache
         WSCACHE_EXPORT BentleyStatus RemoveResponses(Utf8StringCR name) override;
         WSCACHE_EXPORT CacheStatus RemoveInstance(ObjectIdCR objectId) override;
         WSCACHE_EXPORT BentleyStatus RemoveFile(ObjectIdCR objectId) override;
-        WSCACHE_EXPORT BentleyStatus RemoveFilesInTemporaryPersistence() override;
+        WSCACHE_EXPORT BentleyStatus RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate = nullptr) override;
         WSCACHE_EXPORT BentleyStatus RemoveRoot(Utf8StringCR rootName) override;
         WSCACHE_EXPORT BentleyStatus RemoveRootsByPrefix(Utf8StringCR rootPrefix) override;
 

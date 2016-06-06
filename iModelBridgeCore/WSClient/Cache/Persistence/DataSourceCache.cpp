@@ -1432,13 +1432,13 @@ BeFileName DataSourceCache::ReadFilePath(ECInstanceKeyCR instanceKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::RemoveFilesInTemporaryPersistence()
+BentleyStatus DataSourceCache::RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate)
     {
     LogCacheDataForMethod();
 
     ECInstanceKeyMultiMap fullyPersistedNodes;
     if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
-        SUCCESS != m_state->GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes))
+        SUCCESS != m_state->GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes, maxLastAccessDate))
         {
         return ERROR;
         }
