@@ -869,11 +869,63 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Temporary));
     ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
 
-    EXPECT_TRUE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
+    EXPECT_TRUE(cache->ReadFilePath({ "TestSchema.TestClass", "Foo" }).DoesPathExist());
 
     EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
 
-    EXPECT_FALSE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
+    EXPECT_FALSE(cache->ReadFilePath({ "TestSchema.TestClass", "Foo" }).DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndOldFileCachedToPersistent_DeletesFile)
+    {
+    auto cache = GetTestCache();
+    cache->LinkInstanceToRoot("foo_root", { "TestSchema.TestClass", "Foo" });
+    cache->SetupRoot("foo_root", CacheRootPersistence::Temporary);
+    cache->CacheFile({ "TestSchema.TestClass", "Foo" }, StubWSFileResponse(StubFile()), FileCache::Persistent);
+
+    BeFileName cacheFileName = cache->ReadFilePath({ "TestSchema.TestClass", "Foo" });
+    EXPECT_TRUE(cacheFileName.DoesPathExist());
+
+    int64_t unixMs;
+    EXPECT_EQ(SUCCESS, DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(unixMs));
+    unixMs -= 3600 * 1000;
+
+    time_t unixTime = static_cast<time_t>(unixMs / 1000 - 1);
+    EXPECT_EQ(BeFileNameStatus::Success, cacheFileName.SetFileTime(&unixTime, nullptr));
+
+    DateTime maxAccessDateTime;
+    EXPECT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(maxAccessDateTime, unixMs));
+
+    BentleyStatus status = cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime);
+
+    EXPECT_EQ(SUCCESS, status);
+    EXPECT_FALSE(cache->ReadFilePath({ "TestSchema.TestClass", "Foo" }).DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndNewFileCachedToPersistent_LeavesFile)
+    {
+    auto cache = GetTestCache();
+    cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
+    cache->SetupRoot("foo_root", CacheRootPersistence::Temporary);
+    cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent);
+
+    BeFileName cacheFileName = cache->ReadFilePath({ "TestSchema.TestClass", "Foo" });
+    EXPECT_TRUE(cacheFileName.DoesPathExist());
+
+    int64_t unixMs;
+    EXPECT_EQ(SUCCESS, DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(unixMs));
+    unixMs -= 3600 * 1000;
+
+    time_t unixTime = static_cast<time_t>(unixMs / 1000 + 1);
+    EXPECT_EQ(BeFileNameStatus::Success, cacheFileName.SetFileTime(&unixTime, nullptr));
+
+    DateTime maxAccessDateTime;
+    EXPECT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(maxAccessDateTime, unixMs));
+
+    BentleyStatus status = cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime);
+
+    EXPECT_EQ(SUCCESS, status);
+    EXPECT_TRUE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
     }
 
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_ModifiedFileExists_LeavesModifiedFile)

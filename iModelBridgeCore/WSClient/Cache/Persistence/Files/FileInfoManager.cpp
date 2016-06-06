@@ -144,9 +144,37 @@ BeFileName FileInfoManager::GetAbsoluteFilePath(FileCache location, BeFileNameCR
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Travis.Cobbs    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus FileInfoManager::CheckMaxLastAccessDate(BeFileNameCR fileName, DateTimeCP maxLastAccessDate, bool &shouldSkip)
+    {
+    shouldSkip = false;
+    if (nullptr == maxLastAccessDate || fileName.IsEmpty() || !fileName.DoesPathExist())
+        {
+        return SUCCESS;
+        }
+    time_t accessTime;
+    if (BeFileNameStatus::Success != fileName.GetFileTime(nullptr, &accessTime, nullptr))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    DateTime lastAccessDate;
+    if (SUCCESS != DateTime::FromUnixMilliseconds(lastAccessDate, accessTime * 1000))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    if (DateTime::Compare(lastAccessDate, *maxLastAccessDate) == DateTime::CompareResult::LaterThan)
+        {
+        shouldSkip = true;
+        }
+    return SUCCESS;
+    }
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes)
+BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes, DateTimeCP maxLastAccessDate)
     {
     auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::DeleteFilesNotHeldByNodes", [&]
         {
@@ -157,6 +185,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
         });
 
     JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    BentleyStatus returnValue = SUCCESS;
 
     while (BE_SQLITE_ROW == statement->Step())
         {
@@ -172,6 +201,18 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
             continue;
             }
 
+        bool shouldSkip;
+        if (SUCCESS != CheckMaxLastAccessDate(fileInfo.GetFilePath(), maxLastAccessDate, shouldSkip))
+            {
+            // Return error from the function when we eventually finish, but continue processing
+            // files anyway.
+            returnValue = ERROR;
+            }
+        if (shouldSkip)
+            {
+            continue;
+            }
+
         Json::Value externalFileInfoJson;
         if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()) ||
             SUCCESS != CleanupExternalFile(externalFileInfoJson))
@@ -179,7 +220,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
             return ERROR;
             }
         }
-    return SUCCESS;
+    return returnValue;
     }
 
 /*--------------------------------------------------------------------------------------+
