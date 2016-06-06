@@ -29,10 +29,10 @@ DbResult ECDbSchemaManager::RebuildClassHiearchyTable(ECDbCR ecdb)
     {
     StopWatch timer(true);
     DbResult r = ecdb.ExecuteSql("DELETE FROM ec_ClassHierarchy");
-    if (r != BE_SQLITE_DONE)
+    if (r != BE_SQLITE_OK)
         return r;
 
-    return ecdb.ExecuteSql("WITH RECURSIVE"
+    r = ecdb.ExecuteSql("WITH RECURSIVE"
                            "    BaseClassList(ClassId, BaseClassId) AS ("
                            "        SELECT  Id, Id  FROM ec_Class"
                            "        UNION"
@@ -42,8 +42,13 @@ DbResult ECDbSchemaManager::RebuildClassHiearchyTable(ECDbCR ecdb)
                            "        )"
                            "    INSERT INTO ec_ClassHierarchy"
                            "    SELECT  NULL Id, ClassId, BaseClassId FROM BaseClassList");
+
+    if (r != BE_SQLITE_OK)
+        return r;
+
     timer.Stop();
     LOG.infov("RebuildClassHiearchyTable in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    return BE_SQLITE_OK;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
@@ -329,7 +334,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
             return ERROR;
         }
 
-    if (ECDbSchemaManager::RebuildClassHiearchyTable(GetECDb()) != BE_SQLITE_DONE)
+    if (ECDbSchemaManager::RebuildClassHiearchyTable(GetECDb()) != BE_SQLITE_OK)
         return ERROR;
 
     return SUCCESS;
