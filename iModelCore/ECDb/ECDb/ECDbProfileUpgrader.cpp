@@ -29,7 +29,7 @@ DbResult ECDbProfileUpgrader_3711::_Upgrade(ECDbCR ecdb) const
         return stat;
 
     stat = ECDbSchemaManager::RebuildClassHiearchyTable(ecdb);
-    if (BE_SQLITE_DONE != stat)
+    if (BE_SQLITE_OK != stat)
         return stat;
 
     LOG.debug("ECDb profile upgrade: Added ec_ClassHierarchy table to store flat list of baseClasses");
