@@ -1961,6 +1961,120 @@ TEST_F (DoubleBriefcaseTest, StandaloneBriefcase)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* For queries which need to be fast and not necessarily 100% up to date with server,
+* IBriefcaseManager supplies a FastQuery option which queries a local copy of locks+codes
+* known to be unavailable to this briefcase, either because another briefcase owns them
+* or because a required revision has not been pulled.
+* The primary use case for this is tools which want to filter out elements for which the
+* lock is not available.
+* Test that:
+*   - While the cache is in sync with server, fast and slow queries both return same results
+*   - When cache becomes out of sync, fast queries continue to return previous results
+*   - When cache is out of sync, attempts to actually acquire locks/codes are validated against the server, not the local cache
+*   - After refreshing local cache, fast queries are again in sync with server state
+* @bsistruct                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct FastQueryTest : DoubleBriefcaseTest
+{
+    DEFINE_T_SUPER(DoubleBriefcaseTest);
+
+    typedef IBriefcaseManager::FastQuery FastQuery;
+
+    template<typename T> static Utf8String ToString(T const& t)
+        {
+        Json::Value v;
+        t.ToJson(v);
+        return Json::FastWriter::ToString(v);
+        }
+
+    void ExpectEqual(DgnLockInfo const& a, DgnLockInfo const& b)
+        {
+        EXPECT_EQ(a.IsTracked(), b.IsTracked());
+        EXPECT_EQ(a.IsOwned(), b.IsOwned());
+        EXPECT_EQ(a.GetOwnership().GetLockLevel(), b.GetOwnership().GetLockLevel());
+        }
+
+    void ExpectEqual(DgnLockInfoSet const& a, DgnLockInfoSet const& b)
+        {
+        EXPECT_EQ(a.size(), b.size());
+
+        for (auto const& aInfo : a)
+            {
+            auto pbInfo = std::find_if(b.begin(), b.end(), [&](DgnLockInfo const& arg) { return arg.GetLockableId() == aInfo.GetLockableId(); });
+            EXPECT_FALSE(b.end() == pbInfo) << "Present in a only: " << ToString(aInfo).c_str();
+            if (b.end() != pbInfo)
+                ExpectEqual(aInfo, *pbInfo);
+            }
+
+        for (auto const& bInfo : b)
+            {
+            auto paInfo = std::find_if(a.begin(), a.end(), [&](DgnLockInfo const& arg) { return arg.GetLockableId() == bInfo.GetLockableId(); });
+            EXPECT_FALSE(a.end() == paInfo) << "Present in b only: " << ToString(bInfo).c_str();
+            }
+        }
+
+    void ExpectEqual(DgnCodeInfoSet const& a, DgnCodeInfoSet const& b)
+        {
+        EXPECT_EQ(a.size(), b.size());
+        // ###TODO: and details...
+        }
+
+    void ExpectResponsesEqual(Response const& a, Response const& b)
+        {
+        EXPECT_EQ(a.Result(), b.Result());
+        ExpectEqual(a.LockStates(), b.LockStates());
+        ExpectEqual(a.CodeStates(), b.CodeStates());
+        }
+
+    void ExpectResponsesEqual(Request& req, DgnDbR db)
+        {
+        Request fastReq = req; // function modifies input Request...
+        Response response, fastResponse;
+        EXPECT_EQ(db.BriefcaseManager().AreResourcesAvailable(req, &response, FastQuery::No), db.BriefcaseManager().AreResourcesAvailable(fastReq, &fastResponse, FastQuery::Yes));
+        ExpectResponsesEqual(response, fastResponse);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (FastQueryTest, Cache)
+    {
+    SetupDbs();
+
+    // dbA will acquire locks+codes. dbB will make fast queries.
+    DgnDbR dbA = *m_dbA,
+           dbB = *m_dbB;
+    DgnModelPtr modelA1 = GetModel(dbA, true),
+                modelA2 = GetModel(dbA, false),
+                modelB1 = GetModel(dbB, true),
+                modelB2 = GetModel(dbB, false);
+    DgnElementCPtr elemA1 = GetElement(dbA, Elem2dId2()),
+                   elemA2 = GetElement(dbA, Elem3dId2()),
+                   elemB1 = GetElement(dbB, Elem2dId2()),
+                   elemB2 = GetElement(dbB, Elem3dId2());
+
+    ExpectAcquire(*modelA1, LockLevel::Exclusive);
+    ExpectAcquire(*modelA2, LockLevel::Shared);
+    ExpectAcquire(*elemA1, LockLevel::Exclusive);
+
+    // Make sure local state is pulled for dbB
+    EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().RefreshFromRepository());
+
+    // Confirm fast queries return same results as queries against server
+    Request req(ResponseOptions::LockState | ResponseOptions::CodeState);
+    ExpectResponsesEqual(req, dbB);
+
+    req.Reset();
+    req.SetOptions(ResponseOptions::LockState | ResponseOptions::CodeState);
+    req.Locks().Insert(*modelB1, LockLevel::Shared);    // unavailable
+    req.Locks().Insert(*modelB2, LockLevel::Shared);    // available
+    req.Locks().Insert(*elemB1, LockLevel::Exclusive);  // unavailable - but not in denied set, because in exclusively locked model
+    req.Locks().Insert(*elemB2, LockLevel::Exclusive);  // available
+    ExpectResponsesEqual(req, dbB);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ExtractLocksTest : SingleBriefcaseLocksTest

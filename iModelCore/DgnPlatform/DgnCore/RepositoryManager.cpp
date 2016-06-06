@@ -232,7 +232,7 @@ enum CodeColumn { AuthorityId=0, NameSpace, Value };
 #define STMT_UpdateLockLevel "UPDATE " TABLE_Locks " SET " LOCK_Level "=? WHERE rowid=?"
 #define STMT_UpdateUnavailableLockLevel "UPDATE " TABLE_UnavailableLocks " SET " LOCK_Level "=? WHERE rowid=?"
 #define STMT_SelectLocksInSet "SELECT " LOCK_Type "," LOCK_Id " FROM " TABLE_Locks " WHERE InVirtualSet(@vset," LOCK_Columns ")"
-#define STMT_SelectUnavailableLocksInSet "SELECT " LOCK_Type "," LOCK_Id " FROM " TABLE_UnavailableLocks " WHERE InVirtualSet(@vset," LOCK_Columns ")"
+#define STMT_SelectUnavailableLocksInSet "SELECT " LOCK_Type "," LOCK_Id "," LOCK_Level " FROM " TABLE_UnavailableLocks " WHERE InVirtualSet(@vset," LOCK_Columns ")"
 #define STMT_SelectElementInModel " SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?"
 #define STMT_InsertOrReplaceLock "INSERT OR REPLACE INTO " TABLE_Locks " " LOCK_Values " VALUES(?,?,?)"
 #define STMT_InsertOrReplaceUnavailableLock "INSERT OR REPLACE INTO " TABLE_UnavailableLocks " " LOCK_Values " VALUES(?,?,?)"
@@ -583,7 +583,8 @@ ModelElementLocks::const_iterator ModelElementLocks::begin() const
 template<typename T> void BriefcaseManager::InsertLocks(T const& locks, TableType tableType, bool checkExisting)
     {
     CachedStatementPtr select, insert, update;
-    if (TableType::Owned == tableType)
+    bool insertingOwnedLocks = (TableType::Owned == tableType);
+    if (insertingOwnedLocks)
         {
         insert = GetLocalDb().GetCachedStatement(STMT_InsertNewLock);
         if (checkExisting)
@@ -648,7 +649,7 @@ template<typename T> void BriefcaseManager::InsertLocks(T const& locks, TableTyp
         if (select.IsValid())
             select->Reset();
 
-        if (lock.IsExclusive())
+        if (insertingOwnedLocks && lock.IsExclusive())
             {
             switch (lock.GetType())
                 {
@@ -672,6 +673,10 @@ template<typename T> void BriefcaseManager::InsertLocks(T const& locks, TableTyp
     select = nullptr;
     insert = nullptr;
     update = nullptr;
+
+    // The 'unavailable locks' table is mimicking the server, which doesn't track these implicitly owned locks...
+    if (!insertingOwnedLocks)
+        return;
 
     if (dbExclusivelyLocked)
         {
@@ -922,7 +927,7 @@ RepositoryStatus BriefcaseManager::FastQueryLocks(Response& response, LockReques
         LockableId id(static_cast<LockableType>(stmt->GetValueInt(0)), BeInt64Id(stmt->GetValueUInt64(1)));
         auto level = static_cast<LockLevel>(stmt->GetValueInt(2));
 
-        DgnLockInfo details(id);
+        DgnLockInfo details(id, true);
         if (LockLevel::Exclusive == level)
             details.GetOwnership().SetExclusiveOwner(bcId);
         else
