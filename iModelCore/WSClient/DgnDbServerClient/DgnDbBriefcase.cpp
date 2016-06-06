@@ -273,22 +273,66 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate (ICancellationTokenPt
 //	return m_repositoryConnection->GetEvents(longPolling, cancellationToken);
 //	}
 
+////---------------------------------------------------------------------------------------
+////@bsimethod                                 Arvind.Venkateswaran	              06/2016
+////---------------------------------------------------------------------------------------
+//IDgnDbServerEventTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken) const
+//    {
+//    BeAssert(DgnDbServerHost::IsInitialized());
+//    if (!m_db.IsValid() || !m_db->IsDbOpen())
+//        {
+//        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::FileNotFound));
+//        }
+//    if (!m_repositoryConnection)
+//        {
+//        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+//        }
+//
+//    return m_repositoryConnection->GetEvent(longPolling, cancellationToken);
+//    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-IDgnDbServerEventTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken) const
+DgnDbServerEventValueTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
-        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_repositoryConnection)
         {
-        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
 
-    return m_repositoryConnection->GetEvent(longPolling, cancellationToken);
+    IDgnDbServerEventTaskPtr currentEventTask = m_repositoryConnection->GetEvent(longPolling, cancellationToken);
+    auto result = currentEventTask->GetResult();
+    if (!result.IsSuccess())
+        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::InternalServerError));
+
+    IDgnDbServerEventPtr currentEvent = result.GetValue();
+    const type_info& eventType = currentEvent->GetEventType();
+    Utf8String returnedEventName = eventType.name();
+    Utf8String lockEventName = typeid(DgnDbServerLockEvent).name();
+    Utf8String revisionEventName = typeid(DgnDbServerRevisionEvent).name();
+    if (returnedEventName.ContainsI(lockEventName))
+        {
+        DgnDbServerLockEvent& lockEvent = dynamic_cast<DgnDbServerLockEvent&>(*currentEvent);
+        Utf8String myString = "Lock Info-> LockId: " + lockEvent.GetLockId() + " LockType: " + lockEvent.GetLockType();
+        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Success(myString));
+        }
+    else if (returnedEventName.ContainsI(revisionEventName))
+        {
+        //Todo:: Complete revision event
+        //DgnDbServerRevisionEvent& myevent = dynamic_cast<DgnDbServerLockEvent&>(*currentEvent);
+        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::NoEventsFound));
+        }
+    else
+        {
+        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::NoEventsFound));
+        }
+    DgnDbServerEventValueTaskPtr test;
     }
 
 //---------------------------------------------------------------------------------------

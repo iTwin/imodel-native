@@ -20,7 +20,6 @@ DgnDbServerLockEvent::DgnDbServerLockEvent(Utf8String repoId, Utf8String userId,
     m_lockId = lockId;
     m_lockType = lockType;
     m_date = date;
-    m_eventType = "DgnDbServerLockEvent";
     }
 
 //---------------------------------------------------------------------------------------
@@ -74,7 +73,8 @@ Utf8String DgnDbServerLockEvent::GetLockType()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetEventType()
+const type_info& DgnDbServerLockEvent::GetEventType()
     {
-    return m_eventType;
+    const type_info& tp = typeid(this);
+    return tp;
     }

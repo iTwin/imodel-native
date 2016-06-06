@@ -20,6 +20,7 @@ typedef std::shared_ptr<struct DgnDbBriefcase> DgnDbBriefcasePtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbBriefcase);
 
 DEFINE_TASK_TYPEDEFS(bool, DgnDbServerBool);
+DEFINE_TASK_TYPEDEFS(Utf8String, DgnDbServerEventValue);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisionMerge);
 
 //=======================================================================================
@@ -76,8 +77,9 @@ public:
 
 	/*DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr         GetEvents				(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr) const;*/
 
-    DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventTaskPtr          GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr) const;
-    DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventsTaskPtr         GetEvents(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr) const;
+    /*DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventTaskPtr          GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr) const;*/
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventValueTaskPtr      GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventsTaskPtr         GetEvents(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR                        GetDgnDb                () const; //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR        GetRepositoryConnection () const; //!< Connection to a repository on server.

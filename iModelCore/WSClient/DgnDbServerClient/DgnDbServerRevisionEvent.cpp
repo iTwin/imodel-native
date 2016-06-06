@@ -19,7 +19,6 @@ DgnDbServerRevisionEvent::DgnDbServerRevisionEvent(Utf8String repoId, Utf8String
     m_userId = userId;
     m_revisionId = revisionId;
     m_date = date;
-    m_eventType = "DgnDbServerRevisionEvent";
     }
 
 //---------------------------------------------------------------------------------------
@@ -65,7 +64,8 @@ Utf8String DgnDbServerRevisionEvent::GetRevisionId()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionEvent::GetEventType()
+const type_info& DgnDbServerRevisionEvent::GetEventType()
     {
-    return m_eventType;
+    const type_info& tp = typeid(this);
+    return tp;
     }

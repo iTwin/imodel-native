@@ -19,9 +19,14 @@ typedef std::tuple<Utf8String, IDgnDbServerEvent> IDgnDbServerGenericEvent;
 struct IDgnDbServerEvent
     {
     public:
-        virtual Utf8String GetEventType() = 0;
-        virtual Utf8String GetRepoId() = 0;
-        virtual Utf8String GetUserId() = 0;
+        DGNDBSERVERCLIENT_EXPORT virtual const type_info& GetEventType() 
+            { 
+            IDgnDbServerEvent *customEvent = new IDgnDbServerEvent(); 
+            const type_info& tp = typeid(*customEvent);
+            return tp;
+            }
+        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetRepoId() { return ""; }
+        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetUserId() { return ""; }
     };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE
