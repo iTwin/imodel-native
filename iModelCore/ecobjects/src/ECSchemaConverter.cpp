@@ -270,9 +270,10 @@ bool ECSchemaConverter::Convert(ECSchemaR schema)
     ECSchemaConverterP eCSchemaConverter = GetSingleton();
     eCSchemaConverter->m_convertedOK = true;
 
-    eCSchemaConverter->ConvertClassLevel(schema);
+    auto classes = GetHierarchicallySortedClasses(schema);
+    eCSchemaConverter->ConvertClassLevel(classes);
 
-    eCSchemaConverter->ConvertPropertyLevel(schema);
+    eCSchemaConverter->ConvertPropertyLevel(classes);
 
     eCSchemaConverter->ConvertSchemaLevel(schema);
 
@@ -501,9 +502,9 @@ void ECSchemaConverter::ConvertSchemaLevel(ECSchemaR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::ConvertClassLevel(ECSchemaR schema)
+void ECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
     {
-    for (auto const& ecClass : GetHierarchicallySortedClasses(schema))
+    for (auto const& ecClass : classes)
         {
         ProcessCustomAttributeInstance(ecClass->GetCustomAttributes(false), *ecClass, "ECClass:" + ecClass->GetName());
         if (ecClass->IsRelationshipClass())
@@ -523,9 +524,9 @@ void ECSchemaConverter::ConvertClassLevel(ECSchemaR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::ConvertPropertyLevel(ECSchemaR schema)
+void ECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
     {
-    for (auto const& ecClass : GetHierarchicallySortedClasses(schema))
+    for (auto const& ecClass : classes)
         {
         for (auto const& ecProp : ecClass->GetProperties(false))
             {
@@ -607,7 +608,8 @@ bvector<ECClassP> ECSchemaConverter::GetHierarchicallySortedClasses(ECSchemaR sc
     Utf8String defaultOrder = "";
     for (auto const& ecClass : schema.GetClasses())
         {
-        defaultOrder += ecClass->GetName() + ",";
+        if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
+            defaultOrder += ecClass->GetName() + ",";
         classes.push_back(ecClass);
         }
 
@@ -616,11 +618,14 @@ bvector<ECClassP> ECSchemaConverter::GetHierarchicallySortedClasses(ECSchemaR sc
 
     SortClassesByNameAndHierarchy(classes);
     Utf8String sortedOrder = "";
-    std::for_each(classes.begin(), classes.end(), 
-        [&sortedOrder](ECClassP& ecClass) 
-        { 
-        sortedOrder += ecClass->GetName() + ","; 
-        });
+    if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
+        {
+        std::for_each(classes.begin(), classes.end(),
+                      [&sortedOrder](ECClassP& ecClass)
+            {
+            sortedOrder += ecClass->GetName() + ",";
+            });
+        }
 
     LOG.tracev("Default Order For classes in schema: %s", defaultOrder.c_str());
     LOG.tracev("Name and Hierarchical Sorted Order For classes in schema: %s", sortedOrder.c_str());
