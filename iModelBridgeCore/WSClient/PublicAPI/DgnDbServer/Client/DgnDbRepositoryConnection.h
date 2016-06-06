@@ -17,7 +17,7 @@
 #include <WebServices/Azure/EventServiceClient.h>
 #include <DgnDbServer/Client/EventServiceConnection.h>
 #include <DgnDbServer/Client/EventServiceReceive.h>
-
+//#include <DgnDbServer/Client/IDgnDbServerEvent.h>
 #include <DgnDbServer/Client/DgnDbServerLockevent.h>
 #include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
 #include <DgnClientFx/Utils/Http/AuthenticationHandler.h>

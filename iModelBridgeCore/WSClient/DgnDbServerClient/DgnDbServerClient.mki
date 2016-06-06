@@ -39,9 +39,9 @@ $(o)DgnDbServerError$(oext)                : $(DgnDbServerClientMkiSourceDir)Dgn
 
 $(o)DgnDbServerRevision$(oext)             : $(DgnDbServerClientMkiSourceDir)DgnDbServerRevision.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerLockEvent$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerLockEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)DgnDbServerLockEvent$(oext)            : $(DgnDbServerClientMkiSourceDir)DgnDbServerLockEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbServerRevisionEvent$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerRevisionEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)DgnDbServerRevisionEvent$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerRevisionEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)EventServiceConnection$(oext)          : $(DgnDbServerClientMkiSourceDir)EventServiceConnection.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
