@@ -241,7 +241,7 @@ protected:
     void ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat, BottomUp bottomUp);
     void ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat);
 public:
-    //! Construct a blank invalid image
+    //! Construct a blank invalid Image
     Image() {}
 
     //! Construct an image from a ByteStream containing either Rgb or Rgba data.
@@ -306,7 +306,7 @@ private:
 public:
     Format GetFormat() const {return m_format;} //!< Get the format of this ImageSource
     void SetFormat(Format format) {m_format=format;} //!< Change the format of this ImageSource
-    ByteStream const& GetByteStream() const {return m_stream;} //!< Get a readonly refernce to the ByteStream of this ImageSource.
+    ByteStream const& GetByteStream() const {return m_stream;} //!< Get a readonly reference to the ByteStream of this ImageSource.
     ByteStream& GetByteStreamR() {return m_stream;} //!< Get a writable reference to the ByteStream of this ImageSource.
     bool IsValid() const {return 0 < m_stream.GetSize();} //!< @return true if this ImageSource holds valid data
     DGNPLATFORM_EXPORT Point2d GetSize() const; //!< Reads and returns the width and height of this ImageSource
@@ -321,7 +321,7 @@ public:
     //! either pass a temporary variable or use std::move on a non-temporary variable.
     explicit ImageSource(Format format, ByteStream&& stream) : m_format(format), m_stream(stream) {}
 
-    //! Construct an ImageSource by compressing the pixels of an Image. This compresses using either Jpeg or Png format.
+    //! Construct an ImageSource by compressing the pixels of an Image. The compression is done using either Jpeg or Png format.
     //! @param[in] image the Rgb or Rgba image data to compress to create the ImageSource
     //! @param[in] format the format (either Jpeg or Png) to compress the image
     //! @param[in] quality a value between 1 and 100 to control the level of compression. Used only if format==Jpeg.
@@ -932,25 +932,6 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct PointCloudDraw : RefCounted<NonCopyableClass>
-{
-    // If IsThreadBound returns false, implement AddRef and Release using InterlockedIncrement
-    virtual bool _IsThreadBound() = 0; // If true, always executed in calling thread instead of QV thread
-    virtual bool _GetRange(DPoint3dP range) = 0; // returns false if it does not have range
-
-    //  Added to points returned by GetPoints or GetFPoints
-    virtual bool _GetOrigin(DPoint3dP origin) = 0; // returns false if no origin
-
-    virtual ColorDef const* _GetRgbColors() = 0; // Returns nullptr if not using colors
-
-    virtual uint32_t _GetNumPoints() = 0;
-    virtual DPoint3dCP _GetDPoints() = 0; // Returns nullptr if using floats
-    virtual FPoint3dCP _GetFPoints() = 0; // Returns nullptr if using doubles
-};
-
-//=======================================================================================
 //! A renderer-specific object which can be placed into a display list.
 // @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
@@ -1015,6 +996,10 @@ public:
 //=======================================================================================
 struct IGraphicBuilder
 {
+    //=======================================================================================
+    //! Information needed to draw a triangle mesh
+    // @bsiclass                                                    Keith.Bentley   06/16
+    //=======================================================================================
     struct TriMeshArgs
     {
         int32_t m_numIndices = 0;
@@ -1027,6 +1012,7 @@ struct IGraphicBuilder
         int32_t m_flags = 0; // don't generate normals
         DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
     };
+
 protected:
     friend struct GraphicBuilder;
 
@@ -1056,7 +1042,7 @@ protected:
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
     virtual void _AddTile(TextureCR tile, DPoint3dCP corners) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
-    virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
+    virtual void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR) const = 0;
 };
@@ -1178,6 +1164,9 @@ public:
 
     void AddTriMesh(TriMeshArgs const& args) {m_builder->_AddTriMesh(args);}
 
+    //! Draw a 3D point cloud.
+    void AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) {m_builder->_AddPointCloud(numPoints, origin, points, colors);}
+
     //! Draw a BRep surface/solid entity from the solids kernel.
     void AddBody(ISolidKernelEntityCR entity) {m_builder->_AddBody(entity);}
 
@@ -1246,10 +1235,6 @@ public:
 
         AddLineString2d(5, tmpPts, zDepth);
         }
-
-    //! Draw a 3D point cloud.
-    //! @param[in] drawParams PointCloud parameters
-    void AddPointCloud(PointCloudDraw* drawParams) {m_builder->_AddPointCloud(drawParams);}
 
     //! Draw OLE object.
     void AddDgnOle(DgnOleDraw* ole) {m_builder->_AddDgnOle(ole);}
@@ -1436,6 +1421,8 @@ public:
 };
 
 //=======================================================================================
+//! An array of GraphicPtrs. 
+//! @note All entries are closed (and therefore may never change) when they're added to this array.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct GraphicArray
@@ -1461,11 +1448,11 @@ struct System
     //! @param[in] db the DgnDb for textureId
     virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const = 0;
 
-    //! Create a new Texture from an Image. 
+    //! Create a new Texture from an Image.
     virtual TexturePtr _CreateTexture(ImageCR image) const = 0;
 
-    //! Create a new Texture from an ImageSource. 
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp) const = 0;                                   
+    //! Create a new Texture from an ImageSource.
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp) const = 0;
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;

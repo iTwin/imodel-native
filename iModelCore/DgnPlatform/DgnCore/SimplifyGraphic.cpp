@@ -2015,56 +2015,23 @@ void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    john.gooding                    03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
+void SimplifyGraphic::_AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors)
     {
     // NEEDSWORK...Provide option to handle/ignore...
     enum {MAX_POINTS_PER_BATCH = 300};
-
-    uint32_t        numPoints = drawParams->_GetNumPoints();
-
     if (0 == numPoints)
         return;
 
-    DPoint3d    offsets;
-
-    offsets.Init(0, 0, 0);
-
-    bool        haveOffsets = drawParams->_GetOrigin(&offsets);
-    DPoint3dCP  dPoints = drawParams->_GetDPoints();
-
-    if (NULL != dPoints)
-        {
-        //  QVision does not support DPoint3d with offsets so QvOutput does not support it and there
-        //  is no need to support it here.
-        BeAssert(!haveOffsets);
-
-        while (numPoints > 0)
-            {
-            if (m_context.CheckStop())
-                return;
-            
-            uint32_t pointsThisIter = numPoints > MAX_POINTS_PER_BATCH ? MAX_POINTS_PER_BATCH: numPoints;
-
-            _AddPointString(pointsThisIter, dPoints);
-            numPoints -= pointsThisIter;
-            dPoints   += pointsThisIter;
-            }
-
-        return;
-        }
-
     // Don't risk stack overflow to get points buffer
-    uint32_t maxPointsPerIter = MAX_POINTS_PER_BATCH;
+    int32_t maxPointsPerIter = MAX_POINTS_PER_BATCH;
 
     if (numPoints < maxPointsPerIter)
         maxPointsPerIter = numPoints;
 
-    DPoint3dP   pointBuffer = (DPoint3dP)_alloca(maxPointsPerIter * sizeof (*pointBuffer));
+    DPoint3dP pointBuffer = (DPoint3dP)_alloca(maxPointsPerIter * sizeof (*pointBuffer));
 
     // Convert float points to DPoints and add offset
-    FPoint3dCP fPoints = drawParams->_GetFPoints();
-    FPoint3dCP currIn = fPoints;
-
+    FPoint3dCP currIn = points;
     while (numPoints > 0)
         {
         if (m_context.CheckStop())
@@ -2074,9 +2041,9 @@ void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
 
         for (DPoint3dP  curr = pointBuffer; curr < pointBuffer + pointsThisIter; curr++, currIn++)
             {
-            curr->x = currIn->x + offsets.x;
-            curr->y = currIn->y + offsets.y;
-            curr->z = currIn->z + offsets.z;
+            curr->x = currIn->x + origin.x;
+            curr->y = currIn->y + origin.y;
+            curr->z = currIn->z + origin.z;
             }
 
         _AddPointString(pointsThisIter, pointBuffer);
