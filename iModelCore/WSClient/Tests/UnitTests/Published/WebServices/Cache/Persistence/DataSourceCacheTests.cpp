@@ -4153,54 +4153,6 @@ TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceNotCached_ReturnsInv
     ASSERT_THAT(cache->ReadInstanceCachedDate({"TestSchema.TestClass", "NonExisting"}).IsValid(), false);
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_ExternalFileInfoIsAssociatedWithInstance)
-    {
-    auto cache = GetTestCache();
-
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    cache->LinkInstanceToRoot("Root", fileId);
-
-    auto status = cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Test.txt"), HttpStatus::OK, nullptr), FileCache::Persistent);
-    ASSERT_EQ(SUCCESS, status);
-
-    ECRelationshipClassCP instanceHasFileInfoClass = cache->GetAdapter().GetECRelationshipClass("ECDb_FileInfo.InstanceHasFileInfo");
-    ECClassCP fileInfoClass = cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo");
-    auto instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
-
-    Json::Value externalFileInfos;
-    cache->GetAdapter().GetJsonRelatedTargets(externalFileInfos, instanceHasFileInfoClass, fileInfoClass, instanceKey);
-
-    JsonValueCR externalFileInfo = externalFileInfos[0];
-
-    EXPECT_EQ(CacheEnvironment::GetPersistentRootFolderId(), externalFileInfo["RootFolder"].asInt());
-    EXPECT_NE("", externalFileInfo["RelativePath"].asString());
-    EXPECT_EQ("Test.txt", externalFileInfo["Name"].asString());
-    }
-
-TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_ExternalFileInfoIsAssociatedWithInstance)
-    {
-    auto cache = GetTestCache();
-
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    cache->LinkInstanceToRoot("Root", fileId);
-
-    auto status = cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Test.txt"), HttpStatus::OK, nullptr), FileCache::Temporary);
-    ASSERT_EQ(SUCCESS, status);
-
-    ECRelationshipClassCP instanceHasFileInfoClass = cache->GetAdapter().GetECRelationshipClass("ECDb_FileInfo.InstanceHasFileInfo");
-    ECClassCP fileInfoClass = cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo");
-    auto instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
-
-    Json::Value externalFileInfos;
-    cache->GetAdapter().GetJsonRelatedTargets(externalFileInfos, instanceHasFileInfoClass, fileInfoClass, instanceKey);
-
-    JsonValueCR externalFileInfo = externalFileInfos[0];
-
-    EXPECT_EQ(CacheEnvironment::GetTemporaryRootFolderId(), externalFileInfo["RootFolder"].asInt());
-    EXPECT_NE("", externalFileInfo["RelativePath"].asString());
-    EXPECT_EQ("Test.txt", externalFileInfo["Name"].asString());
-    }
-
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingInstance_Error)
     {
     auto cache = GetTestCache();
