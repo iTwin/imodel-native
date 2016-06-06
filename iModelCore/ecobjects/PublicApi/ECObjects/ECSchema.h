@@ -222,6 +222,22 @@ struct ECPropertyId : BeInt64Id
     BEINT64_ID_DECLARE_MEMBERS(ECPropertyId, BeInt64Id)
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECEnumerationId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECEnumerationId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct KindOfQuantityId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(KindOfQuantityId, BeInt64Id)
+    };
+
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 struct SupplementedSchemaBuilder;
@@ -1574,6 +1590,7 @@ friend struct SchemaXmlReaderImpl;
         EnumeratorList m_enumeratorList;
         EnumeratorIterable m_enumeratorIterable;
         bool m_isStrict;
+        mutable ECEnumerationId m_ecEnumerationId;
 
         //  Lifecycle management:  The schema implementation will
         //  serve as a factory for enumerations and will manage their lifecycle.
@@ -1653,6 +1670,12 @@ friend struct SchemaXmlReaderImpl;
         EnumeratorIterable const& GetEnumerators() const { return m_enumeratorIterable; }
         //! Get the amount of enumerators in this enumeration
         size_t GetEnumeratorCount() const { return m_enumeratorList.size(); }
+
+        //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+        ECEnumerationId GetId() const { BeAssert(HasId()); return m_ecEnumerationId; }
+        //! Intended to be called by ECDb or a similar system
+        void SetId(ECEnumerationId id) { BeAssert(!m_ecEnumerationId.IsValid()); m_ecEnumerationId = id; };
+        bool HasId() const { return m_ecEnumerationId.IsValid(); };
     };
 
 //=======================================================================================
@@ -1730,6 +1753,7 @@ struct KindOfQuantity : NonCopyableClass
         Utf8String m_defaultPresentationUnit;
         //! list of alternative presentation Units
         bvector<Utf8String> m_alternativePresentationUnitList;
+        mutable KindOfQuantityId m_kindOfQuantityId;
 
         //  Lifecycle management:  The schema implementation will
         //  serve as a factory for kind of quantities and will manage their lifecycle.
@@ -1796,6 +1820,12 @@ struct KindOfQuantity : NonCopyableClass
         bvector<Utf8String> const& GetAlternativePresentationUnitList() const { return m_alternativePresentationUnitList; };
         //! Gets an editable list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
         bvector<Utf8String>& GetAlternativePresentationUnitListR() { return m_alternativePresentationUnitList; };
+
+        //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+        KindOfQuantityId    GetId() const { BeAssert(HasId()); return m_kindOfQuantityId; }
+        //! Intended to be called by ECDb or a similar system
+        void                SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; };
+        bool                HasId() const { return m_kindOfQuantityId.IsValid(); };
     };
 
 //---------------------------------------------------------------------------------------
