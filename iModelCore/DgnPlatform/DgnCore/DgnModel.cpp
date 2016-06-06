@@ -546,6 +546,12 @@ DgnDbStatus DgnModel::_OnUpdate()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Update))
         return DgnDbStatus::MissingHandler;
 
+    auto existingModelIdWithCode = GetDgnDb().Models().QueryModelId(m_code);
+    if (existingModelIdWithCode.IsValid() && existingModelIdWithCode != GetModelId())
+        return DgnDbStatus::DuplicateCode;
+    else if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
+        return DgnDbStatus::DuplicateCode;
+
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnUpdate(*this);
@@ -978,8 +984,8 @@ DgnDbStatus DgnModel::Insert()
     if (DgnDbStatus::Success != status)
         return status;
 
-    if (GetDgnDb().Models().QueryModelId(m_code).IsValid()) // can't allow two models with the same code
-        return DgnDbStatus::DuplicateName;
+    if (GetDgnDb().Models().QueryModelId(m_code).IsValid() || GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid()) // can't allow two models with the same code
+        return DgnDbStatus::DuplicateCode;
 
     m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
@@ -1447,7 +1453,7 @@ DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& impor
     if (importer.GetDestinationDb().Models().QueryModelId(params.m_code).IsValid()) // Is the name already used in destination?
         {
         if (nullptr != stat)
-            *stat = DgnDbStatus::DuplicateName;
+            *stat = DgnDbStatus::DuplicateCode;
         return nullptr;
         }
 

@@ -243,7 +243,7 @@ DgnDbStatus DgnElement::_OnInsert()
             return DgnDbStatus::InvalidName;
         }
 
-    if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
+    if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid() || GetDgnDb().Models().QueryModelId(m_code).IsValid())
         return DgnDbStatus::DuplicateCode;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
@@ -370,7 +370,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
         return DgnDbStatus::InvalidParent;
 
     auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-    if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
+    if ((existingElemWithCode.IsValid() && existingElemWithCode != GetElementId()) || GetDgnDb().Models().QueryModelId(m_code).IsValid())
         return DgnDbStatus::DuplicateCode;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
