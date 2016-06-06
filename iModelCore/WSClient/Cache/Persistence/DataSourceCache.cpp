@@ -1380,7 +1380,7 @@ BeFileName DataSourceCache::ReadFilePath(ECInstanceKeyCR instanceKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::RemoveFilesInTemporaryPersistence()
+BentleyStatus DataSourceCache::RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate)
     {
     LogCacheDataForMethod();
 
@@ -1390,7 +1390,7 @@ BentleyStatus DataSourceCache::RemoveFilesInTemporaryPersistence()
         return ERROR;
         }
 
-    if (SUCCESS != m_state->GetFileInfoManager().DeleteFilesNotHeldByInstances(fullyPersistedInstances))
+    if (SUCCESS != m_state->GetFileInfoManager().DeleteFilesNotHeldByInstances(fullyPersistedInstances, maxLastAccessDate))
         {
         return ERROR;
         }
