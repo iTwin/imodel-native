@@ -319,20 +319,20 @@ DgnDbServerEventValueTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancell
     if (returnedEventName.ContainsI(lockEventName))
         {
         DgnDbServerLockEvent& lockEvent = dynamic_cast<DgnDbServerLockEvent&>(*currentEvent);
-        Utf8String myString = "Lock Info-> LockId: " + lockEvent.GetLockId() + " LockType: " + lockEvent.GetLockType();
-        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Success(myString));
+        Utf8String resultString = "Lock Info-> LockId: " + lockEvent.GetLockId() + " LockType: " + lockEvent.GetLockType();
+        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Success(resultString));
         }
     else if (returnedEventName.ContainsI(revisionEventName))
         {
         //Todo:: Complete revision event
-        //DgnDbServerRevisionEvent& myevent = dynamic_cast<DgnDbServerLockEvent&>(*currentEvent);
-        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::NoEventsFound));
+        DgnDbServerRevisionEvent& revisionEvent = dynamic_cast<DgnDbServerRevisionEvent&>(*currentEvent);
+        Utf8String resultString = "Revision Info-> RevisionId: " + revisionEvent.GetRevisionId();
+        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Success(resultString));
         }
     else
         {
         return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::NoEventsFound));
         }
-    DgnDbServerEventValueTaskPtr test;
     }
 
 //---------------------------------------------------------------------------------------
