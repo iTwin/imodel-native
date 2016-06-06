@@ -140,7 +140,7 @@ BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName FileInfoManager::GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath) const
     {
-    return m_fileStorage->GetAbsoluteFilePath(location, relativePath);
+    return m_fileStorage.GetAbsoluteFilePath(location, relativePath);
     }
 
 /*--------------------------------------------------------------------------------------+
