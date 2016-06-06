@@ -315,7 +315,7 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* baseClassMap)
+MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo)
     {   
     //Don't call base class method as end table map requires its own handling
     BeAssert(GetMapStrategy().IsForeignKeyMapping());
@@ -323,6 +323,7 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
     RelationshipMappingInfo const& relClassMappingInfo = static_cast<RelationshipMappingInfo const&> (classMapInfo);
     BeAssert(GetClass().GetRelationshipClassCP() != nullptr && classMapInfo.GetMapStrategy().IsForeignKeyMapping());
 
+    ClassMap const* baseClassMap = classMapInfo.GetBaseClassMap();
     if (baseClassMap != nullptr)
         return MapSubClass(relClassMappingInfo, *baseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
 
@@ -739,10 +740,10 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus RelationshipClassEndTableMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMappingInfo const& classMapInfo, ClassMap const* baseClassMap)
+MappingStatus RelationshipClassEndTableMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMappingInfo const& classMapInfo)
     {
     //add non-system property maps
-    AddPropertyMaps(schemaImportContext.GetClassMapLoadContext(), baseClassMap, nullptr, &classMapInfo);
+    AddPropertyMaps(schemaImportContext.GetClassMapLoadContext(), classMapInfo.GetBaseClassMap(), nullptr, &classMapInfo);
 
     AddIndexToRelationshipEnd(schemaImportContext, classMapInfo);
     return MappingStatus::Success;
@@ -1204,12 +1205,12 @@ RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECRelationshipClass
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
-MappingStatus RelationshipClassLinkTableMap::_MapPart1(SchemaImportContext& context, ClassMappingInfo const& classMapInfo, ClassMap const* baseClassMap)
+MappingStatus RelationshipClassLinkTableMap::_MapPart1(SchemaImportContext& context, ClassMappingInfo const& classMapInfo)
     {
     BeAssert(!GetMapStrategy().IsForeignKeyMapping() &&
              "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
 
-    MappingStatus stat = RelationshipClassMap::_MapPart1(context, classMapInfo, baseClassMap);
+    MappingStatus stat = RelationshipClassMap::_MapPart1(context, classMapInfo);
     if (stat != MappingStatus::Success)
         return stat;
 
@@ -1296,18 +1297,18 @@ RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassLinkTableMap::
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
-MappingStatus RelationshipClassLinkTableMap::_MapPart2(SchemaImportContext& context, ClassMappingInfo const& classMapInfo, ClassMap const* baseClassMap)
+MappingStatus RelationshipClassLinkTableMap::_MapPart2(SchemaImportContext& context, ClassMappingInfo const& classMappingInfo)
     {
-    MappingStatus stat = RelationshipClassMap::_MapPart2(context, classMapInfo, baseClassMap);
+    MappingStatus stat = RelationshipClassMap::_MapPart2(context, classMappingInfo);
     if (stat != MappingStatus::Success)
         return stat;
 
     BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have been caught already in ClassMapInfo");
 
     if (GetPrimaryTable().GetType() != DbTable::Type::Existing &&
-        baseClassMap == nullptr) //if subclass we must not create any FK anymore, as the base class mapping did that already
+        classMappingInfo.GetBaseClassMap() == nullptr) //if subclass we must not create any FK anymore, as the base class mapping did that already
         {
-        RelationshipMappingInfo const& relationClassMapInfo = static_cast<RelationshipMappingInfo const&> (classMapInfo);
+        RelationshipMappingInfo const& relationClassMapInfo = static_cast<RelationshipMappingInfo const&> (classMappingInfo);
 
         //Create FK from Source-Primary to LinkTable
         DbTable const* sourceTable = *relationClassMapInfo.GetSourceTables().begin();
@@ -1322,7 +1323,7 @@ MappingStatus RelationshipClassLinkTableMap::_MapPart2(SchemaImportContext& cont
         GetPrimaryTable().CreateForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
         }
 
-    AddIndices(context, classMapInfo);
+    AddIndices(context, classMappingInfo);
     return MappingStatus::Success;
     }
 

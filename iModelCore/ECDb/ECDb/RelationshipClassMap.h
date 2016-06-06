@@ -156,8 +156,8 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
 
         void AddIndexToRelationshipEnd(SchemaImportContext&, ClassMappingInfo const& mapInfo);
 
-        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* baseClassMap) override;
-        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* baseClassMap) override;
+        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo) override;
+        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const& classMapInfo) override;
 
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
         BentleyStatus MapSubClass(RelationshipMappingInfo const&, ClassMap const& baseClassMap);
@@ -208,8 +208,8 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
     private:
         RelationshipClassLinkTableMap(ECN::ECRelationshipClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
 
-        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* baseClassMap) override;
-        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* baseClassMap) override;
+        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&) override;
+        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&) override;
 
         MappingStatus CreateConstraintPropMaps(RelationshipMappingInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 

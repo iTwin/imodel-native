@@ -1844,6 +1844,34 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     return ImportCustomAttributes(ecProperty, ECContainerId(ecPropertyId), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property);
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
+    {
+    StopWatch timer(true);
+    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_ClassHierarchy");
+    if (r != BE_SQLITE_OK)
+        return r;
+
+    r = ecdb.ExecuteSql("WITH RECURSIVE "
+                        "BaseClassList(ClassId, BaseClassId) AS "
+                        "(SELECT Id, Id FROM ec_Class"
+                        " UNION"
+                        " SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
+                        " INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
+                        " ORDER BY 2)"
+                        " INSERT INTO ec_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList");
+
+    if (r != BE_SQLITE_OK)
+        return r;
+
+    timer.Stop();
+    LOG.debugv("Re-populated ec_ClassHierarchy in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    return BE_SQLITE_OK;
+    }
+
 
 /////////////////////////////////////////////////////////////////////////////
 //---------------------------------------------------------------------------------------

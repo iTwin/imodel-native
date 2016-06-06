@@ -1319,6 +1319,7 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
     m_loadedFlags.m_classIdsPerTableIsLoaded = true;
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
@@ -1328,14 +1329,10 @@ void ECDbMap::LightweightCache::LoadRelationshipCache() const
         return;
 
     Utf8CP sql0 =
-        "WITH RECURSIVE DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
-        "AS (SELECT RC.RelationshipClassId,RC.RelationshipEnd,RC.IsPolymorphic,RCC.ClassId,RCC.ClassId "
-        "FROM ec_RelationshipConstraintClass RCC INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId "
-        "UNION "
-        "SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
-        "FROM DerivedClassList DCL INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = DCL.DerivedClassId "
-        "WHERE IsPolymorphic = 1) "
-        "SELECT DerivedClassId, RelationshipClassId, RelationshipEnd FROM DerivedClassList";
+        "SELECT  IFNULL(CH.ClassId, RCC.[ClassId]) ConstraintClassId, RC.RelationshipClassId, RC.RelationshipEnd"
+        "    FROM ec_RelationshipConstraintClass RCC"
+        "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
+        "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1";
 
     auto stmt0 = m_map.GetECDb().GetCachedStatement(sql0);
     while (stmt0->Step() == BE_SQLITE_ROW)
@@ -1344,14 +1341,12 @@ void ECDbMap::LightweightCache::LoadRelationshipCache() const
         ECClassId relationshipId = stmt0->GetValueId<ECClassId>(1);
         BeAssert(!stmt0->IsColumnNull(2));
         RelationshipEnd end = stmt0->GetValueInt(2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
-
         bmap<ECN::ECClassId, RelationshipEnd>& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
         auto relIt = relClassIds.find(relationshipId);
         if (relIt == relClassIds.end())
             relClassIds[relationshipId] = end;
         else
             relClassIds[relationshipId] = static_cast<RelationshipEnd>((int) (relIt->second) | (int) (end));
-
 
         bmap<ECN::ECClassId, RelationshipEnd>& constraintClassIds = m_constraintClassIdsPerRelClassIds[relationshipId];
         auto constraintIt = constraintClassIds.find(constraintClassId);
@@ -1375,22 +1370,18 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions()  const
 
     Utf8String sql;
     sql.Sprintf(
-        "WITH RECURSIVE DerivedClassList(RootClassId,CurrentClassId,DerivedClassId) "
-        "AS (SELECT Id, Id, Id FROM ec_Class "
-        "UNION "
-        "SELECT RootClassId, BC.BaseClassId, BC.ClassId FROM DerivedClassList DCL "
-        "INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = DCL.DerivedClassId), "
-        "TableMapInfo AS ("
-        "SELECT ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d = 0) "
-        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy<>%d AND ec_ClassMap.MapStrategy<>%d AND ec_Table.Type<>%d "
-        "GROUP BY ec_Class.Id, ec_Table.Name) "
-        "SELECT DISTINCT DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL "
-        "INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId",
+        "WITH "
+        "TableMapInfo AS ( "
+        "    SELECT ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
+        "        JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d= 0) "
+        "        JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "        JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "        JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+        "        JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "    WHERE ec_ClassMap.MapStrategy <> %d AND ec_ClassMap.MapStrategy <> %d AND ec_Table.Type <> %d "
+        "    GROUP BY ec_Class.Id, ec_Table.Name) "
+        "SELECT  DCL.BaseClassId, DCL.ClassId, TMI.TableName FROM ec_ClassHierarchy DCL "
+        "    INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.ClassId GROUP BY DCL.BaseClassId, TMI.TableName, DCL.ClassId",
         Enum::ToInt(DbColumn::Kind::ECClassId), Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable),
         Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable), Enum::ToInt(DbTable::Type::Joined));
 

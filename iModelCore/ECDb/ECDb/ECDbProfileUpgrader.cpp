@@ -11,6 +11,39 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3711::_Upgrade(ECDbCR ecdb) const
+    {
+    //ec_ClassHierarchy
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE ec_ClassHierarchy("
+                                        "Id INTEGER PRIMARY KEY,"
+                                        "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                                        "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating table ec_ClassHierarchy failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassHierarchy_ClassId_BaseClassId ON ec_ClassHasBaseClasses(ClassId,BaseClassId);"
+                           "CREATE INDEX ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHasBaseClasses(BaseClassId);"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating indexes on table ec_ClassHierarchy failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ECDbSchemaWriter::RepopulateClassHierarchyTable(ecdb))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Repopulating the ec_ClassHierarchy table failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Added and populated table 'ec_ClassHierarchy'.");
+    return BE_SQLITE_OK;
+    }
+
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3710::_Upgrade(ECDbCR ecdb) const

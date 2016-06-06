@@ -114,8 +114,8 @@ struct ClassMap : RefCountedBase
     protected:
         ClassMap(Type, ECN::ECClassCR, ECDbMap const&, ECDbMapStrategy, bool setIsDirty);
 
-        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* baseClassMap);
-        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* baseClassMap);
+        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&);
+        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&);
         virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* baseClassMap);
         virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph);
         virtual void _WriteDebugInfo(DebugWriter&) const;
@@ -203,9 +203,9 @@ struct UnmappedClassMap : public ClassMap
 private:
     UnmappedClassMap(ECN::ECClassCR ecClass, ECDbMap const& ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) : ClassMap(Type::Unmapped, ecClass, ecdbMap, mapStrategy, setIsDirty) {}
 
-    virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap) override;
-    virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap) override { return MappingStatus::Success; }
-    virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* parentClassMap) override;
+    virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo) override;
+    virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const& classMapInfo) override { return MappingStatus::Success; }
+    virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* baseClassMap) override;
 
 public:
     ~UnmappedClassMap() {}

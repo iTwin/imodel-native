@@ -90,11 +90,11 @@ MappingStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMappi
          mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable ||
          mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable);
 
-    auto stat = _MapPart1(schemaImportContext, mapInfo, mapInfo.GetBaseClassMap());
+    auto stat = _MapPart1(schemaImportContext, mapInfo);
     if (stat != MappingStatus::Success)
         return stat;
     
-    stat = _MapPart2(schemaImportContext, mapInfo, mapInfo.GetBaseClassMap());
+    stat = _MapPart2(schemaImportContext, mapInfo);
     if (stat != MappingStatus::Success)
         return stat;
 
@@ -105,14 +105,21 @@ MappingStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMappi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo, ClassMap const* parentClassMap)
+MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
     {
+    ClassMap const* baseClassMap = mapInfo.GetBaseClassMap();
     DbTable const* primaryTable = nullptr;
     DbTable::Type tableType = DbTable::Type::Primary;
     if (Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable))
         {
         tableType = DbTable::Type::Joined;
-        primaryTable = &parentClassMap->GetPrimaryTable();
+        if (baseClassMap == nullptr)
+            {
+            BeAssert(false);
+            return MappingStatus::Error;
+            }
+
+        primaryTable = &baseClassMap->GetPrimaryTable();
         }
     else if (mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
         tableType = DbTable::Type::Existing;
@@ -134,14 +141,14 @@ MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, Clas
         return MappingStatus::Success;
         };
 
-    BeAssert(tableType != DbTable::Type::Joined || parentClassMap != nullptr);
-    if (parentClassMap != nullptr)
+    BeAssert(tableType != DbTable::Type::Joined || baseClassMap != nullptr);
+    if (baseClassMap != nullptr)
         {
-        if (parentClassMap->GetMapStrategy().IsNotMapped())
+        if (baseClassMap->GetMapStrategy().IsNotMapped())
             return MappingStatus::Error;
 
-        m_baseClassId = parentClassMap->GetClass().GetId();
-        SetTable(parentClassMap->GetPrimaryTable());
+        m_baseClassId = baseClassMap->GetClass().GetId();
+        SetTable(baseClassMap->GetPrimaryTable());
 
         if (tableType == DbTable::Type::Joined)
             {
@@ -185,9 +192,10 @@ MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, Clas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo, ClassMap const* parentClassMap)
+MappingStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
     {
-    MappingStatus stat = AddPropertyMaps(schemaImportContext.GetClassMapLoadContext(), parentClassMap, nullptr, &mapInfo);
+    ClassMap const* baseClassMap = mapInfo.GetBaseClassMap();
+    MappingStatus stat = AddPropertyMaps(schemaImportContext.GetClassMapLoadContext(), baseClassMap, nullptr, &mapInfo);
     if (stat != MappingStatus::Success)
         return stat;
 
@@ -202,10 +210,10 @@ MappingStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, Clas
     bool isJoinedTable = Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
     if (isJoinedTable)
         {
-        PRECONDITION(parentClassMap != nullptr, MappingStatus::Error);
-        if (&parentClassMap->GetJoinedTable() != &GetJoinedTable())
+        PRECONDITION(baseClassMap != nullptr, MappingStatus::Error);
+        if (&baseClassMap->GetJoinedTable() != &GetJoinedTable())
             {
-            DbColumn const* primaryKeyColumn = parentClassMap->GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+            DbColumn const* primaryKeyColumn = baseClassMap->GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
             DbColumn const* foreignKeyColumn = GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
             PRECONDITION(primaryKeyColumn != nullptr, MappingStatus::Error);
             PRECONDITION(foreignKeyColumn != nullptr, MappingStatus::Error);
@@ -215,7 +223,7 @@ MappingStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, Clas
                 if (constraint->GetType() == DbConstraint::Type::ForeignKey)
                     {
                     ForeignKeyDbConstraint const* fk = static_cast<ForeignKeyDbConstraint const*>(constraint);
-                    if (&fk->GetReferencedTable() == &parentClassMap->GetJoinedTable())
+                    if (&fk->GetReferencedTable() == &baseClassMap->GetJoinedTable())
                         {
                         if (fk->GetFkColumns().front() == foreignKeyColumn && fk->GetReferencedTableColumns().front() == primaryKeyColumn)
                             {
@@ -602,13 +610,13 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* parentClassMap)
+BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& classMapping, ClassMap const* baseClassMap)
     {
-    if (parentClassMap != nullptr)
-        m_baseClassId = parentClassMap->GetClass().GetId();
+    if (baseClassMap != nullptr)
+        m_baseClassId = baseClassMap->GetClass().GetId();
 
     std::vector<PropertyDbMapping const*> allPropertyMappings;
-    mapInfo.GetPropertyMappings(allPropertyMappings, true);
+    classMapping.GetPropertyMappings(allPropertyMappings, true);
 
     std::set<Utf8CP, CompareIUtf8Ascii> localPropSet;
     for (auto property : GetClass().GetProperties(false))
@@ -653,7 +661,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     if (GetECInstanceIdPropertyMap() != nullptr)
         return ERROR;
 
-    PropertyDbMapping const* ecInstanceIdMapping = mapInfo.FindPropertyMapping(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
+    PropertyDbMapping const* ecInstanceIdMapping = classMapping.FindPropertyMapping(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
     if (ecInstanceIdMapping == nullptr)
         return ERROR;
 
@@ -662,7 +670,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
         return ERROR;
 
     GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
-    return AddPropertyMaps(ctx, parentClassMap, &mapInfo, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;
+    return AddPropertyMaps(ctx, baseClassMap, &classMapping, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1157,10 +1165,10 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MappingStatus UnmappedClassMap::_MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap)
+MappingStatus UnmappedClassMap::_MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo)
     {
-    if (parentClassMap != nullptr)
-        m_baseClassId = parentClassMap->GetBaseClassId();
+    if (classMapInfo.GetBaseClassMap() != nullptr)
+        m_baseClassId = classMapInfo.GetBaseClassMap()->GetBaseClassId();
 
     DbTable const* nullTable = GetECDbMap().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
