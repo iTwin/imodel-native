@@ -47,6 +47,7 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
         ECInstanceKey FindTargetInstanceKeyForInfo(ECInstanceId infoId);
         Json::Value ReadExternalFileInfo(ECInstanceKeyCR instanceKey);
         Json::Value ReadCachedInfoJson(ECInstanceKeyCR instanceKey);
+        BentleyStatus CheckMaxLastAccessDate(BeFileNameCR fileName, DateTimeCP maxLastAccessDate, bool &shouldSkip);
 
     public:
         FileInfoManager
@@ -67,7 +68,7 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
 
         BentleyStatus SaveInfo(FileInfoR info);
 
-        BentleyStatus DeleteFilesNotHeldByInstances(const ECInstanceKeyMultiMap& holdingInstances);
+        BentleyStatus DeleteFilesNotHeldByInstances(const ECInstanceKeyMultiMap& holdingInstances, DateTimeCP maxLastAccessDate = nullptr);
 
         BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath) const override;
 
