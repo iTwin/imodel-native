@@ -50,3 +50,7 @@ SchemaDeserializationTest.TestDefaultElementOrder
 SchemaDeserializationTest.TestDefaultElementOrderWithBaseClassAndRelationships
 SchemaDeserializationTest.TestPreserveElementOrderWithBaseClassAndRelationships
 ValueValidationTests.ECPropertyHasMinAndMaxValues
+# Temp Disabled until we're ready to enable unit conversion on this branch.
+SchemaVersionConversionTests.SchemaWithOldUnitSpecifications
+UnitsTest.TestConvertingUnitSpecifications
+
