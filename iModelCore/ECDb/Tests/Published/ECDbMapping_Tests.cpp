@@ -8261,47 +8261,105 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, RelationshipClassInheritance)
     {
-    ECDbCR ecdb = SetupECDb("relclassinheritance.ecdb", SchemaItem(
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Model' >"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.01'>"
-        "                <MapStrategy>"
-        "                   <Strategy>SharedTable</Strategy>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='PhysicalElement'>"
-        "    <BaseClass>Element</BaseClass>"
-        "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-        "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "      <Class class='Model' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='Element' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
-        "   <BaseClass>ModelHasElements</BaseClass>"
-        "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "      <Class class='Model' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='PhysicalElement' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    Utf8String ecdbFilePath;
+    {
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='Model' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                          "    <ECCustomAttributes>"
+                          "        <ClassMap xmlns='ECDbMap.01.01'>"
+                          "                <MapStrategy>"
+                          "                   <Strategy>SharedTable</Strategy>"
+                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                          "                </MapStrategy>"
+                          "        </ClassMap>"
+                          "    </ECCustomAttributes>"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='PhysicalElement'>"
+                          "    <BaseClass>Element</BaseClass>"
+                          "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "      <Class class='Model' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='Element' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
+                          "   <BaseClass>ModelHasElements</BaseClass>"
+                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "      <Class class='Model' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='PhysicalElement' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipinheritance.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ecdbFilePath.assign(ecdb.GetDbFileName());
+    }
+
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+
+    ECSqlStatement stmt;
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model(Name) VALUES(?)"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model1", IECSqlBinder::MakeCopy::No));
+    ECInstanceKey model1Key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(model1Key));
+    stmt.Reset();
+    stmt.ClearBindings();
+        
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model2", IECSqlBinder::MakeCopy::No));
+    ECInstanceKey model2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(model2Key));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PhysicalElement(Code, ModelId) VALUES(?,?)"));
+
+    ECInstanceKey element1Key;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Element 1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, model1Key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element1Key)) << ecdb.GetLastError().c_str();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ECInstanceKey element2Key;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Element 2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, model1Key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element2Key)) << ecdb.GetLastError().c_str();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ECInstanceKey element3Key;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Element 3", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, model2Key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element3Key)) << ecdb.GetLastError().c_str();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasElements"));
+
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ONLY ts.ModelHasElements"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasPhysicalElements"));
+    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
