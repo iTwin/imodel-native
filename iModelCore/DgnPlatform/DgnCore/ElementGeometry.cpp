@@ -245,6 +245,7 @@ static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP trans
     // NOTE: MSBsplineSurface::GetPoleRange doesn't give a nice fitted box...
     IFacetOptionsPtr          facetOpt = IFacetOptions::Create();
     facetOpt->SetMinPerBezier (3);
+    facetOpt->SetAngleTolerance (0.30); 
     IPolyfaceConstructionPtr  builder = IPolyfaceConstruction::Create(*facetOpt);
 
     builder->Add(geom);
