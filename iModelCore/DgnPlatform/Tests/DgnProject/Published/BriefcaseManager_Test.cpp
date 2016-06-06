@@ -1994,13 +1994,24 @@ struct FastQueryTest : DoubleBriefcaseTest
         EXPECT_EQ(a.GetOwnership().GetLockLevel(), b.GetOwnership().GetLockLevel());
         }
 
-    void ExpectEqual(DgnLockInfoSet const& a, DgnLockInfoSet const& b)
+    void ExpectEqual(DgnCodeInfo const& a, DgnCodeInfo const& b)
+        {
+        EXPECT_EQ(a.IsAvailable(), b.IsAvailable());
+        EXPECT_EQ(a.IsReserved(), b.IsReserved());
+        EXPECT_EQ(a.IsUsed(), b.IsUsed());
+        EXPECT_EQ(a.IsDiscarded(), b.IsDiscarded());
+        }
+
+    static bool AreSameEntity(DgnLockInfo const& a, DgnLockInfo const& b) { return a.GetLockableId() == b.GetLockableId(); }
+    static bool AreSameEntity(DgnCodeInfo const& a, DgnCodeInfo const& b) { return a.GetCode() == b.GetCode(); }
+
+    template<typename T> void ExpectEqual(T const& a, T const& b)
         {
         EXPECT_EQ(a.size(), b.size());
 
         for (auto const& aInfo : a)
             {
-            auto pbInfo = std::find_if(b.begin(), b.end(), [&](DgnLockInfo const& arg) { return arg.GetLockableId() == aInfo.GetLockableId(); });
+            auto pbInfo = std::find_if(b.begin(), b.end(), [&](decltype(aInfo) const& arg) { return AreSameEntity(aInfo, arg); });
             EXPECT_FALSE(b.end() == pbInfo) << "Present in a only: " << ToString(aInfo).c_str();
             if (b.end() != pbInfo)
                 ExpectEqual(aInfo, *pbInfo);
@@ -2008,15 +2019,9 @@ struct FastQueryTest : DoubleBriefcaseTest
 
         for (auto const& bInfo : b)
             {
-            auto paInfo = std::find_if(a.begin(), a.end(), [&](DgnLockInfo const& arg) { return arg.GetLockableId() == bInfo.GetLockableId(); });
+            auto paInfo = std::find_if(a.begin(), a.end(), [&](decltype(bInfo) const& arg) { return AreSameEntity(bInfo, arg); });
             EXPECT_FALSE(a.end() == paInfo) << "Present in b only: " << ToString(bInfo).c_str();
             }
-        }
-
-    void ExpectEqual(DgnCodeInfoSet const& a, DgnCodeInfoSet const& b)
-        {
-        EXPECT_EQ(a.size(), b.size());
-        // ###TODO: and details...
         }
 
     void ExpectResponsesEqual(Response const& a, Response const& b)
@@ -2038,11 +2043,11 @@ struct FastQueryTest : DoubleBriefcaseTest
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (FastQueryTest, Cache)
+TEST_F (FastQueryTest, CacheLocks)
     {
     SetupDbs();
 
-    // dbA will acquire locks+codes. dbB will make fast queries.
+    // dbA will acquire locks. dbB will make fast queries.
     DgnDbR dbA = *m_dbA,
            dbB = *m_dbB;
     DgnModelPtr modelA1 = GetModel(dbA, true),
@@ -2062,15 +2067,50 @@ TEST_F (FastQueryTest, Cache)
     EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().RefreshFromRepository());
 
     // Confirm fast queries return same results as queries against server
-    Request req(ResponseOptions::LockState | ResponseOptions::CodeState);
+    Request req(ResponseOptions::LockState);
     ExpectResponsesEqual(req, dbB);
 
     req.Reset();
-    req.SetOptions(ResponseOptions::LockState | ResponseOptions::CodeState);
+    req.SetOptions(ResponseOptions::LockState);
     req.Locks().Insert(*modelB1, LockLevel::Shared);    // unavailable
     req.Locks().Insert(*modelB2, LockLevel::Shared);    // available
     req.Locks().Insert(*elemB1, LockLevel::Exclusive);  // unavailable - but not in denied set, because in exclusively locked model
     req.Locks().Insert(*elemB2, LockLevel::Exclusive);  // available
+    ExpectResponsesEqual(req, dbB);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (FastQueryTest, CacheCodes)
+    {
+    SetupDbs();
+
+    // dbA will acquire codes. dbB will make fast queries
+    DgnDbR dbA = *m_dbA,
+           dbB = *m_dbB;
+
+    DgnCode code1 = DgnMaterial::CreateMaterialCode("Code", "One"),
+            code2 = DgnMaterial::CreateMaterialCode("Code", "Two");
+
+    // reserve codes
+    DgnCodeSet codes;
+    codes.insert(code1);
+    codes.insert(code2);
+    EXPECT_EQ(RepositoryStatus::Success, dbA.BriefcaseManager().ReserveCodes(codes).Result());
+
+    // Make sure local state is pulled for dbB
+    EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().RefreshFromRepository());
+
+    // Confirm fast queries return same results as queries against server
+    Request req(ResponseOptions::CodeState);
+    ExpectResponsesEqual(req, dbB);
+
+    DgnCode code3 = DgnMaterial::CreateMaterialCode("Code", "Three");
+    req.Reset();
+    req.SetOptions(ResponseOptions::CodeState);
+    req.Codes().insert(code1);  // unavailable
+    req.Codes().insert(code3);  // available
     ExpectResponsesEqual(req, dbB);
     }
 
