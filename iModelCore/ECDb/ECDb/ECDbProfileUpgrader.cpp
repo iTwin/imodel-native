@@ -25,8 +25,8 @@ DbResult ECDbProfileUpgrader_3711::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassHierarchy_ClassId_BaseClassId ON ec_ClassHasBaseClasses(ClassId,BaseClassId);"
-                           "CREATE INDEX ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHasBaseClasses(BaseClassId);"))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassHierarchy_ClassId_BaseClassId ON ec_ClassHierarchy(ClassId,BaseClassId);"
+                           "CREATE INDEX ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHierarchy(BaseClassId);"))
         {
         LOG.errorv("ECDb profile upgrade failed: Creating indexes on table ec_ClassHierarchy failed: %s", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
