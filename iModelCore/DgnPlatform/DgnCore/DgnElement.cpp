@@ -184,6 +184,51 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus DgnElement::_PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const
+    {
+    DgnCode code;
+    switch (opcode)
+        {
+        case BeSQLite::DbOpcode::Insert:
+            {
+            code = m_code.IsValid() ? m_code : _GenerateDefaultCode();
+            request.Locks().Insert(*GetModel(), LockLevel::Shared);
+            break;
+            }
+        case BeSQLite::DbOpcode::Delete:
+            {
+            request.Locks().Insert(*this, LockLevel::Exclusive);
+            break;
+            }
+        case BeSQLite::DbOpcode::Update:
+            {
+            BeAssert(nullptr != original && original->IsPersistent() && original->GetElementId() == GetElementId());
+            if (m_code != original->GetCode())
+                code = m_code;
+
+            request.Locks().Insert(*this, LockLevel::Exclusive);
+            if (GetModelId() != original->GetModelId())
+                request.Locks().Insert(*original->GetModel(), LockLevel::Shared);
+
+            break;
+            }
+        }
+
+    if (code.IsValid() && !code.IsEmpty())
+        {
+        // Avoid asking repository manager to reserve code if we know it's already in use...
+        if (GetDgnDb().Elements().QueryElementIdByCode(code).IsValid())
+            return RepositoryStatus::CodeUsed;
+
+        request.Codes().insert(code);
+        }
+
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnInsert()
@@ -197,6 +242,9 @@ DgnDbStatus DgnElement::_OnInsert()
         if (!m_code.IsValid())
             return DgnDbStatus::InvalidName;
         }
+
+    if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid() || GetDgnDb().Models().QueryModelId(m_code).IsValid())
+        return DgnDbStatus::DuplicateCode;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
@@ -321,6 +369,10 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     if (parentId.IsValid() && parentId != original.GetParentId() && parentCycleExists(parentId, GetElementId(), GetDgnDb()))
         return DgnDbStatus::InvalidParent;
 
+    auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+    if ((existingElemWithCode.IsValid() && existingElemWithCode != GetElementId()) || GetDgnDb().Models().QueryModelId(m_code).IsValid())
+        return DgnDbStatus::DuplicateCode;
+
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnUpdate(*this, original);
@@ -329,7 +381,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
         }
 
     // Ensure lock acquired and code reserved
-    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementUpdate(*this, original.GetModelId());
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementUpdate(*this, original);
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -503,7 +555,7 @@ DgnDbStatus DgnElement::_InsertInDb()
     auto stmtResult = statement->Step();
     if (BE_SQLITE_DONE != stmtResult)
         {
-        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        // SQLite doesn't tell us which constraint failed - check if it's the Code. (NOTE: We should catch this in _OnInsert())
         auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
         return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
         }
@@ -538,7 +590,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
     auto stmtResult = stmt->Step();
     if (BE_SQLITE_DONE != stmtResult)
         {
-        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        // SQLite doesn't tell us which constraint failed - check if it's the Code. (NOTE: We should catch this in _OnInsert())
         auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
         if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
             return DgnDbStatus::DuplicateCode;

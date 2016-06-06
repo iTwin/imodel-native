@@ -54,6 +54,20 @@ public:
         All = 0xff, //!< Include all options
     };
 
+    //! Possible actions performed by various PrepareFor* methods
+    enum class PrepareAction
+    {
+        //! Populate the set of locks and codes required for a given operation
+        //! @note This action does not contact the repository manager
+        Populate,
+        //! Populate the set of locks and codes required for a given operation, and then verify that all are already held by this briefcase
+        //! @note This action does not contact the repository manager
+        Verify,
+        //! Populate the set of locks and codes required for a given operation, and then request them from the repository manager
+        //! @note This action may contact the repository manager. If multiple operations are to be performed - e.g., modification of several elements - it is far more efficient to populate a single Request from all operations before forwarding to the repository manager.
+        Acquire,
+    };
+
     //! A request made to the IBriefcaseManager and possibly forwarded to the IRepositoryManager.
     //! Specifies a set of locks the briefcase wishes to acquire and/or a set of codes to be reserved.
     struct Request
@@ -107,6 +121,12 @@ public:
         DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
     };
         
+    //! Options for querying availability of locks and codes
+    enum class FastQuery
+    {
+        No, //!< Query the server. May be slow, but results will be up-to-date.
+        Yes //!< Query a local cache. Faster, but results may be out-of-date with server state.
+    };
 private:
     DgnDbR  m_db;
 
@@ -116,15 +136,20 @@ private:
 protected:
     explicit IBriefcaseManager(DgnDbR db) : m_db(db) { }
 
+    enum class RequestPurpose
+    {
+        Acquire,
+        Query,
+        FastQuery
+    };
+
     // Codes and Locks
-    virtual Response _ProcessRequest(Request& request) = 0;
+    virtual Response _ProcessRequest(Request& request, RequestPurpose purpose) = 0;
     virtual RepositoryStatus _Demote(DgnLockSet& locks, DgnCodeSet const& codes) = 0;
     virtual RepositoryStatus _Relinquish(Resources which) = 0;
     virtual bool _AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* status) = 0;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _LockElement(DgnElementCR el, DgnCodeCR code, DgnModelId originalModelId);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _LockModel(DgnModelCR model, LockLevel level, DgnCodeCR code);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _LockDb(LockLevel level, DgnCodeCR code);
-    DgnDbStatus LockElement(DgnElementCR el, DgnCodeCR code, DgnModelId originalModelId=DgnModelId()) { return _LockElement(el, code, originalModelId); }
+    virtual RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP original) = 0;
+    virtual RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode opcode) = 0;
 
     // Codes
     virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
@@ -143,6 +168,12 @@ protected:
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
     DGNPLATFORM_EXPORT bool LocksRequired() const;
+    DGNPLATFORM_EXPORT RepositoryStatus PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode opcode, PrepareAction action, DgnElementCP original=nullptr);
+    DGNPLATFORM_EXPORT RepositoryStatus PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode opcode, PrepareAction action);
+    RepositoryStatus PerformAction(Request& req, PrepareAction action);
+    DgnDbStatus OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP pre=nullptr);
+    DgnDbStatus OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode);
+    static DgnDbStatus ToDgnDbStatus(RepositoryStatus repoStatus, Request const& request);
 public:
     DgnDbR GetDgnDb() const { return m_db; } //!< The DgnDb managed by this object
 
@@ -152,7 +183,15 @@ public:
     //! @param[in]      request The set of locks and/or codes to acquire, and options for customizing the response
     //! @return The response, containing the result and any additional details as specified by the request's ResponseOptions
     //! @remarks Note the contents of the request may be modified.
-    Response ProcessRequest(Request& request) { return _ProcessRequest(request); }
+    Response Acquire(Request& request) { return _ProcessRequest(request, RequestPurpose::Acquire); }
+
+    //! Query whether all of a set of locks and codes are available for acquisition by this briefcase.
+    //! @param[in]      request  The set of locks and/or codes to acquire, and options for customizing the response
+    //! @param[out]     response If supplied, populated with the results of the operation
+    //! @param[in]      fast     Whether to query the repository manager directly (slow but accurate) or local cache (fast but less accurate)
+    //! @return True if all locks and codes are available; LockAlreadyHeld or CodeUnavailable if some are not; or an error status if the operation failed.
+    //! @remarks Note the contents of the request may be modified.
+    DGNPLATFORM_EXPORT bool AreResourcesAvailable(Request& request, Response* response=nullptr, FastQuery fast=FastQuery::No);
 
     //! Demote the previously-acquired locks to the specified levels, and release the previously-reserved codes
     //! @param[in]      locks The set of locks to demote and their new levels
@@ -174,6 +213,34 @@ public:
     //! @return True if the operation completed successfully, all of the locks are held at or above the desired level, and all of the codes are reserved.
     //! @remarks The sets of locks and codes may be modified.
     bool AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* status=nullptr) { return _AreResourcesHeld(locks, codes, status); }
+
+    //! Populates the request with the locks + codes required to insert the specified element into the DgnDb
+    RepositoryStatus PrepareForElementInsert(Request& request, DgnElementCR el, PrepareAction action=PrepareAction::Populate) { return PrepareForElementOperation(request, el, BeSQLite::DbOpcode::Insert, action); }
+
+    //! Populates the request with the locks + codes required to update the specified element in the DgnDb
+    DGNPLATFORM_EXPORT RepositoryStatus PrepareForElementUpdate(Request& request, DgnElementCR el, PrepareAction action=PrepareAction::Populate);
+
+    //! Populates the request with the locks + codes required to delete the specified element from the DgnDb
+    RepositoryStatus PrepareForElementDelete(Request& request, DgnElementCR el, PrepareAction action=PrepareAction::Populate) { return PrepareForElementOperation(request, el, BeSQLite::DbOpcode::Delete, action); }
+
+    //! Populates the request with the locks + codes required to insert the specified model into the DgnDb
+    RepositoryStatus PrepareForModelInsert(Request& request, DgnModelCR model, PrepareAction action=PrepareAction::Populate) { return PrepareForModelOperation(request, model, BeSQLite::DbOpcode::Insert, action); }
+
+    //! Populates the request with the locks + codes required to update the specified model in the DgnDb
+    RepositoryStatus PrepareForModelUpdate(Request& request, DgnModelCR model, PrepareAction action=PrepareAction::Populate) { return PrepareForModelOperation(request, model, BeSQLite::DbOpcode::Update, action); }
+
+    //! Populates the request with the locks + codes required to delete the specified model from the DgnDb
+    RepositoryStatus PrepareForModelDelete(Request& request, DgnModelCR model, PrepareAction action=PrepareAction::Populate) { return PrepareForModelOperation(request, model, BeSQLite::DbOpcode::Delete, action); }
+
+    //! Convenience function to acquire all locks and codes required for element insertion. Prefer batch operations instead where possible.
+    RepositoryStatus AcquireForElementInsert(DgnElementCR el) { Request req; return PrepareForElementInsert(req, el, PrepareAction::Acquire); }
+
+    //! Convenience function to acquire all locks and codes required for element update. Prefer batch operations instead where possible.
+    RepositoryStatus AcquireForElementUpdate(DgnElementCR el) { Request req; return PrepareForElementUpdate(req, el, PrepareAction::Acquire); }
+
+    //! Convenience function to acquire all locks and codes required for element deletion. Prefer batch operations instead where possible.
+    RepositoryStatus AcquireForElementDelete(DgnElementCR el) { Request req; return PrepareForElementDelete(req, el, PrepareAction::Acquire); }
+
     //@}
 
     //! @name Managing Locks
@@ -229,6 +296,9 @@ public:
     //! @param[in]      response The response to the original request, containing the sets of locks and codes which could not be obtained
     //! @remarks This method is only effective if the original request specified ResponseOptions::LockState and ResponseOptions::CodeState
     DGNPLATFORM_EXPORT void ReformulateRequest(Request& req, Response const& response) const;
+
+    //! Acquire a shared or exclusive lock on the DgnDb.
+    Response LockDb(LockLevel level) { Request req; req.Locks().Insert(GetDgnDb(), level); return Acquire(req); }
     //@}
 
     //! @name Managing Codes
@@ -282,12 +352,15 @@ public:
     //@}
 
     DgnDbStatus OnElementInsert(DgnElementCR el); //!< @private
-    DgnDbStatus OnElementUpdate(DgnElementCR el, DgnModelId originalModelId); //!< @private
+    DgnDbStatus OnElementUpdate(DgnElementCR el, DgnElementCR pre); //!< @private
     DgnDbStatus OnElementDelete(DgnElementCR el); //!< @private
     DgnDbStatus OnModelInsert(DgnModelCR model); //!< @private
     DgnDbStatus OnModelUpdate(DgnModelCR model); //!< @private
     DgnDbStatus OnModelDelete(DgnModelCR model); //!< @private
     void OnDgnDbDestroyed() { _OnDgnDbDestroyed(); } //!< @private
+
+    DGNPLATFORM_EXPORT static void BackDoor_SetAutomaticAcquisition(bool acquireAutomatically); //!< @private TEMPORARY
+    DGNPLATFORM_EXPORT static void BackDoor_SetSupportFastQuery(bool supportFastQuery); //!< @private TEMPORARY
 };
 
 /*=====================================================================================*/
@@ -307,17 +380,23 @@ struct IRepositoryManager
     typedef IBriefcaseManager::ResponseOptions ResponseOptions;
 protected:
     // Codes + Locks
-    virtual Response _ProcessRequest(Request const& req, DgnDbR db) = 0;
+    virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) = 0;
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) = 0;
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) = 0;
-    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) = 0;
+    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) = 0;
     virtual RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) = 0;
 public:
     //! Process a briefcase's request to acquire locks and/or reserve codes
     //! @param[in]      req The set of desired codes and/or locks, and options for customizing what data is included in the response
     //! @param[in]      db  The requesting briefcase
     //! @return The response, customized according to the specified options
-    Response ProcessRequest(Request const& req, DgnDbR db) { return _ProcessRequest(req, db); }
+    Response Acquire(Request const& req, DgnDbR db) { return _ProcessRequest(req, db, false); }
+
+    //! Query whether a briefcase's request to acquire locks and/or reserve codes could be fulfilled, without actually fulfulling it
+    //! @param[in]      req The set of desired codes and/or locks, and options for customizing what data is included in the response
+    //! @param[in]      db  The requesting briefcase
+    //! @return The response, customized according to the specified options
+    Response QueryAvailability(Request const& req, DgnDbR db) { return _ProcessRequest(req, db, true); }
 
     //! Reduces the level at which a set of locks are held and/or releases a set of reserved codes
     //! @param[in]      locks The set of locks to demote and their new levels
@@ -342,12 +421,14 @@ public:
     RepositoryStatus QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) { return _QueryStates(lockStates, codeStates, locks, codes); }
 
     //! Retrieves the set of resources held by a briefcase as recorded in the repository
-    //! @param[in]      locks The set of locks tracked by the repository and held by the briefcase
-    //! @param[in]      codes The set of codes tracked by the repository and held by the briefcase
+    //! @param[out]     locks The set of locks tracked by the repository and held by the briefcase
+    //! @param[out]     codes The set of codes tracked by the repository and held by the briefcase
+    //! @param[out]     unavailableLocks The set of locks tracked by the repository and unavailable for acquisition by this briefcase
+    //! @param[out]     unavailableCodes The set of codes tracked by the repository and unavailable for acquisition by this briefcase
     //! @param[in]      db    The requesting briefcase
     //! @return Success, or an error status
     //! @remarks This method only returns resources tracked by the repository - e.g., excluding locks implicitly held for elements/models created locally by this briefcase and not yet committed to the repository
-    RepositoryStatus QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) { return _QueryHeldResources(locks, codes, db); }
+    RepositoryStatus QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) { return _QueryHeldResources(locks, codes, unavailableLocks, unavailableCodes, db); }
 
     //! Query the repository states of a set of codes
     //! @param[in]      states Upon successful return, holds the state of each specified code
