@@ -8280,9 +8280,64 @@ TEST_F(ECDbMappingTestFixture, RelationshipClassInheritance)
                           "    <ECProperty propertyName='Code' typeName='string' />"
                           "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
                           "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='PhysicalElement'>"
+                          "  <ECEntityClass typeName='InformationElement' modifier='Abstract'>"
+                          "     <BaseClass>Element</BaseClass>"
+                          "     <ECCustomAttributes>"
+                          "      <ClassMap xmlns='ECDbMap.01.00'>"
+                          "        <MapStrategy>"
+                          "            <Options>JoinedTablePerDirectSubclass</Options>"
+                          "        </MapStrategy>"
+                          "       </ClassMap>"
+                          "     </ECCustomAttributes>"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='LinkElement' modifier='Abstract'>"
+                          "     <BaseClass>InformationElement</BaseClass>"
+                          "     <ECCustomAttributes>"
+                          "      <ClassMap xmlns='ECDbMap.01.00'>"
+                          "        <MapStrategy>"
+                          "            <Options>SharedColumnsForSubclasses</Options>"
+                          "            <MinimumSharedColumnCount>8</MinimumSharedColumnCount>"
+                          "        </MapStrategy>"
+                          "       </ClassMap>"
+                          "     </ECCustomAttributes>"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='UrlLink' modifier='Sealed'>"
+                          "     <BaseClass>LinkElement</BaseClass>"
+                          "    <ECProperty propertyName='Url' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='EmbeddedLink' modifier='Sealed'>"
+                          "     <BaseClass>LinkElement</BaseClass>"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='GeometricElement' modifier='Abstract'>"
+                          "     <ECCustomAttributes>"
+                          "      <ClassMap xmlns='ECDbMap.01.00'>"
+                          "        <MapStrategy>"
+                          "            <Options>JoinedTablePerDirectSubclass</Options>"
+                          "        </MapStrategy>"
+                          "       </ClassMap>"
+                          "     </ECCustomAttributes>"
                           "    <BaseClass>Element</BaseClass>"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='Geometric3dElement' modifier='Abstract'>"
+                          "     <ECCustomAttributes>"
+                          "      <ClassMap xmlns='ECDbMap.01.00'>"
+                          "        <MapStrategy>"
+                          "            <Options>SharedColumnsForSubclasses</Options>"
+                          "            <MinimumSharedColumnCount>16</MinimumSharedColumnCount>"
+                          "        </MapStrategy>"
+                          "       </ClassMap>"
+                          "     </ECCustomAttributes>"
+                          "    <BaseClass>GeometricElement</BaseClass>"
                           "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='VolumeElement'>"
+                          "    <BaseClass>Geometric3dElement</BaseClass>"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='Annotation3dElement'>"
+                          "    <BaseClass>Geometric3dElement</BaseClass>"
+                          "    <ECProperty propertyName='Font' typeName='string' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
                           "    <Source cardinality='(1,1)' polymorphic='True'>"
@@ -8292,13 +8347,48 @@ TEST_F(ECDbMappingTestFixture, RelationshipClassInheritance)
                           "      <Class class='Element' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
-                          "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
+                          "  <ECRelationshipClass typeName='ModelHasGeometric3dElements' strength='embedding' modifier='Sealed'>"
                           "   <BaseClass>ModelHasElements</BaseClass>"
                           "    <Source cardinality='(1,1)' polymorphic='True'>"
                           "      <Class class='Model' />"
                           "    </Source>"
                           "    <Target cardinality='(0,N)' polymorphic='True'>"
-                          "      <Class class='PhysicalElement' />"
+                          "      <Class class='Geometric3dElement' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='ModelHasLinkElements' strength='embedding' modifier='Sealed'>"
+                          "   <BaseClass>ModelHasElements</BaseClass>"
+                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "      <Class class='Model' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='LinkElement' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='ElementDrivesElement' strength='referencing' modifier='Abstract'>"
+                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='Element' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='Element' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='InformationElementDrivesInformationElement' strength='referencing' modifier='Sealed'>"
+                          "   <BaseClass>ElementDrivesElement</BaseClass>"
+                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='InformationElement' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='InformationElement' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='UrlLinkDrivesAnnotation3dElement' strength='referencing' modifier='Sealed'>"
+                          "   <BaseClass>ElementDrivesElement</BaseClass>"
+                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='UrlLink' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='Annotation3dElement' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "</ECSchema>");
@@ -8307,58 +8397,194 @@ TEST_F(ECDbMappingTestFixture, RelationshipClassInheritance)
     AssertSchemaImport(ecdb, asserted, testSchema, "ecdbrelationshipinheritance.ecdb");
     ASSERT_FALSE(asserted);
 
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     ecdbFilePath.assign(ecdb.GetDbFileName());
     }
 
+
+    std::vector<ECInstanceKey> modelKeys;
+    std::vector<ECInstanceKey> urlLinkKeys;
+    std::vector<ECInstanceKey> embeddedLinkKeys;
+    std::vector<ECInstanceKey> volumeElKeys;
+    std::vector<ECInstanceKey> annotationElKeys;
+
+        {
+        //insert test data
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+
+        ECSqlStatement stmt;
+
+        //Model
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model(Name) VALUES(?)"));
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model1", IECSqlBinder::MakeCopy::No));
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+        modelKeys.push_back(key);
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+        modelKeys.push_back(key);
+        stmt.Finalize();
+
+        //VolumeElement
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.VolumeElement(Code, ModelId, Name) VALUES(?,?, 'Volume')"));
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+        volumeElKeys.push_back(key);
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+        volumeElKeys.push_back(key);
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 3", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+        volumeElKeys.push_back(key);
+        stmt.Finalize();
+
+        //AnnotationElement
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Annotation3dElement(Code, ModelId, Font) VALUES(?,?, 'Consolas Sans Serif')"));
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+        annotationElKeys.push_back(key);
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+        annotationElKeys.push_back(key);
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 3", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+        annotationElKeys.push_back(key);
+        stmt.Finalize();
+
+        //UrlLink
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.UrlLink(Code, ModelId, Url) VALUES(?,?, 'http://www.staufen.de')"));
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "UrlLinkElement 1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+        urlLinkKeys.push_back(key);
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "UrlLinkElement 2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+        urlLinkKeys.push_back(key);
+        stmt.Finalize();
+
+        //EmbeddedLink
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.EmbeddedLink(Code, ModelId, Name) VALUES(?,?, 'bliblablub')"));
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "EmbeddedLinkElement 1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+        embeddedLinkKeys.push_back(key);
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "EmbeddedLinkElement 2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+        embeddedLinkKeys.push_back(key);
+        stmt.Finalize();
+
+        //InformationElementDrivesInformationElement
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.InformationElementDrivesInformationElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedLinkKeys[0].GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedLinkKeys[0].GetECClassId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedLinkKeys[1].GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedLinkKeys[1].GetECClassId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
+        stmt.Finalize();
+
+        //UrlLinkDrivesAnnotationElement
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.UrlLinkDrivesAnnotation3dElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[0].GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[0].GetECClassId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[1].GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[1].GetECClassId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[2].GetECInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[2].GetECClassId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
+        stmt.Finalize();
+        }
+
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly)));
 
     ECSqlStatement stmt;
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model(Name) VALUES(?)"));
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model1", IECSqlBinder::MakeCopy::No));
-    ECInstanceKey model1Key;
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(model1Key));
-    stmt.Reset();
-    stmt.ClearBindings();
-        
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model2", IECSqlBinder::MakeCopy::No));
-    ECInstanceKey model2Key;
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(model2Key));
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PhysicalElement(Code, ModelId) VALUES(?,?)"));
-
-    ECInstanceKey element1Key;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Element 1", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, model1Key.GetECInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element1Key)) << ecdb.GetLastError().c_str();
-    stmt.Reset();
-    stmt.ClearBindings();
-
-    ECInstanceKey element2Key;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Element 2", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, model1Key.GetECInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element2Key)) << ecdb.GetLastError().c_str();
-    stmt.Reset();
-    stmt.ClearBindings();
-
-    ECInstanceKey element3Key;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Element 3", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, model2Key.GetECInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element3Key)) << ecdb.GetLastError().c_str();
-    stmt.Reset();
-    stmt.ClearBindings();
-
-    stmt.Finalize();
-
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasElements"));
-
     stmt.Finalize();
+
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ONLY ts.ModelHasElements"));
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasPhysicalElements"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasGeometric3dElements"));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasLinkElements"));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.ElementDrivesElement"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(5, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ONLY ts.ElementDrivesElement"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.InformationElementDrivesInformationElement"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(2, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.UrlLinkDrivesAnnotation3dElement"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(3, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
     }
 
