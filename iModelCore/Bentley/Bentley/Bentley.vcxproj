@@ -84,6 +84,7 @@
     <ClInclude Include="..\PublicAPI\Bentley\Iota.h" />
     <ClInclude Include="..\PublicAPI\Bentley\IStorage.h" />
     <ClInclude Include="..\PublicAPI\Bentley\NonCopyableClass.h" />
+    <ClInclude Include="..\PublicAPI\Bentley\Nullable.h" />
     <ClInclude Include="..\PublicAPI\Bentley\PTypesU.h" />
     <ClInclude Include="..\PublicAPI\Bentley\rbtree.h" />
     <ClInclude Include="..\PublicAPI\Bentley\RefCounted.h" />
