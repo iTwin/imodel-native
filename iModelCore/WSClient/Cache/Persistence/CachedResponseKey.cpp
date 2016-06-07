@@ -2,13 +2,18 @@
 |
 |     $Source: Cache/Persistence/CachedResponseKey.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <WebServices/Cache/Persistence/CachedResponseKey.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedResponseKey::CachedResponseKey() {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
