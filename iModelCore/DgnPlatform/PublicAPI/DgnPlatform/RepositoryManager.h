@@ -471,6 +471,7 @@ namespace RepositoryJson
     DGNPLATFORM_EXPORT bool LockableTypeFromJson(LockableType& type, JsonValueCR value);
     DGNPLATFORM_EXPORT bool RepositoryStatusFromJson(RepositoryStatus& status, JsonValueCR value);
     DGNPLATFORM_EXPORT bool ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions& options, JsonValueCR value);
+    DGNPLATFORM_EXPORT bool RequestPurposeFromJson(IBriefcaseManager::RequestPurpose& purpose, JsonValueCR value);
 
     DGNPLATFORM_EXPORT void BriefcaseIdToJson(JsonValueR value, BeSQLite::BeBriefcaseId id);
     DGNPLATFORM_EXPORT void BeInt64IdToJson(JsonValueR value, BeInt64Id id);
@@ -478,6 +479,7 @@ namespace RepositoryJson
     DGNPLATFORM_EXPORT void LockableTypeToJson(JsonValueR value, LockableType type);
     DGNPLATFORM_EXPORT void RepositoryStatusToJson(JsonValueR value, RepositoryStatus status);
     DGNPLATFORM_EXPORT void ResponseOptionsToJson(JsonValueR value, IBriefcaseManager::ResponseOptions options);
+    DGNPLATFORM_EXPORT void RequestPurposeToJson(JsonValueR value, IBriefcaseManager::RequestPurpose purpose);
 } // namespace RepositoryJson
 //__PUBLISH_SECTION_START__
 

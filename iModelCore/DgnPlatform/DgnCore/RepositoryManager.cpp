@@ -1636,6 +1636,7 @@ bool IBriefcaseManager::AreResourcesAvailable(Request& req, Response* pResponse,
 #define JSON_CodeStateType "Type"       // DgnCodeState::Type
 #define JSON_Codes "Codes"              // DgnCodeSet
 #define JSON_Options "Options"          // ResponseOptions
+#define JSON_Purpose "Purpose"          // RequestPurpose
 #define JSON_CodeStates "CodeStates"    // list of DgnCodeInfo
 
 /*---------------------------------------------------------------------------------**//**
@@ -2066,6 +2067,23 @@ bool RepositoryJson::ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions&
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::RequestPurposeFromJson(IBriefcaseManager::RequestPurpose& purpose, JsonValueCR value)
+    {
+    purpose = static_cast<IBriefcaseManager::RequestPurpose>(value.asUInt());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryJson::RequestPurposeToJson(JsonValueR value, IBriefcaseManager::RequestPurpose purpose)
+    {
+    value = static_cast<uint32_t>(purpose);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IBriefcaseManager::Request::ToJson(JsonValueR value) const
@@ -2094,6 +2112,8 @@ bool IBriefcaseManager::Request::FromJson(JsonValueCR value)
 void IBriefcaseManager::Response::ToJson(JsonValueR value) const
     {
     RepositoryJson::RepositoryStatusToJson(value[JSON_Status], m_status);
+    RepositoryJson::RequestPurposeToJson(value[JSON_Purpose], m_purpose);
+    RepositoryJson::ResponseOptionsToJson(value[JSON_Options], m_options);
     collectionToJson(value[JSON_LockStates], m_lockStates);
     collectionToJson(value[JSON_CodeStates], m_codeStates);
     }
@@ -2104,7 +2124,11 @@ void IBriefcaseManager::Response::ToJson(JsonValueR value) const
 bool IBriefcaseManager::Response::FromJson(JsonValueCR value)
     {
     Invalidate();
-    if (RepositoryJson::RepositoryStatusFromJson(m_status, value[JSON_Status]) && setFromJson(m_lockStates, value[JSON_LockStates]) && setFromJson(m_codeStates, value[JSON_CodeStates]))
+    if (RepositoryJson::RepositoryStatusFromJson(m_status, value[JSON_Status])
+        && RepositoryJson::RequestPurposeFromJson(m_purpose, value[JSON_Purpose])
+        && RepositoryJson::ResponseOptionsFromJson(m_options, value[JSON_Options])
+        && setFromJson(m_lockStates, value[JSON_LockStates])
+        && setFromJson(m_codeStates, value[JSON_CodeStates]))
         return true;
 
     Invalidate();
