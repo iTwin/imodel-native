@@ -16,10 +16,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECDbSchemaReader::GetECSchema(ECSchemaId const& ecSchemaId, bool ensureAllClassesLoaded) const
+ECSchemaCP ECDbSchemaReader::GetECSchema(ECSchemaId const& ecSchemaId, bool loadSchemaEntities) const
     {
     ECDbSchemaReader::Context ctx;
-    ECSchemaCP schema = GetECSchema(ctx, ecSchemaId, ensureAllClassesLoaded);
+    ECSchemaCP schema = GetECSchema(ctx, ecSchemaId, loadSchemaEntities);
     if (schema == nullptr)
         return nullptr;
 
@@ -32,10 +32,10 @@ ECSchemaCP ECDbSchemaReader::GetECSchema(ECSchemaId const& ecSchemaId, bool ensu
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECDbSchemaReader::GetECSchema(Context& ctx, ECSchemaId const& ecSchemaId, bool ensureAllClassesLoaded) const
+ECSchemaCP ECDbSchemaReader::GetECSchema(Context& ctx, ECSchemaId const& ecSchemaId, bool loadSchemaEntities) const
     {
     DbECSchemaEntry* outECSchemaKey = nullptr;
-    if (SUCCESS != ReadECSchema(outECSchemaKey, ctx, ecSchemaId, ensureAllClassesLoaded))
+    if (SUCCESS != ReadECSchema(outECSchemaKey, ctx, ecSchemaId, loadSchemaEntities))
         return nullptr;
 
     return outECSchemaKey->m_cachedECSchema.get();
@@ -518,7 +518,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& schemaE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, Context& ctx, ECSchemaId const& ctxECSchemaId, bool ensureAllClassesLoaded) const
+BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, Context& ctx, ECSchemaId const& ctxECSchemaId, bool loadSchemaEntities) const
     {
     BeMutexHolder lock(m_criticalSection);
     bvector<DbECSchemaEntry*> newlyLoadedSchemas;
@@ -531,7 +531,7 @@ BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, C
         ctx.AddSchemaToLoadCAInstanceFor(schema);
         }
 
-    if (ensureAllClassesLoaded && !outECSchemaKey->IsFullyLoaded())
+    if (loadSchemaEntities && !outECSchemaKey->IsFullyLoaded())
         {
         std::set<DbECSchemaEntry*> fullyLoadedSchemas;
         if (SUCCESS != LoadSchemaEntitiesFromDb(outECSchemaKey, ctx, fullyLoadedSchemas))

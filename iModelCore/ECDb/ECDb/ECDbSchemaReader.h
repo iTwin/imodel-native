@@ -107,7 +107,7 @@ struct ECDbSchemaReader
         mutable DbKindOfQuantityEntryMap m_koqCache;
         mutable BeMutex m_criticalSection;
 
-        ECN::ECSchemaCP GetECSchema(Context&, ECN::ECSchemaId const&, bool loadClasses) const;
+        ECN::ECSchemaCP GetECSchema(Context&, ECN::ECSchemaId const&, bool loadSchemaEntities) const;
         ECN::ECClassP GetECClass(Context&, ECN::ECClassId const&) const;
         bool TryGetECClassFromCache(ECN::ECClassP&, ECN::ECClassId const&) const;
         ECEnumerationCP GetECEnumeration(Context&, Utf8CP schemaName, Utf8CP enumName) const;
@@ -122,7 +122,7 @@ struct ECDbSchemaReader
         BentleyStatus LoadECRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECRelationshipConstraintId const& constraintId) const;
         BentleyStatus LoadECSchemaDefinition(DbECSchemaEntry*&, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECN::ECSchemaId const&) const;
 
-        BentleyStatus ReadECSchema(DbECSchemaEntry*&, Context&, ECN::ECSchemaId const&, bool loadClasses) const;
+        BentleyStatus ReadECSchema(DbECSchemaEntry*&, Context&, ECN::ECSchemaId const&, bool loadSchemaEntities) const;
         BentleyStatus ReadECEnumeration(ECEnumerationP&, Context&, ECN::ECEnumerationId const&) const;
         BentleyStatus ReadKindOfQuantity(KindOfQuantityP&, Context&, ECN::KindOfQuantityId const&) const;
 

@@ -71,7 +71,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 
         BentleyStatus BatchImportECSchemas(SchemaImportContext&, ECN::ECSchemaCacheR) const;
 
-        ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool ensureAllClassesLoaded) const;
+        ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId const&, bool loadSchemaEntities) const;
         //! Implementation of IECSchemaLocater
         virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
 
@@ -106,17 +106,17 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 
         //! Get an ECSchema by name
         //! @param[in] schemaName Name (not full name) of the ECSchema to retrieve
-        //! @param[in] ensureAllClassesLoaded true, if all classes in the ECSchema should be proactively loaded into memory. false,
+        //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
         //!                                   if they are loaded on-demand.
         //! @return The retrieved ECSchema or nullptr if not found
-        ECDB_EXPORT ECN::ECSchemaCP GetECSchema(Utf8CP schemaName, bool ensureAllClassesLoaded = true) const;
+        ECDB_EXPORT ECN::ECSchemaCP GetECSchema(Utf8CP schemaName, bool loadSchemaEntities = true) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @param[out] schemas The retrieved list of ECSchemas
-        //! @param[in] ensureAllClassesLoaded true, if all classes in the ECSchema should be proactively loaded into memory. false,
+        //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
         //!                                   if they are loaded on-demand.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR
-        ECDB_EXPORT BentleyStatus GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool ensureAllClassesLoaded = true) const;
+        ECDB_EXPORT BentleyStatus GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool loadSchemaEntities = true) const;
 
         //! Gets the ECClass for the specified name.
         //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
@@ -128,7 +128,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! Gets the ECClass for the specified ECClassId.
         //! @param[in] ecClassId Id of the ECClass to retrieve
         //! @return The retrieved ECClass or nullptr if not found
-        ECDB_EXPORT ECN::ECClassCP GetECClass(ECN::ECClassId ecClassId) const;
+        ECDB_EXPORT ECN::ECClassCP GetECClass(ECN::ECClassId const& ecClassId) const;
 
         //! Gets the ECClassId for the ECClass with the specified name.
         //! @param[out] id ECClassId of the requested ECClass.

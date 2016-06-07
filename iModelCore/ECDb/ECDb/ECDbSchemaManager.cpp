@@ -37,7 +37,7 @@ ECDbSchemaManager::~ECDbSchemaManager()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool ensureAllClassesLoaded) const
+BentleyStatus ECDbSchemaManager::GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool loadSchemaEntities) const
     {
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_Schema");
     if (stmt == nullptr)
@@ -54,7 +54,7 @@ BentleyStatus ECDbSchemaManager::GetECSchemas(bvector<ECN::ECSchemaCP>& schemas,
     schemas.clear();
     for (ECSchemaId schemaId : schemaIds)
         {
-        ECSchemaCP out = GetECSchema(schemaId, ensureAllClassesLoaded);
+        ECSchemaCP out = GetECSchema(schemaId, loadSchemaEntities);
         if (out == nullptr)
             return ERROR;
 
@@ -315,21 +315,21 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECDbSchemaManager::GetECSchema(Utf8CP schemaName, bool ensureAllClassesLoaded) const
+ECSchemaCP ECDbSchemaManager::GetECSchema(Utf8CP schemaName, bool loadSchemaEntities) const
     {
     const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), schemaName);
     if (!schemaId.IsValid())
         return nullptr;
 
-    return GetECSchema(schemaId, ensureAllClassesLoaded);
+    return GetECSchema(schemaId, loadSchemaEntities);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECDbSchemaManager::GetECSchema(ECSchemaId schemaId, bool ensureAllClassesLoaded) const
+ECSchemaCP ECDbSchemaManager::GetECSchema(ECSchemaId const& schemaId, bool loadSchemaEntities) const
     {
-    return m_schemaReader->GetECSchema(schemaId, ensureAllClassesLoaded);
+    return m_schemaReader->GetECSchema(schemaId, loadSchemaEntities);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -361,7 +361,7 @@ ECClassCP ECDbSchemaManager::GetECClass(Utf8CP schemaNameOrPrefix, Utf8CP classN
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
+ECClassCP ECDbSchemaManager::GetECClass(ECClassId const& ecClassId) const
     {
     return m_schemaReader->GetECClass(ecClassId);
     }
