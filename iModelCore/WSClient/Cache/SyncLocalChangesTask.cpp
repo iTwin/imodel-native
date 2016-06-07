@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncLocalChangesTask.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -13,6 +13,7 @@
 #include <WebServices/Client/WSChangeset.h>
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
 
+#include "SessionInfo.h"
 #include "Util/JsonUtil.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -238,6 +239,51 @@ bool SyncLocalChangesTask::CanSyncChangeset(ChangeGroupCR changeGroup) const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperately(ChangeGroupPtr changeGroup)
+    {
+    ECInstanceKey fileKey = changeGroup->GetFileChange().GetInstanceKey();
+    if (!fileKey.IsValid())
+        return CreateCompletedAsyncTask(false);
+
+    if (m_serverInfo.GetWebApiVersion() < BeVersion(2, 4))
+        return CreateCompletedAsyncTask(false);
+
+    if (nullptr != m_ds->m_sessionInfo->repositorySupportsFileAccessUrl)
+        return CreateCompletedAsyncTask(*m_ds->m_sessionInfo->repositorySupportsFileAccessUrl);
+
+    // TODO: 500 server issue "N~3APersonalPublishing.01.00~3APublishedFile"
+    //auto txn = m_ds->StartCacheTransaction();
+    //ECClassCP ecClass = txn.GetCache().GetAdapter().GetECClass(fileKey);
+    //if (nullptr == ecClass)
+    //    return CreateCompletedAsyncTask(false);
+    //Utf8String remoteClassId = "N~3A" + Utf8String(ecClass->GetSchema().GetFullSchemaName()) + "~3A" + Utf8String(ecClass->GetName());
+    //query.SetFilter(
+    //    "PolicyAppliesTo-forward-MetaSchema.ECClassDef.$id+eq+'" + remoteClassId + "'+and+"
+    //    "Name+eq+'SupportsFileAccessUrl'+and+"
+    //    "Supported+eq+true");
+
+    WSQuery query("Policies", "PolicyAssertion");
+    query.SetSelect("$id");
+    query.SetFilter("Name+eq+'SupportsFileAccessUrl'+and+Supported+eq+true");
+
+    return m_ds->GetClient()->SendQueryRequest(query, nullptr, nullptr, GetCancellationToken())
+        ->Then<bool>(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
+        {
+        if (!result.IsSuccess())
+            {
+            SetError(result.GetError());
+            return false;
+            }
+
+        bool supportsFileAccessUrl = !result.GetValue().GetInstances().IsEmpty();
+        m_ds->m_sessionInfo->repositorySupportsFileAccessUrl.reset(new bool(supportsFileAccessUrl));
+        return supportsFileAccessUrl;
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<void> SyncLocalChangesTask::SyncChangeGroup(ChangeGroupPtr changeGroup)
@@ -274,6 +320,47 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncChangeGroup(ChangeGroupPtr changeGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup)
     {
+    if (changeGroup->GetFileChange().GetChangeStatus() == IChangeManager::ChangeStatus::NoChange)
+        {
+        return SyncObjectWithFileCreation(changeGroup, false);
+        }
+
+    return ShouldSyncObjectAndFileCreationSeperately(changeGroup)->Then([=] (bool syncSeperately)
+        {
+        if (IsTaskCanceled()) return;
+        if (!syncSeperately)
+            {
+            SyncObjectWithFileCreation(changeGroup, true);
+            return;
+            }
+
+        SyncObjectWithFileCreation(changeGroup, false)->Then([=]
+            {
+            if (IsTaskCanceled()) return;
+            if (!changeGroup->IsSynced()) return;
+
+            SyncFileModification(changeGroup)->Then(m_ds->GetCacheAccessThread(), [=]
+                {
+                if (IsTaskCanceled()) return;
+
+                auto txn = m_ds->StartCacheTransaction();
+                auto fileId = txn.GetCache().FindInstance(changeGroup->GetFileChange().GetInstanceKey());
+                m_ds->CacheObject(fileId, GetCancellationToken())
+                    ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::Result result)
+                    {
+                    if (!result.IsSuccess())
+                        SetError(result.GetError());
+                    });
+                });
+            });
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(ChangeGroupPtr changeGroup, bool includeFile)
+    {
     return m_ds->GetCacheAccessThread()->ExecuteAsync([=]
         {
         if (IsTaskCanceled()) return;
@@ -286,7 +373,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
         BeFileName filePath;
         uint64_t currentFileSize = 0;
 
-        if (changeGroup->GetFileChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
+        if (includeFile && changeGroup->GetFileChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
             {
             fileRevision = txn.GetCache().GetChangeManager().ReadFileRevision(changeGroup->GetFileChange().GetInstanceKey());
             filePath = fileRevision->GetFilePath();
@@ -352,7 +439,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
                     };
                 }
 
-            if (changeGroup->GetFileChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
+            if (nullptr != fileRevision)
                 {
                 if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileRevision(*fileRevision))
                     {
@@ -366,7 +453,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
             if (changeGroup->GetObjectChange().GetChangeStatus() == IChangeManager::ChangeStatus::Created)
                 {
                 ObjectId newObjectId = txn.GetCache().FindInstance(changeGroup->GetObjectChange().GetInstanceKey());
-                if (m_ds->GetServerInfo(txn).GetVersion() < BeVersion(2, 0))
+                if (m_serverInfo.GetVersion() < BeVersion(2, 0))
                     {
                     m_ds->CacheObject(newObjectId, GetCancellationToken())
                         ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::Result result)
@@ -703,20 +790,19 @@ bool ensureChangedInstanceInRoot
             {
             source = &changeset.AddInstance(sourceId, sourceState, sourceProperties);
             target = &source->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Forward,
-                targetId, targetState, targetProperties);
-
+                                                 targetId, targetState, targetProperties);
             return source;
             }
         else if (nullptr == source)
             {
             source = &target->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Backward,
-                sourceId, sourceState, sourceProperties);
+                                                 sourceId, sourceState, sourceProperties);
             return source;
             }
         else if (nullptr == target)
             {
             target = &source->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Forward,
-                targetId, targetState, targetProperties);
+                                                 targetId, targetState, targetProperties);
             return target;
             }
         else

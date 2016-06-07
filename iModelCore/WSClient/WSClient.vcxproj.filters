@@ -818,6 +818,9 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cache\SessionInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -851,5 +854,6 @@
     <None Include="UnZip.py" />
     <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="Azure\Azure.mki" />
+    <None Include=".hgignore" />
   </ItemGroup>
 </Project>

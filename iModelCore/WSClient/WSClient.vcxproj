@@ -219,6 +219,7 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h" />
+    <ClInclude Include="Cache\SessionInfo.h" />
     <ClInclude Include="Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\Util\StringHelper.h" />
     <ClInclude Include="Cache\SyncCachedDataTask.h" />
@@ -344,6 +345,7 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <None Include=".hgignore" />
     <None Include="Azure\Azure.mki" />
     <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="CacheLib.mke" />

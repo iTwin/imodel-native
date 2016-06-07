@@ -22,6 +22,7 @@
 #include "DownloadFilesTask.h"
 #include "Persistence/Core/SchemaContext.h"
 #include "Persistence/RepositoryInfoStore.h"
+#include "SessionInfo.h"
 #include "SyncCachedDataTask.h"
 #include "SyncCachedInstancesTask.h"
 #include "SyncLocalChangesTask.h"
@@ -48,6 +49,7 @@ BeFileNameCR temporaryDir
 m_client(client),
 m_cacheTransactionManager(cacheTransactionManager),
 m_infoStore(infoStore),
+m_sessionInfo(new SessionInfo()),
 m_cacheAccessThread(cacheAccessThread),
 m_cancellationToken(SimpleCancellationToken::Create()),
 m_temporaryDir(temporaryDir)
