@@ -68,11 +68,12 @@ DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request const& req, DgnDbR db, bool queryOnly)
     {
+    auto purpose = queryOnly ? IBriefcaseManager::RequestPurpose::Query : IBriefcaseManager::RequestPurpose::Acquire;
     if (!m_connection)
-        return Response (RepositoryStatus::ServerUnavailable);
+        return Response (purpose, req.Options(), RepositoryStatus::ServerUnavailable);
 
     if (req.Locks ().IsEmpty ())
-        return IBriefcaseManager::Response (RepositoryStatus::Success);
+        return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
 
     Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
 
@@ -90,14 +91,14 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
 
             auto retVal = _Demote(locks, req.Codes(), db);
             BeAssert(RepositoryStatus::Success == retVal);
-            return IBriefcaseManager::Response(retVal);
+            return IBriefcaseManager::Response(purpose, req.Options(), retVal);
             }
 
-        return IBriefcaseManager::Response (RepositoryStatus::Success);
+        return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
         }
     else
         {
-        Response           response (RepositoryStatus::ServerUnavailable);
+        Response           response (purpose, req.Options(), RepositoryStatus::ServerUnavailable);
         DgnDbServerError&  error = result.GetError ();
 
         if (DgnDbServerError::Id::LockOwnedByAnotherBriefcase == error.GetId ())
