@@ -22,10 +22,9 @@ JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 #TFS 440168
 ECDbMappingTestFixture.MapRelationshipsToExistingTable
 
-#TFS 438843
-ECSchemaUpdateTests.DeleteEntityClassPartOfRelationshipConstraint
-
 #TFS 467814
 ECDbMappingTestFixture.AddDerivedClassOfConstraintOnNsideOf1NRelationship
 ECDbMappingTestFixture.AddDerivedClassOfConstraintOn1sideOf1NRelationship
 ECDbMappingTestFixture.AddDerivedClassOfConstraintsForNNRelationship
+
+ECDbSchemaTests.LoadECSchemas (notifed Colin)
