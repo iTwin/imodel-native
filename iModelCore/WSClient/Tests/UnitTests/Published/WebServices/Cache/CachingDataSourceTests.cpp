@@ -3612,6 +3612,201 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdate
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetFileChange(instance).GetChangeStatus());
     }
 
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile_ChecksIfRepositorySupportsFileAccessUrl)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_EQ("Policies/PolicyAssertion?$select=$id&$filter=Name+eq+'SupportsFileAccessUrl'+and+Supported+eq+true", query.ToFullString());
+        EXPECT_NE(nullptr, ct);
+        return CreateCompletedAsyncTask(WSObjectsResult::Error({}));
+        }));
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFileAndFileAccessUrlNotSupported_UploadsInstanceAndFileInOneRequest)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    auto filePath = txn.GetCache().ReadFilePath(instance);
+    ASSERT_TRUE(filePath.DoesPathExist());
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("Policies", query.GetSchemaName());
+        return CreateCompletedAsyncTask(StubWSObjectsResult());
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_EQ(filePath, path);
+        EXPECT_NE(nullptr, ct);
+
+        EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+            .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewRemoteId"}))));
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "NewRemoteId"}));
+        }));
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue().empty());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFileAndFileAccessUrlSupported_UploadsInstanceAndFileSeperately)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    auto filePath = txn.GetCache().ReadFilePath(instance);
+    ASSERT_TRUE(filePath.DoesPathExist());
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("Policies", query.GetSchemaName());
+        return CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()));
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_EQ(L"", path);
+        EXPECT_NE(nullptr, ct);
+
+        EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+            .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewRemoteId"}))));
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "NewRemoteId"}));
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendUpdateFileRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_EQ(ObjectId("TestSchema.TestClass", "NewRemoteId"), objectId);
+        EXPECT_EQ(filePath, path);
+        EXPECT_NE(nullptr, ct);
+
+        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId("TestSchema.TestClass", "NewRemoteId"), _, _))
+            .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewRemoteId"}))));
+        return CreateCompletedAsyncTask(WSUpdateFileResult::Success());
+        }));
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue().empty());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFileAndFileAccessUrlSupportedAndCreationFails_DoesNotUploadFile)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    auto filePath = txn.GetCache().ReadFilePath(instance);
+    ASSERT_TRUE(filePath.DoesPathExist());
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("Policies", query.GetSchemaName());
+        return CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()));
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(L"", path);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error({WSError::Id::Conflict}));
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendUpdateFileRequest(_, _, _, _)).Times(0);
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    ASSERT_EQ(1, result.GetValue().size());
+    EXPECT_EQ(instance, ds->StartCacheTransaction().GetCache().FindInstance(result.GetValue()[0].GetObjectId()));
+    EXPECT_EQ(WSError::Id::Conflict, result.GetValue()[0].GetError().GetWSError().GetId());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFileAndCalledSecondTime_PoliciesCheckDoneOnce)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    auto filePath = txn.GetCache().ReadFilePath(instance);
+    ASSERT_TRUE(filePath.DoesPathExist());
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("Policies", query.GetSchemaName());
+        return CreateCompletedAsyncTask(StubWSObjectsResult());
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(filePath, path);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
+        }));
+
+    ASSERT_FALSE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(filePath, path);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
+        }));
+
+    ASSERT_FALSE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFileAndFileAccessUrlIsSupportedAndCalledSecondTime_PoliciesCheckDoneOnce)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("Policies", query.GetSchemaName());
+        return CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()));
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(L"", path);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
+        }));
+
+    ASSERT_FALSE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(L"", path);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
+        }));
+
+    ASSERT_FALSE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
+    }
+
 TEST_F(CachingDataSourceTests, SyncLocalChanges_DeletedObject_SendsDeleteObjectRequestWithCorrectParametersAndCommits)
     {
     // Arrange

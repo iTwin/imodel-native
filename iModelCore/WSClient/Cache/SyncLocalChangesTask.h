@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncLocalChangesTask.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -54,10 +54,13 @@ struct SyncLocalChangesTask : public CachingTaskBase
         void SyncNext();
 
         bool CanSyncChangeset(ChangeGroupCR changeGroup) const;
+        AsyncTaskPtr<bool> ShouldSyncObjectAndFileCreationSeperately(ChangeGroupPtr changeGroup);
+
         AsyncTaskPtr<void> SyncNextChangeset();
 
         AsyncTaskPtr<void> SyncChangeGroup(ChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncCreation(ChangeGroupPtr changeGroup);
+        AsyncTaskPtr<void> SyncObjectWithFileCreation(ChangeGroupPtr changeGroup, bool includeFile);
         AsyncTaskPtr<void> SyncObjectModification(ChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncFileModification(ChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncObjectDeletion(ChangeGroupPtr changeGroup);
