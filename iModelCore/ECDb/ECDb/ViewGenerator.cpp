@@ -597,10 +597,20 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
         if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
             continue;
 
+
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
         BeAssert(actualPropMap->GetTable() != nullptr);
         auto colSqlSnippets = actualPropMap->ToNativeSql(actualPropMap->GetTable()->GetName().c_str(), ECSqlType::Select, false);
         auto colSqlSnippetsWithoutTableNames = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
+
+
+        ColumnMappedToPropertyList columnMapped;
+        bool generateDebugView = m_viewAccessStringList && m_captureViewAccessStringList;
+        if (generateDebugView)
+            {
+            columnMapped = actualPropMap->QueryColumnInfo(
+                Enum::Or(ColumnMappedToProperty::LoadFlags::StrongType, Enum::Or(ColumnMappedToProperty::LoadFlags::Column, ColumnMappedToProperty::LoadFlags::AccessString)), true);
+            }
 
         const size_t snippetCount = colSqlSnippets.size();
         if (aliasSqlSnippets.size() != snippetCount)
@@ -617,16 +627,34 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                 viewSql.Append("NULL ");
             else
                 {
-                viewSql.Append(colSqlSnippets[i]);
+                if (generateDebugView)
+                    {
+                    if (!columnMapped[i].GetColumn()->IsShared())
+                        viewSql.Append(colSqlSnippets[i]);
+                    else
+                        {
+                        viewSql.Append("CAST (");
+                        viewSql.Append(colSqlSnippets[i]);
+                        viewSql.Append(" AS ").Append(DbColumn::TypeToSql(columnMapped[i].GetStrongType()));
+                        viewSql.Append(")");
+                        }
+                    }
+                else
+                    {
+                    viewSql.Append(colSqlSnippets[i]);
+                    }
                 }
+
             if (strcmp(colSqlSnippetsWithoutTableNames[i].ToString(), aliasSqlSnippet.ToString()) != 0 || forNullView) //do not add alias if column name is same as alias.
                 viewSql.AppendSpace().Append(aliasSqlSnippet);
             }
 
-        if (m_viewAccessStringList && m_captureViewAccessStringList)
+        if (generateDebugView)
             {
-            if (actualPropMap->GetPropertyPathList(*m_viewAccessStringList) != SUCCESS)
-                return ERROR;
+            for (auto const& columnInfo : columnMapped)
+                {
+                m_viewAccessStringList->push_back(columnInfo.GetAccessString());
+                }
             }
         }
 

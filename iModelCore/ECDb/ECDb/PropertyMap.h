@@ -67,7 +67,6 @@ public:
 struct StructArrayJsonPropertyMap;
 struct NavigationPropertyMap;
 struct ECClassIdRelationshipConstraintPropertyMap;
-
 struct ColumnMappedToProperty
     {
     enum class LoadFlags :uint32_t
@@ -82,13 +81,48 @@ struct ColumnMappedToProperty
     private:
         LoadFlags m_loadFlag;
         DbColumn const* m_column;
-        Utf8StringP  m_accessString;
+        Utf8String  m_accessString;
         DbColumn::Type m_strongType;
         PropertyMap const* m_propertyMap;
+
     public:
         ColumnMappedToProperty()
-            :m_loadFlag(LoadFlags::None), m_column(nullptr), m_accessString(nullptr), m_strongType(DbColumn::Type::Any), m_propertyMap(nullptr)
+            :m_loadFlag(LoadFlags::None), m_column(nullptr), m_strongType(DbColumn::Type::Any), m_propertyMap(nullptr)
             {}
+        ColumnMappedToProperty(ColumnMappedToProperty const& rhs)
+            :m_loadFlag(rhs.m_loadFlag), m_column(rhs.m_column), m_accessString(rhs.m_accessString), m_strongType(rhs.m_strongType), m_propertyMap(rhs.m_propertyMap)
+            {}
+
+        ColumnMappedToProperty(ColumnMappedToProperty const&& rhs)
+            :m_loadFlag(std::move(rhs.m_loadFlag)), m_column(std::move(rhs.m_column)), m_accessString(std::move(rhs.m_accessString)), m_strongType(std::move(rhs.m_strongType)), m_propertyMap(std::move(rhs.m_propertyMap))
+            {}
+        ColumnMappedToProperty& operator = (ColumnMappedToProperty const& rhs) 
+            {
+            if (this != &rhs)
+                {
+                m_loadFlag = rhs.m_loadFlag;
+                m_column = rhs.m_column;
+                m_strongType = rhs.m_strongType;
+                m_propertyMap = rhs.m_propertyMap;
+                m_accessString = rhs.m_accessString;
+                }
+
+            return *this;
+            }
+        ColumnMappedToProperty& operator = (ColumnMappedToProperty const&& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_loadFlag = std::move(rhs.m_loadFlag);
+                m_column = std::move(rhs.m_column);
+                m_strongType = std::move(rhs.m_strongType);
+                m_propertyMap = std::move(rhs.m_propertyMap);
+                m_accessString = std::move(rhs.m_accessString);
+                }
+
+            return *this;
+            }
+
         ~ColumnMappedToProperty()
             {
             Reset();
@@ -97,30 +131,21 @@ struct ColumnMappedToProperty
         void SetAccessString(Utf8StringCR  accessString)
             {
             m_loadFlag = Enum::Or(m_loadFlag, LoadFlags::AccessString);
-            if (m_accessString)
-                m_accessString->clear();
-            else
-                m_accessString = new Utf8String();
-
-            m_accessString->assign(accessString);
+            m_accessString = accessString;
             }
-
         void SetStrongType(DbColumn::Type type) { m_loadFlag = Enum::Or(m_loadFlag, LoadFlags::StrongType); m_strongType = type; }
         void SetPropertyMap(PropertyMap const& propertyMap) { m_loadFlag = Enum::Or(m_loadFlag, LoadFlags::PropertyMap); m_propertyMap = &propertyMap; }
         void Reset()
             {
             m_loadFlag = LoadFlags::None;
             m_column = nullptr;
-            if (m_accessString)
-                delete m_accessString;
-
-            m_accessString = nullptr;
+            m_accessString.clear();
             m_strongType = DbColumn::Type::Any;
             m_propertyMap = nullptr;
             }
         LoadFlags GetLoadFlags() const { return m_loadFlag; }
         DbColumn const* GetColumn() const { BeAssert(Enum::Contains(m_loadFlag, LoadFlags::Column)); return m_column; }
-        Utf8CP GetAccessString() const { BeAssert(Enum::Contains(m_loadFlag, LoadFlags::AccessString)); return m_accessString->c_str(); }
+        Utf8CP GetAccessString() const { BeAssert(Enum::Contains(m_loadFlag, LoadFlags::AccessString)); return m_accessString.c_str(); }
         DbColumn::Type GetStrongType() const { BeAssert(Enum::Contains(m_loadFlag, LoadFlags::StrongType)); return m_strongType; }
         PropertyMapCP GetPropertyMap() const { BeAssert(Enum::Contains(m_loadFlag, LoadFlags::PropertyMap)); return m_propertyMap; }
     };
