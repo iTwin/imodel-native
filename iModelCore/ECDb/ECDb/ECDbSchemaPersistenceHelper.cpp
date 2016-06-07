@@ -26,9 +26,9 @@ ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, ECSchemaCR ecSc
     const ECSchemaId schemaId = GetECSchemaId(db, ecSchema.GetName().c_str());
     if (schemaId.IsValid())
         {
+        //it is possible that the schema was already imported before, but the given C++ object comes from another source.
+        //in that case we assign it here on the fly.
         const_cast<ECSchemaR>(ecSchema).SetId(schemaId);
-        LOG.debugv("ECSchema '%s' exists in the ECDb file, but its ECSchema C++ object wasn't assigned the ECSchemaId. Assigning it now.", ecSchema.GetName().c_str());
-        BeAssert(false && "ECSchema exists in the ECDb file, but its ECSchema C++ object wasn't assigned the ECSchemaId. Assigning it now.");
         }
 
     return schemaId;
@@ -245,9 +245,9 @@ ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR ecdb, ECPropert
     const ECPropertyId id = GetECPropertyId(ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str());
     if (id.IsValid())
         {
+        //it is possible that the property was already imported before, but the given C++ object comes from another source.
+        //in that case we assign it here on the fly.
         const_cast<ECPropertyR>(prop).SetId(id);
-        LOG.debugv("ECProperty '%s.%s' exists in the ECDb file, but its ECProperty C++ object wasn't assigned the ECPropertyId. Assigning it now.", prop.GetClass().GetFullName(), prop.GetName().c_str());
-        BeAssert(false && "ECProperty exists in the ECDb file, but its C++ object wasn't assigned the ECProperty. Assigning it now.");
         }
 
     return id;

@@ -753,9 +753,9 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 if (!stmt->IsColumnNull(enumIdIx))
                     rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIdIx);
 
-                if ((kind == ECPropertyKind::Primitive || kind == ECPropertyKind::PrimitiveArray) && primTypeIsNull && !rowInfo.m_enumId.IsValid())
+                if (kind == ECPropertyKind::Primitive && primTypeIsNull && !rowInfo.m_enumId.IsValid())
                     {
-                    BeAssert(false && "Either PrimitiveType or EnumerationId column must not be NULL for primitive and prim array property");
+                    BeAssert(false && "Either PrimitiveType or EnumerationId column must not be NULL for primitive property");
                     return ERROR;
                     }
 

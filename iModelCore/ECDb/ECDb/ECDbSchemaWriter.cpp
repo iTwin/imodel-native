@@ -393,7 +393,7 @@ BentleyStatus ECDbSchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
         if (SUCCESS != ECDbSchemaPersistenceHelper::SerializeKoqAlternativePresentationUnits(altPresUnitsJsonStr, koq))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindText(8, altPresUnitsJsonStr.c_str(), Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != stmt->BindText(9, altPresUnitsJsonStr.c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
 

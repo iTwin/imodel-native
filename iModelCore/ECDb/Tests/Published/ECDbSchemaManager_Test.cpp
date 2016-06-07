@@ -1321,3 +1321,4 @@ TEST_F(ECDbSchemaManagerTests, EnforceECEnumeration)
     }
 
 END_ECDBUNITTESTS_NAMESPACE
+
