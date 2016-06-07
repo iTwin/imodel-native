@@ -47,6 +47,7 @@ ECInstanceKey FindRelationship(
     ECInstanceKeyCR target);
 
 int CountClassInstances(IDataSourceCache& ds, Utf8StringCR classKey);
+bool DoesInstanceExist(IDataSourceCache& ds, ECInstanceKeyCR key);
 
 Json::Value ReadInstance(IDataSourceCache& ds, ECInstanceKeyCR key);
 Json::Value ReadModifiedProperties(IDataSourceCache& ds, ECInstanceKeyCR key);

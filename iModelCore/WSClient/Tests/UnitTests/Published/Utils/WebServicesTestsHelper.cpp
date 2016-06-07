@@ -28,6 +28,16 @@ bool rapidjson::operator==(const rapidjson::Value& a, const rapidjson::Value& b)
     return JsonUtil::AreValuesEqual(a, b);
     }
 
+BEGIN_BENTLEY_NAMESPACE
+namespace Json
+    {
+    bool operator==(Utf8CP a, const Value& b)
+        {
+        return a == b.asString();
+        }
+    }
+END_BENTLEY_NAMESPACE
+
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
 std::shared_ptr<rapidjson::Document> ToRapidJson(Utf8StringCR jsonString)

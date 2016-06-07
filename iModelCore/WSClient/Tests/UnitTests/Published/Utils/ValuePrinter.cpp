@@ -129,6 +129,12 @@ std::ostream& operator << (std::ostream &o, DateTimeCR date)
     return o;
     }
 
+std::ostream& operator << (std::ostream &o, ECClassCR value)
+    {
+    o << Utf8String(value.GetFullName());
+    return o;
+    }
+
 std::ostream& operator << (std::ostream &o, ECValueCR value)
     {
     o << Utf8String(value.ToString());
@@ -328,7 +334,7 @@ std::ostream& operator << (std::ostream &o, ObjectIdCR id)
     return o;
     }
 
-std::ostream& operator << (std::ostream &o, BeFileNameStatus errorId)
+std::ostream& operator << (std::ostream &o, BeFileNameStatus status)
     {
     static std::map<BeFileNameStatus, Utf8String> names
         {
@@ -343,13 +349,13 @@ std::ostream& operator << (std::ostream &o, BeFileNameStatus errorId)
         TO_VALUE_STRING_PAIR(BeFileNameStatus::UnknownError)
     };
 
-    Utf8String name = names[errorId];
+    Utf8String name = names[status];
     BeAssert(!name.empty() && "Add missing value");
     o << name;
 
     return o;
     }
-
+    
 std::ostream& operator << (std::ostream &o, BeFileStatus errorId)
     {
     static std::map<BeFileStatus, Utf8String> names

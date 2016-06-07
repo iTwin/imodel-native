@@ -43,6 +43,7 @@ std::ostream& operator << (std::ostream &o, ECInstanceKeyCR instance);
 std::ostream& operator << (std::ostream &o, DateTimeCR date);
 
 // EC
+std::ostream& operator << (std::ostream &o, ECClassCR value);
 std::ostream& operator << (std::ostream &o, ECValueCR value);
 std::ostream& operator << (std::ostream &o, DbResult value);
 std::ostream& operator << (std::ostream &o, ECSqlStatus status);
