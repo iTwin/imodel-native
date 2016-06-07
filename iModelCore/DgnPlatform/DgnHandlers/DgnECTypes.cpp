@@ -807,5 +807,22 @@ IECClassLocaterR StandaloneTypeAdapterContext::_GetUnitsECClassLocater() const
     return m_model->GetDgnDb().GetClassLocater();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void IDgnECTypeAdapterContext::RegisterFactory()
+    {
+    IECTypeAdapterContext::RegisterFactory(&IDgnECTypeAdapterContext::CreateBase);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IECTypeAdapterContextPtr IDgnECTypeAdapterContext::CreateBase(ECPropertyCR ecproperty, IECInstanceCR unused, uint32_t componentIndex)
+    {
+    // ###TODO: slight hack for navigator.
+    return StandaloneTypeAdapterContext::Create(ecproperty, componentIndex, nullptr).get();
+    }
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

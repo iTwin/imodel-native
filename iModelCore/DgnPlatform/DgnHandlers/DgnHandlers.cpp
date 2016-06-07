@@ -9,6 +9,7 @@
 #include <BeSQLite/L10N.h>
 #include <DgnPlatform/DgnECSymbolProvider.h>
 #include <DgnPlatform/Dimension.h>
+#include <DgnPlatform/DgnECTypes.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -82,6 +83,8 @@ void DgnPlatformLib::StaticInitialize()
     bentleyAllocator_enableLowFragmentationCRTHeap();
 
     SectionClipObjectFactory::Register();
+
+    IDgnECTypeAdapterContext::RegisterFactory();
 
     s_staticInitialized = true;
     }
