@@ -167,6 +167,12 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! @return The retrieved ECEnumeration or nullptr if not found
         ECDB_EXPORT ECN::ECEnumerationCP GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
 
+        //! Gets the KindOfQuantity for the specified name.
+        //! @param[in] schemaName Name (not full name) of the schema containing the KindOfQuantity
+        //! @param[in] koqName Name of the KindOfQuantity to be retrieved
+        //! @return The retrieved KindOfQuantity or nullptr if not found
+        ECDB_EXPORT ECN::KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
+
         //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
         //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
         //! @note The views are strictly intended for developers for debugging purpose only. They should not be used in application code. 

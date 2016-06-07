@@ -98,4 +98,31 @@ struct NativeSqlBuilder
     };
 
 
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+struct SqlUpdateBuilder
+    {
+private:
+    Utf8String m_table;
+    std::vector<std::pair<Utf8String, ECN::ECValue>> m_updateExpressions;
+    std::vector<std::pair<Utf8String, ECN::ECValue>> m_whereExpressions;
+    
+    BentleyStatus Bind(BeSQLite::Statement&, int paramIndex, Utf8CP columnName, ECN::ECValueCR) const;
+
+public:
+    explicit SqlUpdateBuilder(Utf8CP table) : m_table(table) {}
+
+    bool IsValid() const { return !m_table.empty() && !m_updateExpressions.empty(); }
+    void AddSetExp(Utf8CP columnName, Utf8CP value) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
+    void AddSetExp(Utf8CP columnName, double value) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
+    void AddSetExp(Utf8CP columnName, bool value) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
+    void AddSetExp(Utf8CP columnName, uint32_t value) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue((int32_t) value))); }
+    void AddSetExp(Utf8CP columnName, uint64_t value) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
+    void AddSetExp(Utf8CP columnName, int32_t value) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
+    void AddSetExp(Utf8CP columnName, int64_t value) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
+    void AddWhereExp(Utf8CP columnName, int64_t value) { m_whereExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
+
+    BentleyStatus ExecuteSql(ECDb const&) const;
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

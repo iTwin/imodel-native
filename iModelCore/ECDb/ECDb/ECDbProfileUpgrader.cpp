@@ -11,6 +11,44 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3712::_Upgrade(ECDbCR ecdb) const
+    {
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE ec_KindOfQuantity("
+                                        "Id INTEGER PRIMARY KEY,"
+                                        "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+                                        "Name TEXT NOT NULL COLLATE NOCASE,"
+                                        "DisplayLabel TEXT,"
+                                        "Description TEXT,"
+                                        "PersistenceUnit TEXT NOT NULL,"
+                                        "PersistencePrecision INTEGER NOT NULL,"
+                                        "DefaultPresentationUnit TEXT,"
+                                        "AlternativePresentationUnits TEXT)"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating table ec_KindOfQuantity failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_KindOfQuantity_SchemaId ON ec_KindOfQuantity(SchemaId);"
+                                        "CREATE INDEX ix_ec_KindOfQuantity_Name ON ec_KindOfQuantity(Name);"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating indexes on table ec_KindOfQuantity failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("ALTER TABLE ec_Property ADD COLUMN "
+                                        "KindOfQuantityId INTEGER REFERENCES ec_KindOfQuantity(Id) ON DELETE CASCADE"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Adding column 'KindOfQuantityId' to table 'ec_KindOfQuantity' failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Added table 'ec_KindOfQuantity' and indexes. Added column 'KindOfQuantityId' to table 'ec_Property'.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3711::_Upgrade(ECDbCR ecdb) const

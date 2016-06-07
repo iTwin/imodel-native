@@ -57,6 +57,7 @@ public:
     static ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
     static ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema);
     static ECEnumerationId GetECEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
+    static KindOfQuantityId GetKindOfQuantityId(ECDbCR, Utf8CP schemaName, Utf8CP koqName);
     static ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
     static bool TryGetECSchemaKey(SchemaKey&, ECDbCR, Utf8CP schemaName);
@@ -65,7 +66,10 @@ public:
     static BentleyStatus DeserializeRelationshipKeyProperties(ECRelationshipConstraintClassR, Utf8CP jsonStr);
     static BentleyStatus SerializeECEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR);
     static BentleyStatus DeserializeECEnumerationValues(ECEnumerationR, Utf8CP jsonStr);
-    
+
+    static BentleyStatus SerializeKoqAlternativePresentationUnits(Utf8StringR jsonStr, KindOfQuantityCR);
+    static BentleyStatus DeserializeKoqAlternativePresentationUnits(KindOfQuantityR, Utf8CP jsonStr);
+
     static bool ContainsECSchemaWithNamespacePrefix(ECDbCR, Utf8CP namespacePrefix);
     };
 

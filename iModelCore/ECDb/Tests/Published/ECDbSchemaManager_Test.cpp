@@ -197,12 +197,22 @@ TEST_F(ECDbSchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     {
-    BeFileName testFilePath(ECDbTestUtility::BuildECDbPath("ecschemamanagertest.ecdb"));
-    SetupTestECDb(testFilePath);
+    ECDbCR ecdb = SetupECDb("getenumeration.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+                                     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                     "<ECSchemaReference name='ECDb_FileInfo' version='02.00.00' prefix='ecdbf' />"
+                                     "  <ECEntityClass typeName='Foo' >"
+                                     "    <ECProperty propertyName='Folder' typeName='ecdbf:StandardRootFolderType' />"
+                                     "    <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
+                                     "    <ECArrayProperty propertyName='FavoriteFolders' typeName='ecdbf:StandardRootFolderType' minOccurs='0' maxOccurs='unbounded' />"
+                                     "  </ECEntityClass>"
+                                     "</ECSchema>"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    Utf8String ecdbPath(ecdb.GetDbFileName());
 
     {
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8().c_str();
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
     ECEnumerationCP ecEnum = ecdb.Schemas().GetECEnumeration("ECDb_FileInfo", "StandardRootFolderType");
     ASSERT_TRUE(ecEnum != nullptr);
@@ -211,7 +221,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8().c_str();
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
     ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", false);
     ASSERT_TRUE(schema != nullptr);
@@ -234,7 +244,30 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
 
     {
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8().c_str();
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
+
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", false);
+    ASSERT_TRUE(schema != nullptr);
+    ASSERT_EQ(0, schema->GetEnumerationCount());
+    ECClassCP classWithEnum = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(classWithEnum != nullptr);
+
+    ECPropertyCP prop = classWithEnum->GetPropertyP("Folder");
+    ASSERT_TRUE(prop != nullptr);
+    PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
+    ASSERT_TRUE(primProp != nullptr);
+    ECEnumerationCP ecEnum = primProp->GetEnumeration();
+    ASSERT_TRUE(ecEnum != nullptr);
+    ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
+
+    ecEnum = schema->GetEnumerationCP("StandardRootFolderType");
+    ASSERT_TRUE(ecEnum != nullptr);
+    ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
+    }
+
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
     ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", true);
     ASSERT_TRUE(schema != nullptr);
@@ -243,6 +276,97 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
     }
 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, GetKindOfQuantity)
+    {
+    auto assertKoq = [] (KindOfQuantityCR actualKoq)
+        {
+        ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDisplayLabel().c_str());
+        ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
+        ASSERT_STREQ("CENTIMETRE", actualKoq.GetPersistenceUnit().c_str());
+        ASSERT_STREQ("FOOT", actualKoq.GetDefaultPresentationUnit().c_str());
+        bvector<Utf8String> const& actualAltUnits = actualKoq.GetAlternativePresentationUnitList();
+        ASSERT_EQ(2, actualAltUnits.size());
+        ASSERT_STREQ("INCH", actualAltUnits[0].c_str());
+        ASSERT_STREQ("YARD", actualAltUnits[1].c_str());
+        };
+
+    Utf8String ecdbPath;
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+                                     "<ECSchema schemaName='Schema1' nameSpacePrefix='s1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                     "<KindOfQuantity typeName='MyKindOfQuantity' description='My KindOfQuantity'"
+                                     "                displayLabel='My KindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
+                                     "                defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+                                     "</ECSchema>"));
+
+    testSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+                                     "<ECSchema schemaName='Schema2' nameSpacePrefix='s2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                     "<ECSchemaReference name='Schema1' version='01.00.00' prefix='s1' />"
+                                     "  <ECEntityClass typeName='Foo' >"
+                                     "    <ECProperty propertyName='Length' typeName='double' kindOfQuantity='s1:MyKindOfQuantity' />"
+                                     "    <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
+                                     "    <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity='s1:MyKindOfQuantity'/>"
+                                     "    <ECArrayProperty propertyName='Favorites' typeName='string' extendedTypeName='URL' minOccurs='0' maxOccurs='unbounded' />"
+                                     "  </ECEntityClass>"
+                                     "</ECSchema>"));
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchemas[0], "getkindofquantity.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertSchemaImport(asserted, ecdb, testSchemas[1]);
+    ASSERT_FALSE(asserted);
+
+    ecdbPath.assign(ecdb.GetDbFileName());
+    }
+
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
+
+    KindOfQuantityCP koq = ecdb.Schemas().GetKindOfQuantity("Schema1", "MyKindOfQuantity");
+    ASSERT_TRUE(koq != nullptr);
+    assertKoq(*koq);
+    }
+
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
+
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("Schema1", false);
+    ASSERT_TRUE(schema != nullptr);
+    ASSERT_EQ(0, schema->GetKindOfQuantityCount());
+    ECClassCP classWithKoq = ecdb.Schemas().GetECClass("Schema2", "Foo");
+    ASSERT_TRUE(classWithKoq != nullptr);
+    ASSERT_EQ(1, schema->GetKindOfQuantityCount());
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
+    ASSERT_TRUE(koq != nullptr);
+    assertKoq(*koq);
+
+    ECPropertyCP prop = classWithKoq->GetPropertyP("Length");
+    ASSERT_TRUE(prop != nullptr);
+    PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
+    ASSERT_TRUE(primProp != nullptr);
+    koq = primProp->GetKindOfQuantity();
+    ASSERT_TRUE(koq != nullptr);
+    assertKoq(*koq);
+    }
+
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
+
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("Schema1", true);
+    ASSERT_TRUE(schema != nullptr);
+    ASSERT_EQ(1, schema->GetKindOfQuantityCount());
+    }
     }
 
 //---------------------------------------------------------------------------------------

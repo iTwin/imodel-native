@@ -58,6 +58,23 @@ ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Utf8CP schemaName, Utf8CP enu
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+KindOfQuantityCP ECDbSchemaReader::GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const
+    {
+    ECDbSchemaReader::Context ctx;
+    KindOfQuantityCP koq = GetKindOfQuantity(ctx, schemaName, koqName);
+    if (koq == nullptr)
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess(*this))
+        return nullptr;
+
+    return koq;
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      03/2013
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(ECClassId baseClassId) const
@@ -352,6 +369,95 @@ BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, Contex
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+KindOfQuantityCP ECDbSchemaReader::GetKindOfQuantity(Context& ctx, Utf8CP schemaName, Utf8CP koqName) const
+    {
+    KindOfQuantityId koqId = ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_db, schemaName, koqName);
+    if (!koqId.IsValid())
+        return nullptr;
+
+    KindOfQuantityP koq = nullptr;
+    if (SUCCESS != ReadKindOfQuantity(koq, ctx, koqId))
+        return nullptr;
+
+    return koq;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ctx, KindOfQuantityId koqId) const
+    {
+    BeMutexHolder lock(m_criticalSection);
+
+    auto koqEntryIt = m_koqCache.find(koqId);
+    if (koqEntryIt != m_koqCache.end())
+        {
+        koq = koqEntryIt->second->m_cachedKoq;
+        return SUCCESS;
+        }
+
+    const int schemaIdIx = 0;
+    const int nameIx = 1;
+    const int displayLabelColIx = 2;
+    const int descriptionColIx = 3;
+    const int persUnitColIx = 4;
+    const int persPrecColIx = 5;
+    const int defaultPresUnitColIx = 6;
+    const int altPresUnitColIx = 7;
+
+    BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,PersistenceUnit,PersistencePrecision,DefaultPresentationUnit,AlternativePresentationUnits FROM ec_KindOfQuantity WHERE Id=?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, koqId))
+        return ERROR;
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ERROR;
+
+    const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
+    DbECSchemaEntry* schemaKey = nullptr;
+    if (SUCCESS != ReadECSchema(schemaKey, ctx, schemaId, false))
+        return ERROR;
+
+    Utf8CP koqName = stmt->GetValueText(nameIx);
+    Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
+    Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
+    BeAssert(!stmt->IsColumnNull(persUnitColIx));
+    Utf8CP persUnit = stmt->GetValueText(persUnitColIx);
+    uint32_t persPrec = (uint32_t) stmt->GetValueInt(persPrecColIx);
+    Utf8CP defaultPresUnit = stmt->IsColumnNull(defaultPresUnitColIx) ? nullptr : stmt->GetValueText(defaultPresUnitColIx);
+    Utf8CP altPresUnits = stmt->IsColumnNull(altPresUnitColIx) ? nullptr : stmt->GetValueText(altPresUnitColIx);
+    
+    koq = nullptr;
+    if (ECObjectsStatus::Success != schemaKey->m_cachedECSchema->CreateKindOfQuantity(koq, koqName))
+        return ERROR;
+
+    if (displayLabel != nullptr)
+        koq->SetDisplayLabel(displayLabel);
+
+    koq->SetDescription(description);
+    koq->SetPersistenceUnit(persUnit);
+    koq->SetPrecision(persPrec);
+
+    if (!Utf8String::IsNullOrEmpty(defaultPresUnit))
+        koq->SetDefaultPresentationUnit(defaultPresUnit);
+
+    if (!Utf8String::IsNullOrEmpty(altPresUnits))
+        {
+        if (SUCCESS != ECDbSchemaPersistenceHelper::DeserializeKoqAlternativePresentationUnits(*koq, altPresUnits))
+            return ERROR;
+        }
+
+    //cache the koq
+    m_koqCache[koqId] = std::unique_ptr<DbKindOfQuantityEntry>(new DbKindOfQuantityEntry(koqId, *koq));
+
+    schemaKey->m_loadedTypeCount++;
+    return SUCCESS;
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -424,7 +530,7 @@ BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, C
     if (ensureAllClassesLoaded && !outECSchemaKey->IsFullyLoaded())
         {
         std::set<DbECSchemaEntry*> fullyLoadedSchemas;
-        if (SUCCESS != LoadClassesAndEnumsFromDb(outECSchemaKey, ctx, fullyLoadedSchemas))
+        if (SUCCESS != LoadSchemaEntitiesFromDb(outECSchemaKey, ctx, fullyLoadedSchemas))
             return ERROR;
 
         }
@@ -434,7 +540,7 @@ BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, C
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSchemaKey, Context& ctx, std::set<DbECSchemaEntry*>& fullyLoadedSchemas) const
+BentleyStatus ECDbSchemaReader::LoadSchemaEntitiesFromDb(DbECSchemaEntry* ecSchemaKey, Context& ctx, std::set<DbECSchemaEntry*>& fullyLoadedSchemas) const
     {
     BeAssert(ecSchemaKey != nullptr);
     if (!ecSchemaKey)
@@ -452,7 +558,7 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
         if (schemaIterator != m_ecSchemaCache.end())
             key = schemaIterator->second.get();
 
-        if (SUCCESS != LoadClassesAndEnumsFromDb(key, ctx, fullyLoadedSchemas))
+        if (SUCCESS != LoadSchemaEntitiesFromDb(key, ctx, fullyLoadedSchemas))
             return ERROR;
         }
 
@@ -495,6 +601,24 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
             return SUCCESS;
         }
 
+    stmt = nullptr;
+    stmt = m_db.GetCachedStatement("SELECT Id FROM ec_KindOfQuantity WHERE SchemaId=?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        KindOfQuantityP koq = nullptr;
+        if (SUCCESS != ReadKindOfQuantity(koq, ctx, stmt->GetValueId<KindOfQuantityId>(0)))
+            return ERROR;
+
+        if (ecSchemaKey->IsFullyLoaded())
+            return SUCCESS;
+        }
+
     return SUCCESS;
     }
 
@@ -504,9 +628,12 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
 BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry, ECSchemaId ecSchemaId) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT S.Name, S.DisplayLabel,S.Description,S.NamespacePrefix,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
-                                                "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaId) + (SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaId) "
-                                                "FROM ec_Schema S WHERE S.Id=?"))
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt,
+        "SELECT S.Name, S.DisplayLabel,S.Description,S.NamespacePrefix,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
+        "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaId) + "
+        "(SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaId) + "
+        "(SELECT COUNT(*) FROM ec_KindOfQuantity koq WHERE S.Id = koq.SchemaId)"
+        "FROM ec_Schema S WHERE S.Id=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaId))
@@ -562,6 +689,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
             ECClassId m_structClassId;
             Utf8String m_extendedTypeName;
             ECEnumerationId m_enumId;
+            KindOfQuantityId m_koqId;
             uint32_t m_arrayMinOccurs = 0;
             uint32_t m_arrayMaxOccurs = std::numeric_limits<uint32_t>::max();
             ECClassId m_navPropRelClassId;
@@ -580,13 +708,14 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
             const int enumIdIx = 7;
             const int structClassIdIx = 8;
             const int extendedTypeIx = 9;
-            const int minOccursIx = 10;
-            const int maxOccursIx = 11;
-            const int navRelationshipClassId = 12;
-            const int navPropDirectionIx = 13;
+            const int koqIdIx = 10;
+            const int minOccursIx = 11;
+            const int maxOccursIx = 12;
+            const int navRelationshipClassId = 13;
+            const int navPropDirectionIx = 14;
 
             CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,"
-                                                              "PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,"
+                                                              "PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,"
                                                               "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
                                                               "FROM ec_Property WHERE ClassId=? ORDER BY Ordinal");
             if (stmt == nullptr)
@@ -639,6 +768,15 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 
                 if (!stmt->IsColumnNull(extendedTypeIx))
                     rowInfo.m_extendedTypeName.assign(stmt->GetValueText(extendedTypeIx));
+
+                if (!stmt->IsColumnNull(koqIdIx))
+                    rowInfo.m_koqId = stmt->GetValueId<KindOfQuantityId>(koqIdIx);
+
+                if (rowInfo.m_koqId.IsValid() && kind != ECPropertyKind::Primitive && kind != ECPropertyKind::PrimitiveArray)
+                    {
+                    BeAssert(false && "KindOfQuantityId must only be set for primitive or primitive array props");
+                    return ERROR;
+                    }
 
                 if (stmt->IsColumnNull(minOccursIx) || stmt->IsColumnNull(maxOccursIx))
                     {
@@ -721,6 +859,15 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                         return ERROR;
                     }
 
+                if (rowInfo.m_koqId.IsValid())
+                    {
+                    KindOfQuantityP koq = nullptr;
+                    if (SUCCESS != ReadKindOfQuantity(koq, ctx, rowInfo.m_koqId))
+                        return ERROR;
+
+                    primProp->SetKindOfQuantity(koq);
+                    }
+
                 prop = primProp;
                 break;
                 }
@@ -762,6 +909,15 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                     {
                     if (ECObjectsStatus::Success != arrayProp->SetExtendedTypeName(rowInfo.m_extendedTypeName.c_str()))
                         return ERROR;
+                    }
+
+                if (rowInfo.m_koqId.IsValid())
+                    {
+                    KindOfQuantityP koq = nullptr;
+                    if (SUCCESS != ReadKindOfQuantity(koq, ctx, rowInfo.m_koqId))
+                        return ERROR;
+
+                    arrayProp->SetKindOfQuantity(koq);
                     }
 
                 arrayProp->SetMinOccurs(rowInfo.m_arrayMinOccurs);
@@ -1016,6 +1172,7 @@ void ECDbSchemaReader::ClearCache()
     BeMutexHolder lock(m_criticalSection);
 
     m_ecEnumCache.clear();
+    m_koqCache.clear();
     m_ecClassCache.clear();
     m_ecSchemaCache.clear();
     m_cache.Clear();

@@ -11,6 +11,13 @@
             <TablePrefix>ecsqltest</TablePrefix>
         </SchemaMap>
     </ECCustomAttributes>
+    
+    <KindOfQuantity typeName="Length" description="My Length" displayLabel="My Length" persistenceUnit="CENTIMETRE" precision="10"
+        defaultPresentationUnit="FOOT" alternativePresentationUnits="INCH;YARD" />
+
+    <KindOfQuantity typeName="Volume" description="My Volumne" displayLabel="My Length" persistenceUnit="CM^3" precision="5"
+        defaultPresentationUnit="CM^3" />
+        
     <ECStructClass typeName="PStruct" description="Struct with primitive props (default mappings)">
         <ECProperty propertyName="b" typeName="boolean"/>
         <ECProperty propertyName="bi" typeName="binary"/>
@@ -142,7 +149,7 @@
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECArrayProperty>
-        <ECArrayProperty propertyName="I_Array" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="I_Array" typeName="int" kindOfQuantity="Length" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="L_Array" typeName="long" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="S_Array" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="P2D_Array" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
@@ -150,8 +157,8 @@
     </ECEntityClass>
     <ECEntityClass typeName="PASpatial" description="Class including a CommonGeometry prop and a CommonGeometry array prop">
         <ECProperty propertyName="B" typeName="boolean"/>
-        <ECProperty propertyName="D" typeName="double"/>
-        <ECProperty propertyName="I" typeName="int"/>
+        <ECProperty propertyName="D" typeName="double" kindOfQuantity="Volume"/>
+        <ECProperty propertyName="I" typeName="int" kindOfQuantity="Length"/>
         <ECProperty propertyName="S" typeName="string"/>
         <ECProperty propertyName="Geometry" typeName="Bentley.Geometry.Common.IGeometry"/>
         <ECArrayProperty propertyName="Geometry_Array" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded"/>
@@ -176,7 +183,7 @@
         <ECStructProperty propertyName="PStructProp" typeName="PStruct"/>
         <ECArrayProperty propertyName="B_Array" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="Bi_Array" typeName="binary" minOccurs="0" maxOccurs="unbounded"/>
-        <ECArrayProperty propertyName="D_Array" typeName="double" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="D_Array" typeName="double" kindOfQuantity="Length" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="Dt_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="DtUtc_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>

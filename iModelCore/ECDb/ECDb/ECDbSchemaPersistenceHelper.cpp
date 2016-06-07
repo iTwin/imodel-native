@@ -149,6 +149,28 @@ ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, Utf
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2016
+//---------------------------------------------------------------------------------------
+//static
+KindOfQuantityId ECDbSchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP koqName)
+    {
+    CachedStatementPtr stmt = nullptr;
+    //Although the ec_Schema column 'Name' used in the WHERE has COLLATE NOCASE we need to specify it in the WHERE clause again
+    //to satisfy older files which were created before column COLLATE NOCASE was added. This is not necessary
+    //for the KOQ table which was added later
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND s.Name=? COLLATE NOCASE AND koq.Name=?"))
+        return KindOfQuantityId();
+
+    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt->BindText(2, koqName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return KindOfQuantityId();
+
+    return stmt->GetValueId<KindOfQuantityId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
 ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
@@ -241,7 +263,7 @@ BentleyStatus ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(Utf8Stri
             return ERROR;
             }
 
-        if (enumValue->GetIsDisplayLabelDefined())
+        if (!enumValue->GetDisplayLabel().empty())
             enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel] = Json::Value(enumValue->GetDisplayLabel().c_str());
 
         enumValuesJson.append(enumValueJson);
@@ -300,6 +322,48 @@ BentleyStatus ECDbSchemaPersistenceHelper::DeserializeECEnumerationValues(ECEnum
             Utf8CP displayLabel = enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel].asCString();
             enumValue->SetDisplayLabel(displayLabel);
             }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  06/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaPersistenceHelper::SerializeKoqAlternativePresentationUnits(Utf8StringR jsonStr, KindOfQuantityCR koq)
+    {
+    Json::Value altPresUnitsJson(Json::arrayValue);
+    BeAssert(!koq.GetAlternativePresentationUnitList().empty());
+    for (Utf8StringCR altUnit : koq.GetAlternativePresentationUnitList())
+        {
+        altPresUnitsJson.append(Json::Value(altUnit.c_str()));
+        }
+
+    Json::FastWriter writer;
+    jsonStr = writer.write(altPresUnitsJson);
+    return SUCCESS;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  06/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaPersistenceHelper::DeserializeKoqAlternativePresentationUnits(KindOfQuantityR koq, Utf8CP jsonStr)
+    {
+    Json::Value altPresUnitsJson;
+    Json::Reader reader;
+    if (!reader.Parse(jsonStr, altPresUnitsJson, false))
+        {
+        BeAssert(false && "Could not parse KindOfQuantity AlternativePresentationUnits values JSON string.");
+        return ERROR;
+        }
+
+    BeAssert(altPresUnitsJson.isArray());
+
+    for (JsonValueCR altPresUnitJson : altPresUnitsJson)
+        {
+        BeAssert(altPresUnitJson.isString());
+        koq.GetAlternativePresentationUnitListR().push_back(altPresUnitJson.asCString());
         }
 
     return SUCCESS;

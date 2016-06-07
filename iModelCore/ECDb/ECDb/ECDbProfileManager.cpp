@@ -309,6 +309,25 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
+    //ec_KindOfQuantity
+    stat = ecdb.ExecuteSql("CREATE TABLE ec_KindOfQuantity("
+                           "Id INTEGER PRIMARY KEY,"
+                           "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+                           "Name TEXT NOT NULL COLLATE NOCASE,"
+                           "DisplayLabel TEXT,"
+                           "Description TEXT,"
+                           "PersistenceUnit TEXT NOT NULL,"
+                           "PersistencePrecision INTEGER NOT NULL,"
+                           "DefaultPresentationUnit TEXT,"
+                           "AlternativePresentationUnits TEXT)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_KindOfQuantity_SchemaId ON ec_KindOfQuantity(SchemaId);"
+                           "CREATE INDEX ix_ec_KindOfQuantity_Name ON ec_KindOfQuantity(Name);");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
     //ec_Property
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Property("
                            "Id INTEGER PRIMARY KEY,"
@@ -323,6 +342,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "EnumerationId INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,"
                            "StructClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "ExtendedTypeName TEXT,"
+                           "KindOfQuantityId INTEGER REFERENCES ec_KindOfQuantity(Id) ON DELETE CASCADE,"
                            "ArrayMinOccurs INTEGER,"
                            "ArrayMaxOccurs INTEGER,"
                            "NavigationRelationshipClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
@@ -336,6 +356,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "CREATE INDEX ix_ec_Property_Name ON ec_Property(Name);"
                            "CREATE INDEX ix_ec_Property_EnumerationId ON ec_Property(EnumerationId);"
                            "CREATE INDEX ix_ec_Property_StructClassId ON ec_Property(StructClassId);"
+                           "CREATE INDEX ix_ec_Property_KindOfQuantityId ON ec_Property(KindOfQuantityId);"
                            "CREATE INDEX ix_ec_Property_NavigationRelationshipClassId ON ec_Property(NavigationRelationshipClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;

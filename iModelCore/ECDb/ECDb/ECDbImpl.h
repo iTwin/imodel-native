@@ -69,6 +69,7 @@ private:
     BeBriefcaseBasedIdSequence m_ecClassIdSequence;
     BeBriefcaseBasedIdSequence m_ecPropertyIdSequence;
     BeBriefcaseBasedIdSequence m_ecEnumIdSequence;
+    BeBriefcaseBasedIdSequence m_koqIdSequence;
     BeBriefcaseBasedIdSequence m_tableIdSequence;
     BeBriefcaseBasedIdSequence m_columnIdSequence;
     BeBriefcaseBasedIdSequence m_indexIdSequence;
@@ -121,6 +122,7 @@ public:
     BeBriefcaseBasedIdSequence& GetECClassIdSequence() { return m_ecClassIdSequence; }
     BeBriefcaseBasedIdSequence& GetECPropertyIdSequence() { return m_ecPropertyIdSequence; }
     BeBriefcaseBasedIdSequence& GetECEnumIdSequence() { return m_ecEnumIdSequence; }
+    BeBriefcaseBasedIdSequence& GetKindOfQuantityIdSequence() { return m_koqIdSequence; }
     BeBriefcaseBasedIdSequence& GetTableIdSequence() { return m_tableIdSequence; }
     BeBriefcaseBasedIdSequence& GetColumnIdSequence() { return m_columnIdSequence; }
     BeBriefcaseBasedIdSequence& GetIndexIdSequence() { return m_indexIdSequence; }
