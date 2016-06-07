@@ -43,8 +43,8 @@ HttpResponse EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
     HttpRequest request(url.c_str(), "DELETE", nullptr);
     request.GetHeaders().Clear();
     request.GetHeaders().SetValue("Content-Length", "0");
-    request.GetHeaders().SetContentType("application/json");
-    //request.GetHeaders().SetValue("Content-Type", "application/atom+xml;type=entry;charset=utf-8");
+    //request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetValue("Content-Type", "application/atom+xml;type=entry;charset=utf-8");
     request.GetHeaders().SetAuthorization(m_token);
     request.SetTransferTimeoutSeconds(230);
     return request.Perform();
