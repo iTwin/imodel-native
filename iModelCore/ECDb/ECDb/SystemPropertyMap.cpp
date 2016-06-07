@@ -9,6 +9,25 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //******************************** PropertyMapSystem ****************************************
+
+void SystemPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const 
+    {
+    ColumnMappedToProperty info;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        info.SetAccessString(GetPropertyAccessString());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        info.SetColumn(*GetSingleColumn());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        info.SetPropertyMap(*this);
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        info.SetStrongType(DbColumn::Type::Integer);
+
+    result.push_back(info);
+    }
+
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2016
 //+---------------+---------------+---------------+---------------+---------------+-
