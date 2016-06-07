@@ -230,7 +230,8 @@ public:
     DGNPLATFORM_EXPORT  uint32_t                GetComponentIndex() const;
     DGNPLATFORM_EXPORT  bool                    Is3d() const;
 
-    static ECN::IECTypeAdapterContextPtr        CreateBase (ECN::ECPropertyCR ecproperty, ECN::IECInstanceCR instance);
+    static ECN::IECTypeAdapterContextPtr        CreateBase (ECN::ECPropertyCR ecproperty, ECN::IECInstanceCR instance, uint32_t componentIndex);
+    static void RegisterFactory();
 
 /*__PUBLISH_SECTION_START__*/
 public:
