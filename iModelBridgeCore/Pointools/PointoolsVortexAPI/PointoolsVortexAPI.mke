@@ -58,7 +58,7 @@ PchExplicitDepends  = $(MultiCompileDepends)
 %if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
     # Using pch generate a crash in cc1plus.exe. Apparently this is caused by a too large pch. Should be fixed in future android NDK release.
     # http://stackoverflow.com/questions/10841306/cc1plus-exe-crash-when-using-large-precompiled-header-file
-    #GCC_NO_PRE_COMPILED_HEADER = 1
+    GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
 
 %include $(SharedMki)PreCompileHeader.mki

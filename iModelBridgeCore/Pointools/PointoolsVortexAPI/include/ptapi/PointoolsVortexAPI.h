@@ -56,4 +56,4 @@ PTvoid		PTAPI ptDeleteImage( PThandle image );
 
 /* unit tests */ 
 PTbool	PTAPI _ptUnitTests( PTenum test );
-PTres	PTAPI _ptDiagnostic( PTvoid *data );
+
