@@ -16,7 +16,7 @@ struct MasterBriefcaseManager : IBriefcaseManager
 private:
     MasterBriefcaseManager(DgnDbR db) : IBriefcaseManager(db) { }
 
-    virtual Response _ProcessRequest(Request&, RequestPurpose purpose) override { return Response(RepositoryStatus::Success); }
+    virtual Response _ProcessRequest(Request& req, RequestPurpose purpose) override { return Response(purpose, req.Options(), RepositoryStatus::Success); }
     virtual RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _Relinquish(Resources) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
@@ -839,11 +839,11 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req, Requ
     {
     RepositoryStatus stat;
     if (!Validate(&stat))
-        return Response(stat);
+        return Response(purpose, req.Options(), stat);
 
     Cull(req);
     if (req.IsEmpty())
-        return Response(RepositoryStatus::Success);
+        return Response(purpose, req.Options(), RepositoryStatus::Success);
 
     if (RequestPurpose::FastQuery == purpose)
         {
@@ -856,7 +856,7 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req, Requ
 
     auto mgr = GetRepositoryManager();
     if (nullptr == mgr)
-        return Response(RepositoryStatus::ServerUnavailable);
+        return Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable);
 
     auto response = RequestPurpose::Acquire == purpose ? mgr->Acquire(req, GetDgnDb()) : mgr->QueryAvailability(req, GetDgnDb());
     if (RequestPurpose::Acquire == purpose && RepositoryStatus::Success == response.Result())
@@ -874,7 +874,7 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req, Requ
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManager::Response BriefcaseManager::DoFastQuery(Request const& req)
     {
-    Response response;
+    Response response(RequestPurpose::FastQuery, req.Options());
     response.SetResult(FastQueryLocks(response, req.Locks(), req.Options()));
     auto codeResult = FastQueryCodes(response, req.Codes(), req.Options());
     if (RepositoryStatus::Success == response.Result())
@@ -1609,9 +1609,10 @@ void IBriefcaseManager::ReformulateRequest(Request& req, Response const& respons
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IBriefcaseManager::AreResourcesAvailable(Request& req, Response* pResponse, FastQuery fast)
     {
-    Response localResponse;
+    auto purpose = FastQuery::Yes == fast ? RequestPurpose::FastQuery : RequestPurpose::Query;
+    Response localResponse(purpose, req.Options());
     auto& response = nullptr != pResponse ? *pResponse : localResponse;
-    response = _ProcessRequest(req, FastQuery::Yes == fast ? RequestPurpose::FastQuery : RequestPurpose::Query);
+    response = _ProcessRequest(req, purpose);
     return RepositoryStatus::Success == response.Result();
     }
 

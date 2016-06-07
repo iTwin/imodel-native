@@ -26,6 +26,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 struct RepositoryManager : IRepositoryManager
 {
     typedef IBriefcaseManager::ResponseOptions Options;
+    typedef IBriefcaseManager::RequestPurpose Purpose;
 private:
     Db  m_db;
 
@@ -286,7 +287,7 @@ static void bindBcId(Statement& stmt, int index, BeBriefcaseId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryManager::Response RepositoryManager::_ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
     {
-    Response response;
+    Response response(queryOnly ? Purpose::Query : Purpose::Acquire, req.Options());
     _ReserveCodes(response, req.Codes(), db, req.Options(), queryOnly);
     auto prevStatus = response.Result();
     if (queryOnly)
@@ -1979,6 +1980,7 @@ struct FastQueryTest : DoubleBriefcaseTest
     DEFINE_T_SUPER(DoubleBriefcaseTest);
 
     typedef IBriefcaseManager::FastQuery FastQuery;
+    typedef IBriefcaseManager::RequestPurpose Purpose;
 
     template<typename T> static Utf8String ToString(T const& t)
         {
@@ -2034,7 +2036,7 @@ struct FastQueryTest : DoubleBriefcaseTest
     void ExpectResponsesEqual(Request& req, DgnDbR db)
         {
         Request fastReq = req; // function modifies input Request...
-        Response response, fastResponse;
+        Response response(Purpose::Query, req.Options()), fastResponse(Purpose::FastQuery, req.Options());
         EXPECT_EQ(db.BriefcaseManager().AreResourcesAvailable(req, &response, FastQuery::No), db.BriefcaseManager().AreResourcesAvailable(fastReq, &fastResponse, FastQuery::Yes));
         ExpectResponsesEqual(response, fastResponse);
         }

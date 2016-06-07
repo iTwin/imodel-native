@@ -68,6 +68,14 @@ public:
         Acquire,
     };
 
+    //! Associated with a Response to identify the purpose for which a request was made
+    enum class RequestPurpose
+    {
+        Acquire,    //!< Attempted to acquire locks/codes
+        Query,      //!< Queried server for availability of locks/codes
+        FastQuery,  //!< Queried local cache for availability of locks/codes. Response may not include full ownership details for denied request.
+    };
+
     //! A request made to the IBriefcaseManager and possibly forwarded to the IRepositoryManager.
     //! Specifies a set of locks the briefcase wishes to acquire and/or a set of codes to be reserved.
     struct Request
@@ -102,11 +110,21 @@ public:
         DgnCodeInfoSet      m_codeStates;
         DgnLockInfoSet      m_lockStates;
         RepositoryStatus    m_status;
+        RequestPurpose      m_purpose;
+        ResponseOptions     m_options;
     public:
         //! Construct with the specified result
-        explicit Response(RepositoryStatus status=RepositoryStatus::InvalidResponse) : m_status(status) { }
+        Response(RequestPurpose purpose, ResponseOptions options, RepositoryStatus status=RepositoryStatus::InvalidResponse) : m_status(status) { }
 
         RepositoryStatus Result() const { return m_status; } //!< The result of the operation
+        RequestPurpose Purpose() const { return m_purpose; } //!< The purpose of the query which generated this response
+        ResponseOptions Options() const { return m_options; } //!< The options which were specified with the request, signifying the details included in this response
+        void SetOptions(ResponseOptions options) { m_options = options; } //!< Change the response options
+        void SetPurpose(RequestPurpose purpose) { m_purpose = purpose; } //!< Change the request purpose
+
+        //! Returns whether this response was obtained from the server. If not, full ownership details may not be included in LockStates() or CodeStates() and should be obtained from the server instead.
+        bool WasServerQuery() const { return RequestPurpose::FastQuery != m_purpose; }
+
         DgnLockInfoSet const& LockStates() const { return m_lockStates; } //!< The states of any locks which could not be acquired, if ResponseOptions::LockState was specified
         DgnCodeInfoSet const& CodeStates() const { return m_codeStates; } //!< The states of any codes which could not be reserved, if ResponseOptions::CodeState was specified
 
@@ -114,7 +132,7 @@ public:
         DgnLockInfoSet& LockStates() { return m_lockStates; } //!< A writable reference to the lock states
         DgnCodeInfoSet& CodeStates() { return m_codeStates; } //!< A writable reference to the code states
 
-        //! Reset to default state ("invalid response")
+        //! Reset to default state ("invalid response") while preserving the ResponseOptions and RequestPurpose
         void Invalidate() { m_status = RepositoryStatus::InvalidResponse; m_lockStates.clear(); m_codeStates.clear(); }
 
         DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
@@ -135,13 +153,6 @@ private:
     void RemoveElements(LockRequestR, DgnModelId) const;
 protected:
     explicit IBriefcaseManager(DgnDbR db) : m_db(db) { }
-
-    enum class RequestPurpose
-    {
-        Acquire,
-        Query,
-        FastQuery
-    };
 
     // Codes and Locks
     virtual Response _ProcessRequest(Request& request, RequestPurpose purpose) = 0;
