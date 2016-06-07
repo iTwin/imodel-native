@@ -163,8 +163,7 @@ void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true
     }
 
 void ExecuteECSQL(ECDbCR ecdb, Utf8CP ecsql, DbResult stepStatus, ECSqlStatus prepareStatus)
-    {
-    }
+    {}
 
 #define ASSERT_PROPERTIES_STRICT(ECDB_OBJ, EXPRESSION)              AssertECProperties(ECDB_OBJ, EXPRESSION, true);
 #define ASSERT_PROPERTIES(ECDB_OBJ, EXPRESSION)                     AssertECProperties(ECDB_OBJ, EXPRESSION, false)
@@ -393,6 +392,7 @@ TEST_F(ECSchemaUpdateTests, UpdatingECDbMapCAIsNotSupported)
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -463,6 +463,7 @@ TEST_F(ECSchemaUpdateTests, ClassModifierToAbstract)
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -573,6 +574,7 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Voo (L6, S6) VALUES (12, 't12')"); //New class added
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L3, S3) VALUES (8, 't8')"); //Class deleted
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -4226,12 +4228,122 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
         "           <Class class='C' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", false, "can't delete class which is part of relationship constraint.");
+        "</ECSchema>", true, "can't delete class which is part of relationship constraint.");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedConstraintClass);
     ASSERT_FALSE(asserted);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClass)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propC' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='D' modifier='None' >"
+        "       <BaseClass>C</BaseClass>"
+        "       <ECProperty propertyName='propD' typeName='int' />"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    ECClassCP classB = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("B");
+    ECClassCP classD = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("D");
+
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.B(ECInstanceId, propA, propB) VALUES(1, 11, 22)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.D(ECInstanceId, propC, propD) VALUES(2, 33, 44)");
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO ts.RelClass(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(101, 1, %llu, 2, %llu)", classB->GetId().GetValue(), classD->GetId().GetValue());
+    //Insert Relationship instance
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+
+    //Verify Insertion
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT * FROM ts.RelClass");
+
+    GetECDb().SaveChanges();
+    SchemaItem schemaWithDeletedConstraintClass(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propC' typeName='int' />"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "only Direct relationship constraint classes can't be deleted.");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedConstraintClass);
+    ASSERT_FALSE(asserted);
+
+    //Verify relationship Instance should be deleted along with deletion of constaint class
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT * FROM ts.RelClass");
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
@@ -4319,10 +4431,9 @@ TEST_F(ECSchemaUpdateTests, AllowChangeOfIndexName)
     ASSERT_FALSE(ca.IsNull());
 
     ECValue indexes, indexName;
-    ASSERT_EQ(ca->GetValue(indexes, "Indexes",0), ECObjectsStatus::Success);
+    ASSERT_EQ(ca->GetValue(indexes, "Indexes", 0), ECObjectsStatus::Success);
     ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
     ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial");
-
     }
 
 //---------------------------------------------------------------------------------------
