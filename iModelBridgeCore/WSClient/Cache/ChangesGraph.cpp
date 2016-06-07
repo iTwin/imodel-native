@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/ChangesGraph.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -361,4 +361,12 @@ bool ChangeGroup::AreAllDependenciesSynced() const
 void ChangeGroup::SetSynced(bool isSynced)
     {
     m_isSynced = isSynced;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChangeGroup::IsSynced() const
+    {
+    return m_isSynced;
     }
