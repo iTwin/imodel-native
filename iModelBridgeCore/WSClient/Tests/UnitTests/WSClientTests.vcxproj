@@ -40,6 +40,7 @@
     <ClInclude Include="Published\WebServices\Cache\MockCachingDataSource.h" />
     <ClInclude Include="Published\WebServices\Cache\MockQueryProvider.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\BaseCacheTest.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.h" />
@@ -181,6 +182,7 @@
     <ClCompile Include="Published\WebServices\Cache\CachingTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\BaseCacheTest.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.cpp" />
@@ -347,7 +349,7 @@
     <NMakeBuildCommandLine>bb -ax86 -r WSClient -f WSClient -p WSClientUnitTests-VS reb WebServices* WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -ax86 -r WSClient -f WSClient -p WSClientUnitTests-VS b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax86 -r WSClient -f WSClient -p WSClientUnitTests-VS reb WebServices* WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
-    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);USE_GTEST</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx86\build\BeGTest\bin\begtest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\PublicAPI;$(OutRoot)Winx86\build\WSClient\PublishedApi\;$(OutRoot)Winx86\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx86\BuildContexts\BeGTest\VendorAPI;$(IncludePath)</IncludePath>

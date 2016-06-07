@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/ChangesGraph.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -78,6 +78,7 @@ struct ChangeGroup
         WSCACHE_EXPORT bool AreAllDependenciesSynced() const;
 
         WSCACHE_EXPORT void SetSynced(bool isSynced);
+        WSCACHE_EXPORT bool IsSynced() const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
