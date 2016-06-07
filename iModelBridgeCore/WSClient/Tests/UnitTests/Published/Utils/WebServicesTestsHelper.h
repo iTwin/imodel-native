@@ -51,6 +51,14 @@ namespace rapidjson
     bool operator==(const Value& a, const Value& b);
     }
 
+// Comparsion operator for testing equality
+BEGIN_BENTLEY_NAMESPACE
+namespace Json
+    {
+    bool operator==(Utf8CP a, const Value& b);
+    }
+END_BENTLEY_NAMESPACE
+
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
 std::shared_ptr<rapidjson::Document> ToRapidJson(Utf8StringCR jsonString);

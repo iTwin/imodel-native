@@ -15,6 +15,10 @@
 #include "../WebServices/Cache/Persistence/MockChangeManager.h"
 #include "../WebServices/Cache/Persistence/MockDataSourceCache.h"
 #include "../WebServices/Cache/Persistence/MockRepositoryInfoStore.h"
+#include "../WebServices/Cache/Util/MockECDbAdapter.h"
+#include "../WebServices/Cache/Util/MockECDbSchemaChangeListener.h"
+#include "../WebServices/Cache/Util/MockExtendedDataAdapter.h"
+#include "../WebServices/Cache/Util/MockSelectProvider.h"
 #include "../WebServices/Client/MockServerInfoListener.h"
 #include "../WebServices/Client/MockWSClient.h"
 #include "../WebServices/Client/MockWSRepositoryClient.h"
@@ -31,6 +35,10 @@ TEST_F(MockTests, Ctor_Default_Builds)
     {
     MockCachingDataSource();
     MockQueryProvider();
+    MockECDbAdapter();
+    MockECDbSchemaChangeListener();
+    MockExtendedDataAdapter();
+    MockSelectProvider();
     MockChangeManager();
     MockDataSourceCache();
     MockRepositoryInfoStore();

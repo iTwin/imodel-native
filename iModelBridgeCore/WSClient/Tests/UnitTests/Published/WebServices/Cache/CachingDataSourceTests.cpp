@@ -380,6 +380,39 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_Skips
     ASSERT_TRUE(result.IsSuccess());
     }
 
+TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsError)
+    {  
+    // Arrange
+    auto client = MockWSRepositoryClient::Create();
+    auto ds = CreateNewTestDataSource(client);
+    ASSERT_TRUE(nullptr != ds);
+
+    // Act & Assert
+    StubInstances schemas;
+    schemas.Add({"MetaSchema.ECSchemaDef", "Foo"}, {{"Name", "Foo"}});
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
+
+    EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        SimpleWriteToFile("Not-a-schema", filePath);
+        return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, nullptr)));
+        }));
+
+    BeTest::SetFailOnAssert(false);
+    auto result = ds->UpdateSchemas(nullptr)->GetResult();
+    BeTest::SetFailOnAssert(true);
+
+    ASSERT_FALSE(result.IsSuccess());
+    ASSERT_EQ(ICachingDataSource::Status::InternalCacheError, result.GetError().GetStatus());
+    ASSERT_FALSE(result.GetError().GetMessage().empty());
+    }
+
 TEST_F(CachingDataSourceTests, GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas)
     {
     // Arrange
@@ -428,6 +461,8 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemas_CacheContainsNonRepositorySc
         EXPECT_EQ(2, schemas.size());
         EXPECT_CONTAINS(schemas, txn.GetCache().GetAdapter().GetECSchema("A"));
         EXPECT_CONTAINS(schemas, txn.GetCache().GetAdapter().GetECSchema("B"));
+        EXPECT_NE(nullptr, txn.GetCache().GetAdapter().GetECSchema("A"));
+        EXPECT_NE(nullptr, txn.GetCache().GetAdapter().GetECSchema("B"));
         })->Wait();
     }
 
@@ -537,8 +572,7 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
     fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
 
     auto txn = ds->StartCacheTransaction();
-    auto s = ds->GetRepositorySchemas(txn);
-    txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root");
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root"));
     txn.Commit();
 
     // Act & Assert
@@ -574,7 +608,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
     fileInstances.Add(fileId);
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root");
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root"));
     txn.Commit();
 
     // Act & Assert
@@ -611,7 +645,7 @@ TEST_F(CachingDataSourceTests, GetFile_InstanceHasVeryLongRemoteIdAndNoFileDepen
     fileInstances.Add(fileId);
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root");
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root"));
     txn.Commit();
 
     // Act & Assert
@@ -638,7 +672,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
     fileInstances.Add(fileId, {{"Name", "TestLabel"}});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root");
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root"));
     txn.Commit();
 
     // Act & Assert
@@ -672,10 +706,10 @@ TEST_F(CachingDataSourceTests, CacheFiles_BothFilesCachedAndSkipCached_NoFileReq
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
     ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
-    txn.GetCache().LinkInstanceToRoot(nullptr, fileId);
-    txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Persistent);
-    txn.GetCache().LinkInstanceToRoot(nullptr, file2Id);
-    txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent);
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, fileId));
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Persistent));
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, file2Id));
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent));
     txn.Commit();
 
     bvector<ObjectId> files;
@@ -697,9 +731,9 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndSkipCached_OneFileRequ
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
     ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
-    txn.GetCache().LinkInstanceToRoot(nullptr, fileId);
-    txn.GetCache().LinkInstanceToRoot(nullptr, file2Id);
-    txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent);
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, fileId));
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, file2Id));
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent));
     txn.Commit();
 
     bvector<ObjectId> files;
@@ -726,9 +760,9 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRe
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
     ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
-    txn.GetCache().LinkInstanceToRoot(nullptr, fileId);
-    txn.GetCache().LinkInstanceToRoot(nullptr, file2Id);
-    txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent);
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, fileId));
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, file2Id));
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent));
     txn.Commit();
 
     bvector<ObjectId> files;
@@ -753,7 +787,7 @@ TEST_F(CachingDataSourceTests, DownloadAndCacheChildren_SpecificParent_ChildIsCa
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Parent"});
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Parent"}));
     txn.Commit();
 
     // Act & Assert
@@ -814,7 +848,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingRemoteData_ObjectIsC
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(instances.ToWSObjectsResponse()))));
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId());
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId()));
     txn.Commit();
 
     auto result = ds->GetNavigationChildren(ObjectId(), CachingDataSource::DataOrigin::RemoteData, nullptr)->GetResult();
@@ -843,7 +877,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingCachedDataAfterCache
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(instances.ToWSObjectsResponse()))));
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId());
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId()));
     txn.Commit();
 
     ds->GetNavigationChildren(ObjectId(), CachingDataSource::DataOrigin::RemoteData, nullptr)->Wait();
@@ -865,7 +899,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_SpecificParentInstance_
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Parent"});
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Parent"}));
     txn.Commit();
 
     // Act & Assert
@@ -901,7 +935,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingRemoteData_Objec
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(instances.ToWSObjectsResponse()))));
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId());
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId()));
     txn.Commit();
 
     auto result = ds->GetNavigationChildrenKeys(ObjectId(), CachingDataSource::DataOrigin::RemoteData, nullptr)->GetResult();
@@ -927,7 +961,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingCachedDataAfterC
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(instances.ToWSObjectsResponse()))));
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId());
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId()));
     txn.Commit();
 
     ds->GetNavigationChildrenKeys(ObjectId(), CachingDataSource::DataOrigin::RemoteData, nullptr)->Wait();
@@ -972,7 +1006,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_TwoLevelsCachedPreviouslyAsTempor
             }));
 
         auto txn = ds->StartCacheTransaction();
-        txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId());
+        ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId()));
         txn.Commit();
 
         ds->GetNavigationChildren(ObjectId(), CachingDataSource::DataOrigin::RemoteData, nullptr)->Wait();
@@ -1008,7 +1042,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_OneLevelCachedPreviouslyAsTempora
         }));
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId());
+    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId()));
     txn.Commit();
 
     ds->GetNavigationChildren(ObjectId(), CachingDataSource::DataOrigin::RemoteData, nullptr)->Wait();
@@ -1070,7 +1104,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_NotCachedRootPassedToBeFullyCache
         navigationTreesToCacheFully.push_back(ObjectId());
 
         auto txn = ds->StartCacheTransaction();
-        txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId());
+        ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, ObjectId()));
         txn.Commit();
 
         auto result = ds->CacheNavigation(navigationTreesToCacheFully, navigationTreesToUpdateOnly, nullptr, nullptr, nullptr)->GetResult();
@@ -1171,7 +1205,7 @@ TEST_F(CachingDataSourceTests, GetObjects_CachedOrRemoteDataAndQueryResponseIsCa
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     auto result = ds->GetObjects(key, query, CachingDataSource::DataOrigin::CachedOrRemoteData, nullptr, nullptr)->GetResult();
@@ -1209,7 +1243,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteOrCachedDataAndQueryResponseIsCa
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
@@ -1234,7 +1268,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteOrCachedDataAndQueryResponseIsCa
     instances.Add({"TestSchema.TestClass", "A"});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     StubInstances newInstances;
@@ -1260,7 +1294,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteDataAndQueryResponseIsCached_Sen
     WSQuery query("TestSchema", "TestClass");
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag"));
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, Utf8String("TestEtag"), _, _))
@@ -1277,7 +1311,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteDataAndQueryResponseIsCachedAndN
     WSQuery query("TestSchema", "TestClass");
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag"));
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult())));
@@ -1299,7 +1333,7 @@ TEST_F(CachingDataSourceTests, GetObjects_ResponseDoesNotContainPreviouslyCached
     instances.Add({"TestSchema.TestClass", "B"});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     // Act & Assert
@@ -1350,7 +1384,7 @@ TEST_F(CachingDataSourceTests, GetObjects_QueryIncludesPartialInstancesThatAreIn
     StubInstances fullInstances;
     fullInstances.Add({"TestSchema.TestClass", "A"});
     fullInstances.Add({"TestSchema.TestClass", "B"});
-    txn.GetCache().CacheInstancesAndLinkToRoot(fullInstances.ToWSObjectsResponse(), "SomePersistentRoot");
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(fullInstances.ToWSObjectsResponse(), "SomePersistentRoot"));
     txn.Commit();
 
     StubInstances remoteInstances;
@@ -1399,7 +1433,7 @@ TEST_F(CachingDataSourceTests, GetObjects_WSGV1NavigationQueryIncludesPartialIns
     StubInstances fullInstances;
     fullInstances.Add({"TestSchema.TestClass", "A"});
     fullInstances.Add({"TestSchema.TestClass", "B"});
-    txn.GetCache().CacheInstancesAndLinkToRoot(fullInstances.ToWSObjectsResponse(), "SomePersistentRoot");
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(fullInstances.ToWSObjectsResponse(), "SomePersistentRoot"));
     txn.Commit();
 
     StubInstances remoteInstances;
@@ -1524,7 +1558,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     auto result = ds->GetObjectsKeys(key, query, CachingDataSource::DataOrigin::CachedOrRemoteData, nullptr)->GetResult();
@@ -1564,7 +1598,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndQueryResponse
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
@@ -1591,7 +1625,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndQueryResponse
     instances.Add({"TestSchema.TestClass", "A"});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     StubInstances newInstances;
@@ -1618,7 +1652,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndQueryResponseIsCached
     WSQuery query("TestSchema", "TestClass");
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag"));
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, Utf8String("TestEtag"), _, _))
@@ -1635,7 +1669,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndQueryResponseIsCached
     WSQuery query("TestSchema", "TestClass");
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag"));
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, StubInstances().ToWSObjectsResponse("TestEtag")));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult())));
@@ -1657,7 +1691,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_ResponseDoesNotContainPreviouslyCa
     instances.Add({"TestSchema.TestClass", "B"});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     txn.Commit();
 
     // Act & Assert
@@ -1689,7 +1723,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndResponseNotModified_R
     instances.Add({"TestSchema.TestClass", "B"});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse("TestTag"));
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse("TestTag")));
     txn.Commit();
 
     ECInstanceKeyMultiMap expectedInstances;
@@ -1842,7 +1876,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndInstanceIsCachedAn
     instances.Add(objectId);
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr);
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
@@ -1865,7 +1899,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndInstanceIsCachedAn
     instances.Add(objectId, {{"TestProperty", "A"}});
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr);
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
     txn.Commit();
 
     StubInstances newInstances;
@@ -1892,7 +1926,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotModfieid_ReturnsCached)
     instances.Add(objectId, {{"TestProperty", "A"}}, "TestTag");
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr);
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), nullptr));
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, Utf8String("TestTag"), _))
@@ -2056,7 +2090,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue).IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -2089,7 +2123,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue).IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -2116,7 +2150,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SendsCreateObjectR
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "42"})"));
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "42"})")).IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -2152,7 +2186,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ServerV1CreatedObject_SendsQuery
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue).IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -2183,7 +2217,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ServerV2CreatedObject_SendsQuery
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue).IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -3034,7 +3068,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V20WithChangesetEnabledAndCreate
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"A"})"));
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty":"A"})")).IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -3074,10 +3108,10 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
     auto instanceA = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
     auto instanceB = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "ValB"})"));
     auto instanceC = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "ValC"})"));
-    txn.GetCache().GetChangeManager().ModifyFile(instanceC, StubFile(), false);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instanceC, StubFile(), false));
 
-    txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB);
-    txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC);
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB).IsValid());
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC).IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -3183,10 +3217,10 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
     auto instanceA = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
     auto instanceB = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "ValB"})"));
     auto instanceC = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "ValC"})"));
-    txn.GetCache().GetChangeManager().ModifyFile(instanceC, StubFile(), false);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instanceC, StubFile(), false));
 
-    txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB);
-    txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC);
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB).IsValid());
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC).IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -3286,8 +3320,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedTwoRelatedInstancesAndFir
     auto instanceB = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
     auto instanceC = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
 
-    txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB);
-    txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC);
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB).IsValid());
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC).IsValid());
     txn.Commit();
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
@@ -3318,8 +3352,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
     auto instanceB = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "B"});
     auto instanceC = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "ValC"})"));
 
-    txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceC);
-    txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC);
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceC).IsValid());
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC).IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -3456,7 +3490,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithReadOnlyProper
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass3", "Foo"});
-    txn.GetCache().GetChangeManager().ModifyObject(instance, ToJson(R"({ "TestReadOnlyProperty" : "42" })"));
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyObject(instance, ToJson(R"({ "TestReadOnlyProperty" : "42" })")));
     txn.Commit();
 
     // Act & Assert
@@ -3479,7 +3513,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_FailedToModifyObject_ReturnsFail
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache());
-    txn.GetCache().GetChangeManager().ModifyObject(instance, Json::objectValue);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyObject(instance, Json::objectValue));
     txn.Commit();
 
     // Act & Assert
@@ -3505,7 +3539,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectR
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldA"},{ "TestProperty2", "OldB"}});
 
     Json::Value newPropertiesJson = ToJson(R"({ "TestProperty" : "NewA", "TestProperty2" : "OldB" })");
-    txn.GetCache().GetChangeManager().ModifyObject(instance, newPropertiesJson);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyObject(instance, newPropertiesJson));
     txn.Commit();
 
     // Act & Assert
@@ -3530,7 +3564,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFile_SendUpdateFileReque
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"});
-    txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile(), false);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile(), false));
     auto cachedFilePath = txn.GetCache().ReadFilePath(instance);
     txn.Commit();
 
@@ -3557,7 +3591,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdate
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
     auto instance = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
-    txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile(), false);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile(), false));
     auto cachedFilePath = txn.GetCache().ReadFilePath(instance);
     txn.Commit();
 
@@ -3585,7 +3619,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_DeletedObject_SendsDeleteObjectR
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"});
-    txn.GetCache().GetChangeManager().DeleteObject(instance);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteObject(instance));
     txn.Commit();
 
     // Act & Assert
@@ -3695,7 +3729,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithLabel_CallsPro
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestLabeledClass", "Foo"});
-    txn.GetCache().GetChangeManager().ModifyObject(instance, ToJson(R"({"Name" : "TestLabel"})"));
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyObject(instance, ToJson(R"({"Name" : "TestLabel"})")));
     txn.Commit();
 
     // Act & Assert
@@ -3724,8 +3758,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedAndModifiedAndDeletedObje
     auto instanceB = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "B"});
     auto instanceC = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "C"});
     auto instanceA = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
-    txn.GetCache().GetChangeManager().ModifyObject(instanceB, Json::objectValue);
-    txn.GetCache().GetChangeManager().DeleteObject(instanceC);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyObject(instanceB, Json::objectValue));
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteObject(instanceC));
 
     txn.Commit();
 
@@ -3761,7 +3795,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_CallsSyncedInstan
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestLabeledClass", "Foo"});
-    txn.GetCache().GetChangeManager().ModifyObject(instance, ToJson(R"({"Name" : "TestLabelA"})"));
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyObject(instance, ToJson(R"({"Name" : "TestLabelA"})")));
     txn.Commit();
 
     // Act & Assert
@@ -3786,9 +3820,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFileWithLabel_CallsProgr
     auto ds = GetTestDataSourceV1();
 
     auto txn = ds->StartCacheTransaction();
-    txn.GetCache().CacheInstanceAndLinkToRoot({"TestSchema.TestLabeledClass", "Foo"}, *ToRapidJson(R"({"Name" : "TestLabel"})"), "", "");
+    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot({"TestSchema.TestLabeledClass", "Foo"}, *ToRapidJson(R"({"Name" : "TestLabel"})"), "", ""));
     auto instance = txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "Foo"});
-    txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile("12"), false);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile("12"), false));
     txn.Commit();
 
     // Act & Assert
@@ -3822,8 +3856,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
     auto instanceA = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
     auto instanceB = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
-    txn.GetCache().GetChangeManager().ModifyFile(instanceA, StubFile("12"), false);
-    txn.GetCache().GetChangeManager().ModifyFile(instanceB, StubFile("3456"), false);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instanceA, StubFile("12"), false));
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instanceB, StubFile("3456"), false));
     txn.Commit();
 
     // Act & Assert
@@ -3869,8 +3903,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
     auto txn = ds->StartCacheTransaction();
     auto instanceA = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
     auto instanceB = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "B"});
-    txn.GetCache().GetChangeManager().ModifyFile(instanceA, StubFile("12"), false);
-    txn.GetCache().GetChangeManager().ModifyFile(instanceB, StubFile("3456"), false);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instanceA, StubFile("12"), false));
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instanceB, StubFile("3456"), false));
     txn.Commit();
 
     // Act & Assert
@@ -3909,7 +3943,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_NoObjectsPassedToSync_DoesNoRequ
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue).IsValid());
     txn.Commit();
 
     bset<ECInstanceKey> toSync;
@@ -3964,7 +3998,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForFileChangePassed_Sync
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
-    txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile("12"), false);
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile("12"), false));
     txn.Commit();
 
     // Act & Assert
