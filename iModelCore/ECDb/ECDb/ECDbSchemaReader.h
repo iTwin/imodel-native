@@ -50,14 +50,14 @@ struct DbECClassEntry
 //+===============+===============+===============+===============+===============+======
 struct DbECEnumEntry
     {
-    public:
-        ECEnumerationId m_enumId;
-        ECN::ECEnumerationP m_cachedECEnum;
+public:
+    ECN::ECEnumerationId m_enumId;
+    ECN::ECEnumerationP m_cachedECEnum;
 
-        DbECEnumEntry(ECEnumerationId enumId, ECN::ECEnumerationCR ecEnum) : m_enumId(enumId)
-            {
-            m_cachedECEnum = const_cast<ECN::ECEnumerationP> (&ecEnum);
-            }
+    DbECEnumEntry(ECN::ECEnumerationId const& enumId, ECN::ECEnumerationCR ecEnum) : m_enumId(enumId)
+        {
+        m_cachedECEnum = const_cast<ECN::ECEnumerationP> (&ecEnum);
+        }
     };
 
 //=======================================================================================
@@ -65,14 +65,14 @@ struct DbECEnumEntry
 //+===============+===============+===============+===============+===============+======
 struct DbKindOfQuantityEntry
     {
-    public:
-        KindOfQuantityId m_koqId;
-        ECN::KindOfQuantityP m_cachedKoq;
+public:
+    ECN::KindOfQuantityId m_koqId;
+    ECN::KindOfQuantityP m_cachedKoq;
 
-        DbKindOfQuantityEntry(KindOfQuantityId koqId, ECN::KindOfQuantityCR koq) : m_koqId(koqId)
-            {
-            m_cachedKoq = const_cast<ECN::KindOfQuantityP> (&koq);
-            }
+    DbKindOfQuantityEntry(ECN::KindOfQuantityId const& koqId, ECN::KindOfQuantityCR koq) : m_koqId(koqId)
+        {
+        m_cachedKoq = const_cast<ECN::KindOfQuantityP> (&koq);
+        }
     };
 
 /*---------------------------------------------------------------------------------------
@@ -107,38 +107,38 @@ struct ECDbSchemaReader
         mutable DbKindOfQuantityEntryMap m_koqCache;
         mutable BeMutex m_criticalSection;
 
-        ECN::ECSchemaCP GetECSchema(Context&, ECN::ECSchemaId, bool loadClasses) const;
-        ECN::ECClassP GetECClass(Context&, ECN::ECClassId) const;
-        bool TryGetECClassFromCache(ECN::ECClassP&, ECN::ECClassId) const;
+        ECN::ECSchemaCP GetECSchema(Context&, ECN::ECSchemaId const&, bool loadClasses) const;
+        ECN::ECClassP GetECClass(Context&, ECN::ECClassId const&) const;
+        bool TryGetECClassFromCache(ECN::ECClassP&, ECN::ECClassId const&) const;
         ECEnumerationCP GetECEnumeration(Context&, Utf8CP schemaName, Utf8CP enumName) const;
         KindOfQuantityCP GetKindOfQuantity(Context&, Utf8CP schemaName, Utf8CP koqName) const;
 
         BentleyStatus LoadSchemaEntitiesFromDb(DbECSchemaEntry*, Context&, std::set<DbECSchemaEntry*>& fullyLoadedSchemas) const;
-        BentleyStatus LoadECSchemaFromDb(DbECSchemaEntry*&, ECN::ECSchemaId) const;
-        BentleyStatus LoadECPropertiesFromDb(ECN::ECClassP&, Context&, ECN::ECClassId) const;
-        BentleyStatus LoadBaseClassesFromDb(ECN::ECClassP&, Context&, ECN::ECClassId) const;
-        BentleyStatus LoadCAFromDb(ECN::IECCustomAttributeContainerR, Context&, ECContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType) const;
-        BentleyStatus LoadECRelationshipConstraintFromDb(ECN::ECRelationshipClassP&, Context&, ECN::ECClassId constraintClassId, ECN::ECRelationshipEnd) const;
-        BentleyStatus LoadECRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECRelationshipConstraintId constraintId) const;
-        BentleyStatus LoadECSchemaDefinition(DbECSchemaEntry*&, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECN::ECSchemaId ctxECSchemaId) const;
+        BentleyStatus LoadECSchemaFromDb(DbECSchemaEntry*&, ECN::ECSchemaId const&) const;
+        BentleyStatus LoadECPropertiesFromDb(ECN::ECClassP&, Context&, ECN::ECClassId const&) const;
+        BentleyStatus LoadBaseClassesFromDb(ECN::ECClassP&, Context&, ECN::ECClassId const&) const;
+        BentleyStatus LoadCAFromDb(ECN::IECCustomAttributeContainerR, Context&, ECContainerId const&, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType) const;
+        BentleyStatus LoadECRelationshipConstraintFromDb(ECN::ECRelationshipClassP&, Context&, ECN::ECClassId const& constraintClassId, ECN::ECRelationshipEnd) const;
+        BentleyStatus LoadECRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECRelationshipConstraintId const& constraintId) const;
+        BentleyStatus LoadECSchemaDefinition(DbECSchemaEntry*&, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECN::ECSchemaId const&) const;
 
-        BentleyStatus ReadECSchema(DbECSchemaEntry*&, Context&, ECN::ECSchemaId, bool loadClasses) const;
-        BentleyStatus ReadECEnumeration(ECEnumerationP&, Context&, ECN::ECEnumerationId) const;
-        BentleyStatus ReadKindOfQuantity(KindOfQuantityP&, Context&, ECN::KindOfQuantityId) const;
+        BentleyStatus ReadECSchema(DbECSchemaEntry*&, Context&, ECN::ECSchemaId const&, bool loadClasses) const;
+        BentleyStatus ReadECEnumeration(ECEnumerationP&, Context&, ECN::ECEnumerationId const&) const;
+        BentleyStatus ReadKindOfQuantity(KindOfQuantityP&, Context&, ECN::KindOfQuantityId const&) const;
 
-        BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId baseClassId) const;
+        BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId const&) const;
 
     public:
         explicit ECDbSchemaReader(ECDbCR db) :m_db(db) {}
         ~ECDbSchemaReader() {}
 
-        ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId ecSchemaId, bool loadClasses) const;
-        ECN::ECClassCP GetECClass(ECN::ECClassId ecClassId) const;
+        ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId const&, bool loadSchemaEntities) const;
+        ECN::ECClassCP GetECClass(ECN::ECClassId const&) const;
         ECN::ECEnumerationCP GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
         KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
 
-        BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId baseClassId) const;
-        bool TryGetECClassId(ECN::ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;
+        BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId const&) const;
+        bool TryGetECClassId(ECN::ECClassId&, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;
         void ClearCache();
     };
 

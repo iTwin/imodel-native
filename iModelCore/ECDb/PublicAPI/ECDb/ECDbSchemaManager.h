@@ -72,10 +72,6 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         BentleyStatus BatchImportECSchemas(SchemaImportContext&, ECN::ECSchemaCacheR) const;
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool ensureAllClassesLoaded) const;
-        //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded
-        //! @param[in] ecClass ECClass whose direct subclasses should be loaded
-        //! @return ::SUCCESS or ::ERROR
-        BentleyStatus EnsureDerivedClassesExist(ECN::ECClassCR) const;
         //! Implementation of IECSchemaLocater
         virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
 
@@ -181,21 +177,6 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
 
 #if !defined (DOCUMENTATION_GENERATOR)    
-        //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
-        //! and therefore doesn't have the persistent ECClassId set. Generally, we would prefer that the primary ECSchema had
-        //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
-        static ECN::ECClassId GetClassIdForECClassFromDuplicateECSchema(ECDbCR, ECN::ECClassCR);
-
-        //! For cases where we are working with an ECProperty in a referenced ECSchema that is a duplicate of one already persisted
-        //! and therefore doesn't have the persistent ECPropertyId set. Generally, we would prefer that the primary ECSchema had
-        //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
-        static ECN::ECPropertyId GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR, ECN::ECPropertyCR);
-
-        //! For cases where we are working with an ECSchema in a referenced ECSchema that is a duplicate of one already persisted
-        //! and therefore doesn't have the persistent ECSchemaId set. Generally, we would prefer that the primary ECSchema had
-        //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
-        static ECN::ECSchemaId GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR, ECN::ECSchemaCR);
-
         void ClearCache() const;
         ECDbCR GetECDb() const;
 #endif

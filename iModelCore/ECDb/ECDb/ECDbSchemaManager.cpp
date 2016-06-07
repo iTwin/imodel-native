@@ -377,14 +377,18 @@ bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrPrefix
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                       12/13
 //---------------------------------------------------------------------------------------
-ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR baseECClass) const
+ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR ecClass) const
     {
-    if (EnsureDerivedClassesExist(baseECClass) != SUCCESS)
+    ECClassId id = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ecClass);
+    if (id.IsValid())
         {
-        BeAssert(false);
+        if (SUCCESS != m_schemaReader->EnsureDerivedClassesExist(id))
+            LOG.errorv("Could not load derived classes for ECClass %s.", ecClass.GetFullName());
         }
+    else
+        LOG.errorv("Cannot call ECDbSchemaManager::GetDerivedECClasses on ECClass %s. The ECClass does not exist in the ECDb file %s.", ecClass.GetFullName(), m_ecdb.GetDbFileName());
 
-    return baseECClass.GetDerivedClasses();
+    return ecClass.GetDerivedClasses();
     }
 
 //---------------------------------------------------------------------------------------
@@ -445,52 +449,6 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType mat
 ECClassCP ECDbSchemaManager::_LocateClass(Utf8CP schemaName, Utf8CP className)
     {
     return GetECClass(schemaName, className);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      05/2013
-//---------------------------------------------------------------------------------------
-//static
-ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(ECDbCR db, ECClassCR ecClass)
-    {
-    ECClassId id;
-    db.Schemas().TryGetECClassId(id, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
-    const_cast<ECClassR>(ecClass).SetId(id);
-    return id;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      05/2013
-//---------------------------------------------------------------------------------------
-ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR db, ECPropertyCR ecProperty)
-    {
-    ECPropertyId ecPropertyId = ECDbSchemaPersistenceHelper::GetECPropertyId(db, ecProperty.GetClass().GetSchema().GetName().c_str(), ecProperty.GetClass().GetName().c_str(), ecProperty.GetName().c_str());
-    const_cast<ECPropertyR>(ecProperty).SetId(ecPropertyId);
-    return ecPropertyId;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      05/2013
-//---------------------------------------------------------------------------------------
-ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR db, ECSchemaCR ecSchema)
-    {
-    const ECSchemaId ecSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(db, ecSchema.GetName().c_str());
-    const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
-    return ecSchemaId;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan      03/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClass) const
-    {
-    ECClassId ecClassId;
-    if (ecClass.HasId())
-        ecClassId = ecClass.GetId();
-    else
-        ecClassId = GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass);
-
-    return m_schemaReader->EnsureDerivedClassesExist(ecClassId);
     }
 
 //---------------------------------------------------------------------------------------

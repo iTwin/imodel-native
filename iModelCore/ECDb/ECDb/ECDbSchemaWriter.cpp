@@ -172,13 +172,8 @@ BentleyStatus ECDbSchemaWriter::InsertECSchemaReferenceEntries(ECSchemaCR schema
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     {
-    if (ECDbSchemaPersistenceHelper::ContainsECClass(m_ecdb, ecClass))
-        {
-        if (!ecClass.HasId())
-            ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass); //Callers will assume it has a valid Id
-
+    if (ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ecClass).IsValid())
         return SUCCESS;
-        }
 
     // GenerateId
     BeBriefcaseBasedId nextId;
@@ -188,7 +183,7 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     ECClassId ecClassId(nextId.GetValue());
     const_cast<ECClassR>(ecClass).SetId(ecClassId);
 
-    BeAssert(ECDbSchemaPersistenceHelper::ContainsECSchema(m_ecdb, ecClass.GetSchema().GetId()));
+    BeAssert(ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, ecClass.GetSchema()).IsValid());
 
     //now import actual ECClass
     BeSQLite::CachedStatementPtr stmt = nullptr;
@@ -282,6 +277,9 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
     {
+    if (ECDbSchemaPersistenceHelper::GetECEnumerationId(m_ecdb, ecEnum).IsValid())
+        return SUCCESS;
+
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Enumeration(Id, SchemaId, Name, DisplayLabel, Description, UnderlyingPrimitiveType, IsStrict, EnumValues) VALUES(?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
@@ -293,7 +291,7 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
     ECEnumerationId enumId(nextId.GetValue());
     const_cast<ECEnumerationR>(ecEnum).SetId(enumId);
 
-    BeAssert(ECDbSchemaPersistenceHelper::ContainsECSchema(m_ecdb, ecEnum.GetSchema().GetId()));
+    BeAssert(ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, ecEnum.GetSchema()).IsValid());
 
     if (BE_SQLITE_OK != stmt->BindId(1, enumId))
         return ERROR;
@@ -340,6 +338,9 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
     {
+    if (ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, koq).IsValid())
+        return SUCCESS;
+
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_KindOfQuantity(Id,SchemaId,Name,DisplayLabel,Description,PersistenceUnit,PersistencePrecision,DefaultPresentationUnit,AlternativePresentationUnits) VALUES(?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
@@ -350,7 +351,8 @@ BentleyStatus ECDbSchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
 
     KindOfQuantityId koqId(nextId.GetValue());
     const_cast<KindOfQuantityR>(koq).SetId(koqId);
-    BeAssert(ECDbSchemaPersistenceHelper::ContainsECSchema(m_ecdb, koq.GetSchema().GetId()));
+
+    BeAssert(ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, koq.GetSchema()).IsValid());
 
     if (BE_SQLITE_OK != stmt->BindId(1, koqId))
         return ERROR;
@@ -471,6 +473,9 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, int32_t ordinal)
     {
+    //Local properties are expected to not be imported at this point as they get imported along with their class.
+    BeAssert(!ECDbSchemaPersistenceHelper::GetECPropertyId(m_ecdb, ecProperty).IsValid());
+
     // GenerateId
     BeBriefcaseBasedId nextId;
     if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetECPropertyIdSequence().GetNextValue(nextId))
@@ -668,12 +673,8 @@ BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContain
         bvector<IECInstanceP> const& customAttributes = itor->second;
         IECInstanceP customAttribute = customAttributes.size() == 1 ? customAttributes[0] : customAttributes[1];
         ECClassCP ecClass = itor->first;
-        ECClassId customAttributeClassId;
-        if (ecClass->HasId())
-            customAttributeClassId = ecClass->GetId();
-        else
-            customAttributeClassId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, *ecClass);
-
+        ECClassId customAttributeClassId = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, *ecClass);
+        BeAssert(customAttributeClassId.IsValid());
         if (SUCCESS != InsertCAEntry(customAttribute, customAttributeClassId, sourceContainerId, containerType, index++))
             return ERROR;
         }
@@ -901,18 +902,12 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
     if (propertyChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    ECPropertyId propertyId;
-    if (!newProperty.HasId())
+    ECPropertyId propertyId = ECDbSchemaPersistenceHelper::GetECPropertyId(m_ecdb, newProperty);
+    if (!propertyId.IsValid())
         {
-        propertyId = ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(m_ecdb, newProperty);
-        if (!propertyId.IsValid())
-            {
-            BeAssert(false && "Failed to resolve ecclass id");
-            return ERROR;
-            }
+        BeAssert(false && "Failed to resolve ecclass id");
+        return ERROR;
         }
-    else
-        propertyId = newProperty.GetId();
 
     if (propertyChange.GetTypeName().IsValid())
         {
@@ -1108,8 +1103,8 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
             if (ca.IsNull())
                 return ERROR;
 
-            if (!ca->GetClass().HasId())
-                ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ca->GetClass()); //Callers will assume it has a valid Id
+            ECClassId caClassId = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ca->GetClass());
+            BeAssert(caClassId.IsValid());
 
             if (DeleteCAEntry(ca->GetClass().GetId(), containerId, containerType) != SUCCESS)
                 return ERROR;
@@ -1143,18 +1138,12 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
     if (classChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    ECClassId classId;
-    if (!newClass.HasId())
+    ECClassId classId = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, newClass);
+    if (!classId.IsValid())
         {
-        classId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, newClass);
-        if (!classId.IsValid())
-            {
-            BeAssert(false && "Failed to resolve ecclass id");
-            return ERROR;
-            }
+        BeAssert(false && "Failed to resolve ecclass id");
+        return ERROR;
         }
-    else
-        classId = newClass.GetId();
 
     SqlUpdateBuilder updateBuilder("ec_Class");
 
@@ -1839,20 +1828,13 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
     {
     if (schemaChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
-
    
-    ECSchemaId schemaId;
-    if (!newSchema.HasId())
+    ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, newSchema);
+    if (!schemaId.IsValid())
         {
-        schemaId = ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(m_ecdb, newSchema);
-        if (!schemaId.IsValid())
-            {
-            BeAssert(false && "Failed to resolve ecschema id");
-            return ERROR;
-            }
+        BeAssert(false && "Failed to resolve ecschema id");
+        return ERROR;
         }
-    else
-        schemaId = newSchema.GetId();
 
     SqlUpdateBuilder updateBuilder("ec_Schema");
     if (schemaChange.GetName().IsValid())
@@ -1939,6 +1921,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
         if (updateBuilder.ExecuteSql(m_ecdb) != SUCCESS)
             return ERROR;
         }
+
     schemaChange.SetStatus(ECChange::Status::Done);
 
     if (UpdateECSchemaReferences(schemaChange.References(), oldSchema, newSchema) == ERROR)
