@@ -4228,7 +4228,7 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
         "           <Class class='C' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", false, "can't delete class which is part of relationship constraint.");
+        "</ECSchema>", true, "can't delete class which is part of relationship constraint.");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedConstraintClass);
     ASSERT_FALSE(asserted);
