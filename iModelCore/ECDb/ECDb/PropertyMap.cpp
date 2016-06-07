@@ -578,7 +578,22 @@ StructPropertyMap::StructPropertyMap(ECDbMap const& ecdbMap, StructPropertyMap c
         m_children.AddPropertyMap(protoChild->GetProperty().GetName().c_str(), PropertyMapFactory::ClonePropertyMap(ecdbMap, *protoChild, targetClass, this));
         }
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan     09/2013
+//---------------------------------------------------------------------------------------
+void StructPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const
+    {
+    if (!recusive)
+        return;
 
+    for (PropertyMapCP childMap : GetChildren())
+        {
+        for (ColumnMappedToProperty const& columnInfo : childMap->QueryColumnInfo(loadFlags, recusive))
+            {
+            result.push_back(columnInfo);
+            }
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
@@ -756,7 +771,26 @@ bool SingleColumnPropertyMap::_IsVirtual() const
     }
 
 //******************************** PrimitivePropertyMap *****************************************
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitivePropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const 
+    {
+    ColumnMappedToProperty info;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        info.SetAccessString(GetPropertyAccessString());
 
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        info.SetColumn(*GetSingleColumn());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        info.SetPropertyMap(*this);
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        info.SetStrongType(DbColumn::PrimitiveTypeToColumnType(GetProperty().GetAsPrimitiveProperty()->GetType()));
+
+    result.push_back(info);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
@@ -834,6 +868,49 @@ BentleyStatus PointPropertyMap::_Save(ClassDbMapping& classMapping) const
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PointPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const
+    {
+    ColumnMappedToProperty x, y, z;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        {
+        x.SetAccessString(GetPropertyAccessString() + Utf8String(".X"));
+        y.SetAccessString(GetPropertyAccessString() + Utf8String(".Y"));
+        if (m_is3d)
+            z.SetAccessString(GetPropertyAccessString() + Utf8String(".Z"));
+        }
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        {
+        x.SetColumn(*m_xColumn);
+        y.SetColumn(*m_yColumn);
+        if (m_is3d)
+            z.SetColumn(*m_zColumn);
+        }
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        {
+        x.SetPropertyMap(*this);
+        y.SetPropertyMap(*this);
+        if (m_is3d)
+            z.SetPropertyMap(*this);
+        }
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        {
+        x.SetStrongType(DbColumn::Type::Real);
+        y.SetStrongType(DbColumn::Type::Real);
+        if (m_is3d)
+            z.SetStrongType(DbColumn::Type::Real);
+        }
+
+    result.push_back(x);
+    result.push_back(y);
+    if (m_is3d)
+        result.push_back(z);
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -986,6 +1063,26 @@ PrimitiveArrayPropertyMap::PrimitiveArrayPropertyMap (ECDbCR ecdb, ArrayECProper
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      6/2016
+//---------------------------------------------------------------------------------------
+void PrimitiveArrayPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const
+    {
+    ColumnMappedToProperty info;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        info.SetAccessString(GetPropertyAccessString());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        info.SetColumn(*GetSingleColumn());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        info.SetPropertyMap(*this);
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        info.SetStrongType(DbColumn::Type::Blob);
+
+    result.push_back(info);
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
 BentleyStatus PrimitiveArrayPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& classMap)
@@ -1021,6 +1118,26 @@ BentleyStatus StructArrayJsonPropertyMap::_FindOrCreateColumnsInTable(ClassMap c
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                      03/2016
+//---------------------------------------------------------------------------------------
+void StructArrayJsonPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const
+    {
+    ColumnMappedToProperty info;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        info.SetAccessString(GetPropertyAccessString());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        info.SetColumn(*GetSingleColumn());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        info.SetPropertyMap(*this);
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        info.SetStrongType(DbColumn::Type::Text);
+
+    result.push_back(info);
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      03/2016
 //---------------------------------------------------------------------------------------
 Utf8String StructArrayJsonPropertyMap::_ToString() const
@@ -1050,6 +1167,26 @@ PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ec
     return new NavigationPropertyMap(ctx, ecClass, navProp, propertyAccessString);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                      12/2015
+//---------------------------------------------------------------------------------------
+void NavigationPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive)  const
+    {
+    ColumnMappedToProperty info;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        info.SetAccessString(GetPropertyAccessString());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        info.SetColumn(*GetSingleColumn());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        info.SetPropertyMap(*this);
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        info.SetStrongType(DbColumn::PrimitiveTypeToColumnType(GetProperty().GetAsNavigationProperty()->GetType()));
+
+    result.push_back(info);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      12/2015
 //---------------------------------------------------------------------------------------
