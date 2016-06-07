@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/CachedResponseKey.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,6 +26,9 @@ struct CachedResponseKey
         Utf8String m_name;
 
     public:
+        //! Create invalid key
+        WSCACHE_EXPORT CachedResponseKey();
+
         //! Create cached respose key.
         //! param[in] parent - response will be kept as long as parent instance is available. Is also holder if not specified other way.
         //! param[in] name - is unique for same parent. Using same key second time will override previous results.
