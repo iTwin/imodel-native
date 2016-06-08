@@ -241,7 +241,7 @@ bool SyncLocalChangesTask::CanSyncChangeset(CacheChangeGroupCR changeGroup) cons
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperately(ChangeGroupPtr changeGroup)
+AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperately(CacheChangeGroupPtr changeGroup)
     {
     ECInstanceKey fileKey = changeGroup->GetFileChange().GetInstanceKey();
     if (!fileKey.IsValid())
@@ -359,7 +359,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr change
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(ChangeGroupPtr changeGroup, bool includeFile)
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(CacheChangeGroupPtr changeGroup, bool includeFile)
     {
     return m_ds->GetCacheAccessThread()->ExecuteAsync([=]
         {

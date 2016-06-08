@@ -247,6 +247,7 @@
     <ClInclude Include="Cache\Schemas.h" />
     <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\SessionInfo.h" />
@@ -359,6 +360,8 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\IImsClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ITokenStore.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h" />
     <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTrackingData.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\ObjectId.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Passport.h" />
