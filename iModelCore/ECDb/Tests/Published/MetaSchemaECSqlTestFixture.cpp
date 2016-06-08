@@ -51,6 +51,9 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDefs()
 
         AssertSchemaDef(*expectedSchema, schemaStatement);
         AssertClassDefs(*expectedSchema);
+        AssertEnumerationDefs(*expectedSchema);
+        //MetaSchema cannot be enhanced yet until ECschema update supports adding KOQ classes and rels
+        //AssertKindOfQuantityDefs(*expectedSchema);
         actualSchemaCount++;
         }
 
@@ -393,7 +396,7 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationValue(ECEnumeratorCR expectedE
         if (memberName.EqualsI("StringValue"))
             {
             if (expectedEnumValue.IsString())
-                ASSERT_EQ(expectedEnumValue.GetString().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].StringValue";
+                ASSERT_STREQ(expectedEnumValue.GetString().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].StringValue";
             else
                 ASSERT_TRUE(memberVal.IsNull()) << "ECEnumerationDef.EnumValues[].StringValue for non-string values";
 
@@ -401,8 +404,8 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationValue(ECEnumeratorCR expectedE
             }
         if (memberName.EqualsI("DisplayLabel"))
             {
-            if (expectedEnumValue.GetIsDisplayLabelDefined())
-                ASSERT_EQ(expectedEnumValue.GetDisplayLabel().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].DisplayLabel";
+            if (!expectedEnumValue.GetDisplayLabel().empty())
+                ASSERT_STREQ(expectedEnumValue.GetDisplayLabel().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].DisplayLabel";
             else
                 ASSERT_TRUE(memberVal.IsNull()) << "ECEnumerationDef.EnumValues[].DisplayLabel if not defined";
 
