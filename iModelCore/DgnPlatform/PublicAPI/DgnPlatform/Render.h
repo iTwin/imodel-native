@@ -68,8 +68,6 @@ public:
     uint32_t    visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode. This is typically controlled through a display style.
     uint32_t    hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode. This is typically controlled through a display style.
     uint32_t    shadows:1;          //!< Shows or hides shadows. This is typically controlled through a display style.
-    uint32_t    noFrontClip:1;      //!< Controls whether the front clipping plane is used. Note the inversion. Elements beyond will not be displayed.
-    uint32_t    noBackClip:1;       //!< Controls whether the back clipping plane is used. Note the inversion. Elements beyond will not be displayed.
     uint32_t    noClipVolume:1;     //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
     uint32_t    ignoreLighting:1;   //!< Controls whether lights are used.
 

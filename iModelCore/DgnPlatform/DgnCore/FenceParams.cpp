@@ -758,54 +758,30 @@ StatusInt FenceParams::StoreClippingPoints(DPoint3dCP points, size_t nPoints, bo
     if (nullptr == m_viewport || nPoints < 2)
         return ERROR;
 
-    DMap4dCP worldToNPC = m_viewport->GetWorldToNpcMap ();
+    DMap4dCP worldToNPC = m_viewport->GetWorldToNpcMap();
     bvector<DPoint2d> backPlaneUV;
     DRange3d uvRange = DRange3d::NullRange();
 
     for (size_t i = 0; i < nPoints; i++)
         {
         DPoint3d uvw;
-        worldToNPC->M0.MultiplyAndRenormalize (&uvw, &points[i], 1);
-        backPlaneUV.push_back (DPoint2d::From (uvw.x, uvw.y));
-        uvRange.Extend (uvw.x, uvw.y, 0.0);
+        worldToNPC->M0.MultiplyAndRenormalize(&uvw, &points[i], 1);
+        backPlaneUV.push_back(DPoint2d::From(uvw.x, uvw.y));
+        uvRange.Extend(uvw.x, uvw.y, 0.0);
         }
 
     if (2 == nPoints) // Degenerate fence shape is used for crossing line selection...
         backPlaneUV.push_back(backPlaneUV.front());
 
-    // Clipping is defined in npc space --- back plane is always z=0, front is z=1.0
-    ClipMask    clipMask = ClipMask::XAndY;
-    double      *pZLow = NULL, *pZHigh = NULL, zLow = -1.0e20, zHigh = 1.0e20;
-
-    if (!m_viewport->GetViewFlags().noFrontClip)
-        {
-        zHigh = 1.0;
-        clipMask = clipMask | ClipMask::ZHigh;
-        pZHigh = &zHigh;
-        }
-
-    if (!m_viewport->GetViewFlags().noBackClip)
-        {
-        zLow = 0.0;
-        clipMask = clipMask | ClipMask::ZLow;
-        pZLow = &zLow;
-        }
-
-    if (zHigh > NPC_CAMERA_LIMIT)
-        {
-        zHigh = NPC_CAMERA_LIMIT;
-        pZHigh = &zHigh;
-        }
-
-    m_clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromShape(&backPlaneUV.front(), backPlaneUV.size(), outside, pZLow, pZHigh, nullptr).get());
-    m_clip->MultiplyPlanesTimesMatrix (worldToNPC->M0);
-
+    m_clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromShape(&backPlaneUV.front(), backPlaneUV.size(), outside, nullptr, nullptr, nullptr).get());
+    m_clip->MultiplyPlanesTimesMatrix(worldToNPC->M0);
     m_fenceRangeNPC.Init ();
+
     if (!outside)
         {
         m_fenceRangeNPC = uvRange;
-        m_fenceRangeNPC.low.z = zLow;
-        m_fenceRangeNPC.high.z = zHigh;
+        m_fenceRangeNPC.low.z = -1.0e20;
+        m_fenceRangeNPC.high.z = NPC_CAMERA_LIMIT;
         }
 
     return SUCCESS;
