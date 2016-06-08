@@ -44,13 +44,13 @@ class BaseCachingDataSourceTest : public BaseCacheTest
             BeFileName temporaryDir = BeFileName()
             );
 
-        // Get reusable WebApi 1.3 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
+        // Get seed WebApi 1.3 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
         CachingDataSourcePtr GetTestDataSourceV1();
-        // Get reusable WebApi 2.0 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
+        // Get seed WebApi 2.0 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
         CachingDataSourcePtr GetTestDataSourceV2();
-        // Get reusable WebApi 2.4 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
+        // Get seed WebApi 2.4 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
         CachingDataSourcePtr GetTestDataSourceV24();
-        // Get reusable WebApi version CachingDataSource created with GetMockClient() MockWSRepositoryClient;
+        // Get seed WebApi version CachingDataSource created with GetMockClient() MockWSRepositoryClient;
         CachingDataSourcePtr GetTestDataSource(BeVersion webApiVersion);
 
         // Use for CachingDataSource created with GetTestDataSourceV1 ();
