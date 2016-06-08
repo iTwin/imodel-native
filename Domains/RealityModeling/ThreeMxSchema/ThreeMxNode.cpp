@@ -41,7 +41,7 @@ int Node::CountNodes() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Draw this node. If it is too coarse, instead draw its children if they are loaded. 
+* Draw this node. If it is too coarse, instead draw its children, if they are already loaded.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Node::Draw(DrawArgsR args, int depth)
@@ -51,15 +51,15 @@ void Node::Draw(DrawArgsR args, int depth)
     if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
         {
         Frustum box(m_range);
-        args.m_scene.GetLocation().Multiply(box.GetPtsP(), box.GetPts(), 8); 
+        args.m_scene.GetLocation().Multiply(box.GetPtsP(), box.GetPts(), 8);
 
         if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box))
             {
-            UnloadChildren(args.m_purgeOlderThan); 
+            UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum. Unload any loaded children if they're expired.
             return;
             }
 
-        double radius = args.m_scene.GetNodeRadius(*this);
+        double radius = args.m_scene.GetNodeRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
         if (args.m_scene.UseFixedResolution())
             {
             tooCoarse = (radius / args.m_scene.GetFixedResolution()) > GetMaxDiameter();
@@ -73,10 +73,10 @@ void Node::Draw(DrawArgsR args, int depth)
         }
 
     ChildNodes const* children = GetChildren(); // returns nullptr if this node's children are not yet loaded.
-    if (tooCoarse && nullptr != children) 
+    if (tooCoarse && nullptr != children)
         {
         // this node is too coarse for current view, don't draw it and instead draw its children
-        m_childrenLastUsed = args.m_now; // save the fact that we've used our children to delay purging them if this node becomes unused 
+        m_childrenLastUsed = args.m_now; // save the fact that we've used our children to delay purging them if this node becomes unused
 
         for (auto const& child : *children)
             child->Draw(args, depth+1);
@@ -84,24 +84,26 @@ void Node::Draw(DrawArgsR args, int depth)
         return;
         }
 
+    // This node is either fine enough for the current view or has no loaded children. We'll draw it.
     if (!m_geometry.empty()) // if we have geometry, draw it now
         {
         for (auto geom : m_geometry)
             geom->Draw(args);
         }
 
-    if (!HasChildren()) // this is a visible leaf node - we're done
+    if (!HasChildren()) // this is a leaf node - we're done
         return;
 
-    if (!tooCoarse) // if this node was fine enough for the current zoom scale, but it has children,  then they're no longer needed, unload them if they're loaded
+    if (!tooCoarse)
         {
-        UnloadChildren(args.m_purgeOlderThan); 
+        // This node was fine enough for the current zoom scale. If it has loaded children from a previous pass, they're no longer needed.
+        UnloadChildren(args.m_purgeOlderThan);
         return;
         }
 
     // this node is too coarse (even though we already drew it) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded
     args.m_missing.Insert(depth, this);
-    
+
     if (AreChildrenNotLoaded()) // only request children if we haven't already asked for them
         args.m_scene.RequestData(this, false, nullptr);
     }
@@ -119,7 +121,7 @@ void Node::SetAbandoned()
             child->SetAbandoned();
         }
 
-    // this is actually a race condtion, but it doesn't matter. If the loading thread misses the abandoned flag, the only consequence is we waste a little time.
+    // this is actually a race condition, but it doesn't matter. If the loading thread misses the abandoned flag, the only consequence is we waste a little time.
     m_childLoad.store(ChildLoad::Abandoned);
     }
 
@@ -153,15 +155,15 @@ void Node::UnloadChildren(uint64_t olderThan)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementAlignedBox3d Node::ComputeRange() 
+ElementAlignedBox3d Node::ComputeRange()
     {
     if (m_range.IsValid())
         return m_range;
 
     ChildNodes const* children = GetChildren(); // only returns fully loaded children
-    if (nullptr != children) 
+    if (nullptr != children)
         {
-        for (auto const& child : *children)   
+        for (auto const& child : *children)
             m_range.UnionOf(m_range, child->ComputeRange()); // this updates the range of the top level node
         }
 
@@ -191,6 +193,8 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene)
     {
+    // After we create a Render::Graphic, we only need the points/indices/normals for picking.
+    // To save memory, only store them if the model is locatable.
     if (scene.IsLocatable())
         {
         m_indices.resize(args.m_numIndices);
