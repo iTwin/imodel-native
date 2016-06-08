@@ -1759,7 +1759,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         if (meshP == 0) return false;
         assert(meshP != 0);
 
-//#if SM_OUTPUT_MESHES_STITCHING
+#if SM_OUTPUT_MESHES_STITCHING
         if (hasPtsToTrack)
         {
         WString nameStitched = LOG_PATH_STR_W + L"posttrimesh_new_";
@@ -1767,7 +1767,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         nameStitched.append(L".m");
         LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, meshP->GetNbPoints(), meshP->GetNbFaceIndexes(), meshP->GetPoints(), (int32_t*)meshP->GetFaceIndexes())
         }
-//#endif
+#endif
             vector<vector<int32_t>> indices;
             indices.resize(2);
             ExtractMeshIndicesFromGraph(indices[0], &meshGraph);
@@ -1777,7 +1777,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             pts[0] = nodePoints;
             pts[1].resize(meshP->GetNbPoints());
 
-//#if SM_OUTPUT_MESHES_STITCHING
+#if SM_OUTPUT_MESHES_STITCHING
             if (hasPtsToTrack)
                 {
                 WString nameStitched = LOG_PATH_STR_W + L"posttrimesh_old_";
@@ -1785,7 +1785,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
                 nameStitched.append(L".m");
                 LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, nodePoints.size(), indices[0].size(), &pts[0][0], (int32_t*)&indices[0][0])
                 }
-//#endif
+#endif
             memcpy(&pts[1][0], meshP->GetPoints(), sizeof(DPoint3d)*pts[1].size());
                        // arraySize = UpdateMeshNodeFromGraphs(node, &newNodePointData, graphs, pts, nfaces, extentMin, extentMax);
                 arraySize = UpdateMeshNodeFromIndexLists(node, &newNodePointData, indices, pts, nfaces, extentMin, extentMax);
