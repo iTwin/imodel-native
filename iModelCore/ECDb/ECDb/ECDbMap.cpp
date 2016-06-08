@@ -484,14 +484,11 @@ MappingStatus ECDbMap::MapClass(ECClassCR ecClass)
     if (AssertIfIsNotImportingSchema())
         return MappingStatus::Error;
 
-    if (!ecClass.HasId())
+    if (!ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ecClass).IsValid())
         {
-        if (!ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(GetECDb(), ecClass).IsValid())
-            {
-            LOG.errorv("ECClass %s does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
-            BeAssert(false);
-            return MappingStatus::Error;
-            }
+        LOG.errorv("ECClass %s does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
+        BeAssert(false);
+        return MappingStatus::Error;
         }
 
     ClassMapPtr existingClassMap = nullptr;
@@ -615,10 +612,10 @@ ClassMap const* ECDbMap::GetClassMap(ECN::ECClassId classId) const
 BentleyStatus ECDbMap::TryGetClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
     BeMutexHolder lock(m_mutex);
-    if (!ecClass.HasId())
+    if (!ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ecClass).IsValid())
         {
-        ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass);
-        BeAssert(ecClass.HasId() && "ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema was not able to retrieve a class id.");
+        BeAssert(false && "TryGetClassMap fails because ecClass does not exist in the file.");
+        return ERROR;
         }
 
     classMap = DoGetClassMap(ecClass);

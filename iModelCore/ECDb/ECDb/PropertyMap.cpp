@@ -19,8 +19,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, ECDbCR ecdb, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
     {
-    if (!ecProperty.HasId())
-        ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ecdb, ecProperty);
+    if (!ECDbSchemaPersistenceHelper::GetECPropertyId(ecdb, ecProperty).IsValid())
+        return nullptr;
 
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
     if (primitiveProperty != nullptr)
@@ -433,18 +433,30 @@ PropertyMapCollection& PropertyMapCollection::operator= (PropertyMapCollection&&
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void PropertyMapCollection::AddPropertyMap(PropertyMapPtr const& propertyMap)
+BentleyStatus PropertyMapCollection::AddPropertyMap(PropertyMapPtr const& propertyMap)
     {
-    AddPropertyMap(propertyMap->GetPropertyAccessString(), propertyMap);
+    return AddPropertyMap(propertyMap->GetPropertyAccessString(), propertyMap);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void PropertyMapCollection::AddPropertyMap(Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap)
+BentleyStatus PropertyMapCollection::AddPropertyMap(Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap)
     {
+    if (propertyMap.IsNull())
+        {
+        BeAssert(false && "propertyMap cannot be null");
+        return ERROR;
+        }
+    if (m_dictionary.find(propertyAccessString) != m_dictionary.end())
+        {
+        BeAssert(false && "PropertyMap with same name or may be different case already exist");
+        return ERROR;
+        }
+
     m_dictionary[propertyAccessString] = propertyMap;
     m_orderedCollection.push_back(propertyMap.get());
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -621,7 +633,10 @@ BentleyStatus StructPropertyMap::Initialize(ClassMapLoadContext& ctx, ECDbCR ecd
         //don't use full prop access string as key in child collection, but just the relative prop access string which is 
         //just the prop name
         if (propertyMap != nullptr)
-            m_children.AddPropertyMap(property->GetName().c_str(), propertyMap);
+            {
+            if (m_children.AddPropertyMap(property->GetName().c_str(), propertyMap) != SUCCESS)
+                return ERROR;
+            }
         }
 
     return SUCCESS;

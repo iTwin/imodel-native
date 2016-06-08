@@ -31,11 +31,11 @@ private:
     static DbResult AssignProfileVersion(ECDbR, bool onProfileCreation);
 
     //! Expected version of the ECDb profile for this version of the ECDb API.
-    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 7, 1, 1); }
+    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 7, 1, 2); }
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
     static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 7, 0, 0); }
 
-    static void GetUpgraderSequence(std::vector<std::unique_ptr<ECDbProfileUpgrader>>&, SchemaVersion const& currentProfileVersion);
+    static DbResult RunUpgraders(ECDbCR, SchemaVersion const& currentProfileVersion);
 
     static PropertySpec GetProfileVersionPropertySpec() { return PropertySpec("SchemaVersion", "ec_Db"); }
     static PropertySpec GetInitialProfileVersionPropertySpec() { return PropertySpec("InitialSchemaVersion", "ec_Db"); }

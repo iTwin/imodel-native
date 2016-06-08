@@ -8,7 +8,6 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 
-USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define METASCHEMA_ECENUMERATOR_PROPERTY_IntValue "IntValue"
@@ -51,21 +50,28 @@ private:
     ~ECDbSchemaPersistenceHelper();
 
 public:
-    static bool ContainsECSchema(ECDbCR, ECSchemaId);
-    static bool ContainsECClass(ECDbCR, ECClassCR);
-
-    static ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
-    static ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema);
-    static ECEnumerationId GetECEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
-    static ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
+    static ECN::ECSchemaId GetECSchemaId(ECDbCR, ECN::ECSchemaCR);
+    static ECN::ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
+    static ECN::ECClassId GetECClassId(ECDbCR, ECN::ECClassCR);
+    static ECN::ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema);
+    static ECN::ECEnumerationId GetECEnumerationId(ECDbCR, ECN::ECEnumerationCR);
+    static ECN::ECEnumerationId GetECEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
+    static ECN::KindOfQuantityId GetKindOfQuantityId(ECDbCR, ECN::KindOfQuantityCR);
+    static ECN::KindOfQuantityId GetKindOfQuantityId(ECDbCR, Utf8CP schemaName, Utf8CP koqName);
+    static ECN::ECPropertyId GetECPropertyId(ECDbCR, ECN::ECPropertyCR);
+    static ECN::ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
     static bool TryGetECSchemaKey(SchemaKey&, ECDbCR, Utf8CP schemaName);
+    static bool TryGetECSchemaKeyAndId(SchemaKey&, ECN::ECSchemaId& schemaId, ECDbCR, Utf8CP schemaName);
 
     static BentleyStatus SerializeRelationshipKeyProperties(Utf8StringR jsonStr, bvector<Utf8String> const& keyPropNames);
-    static BentleyStatus DeserializeRelationshipKeyProperties(ECRelationshipConstraintClassR, Utf8CP jsonStr);
-    static BentleyStatus SerializeECEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR);
-    static BentleyStatus DeserializeECEnumerationValues(ECEnumerationR, Utf8CP jsonStr);
-    
+    static BentleyStatus DeserializeRelationshipKeyProperties(ECN::ECRelationshipConstraintClassR, Utf8CP jsonStr);
+    static BentleyStatus SerializeECEnumerationValues(Utf8StringR jsonStr, ECN::ECEnumerationCR);
+    static BentleyStatus DeserializeECEnumerationValues(ECN::ECEnumerationR, Utf8CP jsonStr);
+
+    static BentleyStatus SerializeKoqAlternativePresentationUnits(Utf8StringR jsonStr, ECN::KindOfQuantityCR);
+    static BentleyStatus DeserializeKoqAlternativePresentationUnits(ECN::KindOfQuantityR, Utf8CP jsonStr);
+
     static bool ContainsECSchemaWithNamespacePrefix(ECDbCR, Utf8CP namespacePrefix);
     };
 

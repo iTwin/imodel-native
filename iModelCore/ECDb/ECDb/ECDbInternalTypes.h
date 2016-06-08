@@ -109,16 +109,6 @@ enum class SqlSetQuantifier
     All,
     };
 
-
-//=======================================================================================
-//should actually be in ECObjects, but ECEnumeration doesn't have Id yet in ECObjects - only in ECDb
-// @bsienum                                                Krischan.Eberle      02/2016
-//+===============+===============+===============+===============+===============+======
-struct ECEnumerationId : BeInt64Id
-    {
-    BEINT64_ID_DECLARE_MEMBERS(ECEnumerationId, BeInt64Id)
-    };
-
 typedef BeInt64Id ECContainerId;
 typedef BeInt64Id ECRelationshipConstraintId;
 
