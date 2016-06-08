@@ -120,32 +120,20 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                     assert(fileOpenStatus == BeFileStatus::Success);
 
+                    bvector<uint8_t> entire_file;
+                    BeFileStatus read_result = file.ReadEntireFile(entire_file);
+                    assert(BeFileStatus::Success == read_result);
+
                     // Read texture header
-                    uint32_t bytesRead = 0;
-                    BeFileStatus read_result = BeFileStatus::Success;
-                    read_result = file.Read(&m_Width, &bytesRead, sizeof(m_Width));
-                    assert(BeFileStatus::Success == read_result);
-                    assert(bytesRead == sizeof(m_Width));
-                    read_result = file.Read(&m_Height, &bytesRead, sizeof(m_Height));
-                    assert(BeFileStatus::Success == read_result);
-                    assert(bytesRead == sizeof(m_Height));
-                    read_result = file.Read(&m_NbChannels, &bytesRead, sizeof(m_NbChannels));
-                    assert(BeFileStatus::Success == read_result);
-                    assert(bytesRead == sizeof(m_NbChannels));
-                    read_result = file.Read(&m_Format, &bytesRead, sizeof(m_Format));
-                    assert(BeFileStatus::Success == read_result);
-                    assert(bytesRead == sizeof(m_Format));
+                    memcpy(&m_Width, entire_file.data(), sizeof(int));
+                    memcpy(&m_Height, entire_file.data() + sizeof(int), sizeof(int));
+                    memcpy(&m_NbChannels, entire_file.data() + 2* sizeof(int), sizeof(int));
+                    memcpy(&m_Format, entire_file.data() + 3 * sizeof(int), sizeof(int));
 
-                    // Read compressed texture
                     auto textureSize = m_Width*m_Height*m_NbChannels;
-                    auto DataTypeArray = new uint8_t[textureSize];
-                    read_result = file.Read((uint8_t*)DataTypeArray, &bytesRead, (uint32_t)textureSize);
-                    assert(BeFileStatus::Success == read_result);
-                    assert(bytesRead <= (uint32_t)textureSize);
+                    uint64_t compressedSize = entire_file.size()-4*sizeof(int);
 
-                    uint64_t compressedSize = bytesRead;
-
-                    this->DecompressTexture(DataTypeArray, compressedSize, (uint32_t)textureSize, m_NbChannels);
+                    this->DecompressTexture(entire_file.data() + 4 * sizeof(int), compressedSize, (uint32_t)textureSize, m_NbChannels);
 
                     file.Close();
                     }
@@ -352,8 +340,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const
             {
-            return this->GetTexture(blockID).size();
-
+            return this->GetTexture(blockID).size() + 3 * sizeof(int);
             }
 
 
@@ -376,7 +363,6 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             ((int*)DataTypeArray)[1] = (int)texture.GetHeight();
             ((int*)DataTypeArray)[2] = (int)texture.GetNbChannels();
             memmove(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
-            //return texture.size() + 3 * sizeof(int);
             texture.Unload();
             return std::min(textureSize + 3 * sizeof(int), maxCountData);
             }
