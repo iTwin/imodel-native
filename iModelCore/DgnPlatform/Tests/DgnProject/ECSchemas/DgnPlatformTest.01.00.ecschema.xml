@@ -13,10 +13,10 @@
         <BaseClass>dgn:PhysicalElement</BaseClass>
         <ECProperty propertyName="TestElementProperty" typeName="string" />
         <!-- Sam added the following properties and explicitly did NOT implement logic to read/write them -->
-        <ECProperty propertyName="IntegerProperty1" typeName="integer" />
-        <ECProperty propertyName="IntegerProperty2" typeName="integer" />
-        <ECProperty propertyName="IntegerProperty3" typeName="integer" />
-        <ECProperty propertyName="IntegerProperty4" typeName="integer" />
+        <ECProperty propertyName="IntegerProperty1" typeName="int" />
+        <ECProperty propertyName="IntegerProperty2" typeName="int" />
+        <ECProperty propertyName="IntegerProperty3" typeName="int" />
+        <ECProperty propertyName="IntegerProperty4" typeName="int" />
         <ECProperty propertyName="DoubleProperty1"  typeName="double" />
         <ECProperty propertyName="DoubleProperty2"  typeName="double" />
         <ECProperty propertyName="DoubleProperty3"  typeName="double" />
@@ -27,10 +27,10 @@
         <ECProperty propertyName="PointProperty4"   typeName="Point3d" />
 
         <!-- The following properties have getters and setters on the TestElement class and are written/read when the element is written/read -->
-        <ECProperty propertyName="TestIntegerProperty1" typeName="integer" />
-        <ECProperty propertyName="TestIntegerProperty2" typeName="integer" />
-        <ECProperty propertyName="TestIntegerProperty3" typeName="integer" />
-        <ECProperty propertyName="TestIntegerProperty4" typeName="integer" />
+        <ECProperty propertyName="TestIntegerProperty1" typeName="int" />
+        <ECProperty propertyName="TestIntegerProperty2" typeName="int" />
+        <ECProperty propertyName="TestIntegerProperty3" typeName="int" />
+        <ECProperty propertyName="TestIntegerProperty4" typeName="int" />
         <ECProperty propertyName="TestDoubleProperty1"  typeName="double" />
         <ECProperty propertyName="TestDoubleProperty2"  typeName="double" />
         <ECProperty propertyName="TestDoubleProperty3"  typeName="double" />
