@@ -425,22 +425,21 @@ ECDbCR ECDbSchemaManager::GetECDb() const { return m_ecdb; }
 //---------------------------------------------------------------------------------------
 ECSchemaPtr ECDbSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), key.GetName().c_str());
-    if (!schemaId.IsValid())
+    SchemaKey foundKey;
+    ECSchemaId foundId;
+    if (!ECDbSchemaPersistenceHelper::TryGetECSchemaKeyAndId(foundKey, foundId, m_ecdb, key.GetName().c_str()))
         return nullptr;
 
-    ECSchemaCP schema = m_schemaReader->GetECSchema(schemaId, true);
+    if (!foundKey.Matches(key, matchType))
+        return nullptr;
+
+    ECSchemaCP schema = m_schemaReader->GetECSchema(foundId, true);
     if (schema == nullptr)
         return nullptr;
 
-    if (schema->GetSchemaKey().Matches(key, matchType))
-        {
-        ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
-        schemaContext.GetCache().AddSchema(*schemaP);
-        return schemaP;
-        }
-
-    return nullptr;
+    ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
+    schemaContext.GetCache().AddSchema(*schemaP);
+    return schemaP;
     }
 
 /*---------------------------------------------------------------------------------**//**

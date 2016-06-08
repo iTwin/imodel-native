@@ -58,8 +58,10 @@ ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaNa
 //---------------------------------------------------------------------------------------
 bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8CP schemaName)
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=?"))
+    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
+    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=? COLLATE NOCASE");
+    if (stmt == nullptr)
         return false;
 
     if (BE_SQLITE_OK != stmt->BindText(1, schemaName, Statement::MakeCopy::No))
@@ -69,6 +71,28 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb,
         return false;
 
     key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                    04/2016
+//---------------------------------------------------------------------------------------
+bool ECDbSchemaPersistenceHelper::TryGetECSchemaKeyAndId(SchemaKey& key, ECSchemaId& id, ECDbCR ecdb, Utf8CP schemaName)
+    {
+    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
+    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3, Id FROM ec_Schema WHERE Name=? COLLATE NOCASE");
+    if (stmt == nullptr)
+        return false;
+
+    if (BE_SQLITE_OK != stmt->BindText(1, schemaName, Statement::MakeCopy::No))
+        return false;
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return false;
+
+    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
+    id = stmt->GetValueId<ECSchemaId>(4);
     return true;
     }
 

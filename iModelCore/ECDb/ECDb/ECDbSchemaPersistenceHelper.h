@@ -62,6 +62,7 @@ public:
     static ECN::ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
     static bool TryGetECSchemaKey(SchemaKey&, ECDbCR, Utf8CP schemaName);
+    static bool TryGetECSchemaKeyAndId(SchemaKey&, ECN::ECSchemaId& schemaId, ECDbCR, Utf8CP schemaName);
 
     static BentleyStatus SerializeRelationshipKeyProperties(Utf8StringR jsonStr, bvector<Utf8String> const& keyPropNames);
     static BentleyStatus DeserializeRelationshipKeyProperties(ECN::ECRelationshipConstraintClassR, Utf8CP jsonStr);
