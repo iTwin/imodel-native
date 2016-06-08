@@ -171,6 +171,7 @@ BentleyStatus FileInfoManager::CheckMaxLastAccessDate(BeFileNameCR fileName, Dat
         }
     return SUCCESS;
     }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -195,27 +196,35 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
             continue;
             }
 
-        ECInstanceKey externalFileInfoKey(m_externalFileInfoClass->GetId(),statement->GetValueId<ECInstanceId>(1));
+        ECInstanceKey externalFileInfoKey(m_externalFileInfoClass->GetId(), statement->GetValueId<ECInstanceId>(1));
         if (ECDbHelper::IsInstanceInMultiMap(externalFileInfoKey, holdingNodes))
             {
             continue;
             }
 
-        //bool shouldSkip;
-        //if (SUCCESS != CheckMaxLastAccessDate(fileInfo.GetFilePath(), maxLastAccessDate, shouldSkip))
-        //    {
-        //    // Return error from the function when we eventually finish, but continue processing
-        //    // files anyway.
-        //    returnValue = ERROR;
-        //    }
-        //if (shouldSkip)
-        //    {
-        //    continue;
-        //    }
-
         Json::Value externalFileInfoJson;
-        if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()) ||
-            SUCCESS != CleanupExternalFile(externalFileInfoJson))
+        if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()))
+            {
+            return ERROR;
+            }
+
+        FileInfo fileInfo(Json::nullValue, externalFileInfoJson, CachedInstanceKey(), this);
+        auto filePath = fileInfo.GetFilePath();
+
+        bool shouldSkip;
+        if (SUCCESS != CheckMaxLastAccessDate(fileInfo.GetFilePath(), maxLastAccessDate, shouldSkip))
+            {
+            // Return error from the function when we eventually finish, but continue processing
+            // files anyway.
+            returnValue = ERROR;
+            }
+
+        if (shouldSkip)
+            {
+            continue;
+            }
+
+        if (SUCCESS != m_fileStorage.CleanupCachedFile(filePath))
             {
             return ERROR;
             }
