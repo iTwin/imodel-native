@@ -184,7 +184,8 @@ MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, Clas
         //log and assert already done in child method
         return MappingStatus::Error;
 
-    GetPropertyMapsR ().AddPropertyMap(ecInstanceIdPropertyMap);
+    if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap) != SUCCESS)
+        return MappingStatus::Error;
 
     return MappingStatus::Success;
     }
@@ -337,14 +338,19 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
 
         if (!isJoinedTableMapping && propMapInBaseClass->GetAsNavigationPropertyMap() == nullptr)
             {
-            GetPropertyMapsR().AddPropertyMap(propMapInBaseClass);
+            if (GetPropertyMapsR().AddPropertyMap(propMapInBaseClass) != SUCCESS)
+                return MappingStatus::Error;
+
             continue;
             }
 
         //nav prop maps and if the class is mapped to primary and joined table, create clones of property maps of the base class
         //as the context (table, containing ECClass) is different
         if (isImportingSchemas)
-            GetPropertyMapsR().AddPropertyMap(PropertyMapFactory::ClonePropertyMap(m_ecDbMap, *propMapInBaseClass, GetClass(), nullptr));
+            {
+            if (GetPropertyMapsR().AddPropertyMap(PropertyMapFactory::ClonePropertyMap(m_ecDbMap, *propMapInBaseClass, GetClass(), nullptr)) != SUCCESS)
+                return MappingStatus::Error;
+            }
         else
             propertiesToCreatePropMapsFor.push_back(property);
         }
@@ -381,7 +387,8 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
                 }
             }
 
-        GetPropertyMapsR().AddPropertyMap(propMap);
+        if (GetPropertyMapsR().AddPropertyMap(propMap) != SUCCESS)
+            return MappingStatus::Error;
         }
 
     return MappingStatus::Success;
@@ -669,7 +676,9 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     if (ecInstanceIdPropertyMap == nullptr)
         return ERROR;
 
-    GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
+    if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap) != SUCCESS)
+        return ERROR;
+
     return AddPropertyMaps(ctx, baseClassMap, &classMapping, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;
     }
 
