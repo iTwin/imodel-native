@@ -8408,148 +8408,148 @@ TEST_F(ECDbMappingTestFixture, RelationshipClassInheritance)
     std::vector<ECInstanceKey> volumeElKeys;
     std::vector<ECInstanceKey> annotationElKeys;
 
-        {
-        //insert test data
-        ECDb ecdb;
-        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    {
+    //insert test data
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
-        ECSqlStatement stmt;
+    ECSqlStatement stmt;
 
-        //Model
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model(Name) VALUES(?)"));
+    //Model
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model(Name) VALUES(?)"));
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model1", IECSqlBinder::MakeCopy::No));
-        ECInstanceKey key;
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
-        modelKeys.push_back(key);
-        stmt.Reset();
-        stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model1", IECSqlBinder::MakeCopy::No));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    modelKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model2", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
-        modelKeys.push_back(key);
-        stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Model2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    modelKeys.push_back(key);
+    stmt.Finalize();
 
-        //VolumeElement
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.VolumeElement(Code, ModelId, Name) VALUES(?,?, 'Volume')"));
+    //VolumeElement
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.VolumeElement(Code, ModelId, Name) VALUES(?,?, 'Volume')"));
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 1", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
-        volumeElKeys.push_back(key);
-        stmt.Reset();
-        stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+    volumeElKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 2", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
-        volumeElKeys.push_back(key);
-        stmt.Reset();
-        stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+    volumeElKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 3", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
-        volumeElKeys.push_back(key);
-        stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 3", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+    volumeElKeys.push_back(key);
+    stmt.Finalize();
 
-        //AnnotationElement
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Annotation3dElement(Code, ModelId, Font) VALUES(?,?, 'Consolas Sans Serif')"));
+    //AnnotationElement
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Annotation3dElement(Code, ModelId, Font) VALUES(?,?, 'Consolas Sans Serif')"));
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 1", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
-        annotationElKeys.push_back(key);
-        stmt.Reset();
-        stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+    annotationElKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 2", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
-        annotationElKeys.push_back(key);
-        stmt.Reset();
-        stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+    annotationElKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 3", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
-        annotationElKeys.push_back(key);
-        stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 3", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+    annotationElKeys.push_back(key);
+    stmt.Finalize();
 
-        //UrlLink
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.UrlLink(Code, ModelId, Url) VALUES(?,?, 'http://www.staufen.de')"));
+    //UrlLink
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.UrlLink(Code, ModelId, Url) VALUES(?,?, 'http://www.staufen.de')"));
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "UrlLinkElement 1", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
-        urlLinkKeys.push_back(key);
-        stmt.Reset();
-        stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "UrlLinkElement 1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+    urlLinkKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "UrlLinkElement 2", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
-        urlLinkKeys.push_back(key);
-        stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "UrlLinkElement 2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+    urlLinkKeys.push_back(key);
+    stmt.Finalize();
 
-        //EmbeddedLink
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.EmbeddedLink(Code, ModelId, Name) VALUES(?,?, 'bliblablub')"));
+    //EmbeddedLink
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.EmbeddedLink(Code, ModelId, Name) VALUES(?,?, 'bliblablub')"));
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "EmbeddedLinkElement 1", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
-        embeddedLinkKeys.push_back(key);
-        stmt.Reset();
-        stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "EmbeddedLinkElement 1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+    embeddedLinkKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "EmbeddedLinkElement 2", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
-        embeddedLinkKeys.push_back(key);
-        stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "EmbeddedLinkElement 2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
+    embeddedLinkKeys.push_back(key);
+    stmt.Finalize();
 
-        //InformationElementDrivesInformationElement
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.InformationElementDrivesInformationElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetECClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedLinkKeys[0].GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedLinkKeys[0].GetECClassId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
-        stmt.Reset();
-        stmt.ClearBindings();
+    //InformationElementDrivesInformationElement
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.InformationElementDrivesInformationElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedLinkKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedLinkKeys[0].GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetECClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedLinkKeys[1].GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedLinkKeys[1].GetECClassId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
-        stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedLinkKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedLinkKeys[1].GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
+    stmt.Finalize();
 
-        //UrlLinkDrivesAnnotationElement
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.UrlLinkDrivesAnnotation3dElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[0].GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[0].GetECClassId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
-        stmt.Reset();
-        stmt.ClearBindings();
+    //UrlLinkDrivesAnnotationElement
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.UrlLinkDrivesAnnotation3dElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[0].GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[1].GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[1].GetECClassId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
-        stmt.Reset();
-        stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[1].GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
+    stmt.Reset();
+    stmt.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[2].GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[2].GetECClassId()));
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
-        stmt.Finalize();
-        }
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[2].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[2].GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
+    stmt.Finalize();
+    }
 
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly)));
@@ -9245,160 +9245,204 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
     {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem(
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='None'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <MapStrategy>"
-        "               <Strategy>NotMapped</Strategy>"
-        "               <AppliesToSubclasses>False</AppliesToSubclasses>"
-        "            </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <MapStrategy>"
-        "               <Strategy>NotMapped</Strategy>"
-        "               <AppliesToSubclasses>False</AppliesToSubclasses>"
-        "            </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Geom' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ElementHasGeometry' strength='embedding' modifier='Sealed'>"
-        "    <Source cardinality='(0,1)' polymorphic='True'>"
-        "      <Class class='Element' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='ElementGeometry' />"
-        "    </Target>"
-        "    <ECProperty propertyName='RelProp' typeName='string' />"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", true, "1:N Relationship having NotMapped constraint class on both sides of relationship are not supported"));
+            {
+            SchemaItem testItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "  <ECEntityClass typeName='Element' modifier='None'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <ECProperty propertyName='Code' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <ECProperty propertyName='Geom' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ElementHasGeometry' strength='embedding' modifier='Sealed'>"
+                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='Element' />"
+                "    </Source>"
+                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='ElementGeometry' />"
+                "    </Target>"
+                "    <ECProperty propertyName='RelProp' typeName='string' />"
+                "  </ECRelationshipClass>"
+                "</ECSchema>", true, "1:N Relationship having NotMapped constraint class on both sides of relationship are not supported");
+                bool asserted = false;
+                ECDb ecdb;
+                AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
+                ASSERT_FALSE(asserted);
 
-    testItems.push_back(SchemaItem(
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='None'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <MapStrategy>"
-        "               <Strategy>NotMapped</Strategy>"
-        "               <AppliesToSubclasses>False</AppliesToSubclasses>"
-        "            </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <MapStrategy>"
-        "               <Strategy>NotMapped</Strategy>"
-        "               <AppliesToSubclasses>False</AppliesToSubclasses>"
-        "            </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='Geom' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
-        "    <Source cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='Element' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='ElementGeometry' />"
-        "    </Target>"
-        "    <ECProperty propertyName='RelProp' typeName='string' />"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", true, "N:N Relationship having not mapped constraint class on both sides of relationship are not supported"));
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                PersistedMapStrategy mapStrategy;
+                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            }
 
-    testItems.push_back(SchemaItem(
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='None'>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='PhysicalElement' modifier='None'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <MapStrategy>"
-        "               <Strategy>NotMapped</Strategy>"
-        "               <AppliesToSubclasses>False</AppliesToSubclasses>"
-        "            </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <BaseClass>Element</BaseClass>"
-        "    <ECProperty propertyName='NameSpace' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry' modifier='None'>"
-        "    <ECProperty propertyName='Geom' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry3D'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <MapStrategy>"
-        "               <Strategy>NotMapped</Strategy>"
-        "               <AppliesToSubclasses>False</AppliesToSubclasses>"
-        "            </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <BaseClass>ElementGeometry</BaseClass>"
-        "    <ECProperty propertyName='Category3D' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
-        "    <Source cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='Element' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='ElementGeometry' />"
-        "    </Target>"
-        "    <ECProperty propertyName='RelProp' typeName='string' />"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", true, "N:N Relationship having at least one NotMapped constraint class on both sides of relationship are not supported"));
+            {
+            SchemaItem testItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "  <ECEntityClass typeName='Element' modifier='None'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <ECProperty propertyName='Code' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <ECProperty propertyName='Geom' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
+                "    <Source cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='Element' />"
+                "    </Source>"
+                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='ElementGeometry' />"
+                "    </Target>"
+                "    <ECProperty propertyName='RelProp' typeName='string' />"
+                "  </ECRelationshipClass>"
+                "</ECSchema>", true, "N:N Relationship having not mapped constraint class on both sides of relationship are not supported");
 
-    testItems.push_back(SchemaItem(
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "  <ECEntityClass typeName='Element' modifier='None'>"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='PhysicalElement' modifier='None'>"
-        "    <BaseClass>Element</BaseClass>"
-        "    <ECProperty propertyName='NameSpace' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry' modifier='None'>"
-        "    <ECProperty propertyName='Geom' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='ElementGeometry3D'>"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <MapStrategy>"
-        "               <Strategy>NotMapped</Strategy>"
-        "               <AppliesToSubclasses>False</AppliesToSubclasses>"
-        "            </MapStrategy>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <BaseClass>ElementGeometry</BaseClass>"
-        "    <ECProperty propertyName='Category3D' typeName='binary' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
-        "    <Source cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='Element' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class='ElementGeometry' />"
-        "    </Target>"
-        "    <ECProperty propertyName='RelProp' typeName='string' />"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", true, "N:N Relationships having at least one NotMapped constraint class on one sides of relationship are not supported"));
+                bool asserted = false;
+                ECDb ecdb;
+                AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
+                ASSERT_FALSE(asserted);
 
-    AssertSchemaImport(testItems, "RelationshipWithNotMappedClassAsConstraint.ecdb");
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                PersistedMapStrategy mapStrategy;
+                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            }
+
+            {
+            SchemaItem testItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "  <ECEntityClass typeName='Element' modifier='None'>"
+                "    <ECProperty propertyName='Code' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='PhysicalElement' modifier='None'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <BaseClass>Element</BaseClass>"
+                "    <ECProperty propertyName='NameSpace' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry' modifier='None'>"
+                "    <ECProperty propertyName='Geom' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry3D'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <BaseClass>ElementGeometry</BaseClass>"
+                "    <ECProperty propertyName='Category3D' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
+                "    <Source cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='Element' />"
+                "    </Source>"
+                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='ElementGeometry' />"
+                "    </Target>"
+                "    <ECProperty propertyName='RelProp' typeName='string' />"
+                "  </ECRelationshipClass>"
+                "</ECSchema>", true, "N:N Relationship having at least one NotMapped constraint class on both sides of relationship are not supported");
+
+                bool asserted = false;
+                ECDb ecdb;
+                AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
+                ASSERT_FALSE(asserted);
+
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                PersistedMapStrategy mapStrategy;
+                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            }
+
+            {
+            SchemaItem testItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "  <ECEntityClass typeName='Element' modifier='None'>"
+                "    <ECProperty propertyName='Code' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='PhysicalElement' modifier='None'>"
+                "    <BaseClass>Element</BaseClass>"
+                "    <ECProperty propertyName='NameSpace' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry' modifier='None'>"
+                "    <ECProperty propertyName='Geom' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry3D'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <BaseClass>ElementGeometry</BaseClass>"
+                "    <ECProperty propertyName='Category3D' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
+                "    <Source cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='Element' />"
+                "    </Source>"
+                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='ElementGeometry' />"
+                "    </Target>"
+                "    <ECProperty propertyName='RelProp' typeName='string' />"
+                "  </ECRelationshipClass>"
+                "</ECSchema>", true, "N:N Relationships having at least one NotMapped constraint class on one sides of relationship are not supported");
+
+                bool asserted = false;
+                ECDb ecdb;
+                AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
+                ASSERT_FALSE(asserted);
+
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                PersistedMapStrategy mapStrategy;
+                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            }
     }
 
 //---------------------------------------------------------------------------------------
@@ -9727,7 +9771,7 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
     AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
 
     Utf8String ecsql;
-    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu",unit->GetId().GetValue(), item->GetId().GetValue());
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
     AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
     }
 
