@@ -166,6 +166,8 @@ private:
     bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
     static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
 
+    static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
+
 public:
     RelationshipMappingInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMap const& ecdbMap) : ClassMappingInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
         m_customMapType(CustomMapType::None), m_allowDuplicateRelationships(false), 
