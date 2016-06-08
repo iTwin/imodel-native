@@ -120,7 +120,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_RootInstanceCreated_ShouldNotDeleteRo
     cache->GetECDb().SaveChanges();
 
     auto schema = ParseSchema(R"xml(
-        <ECSchema schemaName="UpgradeTestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchema schemaName="UpgradeTestSchema" nameSpacePrefix="UTS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass">
                 <ECProperty propertyName="TestProperty" typeName="string" />
             </ECClass>
