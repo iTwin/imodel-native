@@ -949,14 +949,48 @@ namespace IndexECPlugin.Source
                 IECInstance metadataInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == metadataClass.Name).Target;
                 IECInstance datasourceInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == dataSourceClass.Name).Target;
 
-                string metadata = datasourceInstance.GetPropertyValue("Metadata").StringValue;
-                string url = datasourceInstance.GetPropertyValue("MainURL").StringValue;
-                string type = datasourceInstance.GetPropertyValue("DataSourceType").StringValue;
-                string copyright = metadataInstance.GetPropertyValue("Legal").StringValue;
-                string id = datasourceInstance.GetPropertyValue("Id").StringValue;
-                long fileSize = (long) datasourceInstance.GetPropertyValue("FileSize").NativeValue;
+                string metadata = null;
+                if ( !datasourceInstance.GetPropertyValue("Metadata").IsNull )
+                    {
+                    metadata = datasourceInstance.GetPropertyValue("Metadata").StringValue;
+                    }
+
+                string url = null;
+                if ( !datasourceInstance.GetPropertyValue("MainURL").IsNull )
+                    {
+                    url = datasourceInstance.GetPropertyValue("MainURL").StringValue;
+                    }
+
+                string type = null;
+                if ( !datasourceInstance.GetPropertyValue("DataSourceType").IsNull )
+                    {
+                    type = datasourceInstance.GetPropertyValue("DataSourceType").StringValue;
+                    }
+
+                string copyright = null;
+                if ( !metadataInstance.GetPropertyValue("Legal").IsNull )
+                    {
+                    copyright = metadataInstance.GetPropertyValue("Legal").StringValue;
+                    }
+
+                string id = null;
+                if ( !datasourceInstance.GetPropertyValue("Id").IsNull )
+                    {
+                    id = datasourceInstance.GetPropertyValue("Id").StringValue;
+                    }
+
+                long fileSize = 0;
+                if(!datasourceInstance["FileSize"].IsNull)
+                    {
+                    fileSize = (long) datasourceInstance.GetPropertyValue("FileSize").NativeValue;
+                    }
                 ulong uFileSize = (fileSize > 0) ? (ulong) fileSize : 0;
-                string location = datasourceInstance.GetPropertyValue("LocationInCompound").StringValue;
+
+                string location = null;
+                if ( !datasourceInstance.GetPropertyValue("LocationInCompound").IsNull )
+                    {
+                    location = datasourceInstance.GetPropertyValue("LocationInCompound").StringValue;
+                    }
                 var classificationPropValue = entity.GetPropertyValue("Classification");
                 string classification = null;
                 if ( (classificationPropValue != null) && (!classificationPropValue.IsNull) )
