@@ -212,22 +212,19 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithRemoteSchemas_UsesE
 
 TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithLocalSchema_QueriesServerForRemoteSchemas)
     {
-    // Arrange
-    auto client = MockWSRepositoryClient::Create();
-    auto ds = CreateNewTestDataSource(client);
-    ASSERT_TRUE(nullptr != ds);
+    auto ds = GetTestDataSourceV1();
 
     // Act & Assert
     StubInstances schemas;
     schemas.Add({"MetaSchema.ECSchemaDef", "SchemaId"}, {{"Name", "TestSchema"}});
 
-    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+    EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
         .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
 
-    EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
+    EXPECT_CALL(GetMockClient(), SendGetSchemasRequest(_, _)).Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse("SchemaListETag")))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
@@ -243,21 +240,19 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithLocalSchema_Queries
 
 TEST_F(CachingDataSourceTests, UpdateSchemas_SchemaWithReferancedSchema_ImportsBothSchemas)
     {
-    // Arrange
-    auto client = MockWSRepositoryClient::Create();
-    auto ds = CreateNewTestDataSource(client);
+    auto ds = GetTestDataSourceV1();
 
     StubInstances schemas;
     schemas.Add({"MetaSchema.ECSchemaDef", "A"}, {{"Name", "SchemaWithReferance"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
     schemas.Add({"MetaSchema.ECSchemaDef", "B"}, {{"Name", "ReferancedSchema"}, {"VersionMajor", 1}, {"VersionMinor", 456}});
 
-    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+    EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
         .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
 
-    EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
+    EXPECT_CALL(GetMockClient(), SendGetSchemasRequest(_, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         Utf8String schemaXml =
@@ -267,7 +262,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemaWithReferancedSchema_ImportsB
         SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         Utf8String schemaXml =
@@ -289,21 +284,19 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemaWithReferancedSchema_ImportsB
 
 TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSchema_ImportsNewSchema)
     {
-    // Arrange
-    auto client = MockWSRepositoryClient::Create();
-    auto ds = CreateNewTestDataSource(client);
+    auto ds = GetTestDataSourceV1();
 
     // Initial schema
     StubInstances schemas1;
     schemas1.Add({"MetaSchema.ECSchemaDef", "B"}, {{"Name", "ReferancedSchema"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
 
-    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+    EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
         .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
 
-    EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
+    EXPECT_CALL(GetMockClient(), SendGetSchemasRequest(_, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas1.ToWSObjectsResponse()))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         Utf8String schemaXml =
@@ -320,10 +313,10 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSche
     schemas2.Add({"MetaSchema.ECSchemaDef", "A"}, {{"Name", "SchemaWithReferance"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
     schemas2.Add({"MetaSchema.ECSchemaDef", "B"}, {{"Name", "ReferancedSchema"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
 
-    EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
+    EXPECT_CALL(GetMockClient(), SendGetSchemasRequest(_, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas2.ToWSObjectsResponse()))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         Utf8String schemaXml =
@@ -333,7 +326,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSche
         SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         return CreateCompletedAsyncTask(StubWSFileResultNotModified());
@@ -351,23 +344,20 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSche
 
 TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_SkipsStandardSchemas)
     {
-    // Arrange
-    auto client = MockWSRepositoryClient::Create();
-    auto ds = CreateNewTestDataSource(client);
-    ASSERT_TRUE(nullptr != ds);
+    auto ds = GetTestDataSourceV1();
 
     // Act & Assert
     StubInstances schemas;
     schemas.Add({"MetaSchema.ECSchemaDef", "A"}, {{"Name", "Bentley_Standard_CustomAttributes"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
     schemas.Add({"MetaSchema.ECSchemaDef", "B"}, {{"Name", "CustomSchema"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
 
-    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+    EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
         .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
 
-    EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
+    EXPECT_CALL(GetMockClient(), SendGetSchemasRequest(_, _)).Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "B"), objectId);
@@ -379,6 +369,36 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_Skips
 
     auto result = ds->UpdateSchemas(nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsError)
+    {
+    auto ds = GetTestDataSourceV1();
+
+    // Act & Assert
+    StubInstances schemas;
+    schemas.Add({"MetaSchema.ECSchemaDef", "Foo"}, {{"Name", "Foo"}});
+
+    EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
+        .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(GetMockClient(), SendGetSchemasRequest(_, _)).Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
+
+    EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        SimpleWriteToFile("Not-a-schema", filePath);
+        return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, nullptr)));
+        }));
+
+    BeTest::SetFailOnAssert(false);
+    auto result = ds->UpdateSchemas(nullptr)->GetResult();
+    BeTest::SetFailOnAssert(true);
+
+    ASSERT_FALSE(result.IsSuccess());
+    ASSERT_EQ(ICachingDataSource::Status::InternalCacheError, result.GetError().GetStatus());
+    ASSERT_FALSE(result.GetError().GetMessage().empty());
     }
 
 TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError)
@@ -838,8 +858,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_SpecificParentInstance_Chil
 
 TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingRemoteData_ObjectIsCachedAndReturned)
     {
-    // Arrange
-    auto ds = CreateNewTestDataSource();
+    auto ds = GetTestDataSourceV1();
 
     // Act & Assert
     StubInstances instances;
@@ -867,8 +886,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingRemoteData_ObjectIsC
 
 TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingCachedDataAfterCached_ObjectIsReturned)
     {
-    // Arrange
-    auto ds = CreateNewTestDataSource();
+    auto ds = GetTestDataSourceV1();
 
     // Act & Assert
     StubInstances instances;
@@ -923,8 +941,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_SpecificParentInstance_
 
 TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingRemoteData_ObjectIsCachedAndReturned)
     {
-    // Arrange
-    auto ds = CreateNewTestDataSource();
+    auto ds = GetTestDataSourceV1();
 
     // Act & Assert
     StubInstances instances;
@@ -951,8 +968,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingRemoteData_Objec
 
 TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingCachedDataAfterCached_ObjectIsReturned)
     {
-    // Arrange
-    auto ds = CreateNewTestDataSource();
+    auto ds = GetTestDataSourceV1();
 
     // Act & Assert
     StubInstances instances;
@@ -978,8 +994,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingCachedDataAfterC
 
 TEST_F(CachingDataSourceTests, CacheNavigation_TwoLevelsCachedPreviouslyAsTemporary_RepeatsSameQueries)
     {
-    // Arrange
-    auto ds = CreateNewTestDataSource();
+    auto ds = GetTestDataSourceV1();
 
     // Act & Assert
     StubInstances instances1;
@@ -1023,8 +1038,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_TwoLevelsCachedPreviouslyAsTempor
 
 TEST_F(CachingDataSourceTests, CacheNavigation_OneLevelCachedPreviouslyAsTemporary_RepeatsSameQueryAndCachesResults)
     {
-    // Arrange
-    auto ds = CreateNewTestDataSource();
+    auto ds = GetTestDataSourceV1();
 
     // Act & Assert
     StubInstances instances1;
@@ -3611,6 +3625,201 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdate
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, ds->StartCacheTransaction().GetCache().GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile_ChecksIfRepositorySupportsFileAccessUrl)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_EQ("Policies/PolicyAssertion?$select=$id&$filter=Name+eq+'SupportsFileAccessUrl'+and+Supported+eq+true", query.ToFullString());
+        EXPECT_NE(nullptr, ct);
+        return CreateCompletedAsyncTask(WSObjectsResult::Error({}));
+        }));
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFileAndFileAccessUrlNotSupported_UploadsInstanceAndFileInOneRequest)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    auto filePath = txn.GetCache().ReadFilePath(instance);
+    ASSERT_TRUE(filePath.DoesPathExist());
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("Policies", query.GetSchemaName());
+        return CreateCompletedAsyncTask(StubWSObjectsResult());
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_EQ(filePath, path);
+        EXPECT_NE(nullptr, ct);
+
+        EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+            .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewRemoteId"}))));
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "NewRemoteId"}));
+        }));
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue().empty());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFileAndFileAccessUrlSupported_UploadsInstanceAndFileSeperately)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    auto filePath = txn.GetCache().ReadFilePath(instance);
+    ASSERT_TRUE(filePath.DoesPathExist());
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("Policies", query.GetSchemaName());
+        return CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()));
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_EQ(L"", path);
+        EXPECT_NE(nullptr, ct);
+
+        EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+            .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewRemoteId"}))));
+        return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "NewRemoteId"}));
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendUpdateFileRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_EQ(ObjectId("TestSchema.TestClass", "NewRemoteId"), objectId);
+        EXPECT_EQ(filePath, path);
+        EXPECT_NE(nullptr, ct);
+
+        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId("TestSchema.TestClass", "NewRemoteId"), _, _))
+            .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewRemoteId"}))));
+        return CreateCompletedAsyncTask(WSUpdateFileResult::Success());
+        }));
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue().empty());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFileAndFileAccessUrlSupportedAndCreationFails_DoesNotUploadFile)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    auto filePath = txn.GetCache().ReadFilePath(instance);
+    ASSERT_TRUE(filePath.DoesPathExist());
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("Policies", query.GetSchemaName());
+        return CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()));
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(L"", path);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error({WSError::Id::Conflict}));
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendUpdateFileRequest(_, _, _, _)).Times(0);
+
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    ASSERT_EQ(1, result.GetValue().size());
+    EXPECT_EQ(instance, ds->StartCacheTransaction().GetCache().FindInstance(result.GetValue()[0].GetObjectId()));
+    EXPECT_EQ(WSError::Id::Conflict, result.GetValue()[0].GetError().GetWSError().GetId());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFileAndCalledSecondTime_PoliciesCheckDoneOnce)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    auto filePath = txn.GetCache().ReadFilePath(instance);
+    ASSERT_TRUE(filePath.DoesPathExist());
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("Policies", query.GetSchemaName());
+        return CreateCompletedAsyncTask(StubWSObjectsResult());
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(filePath, path);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
+        }));
+
+    ASSERT_FALSE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(filePath, path);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
+        }));
+
+    ASSERT_FALSE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFileAndFileAccessUrlIsSupportedAndCalledSecondTime_PoliciesCheckDoneOnce)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto instance = StubCreatedFileInCache(txn.GetCache(), "TestSchema.TestClass");
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ("Policies", query.GetSchemaName());
+        return CreateCompletedAsyncTask(StubWSObjectsResult(StubObjectId()));
+        }));
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(L"", path);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
+        }));
+
+    ASSERT_FALSE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
+
+    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_EQ(L"", path);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
+        }));
+
+    ASSERT_FALSE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_DeletedObject_SendsDeleteObjectRequestWithCorrectParametersAndCommits)

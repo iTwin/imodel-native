@@ -134,7 +134,7 @@ std::ostream& operator << (std::ostream &o, ECClassCR value)
     o << Utf8String(value.GetFullName());
     return o;
     }
-
+    
 std::ostream& operator << (std::ostream &o, ECValueCR value)
     {
     o << Utf8String(value.ToString());

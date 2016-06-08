@@ -205,6 +205,12 @@ WSInfoResult StubWSInfoResult(BeVersion webApiVersion)
     return WSInfoResult::Success(WSInfo(StubWSInfoHttpResponseWebApi(webApiVersion)));
     }
 
+WSObjectsResult StubWSObjectsResult()
+    {
+    StubInstances instances;
+    return WSObjectsResult::Success(instances.ToWSObjectsResponse());
+    }
+
 WSObjectsResult StubWSObjectsResult(ObjectIdCR objectId)
     {
     StubInstances instances;
@@ -430,6 +436,13 @@ ECInstanceKey StubCreatedObjectInCache(IDataSourceCache& cache, IChangeManager::
         {
         EXPECT_TRUE(false);
         }
+    return instance;
+    }
+
+ECInstanceKey StubCreatedFileInCache(IDataSourceCache& cache, Utf8StringCR classKey, BeFileName filePath)
+    {
+    auto instance = StubCreatedObjectInCache(cache, classKey);
+    EXPECT_EQ(SUCCESS, cache.GetChangeManager().ModifyFile(instance, filePath, false));
     return instance;
     }
 

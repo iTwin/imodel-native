@@ -157,6 +157,7 @@
     <ClInclude Include="Published\WebServices\IMS\SolrQueryTests.h" />
     <ClInclude Include="Published\WebServices\IMS\SolrClientTests.h" />
     <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -327,6 +328,7 @@
     <ClCompile Include="Published\WebServices\IMS\SolrQueryTests.cpp" />
     <ClCompile Include="Published\WebServices\IMS\SolrClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

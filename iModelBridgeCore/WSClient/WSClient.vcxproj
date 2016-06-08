@@ -249,6 +249,7 @@
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
+    <ClInclude Include="Cache\SessionInfo.h" />
     <ClInclude Include="Cache\Util\StringHelper.h" />
     <ClInclude Include="Cache\SyncCachedDataTask.h" />
     <ClInclude Include="Cache\SyncCachedInstancesSeperatelyTask.h" />
@@ -406,6 +407,7 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <None Include=".hgignore" />
     <None Include="Azure\Azure.mki" />
     <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="CacheLib.mke" />
