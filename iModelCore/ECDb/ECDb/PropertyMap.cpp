@@ -19,8 +19,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, ECDbCR ecdb, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
     {
-    if (!ecProperty.HasId())
-        ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ecdb, ecProperty);
+    if (!ECDbSchemaPersistenceHelper::GetECPropertyId(ecdb, ecProperty).IsValid())
+        return nullptr;
 
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
     if (primitiveProperty != nullptr)

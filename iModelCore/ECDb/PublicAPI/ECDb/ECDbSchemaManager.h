@@ -71,11 +71,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 
         BentleyStatus BatchImportECSchemas(SchemaImportContext&, ECN::ECSchemaCacheR) const;
 
-        ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool ensureAllClassesLoaded) const;
-        //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded
-        //! @param[in] ecClass ECClass whose direct subclasses should be loaded
-        //! @return ::SUCCESS or ::ERROR
-        BentleyStatus EnsureDerivedClassesExist(ECN::ECClassCR) const;
+        ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId const&, bool loadSchemaEntities) const;
         //! Implementation of IECSchemaLocater
         virtual ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
 
@@ -110,17 +106,17 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 
         //! Get an ECSchema by name
         //! @param[in] schemaName Name (not full name) of the ECSchema to retrieve
-        //! @param[in] ensureAllClassesLoaded true, if all classes in the ECSchema should be proactively loaded into memory. false,
+        //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
         //!                                   if they are loaded on-demand.
         //! @return The retrieved ECSchema or nullptr if not found
-        ECDB_EXPORT ECN::ECSchemaCP GetECSchema(Utf8CP schemaName, bool ensureAllClassesLoaded = true) const;
+        ECDB_EXPORT ECN::ECSchemaCP GetECSchema(Utf8CP schemaName, bool loadSchemaEntities = true) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @param[out] schemas The retrieved list of ECSchemas
-        //! @param[in] ensureAllClassesLoaded true, if all classes in the ECSchema should be proactively loaded into memory. false,
+        //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
         //!                                   if they are loaded on-demand.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR
-        ECDB_EXPORT BentleyStatus GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool ensureAllClassesLoaded = true) const;
+        ECDB_EXPORT BentleyStatus GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool loadSchemaEntities = true) const;
 
         //! Gets the ECClass for the specified name.
         //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
@@ -132,7 +128,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! Gets the ECClass for the specified ECClassId.
         //! @param[in] ecClassId Id of the ECClass to retrieve
         //! @return The retrieved ECClass or nullptr if not found
-        ECDB_EXPORT ECN::ECClassCP GetECClass(ECN::ECClassId ecClassId) const;
+        ECDB_EXPORT ECN::ECClassCP GetECClass(ECN::ECClassId const& ecClassId) const;
 
         //! Gets the ECClassId for the ECClass with the specified name.
         //! @param[out] id ECClassId of the requested ECClass.
@@ -167,6 +163,12 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! @return The retrieved ECEnumeration or nullptr if not found
         ECDB_EXPORT ECN::ECEnumerationCP GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
 
+        //! Gets the KindOfQuantity for the specified name.
+        //! @param[in] schemaName Name (not full name) of the schema containing the KindOfQuantity
+        //! @param[in] koqName Name of the KindOfQuantity to be retrieved
+        //! @return The retrieved KindOfQuantity or nullptr if not found
+        ECDB_EXPORT ECN::KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
+
         //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
         //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
         //! @note The views are strictly intended for developers for debugging purpose only. They should not be used in application code. 
@@ -175,21 +177,6 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
 
 #if !defined (DOCUMENTATION_GENERATOR)    
-        //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
-        //! and therefore doesn't have the persistent ECClassId set. Generally, we would prefer that the primary ECSchema had
-        //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
-        static ECN::ECClassId GetClassIdForECClassFromDuplicateECSchema(ECDbCR, ECN::ECClassCR);
-
-        //! For cases where we are working with an ECProperty in a referenced ECSchema that is a duplicate of one already persisted
-        //! and therefore doesn't have the persistent ECPropertyId set. Generally, we would prefer that the primary ECSchema had
-        //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
-        static ECN::ECPropertyId GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR, ECN::ECPropertyCR);
-
-        //! For cases where we are working with an ECSchema in a referenced ECSchema that is a duplicate of one already persisted
-        //! and therefore doesn't have the persistent ECSchemaId set. Generally, we would prefer that the primary ECSchema had
-        //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
-        static ECN::ECSchemaId GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR, ECN::ECSchemaCR);
-
         void ClearCache() const;
         ECDbCR GetECDb() const;
 #endif
