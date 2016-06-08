@@ -24,7 +24,7 @@ struct SystemPropertyMap : PropertyMap
         virtual bool _IsVirtual() const override { return !m_columns.front().expired() && m_columns.front().lock()->GetPersistenceType() == PersistenceType::Virtual; }
         virtual bool _IsSystemPropertyMap() const override { return true; }
         virtual void _GetColumns(std::vector<DbColumn const*>& columns) const override;
-
+        virtual void _QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const override;
     protected:
         SystemPropertyMap(ECN::ECPropertyCR, std::vector<DbColumn const*>, ECSqlSystemProperty);
         SystemPropertyMap(SystemPropertyMap const& proto)
