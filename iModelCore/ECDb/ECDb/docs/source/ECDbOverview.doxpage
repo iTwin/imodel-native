@@ -116,7 +116,8 @@
     @li @subpage ECDbTransactions
     @li @subpage ECDbECSchemaImportAndUpdate
     @li @subpage ECDbECSchemaRules
-    @li @subpage ECDbRelationshipMappingRules
+    @li @subpage ECDbRelationshipRules
+    @li @subpage ECDbRelationshipInheritanceRules
     @li @subpage ECDbSchemaMappingCustomization
     @li @subpage ECDbFileInfo
     @li @subpage ECDbCreatingECDbFromScratch
@@ -300,7 +301,7 @@
     */
 
     /**
-    @page ECDbRelationshipMappingRules Rules for ECRelationshipClasses in ECDb
+    @page ECDbRelationshipRules Rules for ECRelationshipClasses in ECDb
     The specification of @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" allows for constructs which don't necessarily
     lead to a good database design. ECDb therefore only supports @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" that 
     can be mapped to a reasonable database layout.
@@ -394,6 +395,26 @@
 
     @see @ref ECDbOverview
     */
+
+    /**
+    @page ECDbRelationshipInheritanceRules Inheriting ECRelationshipClasses in ECDb
+    
+    In addition to the rules for @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" inheritance specified by the EC specification, 
+    %ECDb has some more:
+
+    - The @b ForeignKeyRelationshipMap and @b LinkTableRelationshipMap custom attributes (see @ref ECDbSchemaMappingCustomization) can only 
+    be applied to the @b root of the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" hierarchy. The @root is the ECRelationshipClass which
+    does not have a base class itself.
+    - The mapping type must not change within a relationship class hierarchy. In other words, the @ref BentleyApi::ECN::ECRelationshipClass "Root ECRelationshipClass"
+    determines the mapping for the entire hierarchy.
+    - This implies in particular that if the root class implies a <em>foreign key type mapping</em>, the subclasses must 
+    not add ECProperties, because ECRelationshipClasses with ECProperties are only supported when mapped as link tables.
+    - Link tables implicity use the @b SharedTable strategy if they store an ECRelationshipClass hierarchy.
+    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
+
+    @see @ref ECDbRelationshipRules
+    @see @ref ECDbSchemaMappingCustomization
+    @see @ref ECDbOverview
 
     /**
     @page ECDbSchemaMappingCustomization Customizing the ECDb schema mapping
@@ -575,7 +596,7 @@
 
     @section CustomRelationshipMapDescription Custom mapping for ECRelationshipClasses
 
-    Please read @ref ECDbRelationshipMappingRules before.
+    Please read @ref ECDbRelationshipRules before.
 
     Customizing the mapping for an ECRelationshipClass is done by applying either the @b ForeignKeyRelationshipMap or the @b LinkTableRelationshipMap
     custom attribute to the respective ECRelationshipClass. (ECDb will only look for it in local attributes on the ECRelationshipClass)
