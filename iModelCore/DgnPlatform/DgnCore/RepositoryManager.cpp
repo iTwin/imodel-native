@@ -441,8 +441,6 @@ void BriefcaseManager::InsertCodes(DgnCodeSet const& codes, TableType tableType)
         stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
         stmt->Step();
         }
-
-    //Save();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -503,7 +501,6 @@ RepositoryStatus BriefcaseManager::Remove(DgnCodeSet const& codes)
     if (BE_SQLITE_OK != stmt->Step())
         return RepositoryStatus::SyncError;
 
-    //Save();
     return RepositoryStatus::Success;
     }
 
@@ -771,10 +768,7 @@ RepositoryStatus BriefcaseManager::AcquireLocks(LockRequestR locks, bool cull)
     std::swap(locks, req.Locks());
 
     if (RepositoryStatus::Success == result)
-        {
         InsertLocks(locks, TableType::Owned, true);
-        //Save();
-        }
 
     return result;
     }
@@ -850,7 +844,6 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req, Requ
         if (s_supportFastQuery)
             return DoFastQuery(req);
 
-        // ###TODO: Respect FastQuery...
         purpose = RequestPurpose::Query;
         }
 
@@ -863,7 +856,6 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req, Requ
         {
         InsertCodes(req.Codes(), TableType::Owned);
         InsertLocks(req.Locks(), TableType::Owned, true);
-        //Save();
         }
 
     return response;
@@ -923,7 +915,7 @@ RepositoryStatus BriefcaseManager::FastQueryLocks(Response& response, LockReques
         if (!wantDetails)
             break;
 
-        // ###TODO? Callers who want fast query in general are not interested in detailed ResponseOptions, and we don't have all of the details to provide anyway...
+        // NB: FastQuery cannot supply all ownership/revision details...callers who care can check the RequestPurpose of the Response and query server for details.
         LockableId id(static_cast<LockableType>(stmt->GetValueInt(0)), BeInt64Id(stmt->GetValueUInt64(1)));
         auto level = static_cast<LockLevel>(stmt->GetValueInt(2));
 
@@ -956,7 +948,7 @@ RepositoryStatus BriefcaseManager::FastQueryCodes(Response& response, DgnCodeSet
         if (!wantDetails)
             break;
 
-        // ###TODO? Callers who want fast query in general are not interested in detailed ResponseOptions, and we don't have all of the details to provide anyway...
+        // NB: FastQuery cannot supply all ownership/revision details...callers who care can check the RequestPurpose of the Response and query server for details.
         DgnCode code(stmt->GetValueId<DgnAuthorityId>(CodeColumn::AuthorityId), stmt->GetValueText(CodeColumn::Value), stmt->GetValueText(CodeColumn::NameSpace));
         DgnCodeInfo details(code);
         details.SetReserved(BeSQLite::BeBriefcaseId());
@@ -1303,10 +1295,7 @@ RepositoryStatus BriefcaseManager::_OnFinishRevision(DgnRevision const& rev)
 void BriefcaseManager::_OnElementInserted(DgnElementId id)
     {
     if (LocksRequired() && Validate())
-        {
         InsertLock(LockableId(id), LockLevel::Exclusive, TableType::Owned);
-        //Save();
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
