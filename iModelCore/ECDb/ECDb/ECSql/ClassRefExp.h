@@ -41,6 +41,7 @@ struct RangeClassRefExp : ClassRefExp
 private:
     Utf8String m_alias;
     bool m_isPolymorphic;
+
     virtual Utf8StringCR _GetId() const = 0;
     virtual bool _ContainProperty(Utf8CP propertyName) const = 0;
     virtual BentleyStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
@@ -56,10 +57,8 @@ public:
     Utf8StringCR GetAlias() const { return m_alias;}
     bool IsPolymorphic() const { return m_isPolymorphic;}
 
-    BentleyStatus CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const;
-
-    bool ContainProperty(Utf8CP propertyName) const;
-    
+    BentleyStatus CreatePropertyNameExpList(std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const { return _CreatePropertyNameExpList(addDelegate); }
+    bool ContainProperty(Utf8CP propertyName) const { return _ContainProperty(propertyName); }
     void SetAlias (Utf8StringCR alias) { m_alias = alias;}
    };
 
@@ -95,43 +94,12 @@ private:
     Utf8String m_catalogName;
     std::shared_ptr<Info> m_info;
 
-    virtual Utf8StringCR _GetId() const override
-        {
-        if (GetAlias().empty())
-            return m_className;
-
-        return GetAlias();
-        }
-
-    virtual bool _ContainProperty(Utf8CP propertyName) const override
-        {
-        PRECONDITION(m_info != nullptr, false);
-        auto propertyMap = m_info->GetMap().GetPropertyMap(propertyName);
-        return propertyMap != nullptr;
-        }
-
-    virtual BentleyStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
-
-    virtual Utf8String _ToECSql() const override
-        {
-        Utf8String tmp;
-        if (!IsPolymorphic())
-            tmp.append("ONLY ");
-
-        tmp.append(GetFullName());
-
-        if (!GetAlias().empty())
-            tmp.append(" ").append(GetAlias());
-        return tmp;
-        }
-
-    virtual Utf8String _ToString () const override
-        {
-        Utf8String str ("ClassName [Catalog: ");
-        str.append (m_catalogName.c_str ()).append (", Schema prefix: ").append (m_schemaPrefix.c_str ());
-        str.append (", Class: ").append (m_className).append (", Alias: ").append (GetAlias ()).append ("]");
-        return str;
-        }
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+    virtual Utf8StringCR _GetId() const override;
+    virtual bool _ContainProperty(Utf8CP propertyName) const override;
+    virtual BentleyStatus _CreatePropertyNameExpList(std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString () const override;
 
 public:
     ClassNameExp(Utf8CP className, Utf8CP schemaPrefix, Utf8CP catalog, std::shared_ptr<Info> info, bool isPolymorphic = true)
