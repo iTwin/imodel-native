@@ -2345,7 +2345,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
         .AddRelated({"TestSchema.TestDerivedRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"}, {}, ECRelatedInstanceDirection::Forward);
 
     WSQuery query("TestSchema", "TestClass");
-    query.SetSelect("*,TestRelationshipClass!poly-forward-TestClass.*");
+    query.SetSelect("*,TestAbstractRelationshipClass!poly-forward-TestClass.*");
 
     bset<ObjectId> rejected;
     EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));

@@ -144,8 +144,16 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                     <Class class="TestClass" />
                 </Target>
             </ECRelationshipClass>
+            <ECRelationshipClass typeName="TestAbstractRelationshipClass" isDomainClass="false" strength="referencing" strengthDirection="forward">
+                <Source cardinality="(0,N)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Source>
+                <Target cardinality="(0,N)" polymorphic="True">
+                    <Class class="TestClass" />
+                </Target>
+            </ECRelationshipClass>
             <ECRelationshipClass typeName="TestDerivedRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
-                <BaseClass>TestRelationshipClass</BaseClass>
+                <BaseClass>TestAbstractRelationshipClass</BaseClass>
                 <Source cardinality="(0,N)" polymorphic="True">
                     <Class class="TestClass" />
                 </Source>
@@ -193,7 +201,7 @@ ECSchemaPtr BaseCacheTest::GetTestSchema2()
 
 BeFileName BaseCacheTest::GetTestSchemaPath()
     {
-    BeFileName testSchemaPath(GetTestsTempDir().AppendToPath(L"TestSchema"));
+    BeFileName testSchemaPath(GetTestsTempDir().AppendToPath(L"TestSchema.xml"));
 
     if (!testSchemaPath.DoesPathExist())
         {
