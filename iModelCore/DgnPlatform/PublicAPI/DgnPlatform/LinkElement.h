@@ -80,7 +80,7 @@ public:
 //=======================================================================================
 //! LinkElement
 //=======================================================================================
-struct LinkElement : InformationElement
+struct EXPORT_VTABLE_ATTRIBUTE LinkElement : InformationElement
 {
     DEFINE_T_SUPER(InformationElement)
 
