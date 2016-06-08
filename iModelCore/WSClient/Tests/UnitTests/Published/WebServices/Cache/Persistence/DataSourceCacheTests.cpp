@@ -87,84 +87,72 @@ TEST_F(DataSourceCacheTests, Open_ExistingDbWithNoDefaultTransaction_Success)
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
-
-    BentleyStatus result = cache.UpdateSchemas(std::vector<BeFileName> {});
-
-    EXPECT_EQ(SUCCESS, result);
+    auto cache = GetTestCache();
+    EXPECT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<BeFileName> {}));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_PathPasssed_SuccessAndSchemaAccessable)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
+    auto cache = GetTestCache();
 
     BeFileName schemaPath = GetTestSchemaPath();
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<BeFileName> {schemaPath}));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<BeFileName> {schemaPath}));
 
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema"));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassed_SuccessAndSchemasAccessable)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema(), GetTestSchema2() }));
+    auto cache = GetTestCache();
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema(), GetTestSchema2() }));
 
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema2"));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema"));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
-TEST_F(DataSourceCacheTests, UpdateSchema_RootInstanceCreated_ShouldNotDeleteRootInstance)
+TEST_F(DataSourceCacheTests, UpdateSchemas_RootInstanceCreated_ShouldNotDeleteRootInstance)
     {
-    DataSourceCache cache;
-    cache.Create(StubFilePath("test.ecdb"), CacheEnvironment());
+    auto cache = GetTestCache();
 
-    auto root1 = cache.FindOrCreateRoot("Foo");
+    auto root1 = cache->FindOrCreateRoot("Foo");
     ASSERT_TRUE(root1.IsValid());
 
-    cache.GetECDb().SaveChanges();
+    cache->GetECDb().SaveChanges();
 
     auto schema = ParseSchema(R"xml(
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchema schemaName="UpgradeTestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass">
                 <ECProperty propertyName="TestProperty" typeName="string" />
             </ECClass>
         </ECSchema>)xml");
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
 
-    cache.GetECDb().SaveChanges();
+    cache->GetECDb().SaveChanges();
 
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema"));
 
-    auto root2 = cache.FindOrCreateRoot("Foo");
+    auto root2 = cache->FindOrCreateRoot("Foo");
     ASSERT_TRUE(root2.IsValid());
     EXPECT_EQ(root1, root2);
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
+    auto cache = GetTestCache();
 
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
-    ASSERT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "A"}));
+    ASSERT_TRUE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
 
-    ASSERT_EQ(SUCCESS, cache.LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "A"}));
-    ASSERT_TRUE(cache.FindInstance({"TestSchema.TestClass", "A"}).IsValid());
-
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema2()}));
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema2"));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema2()}));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
+    auto cache = GetTestCache();
 
     auto schema1 = ParseSchema(
-        R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass" >
                 <ECProperty propertyName="A" typeName="string" />
                 <ECProperty propertyName="B" typeName="string" />
@@ -172,29 +160,28 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDat
         </ECSchema>)xml");
 
     auto schema2 = ParseSchema(
-        R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass" >
                 <ECProperty propertyName="A" typeName="string" />
             </ECClass>
         </ECSchema>)xml");
 
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
-    ASSERT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
 
-    ASSERT_EQ(SUCCESS, cache.LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "Foo"}));
-    ASSERT_TRUE(cache.FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, {"UpdateSchema.TestClass", "Foo"}));
+    ASSERT_TRUE(cache->FindInstance({"UpdateSchema.TestClass", "Foo"}).IsValid());
 
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
+    auto cache = GetTestCache();
 
     BeTest::SetFailOnAssert(false);
-    BentleyStatus result = cache.UpdateSchemas(std::vector<ECSchemaPtr> {nullptr});
+    BentleyStatus result = cache->UpdateSchemas(std::vector<ECSchemaPtr> {nullptr});
     BeTest::SetFailOnAssert(true);
 
     EXPECT_EQ(ERROR, result);
@@ -202,14 +189,13 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate)
     {
-    MockECDbSchemaChangeListener listener;
+    auto cache = GetTestCache();
 
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
-    cache.RegisterSchemaChangeListener(&listener);
+    MockECDbSchemaChangeListener listener;
+    cache->RegisterSchemaChangeListener(&listener);
 
     EXPECT_CALL(listener, OnSchemaChanged()).Times(2);
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListenerOnceTransactionIsStarted)
@@ -249,14 +235,12 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
-
+    auto cache = GetTestCache();
     auto path = GetTestsAssetsDir().AppendToPath(L"ECSchemas/WSClient/Cache/MetaSchema.02.00.ecschema.xml");
 
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<BeFileName> {path}));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<BeFileName> {path}));
 
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("MetaSchema"));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("MetaSchema"));
     }
 
 TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullInstance)
