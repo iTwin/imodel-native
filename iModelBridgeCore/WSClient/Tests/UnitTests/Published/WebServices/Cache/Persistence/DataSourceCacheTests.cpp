@@ -120,7 +120,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_RootInstanceCreated_ShouldNotDeleteRo
     cache->GetECDb().SaveChanges();
 
     auto schema = ParseSchema(R"xml(
-        <ECSchema schemaName="UpgradeTestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchema schemaName="UpgradeTestSchema" nameSpacePrefix="UTS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass">
                 <ECProperty propertyName="TestProperty" typeName="string" />
             </ECClass>
@@ -235,10 +235,14 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
     {
+    DataSourceCache cache;
     cache.Create(BeFileName(":memory:"), CacheEnvironment());
 
+    auto path = GetTestsAssetsDir().AppendToPath(L"ECSchemas/WSClient/Cache/WSCacheMetaSchema.03.00.ecschema.xml");
 
+    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<BeFileName> {path}));
 
+    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("WSCacheMetaSchema"));
     }
 
 TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullInstance)
@@ -712,6 +716,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWithWea
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWitStrongLink_InstancesCached)
     {
     auto cache = GetTestCache();
 
@@ -850,21 +855,21 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Temporary));
     ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
 
-    EXPECT_TRUE(cache->ReadFilePath({ "TestSchema.TestClass", "Foo" }).DoesPathExist());
+    EXPECT_TRUE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
 
     EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
 
-    EXPECT_FALSE(cache->ReadFilePath({ "TestSchema.TestClass", "Foo" }).DoesPathExist());
+    EXPECT_FALSE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
     }
 
 TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndOldFileCachedToPersistent_DeletesFile)
     {
     auto cache = GetTestCache();
-    cache->LinkInstanceToRoot("foo_root", { "TestSchema.TestClass", "Foo" });
+    cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
     cache->SetupRoot("foo_root", CacheRootPersistence::Temporary);
-    cache->CacheFile({ "TestSchema.TestClass", "Foo" }, StubWSFileResponse(StubFile()), FileCache::Persistent);
+    cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent);
 
-    BeFileName cacheFileName = cache->ReadFilePath({ "TestSchema.TestClass", "Foo" });
+    BeFileName cacheFileName = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(cacheFileName.DoesPathExist());
 
     int64_t unixMs;
@@ -880,7 +885,7 @@ TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSe
     BentleyStatus status = cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime);
 
     EXPECT_EQ(SUCCESS, status);
-    EXPECT_FALSE(cache->ReadFilePath({ "TestSchema.TestClass", "Foo" }).DoesPathExist());
+    EXPECT_FALSE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
     }
 
 TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndNewFileCachedToPersistent_LeavesFile)
@@ -890,7 +895,7 @@ TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSe
     cache->SetupRoot("foo_root", CacheRootPersistence::Temporary);
     cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent);
 
-    BeFileName cacheFileName = cache->ReadFilePath({ "TestSchema.TestClass", "Foo" });
+    BeFileName cacheFileName = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(cacheFileName.DoesPathExist());
 
     int64_t unixMs;
@@ -4502,8 +4507,8 @@ TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndNotCached_InvalidKey)
     ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
 
     EXPECT_FALSE(instanceKey.IsValid());
-    } 
-    
+    }
+
 TEST_F(DataSourceCacheTests, CacheFile_PersistentFileCached_CorrectECDbExternalFileInfoCreated)
     {
     auto cache = GetTestCache();
@@ -4589,23 +4594,6 @@ TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdRemoteId_InvalidKey
 
     EXPECT_FALSE(instanceKey.IsValid());
     EXPECT_EQ(cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId(), instanceKey.GetECClassId());
-    }
-
-TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdClass_EmptyKey)
-    {
-    auto cache = GetTestCache();
-
-    ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.NonExistingClass", "Foo"});
-
-    EXPECT_FALSE(instanceKey.IsValid());
-    EXPECT_EQ(ECInstanceKey(), instanceKey);
-    }
-
-TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdRemoteId_InvalidKey)
-    {
-    auto cache = GetTestCache();
-    ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
-    EXPECT_FALSE(instanceKey.IsValid());
     }
 
 TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdClass_EmptyKey)

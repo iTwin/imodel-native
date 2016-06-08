@@ -397,7 +397,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsE
     BeTest::SetFailOnAssert(true);
 
     ASSERT_FALSE(result.IsSuccess());
-    ASSERT_EQ(ICachingDataSource::Status::InternalCacheError, result.GetError().GetStatus());
+    ASSERT_EQ(ICachingDataSource::Status::RepositorySchemaError, result.GetError().GetStatus());
     ASSERT_FALSE(result.GetError().GetMessage().empty());
     }
 

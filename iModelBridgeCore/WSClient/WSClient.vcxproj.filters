@@ -977,6 +977,18 @@
     <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cache\SessionInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -1026,5 +1038,6 @@
     <None Include="ConnectC\ConnectC.mki" />
     <None Include="CWSClientCLib.mke" />
     <None Include="CWSClientCPrewire.mke" />
+    <None Include=".hgignore" />
   </ItemGroup>
 </Project>
