@@ -263,9 +263,15 @@
     - @b CustomAttributes on the ECRelationshipConstraint
         - @b Add, @b delete, @b modify
     
-    @note The CustomAttributes from the @b ECDbMap ECSchema cannot be added, deleted, or modified as they
-    impact the mapping of the ECSchemas and therefore the layout of the database schema.
+    ### ECDbMap ECSchema Custom Attributes
 
+    Generally, the Custom Attributes from the @b ECDbMap ECSchema cannot be added, deleted, or modified if they affected the mapping of the ECSchemas and 
+    therefore the layout of the database schema.
+
+    #### DbIndex ECStructClass
+    - @b Modify: 
+        - @ref BentleyApi::ECN::ECDbClassMap::DbIndex::GetName "Name"
+        
     @see @ref ECDbOverview
     */
 
@@ -276,9 +282,10 @@
     Rules already enforced by ECObjects are not listed here.
 
     ### ECRelationshipClasses
-    - ECDb only enforces the @ref BentleyApi::ECN::RelationshipCardinality "ECRelationshipConstraint multiplicities" 
+    - %ECDb only enforces the @ref BentleyApi::ECN::RelationshipCardinality "ECRelationshipConstraint multiplicities" 
     common to databases: (0..1), (1..1), (0..N), (1..N).
     Abitrary numbers for the lower and upper bound of the multiplicity are not enforced.
+    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
      
     ### Enumerations
     - %ECDb does not enforce @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" 
