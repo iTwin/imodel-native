@@ -625,13 +625,6 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     std::vector<PropertyDbMapping const*> allPropertyMappings;
     classMapping.GetPropertyMappings(allPropertyMappings, true);
 
-    std::set<Utf8CP, CompareIUtf8Ascii> localPropSet;
-    for (auto property : GetClass().GetProperties(false))
-        {
-        localPropSet.insert(property->GetName().c_str());
-        }
-
-    localPropSet.insert(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
     std::set<DbTable*> tables;
     std::set<DbTable*> joinedTables;
 
