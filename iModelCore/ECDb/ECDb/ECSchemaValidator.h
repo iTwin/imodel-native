@@ -41,6 +41,8 @@ struct ECSchemaValidationRule
         //+===============+===============+===============+===============+===============+======
         enum Type
             {
+            CaseInsensitiveClassNames, //!< Names of ECClasses within one ECSchema must be case insensitive, i.e. must not only differ by case
+            CaseInsensitivePropertyNames, //!< Names of ECProperties within one ECClass must be case insensitive, i.e. must not only differ by case
             SchemaNamespacePrefix,
             NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
             ValidRelationshipConstraints
@@ -112,6 +114,87 @@ struct ECSchemaValidationResult : NonCopyableClass
 
 //**************************** Subclasses *********************************************
 
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      06/2014
+//+===============+===============+===============+===============+===============+======
+struct CaseInsensitiveClassNamesRule : ECSchemaValidationRule
+    {
+    public:
+        //=======================================================================================
+        // @bsiclass                                                Krischan.Eberle      06/2014
+        //+===============+===============+===============+===============+===============+======
+        struct Error : ECSchemaValidationRule::Error
+            {
+            public:
+                typedef bmap<Utf8CP, bset<ECN::ECClassCP>, CompareIUtf8Ascii> InvalidClasses;
+
+            private:
+                InvalidClasses m_invalidClasses;
+
+                virtual Utf8String _ToString() const override;
+
+            public:
+                explicit Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
+                ~Error() {}
+
+                InvalidClasses const& GetInvalidClasses() const { return m_invalidClasses; }
+                InvalidClasses& GetInvalidClassesR() { return m_invalidClasses; }
+            };
+
+    private:
+        bset<Utf8CP, CompareIUtf8Ascii> m_classNameSet;
+        mutable std::unique_ptr<Error> m_error;
+
+        virtual bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR) override;
+        virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+
+    public:
+        CaseInsensitiveClassNamesRule();
+        ~CaseInsensitiveClassNamesRule() {}
+    };
+
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      06/2014
+//+===============+===============+===============+===============+===============+======
+struct CaseInsensitivePropertyNamesRule : ECSchemaValidationRule
+    {
+    private:
+        //=======================================================================================
+        // @bsiclass                                                Krischan.Eberle      06/2014
+        //+===============+===============+===============+===============+===============+======
+        struct Error : ECSchemaValidationRule::Error
+            {
+            public:
+                typedef bmap<Utf8CP, bset<ECN::ECPropertyCP>, CompareIUtf8Ascii> InvalidProperties;
+
+            private:
+                ECN::ECClassCR m_ecClass;
+                InvalidProperties m_invalidProperties;
+
+                virtual Utf8String _ToString() const override;
+
+            public:
+                Error(Type ruleType, ECN::ECClassCR ecClass)
+                    : ECSchemaValidationRule::Error(ruleType), m_ecClass(ecClass)
+                    {}
+
+                ~Error() {}
+
+                InvalidProperties const& GetInvalidProperties() const { return m_invalidProperties; }
+                InvalidProperties& GetInvalidPropertiesR() { return m_invalidProperties; }
+            };
+
+        bset<Utf8CP, CompareIUtf8Ascii> m_propertyNameSet;
+        mutable std::unique_ptr<Error> m_error;
+
+        virtual bool _ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;
+        virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+
+    public:
+        explicit CaseInsensitivePropertyNamesRule(ECN::ECClassCR ecClass);
+        ~CaseInsensitivePropertyNamesRule() {}
+    };
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2014
 //+===============+===============+===============+===============+===============+======
