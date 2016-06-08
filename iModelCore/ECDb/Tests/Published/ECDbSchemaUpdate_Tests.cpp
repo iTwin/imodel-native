@@ -172,7 +172,7 @@ void ExecuteECSQL(ECDbCR ecdb, Utf8CP ecsql, DbResult stepStatus, ECSqlStatus pr
                                                                     ASSERT_EQ(PREPARESTATUS, stmt.Prepare(ECDB_OBJ, ECSQL));\
                                                                     if (PREPARESTATUS == ECSqlStatus::Success)\
                                                                         ASSERT_EQ(STEPSTATUS, stmt.Step());\
-                                                                   } 
+                                                                   }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
@@ -793,9 +793,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
     ASSERT_STREQ("this is modified property", statement.GetValueText(1));
 
     //Verify class and Property accessible using new ECSchemaPrefix
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT TestProperty FROM ts_modified.TestClass");
 
     //verify CA changes
     testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
@@ -1916,20 +1914,10 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(S,D,L) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(S,D,L) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(S,D,L) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(S,D,L) VALUES ('test4', 13.3, 2345)");
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Foo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
@@ -1958,8 +1946,8 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT S, D, L FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT S, D, L FROM ts.Goo");
 
     //Add Foo Again===============================================================================================
     SchemaItem addFoo(
@@ -1986,11 +1974,11 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT S, D, L FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT S, D, L FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)");
     }
 
 /*********************************************************************Example Scenario******************************************************************************************
@@ -2037,16 +2025,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
@@ -2058,10 +2036,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     testItems.push_back(std::make_pair("ts_Goo", 8));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
+
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     SchemaItem deleteFoo(
@@ -2099,8 +2078,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     testItems.push_back(std::make_pair("ts_Goo", 8));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     //Deleting Class with ECDbMap CA is expected to be supported
@@ -2153,8 +2132,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     testItems.push_back(std::make_pair("ts_Goo", 5));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     SchemaItem addFoo(
@@ -2198,11 +2177,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     testItems.push_back(std::make_pair("ts_Goo", 8));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::Success, BE_SQLITE_DONE);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2241,16 +2220,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //following table should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -2264,10 +2233,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -2307,8 +2276,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     //Deleting Class with SharedTable:SharedColumns is expected to be supported
@@ -2364,8 +2333,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 5));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     //Adding new derived entity class is expected to be supported
@@ -2413,11 +2382,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2457,16 +2426,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //following table should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -2480,10 +2439,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_minimumSharedColumn");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -2524,8 +2483,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_MinimumSharedColumn");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     //Deleting Class with SharedTable_SharedColumns_minimumSharedColumn is expected to be supported
@@ -2582,8 +2541,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_minimumSharedColumn");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     //Adding new derived entity class is expected to be supported
@@ -2633,11 +2592,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 10));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_minimumSharedColumn");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test1', 1.3, 334, 1, 11)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test1', 1.3, 334, 1, 11)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2683,16 +2642,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //following table should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -2717,10 +2666,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -2760,8 +2709,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_DisableSharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     //Deleting Class with SharedTable_SharedColumns_minimumSharedColumn is expected to be supported
@@ -2828,8 +2777,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     //Adding new derived entity class is expected to be supported
@@ -2888,11 +2837,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2935,16 +2884,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -2962,10 +2901,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3010,8 +2949,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
     //Verify Number of columns
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3136,8 +3075,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
     testItems.push_back(std::make_pair("ts_Goo", 5));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     GetECDb().SaveChanges();
@@ -3192,11 +3131,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3239,16 +3178,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -3266,10 +3195,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3314,8 +3243,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     //Verify Number of columns
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3440,8 +3369,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 5));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     GetECDb().SaveChanges();
@@ -3496,11 +3425,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3544,16 +3473,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -3571,10 +3490,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3620,8 +3539,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
     //Verify Number of columns
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3749,8 +3668,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     GetECDb().SaveChanges();
@@ -3807,11 +3726,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
     testItems.push_back(std::make_pair("ts_Goo", 10));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI, FI1 FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL, FI, FI1 FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test1', 1.3, 334, 1, 11)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test1', 1.3, 334, 1, 11)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3862,16 +3781,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -3899,10 +3808,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3950,8 +3859,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTable_SharedColumns_DisableSharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     GetECDb().SaveChanges();
@@ -4091,8 +4000,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     GetECDb().SaveChanges();
@@ -4158,11 +4067,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL, FI FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
     }
 
 //---------------------------------------------------------------------------------------
