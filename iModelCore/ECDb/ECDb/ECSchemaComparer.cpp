@@ -248,10 +248,9 @@ BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchema
     if (CompareECEnumerations(change.Enumerations(), a.GetEnumerations(), b.GetEnumerations()) != SUCCESS)
         return ERROR;
 
-#ifdef KIND_OF_QUANTITY_SUPPORT
     if (CompareKindOfQuantities(change.KindOfQuantities(), a.GetKindOfQuantities(), b.GetKindOfQuantities()) != SUCCESS)
         return ERROR;
-#endif
+
     if (CompareReferences(change.References(), a.GetReferencedSchemas(), b.GetReferencedSchemas()) != SUCCESS)
         return ERROR;
 
@@ -674,7 +673,6 @@ BentleyStatus ECSchemaComparer::CompareECEnumerations(ECEnumerationChanges& chan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-#ifdef KIND_OF_QUANTITY_SUPPORT
 BentleyStatus ECSchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
     {
     std::map<Utf8CP, KindOfQuantityCP, CompareIUtf8Ascii> aMap, bMap, cMap;
@@ -714,7 +712,6 @@ BentleyStatus ECSchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges&
 
     return SUCCESS;
     }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -954,7 +951,6 @@ BentleyStatus ECSchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-#ifdef KIND_OF_QUANTITY_SUPPORT
 BentleyStatus ECSchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b)
     {
     if (a.GetName() != b.GetName())
@@ -1003,7 +999,6 @@ BentleyStatus ECSchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& chan
         }
     return SUCCESS;
     }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1098,11 +1093,10 @@ BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchem
         if (AppendECEnumeration(change.Enumerations(), *enumerationCP, appendType) == ERROR)
             return ERROR;
 
-#ifdef KIND_OF_QUANTITY_SUPPORT
     for (KindOfQuantityCP kindOfQuantityCP : v.GetKindOfQuantities())
         if (AppendKindOfQuantity(change.KindOfQuantities(), *kindOfQuantityCP, appendType) == ERROR)
             return ERROR;
-#endif
+
     if (AppendReferences(change.References(), v.GetReferencedSchemas(), appendType) != SUCCESS)
         return ERROR;
 
@@ -1227,7 +1221,6 @@ BentleyStatus ECSchemaComparer::AppendECEnumeration(ECEnumerationChanges& change
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-#ifdef KIND_OF_QUANTITY_SUPPORT
 BentleyStatus ECSchemaComparer::AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
@@ -1245,7 +1238,6 @@ BentleyStatus ECSchemaComparer::AppendKindOfQuantity(ECKindOfQuantityChanges& ch
 
     return SUCCESS;
     }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
