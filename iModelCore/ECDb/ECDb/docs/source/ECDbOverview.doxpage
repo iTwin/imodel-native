@@ -235,6 +235,10 @@
     - @b Modify 
         - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECClassModifier "ECClassModifier"
+            - from @b Sealed to @b None
+            - from @b Abstract or @b None to @b Sealed (for leaf classes only, of course)
+
     - @b ECProperties
         - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
         - @b Delete an @ref BentleyApi::ECN::ECProperty "ECProperty" which is
@@ -271,6 +275,11 @@
     This lists rules that ECDb enforces in addition to what ECObjects already enforces, as well as limitations which ECDb cannot enforce.
     Rules already enforced by ECObjects are not listed here.
 
+    ### ECRelationshipClasses
+    - ECDb only enforces the @ref BentleyApi::ECN::RelationshipCardinality "ECRelationshipConstraint multiplicities" 
+    common to databases: (0..1), (1..1), (0..N), (1..N).
+    Abitrary numbers for the lower and upper bound of the multiplicity are not enforced.
+     
     ### Enumerations
     - %ECDb does not enforce @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" 
     @ref BentleyApi::ECN::ECEnumeration "ECEnumerations". For %ECProperties that
@@ -279,7 +288,6 @@
     
     ### Properties
     - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
-    - @ref BentleyApi::ECN::ArrayECProperty "Array ECProperties'" @b MinOccurs and @b MaxOccurs are enforced.
     
     @see @ref ECDbOverview
     */
