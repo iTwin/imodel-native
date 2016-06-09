@@ -578,7 +578,7 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteProperties)
+TEST_F(ECSchemaUpdateTests, DeleteProperties_SharedTable)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -691,6 +691,269 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Foo WHERE D1 IS NULL AND D2 IS NULL");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Goo WHERE D1 IS NULL AND D2 IS NULL AND D3 IS NULL");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Boo WHERE D1 IS NULL AND D2 IS NULL AND D3 IS NULL AND D4 IS NULL");
+
+    //Insert new row with new value
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1, D1) VALUES (1, 't1', 'd1')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L1, S1, D1, L2, D2) VALUES (2, 't2', 'd2',3, 'd3')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L1, S1, D1, L2, D2, L3, D3) VALUES (4, 't3', 'd4', 5, 'd5',6 ,'d6')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L1, S1, D1, L2, D2, L3, D3, L4, D4) VALUES (5, 't4', 'd7', 6, 'd8',7 ,'d9', 8,'d10')");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteProperty_OwnTable)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Delete some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", false, "Deleting ECProperty is not supported as property is mapped to OwnTable");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Make sure PropertyMap is persisted
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, S1");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, S1, L2, S2");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteVirtualColumns)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Delete and Add some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='D1' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Deletion of Virtual column is expected to be supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, -S1, +D1");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "       <ECProperty propertyName='L1' typeName='long' />"//Overridden Property
+        "       <ECProperty propertyName='S1' typeName='string' />"//Overridden Property
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem deleteOverriddenProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", false, "Deletion of Overridden properties is not supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteOverriddenProperty);
+    ASSERT_FALSE(asserted);
+
+    //Make sure ECClass definition still exists
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, S1");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, L2, S1, S2");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L3' typeName='long' />"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo' modifier='None' >"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='L4' typeName='long' />"
+        "       <ECProperty propertyName='S4' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Make sure ECClass definition is updated correctly
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Koo -> L1, S1");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, L2, S1, S2");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, L2, L3, S1, S2, S3");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Boo -> L1, L2, L3, L4, S1, S2, S3, S4");
+
+    //Insert a row for each class
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (1, 't1')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L1, S1, L2, S2) VALUES (2, 't2', 3, 't3')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L1, S1, L2, S2, L3, S3) VALUES (4, 't4', 5, 't5', 6,'t6')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L1, S1, L2, S2, L3, S3, L4, S4) VALUES (5, 't5', 6, 't6', 7,'t7', 8,'t8')");
+
+    //Delete some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "       <ECProperty propertyName='D1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='D2' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L3' typeName='long' />"
+        "       <ECProperty propertyName='D3' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo' modifier='None' >"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='L4' typeName='long' />"
+        "       <ECProperty propertyName='D4' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Make sure ECClass definition is updated correctly
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Koo -> L1, S1, +D1");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, L2, S1, -S2, +D1, +D2");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, L2, L3, S1, -S2, -S3, +D1, +D2, +D3");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Boo -> L1, L2, L3, L4, S1, -S2, -S3, -S4, +D1, +D2, +D3, +D4");
+
+    //see if ECSQL fail for a property which has been deleted
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (1, 't1')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L1, S1, L2, S2) VALUES (2, 't2',3, 't3')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L1, S1, L2, S2, L3, S3) VALUES (4, 't4', 5, 't5', 6,'t6')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L1, S1, L2, S2, L3, S3, L4, S4) VALUES (5, 't5', 6, 't6', 7,'t7', 8,'t8')");
+
+    //Ensure new property is null for existing rows
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Koo WHERE D1 IS NULL");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Foo WHERE D2 IS NULL");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Goo WHERE D2 IS NULL AND D3 IS NULL");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Boo WHERE D2 IS NULL AND D3 IS NULL AND D4 IS NULL");
 
     //Insert new row with new value
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1, D1) VALUES (1, 't1', 'd1')");
