@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSChangesetTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -70,6 +70,39 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAddingMoreThanOn
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
     EXPECT_EQ(1, changeset.GetInstanceCount());
     EXPECT_EQ(0, changeset.GetRelationshipCount());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_NullProperties_DoesNotAddPropertiesMember)
+    {
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    changeset.AddInstance({"TestSchema.TestClass", "A"}, WSChangeset::Created, nullptr);
+
+    Json::Value changesetJson;
+    changeset.ToRequestJson(changesetJson);
+    ASSERT_TRUE(changesetJson.isMember("instance"));
+    EXPECT_FALSE(changesetJson["instance"].isMember("properties"));
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_EmptyObjectValueProperties_DoesNotAddPropertiesMember)
+    {
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    changeset.AddInstance({"TestSchema.TestClass", "A"}, WSChangeset::Created, std::make_shared<Json::Value>(Json::objectValue));
+
+    Json::Value changesetJson;
+    changeset.ToRequestJson(changesetJson);
+    ASSERT_TRUE(changesetJson.isMember("instance"));
+    EXPECT_FALSE(changesetJson["instance"].isMember("properties"));
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_NullValueProperties_DoesNotAddPropertiesMember)
+    {
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    changeset.AddInstance({"TestSchema.TestClass", "A"}, WSChangeset::Created, std::make_shared<Json::Value>());
+
+    Json::Value changesetJson;
+    changeset.ToRequestJson(changesetJson);
+    ASSERT_TRUE(changesetJson.isMember("instance"));
+    EXPECT_FALSE(changesetJson["instance"].isMember("properties"));
     }
 
 TEST_F(WSChangesetTests, ToRequestString_OneExistingInstance_ReturnsChangesetJsonWithNotPropertiesAndCalculateSizeMatches)

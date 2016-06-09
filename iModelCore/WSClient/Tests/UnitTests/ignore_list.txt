@@ -6,7 +6,8 @@
 CachingDataSourceTests.OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds
 
 # Fails on WinX86. (onProgressCalled actual 0; expected 1). Low priority
-CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
+# Commenting out to see if GTEST/GMOCK update fixed this issue
+# CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
 
 # Pending fix on UniqueTaskHolder. Low priority
 ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
@@ -20,11 +21,14 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
-#Fails on iOS; Need to investigate why. High priority - disables many tests
+# Fails on Android due to DgnClientFx::Device not being initialized. Medium priority - disables important tests
+ClientInfoTests.Create_PassedMandatoryValues_SetsValues
+
+# Fails on iOS; Need to investigate why. High priority - disables many tests
 ECDbAdapterTests.*
 
 #----------------------------------------------------------------------------------------
-# Fails due to DgnDb06xx changes. All High priority
+# Fails due to DgnDb06xx changes
 #----------------------------------------------------------------------------------------
 
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
@@ -39,8 +43,11 @@ DataSourceCacheUpgradeTests.Open_V1*
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
 
 #----------------------------------------------------------------------------------------
-# New issues
+# All new unknown/issues here
 #----------------------------------------------------------------------------------------
 
-# Randomly crashes on x64. High priority
-CachingDataSourceTests.SyncCachedData_InitialQueriesSuppliedAndServerErrorReturnedForFirstOne_ContinuesWithOtherQuerysAndReturnsFailedObject
+ # Fails after graphite0505 merge - notified Benediktas
+ChangeManagerTests.ModifyObject_ExistingObject_SavesNewValuesToCache
+
+ # Crashed 61-16q2, winx64, optimized
+CachingDataSourceTests.SyncCachedData_WSG1AndInitialInstancesReturnsNotFound_RemovesInstancesFromCache

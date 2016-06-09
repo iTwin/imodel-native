@@ -153,8 +153,8 @@ struct MockDataSourceCache : public IDataSourceCache
             CacheStatus (ObjectIdCR objectId));
         MOCK_METHOD1 (RemoveFile,
             BentleyStatus (ObjectIdCR objectId));
-        MOCK_METHOD0 (RemoveFilesInTemporaryPersistence,
-            BentleyStatus ());
+        MOCK_METHOD1 (RemoveFilesInTemporaryPersistence,
+            BentleyStatus (DateTimeCP maxLastAccessDate));
         MOCK_METHOD1 (RemoveRoot,
             BentleyStatus (Utf8StringCR rootName));
         MOCK_METHOD1 (RemoveRootsByPrefix,
@@ -193,10 +193,10 @@ struct MockDataSourceCache : public IDataSourceCache
             BentleyStatus (ECInstanceKeyMultiMap& instancesOut));
         MOCK_METHOD1 (MarkTemporaryInstancesAsPartial,
             BentleyStatus (const std::vector<CachedResponseKey>& resultsKeys));
-        MOCK_METHOD2 (SetFileCacheLocation,
-            BentleyStatus (ObjectIdCR objectId, FileCache cacheLocation));
-        MOCK_METHOD1 (GetFileCacheLocation,
-            FileCache (ObjectIdCR objectId));
+        MOCK_METHOD3 (SetFileCacheLocation,
+            BentleyStatus(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR));
+        MOCK_METHOD2 (GetFileCacheLocation,
+            FileCache(ObjectIdCR objectId, FileCache cacheLocation));
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

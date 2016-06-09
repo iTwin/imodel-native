@@ -38,7 +38,11 @@ struct WSError : public AsyncError
             Canceled,
             ServerNotSupported,
 
+            // Could not connect, connection lost, timeout, etc.
             ConnectionError,
+
+            // Could not verify HTTPS certificate
+            CertificateError,
 
             // See error id for more information
             ReceivedError

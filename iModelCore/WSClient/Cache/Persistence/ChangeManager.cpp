@@ -21,7 +21,7 @@
 #include "Instances/ObjectInfoManager.h"
 #include "Instances/RelationshipInfoManager.h"
 #include "Responses/CachedResponseManager.h"
-#include "../Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -202,14 +202,14 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
         return ERROR;
         }
 
+    Json::Value instanceJson;
+    if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJson, instanceKey))
+        return ERROR;
+
     if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
-        Json::Value instanceJson;
-        if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJson, instanceKey) ||
-            SUCCESS != m_changeInfoManager.SaveBackupInstance(info, instanceJson))
-            {
+        if (SUCCESS != m_changeInfoManager.SaveBackupInstance(info, instanceJson))
             return ERROR;
-            }
         }
 
     if (SUCCESS != SetupNewRevision(info))
@@ -228,7 +228,12 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
     rapidjson::Document propertiesRapidJson;
     JsonUtil::ToRapidJson(properties, propertiesRapidJson);
 
-    if (SUCCESS != m_instanceCacheHelper.UpdateExistingInstanceData(info, propertiesRapidJson))
+    rapidjson::Document instanceRapidJson;
+    JsonUtil::ToRapidJson(instanceJson, instanceRapidJson);
+
+    JsonUtil::DeepCopy(propertiesRapidJson, instanceRapidJson);
+
+    if (SUCCESS != m_instanceCacheHelper.UpdateExistingInstanceData(info, instanceRapidJson))
         {
         return ERROR;
         }
@@ -339,7 +344,8 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
     info.SetChangeStatus(ChangeStatus::Modified);
     info.SetSyncStatus(syncStatus);
 
-    if (SUCCESS != m_fileStorage.CacheFile(info, filePath, nullptr, FileCache::Persistent, DateTime::GetCurrentTimeUtc(), copyFile) ||
+    FileCache location = info.GetLocation(FileCache::Persistent);
+    if (SUCCESS != m_fileStorage.CacheFile(info, filePath, nullptr, location, DateTime::GetCurrentTimeUtc(), copyFile) ||
         SUCCESS != m_fileInfoManager.SaveInfo(info))
         {
         BeAssert(false);
@@ -361,11 +367,6 @@ BentleyStatus ChangeManager::ModifyFileName(ECInstanceKeyCR instanceKey, Utf8Str
         }
 
     FileInfo info = m_fileInfoManager.ReadInfo(objInfo.GetCachedInstanceKey());
-    if (info.GetChangeStatus() != ChangeStatus::Modified)
-        {
-        BeAssert(false && "Only modified file name changing is allowed");
-        return ERROR;
-        }
 
     if (IsSyncActive())
         {
@@ -1026,11 +1027,8 @@ BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
         }
 
     info.ClearChangeInfo();
-    if (SUCCESS != m_fileStorage.SetFileCacheLocation(info, FileCache::Temporary) ||
-        SUCCESS != m_fileInfoManager.SaveInfo(info))
-        {
+    if (SUCCESS != m_fileInfoManager.SaveInfo(info))
         return ERROR;
-        }
 
     return SUCCESS;
     }

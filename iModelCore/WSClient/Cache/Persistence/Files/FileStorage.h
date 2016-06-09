@@ -25,12 +25,11 @@ struct FileStorage
         std::shared_ptr<ValueIncrementor> m_folderNameIncrementor;
 
     private:
-        BeFileName CreateNewRelativeCachedFilePath(BeFileNameCR currentFilePath, bool isPersistent);
+        BeFileName CreateNewRelativeCachedFilePath(Utf8StringCR fileName, FileCache location);
         static BeFileName CreateNewFilePath(BeFileNameCR oldFilePath, Utf8String newFileName);
 
         static BentleyStatus CreateNewCachedFileFolderName(Utf8StringR folderNameOut);
         static BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
-        static BentleyStatus GetIsFilePersistent(bool& isPersistent, FileCache cacheLocation, FileInfoCR existingFileInfo);
         static BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
         static BeFileName GetFileCacheFolderPath(BeFileName rootDir, WStringCR cacheName);
 
@@ -42,7 +41,7 @@ struct FileStorage
             CacheEnvironmentCR environment
             );
 
-        BentleyStatus SetFileCacheLocation(FileInfo& info, FileCache cacheLocation);
+        BentleyStatus SetFileCacheLocation(FileInfo& info, FileCache cacheLocation, BeFileNameCP externalRelativePath = nullptr);
         BentleyStatus CacheFile(
             FileInfo& info,
             BeFileNameCR suppliedFilePath,
@@ -55,7 +54,7 @@ struct FileStorage
         static BentleyStatus DeleteFileCacheDirectories(CacheEnvironmentCR fullEnvironment);
         static CacheEnvironment CreateCacheEnvironment(BeFileNameCR cacheFilePath, CacheEnvironmentCR inputEnvironment);
 
-        BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath);
+        BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath);
         BentleyStatus RemoveContainingFolder(BeFileNameCR filePath);
         BentleyStatus CleanupCachedFile(BeFileNameCR filePath);
         BentleyStatus RenameCachedFile(FileInfoR info, Utf8StringCR newFileName);

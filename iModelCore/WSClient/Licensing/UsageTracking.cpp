@@ -52,7 +52,7 @@ Utf8String UsageTracking::GetServiceUrl()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR projId, DateTimeCR usageDate, Utf8StringCR prodVer)
+AsyncTaskPtr<UsageTracking::Status> UsageTracking::RegisterUserUsages(Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR projId, DateTimeCR usageDate, Utf8StringCR prodVer)
     {
     UsageTrackingData utd(dev, userId, prodId, projId, usageDate, prodVer);
     return RegisterUserUsages(utd);
@@ -61,21 +61,17 @@ StatusInt UsageTracking::RegisterUserUsages(Utf8StringCR dev, Utf8StringCR userI
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(bvector<UsageTrackingData> usages)
+AsyncTaskPtr<UsageTracking::Status> UsageTracking::RegisterUserUsages(bvector<UsageTrackingData> usages)
     {
     Json::Value usageList;
     for (UsageTrackingData utd : usages)
         {
         if (!utd.IsEmpty())
-            {
             usageList.append(utd.ToJson());
-            }
         }
 
-    if (0 >= usageList.size())
-        {
-        return USAGE_NO_USAGES;
-        }
+    if (usageList.empty())
+        return CreateCompletedAsyncTask( Status::NoUsages);
 
     HttpClient client(nullptr, s_httpHandler);
     HttpRequest request = client.CreatePostRequest(GetServiceUrl());
@@ -85,20 +81,19 @@ StatusInt UsageTracking::RegisterUserUsages(bvector<UsageTrackingData> usages)
     HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(usageList));
     request.SetRequestBody(requestBody);
 
-    HttpResponse httpResponse = request.Perform();
-
-    if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
+    return request.PerformAsync()
+    ->Then<Status>([=] (HttpResponse response)
         {
-        return USAGE_ERROR;
-        }
-
-    return USAGE_SUCCESS;
+        if (response.GetConnectionStatus() != ConnectionStatus::OK)
+            return Status::Error;
+        return Status::Success;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(UsageTrackingData usage)
+AsyncTaskPtr<UsageTracking::Status> UsageTracking::RegisterUserUsages(UsageTrackingData usage)
     {
     bvector<UsageTrackingData> list;
     list.push_back(usage);

@@ -51,6 +51,7 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         Json::Value ReadExternalFileInfo(CachedInstanceKeyCR cachedKey);
         ECInstanceKey InsertFileInfoOwnership(ECInstanceKeyCR ownerKey, ECInstanceKeyCR fileInfoKey);
         BentleyStatus CleanupExternalFile(JsonValueCR externalFileInfoJson);
+        BentleyStatus CheckMaxLastAccessDate(BeFileNameCR fileName, DateTimeCP maxLastAccessDate, bool &shouldSkip);
 
     public:
         FileInfoManager
@@ -70,12 +71,12 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
 
         BentleyStatus SaveInfo(FileInfoR info);
 
-        BentleyStatus DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes);
+        BentleyStatus DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes, DateTimeCP maxLastAccessDate = nullptr);
 
         BeFileName ReadFilePath(CachedInstanceKeyCR cachedKey);
 
         // FileInfo::IAbsolutePathProvider
-        BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const override;
+        BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath) const override;
 
         //! IECDbAdapter::DeleteListener
         BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut) override;

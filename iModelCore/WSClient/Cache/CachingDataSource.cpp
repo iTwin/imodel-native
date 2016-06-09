@@ -24,6 +24,7 @@
 #include "DownloadFilesTask.h"
 #include "Persistence/Core/SchemaContext.h"
 #include "Persistence/RepositoryInfoStore.h"
+#include "SessionInfo.h"
 #include "SyncCachedDataTask.h"
 #include "SyncCachedInstancesTask.h"
 #include "SyncLocalChangesTask.h"
@@ -49,6 +50,7 @@ BeFileNameCR temporaryDir
 m_client(client),
 m_cacheTransactionManager(cacheTransactionManager),
 m_infoStore(infoStore),
+m_sessionInfo(new SessionInfo()),
 m_cacheAccessThread(cacheAccessThread),
 m_cancellationToken(SimpleCancellationToken::Create()),
 m_temporaryDir(temporaryDir)
@@ -1053,10 +1055,12 @@ ICancellationTokenPtr ct
             return;
             }
 
+        auto txn = StartCacheTransaction();
+        auto cacheLocation = txn.GetCache().GetFileCacheLocation(objectId, FileCache::Temporary);
+
         // check cache for object
         if (DataOrigin::CachedData == origin || DataOrigin::CachedOrRemoteData == origin)
             {
-            auto txn = StartCacheTransaction();
             Json::Value file;
             txn.GetCache().ReadInstance(objectId, file);
             BeFileName cachedFilePath;
@@ -1079,14 +1083,7 @@ ICancellationTokenPtr ct
         bset<ObjectId> filesToDownload;
         filesToDownload.insert(objectId);
 
-        auto task = std::make_shared<DownloadFilesTask>
-            (
-            shared_from_this(),
-            std::move(filesToDownload),
-            FileCache::ExistingOrTemporary,
-            std::move(onProgress),
-            ct
-            );
+        auto task = std::make_shared<DownloadFilesTask>(shared_from_this(), std::move(filesToDownload), cacheLocation, std::move(onProgress), ct);
 
         m_cacheAccessThread->Push(task);
 

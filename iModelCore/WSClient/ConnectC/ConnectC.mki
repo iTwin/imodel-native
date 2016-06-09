@@ -12,12 +12,15 @@ ConnectCMkiSourceDir = $(CWSClientCSourceDirectory)ConnectC/
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-ConnectCMkiHeaders = $(ConnectCMkiPublicApiDir)CWSCCPublic.h            \
-                     $(ConnectCMkiPublicApiDir)CWSCCGenBufferPublic.h   \
-                     $(ConnectCMkiPublicApiDir)CWSCCGenPublic.h         \
-                     $(ConnectCMkiSourceDir)CWSCCGenBuffer.h            \
-                     $(ConnectCMkiSourceDir)CWSCCInternal.h             \
-                     $(ConnectCMkiSourceDir)CWSCCPrivate.h              \
+ConnectCMkiHeaders = $(ConnectCMkiPublicApiDir)ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h   \
+                     $(ConnectCMkiPublicApiDir)ConnectWsgGlobal/GlobalSchemaGenPublic.h         \
+                     $(ConnectCMkiPublicApiDir)CWSCC.h                                          \
+                     $(ConnectCMkiPublicApiDir)CWSCCBufferGenPublic.h                           \
+                     $(ConnectCMkiPublicApiDir)CWSCCPublic.h                                    \
+                     $(ConnectCMkiSourceDir)ConnectWsgGlobal/GlobalSchemaBufferGen.h            \
+                     $(ConnectCMkiSourceDir)CWSCCBufferGen.h                                    \
+                     $(ConnectCMkiSourceDir)CWSCCInternal.h                                     \
+                     $(ConnectCMkiSourceDir)CWSCCPrivate.h                                      \
                      $(ConnectCMkiSourceDir)WSLocalState.h
 
 #----------------------------------------------------------------------
@@ -47,8 +50,10 @@ MultiCompileDepends=$(_MakeFileSpec)
 #---------------------------------------------------------------------------------------+
 #   Files to compile 
 #---------------------------------------------------------------------------------------+
-$(o)CWSCCGen$(oext)         : $(ConnectCMkiSourceDir)CWSCCGen.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+$(o)CWSCC$(oext)                                    : $(ConnectCMkiSourceDir)CWSCC.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
 
-$(o)CWSCCGenBuffer$(oext)   : $(ConnectCMkiSourceDir)CWSCCGenBuffer.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+$(o)CWSCCBufferGen$(oext)                           : $(ConnectCMkiSourceDir)CWSCCBufferGen.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
 
-$(o)CWSCC$(oext)            : $(ConnectCMkiSourceDir)CWSCC.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+$(o)GlobalSchemaBufferGen$(oext)                    : $(ConnectCMkiSourceDir)ConnectWsgGlobal/GlobalSchemaBufferGen.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+
+$(o)GlobalSchemaGen$(oext)                          : $(ConnectCMkiSourceDir)ConnectWsgGlobal/GlobalSchemaGen.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "WebServicesTestsHelper.h"
-#include "../../../../Cache/Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 bool operator <= (const DateTime& lhs, const DateTime& rhs)
     {
@@ -405,6 +405,9 @@ Utf8String SimpleReadFile(BeFileNameCR filePath)
 
 void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath)
     {
+    if (!filePath.GetDirectoryName().DoesPathExist())
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(filePath.GetDirectoryName()));
+    
     uint32_t written = 0;
 
     BeFile file;

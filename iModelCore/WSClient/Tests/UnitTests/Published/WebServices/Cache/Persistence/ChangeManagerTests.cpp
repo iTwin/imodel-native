@@ -320,7 +320,7 @@ TEST_F(ChangeManagerTests, ModifyObject_ExistingObject_SavesNewValuesToCache)
     {
     // Arrange
     auto cache = GetTestCache();
-    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldValue"}});
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldValue"}, {"TestProperty2", "OldValue"}});
     // Act
     Json::Value properties;
     properties["TestProperty"] = "NewValue";
@@ -331,6 +331,7 @@ TEST_F(ChangeManagerTests, ModifyObject_ExistingObject_SavesNewValuesToCache)
     Json::Value instanceJson;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(instanceJson, instance));
     EXPECT_EQ("NewValue", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("OldValue", instanceJson["TestProperty2"].asString());
     }
 
 TEST_F(ChangeManagerTests, ModifyObject_CreatedObject_SuccessAndLeavesStatusCreatedAndSameNumber)
@@ -576,20 +577,37 @@ TEST_F(ChangeManagerTests, ModifyFile_NonExistingObject_Error)
     ASSERT_EQ(ERROR, status);
     }
 
-TEST_F(ChangeManagerTests, ModifyFile_ExistingObject_SetsChangeStatusAndCachesFileToPersistentLocation)
+TEST_F(ChangeManagerTests, ModifyFile_ExistingObjectWithoutFileLocationSet_SetsChangeStatusAndCachesFileToPersistentLocation)
     {
     // Arrange
     auto cache = GetTestCache();
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     auto instance = StubInstanceInCache(*cache, fileId);
     // Act
-    auto status = cache->GetChangeManager().ModifyFile(instance, StubFile("NewContent"), false);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("NewContent"), false));
     // Assert
-    ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
-    EXPECT_TRUE(cache->ReadFilePath(instance).find(L"persistent") != BeFileName::npos);
     EXPECT_EQ(1, cache->GetChangeManager().GetFileChange(instance).GetChangeNumber());
-    EXPECT_EQ("NewContent", SimpleReadFile(cache->ReadFilePath(instance)));
+    auto path = cache->ReadFilePath(instance);
+    EXPECT_THAT(path.c_str(), StartsWith(GetTestCacheEnvironment().persistentFileCacheDir.c_str()));
+    EXPECT_EQ("NewContent", SimpleReadFile(path));
+    }
+
+TEST_F(ChangeManagerTests, ModifyFile_ExistingObjectWithFileCacheLocationSetToExternal_CachesFileToExternalLocation)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    ObjectId fileId {"TestSchema.TestClass", "Foo"};
+    auto instance = StubInstanceInCache(*cache, fileId);
+    BeFileName relativePath(L"Foo/Boo/");
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, relativePath));
+    // Act
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("NewContent"), false));
+    // Assert
+    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    BeFileName path = cache->ReadFilePath(fileId);
+    EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(relativePath), path.GetDirectoryName());
+    EXPECT_EQ("NewContent", SimpleReadFile(path));
     }
 
 TEST_F(ChangeManagerTests, ModifyFile_ExistingObjectAndCopyFileTrue_CopiesFileToPersistentLocationAndLeavesOriginal)
@@ -659,14 +677,18 @@ TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithoutFile_Error)
     BeTest::SetFailOnAssert(true);
     }
 
-TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithNonModifiedFile_Error)
+TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithNonModifiedFile_SuccessAndFileRenamed)
     {
+    // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
-    BeTest::SetFailOnAssert(false);
-    EXPECT_EQ(ERROR, cache->GetChangeManager().ModifyFileName(instance, "Foo.txt"));
-    BeTest::SetFailOnAssert(true);
+    // Act
+    EXPECT_EQ(SUCCESS, cache->GetChangeManager().ModifyFileName(instance, "Foo.txt"));
+    // Assert
+    auto newFilePath = cache->ReadFilePath(instance);
+    EXPECT_TRUE(newFilePath.DoesPathExist());
+    EXPECT_EQ(L"Foo.txt", newFilePath.GetFileNameAndExtension());
     }
 
 TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFile_SuccessAndFileRenamed)
@@ -2173,18 +2195,40 @@ TEST_F(ChangeManagerTests, CommitFileRevision_NotChanged_Error)
     ASSERT_EQ(ERROR, status);
     }
 
-TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFile_RemovesChangeStatusAndMovesToTemporaryLocation)
+TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFile_RemovesChangeStatusAndLeavesFileInSameLocation)
     {
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
+    auto path1 = cache->ReadFilePath(instance);
     // Act
     auto revision = cache->GetChangeManager().ReadFileRevision(instance);
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitFileRevision(*revision));
     // Assert
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
-    EXPECT_TRUE(cache->ReadFilePath(instance).find(L"temporary") != BeFileName::npos);
+    auto path2 = cache->ReadFilePath(instance);
+    EXPECT_EQ(path1, path2);
+    EXPECT_TRUE(path1.DoesPathExist());
+    }
+
+TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFileInExternalLocation_RemovesChangeStatusAndLeavesFileInSameLocation)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(cache->FindInstance(instance), FileCache::External, BeFileName(L"Foo/Boo/")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
+    auto path1 = cache->ReadFilePath(instance);
+    // Act
+    auto revision = cache->GetChangeManager().ReadFileRevision(instance);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitFileRevision(*revision));
+    // Assert
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    auto path2 = cache->ReadFilePath(instance);
+    EXPECT_EQ(path1, path2);
+    EXPECT_TRUE(path1.DoesPathExist());
+    EXPECT_EQ(FileCache::External, cache->GetFileCacheLocation(cache->FindInstance(instance)));
     }
 
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRevisionWasRead_PreservesNewChangesAndLeavesAsModified)

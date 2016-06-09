@@ -47,6 +47,7 @@ struct CachingDataSource :
         IWSRepositoryClientPtr                      m_client;
         std::shared_ptr<ICacheTransactionManager>   m_cacheTransactionManager;
         std::shared_ptr<IRepositoryInfoStore>       m_infoStore;
+        std::unique_ptr<struct SessionInfo>         m_sessionInfo;
 
         WorkerThreadPtr                             m_cacheAccessThread;
         SimpleCancellationTokenPtr                  m_cancellationToken;
@@ -164,7 +165,7 @@ struct CachingDataSource :
             (
             ObjectIdCR objectId,
             DataOrigin origin,
-            IDataSourceCache::JsonFormat format,
+            IDataSourceCache::JsonFormat format = IDataSourceCache::JsonFormat::Raw,
             ICancellationTokenPtr ct = nullptr
             ) override;
 
