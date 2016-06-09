@@ -111,12 +111,6 @@
     <ClCompile Include="Connect\SamlToken.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Licensing\FeatureTrackingData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Licensing\FeatureTracking.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Licensing\UsageTrackingData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -450,6 +444,18 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevisionEvent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cache\Util\ECInstanceKeyFilter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\CWSCCBufferGen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaGen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -561,12 +567,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTrackingData.h">
@@ -833,9 +833,6 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECExpressionHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Cache\Util\JsonUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonDiff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -941,6 +938,9 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ImsClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Ims\SolrQuery.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -981,6 +981,39 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferGenPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectC\CWSCCBufferGen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\SessionInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceInfo.h">
@@ -1050,5 +1083,6 @@
     <None Include="ConnectC\ConnectC.mki" />
     <None Include="CWSClientCLib.mke" />
     <None Include="CWSClientCPrewire.mke" />
+    <None Include=".hgignore" />
   </ItemGroup>
 </Project>

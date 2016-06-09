@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/CacheEnvironment.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -31,7 +31,7 @@ temporaryFileCacheDir(temporaryDir)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int CacheEnvironment::GetPersistentRootFolderId()
     {
-    return FileInfo::PersistentRootFolderId;
+    return static_cast<int>(FileCache::Persistent);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -39,5 +39,13 @@ int CacheEnvironment::GetPersistentRootFolderId()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int CacheEnvironment::GetTemporaryRootFolderId()
     {
-    return FileInfo::TemporaryRootFolderId;
+    return static_cast<int>(FileCache::Temporary);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+int CacheEnvironment::GetExternalRootFolderId()
+    {
+    return static_cast<int>(FileCache::External);
     }

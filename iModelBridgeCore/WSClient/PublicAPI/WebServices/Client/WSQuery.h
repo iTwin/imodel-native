@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSQuery.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,6 +12,7 @@
 #include <WebServices/Client/ObjectId.h>
 #include <ECObjects/ECSchema.h>
 #include <Bentley/WString.h>
+#include <deque>
 #include <map>
 #include <set>
 
@@ -77,6 +78,15 @@ struct WSQuery
         //! Spaces are not allowed - use '+' to seperate operators (example: "Property+eq+'Foo'").
         //! Unknown string values (for example ones that are entered by user) need to be escaped using EscapeValue().
         WSCLIENT_EXPORT WSQuery& SetFilter(Utf8StringCR filter);
+
+        WSCLIENT_EXPORT WSQuery& AddFilterIdsIn
+            (
+            std::deque<ObjectId>& idsInOut,
+            std::set<ObjectId>* idsAddedOut = nullptr,
+            size_t maxIdsInFilter = 100,
+            size_t maxFilterLength = 1024
+            );
+
         WSCLIENT_EXPORT Utf8StringCR GetFilter() const;
 
         //! Escape parameter value in filter. Example: SetFilter ("Property+eq+'" + WSQuery::EscapeValue (userEnteredString) + "'");
@@ -120,7 +130,7 @@ struct WSQuery
         //! Construct string representing whole query. Includes schema, class list and query string.
         WSCLIENT_EXPORT Utf8String ToFullString() const;
 
-        WSCLIENT_EXPORT bool operator== (const WSQuery& other) const;
+        WSCLIENT_EXPORT bool operator==(const WSQuery& other) const;
     };
 
 typedef WSQuery& WSQueryR;

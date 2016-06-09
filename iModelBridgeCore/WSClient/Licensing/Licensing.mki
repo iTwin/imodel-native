@@ -12,18 +12,12 @@ LicensingMkiSourceDir = $(ClientSourceDirectory)Licensing/
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-LicensingMkiHeaders =   $(LicensingMkiPublicApiDir)FeatureTrackingData.h \
-                        $(LicensingMkiPublicApiDir)FeatureTracking.h \
-                        $(LicensingMkiPublicApiDir)UsageTrackingData.h \
+LicensingMkiHeaders =   $(LicensingMkiPublicApiDir)UsageTrackingData.h \
                         $(LicensingMkiPublicApiDir)UsageTracking.h
 
 #--------------------------------------------------------------------------------------
 #   Compile
 #--------------------------------------------------------------------------------------
-$(o)FeatureTrackingData$(oext)       : $(LicensingMkiSourceDir)FeatureTrackingData.cpp $(LicensingMkiHeaders) ${MultiCompileDepends}
-
-$(o)FeatureTracking$(oext)        : $(LicensingMkiSourceDir)FeatureTracking.cpp $(LicensingMkiHeaders) ${MultiCompileDepends}
-
 $(o)UsageTrackingData$(oext)       : $(LicensingMkiSourceDir)UsageTrackingData.cpp $(LicensingMkiHeaders) ${MultiCompileDepends}
 
 $(o)UsageTracking$(oext)        : $(LicensingMkiSourceDir)UsageTracking.cpp $(LicensingMkiHeaders) ${MultiCompileDepends}

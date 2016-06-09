@@ -122,6 +122,7 @@
     <ClCompile Include="Cache\Util\ECDbDebugInfo.cpp" />
     <ClCompile Include="Cache\Util\ECDbHelper.cpp" />
     <ClCompile Include="Cache\Util\ECExpressionHelper.cpp" />
+    <ClCompile Include="Cache\Util\ECInstanceKeyFilter.cpp" />
     <ClCompile Include="Cache\Util\ECSqlStatementCache.cpp" />
     <ClCompile Include="Cache\Util\ExtendedData.cpp" />
     <ClCompile Include="Cache\Util\ExtendedDataAdapter.cpp" />
@@ -140,7 +141,10 @@
     <ClCompile Include="Client\WSChangeset.cpp" />
     <ClCompile Include="Configuration\BuddiClient.cpp" />
     <ClCompile Include="Configuration\BuddiError.cpp" />
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp" />
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaGen.cpp" />
     <ClCompile Include="ConnectC\CWSCC.cpp" />
+    <ClCompile Include="ConnectC\CWSCCBufferGen.cpp" />
     <ClCompile Include="ConnectC\CWSCCGen.cpp" />
     <ClCompile Include="ConnectC\CWSCCGenBuffer.cpp" />
     <ClCompile Include="ConnectC\CWSCCInternal.cpp" />
@@ -174,7 +178,6 @@
     <ClCompile Include="DgnDbServerClient\RepositoryInfo.cpp" />
     <ClCompile Include="Ims\SolrQuery.cpp" />
     <ClCompile Include="Ims\SolrClient.cpp" />
-    <ClCompile Include="Licensing\FeatureTrackingData.cpp" />
     <ClCompile Include="Licensing\UsageTrackingData.cpp" />
     <ClCompile Include="Client\ObjectId.cpp" />
     <ClCompile Include="Connect\Passport.cpp" />
@@ -186,7 +189,6 @@
     <ClCompile Include="Client\Response\WSObjectsResponse.cpp" />
     <ClCompile Include="Client\ServerInfoProvider.cpp" />
     <ClCompile Include="Configuration\UrlProvider.cpp" />
-    <ClCompile Include="Licensing\FeatureTracking.cpp" />
     <ClCompile Include="Licensing\UsageTracking.cpp" />
     <ClCompile Include="Client\Utils.cpp" />
     <ClCompile Include="Client\WebApi\WebApi.cpp" />
@@ -250,7 +252,12 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h" />
     <ClInclude Include="Cache\Schemas.h" />
-    <ClInclude Include="Cache\Util\JsonUtil.h" />
+    <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
+    <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
+    <ClInclude Include="Cache\SessionInfo.h" />
     <ClInclude Include="Cache\Util\StringHelper.h" />
     <ClInclude Include="Cache\SyncCachedDataTask.h" />
     <ClInclude Include="Cache\SyncCachedInstancesSeperatelyTask.h" />
@@ -268,8 +275,13 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevisionEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceConnection.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceInfo.h" />
+
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceReceive.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\IDgnDbServerEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h" />    
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenBufferPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h" />
@@ -363,6 +375,7 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\IImsClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ITokenStore.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h" />
     <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h" />
     <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTrackingData.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\ObjectId.h" />
@@ -375,7 +388,6 @@
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\UrlProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTracking.h" />
-    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WebServicesClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSError.h" />
@@ -414,6 +426,7 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <None Include=".hgignore" />
     <None Include="Azure\Azure.mki" />
     <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="CacheLib.mke" />

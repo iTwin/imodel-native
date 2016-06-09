@@ -233,3 +233,17 @@ Utf8String WSObjectsReaderV2::GetInstanceETag(const rapidjson::Value* instance) 
 
     return eTag;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::SizeType WSObjectsReaderV2::GetRelationshipInstanceCount(const rapidjson::Value* relationshipInstances) const
+    {
+    if (nullptr == relationshipInstances)
+        return 0;
+
+    if (!relationshipInstances->IsArray())
+        return 0;
+
+    return relationshipInstances->Size();
+    }

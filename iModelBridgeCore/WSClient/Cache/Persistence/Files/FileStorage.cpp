@@ -35,37 +35,6 @@ m_environment(environment)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileStorage::GetIsFilePersistent(bool& isPersistent, FileCache cacheLocation, FileInfoCR existingFileInfo)
-    {
-    bool cachedFileExists = existingFileInfo.IsInCache();
-
-    if (cachedFileExists && (FileCache::Existing == cacheLocation ||
-        FileCache::ExistingOrPersistent == cacheLocation ||
-        FileCache::ExistingOrTemporary == cacheLocation))
-        {
-        isPersistent = existingFileInfo.IsFilePersistent();
-        }
-    else if (FileCache::Persistent == cacheLocation ||
-             (!cachedFileExists && FileCache::ExistingOrPersistent == cacheLocation))
-        {
-        isPersistent = true;
-        }
-    else if (FileCache::Temporary == cacheLocation ||
-             (!cachedFileExists && FileCache::ExistingOrTemporary == cacheLocation))
-        {
-        isPersistent = false;
-        }
-    else
-        {
-        BeAssert(false && "Unknown cache option");
-        return ERROR;
-        }
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileStorage::RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath)
     {
     BeFileNameStatus status = BeFileName::BeMoveFile(backupPath, originalPath);
@@ -95,10 +64,10 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
         if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(backupForRollbackFile))
             {
             LOG.errorv(L"Could not delete existing backup cached file: %ls", backupForRollbackFile.c_str());
-            BeAssert(false);
             return ERROR;
             }
         }
+
     // Create backup
     if (rollbackFileExists)
         {
@@ -106,7 +75,6 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
         if (BeFileNameStatus::Success != status)
             {
             LOG.errorv(L"Could not create backup for existing file: %ls", fileToRollback.c_str());
-            BeAssert(false);
             return ERROR;
             }
         }
@@ -121,9 +89,15 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
                 RollbackFile(backupForRollbackFile, fileToRollback);
                 }
             LOG.errorv(L"Could not delete existing file: %ls", moveToFile.c_str());
-            BeAssert(false);
             return ERROR;
             }
+        }
+
+    BeFileName directory = moveToFile.GetDirectoryName();
+    if (!BeFileName::DoesPathExist(directory))
+        {
+        if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(directory))
+            return ERROR;
         }
 
     BeFileNameStatus status;
@@ -161,7 +135,6 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
             RollbackFile(backupForRollbackFile, fileToRollback);
             }
         LOG.errorv(L"Failed to cache file from: %ls to: %ls (Error: %d)", moveFromFile.c_str(), moveToFile.c_str(), status);
-        BeAssert(false);
         return ERROR;
         }
 
@@ -172,35 +145,32 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
         if (BeFileNameStatus::Success != status)
             {
             LOG.errorv(L"Could not remove file backup: %ls", backupForRollbackFile.c_str());
-            BeAssert(false);
             return ERROR;
             }
         }
+
     return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName FileStorage::CreateNewRelativeCachedFilePath(BeFileNameCR currentFilePath, bool isPersistent)
+BeFileName FileStorage::CreateNewRelativeCachedFilePath(Utf8StringCR fileName, FileCache location)
     {
     Utf8String containtingFolderNameUtf8;
     if (SUCCESS != m_folderNameIncrementor->IncrementWithoutSaving(containtingFolderNameUtf8))
-        {
         return BeFileName();
-        }
+
     BeFileName containtingFolderName(containtingFolderNameUtf8);
 
     BeFileName newRelativeFilePath;
     newRelativeFilePath.AppendToPath(containtingFolderName.c_str());
-    newRelativeFilePath.AppendToPath(currentFilePath.GetFileNameAndExtension().c_str());
+    newRelativeFilePath.AppendToPath(BeFileName(fileName));
 
-    BeFileName newAbsoluteFilePath = GetAbsoluteFilePath(isPersistent, newRelativeFilePath);
+    BeFileName newAbsoluteFilePath = GetAbsoluteFilePath(location, newRelativeFilePath);
 
     if (SUCCESS != FileUtil::TruncateFilePath(newAbsoluteFilePath))
-        {
         return BeFileName();
-        }
 
     newRelativeFilePath.clear();
     newRelativeFilePath.AppendToPath(containtingFolderName.c_str());
@@ -214,7 +184,7 @@ BeFileName FileStorage::CreateNewRelativeCachedFilePath(BeFileNameCR currentFile
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName FileStorage::GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath)
+BeFileName FileStorage::GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath)
     {
     BeFileName absolutePath;
     if (relativePath.empty())
@@ -223,13 +193,22 @@ BeFileName FileStorage::GetAbsoluteFilePath(bool isPersistent, BeFileNameCR rela
         }
 
     WCharCP saveDirectory;
-    if (isPersistent)
+    if (FileCache::Persistent == location)
         {
         saveDirectory = m_environment.persistentFileCacheDir.c_str();
         }
-    else
+    else if (FileCache::Temporary == location)
         {
         saveDirectory = m_environment.temporaryFileCacheDir.c_str();
+        }
+    else if (FileCache::External == location)
+        {
+        saveDirectory = m_environment.externalFileCacheDir.c_str();
+        }
+    else
+        {
+        BeAssert(false);
+        return absolutePath;
         }
 
     absolutePath
@@ -242,50 +221,57 @@ BeFileName FileStorage::GetAbsoluteFilePath(bool isPersistent, BeFileNameCR rela
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileStorage::SetFileCacheLocation(FileInfo& info, FileCache cacheLocation)
+BentleyStatus FileStorage::SetFileCacheLocation(FileInfo& info, FileCache location, BeFileNameCP externalRelativePath)
     {
-    bool cachePersistentFile = false;
-    if (SUCCESS != GetIsFilePersistent(cachePersistentFile, cacheLocation, info))
+    if (FileCache::External == location && nullptr == externalRelativePath ||
+        FileCache::External != location && nullptr != externalRelativePath && !externalRelativePath->empty())
         {
+        BeAssert(false);
         return ERROR;
-        }
-
-    if (!info.IsInCache())
-        {
-        info.SetFilePath(cachePersistentFile, BeFileName());
-        return SUCCESS;
         }
 
     BeFileName oldFileAbsolutePath = info.GetFilePath();
     if (oldFileAbsolutePath.empty())
         {
-        info.SetFilePath(cachePersistentFile, BeFileName());
+        BeFileName newFileRelativePath;
+        if (FileCache::External == location)
+            {
+            newFileRelativePath = *externalRelativePath;
+            newFileRelativePath.AppendToPath(L"placeholder");
+            }
+        info.SetFilePath(location, newFileRelativePath, nullptr);
+        return SUCCESS;
+        }
+
+    BeFileName newFileRelativePath;
+    if (FileCache::External == location)
+        {
+        newFileRelativePath = *externalRelativePath;
+        newFileRelativePath.AppendToPath(BeFileName(info.GetFileName()));
         }
     else
         {
-        BeFileName newFileRelativePath = CreateNewRelativeCachedFilePath(oldFileAbsolutePath, cachePersistentFile);
-        if (newFileRelativePath.empty())
-            {
-            return ERROR;
-            }
-
-        info.SetFilePath(cachePersistentFile, newFileRelativePath);
-
-        BeFileName newFileAbsolutePath = info.GetFilePath();
-
-        if (!newFileAbsolutePath.Equals(oldFileAbsolutePath) &&
-            oldFileAbsolutePath.DoesPathExist())
-            {
-            if (SUCCESS != ReplaceFileWithRollback(BeFileName(), oldFileAbsolutePath, newFileAbsolutePath, false))
-                {
-                return ERROR;
-                }
-            if (SUCCESS != RemoveContainingFolder(oldFileAbsolutePath))
-                {
-                return ERROR;
-                }
-            }
+        newFileRelativePath = CreateNewRelativeCachedFilePath(info.GetFileName(), location);
         }
+
+    if (newFileRelativePath.empty())
+        return ERROR;
+
+    info.SetFilePath(location, newFileRelativePath, info.GetFileName());
+
+    BeFileName newFileAbsolutePath = info.GetFilePath();
+
+    if (newFileAbsolutePath.Equals(oldFileAbsolutePath) || !oldFileAbsolutePath.DoesPathExist())
+        return SUCCESS;
+
+    if (SUCCESS != ReplaceFileWithRollback(BeFileName(), oldFileAbsolutePath, newFileAbsolutePath, false))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    if (SUCCESS != RemoveContainingFolder(oldFileAbsolutePath))
+        return ERROR;
 
     return SUCCESS;
     }
@@ -298,15 +284,15 @@ BentleyStatus FileStorage::CacheFile
 FileInfo& info,
 BeFileNameCR suppliedFileAbsolutePath,
 Utf8CP cacheTag,
-FileCache cacheLocation,
+FileCache location,
 DateTimeCR cacheDateUtc,
 bool copyFile
 )
     {
     LOG.infov(L"Caching file: %ls", suppliedFileAbsolutePath.c_str());
 
-    if ((FileCache::Persistent == cacheLocation || FileCache::ExistingOrPersistent == cacheLocation) && m_environment.persistentFileCacheDir.empty() ||
-        (FileCache::Temporary == cacheLocation || FileCache::ExistingOrTemporary == cacheLocation) && m_environment.temporaryFileCacheDir.empty())
+    if (FileCache::Persistent == location && m_environment.persistentFileCacheDir.empty() ||
+        FileCache::Temporary == location && m_environment.temporaryFileCacheDir.empty())
         {
         LOG.error("Invalid environment");
         BeAssert(false);
@@ -314,38 +300,32 @@ bool copyFile
         }
 
     // Set new file path
+    Utf8String fileName(suppliedFileAbsolutePath.GetFileNameAndExtension());
 
-    bool cachePersistentFile = false;
-    if (SUCCESS != GetIsFilePersistent(cachePersistentFile, cacheLocation, info))
+    BeFileName newFileRelativePath;
+    if (FileCache::External == location)
         {
-        return ERROR;
-        }
-
-    BeFileName newFileRelativePath = CreateNewRelativeCachedFilePath(suppliedFileAbsolutePath, cachePersistentFile);
-    if (newFileRelativePath.empty())
-        {
-        return ERROR;
-        }
-
-    // Save cached file info
-
-    BeFileName previouslyCachedFileAbsolutePath;
-    BeFileName newFileAbsolutePath;
-
-    if (!info.IsInCache())
-        {
-        info.SetFilePath(cachePersistentFile, newFileRelativePath);
-        info.SetFileCacheDate(cacheDateUtc);
-        info.SetFileCacheTag(cacheTag);
+        newFileRelativePath = info.GetRelativePath().GetDirectoryName();
+        newFileRelativePath.AppendToPath(BeFileName(fileName));
         }
     else
         {
+        newFileRelativePath = CreateNewRelativeCachedFilePath(fileName, location);
+        }
+
+    if (newFileRelativePath.empty())
+        return ERROR;
+
+    // Save cached file info
+    BeFileName previouslyCachedFileAbsolutePath;
+    BeFileName newFileAbsolutePath;
+
+    if (!info.GetFileName().empty())
         previouslyCachedFileAbsolutePath = info.GetFilePath();
 
-        info.SetFilePath(cachePersistentFile, newFileRelativePath);
-        info.SetFileCacheDate(cacheDateUtc);
-        info.SetFileCacheTag(cacheTag);
-        }
+    info.SetFilePath(location, newFileRelativePath, fileName);
+    info.SetFileCacheDate(cacheDateUtc);
+    info.SetFileCacheTag(cacheTag);
 
     newFileAbsolutePath = info.GetFilePath();
 
@@ -354,6 +334,7 @@ bool copyFile
         {
         if (SUCCESS != ReplaceFileWithRollback(previouslyCachedFileAbsolutePath, suppliedFileAbsolutePath, newFileAbsolutePath, copyFile))
             {
+            BeAssert(false);
             return ERROR;
             }
         }
@@ -393,12 +374,11 @@ CacheEnvironment FileStorage::CreateCacheEnvironment(BeFileNameCR cacheFilePath,
     WString cacheName = BeFileName::GetFileNameAndExtension(cacheFilePath.c_str());
 
     if (cacheName == L":memory:")
-        {
         cacheName = L"_in_memory_cache_";
-        }
 
     fullEnvironment.persistentFileCacheDir = GetFileCacheFolderPath(inputEnvironment.persistentFileCacheDir, cacheName);
     fullEnvironment.temporaryFileCacheDir = GetFileCacheFolderPath(inputEnvironment.temporaryFileCacheDir, cacheName);
+    fullEnvironment.externalFileCacheDir = inputEnvironment.externalFileCacheDir;
 
     return fullEnvironment;
     }
@@ -449,9 +429,7 @@ BentleyStatus FileStorage::CleanupCachedFile(BeFileNameCR filePath)
     if (!filePath.empty())
         {
         if (SUCCESS != RemoveContainingFolder(filePath))
-            {
             return ERROR;
-            }
         }
     return SUCCESS;
     }
@@ -465,26 +443,20 @@ BentleyStatus FileStorage::RenameCachedFile(FileInfoR info, Utf8StringCR newFile
     BeFileName newPath = CreateNewFilePath(oldPath, newFileName);
 
     if (newPath.empty())
-        {
         return ERROR;
-        }
 
     if (oldPath == newPath)
-        {
         return SUCCESS;
-        }
 
     if (BeFileNameStatus::Success != BeFileName::BeMoveFile(oldPath, newPath))
-        {
         return ERROR;
-        }
 
     BeFileName dirPath = newPath.GetDirectoryName();
     dirPath.PopDir();
 
     BeFileName newRelativePath(newPath.substr(dirPath.size()));
 
-    info.SetFilePath(info.IsFilePersistent(), newRelativePath);
+    info.SetFilePath(info.GetLocation(), newRelativePath, newFileName);
     return SUCCESS;
     }
 
@@ -499,9 +471,7 @@ BeFileName FileStorage::CreateNewFilePath(BeFileNameCR oldFilePath, Utf8String n
     BeFileName newFilePath = oldFilePath.GetDirectoryName();
     newFilePath.AppendToPath(BeFileName(newFileName));
     if (SUCCESS != FileUtil::TruncateFilePath(newFilePath))
-        {
         return BeFileName();
-        }
 
     return newFilePath;
     }

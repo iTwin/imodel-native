@@ -71,6 +71,7 @@ WSFileResult StubWSFileResultNotModified();
 
 WSInfoResult StubWSInfoResult(BeVersion webApiVersion = BeVersion(2, 0));
 
+WSObjectsResult StubWSObjectsResult();
 WSObjectsResult StubWSObjectsResult(ObjectIdCR objectId);
 WSCreateObjectResult StubWSCreateObjectResult();
 WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR objectId);
@@ -136,4 +137,14 @@ ECInstanceKey StubCreatedObjectInCache(IDataSourceCache& cache, Utf8StringCR cla
 
 ECInstanceKey StubCreatedObjectInCache(IDataSourceCache& cache, IChangeManager::SyncStatus status, Utf8StringCR classKey = "TestSchema.TestClass");
 
+ECInstanceKey StubCreatedFileInCache(IDataSourceCache& cache, Utf8StringCR classKey = "TestSchema.TestClass", BeFileName filePath = StubFile());
+
 CachedResponseKey StubCachedResponseKey(IDataSourceCache& cache, Utf8StringCR name = "TestQuery");
+
+ObjectId StubFileInCache(
+    IDataSourceCache& cache,
+    FileCache location = FileCache::Temporary,
+    ObjectIdCR objectId = ObjectId("TestSchema.TestClass", "Foo"),
+    BeFileNameCR path = StubFile());
+
+ObjectId StubFileInCache(IDataSourceCache& cache, BeFileNameCR path);

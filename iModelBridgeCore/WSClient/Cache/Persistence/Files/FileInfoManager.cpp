@@ -138,15 +138,44 @@ BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName FileInfoManager::GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const
+BeFileName FileInfoManager::GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath) const
     {
-    return m_fileStorage.GetAbsoluteFilePath(isPersistent, relativePath);
+    return m_fileStorage.GetAbsoluteFilePath(location, relativePath);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Travis.Cobbs    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus FileInfoManager::CheckMaxLastAccessDate(BeFileNameCR fileName, DateTimeCP maxLastAccessDate, bool &shouldSkip)
+    {
+    shouldSkip = false;
+    if (nullptr == maxLastAccessDate || fileName.IsEmpty() || !fileName.DoesPathExist())
+        {
+        return SUCCESS;
+        }
+    time_t accessTime;
+    if (BeFileNameStatus::Success != fileName.GetFileTime(nullptr, &accessTime, nullptr))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    DateTime lastAccessDate;
+    if (SUCCESS != DateTime::FromUnixMilliseconds(lastAccessDate, accessTime * 1000))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    if (DateTime::Compare(lastAccessDate, *maxLastAccessDate) == DateTime::CompareResult::LaterThan)
+        {
+        shouldSkip = true;
+        }
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes)
+BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes, DateTimeCP maxLastAccessDate)
     {
     auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::DeleteFilesNotHeldByNodes", [&]
         {
@@ -157,6 +186,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
         });
 
     JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    BentleyStatus returnValue = SUCCESS;
 
     while (BE_SQLITE_ROW == statement->Step())
         {
@@ -166,20 +196,40 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
             continue;
             }
 
-        ECInstanceKey externalFileInfoKey(m_externalFileInfoClass->GetId(),statement->GetValueId<ECInstanceId>(1));
+        ECInstanceKey externalFileInfoKey(m_externalFileInfoClass->GetId(), statement->GetValueId<ECInstanceId>(1));
         if (ECDbHelper::IsInstanceInMultiMap(externalFileInfoKey, holdingNodes))
             {
             continue;
             }
 
         Json::Value externalFileInfoJson;
-        if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()) ||
-            SUCCESS != CleanupExternalFile(externalFileInfoJson))
+        if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()))
+            {
+            return ERROR;
+            }
+
+        FileInfo fileInfo(Json::nullValue, externalFileInfoJson, CachedInstanceKey(), this);
+        auto filePath = fileInfo.GetFilePath();
+
+        bool shouldSkip;
+        if (SUCCESS != CheckMaxLastAccessDate(fileInfo.GetFilePath(), maxLastAccessDate, shouldSkip))
+            {
+            // Return error from the function when we eventually finish, but continue processing
+            // files anyway.
+            returnValue = ERROR;
+            }
+
+        if (shouldSkip)
+            {
+            continue;
+            }
+
+        if (SUCCESS != m_fileStorage.CleanupCachedFile(filePath))
             {
             return ERROR;
             }
         }
-    return SUCCESS;
+    return returnValue;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -190,16 +240,8 @@ BeFileName FileInfoManager::ReadFilePath(CachedInstanceKeyCR cachedKey)
     FileInfo fileInfo = ReadInfo(cachedKey);
     BeFileName path = fileInfo.GetFilePath();
 
-    if (path.empty())
-        {
-        return path;
-        }
-
-    if (!path.DoesPathExist())
-        {
+    if (!path.empty() && !path.DoesPathExist())
         path.clear();
-        return path;
-        }
 
     return path;
     }

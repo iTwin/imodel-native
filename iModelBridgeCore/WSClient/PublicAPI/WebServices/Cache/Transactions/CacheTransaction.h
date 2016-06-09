@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Transactions/CacheTransaction.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,15 +20,17 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct CacheTransaction : public Transaction
     {
     private:
-        IDataSourceCache& m_cache;
+        IDataSourceCache* m_cache;
 
     public:
         //! Create active transaction.
         WSCACHE_EXPORT CacheTransaction(IDataSourceCache& cache, ITransactionHandler* handler);
         //! Copy not allowed, use explicit move.
-        WSCACHE_EXPORT CacheTransaction(const CacheTransaction&) = delete;
+        WSCACHE_EXPORT CacheTransaction(const CacheTransaction& other) = delete;
         //! Move active transaction without ending it to prolong its scope.
-        WSCACHE_EXPORT CacheTransaction(CacheTransaction&&);
+        WSCACHE_EXPORT CacheTransaction(CacheTransaction&& other);
+        //! If active, rollback transaction and move other transaction without ending it to prolong its scope.
+        WSCACHE_EXPORT CacheTransaction& operator=(CacheTransaction&& other);
         //! If active, rollback transaction without commiting it.
         WSCACHE_EXPORT virtual ~CacheTransaction();
 

@@ -31,12 +31,4 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define ECSql_ExternalFileInfoClass                         "[ecdbf].[" CLASS_ExternalFileInfo "]"
 #define ECSql_FileInfoOwnership                             "[ecdbf].[" CLASS_FileInfoOwnership "]"
 
-enum class StandardRootFolderType
-    {
-    DocumentsFolder = 0,
-    TemporaryFolder = 1,
-    CachesFolder = 2,
-    LocalStateFolder = 3
-    };
-
 END_BENTLEY_WEBSERVICES_NAMESPACE

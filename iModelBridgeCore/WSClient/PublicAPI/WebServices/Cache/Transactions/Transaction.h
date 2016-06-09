@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Transactions/Transaction.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,9 +25,11 @@ struct Transaction
         //! Create active transaction.
         WSCACHE_EXPORT Transaction(ITransactionHandler* handler);
         //! Only move constructor is available.
-        WSCACHE_EXPORT Transaction(const Transaction&) = delete;
+        WSCACHE_EXPORT Transaction(const Transaction& other) = delete;
         //! Move created transaction without ending it.
-        WSCACHE_EXPORT Transaction(Transaction&&);
+        WSCACHE_EXPORT Transaction(Transaction&& other);
+        //! If active, rollback transaction and move other transaction without ending other.
+        WSCACHE_EXPORT Transaction& operator=(Transaction&& other);
         //! If active, rollback transaction without commiting it.
         WSCACHE_EXPORT virtual ~Transaction();
 

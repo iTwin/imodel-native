@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <WebServices/Cache/Util/JsonDiff.h>
-#include "JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace rapidjson;

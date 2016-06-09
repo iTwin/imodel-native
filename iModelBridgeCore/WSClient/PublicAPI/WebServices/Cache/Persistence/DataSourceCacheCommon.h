@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/DataSourceCacheCommon.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,13 +12,21 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+//! Internal ECF defined
+enum class ExternalFileInfoRootFolderId
+    {
+    Documents = 0,
+    Temporary = 1,
+    Caches = 2,
+    LocalState = 3
+    };
+
+//! WSCache defined
 enum class FileCache
     {
-    Temporary,
-    Persistent,
-    Existing,
-    ExistingOrTemporary,
-    ExistingOrPersistent
+    Persistent = static_cast<int>(ExternalFileInfoRootFolderId::LocalState),
+    Temporary = static_cast<int>(ExternalFileInfoRootFolderId::Temporary),
+    External = static_cast<int>(ExternalFileInfoRootFolderId::Documents)
     };
 
 enum class CacheRootPersistence
@@ -29,7 +37,6 @@ enum class CacheRootPersistence
     };
 
 // TODO: remove
-
 // JSON specific properties
 #define DataSourceCache_PROPERTY_LocalInstanceId        "$ECInstanceId"
 #define DataSourceCache_PROPERTY_ClassKey               "$ECClassKey"
