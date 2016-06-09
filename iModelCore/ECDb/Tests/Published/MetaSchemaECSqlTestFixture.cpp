@@ -22,6 +22,7 @@ private:
     void AssertSchemaDef(ECSchemaCR expectedSchema, ECSqlStatement const& actualSchemaDefRow);
     void AssertClassDefs(ECSchemaCR expectedSchema);
     void AssertClassDef(ECClassCR expectedClass, ECSqlStatement const& actualClassDefRow);
+    void AssertBaseClasses(ECClassCR expectedClass);
     void AssertEnumerationDefs(ECSchemaCR expectedSchema);
     void AssertEnumerationDef(ECEnumerationCR expectedEnum, ECSqlStatement const& actualEnumerationDefRow);
     void AssertEnumerationValue(ECEnumeratorCR expectedEnumValue, IECSqlStructValue const& actualEnumValue);
@@ -52,8 +53,7 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDefs()
         AssertSchemaDef(*expectedSchema, schemaStatement);
         AssertClassDefs(*expectedSchema);
         AssertEnumerationDefs(*expectedSchema);
-        //MetaSchema cannot be enhanced yet until ECschema update supports adding KOQ classes and rels
-        //AssertKindOfQuantityDefs(*expectedSchema);
+        AssertKindOfQuantityDefs(*expectedSchema);
         actualSchemaCount++;
         }
 
@@ -131,6 +131,7 @@ void MetaSchemaECSqlTestFixture::AssertClassDefs(ECSchemaCR expectedSchema)
         ASSERT_TRUE(expectedClass != nullptr);
 
         AssertClassDef(*expectedClass, classStatement);
+        AssertBaseClasses(*expectedClass);
         AssertPropertyDefs(*expectedClass);
         actualClassCount++;
         }
@@ -252,6 +253,27 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
 
         FAIL() << "ECProperty ECClassDef." << colName.c_str() << " not tested. Test needs to be adjusted";
         }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void MetaSchemaECSqlTestFixture::AssertBaseClasses(ECClassCR expectedClass)
+    {
+    ECSqlStatement directBaseClassStatement;
+    ASSERT_EQ(ECSqlStatus::Success, directBaseClassStatement.Prepare(GetECDb(), "SELECT TargetECInstanceId FROM ec.ClassHasBaseClasses WHERE SourceECInstanceId=? ORDER BY Ordinal"));
+    ASSERT_EQ(ECSqlStatus::Success, directBaseClassStatement.BindId(1, expectedClass.GetId()));
+
+    int ordinal = 0;
+    const int expectedBaseClassCount = (int) expectedClass.GetBaseClasses().size();
+    while (BE_SQLITE_ROW == directBaseClassStatement.Step())
+        {
+        ASSERT_LT(ordinal, expectedBaseClassCount);
+        ASSERT_EQ(expectedClass.GetBaseClasses()[ordinal]->GetId().GetValue(), directBaseClassStatement.GetValueId<ECInstanceId>(0).GetValue());
+        ordinal++;
+        }
+
+    ASSERT_EQ(ordinal, expectedBaseClassCount);
     }
 
 //---------------------------------------------------------------------------------

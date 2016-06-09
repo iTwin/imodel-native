@@ -231,6 +231,8 @@
             - an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" which is mapped as <b>link table</b>
     - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations"
         - @b Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration"
+    - @ref BentleyApi::ECN::ECSchema::GetKindOfQuantities "KindOfQuantities"
+        - @b Add a new @ref BentleyApi::ECN::KindOfQuantity "KindOfQuantity"
     - @b CustomAttributes on the ECSchema
         - @b Add, @b delete, @b modify
 
