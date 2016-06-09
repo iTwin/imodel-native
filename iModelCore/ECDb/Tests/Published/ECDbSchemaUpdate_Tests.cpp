@@ -4868,6 +4868,150 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyRelationshipConstrainsRoleLabel)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' roleLabel='A has C' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' roleLabel='C belongs to A' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem modifySourceRoleLabel(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' roleLabel='A has C Modified' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' roleLabel='C belongs to A' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "Modifying Source constraint class RoleLabel is expected to be successfull");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), modifySourceRoleLabel);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem modifyTargetRoleLabel(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' roleLabel='A has C Modified' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' roleLabel='C belongs to A Modified' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "Modifying Target Constraint class Role Label is expected to be successfull");
+
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), modifyTargetRoleLabel);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem modifyBothRoleLabels(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' roleLabel='A has B and C' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' roleLabel='B and C belong to A' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "Modifying both source and target class RoleLabels simultaneously is expected to be successfull");
+
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), modifyBothRoleLabels);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ModifyProperties)
@@ -5082,6 +5226,73 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
     AssertSchemaImport(asserted, GetECDb(), modifiedReadonlyFlag);
     ASSERT_FALSE(asserted);
     sp.Cancel();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyNavigationProperty)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='Embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem modifiedRelNameInNavProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='A1'>"
+        "        <ECProperty propertyName='PA1' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='A1HasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='A1HasB' modifier='Sealed' strength='embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A1' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>", false, "Changing relationship Class Name for a Navigation property is not supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), modifiedRelNameInNavProperty);
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
