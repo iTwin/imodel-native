@@ -502,7 +502,22 @@ void HUTExportToFile::Export()
             pPhysicalSrcToPhysicalDst = pSrcPhysToLogModel->ComposeInverseWithDirectOf(*pSrcToDstWorld);
             pPhysicalSrcToPhysicalDst = pPhysicalSrcToPhysicalDst->ComposeInverseWithInverseOf(*pDstPhysToLogModel);
 
-            if (pPhysicalSrcToPhysicalDst->IsIdentity() == false)
+            double          MeanError;
+            double          MaxError;
+            HGF2DLiteExtent PrecisionArea(0.0, 0.0, (double)m_pSourceFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth(),
+                                                    (double)m_pSourceFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight());
+            double          Step(min(m_pSourceFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth(), pDstResDesc->GetHeight()) / 3.0);
+            pPhysicalSrcToPhysicalDst->GetEquivalenceToOver(HGF2DIdentity(), PrecisionArea, Step, &MeanError, &MaxError);
+
+            double scaleFactorX, scaleFactorY, factor;
+            HGF2DDisplacement displacement;
+            pPhysicalSrcToPhysicalDst->GetStretchParamsAt(&scaleFactorX, &scaleFactorY, &displacement,
+                                                          pDstResDesc->GetWidth() / 2.0,
+                                                          pDstResDesc->GetHeight() / 2.0);
+            factor = MIN(fabs(scaleFactorX), fabs(scaleFactorY));
+
+            // bigger than 1/6 of the pixel size
+            if (MaxError > factor / 6.0)
                 {
                 // Indicate that we need a cache on the source file.
                 m_SrcNeedCache = true;

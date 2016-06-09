@@ -290,9 +290,8 @@ bool HRFMrSIDCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     LT_STATUS sts = LT_STS_Uninit;
 
-    AString filenameA;
-    BeStringUtilities::WCharToCurrentLocaleChar (filenameA, static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName().c_str());
-
+    WString filenameW(static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName().c_str(), BentleyCharEncoding::Utf8);
+    AString filenameA(filenameW.c_str());
     const LTFileSpec FileSpec(filenameA.c_str());
 
     MrSIDImageReader* pImageReader(MrSIDImageReader::create());
@@ -638,8 +637,8 @@ bool HRFMrSIDFile::Open()
         // Open the MrSid file
         LT_STATUS sts = LT_STS_Uninit;
 
-        AString filenameA;
-        BeStringUtilities::WCharToCurrentLocaleChar (filenameA, static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str());
+        WString filenameW(static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str(), BentleyCharEncoding::Utf8);
+        AString filenameA(filenameW.c_str());
 
         m_pFileSpec = new LTFileSpec(filenameA.c_str());
 
@@ -1153,7 +1152,9 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     HASSERT(pMetaRecord->getDataType() == LTI_METADATA_DATATYPE_ASCII);
                     ppData = (const void**)pMetaRecord->getArrayData(NumDims, pDims);
 
-                    BeStringUtilities::CurrentLocaleCharToWChar( WKT,(char*)*ppData);
+                    WString wStr;
+                    BeStringUtilities::CurrentLocaleCharToWChar(wStr,(char*)*ppData);
+                    BeStringUtilities::WCharToUtf8(WKT, wStr.c_str(), wStr.size());
                     }
 
                 if ((WKT != "") && (po_rpGeoTiffKeys->GetNbKeys() > 0))
@@ -1164,7 +1165,8 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                         //and there is a WKT string, try with the WKT string
 
                         GeoCoordinates::BaseGCSPtr pBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
-                        if(SUCCESS == pBaseGcs->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WKT.c_str()))
+                        WString WktGeocode(WKT.c_str(), BentleyCharEncoding::Locale);
+                        if(SUCCESS == pBaseGcs->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WktGeocode.c_str()))
                             {
                             po_pFileGeocoding = pBaseGcs; 
                             // Units are always specified in a valid WKT

@@ -543,7 +543,11 @@ public:
                                           double*               po_pScaleChangeMax,
                                           double                pi_ScaleTreshold = 1.0) const;
 
-
+    IMAGEPP_EXPORT void GetEquivalenceToOver (const HGF2DTransfoModel& pi_rModel,
+                               const HGF2DLiteExtent& pi_PrecisionArea,
+                               double                pi_Step,
+                               double*               po_pMeanError,
+                               double*               po_pMaxError) const;
 protected:
     // Primary methods
     IMAGEPP_EXPORT                   HGF2DTransfoModel();
