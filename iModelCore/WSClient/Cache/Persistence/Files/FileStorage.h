@@ -25,6 +25,7 @@ struct FileStorage
         std::shared_ptr<ValueIncrementor> m_folderNameIncrementor;
 
     private:
+        BeFileNameCR GetCacheEnvironmentRootPath(FileCache location);
         static BeFileName GetFileCacheFolderPath(BeFileName rootDir, WStringCR cacheName);
 
         BeFileName CreateNewRelativeCachedFilePath(Utf8StringCR fileName, FileCache location);
