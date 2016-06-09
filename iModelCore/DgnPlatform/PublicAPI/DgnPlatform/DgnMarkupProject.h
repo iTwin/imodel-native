@@ -227,10 +227,11 @@ public:
 
     //! Save an image as the backdrop for this redline model.
     //! @param imageData       the image data
+    //! @param isTopDown        If true, the RGB image in imageData is assumed to start at the upper left. Else, it is assumed to start from the lower left and go up.
     //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
     //! @param compressImageProperty If true, the image data is compressed before being stored in the database. 
-    DGNPLATFORM_EXPORT void StoreImageData(Render::Image const& imageData, bool fitToX, bool compressImageProperty=true);
+    DGNPLATFORM_EXPORT void StoreImageData(Render::Image const& imageData, bool isTopDown, bool fitToX, bool compressImageProperty=true);
 
     //! Save an image as the backdrop for this redline model.
     //! @param jpegData         The image data in JPEG format.

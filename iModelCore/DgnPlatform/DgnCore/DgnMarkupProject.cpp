@@ -1178,14 +1178,14 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageData(Render::Image const& imageData, bool fitToX, bool compressImageProperty)
+void RedlineModel::StoreImageData(Render::Image const& imageData, bool isTopDown, bool fitToX, bool compressImageProperty)
     {
     //  Grab possibly updated image definition data
     m_imageDef.m_format = (int) imageData.GetFormat();
     m_imageDef.m_sizeInPixels.x = imageData.GetWidth();
     m_imageDef.m_sizeInPixels.y = imageData.GetHeight();
 
-    m_imageDef.m_topDown = false;//imageInfo.isTopDown;
+    m_imageDef.m_topDown = isTopDown;
 
     //  Map the image into the sheet area, scaling it up or down to fit ... 
     //  but, be sure to maintain the aspect ratio of the original image.
@@ -1231,7 +1231,7 @@ void RedlineModel::StoreImageDataFromJPEG(uint8_t const* jpegData, size_t jpegDa
     if (imageInfoIn.ReadImageFromJpgBuffer(image, jpegData, jpegDataSize) != BSISUCCESS)
         return;
 
-    StoreImageData(image, fitToX, /*compresssImageProperty*/false);
+    StoreImageData(image, imageInfoIn.m_isTopDown, fitToX, /*compresssImageProperty*/false);
     }
 
 /*---------------------------------------------------------------------------------**//**
