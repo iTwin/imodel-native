@@ -403,7 +403,7 @@
     %ECDb has some more:
 
     - The @b ForeignKeyRelationshipMap and @b LinkTableRelationshipMap custom attributes (see @ref ECDbSchemaMappingCustomization) can only 
-    be applied to the @b root of the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" hierarchy. The @root is the ECRelationshipClass which
+    be applied to the @b root of the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" hierarchy. The @b root is the ECRelationshipClass which
     does not have a base class itself.
     - The mapping type must not change within a relationship class hierarchy. In other words, the @ref BentleyApi::ECN::ECRelationshipClass "Root ECRelationshipClass"
     determines the mapping for the entire hierarchy.
