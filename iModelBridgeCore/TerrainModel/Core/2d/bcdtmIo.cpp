@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmIo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -3173,8 +3173,8 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
  numTinFeatures = 0 ;
  for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
    {
-    dtmFeatureP  = ftableAddrP(dtmP,dtmFeature) ;
-    if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType != DTMFeatureType::Hull ) ++numTinFeatures ;
+    dtmFeatureP  = ftableAddrP(dtmP,dtmFeature) ;    
+    ++numTinFeatures ;
    }
  if( dbg ) bcdtmWrite_message(0,0,0,"numTinFeatures = %8ld",numTinFeatures) ;
 /*
@@ -3347,31 +3347,40 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
 **  Write Features
 */
     dtmTinFeature = 0 ;
+
     for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
       {
        dtmFeatureP  = ftableAddrP(dtmP,dtmFeature) ;
-       if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType != DTMFeatureType::Hull )
+                
+       if( dbg == 2  ) bcdtmWrite_message(0,0,0,"Writing Feature %4ld",dtmFeatureP->dtmFeatureType) ;
+       geopakFeature.firstPnt           = dtmFeatureP->dtmFeaturePts.firstPoint ;
+
+       if (dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && (dtmFeatureP->dtmFeatureType == DTMFeatureType::Hull || dtmFeatureP->dtmFeatureType == DTMFeatureType::Region))
+          {       
+          geopakFeature.dtmFeatureType = DTMFeatureType::GroupSpots;                
+          }
+       else
+          {
+          geopakFeature.dtmFeatureType = dtmFeatureP->dtmFeatureType ;
+          }
+
+       geopakFeature.internalToFeature  = dtmFeatureP->internalToDtmFeature ;
+       geopakFeature.userTag            = dtmFeatureP->dtmUserTag ;
+       geopakFeature.userGuid           = nullGuid ;
+/*
+**     Set Feature Map
+*/
+       *(featureMapP+dtmFeature) = dtmTinFeature ;
+       
+       ++dtmTinFeature ;
+/*
+**     Write Feature Header
+*/
+       if( bcdtmStream_fwrite(&geopakFeature,sizeof(DTM_FEATURE_TABLE),1,dtmStreamP) != 1 )
          {
-          if( dbg == 2  ) bcdtmWrite_message(0,0,0,"Writing Feature %4ld",dtmFeatureP->dtmFeatureType) ;
-          geopakFeature.firstPnt           = dtmFeatureP->dtmFeaturePts.firstPoint ;
-          geopakFeature.dtmFeatureType     = dtmFeatureP->dtmFeatureType ;
-          geopakFeature.internalToFeature  = dtmFeatureP->internalToDtmFeature ;
-          geopakFeature.userTag            = dtmFeatureP->dtmUserTag ;
-          geopakFeature.userGuid           = nullGuid ;
-/*
-**        Set Feature Map
-*/
-          *(featureMapP+dtmFeature) = dtmTinFeature ;
-          ++dtmTinFeature ;
-/*
-**        Write Feature Header
-*/
-          if( bcdtmStream_fwrite(&geopakFeature,sizeof(DTM_FEATURE_TABLE),1,dtmStreamP) != 1 )
-            {
-             bcdtmWrite_message(1,0,0,"Error Writing Dtm Feature") ;
-             goto errexit ; 
-            }
-         }
+          bcdtmWrite_message(1,0,0,"Error Writing Dtm Feature") ;
+          goto errexit ; 
+         }         
       }
    }
 /*

@@ -51,14 +51,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -p ScalableTerrainModel  -f TerrainModel -r TerrainModel -ax64 re ScalableTerrainModel  </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64 -c
-python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64 -c
-</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -p ScalableTerrainModel  -f TerrainModel -r TerrainModel -ax64 re ScalableTerrainModel  -c
+bb -p ScalableTerrainModel  -f TerrainModel -r TerrainModel -ax64 re ScalableTerrainModel  </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p ScalableTerrainModel  -f TerrainModel -r TerrainModel -ax64 re ScalableTerrainModel  -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies>
