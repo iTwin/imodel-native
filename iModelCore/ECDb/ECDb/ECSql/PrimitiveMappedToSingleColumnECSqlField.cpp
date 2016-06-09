@@ -40,7 +40,7 @@ PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField
 //+---------------+---------------+---------------+---------------+---------------+------
 bool PrimitiveMappedToSingleColumnECSqlField::_IsNull() const
     {
-    return GetSqliteStatement().IsColumnNull(GetSqliteColumnIndex());
+    return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -48,11 +48,10 @@ bool PrimitiveMappedToSingleColumnECSqlField::_IsNull() const
 //+---------------+---------------+---------------+---------------+---------------+------
 void const* PrimitiveMappedToSingleColumnECSqlField::_GetBinary(int* binarySize) const
     {
-    const int columnIndex = GetSqliteColumnIndex();
     if (binarySize != nullptr)
-        *binarySize = GetSqliteStatement().GetColumnBytes(columnIndex);
+        *binarySize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
 
-    return GetSqliteStatement().GetValueBlob(columnIndex);
+    return GetSqliteStatement().GetValueBlob(m_sqliteColumnIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -60,7 +59,7 @@ void const* PrimitiveMappedToSingleColumnECSqlField::_GetBinary(int* binarySize)
 //+---------------+---------------+---------------+---------------+---------------+------
 bool PrimitiveMappedToSingleColumnECSqlField::_GetBoolean() const
     {
-    return GetSqliteStatement().GetValueInt(GetSqliteColumnIndex()) != 0;
+    return GetSqliteStatement().GetValueInt(m_sqliteColumnIndex) != 0;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -68,7 +67,7 @@ bool PrimitiveMappedToSingleColumnECSqlField::_GetBoolean() const
 //+---------------+---------------+---------------+---------------+---------------+------
 double PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
-    const double jd = GetSqliteStatement().GetValueDouble(GetSqliteColumnIndex());
+    const double jd = GetSqliteStatement().GetValueDouble(m_sqliteColumnIndex);
     metadata = m_datetimeMetadata;
     return jd;
     }
@@ -87,7 +86,7 @@ uint64_t PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDaysHns(Date
 //+---------------+---------------+---------------+---------------+---------------+------
 double PrimitiveMappedToSingleColumnECSqlField::_GetDouble() const
     {
-    return GetSqliteStatement().GetValueDouble(GetSqliteColumnIndex());
+    return GetSqliteStatement().GetValueDouble(m_sqliteColumnIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -95,7 +94,7 @@ double PrimitiveMappedToSingleColumnECSqlField::_GetDouble() const
 //+---------------+---------------+---------------+---------------+---------------+------
 int PrimitiveMappedToSingleColumnECSqlField::_GetInt() const
     {
-    return GetSqliteStatement().GetValueInt(GetSqliteColumnIndex());
+    return GetSqliteStatement().GetValueInt(m_sqliteColumnIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -103,7 +102,7 @@ int PrimitiveMappedToSingleColumnECSqlField::_GetInt() const
 //+---------------+---------------+---------------+---------------+---------------+------
 int64_t PrimitiveMappedToSingleColumnECSqlField::_GetInt64() const
     {
-    return GetSqliteStatement().GetValueInt64(GetSqliteColumnIndex());
+    return GetSqliteStatement().GetValueInt64(m_sqliteColumnIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -111,7 +110,7 @@ int64_t PrimitiveMappedToSingleColumnECSqlField::_GetInt64() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8CP PrimitiveMappedToSingleColumnECSqlField::_GetText() const
     {
-    return GetSqliteStatement().GetValueText(GetSqliteColumnIndex());
+    return GetSqliteStatement().GetValueText(m_sqliteColumnIndex);
     }
 
 //---------------------------------------------------------------------------------------
@@ -145,11 +144,10 @@ IGeometryPtr PrimitiveMappedToSingleColumnECSqlField::_GetGeometry() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 void const* PrimitiveMappedToSingleColumnECSqlField::_GetGeometryBlob(int* blobSize) const
     {
-    const int columnIndex = GetSqliteColumnIndex();
     if (blobSize != nullptr)
-        *blobSize = GetSqliteStatement().GetColumnBytes(columnIndex);
+        *blobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
 
-    return GetSqliteStatement().GetValueBlob(columnIndex);
+    return GetSqliteStatement().GetValueBlob(m_sqliteColumnIndex);
     }
 
 //**** No-op implementations
