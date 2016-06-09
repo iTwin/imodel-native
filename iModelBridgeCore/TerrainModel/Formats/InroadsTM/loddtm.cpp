@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* loddtm.c                                         tmi    24-Apr-1990        */
@@ -1012,7 +1012,7 @@ struct CIVdtmsrf *srf,
                                 struct CIVdtmftrV8 ftrV8;
                                 memset ( &ftrV8, 0, sizeof ( ftrV8 ) );
 
-                                if ( fread ( &ftrV8, sizeof ( struct CIVdtmftrV8 ), 1, handleP ) != 1 )
+                                if ( fread ( &ftrV8, CIVdtmftrV8Size, 1, handleP ) != 1 )
                                     sts = DTM_M_RDFILF;
 
                                 aecGuid_copy ( &f[blk->use].guid, &ftrV8.guid );
@@ -1033,7 +1033,7 @@ struct CIVdtmsrf *srf,
                                 struct CIVdtmftrV7 ftrV7;
                                 memset ( &ftrV7, 0, sizeof ( ftrV7 ) );
 
-                                if ( fread ( &ftrV7, sizeof ( struct CIVdtmftrV7 ), 1, handleP ) != 1 )
+                                if ( fread ( &ftrV7, CIVdtmftrV7Size, 1, handleP ) != 1 )
                                     sts = DTM_M_RDFILF;
 
                                 aecGuid_copy ( &f[blk->use].guid, &ftrV7.guid );

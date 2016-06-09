@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmcon.h                                            aec    07-Sep-1990     */
@@ -217,6 +217,8 @@
 			   3*sizeof(long) + \
 			     sizeof(byte)        )
 #define CIVdtmftrSize (offsetof (struct CIVdtmftr, flg) + 8)
+#define CIVdtmftrV8Size (offsetof (struct CIVdtmftrV8, flg) + 8)
+#define CIVdtmftrV7Size (offsetof (struct CIVdtmftrV7, flg) + 8)
 //(sizeof(struct CIVdtmftr) - (sizeof (void*)* 3))
 #define CIVdtmstySize (sizeof(struct CIVdtmsty))
 #define CIVdtmpaySize (sizeof(struct CIVdtmpay))
