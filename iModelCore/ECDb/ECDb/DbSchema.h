@@ -641,7 +641,7 @@ public:
 
     DbMappings const& GetDbMappings() const { return m_dbMappings; }
     DbMappings& GetDbMappingsR() { return m_dbMappings; }
-
+    BentleyStatus SynchronizeExistingTables();
     ECDbCR GetECDb() const { return m_ecdb; }
     void Reset();
 
