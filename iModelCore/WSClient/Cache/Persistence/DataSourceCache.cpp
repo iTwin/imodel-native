@@ -1325,34 +1325,25 @@ FileCache cacheLocation
 
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
     if (!info.GetInstanceKey().IsValid())
-        {
         return ERROR;
-        }
 
     if (!fileResult.IsModified())
         {
         if (!info.IsInCache())
-            {
             return ERROR;
-            }
-
-        info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
         }
     else
         {
         auto path = fileResult.GetFilePath();
         auto eTag = fileResult.GetETag();
-        auto time = DateTime::GetCurrentTimeUtc();
-        if (SUCCESS != m_state->GetFileStorage().CacheFile(info, path, eTag.c_str(), cacheLocation, time, false))
-            {
+        if (SUCCESS != m_state->GetFileStorage().CacheFile(info, path, eTag.c_str(), cacheLocation, false))
             return ERROR;
-            }
         }
 
+    info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
+
     if (SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
-        {
         return ERROR;
-        }
 
     return SUCCESS;
     }
