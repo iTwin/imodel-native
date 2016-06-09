@@ -27,25 +27,34 @@ temporaryFileCacheDir(temporaryDir)
     {}
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    11/2014
+* @bsimethod                                                    Vincas.Razma    06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-int CacheEnvironment::GetPersistentRootFolderId()
+BeFileNameCR CacheEnvironment::GetPath(FileCache location)
     {
-    return static_cast<int>(FileCache::Persistent);
+    if (FileCache::External == location)
+        return externalFileCacheDir;
+    if (FileCache::Persistent == location)
+        return persistentFileCacheDir;
+    if (FileCache::Temporary == location)
+        return temporaryFileCacheDir;
+
+    BeAssert(false);
+    static BeFileName empty;
+    return empty;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    11/2014
+* @bsimethod                                                    Vincas.Razma    06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-int CacheEnvironment::GetTemporaryRootFolderId()
+int CacheEnvironment::GetRootFolderId(FileCache location)
     {
-    return static_cast<int>(FileCache::Temporary);
-    }
+    if (FileCache::External == location)
+        return static_cast<int>(FileCache::External);
+    if (FileCache::Persistent == location)
+        return static_cast<int>(FileCache::Persistent);
+    if (FileCache::Temporary == location)
+        return static_cast<int>(FileCache::Temporary);
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-int CacheEnvironment::GetExternalRootFolderId()
-    {
-    return static_cast<int>(FileCache::External);
+    BeAssert(false);
+    return -1;
     }
