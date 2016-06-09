@@ -1458,6 +1458,27 @@
         </Target>
     </ECRelationshipClass>
     
+<!-- 	<ECRelationshipClass 
+      typeName="SpatialEntityDatasetToChildrenView" 
+      description="Link between SpatialEntityDataset and the SpatialEntityBases (view version) it contains." 
+      strength="embedding" 
+      strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipKeys>
+                <ContainerClassName>SpatialEntityDataset</ContainerClassName>
+                <ContainerKey>Id</ContainerKey>
+                <ContainedClassName>SpatialEntityWithDetailsView</ContainedClassName>
+                <ContainedKey>ParentDataset_Id</ContainedKey>
+            </RelationshipKeys>
+        </ECCustomAttributes>
+        <Source cardinality="(0,1)" roleLabel="contains" polymorphic="False">
+            <Class class="SpatialEntityDataset" />
+        </Source>
+        <Target cardinality="(0,n)" roleLabel="contained in" polymorphic="False">
+            <Class class="SpatialEntityWithDetailsView" />
+        </Target>
+    </ECRelationshipClass> -->
+	
     <ECRelationshipClass 
       typeName="SpatialEntityDatasetToAlternateDataset" 
       description="Link between SpatialEntityDataset and an alternate dataset." 

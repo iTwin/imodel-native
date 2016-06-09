@@ -8,6 +8,7 @@ using Bentley.EC.Persistence;
 using Bentley.EC.Persistence.Query;
 using Bentley.ECObjects.Instance;
 using Bentley.ECObjects.Schema;
+using Bentley.Exceptions;
 
 namespace IndexECPlugin.Source.Helpers
     {
@@ -126,6 +127,22 @@ namespace IndexECPlugin.Source.Helpers
                 basePropertiesSelected = propertiesSelected.ToList();
                 }
 
+            try
+                {
+                //We add the instanceIdProperty to the selected properties. It is necessary to fetch this property to set the instance ID later
+                string InstanceIDPropertyName = baseECClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
+                IECProperty InstanceIDProperty = baseECClass.FindProperty(InstanceIDPropertyName);
+
+                if ( !basePropertiesSelected.Contains(InstanceIDProperty) )
+                    {
+                    basePropertiesSelected.Add(InstanceIDProperty);
+                    }
+                }
+            catch ( Bentley.ECObjects.ECObjectsException.NullValue )
+                {
+                throw new ProgrammerException(String.Format("Error in class {0} of the ECSchema. The custom attribute InstanceIDProperty is not set", baseECClass.Name));
+                }
+
             string sqlQueryString = m_mimicTableWriter.CreateMimicSQLQuery(m_source, instanceIdsList, baseECClass, basePropertiesSelected, out drh, out paramNameValueMap, additionalColumns);
 
             List<IECInstance> cachedInstances = SqlQueryHelpers.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
@@ -213,6 +230,22 @@ namespace IndexECPlugin.Source.Helpers
             else
                 {
                 basePropertiesSelected = propertiesSelected.ToList();
+                }
+
+            try
+                {
+                //We add the instanceIdProperty to the selected properties. It is necessary to fetch this property to set the instance ID later
+                string InstanceIDPropertyName = baseECClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
+                IECProperty InstanceIDProperty = baseECClass.FindProperty(InstanceIDPropertyName);
+
+                if ( !basePropertiesSelected.Contains(InstanceIDProperty) )
+                    {
+                    basePropertiesSelected.Add(InstanceIDProperty);
+                    }
+                }
+            catch ( Bentley.ECObjects.ECObjectsException.NullValue )
+                {
+                throw new ProgrammerException(String.Format("Error in class {0} of the ECSchema. The custom attribute InstanceIDProperty is not set", baseECClass.Name));
                 }
 
             string sqlQueryString = m_mimicTableWriter.CreateMimicSQLSpatialQuery(m_source, polygonDescriptor, baseECClass, basePropertiesSelected, out drh, out paramNameValueMap, additionalColumns, whereCriteria);
