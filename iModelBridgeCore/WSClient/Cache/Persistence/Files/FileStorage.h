@@ -44,7 +44,6 @@ struct FileStorage
             BeFileNameCR suppliedFilePath,
             Utf8CP cacheTag,
             FileCache cacheLocation,
-            DateTimeCR cacheDateUtc,
             bool copyFile
             );
 

@@ -281,7 +281,6 @@ FileInfo& info,
 BeFileNameCR suppliedFileAbsolutePath,
 Utf8CP cacheTag,
 FileCache location,
-DateTimeCR cacheDateUtc,
 bool copyFile
 )
     {
@@ -321,7 +320,6 @@ bool copyFile
         oldFileAbsolutePath = info.GetFilePath();
 
     info.SetFilePath(location, newFileRelativePath, fileName);
-    info.SetFileCacheDate(cacheDateUtc);
     info.SetFileCacheTag(cacheTag);
 
     newFileAbsolutePath = info.GetFilePath();

@@ -306,13 +306,14 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
     if (SUCCESS != SetupNewRevision(info))
         return ERROR;
 
+    info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
     info.SetChangeStatus(ChangeStatus::Modified);
     info.SetSyncStatus(syncStatus);
-
+    
     if (info.GetFilePath() != filePath)
         {
         FileCache location = info.GetLocation(FileCache::Persistent);
-        if (SUCCESS != m_fileStorage->CacheFile(info, filePath, nullptr, location, DateTime::GetCurrentTimeUtc(), copyFile))
+        if (SUCCESS != m_fileStorage->CacheFile(info, filePath, nullptr, location, copyFile))
             return ERROR;
         }
 
