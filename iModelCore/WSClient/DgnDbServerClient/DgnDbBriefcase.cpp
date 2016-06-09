@@ -255,42 +255,6 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate (ICancellationTokenPt
         });
     }
 
-////---------------------------------------------------------------------------------------
-////@bsimethod                                     Caleb.Shafer	              06/2016
-////---------------------------------------------------------------------------------------
-//EventServiceReceiveTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken) const
-//	{
-//	BeAssert (DgnDbServerHost::IsInitialized ());
-//    if (!m_db.IsValid () || !m_db->IsDbOpen ())
-//        {
-//		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::FileNotFound));
-//        }
-//    if (!m_repositoryConnection)
-//        {
-//        return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
-//        }
-//
-//	return m_repositoryConnection->GetEvents(longPolling, cancellationToken);
-//	}
-
-////---------------------------------------------------------------------------------------
-////@bsimethod                                 Arvind.Venkateswaran	              06/2016
-////---------------------------------------------------------------------------------------
-//IDgnDbServerEventTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken) const
-//    {
-//    BeAssert(DgnDbServerHost::IsInitialized());
-//    if (!m_db.IsValid() || !m_db->IsDbOpen())
-//        {
-//        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::FileNotFound));
-//        }
-//    if (!m_repositoryConnection)
-//        {
-//        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
-//        }
-//
-//    return m_repositoryConnection->GetEvent(longPolling, cancellationToken);
-//    }
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
