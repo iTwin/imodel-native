@@ -943,17 +943,13 @@ CacheStatus DataSourceCache::RemoveInstance(ObjectIdCR objectId)
 BentleyStatus DataSourceCache::RemoveFile(ObjectIdCR objectId)
     {
     LogCacheDataForMethod();
-    FileInfo fileInfo = m_state->GetFileInfoManager().ReadInfo(objectId);
+    FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
 
-    if (!fileInfo.IsInCache())
-        {
+    if (!info.IsInCache())
         return SUCCESS;
-        }
 
-    if (SUCCESS != m_state->GetFileStorage().CleanupCachedFile(fileInfo.GetFilePath()))
-        {
+    if (SUCCESS != m_state->GetFileStorage().CleanupCachedFile(info))
         return ERROR;
-        }
 
     return SUCCESS;
     }

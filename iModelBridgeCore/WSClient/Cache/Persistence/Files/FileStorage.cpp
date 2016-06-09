@@ -225,6 +225,7 @@ BentleyStatus FileStorage::SetFileCacheLocation(FileInfo& info, FileCache locati
         return ERROR;
         }
 
+    FileCache oldFileLocation = info.GetLocation();
     BeFileName oldFileAbsolutePath = info.GetFilePath();
     if (oldFileAbsolutePath.empty())
         {
@@ -265,7 +266,7 @@ BentleyStatus FileStorage::SetFileCacheLocation(FileInfo& info, FileCache locati
         return ERROR;
         }
 
-    if (SUCCESS != RemoveContainingFolder(oldFileAbsolutePath))
+    if (SUCCESS != CleanupCachedFile(oldFileAbsolutePath, oldFileLocation))
         return ERROR;
 
     return SUCCESS;
@@ -312,11 +313,12 @@ bool copyFile
         return ERROR;
 
     // Save cached file info
-    BeFileName previouslyCachedFileAbsolutePath;
+    FileCache oldFileLocation = info.GetLocation();
+    BeFileName oldFileAbsolutePath;
     BeFileName newFileAbsolutePath;
 
     if (!info.GetFileName().empty())
-        previouslyCachedFileAbsolutePath = info.GetFilePath();
+        oldFileAbsolutePath = info.GetFilePath();
 
     info.SetFilePath(location, newFileRelativePath, fileName);
     info.SetFileCacheDate(cacheDateUtc);
@@ -327,21 +329,17 @@ bool copyFile
     // Move or copy file
     if (!newFileAbsolutePath.Equals(suppliedFileAbsolutePath))
         {
-        if (SUCCESS != ReplaceFileWithRollback(previouslyCachedFileAbsolutePath, suppliedFileAbsolutePath, newFileAbsolutePath, copyFile))
+        if (SUCCESS != ReplaceFileWithRollback(oldFileAbsolutePath, suppliedFileAbsolutePath, newFileAbsolutePath, copyFile))
             {
             BeAssert(false);
             return ERROR;
             }
         }
 
-    if (!previouslyCachedFileAbsolutePath.empty() && !previouslyCachedFileAbsolutePath.Equals(newFileAbsolutePath))
+    if (!oldFileAbsolutePath.empty() && !oldFileAbsolutePath.Equals(newFileAbsolutePath))
         {
-        if (SUCCESS != RemoveContainingFolder(previouslyCachedFileAbsolutePath))
-            {
-            LOG.errorv(L"Cannot remove old containing folder: %ls", previouslyCachedFileAbsolutePath.c_str());
-            BeAssert(false);
+        if (SUCCESS != CleanupCachedFile(oldFileAbsolutePath, oldFileLocation))
             return ERROR;
-            }
         }
 
     return SUCCESS;
@@ -401,31 +399,41 @@ BentleyStatus FileStorage::DeleteFileCacheDirectories(CacheEnvironmentCR fullEnv
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    12/2013
+* @bsimethod                                                    Vincas.Razma    06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileStorage::RemoveContainingFolder(BeFileNameCR filePath)
+BentleyStatus FileStorage::CleanupCachedFile(FileInfoCR info)
     {
-    BeFileName directoryPath(BeFileName::GetDirectoryName(filePath));
-    BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(directoryPath);
-    if (status != BeFileNameStatus::Success &&
-        status != BeFileNameStatus::FileNotFound)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-    return SUCCESS;
+    return CleanupCachedFile(info.GetFilePath(), info.GetLocation());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileStorage::CleanupCachedFile(BeFileNameCR filePath)
+BentleyStatus FileStorage::CleanupCachedFile(BeFileNameCR filePath, FileCache location)
     {
-    if (!filePath.empty())
+    if (filePath.empty())
+        return SUCCESS;
+
+    if (FileCache::External == location)
         {
-        if (SUCCESS != RemoveContainingFolder(filePath))
+        if (filePath.DoesPathExist() && BeFileNameStatus::Success != BeFileName::BeDeleteFile(filePath))
+            {
+            BeAssert(false);
             return ERROR;
+            }
         }
+    else
+        {
+        BeFileName directoryPath(BeFileName::GetDirectoryName(filePath));
+        BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(directoryPath);
+        if (status != BeFileNameStatus::Success &&
+            status != BeFileNameStatus::FileNotFound)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+        }
+
     return SUCCESS;
     }
 
