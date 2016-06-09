@@ -15,7 +15,7 @@
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <WebServices/Azure/EventServiceClient.h>
-#include <DgnDbServer/Client/EventServiceConnection.h>
+#include <DgnDbServer/Client/DgnDbServerEventConnection.h>
 #include <DgnDbServer/Client/DgnDbServerLockevent.h>
 #include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
 #include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
@@ -36,7 +36,7 @@ DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbLockSetResultInfo, DgnDbServerLockSet);
-DEFINE_TASK_TYPEDEFS(EventServiceConnectionPtr, EventServiceConnection);
+DEFINE_TASK_TYPEDEFS(DgnDbServerEventConnectionPtr, DgnDbServerEventConnection);
 DEFINE_TASK_TYPEDEFS(bvector<IDgnDbServerEventPtr>, IDgnDbServerEvents);
 DEFINE_TASK_TYPEDEFS(IDgnDbServerEventPtr, IDgnDbServerEvent);
 
@@ -120,10 +120,10 @@ private:
     DgnDbServerRevisionsTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get the SasToken and NameSpace based on query to EventService WebAPI.
-    EventServiceConnectionTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerEventConnectionTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get the ConnectionId based on query to EventService WebAPI.
-    EventServiceConnectionTaskPtr GetEventServiceSubscriptionId(ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerEventConnectionTaskPtr GetEventServiceSubscriptionId(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get Responses from the EventServiceClient
     bool GetEventServiceResponses(bvector<Json::Value>& responses, bvector<Utf8CP>& contentTypes, bool longpolling = true);
