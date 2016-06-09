@@ -183,34 +183,36 @@ BeFileName FileStorage::GetAbsoluteFilePath(FileCache location, BeFileNameCR rel
     {
     BeFileName absolutePath;
     if (relativePath.empty())
-        {
         return absolutePath;
-        }
-
-    WCharCP saveDirectory;
-    if (FileCache::Persistent == location)
-        {
-        saveDirectory = m_environment.persistentFileCacheDir.c_str();
-        }
-    else if (FileCache::Temporary == location)
-        {
-        saveDirectory = m_environment.temporaryFileCacheDir.c_str();
-        }
-    else if (FileCache::External == location)
-        {
-        saveDirectory = m_environment.externalFileCacheDir.c_str();
-        }
-    else
-        {
-        BeAssert(false);
-        return absolutePath;
-        }
 
     absolutePath
-        .AppendToPath(saveDirectory)
+        .AppendToPath(GetCacheEnvironmentRootPath(location))
         .AppendToPath(relativePath);
 
     return absolutePath;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileNameCR FileStorage::GetCacheEnvironmentRootPath(FileCache location)
+    {
+    if (FileCache::Persistent == location)
+        {
+        return m_environment.persistentFileCacheDir;
+        }
+    else if (FileCache::Temporary == location)
+        {
+        return m_environment.temporaryFileCacheDir;
+        }
+    else if (FileCache::External == location)
+        {
+        return m_environment.externalFileCacheDir;
+        }
+
+    BeAssert(false);
+    static BeFileName empty;
+    return empty;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -227,6 +229,7 @@ BentleyStatus FileStorage::SetFileCacheLocation(FileInfo& info, FileCache locati
 
     FileCache oldFileLocation = info.GetLocation();
     BeFileName oldFileAbsolutePath = info.GetFilePath();
+
     if (oldFileAbsolutePath.empty())
         {
         BeFileName newFileRelativePath;
@@ -371,6 +374,10 @@ CacheEnvironment FileStorage::CreateCacheEnvironment(BeFileNameCR cacheFilePath,
     fullEnvironment.temporaryFileCacheDir = GetFileCacheFolderPath(inputEnvironment.temporaryFileCacheDir, cacheName);
     fullEnvironment.externalFileCacheDir = inputEnvironment.externalFileCacheDir;
 
+    fullEnvironment.persistentFileCacheDir.AppendSeparator();
+    fullEnvironment.temporaryFileCacheDir.AppendSeparator();
+    fullEnvironment.externalFileCacheDir.AppendSeparator();
+
     return fullEnvironment;
     }
 
@@ -452,10 +459,8 @@ BentleyStatus FileStorage::RenameCachedFile(FileInfoR info, Utf8StringCR newFile
     if (BeFileNameStatus::Success != BeFileName::BeMoveFile(oldPath, newPath))
         return ERROR;
 
-    BeFileName dirPath = newPath.GetDirectoryName();
-    dirPath.PopDir();
-
-    BeFileName newRelativePath(newPath.substr(dirPath.size()));
+    BeFileName rootPath = GetCacheEnvironmentRootPath(info.GetLocation());
+    BeFileName newRelativePath(newPath.substr(rootPath.size()));
 
     info.SetFilePath(info.GetLocation(), newRelativePath, newFileName);
     return SUCCESS;

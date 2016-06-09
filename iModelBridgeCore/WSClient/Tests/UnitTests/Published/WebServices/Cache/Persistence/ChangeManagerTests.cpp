@@ -648,6 +648,19 @@ TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFile_SuccessAndFil
     EXPECT_EQ(L"NewName.foo", newFilePath.GetFileNameAndExtension());
     }
 
+TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithFileInExternalLocation_SuccessAndFileRenamed)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto fileId = cache->FindInstance(StubFileInCache(*cache, FileCache::External));
+    // Act
+    EXPECT_EQ(SUCCESS, cache->GetChangeManager().ModifyFileName(fileId, "RenamedFile.txt"));
+    // Assert
+    auto path = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path.DoesPathExist());
+    EXPECT_EQ(L"RenamedFile.txt", path.GetFileNameAndExtension());
+    }
+
 TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFileAndNameNotChanged_SuccessAndFilePathNotChanged)
     {
     // Arrange
@@ -2825,7 +2838,7 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedObjectAndExisting
     stubInstances.Add({"TestSchema.TestClass", "A"});
     stubInstances.Add({"TestSchema.TestClass", "B"});
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, stubInstances.ToWSObjectsResponse()));
-    
+
     auto instance = StubCreatedObjectInCache(*cache);
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
 
