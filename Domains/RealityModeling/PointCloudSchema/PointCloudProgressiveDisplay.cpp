@@ -230,7 +230,7 @@ ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::Pr
         {
         // Our first draw call must be fast and is considered a dynamic so we draw with a low density 
         // and do the full density update in the progressive display callback.
-        static float density = 0.05f;
+        static float density = 0.10f; //&&MM make this an option? used to be 0.05 in Microstation but low density is now defer to progressive display so we can be a bit slower.
         static PtQueryDensity densityType = PtQueryDensity::QUERY_DENSITY_VIEW; // Get only points in memory for a view representation. Point still on disk will get loaded at a later time.
         int64_t pointsToLoad = 0;
         Dgn::Render::GraphicBuilderPtr pLowDensityGraphic;
