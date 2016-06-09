@@ -16,8 +16,6 @@
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <WebServices/Azure/EventServiceClient.h>
 #include <DgnDbServer/Client/EventServiceConnection.h>
-#include <DgnDbServer/Client/EventServiceReceive.h>
-//#include <DgnDbServer/Client/IDgnDbServerEvent.h>
 #include <DgnDbServer/Client/DgnDbServerLockevent.h>
 #include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
 #include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
@@ -39,7 +37,6 @@ DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbLockSetResultInfo, DgnDbServerLockSet);
 DEFINE_TASK_TYPEDEFS(EventServiceConnectionPtr, EventServiceConnection);
-DEFINE_TASK_TYPEDEFS(EventServiceReceivePtr, EventServiceReceive);
 DEFINE_TASK_TYPEDEFS(bvector<IDgnDbServerEventPtr>, IDgnDbServerEvents);
 DEFINE_TASK_TYPEDEFS(IDgnDbServerEventPtr, IDgnDbServerEvent);
 
@@ -237,13 +234,6 @@ public:
     //! @param[in] ids lock ids to query
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocksById (LockableIdSet const& ids, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-
-    ////! Receive Events from EventService
-    //DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr    GetEvents (bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
-
-    ////! Receive Events from EventService
-    //DGNDBSERVERCLIENT_EXPORT EventServiceReceiveTaskPtr    GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Receive Events from EventService
     DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventsTaskPtr    GetEvents(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
