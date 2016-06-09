@@ -25,13 +25,15 @@ struct FileStorage
         std::shared_ptr<ValueIncrementor> m_folderNameIncrementor;
 
     private:
+        static BeFileName GetFileCacheFolderPath(BeFileName rootDir, WStringCR cacheName);
+
         BeFileName CreateNewRelativeCachedFilePath(Utf8StringCR fileName, FileCache location);
         static BeFileName CreateNewFilePath(BeFileNameCR oldFilePath, Utf8String newFileName);
 
         static BentleyStatus CreateNewCachedFileFolderName(Utf8StringR folderNameOut);
         static BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
         static BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
-        static BeFileName GetFileCacheFolderPath(BeFileName rootDir, WStringCR cacheName);
+        static BentleyStatus CleanupCachedFile(BeFileNameCR filePath, FileCache location);
 
     public:
         FileStorage(ECDbAdapter& dbAdapter, ECSqlStatementCache& statementCache, CacheEnvironmentCR environment);
@@ -50,8 +52,8 @@ struct FileStorage
         static CacheEnvironment CreateCacheEnvironment(BeFileNameCR cacheFilePath, CacheEnvironmentCR inputEnvironment);
 
         BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath);
-        BentleyStatus RemoveContainingFolder(BeFileNameCR filePath);
-        BentleyStatus CleanupCachedFile(BeFileNameCR filePath);
+
+        BentleyStatus CleanupCachedFile(FileInfoCR info);
         BentleyStatus RenameCachedFile(FileInfoR info, Utf8StringCR newFileName);
     };
 

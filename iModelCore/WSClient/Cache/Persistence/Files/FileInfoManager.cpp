@@ -243,7 +243,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKey
             continue;
             }
 
-        if (SUCCESS != m_fileStorage->CleanupCachedFile(fileInfo.GetFilePath()))
+        if (SUCCESS != m_fileStorage->CleanupCachedFile(fileInfo))
             {
             return ERROR;
             }
@@ -305,7 +305,7 @@ BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ec
 
     FileInfo info (Json::nullValue, infoJson, ECInstanceKey(), this);
 
-    m_fileStorage->CleanupCachedFile(info.GetFilePath());
+    m_fileStorage->CleanupCachedFile(info);
     return SUCCESS;
     }
 
