@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/JsonDiffTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,5 @@
 
 #include "../../../Utils/WebServicesTestsHelper.h"
 
-class JsonDiffTests : public ::testing::Test
-    {
-    };
+class JsonDiffTests : public WSClientBaseTest
+    {};

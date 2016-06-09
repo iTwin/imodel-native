@@ -10,5 +10,5 @@
 
 #include "BaseCacheTest.h"
 
-class CachedResponseKeyTests : public ::testing::Test
+class CachedResponseKeyTests : public WSClientBaseTest
     {};
