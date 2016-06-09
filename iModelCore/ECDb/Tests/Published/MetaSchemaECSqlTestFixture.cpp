@@ -549,7 +549,7 @@ void MetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR expect
                 {
                 Json::Value actualAltPresUnitsJson;
                 Json::Reader reader;
-                ASSERT_TRUE(!reader.Parse(val.GetText(), actualAltPresUnitsJson, false)) << "KindOfQuantityDef.AlternativePresentationUnits";
+                ASSERT_TRUE(reader.Parse(val.GetText(), actualAltPresUnitsJson, false)) << "KindOfQuantityDef.AlternativePresentationUnits";
 
                 ASSERT_EQ(expectedKoq.GetAlternativePresentationUnitList().size(), actualAltPresUnitsJson.size()) << "KindOfQuantityDef.AlternativePresentationUnits";
 
