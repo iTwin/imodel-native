@@ -41,6 +41,7 @@
     <ClInclude Include="Published\WebServices\Cache\MockQueryProvider.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\BaseCacheTest.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.h" />
@@ -183,6 +184,7 @@
     <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\BaseCacheTest.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.cpp" />

@@ -10,7 +10,7 @@
 
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
-#include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>
+#include <WebServices/Cache/Persistence/CacheEnvironment.h>
 #include "../Changes/ChangeInfo.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE

@@ -4348,23 +4348,17 @@ TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceNotCached_ReturnsInv
 TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_ExternalFileInfoIsAssociatedWithInstance)
     {
     auto cache = GetTestCache();
-
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    cache->LinkInstanceToRoot("Root", fileId);
-
-    auto status = cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Test.txt"), HttpStatus::OK, nullptr), FileCache::Persistent);
-    ASSERT_EQ(SUCCESS, status);
+    ECInstanceKey fileKey = StubInstanceInCache(*cache);
+    ObjectId fileId = cache->FindInstance(fileKey);
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Test.txt"), HttpStatus::OK, nullptr), FileCache::Persistent));
 
     ECRelationshipClassCP instanceHasFileInfoClass = cache->GetAdapter().GetECRelationshipClass("ECDb_FileInfo.InstanceHasFileInfo");
     ECClassCP fileInfoClass = cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo");
-    auto instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
-
     Json::Value externalFileInfos;
-    cache->GetAdapter().GetJsonRelatedTargets(externalFileInfos, instanceHasFileInfoClass, fileInfoClass, instanceKey);
-
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonRelatedTargets(externalFileInfos, instanceHasFileInfoClass, fileInfoClass, fileKey));
     JsonValueCR externalFileInfo = externalFileInfos[0];
 
-    EXPECT_EQ(CacheEnvironment::GetPersistentRootFolderId(), externalFileInfo["RootFolder"].asInt());
+    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::Persistent), externalFileInfo["RootFolder"].asInt());
     EXPECT_NE("", externalFileInfo["RelativePath"].asString());
     EXPECT_EQ("Test.txt", externalFileInfo["Name"].asString());
     }
@@ -4372,24 +4366,36 @@ TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_ExternalFileInf
 TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_ExternalFileInfoIsAssociatedWithInstance)
     {
     auto cache = GetTestCache();
-
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    cache->LinkInstanceToRoot("Root", fileId);
-
-    auto status = cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Test.txt"), HttpStatus::OK, nullptr), FileCache::Temporary);
-    ASSERT_EQ(SUCCESS, status);
+    ECInstanceKey fileKey = StubInstanceInCache(*cache);
+    ObjectId fileId = cache->FindInstance(fileKey);
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Test.txt"), HttpStatus::OK, nullptr), FileCache::Temporary));
 
     ECRelationshipClassCP instanceHasFileInfoClass = cache->GetAdapter().GetECRelationshipClass("ECDb_FileInfo.InstanceHasFileInfo");
     ECClassCP fileInfoClass = cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo");
-    auto instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
-
     Json::Value externalFileInfos;
-    cache->GetAdapter().GetJsonRelatedTargets(externalFileInfos, instanceHasFileInfoClass, fileInfoClass, instanceKey);
-
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonRelatedTargets(externalFileInfos, instanceHasFileInfoClass, fileInfoClass, fileKey));
     JsonValueCR externalFileInfo = externalFileInfos[0];
 
-    EXPECT_EQ(CacheEnvironment::GetTemporaryRootFolderId(), externalFileInfo["RootFolder"].asInt());
+    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::Temporary), externalFileInfo["RootFolder"].asInt());
     EXPECT_NE("", externalFileInfo["RelativePath"].asString());
+    EXPECT_EQ("Test.txt", externalFileInfo["Name"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_CachingExternalLocation_ExternalFileInfoIsAssociatedWithInstance)
+    {
+    auto cache = GetTestCache();
+    ECInstanceKey fileKey = StubInstanceInCache(*cache);
+    ObjectId fileId = cache->FindInstance(fileKey);
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Test.txt"), HttpStatus::OK, nullptr), FileCache::External));
+
+    ECRelationshipClassCP instanceHasFileInfoClass = cache->GetAdapter().GetECRelationshipClass("ECDb_FileInfo.InstanceHasFileInfo");
+    ECClassCP fileInfoClass = cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo");
+    Json::Value externalFileInfos;
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonRelatedTargets(externalFileInfos, instanceHasFileInfoClass, fileInfoClass, fileKey));
+    JsonValueCR externalFileInfo = externalFileInfos[0];
+
+    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::External), externalFileInfo["RootFolder"].asInt());
+    EXPECT_EQ("Test.txt", externalFileInfo["RelativePath"].asString());
     EXPECT_EQ("Test.txt", externalFileInfo["Name"].asString());
     }
 

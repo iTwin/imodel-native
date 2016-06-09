@@ -156,6 +156,7 @@
     <ClInclude Include="Published\WebServices\Connect\IdentityAuthenticationPersistenceTests.h" />
     <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -325,6 +326,7 @@
     <ClCompile Include="Published\WebServices\Connect\IdentityAuthenticationPersistenceTests.cpp" />
     <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />
