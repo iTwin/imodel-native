@@ -5437,6 +5437,120 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, WString("existingTableUpdate.ecdb", BentleyCharEncoding::Utf8).c_str()));
+    // Create existing table and insert rows
+    ecdb.ExecuteSql("CREATE TABLE test_Employee(Id INTEGER PRIMARY KEY, Name TEXT);");
+    ecdb.ExecuteSql("INSERT INTO test_Employee (Id, Name) VALUES (101, 'Affan Khan');");
+    ecdb.ExecuteSql("INSERT INTO test_Employee (Id, Name) VALUES (201, 'Muhammad Hassan');");
+    ecdb.ExecuteSql("INSERT INTO test_Employee (Id, Name) VALUES (301, 'Krischan Eberle');");
+    ecdb.ExecuteSql("INSERT INTO test_Employee (Id, Name) VALUES (401, 'Casey Mullen');");
+
+    // Map ECSchema to exisitng table
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap'/>"
+        "   <ECEntityClass typeName='Employee' modifier='None' >"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "               </MapStrategy>"
+        "               <TableName>test_Employee</TableName>"
+        "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
+        "           </ClassMap>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='Name' typeName='string' >"
+        "       </ECProperty>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, schemaItem);
+    ASSERT_FALSE(asserted);
+
+    // Modify and add new existing table and relate it to another one
+    ecdb.ExecuteSql("CREATE TABLE test_Title(Id INTEGER PRIMARY KEY, Name TEXT);");
+    ecdb.ExecuteSql("INSERT INTO test_Title (Id, Name) VALUES (1, 'Senior Software Engineer');");
+    ecdb.ExecuteSql("INSERT INTO test_Title (Id, Name) VALUES (2, 'Software Quality Analyst');");
+    ecdb.ExecuteSql("INSERT INTO test_Title (Id, Name) VALUES (3, 'Advisory Software Engineer');");
+    ecdb.ExecuteSql("INSERT INTO test_Title (Id, Name) VALUES (4, 'Distinguished Architect');");
+    ecdb.ExecuteSql("ALTER TABLE test_Employee ADD COLUMN TitleId INTEGER REFERENCES test_Title(Id);");
+    ecdb.ExecuteSql("UPDATE test_Employee SET TitleId = 1 WHERE Id = 101");
+    ecdb.ExecuteSql("UPDATE test_Employee SET TitleId = 2 WHERE Id = 201");
+    ecdb.ExecuteSql("UPDATE test_Employee SET TitleId = 3 WHERE Id = 301");
+    ecdb.ExecuteSql("UPDATE test_Employee SET TitleId = 4 WHERE Id = 401");
+
+    // Map ECSchema to exisitng table
+    SchemaItem deleteAllCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap'/>"
+        "   <ECEntityClass typeName='Employee' modifier='None' >"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "               </MapStrategy>"
+        "               <TableName>test_Employee</TableName>"
+        "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
+        "           </ClassMap>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='Name' typeName='string' >"
+        "       </ECProperty>"
+        "       <ECNavigationProperty propertyName='TitleId' relationshipName='EmployeeHasTitle' direction='forward'/>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Title' modifier='None' >"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "               </MapStrategy>"
+        "               <TableName>test_Title</TableName>"
+        "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
+        "           </ClassMap>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='Name' typeName='string' >"
+        "       </ECProperty>"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='EmployeeHasTitle' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
+        "        <Source cardinality='(0,N)' polymorphic='false'>"
+        "            <Class class='Employee'/>"
+        "        </Source>"
+        "        <Target cardinality='(0,1)' polymorphic='false'>"
+        "            <Class class='Title'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>'"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    ASSERT_FALSE(asserted);
+
+    ECSqlStatement stmt;
+    stmt.Prepare(ecdb, "SELECT E.Name EmployeeName, T.Name EmployeeTitle FROM ts.Employee E JOIN ts.Title T USING ts.EmployeeHasTitle ORDER BY E.ECInstanceId");
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("Affan Khan", stmt.GetValueText(0));
+    ASSERT_STREQ("Senior Software Engineer", stmt.GetValueText(1));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("Muhammad Hassan", stmt.GetValueText(0));
+    ASSERT_STREQ("Software Quality Analyst", stmt.GetValueText(1));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("Krischan Eberle", stmt.GetValueText(0));
+    ASSERT_STREQ("Advisory Software Engineer", stmt.GetValueText(1));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("Casey Mullen", stmt.GetValueText(0));
+    ASSERT_STREQ("Distinguished Architect", stmt.GetValueText(1));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
 TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
     {
     SchemaItem schemaItem(
@@ -5494,5 +5608,4 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
     IECInstancePtr propertyCA = ecProperty->GetCustomAttribute("TestCA");
     ASSERT_TRUE(propertyCA == nullptr);
     }
-
 END_ECDBUNITTESTS_NAMESPACE
