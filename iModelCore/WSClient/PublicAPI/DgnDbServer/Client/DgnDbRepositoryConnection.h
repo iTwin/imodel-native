@@ -37,7 +37,7 @@ DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbLockSetResultInfo, DgnDbServerLockSet);
 DEFINE_TASK_TYPEDEFS(DgnDbServerEventConnectionPtr, DgnDbServerEventConnection);
-DEFINE_TASK_TYPEDEFS(bvector<IDgnDbServerEventPtr>, IDgnDbServerEvents);
+DEFINE_TASK_TYPEDEFS(bvector<IDgnDbServerEventPtr>, IDgnDbServerEventCollection);
 DEFINE_TASK_TYPEDEFS(IDgnDbServerEventPtr, IDgnDbServerEvent);
 
 //=======================================================================================
@@ -126,16 +126,16 @@ private:
     DgnDbServerEventConnectionTaskPtr GetEventServiceSubscriptionId(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get Responses from the EventServiceClient
-    bool GetEventServiceResponses(bvector<Json::Value>& responses, bvector<Utf8CP>& contentTypes, bool longpolling = true);
+    bool GetEventServiceResponses(bvector<Utf8String>& responseStrings, bvector<Utf8CP>& contentTypes, bool longpolling = true);
 
     //! Get Responses from the EventServiceClient
     bool GetEventServiceResponse(HttpResponseR returnResponse, bool longpolling = true);
 
     //! Build an IdgnDbServerEventPtr instance from response.
-    IDgnDbServerEventPtr BuildDgnDbServerEvent(Utf8CP contentType, JsonValueCR jsonResponse);
+    IDgnDbServerEventPtr BuildDgnDbServerEventFromJson(Utf8CP contentType, Utf8String jsonString);
 
     //! Build an IdgnDbServerEventPtr instance from response.
-    IDgnDbServerEventPtr BuildDgnDbServerEventasString(Utf8CP contentType, Utf8String jsonString);
+    IDgnDbServerEventPtr BuildDgnDbServerEventFromString(Utf8CP contentType, Utf8String jsonString);
 
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -236,7 +236,7 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocksById (LockableIdSet const& ids, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Receive Events from EventService
-    DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventsTaskPtr    GetEvents(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventCollectionTaskPtr    GetEvents(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Receive Events from EventService
     DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventTaskPtr    GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
