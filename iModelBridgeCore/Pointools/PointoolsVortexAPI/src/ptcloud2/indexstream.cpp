@@ -79,11 +79,11 @@ IndexStream::~IndexStream()
 		if (_readblock) delete _readblock;
 		if (_normalreadblock) delete _normalreadblock;
 
-		for (int i = 0; i < _groups.size(); i++)
+		for (size_t i = 0; i < _groups.size(); i++)
 		{
 			if (CloudGroup* group = _groups[i])
 			{
-				for (int j = 0; j < group->clouds.size(); j++)
+                for (size_t j = 0; j < group->clouds.size(); j++)
 				{
 					if (CloudInfo* info = group->clouds[j])
 						delete info;
@@ -181,14 +181,14 @@ bool IndexStream::closeStream()
 
 	/*center cloud bounding boxes and add this offset to the registration matrix	*/ 
 	/*shift large part of coords to matrix to prevent lage coords from hitting gl*/ 
-	int i;
-	for (i=0; i<_groups.size(); i++)
+
+	for (size_t i= 0; i<_groups.size(); i++)
 	{
-		setGroup(i);
+		setGroup((int)i);
 		CloudGroup *gr = const_cast<CloudGroup*>(group());
 		gr->xbounds.clear();
 
-		for (int j=0; j<_clouds->size(); j++)
+		for (size_t j=0; j<_clouds->size(); j++)
 		{
 			CloudInfo *ci = (*_clouds)[j];
 			if (ci->numPoints < 2) continue;
@@ -225,7 +225,7 @@ bool IndexStream::closeStream()
 	/*check for mis interpreted intensity */ 
 	_intensityBounds.makeEmpty();
 	
-	for (i=0;i<255;i++)
+	for (int i=0;i<255;i++)
 	{
 		if (_intensityHist[i] > mx)
 		{
@@ -238,7 +238,7 @@ bool IndexStream::closeStream()
 	int val;
     mx = static_cast<unsigned int>(mx * 0.05);
 	
-	for (i=0; i<255; i++)
+	for (int i=0; i<255; i++)
 	{
 		val = i*255-32768;
 		if (_intensityHist[i] > mx) _intensityBounds.expand(&val);
@@ -268,7 +268,7 @@ bool IndexStream::closeStream()
 
 	uint spec = 0;
 
-	for (i=0; i< group()->clouds.size(); i++)
+	for (size_t i=0; i< group()->clouds.size(); i++)
 	{
 		spec |= group()->clouds[i]->spec;
 
@@ -794,7 +794,7 @@ int IndexStream::readPoint(pt::vector3 &geom, ubyte *rgb, short *intensity, pt::
 //------------------------------------------------------------------------------
 const IndexStream::CloudInfo *IndexStream::readCloud(int idx)
 {
-	if (idx > _clouds->size()) return 0;
+	if (idx > (int)_clouds->size()) return 0;
 
 	if (_readblock) delete _readblock;
 	_readblock = _pager->newReadBlock(CLOUD_KEY(_groupidx, idx), "Cloud", true);
@@ -905,7 +905,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 	pt::vector3* points=0;
 	try
 	{
-		points = new pt::vector3[ci->numPoints];
+    points = new pt::vector3[(size_t) ci->numPoints];
 	}
 	catch(...)
 	{
@@ -1142,7 +1142,7 @@ void IndexStream::buildNormals(bool transform, float quality)
 	}
 	ptapp::CmdProgress progress("Building Normals...", 0, static_cast<int>(_clouds->size()));
 
-	for (int i=0; i<_clouds->size(); i++)
+	for (int i=0; i<(int)_clouds->size(); i++)
 	{
 		CloudInfo *ci = (*_clouds)[i];
 		if (!ci->hasNormals() && ci->ibound && ci->jbound && ci->numPoints > 1)
@@ -1152,7 +1152,7 @@ void IndexStream::buildNormals(bool transform, float quality)
 			pt::vector3s *normals = 0;
 			
 			try {
-				normals = new pt::vector3s[ci->numPoints];
+                normals = new pt::vector3s[(size_t)ci->numPoints];
 			}
 			catch(...)
 			{
@@ -1181,7 +1181,7 @@ uint64_t IndexStream::getNumCloudPoints() const
 
 		globalPointStreamFilter->getIndexStreams(streams);
 
-		for (int i=0; i<streams.size(); i++)
+        for (size_t i = 0; i < streams.size(); i++)
 		{
 			int numClouds = streams[i]->numClouds();
 
@@ -1193,9 +1193,9 @@ uint64_t IndexStream::getNumCloudPoints() const
 	}
 	else if (_clouds)
 	{
-		for (int i=0; i<_clouds->size(); i++)
+		for (size_t i=0; i<_clouds->size(); i++)
 		{
-			numPoints += cloudInfo(i)->numPoints;
+			numPoints += cloudInfo((int)i)->numPoints;
 		}
 	}
 	return numPoints;

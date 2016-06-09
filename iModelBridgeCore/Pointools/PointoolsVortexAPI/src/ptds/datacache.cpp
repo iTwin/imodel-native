@@ -170,7 +170,7 @@ Status DataCache::readStartEndPages(DataPointer start, DataPointer end, Data *de
 															// Get page offset (start of window) to read from
 		pageStartOffset = getCachePageOffset(start);
 															// Copy  fully windowed part of cache to destination
-		memcpy(dest, &(getPageBuffer()[pageStartOffset]), (end - start) + 1);
+		memcpy(dest, &(getPageBuffer()[pageStartOffset]), (size_t)((end - start) + 1));
 
 		complete = true;
 															// Return OK
@@ -183,7 +183,7 @@ Status DataCache::readStartEndPages(DataPointer start, DataPointer end, Data *de
 															// Get position's offset within the page
 	pageStartOffset = getCachePageOffset(start);
 															// Copy first page with left window
-	memcpy(dest, &(getPageBuffer()[pageStartOffset]), getCachePageSize() - pageStartOffset);
+	memcpy(dest, &(getPageBuffer()[pageStartOffset]), (size_t) (getCachePageSize() - pageStartOffset));
 
 
 															// Fetch the page into a temporary buffer
@@ -193,7 +193,7 @@ Status DataCache::readStartEndPages(DataPointer start, DataPointer end, Data *de
 	destEnd = dest + getCachePageDataPointer(pageEnd) - (getCachePageDataPointer(pageStart) + pageStartOffset);
 
 															// Copy last page with right window
-	memcpy(destEnd, getPageBuffer(), getCachePageOffset(end) + 1);
+	memcpy(destEnd, getPageBuffer(), (size_t) (getCachePageOffset(end) + 1));
 
 															// Return OK
 	return Status();
@@ -383,7 +383,7 @@ std::cout << "Creating Cache..." << std::endl;
 //dataSourceCacheFile->movePointerTo(fullFileSize - 1);
 DataSize s;
 DataSize b = 100 * 1024*1024;
-unsigned char *buffer = new unsigned char[b];
+unsigned char *buffer = new unsigned char[(size_t)b];
 
 for(s = b; s <= fullFileSize; s += b)
 {
@@ -756,7 +756,7 @@ Status DataCache::createPageBuffer(DataSize size)
 	{
 		destroyPageBuffer();
 
-		if((pageBuffer = new Data[size]) == NULL)
+		if((pageBuffer = new Data[(size_t)size]) == NULL)
 			return Status(Status::Status_Error_Memory_Allocation);
 
 		setPageBufferIndex(CachePageIndexNull);

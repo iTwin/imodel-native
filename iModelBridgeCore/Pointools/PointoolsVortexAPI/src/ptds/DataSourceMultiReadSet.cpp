@@ -204,7 +204,7 @@ DataSource::Data *DataSourceMultiReadSet::executeMultiReadSet(DataSource &dataSo
 	if(buffer == NULL)
 	{
 															// Create a new buffer
-		if((buffer = new DataSource::Data[getTotalReadSize()]) == NULL)
+		if((buffer = new DataSource::Data[(size_t)getTotalReadSize()]) == NULL)
 			return NULL;
 
 		bufferAllocated = true;

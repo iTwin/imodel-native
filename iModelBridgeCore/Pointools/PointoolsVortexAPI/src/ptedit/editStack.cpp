@@ -236,7 +236,7 @@ void OperationStack::execute( bool pauseengine )
 void OperationStack::writeStateBranch( datatree::Branch *b )
 {
 	int state = 102857; /* magic number */ 
-	for (int i=0; i<g_stateHandlers.size();i++)
+    for (size_t i = 0; i < g_stateHandlers.size(); i++)
 	{
 		g_stateHandlers[i]->write( b );
 	}
@@ -251,7 +251,7 @@ bool OperationStack::readStateBranch( const datatree::Branch *b )
 	if (!b->getNode( "state", state ) || state != 102857)
 		return false;
 
-	for (int i=0; i<g_stateHandlers.size();i++)
+	for (size_t i=0; i<g_stateHandlers.size();i++)
 	{
 		g_stateHandlers[i]->read( b );
 	}

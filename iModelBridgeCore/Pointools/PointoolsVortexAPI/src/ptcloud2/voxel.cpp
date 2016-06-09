@@ -1325,8 +1325,8 @@ struct StrataOrdering
 		corner = pt::vector3( static_cast<float>(voxel->extents().lx()), 
                               static_cast<float>(voxel->extents().ly()), 
                               static_cast<float>(voxel->extents().lz()));
-		hasEntered = new bool[ voxel->fullPointCount() ];
-		memset(hasEntered, 0, sizeof(bool) * voxel->fullPointCount() );
+		hasEntered = new bool[(size_t) voxel->fullPointCount() ];
+		memset(hasEntered, 0, sizeof(bool) * (size_t) voxel->fullPointCount() );
 	}
 	void setMaxDist( float md ) { maxDist = md; }
 	void setUseOverflow( bool use ) { useOverflow = use; } // overflow is last strata when other entries fail
@@ -1495,7 +1495,7 @@ int		Voxel::computeStrataIndex(std::vector<int> &index, int *strata/*[NUM_STRATA
 
 
 	index.clear();
-	index.reserve(_pointCount);
+	index.reserve((size_t) _pointCount);
 
 	// if this is being done and not all points are loaded and available
 	// then stratification is not possible

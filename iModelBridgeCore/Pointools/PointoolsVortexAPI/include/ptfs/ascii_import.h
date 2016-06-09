@@ -12,7 +12,6 @@
 
 #include <wchar.h>
 #include <fstream>
-#include <pt/utf.h>
 #include <vector>
 
 #define LINE_BUFFER_SIZE 512

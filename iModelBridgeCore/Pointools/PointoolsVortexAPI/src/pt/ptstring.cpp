@@ -1,7 +1,7 @@
 #include "PointoolsVortexAPIInternal.h"
 
 #include <string.h>
-#include <pt/utf.h>
+
 
 #include <assert.h>
 #include <iomanip>
@@ -117,8 +117,8 @@ String &String::operator = (const char *s)
 	{
 		int len = static_cast<int>(strlen(s)+1);
 		allocBuffer(len);
-		
-		utf8towc(s, (unsigned)len, _wbuffer, _wbuffsize);
+
+        BeStringUtilities::Utf8ToWChar(_wbuffer, s, _wbuffsize);
 		
 		_abufferDirty = false;
 		_abuffer = new char[len];

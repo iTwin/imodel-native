@@ -81,7 +81,7 @@ struct PagerFileObserver : public FileObserver
 									// but this is safest thing to do with minimal performance impact
 
 		/* close file handle */ 
-		for (int i=0; i<pp.files.size(); i++)
+		for (size_t i=0; i<pp.files.size(); i++)
 		{
 			if(pp.files[i].scene == sc)
 			{
@@ -188,7 +188,7 @@ PointsPager::Pager::~Pager()
 		if (pp.stateicon)
 			pp.stateicon->state(2);
 #endif
-		for (int i=0; i<pp.files.size(); i++)
+        for (size_t i = 0; i < pp.files.size(); i++)
 		{
 			if (pp.files[i].open[_thread] 
 				&& pp.files[i].handle[_thread]->validHandle())
@@ -279,7 +279,7 @@ pcloud::Scene::CreateSceneResult PointsPager::openScene(pcloud::Scene *scene)
 
             Voxel::FileIndex file = static_cast<Voxel::FileIndex>(pp.files.size() - 1);
 			
-			for (int j=0;j<	pc->voxels().size(); j++)
+			for (size_t j=0;j<	pc->voxels().size(); j++)
 			{
 				pc->voxels()[j]->fileIndex(file);
 			}
@@ -304,7 +304,7 @@ bool PointsPager::reopenScene(pcloud::Scene *scene)
 
 	pp.pointsPager->pause();	// pause paging thread - most probably already paused
 
-	for (int i=0; i<pp.files.size(); i++)
+	for (size_t i=0; i<pp.files.size(); i++)
 	{
 		if(pp.files[i].scene == scene)
 		{
@@ -598,7 +598,7 @@ bool checkForRemoval()
 		if (had_data)
 		{
 			/*check for open files, close if any	*/ 
-			for (int f=0; f<pp.files.size(); f++)
+			for (size_t f=0; f<pp.files.size(); f++)
 			{
 				//if (pp.files[f].open)
 				//{

@@ -93,7 +93,7 @@ ScanPosition* Scene::addScanPosition(const mmatrix4d &mat)
 
 	wchar_t name[64];
 	/* check if this position already exists */ 
-	for (int i=0; i<_scanpositions.size(); i++)
+    for (size_t i = 0; i < _scanpositions.size(); i++)
 	{
 		if (mat == _scanpositions[i]->registration().matrix())
 			return _scanpositions[i];
@@ -158,7 +158,7 @@ void Scene::clear()
 int64_t Scene::fullPointCount() const
 {
 	int64_t pcount = 0;
-	for (int i= 0; i<_clouds.size(); i++)
+	for (size_t i= 0; i<_clouds.size(); i++)
 	{
 		pcount += _clouds[i]->numPoints();
 	}
@@ -173,7 +173,7 @@ int64_t Scene::fullPointCount() const
 int64_t Scene::lodPointCount() const
 {
 	int64_t pcount = 0;
-	for (int i= 0; i<_clouds.size(); i++)
+    for (size_t i = 0; i < _clouds.size(); i++)
 	{
 		if (_clouds[i]->root())	
 			pcount += _clouds[i]->root()->calcLodPointCount();

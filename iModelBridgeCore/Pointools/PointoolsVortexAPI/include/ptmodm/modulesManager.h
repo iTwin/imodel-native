@@ -13,10 +13,14 @@
 
 #include "module.h"
 
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 #ifdef MODM_EXPORTS
 #define MODM_API EXPORT_ATTRIBUTE
 #else
 #define MODM_API IMPORT_ATTRIBUTE
+#endif
+#else
+#define MODM_API
 #endif
 
 namespace pt

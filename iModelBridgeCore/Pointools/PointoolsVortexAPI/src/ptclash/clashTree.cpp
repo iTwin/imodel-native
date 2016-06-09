@@ -293,7 +293,7 @@ bool ClashTree::computeLeafBounds( pt::OBBoxd &box ) const
 		{
 			std::vector<vector3d> pts;
 
-			for (int i=0; i<boxes.size(); i++)
+            for (size_t i = 0; i < boxes.size(); i++)
 			{
 				vector3d verts[8];
 				boxes[i].computeVertices(verts);
@@ -346,7 +346,7 @@ PTres ClashTree::_getLeafBounds(PTfloat* extents, PTdouble* center, PTfloat* xAx
 		return PTV_UNKNOWN_ERROR;
 				
 
-	for (int i=0; i<boxes.size(); i++)
+	for (size_t i=0; i<boxes.size(); i++)
 	{
 		extents[i*3]     = static_cast<PTfloat>(boxes.at(i).extents().x);
 		extents[(i*3)+1] = static_cast<PTfloat>( boxes.at(i).extents().y);

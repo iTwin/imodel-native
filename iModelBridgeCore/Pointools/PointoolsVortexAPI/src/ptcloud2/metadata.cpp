@@ -596,11 +596,10 @@ int		MetaAudit::writeToBlock( WriteBlock &wb ) const
 	
 	wb.write( (int)scan_file_paths.size() );
 
-	int i;
 
 	time_t nullDate = 0;
 
-	for ( i=0; i<scan_file_paths.size();i++)
+	for (size_t i=0; i<scan_file_paths.size();i++)
 	{
 		wb.write( scan_file_paths[i] );
 		if (scan_file_datemod.size() > i)
@@ -611,7 +610,7 @@ int		MetaAudit::writeToBlock( WriteBlock &wb ) const
 
 	/* edits */ 
 	wb.write( (int)edits.size() );
-	for (i=0;i<edits.size();i++)
+	for (size_t i=0;i<edits.size();i++)
 	{
 		wb.write( edits[i].generation );
 		wb.write( edits[i].timestamp );
@@ -679,7 +678,7 @@ bool	MetaAudit::getMetaDataString(const pt::String &item, pt::String &value ) co
 		int *mutable_file_iterator_ptr = const_cast<int*>(&file_iterator);
 		int &mutable_file_iterator = *mutable_file_iterator_ptr;
 
-		if (file_iterator < scan_file_paths.size())
+		if (file_iterator < (int)scan_file_paths.size())
 		{
 			value = scan_file_paths[file_iterator];
 			++mutable_file_iterator;

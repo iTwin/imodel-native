@@ -508,11 +508,6 @@ $(o)DispatcherPTRMI$(oext)               : $(basedir)src/PTRMI/DispatcherPTRMI.c
 %undef CCPchOpts
 %undef CPchOpts
 
-# Objects that need to be built without the pre compiled headers
-nonUniformObjs = $(o)utf$(oext)
-
-$(o)utf$(oext) : $(basedir)src/pt/utf.c $(basedir)include/pt/utf.h
-
 %if defined(HAVE_OPENGL)
 
 $(o)arb_vertex_program$(oext) : $(basedir)src/ptgl/glvp/arb_vertex_program.cpp $(basedir)include/ptgl/arb_vertex_program.h
