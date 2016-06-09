@@ -291,9 +291,10 @@ BentleyStatus ChangeManager::DeleteObject(ECInstanceKeyCR instanceKey, SyncStatu
 BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus)
     {
     if (!m_objectInfoManager->ReadInfo(instanceKey).IsInCache())
-        {
         return ERROR;
-        }
+
+    if (!filePath.DoesPathExist())
+        return ERROR;
 
     FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
     if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
@@ -303,20 +304,20 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
         }
 
     if (SUCCESS != SetupNewRevision(info))
-        {
         return ERROR;
-        }
 
     info.SetChangeStatus(ChangeStatus::Modified);
     info.SetSyncStatus(syncStatus);
 
-    FileCache location = info.GetLocation(FileCache::Persistent);
-    if (SUCCESS != m_fileStorage->CacheFile(info, filePath, nullptr, location, DateTime::GetCurrentTimeUtc(), copyFile) ||
-        SUCCESS != m_fileInfoManager->SaveInfo(info))
+    if (info.GetFilePath() != filePath)
         {
-        BeAssert(false);
+        FileCache location = info.GetLocation(FileCache::Persistent);
+        if (SUCCESS != m_fileStorage->CacheFile(info, filePath, nullptr, location, DateTime::GetCurrentTimeUtc(), copyFile))
+            return ERROR;
+        }
+
+    if (SUCCESS != m_fileInfoManager->SaveInfo(info))
         return ERROR;
-        };
 
     return SUCCESS;
     }
