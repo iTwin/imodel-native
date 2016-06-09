@@ -90,9 +90,6 @@
     <ECRelationshipClass typeName="TestElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward" >
         <ECCustomAttributes>
           <ClassHasHandler xmlns="dgn.02.00" />
-          <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-              <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
-            </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <BaseClass>dgn:ElementDrivesElement</BaseClass>
         <Source cardinality="(0,1)" roleLabel="Element with datum plane" polymorphic="True">
