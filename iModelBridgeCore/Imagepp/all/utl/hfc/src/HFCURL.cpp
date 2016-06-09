@@ -254,10 +254,9 @@ Utf8String HFCURL::AddPath(const Utf8String& pi_Source, const Utf8String& pi_Pat
                 HASSERT(EntryList.size() > 0);
                 EntryList.pop_back();
                 }
-            else if (PathStep.compare(".") == 0)
-                {
+            else
                 EntryList.push_back(PathStep);
-                }
+
             Pos = FoundPos+1;
             }
         else

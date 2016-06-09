@@ -85,8 +85,9 @@ static vector<std::wstring> s_GetFileNameVector()
     //&&MM that path should come from the asset directory(symlink during build) or
     // from a config file ?
     //&&MM pss and dem are missing from the the test case.
+    BeFileName sourcePath("D:\\Dataset\\Images_Files\\_forATPs\\PSS");
 //    BeFileName sourcePath("D:\\Dataset\\Images_Files\\_forATPs\\Images");
-    BeFileName sourcePath("D:\\Dataset\\Images_Files\\_forATPs\\DEM");
+//    BeFileName sourcePath("D:\\Dataset\\Images_Files\\_forATPs\\DEM");
 
     const WString glob = L"*";
 
@@ -411,6 +412,9 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         auto positionStart = GetParam().find(L"Images\\");
         if (positionStart == WString::npos)                     // Try with DEM if Images not there.
             positionStart = GetParam().find(L"DEM\\");
+        if (positionStart == WString::npos)                     // Try with PSS if Images not there.
+            positionStart = GetParam().find(L"PSS\\");
+
         auto positionEnd = GetParam().find(L"\\", positionStart + 7);
         WString folderNameToAppend(GetParam().substr(positionStart, positionEnd - positionStart).c_str());
         outputFilePath.AppendToPath(folderNameToAppend.c_str());
@@ -426,6 +430,8 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         auto pos = GetParam().find(L"Images");
         if (pos == WString::npos)                     // Try with DEM if Images not there.
             pos = GetParam().find(L"DEM");
+        if (pos == WString::npos)                     // Try with PSS if Images not there.
+            pos = GetParam().find(L"PSS");
         WString newNameFile(GetParam().substr(pos).c_str());
         newNameFile.ReplaceAll(L"\\", L"_");
         outputFilePath.AppendToPath(newNameFile.c_str());
