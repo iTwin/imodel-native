@@ -149,7 +149,7 @@ std::vector<SchemaImportTestFixture::IndexInfo> SchemaImportTestFixture::Retriev
     std::vector<SchemaImportTestFixture::IndexInfo> indices;
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT name, sql FROM sqlite_master WHERE type='index' AND tbl_name=?"))
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT name, sql FROM sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name"))
         {
         BeAssert(false && "Preparation failed");
         return indices;

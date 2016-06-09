@@ -116,7 +116,8 @@
     @li @subpage ECDbTransactions
     @li @subpage ECDbECSchemaImportAndUpdate
     @li @subpage ECDbECSchemaRules
-    @li @subpage ECDbRelationshipMappingRules
+    @li @subpage ECDbRelationshipRules
+    @li @subpage ECDbRelationshipInheritanceRules
     @li @subpage ECDbSchemaMappingCustomization
     @li @subpage ECDbFileInfo
     @li @subpage ECDbCreatingECDbFromScratch
@@ -235,6 +236,10 @@
     - @b Modify 
         - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECClassModifier "ECClassModifier"
+            - from @b Sealed to @b None
+            - from @b Abstract or @b None to @b Sealed (for leaf classes only, of course)
+
     - @b ECProperties
         - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
         - @b Delete an @ref BentleyApi::ECN::ECProperty "ECProperty" which is
@@ -259,9 +264,15 @@
     - @b CustomAttributes on the ECRelationshipConstraint
         - @b Add, @b delete, @b modify
     
-    @note The CustomAttributes from the @b ECDbMap ECSchema cannot be added, deleted, or modified as they
-    impact the mapping of the ECSchemas and therefore the layout of the database schema.
+    ### ECDbMap ECSchema Custom Attributes
 
+    Generally, the Custom Attributes from the @b ECDbMap ECSchema cannot be added, deleted, or modified if they affected the mapping of the ECSchemas and 
+    therefore the layout of the database schema.
+
+    #### DbIndex ECStructClass
+    - @b Modify: 
+        - @ref BentleyApi::ECN::ECDbClassMap::DbIndex::GetName "Name"
+        
     @see @ref ECDbOverview
     */
 
@@ -271,6 +282,12 @@
     This lists rules that ECDb enforces in addition to what ECObjects already enforces, as well as limitations which ECDb cannot enforce.
     Rules already enforced by ECObjects are not listed here.
 
+    ### ECRelationshipClasses
+    - %ECDb only enforces the @ref BentleyApi::ECN::RelationshipCardinality "ECRelationshipConstraint multiplicities" 
+    common to databases: (0..1), (1..1), (0..N), (1..N).
+    Abitrary numbers for the lower and upper bound of the multiplicity are not enforced.
+    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
+     
     ### Enumerations
     - %ECDb does not enforce @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" 
     @ref BentleyApi::ECN::ECEnumeration "ECEnumerations". For %ECProperties that
@@ -279,13 +296,12 @@
     
     ### Properties
     - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
-    - @ref BentleyApi::ECN::ArrayECProperty "Array ECProperties'" @b MinOccurs and @b MaxOccurs are enforced.
     
     @see @ref ECDbOverview
     */
 
     /**
-    @page ECDbRelationshipMappingRules Rules for ECRelationshipClasses in ECDb
+    @page ECDbRelationshipRules Rules for ECRelationshipClasses in ECDb
     The specification of @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" allows for constructs which don't necessarily
     lead to a good database design. ECDb therefore only supports @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" that 
     can be mapped to a reasonable database layout.
@@ -379,6 +395,26 @@
 
     @see @ref ECDbOverview
     */
+
+    /**
+    @page ECDbRelationshipInheritanceRules Inheriting ECRelationshipClasses in ECDb
+    
+    In addition to the rules for @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" inheritance specified by the EC specification, 
+    %ECDb has some more:
+
+    - The @b ForeignKeyRelationshipMap and @b LinkTableRelationshipMap custom attributes (see @ref ECDbSchemaMappingCustomization) can only 
+    be applied to the @b root of the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" hierarchy. The @b root is the ECRelationshipClass which
+    does not have a base class itself.
+    - The mapping type must not change within a relationship class hierarchy. In other words, the @ref BentleyApi::ECN::ECRelationshipClass "Root ECRelationshipClass"
+    determines the mapping for the entire hierarchy.
+    - This implies in particular that if the root class implies a <em>foreign key type mapping</em>, the subclasses must 
+    not add ECProperties, because ECRelationshipClasses with ECProperties are only supported when mapped as link tables.
+    - Link tables implicity use the @b SharedTable strategy if they store an ECRelationshipClass hierarchy.
+    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
+
+    @see @ref ECDbRelationshipRules
+    @see @ref ECDbSchemaMappingCustomization
+    @see @ref ECDbOverview
 
     /**
     @page ECDbSchemaMappingCustomization Customizing the ECDb schema mapping
@@ -560,7 +596,7 @@
 
     @section CustomRelationshipMapDescription Custom mapping for ECRelationshipClasses
 
-    Please read @ref ECDbRelationshipMappingRules before.
+    Please read @ref ECDbRelationshipRules before.
 
     Customizing the mapping for an ECRelationshipClass is done by applying either the @b ForeignKeyRelationshipMap or the @b LinkTableRelationshipMap
     custom attribute to the respective ECRelationshipClass. (ECDb will only look for it in local attributes on the ECRelationshipClass)
@@ -600,7 +636,7 @@
     In many cases a class id column is not needed at all. %ECDb will ignore this property in that case.
     - <b>AllowDuplicateRelationship</b>: (optional) If false (default), no duplicate entries for a given relationship instance
     can be inserted. If true, duplicate relationship instances can be inserted. Cardinality must not be violated though. E.g.
-    there cannot be duplicate relationships with a cardinality of 1:1. @b Note: The flag is not applied to subclasses of this relationship class.
+    there cannot be duplicate relationships with a cardinality of 1:1. @b Note: The flag is applied to subclasses of this relationship class, too.
 
     ####Examples
 
