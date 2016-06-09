@@ -302,9 +302,9 @@ DgnDbServerEventValueTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancell
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-IDgnDbServerEventsTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken) const
+IDgnDbServerEventCollectionTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken) const
     {
-    BeAssert(DgnDbServerHost::IsInitialized());
+    /*BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         return CreateCompletedAsyncTask<IDgnDbServerEventsResult>(IDgnDbServerEventsResult::Error(DgnDbServerError::Id::FileNotFound));
@@ -314,7 +314,8 @@ IDgnDbServerEventsTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellat
         return CreateCompletedAsyncTask<IDgnDbServerEventsResult>(IDgnDbServerEventsResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
 
-    return m_repositoryConnection->GetEvents(longPolling, cancellationToken);
+    return m_repositoryConnection->GetEvents(longPolling, cancellationToken);*/
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
