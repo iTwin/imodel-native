@@ -343,7 +343,10 @@ BentleyStatus SqlUpdateBuilder::ExecuteSql(ECDb const& ecdb) const
 BentleyStatus SqlUpdateBuilder::Bind(Statement& stmt, int paramIndex, Utf8CP columName, ECValue const& val) const
     {
     if (val.IsNull())
+        {
+        stmt.BindNull(paramIndex);
         return SUCCESS;
+        }
 
     switch (val.GetPrimitiveType())
         {

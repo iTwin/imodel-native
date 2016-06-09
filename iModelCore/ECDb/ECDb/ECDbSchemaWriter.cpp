@@ -988,6 +988,55 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
         sqlUpdateBuilder.AddSetExp("IsReadonly", propertyChange.IsReadonly().GetNew().Value());
         }
 
+    if (propertyChange.GetEnumeration().IsValid())
+        {
+        if (propertyChange.GetEnumeration().GetState() == ChangeState::Deleted)
+            { 
+            sqlUpdateBuilder.AddSetExp("EnumerationId"); //set to null;
+            }
+        else
+            {
+            auto newPrimitiveProperty = newProperty.GetAsPrimitiveProperty();            
+            if (newPrimitiveProperty == nullptr)
+                {
+                BeAssert(newPrimitiveProperty != nullptr);
+                return ERROR;
+                }
+
+            ECEnumerationCP enumCP = newPrimitiveProperty->GetEnumeration();
+            ECEnumerationId id = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_ecdb, *enumCP);
+            if (!id.IsValid())
+                return ERROR;
+
+            sqlUpdateBuilder.AddSetExp("EnumerationId", id.GetValue());
+            }
+        }
+
+    if (propertyChange.GetKindOfQuanity().IsValid())
+        {
+        if (propertyChange.GetKindOfQuanity().GetState() == ChangeState::Deleted)
+            {
+            sqlUpdateBuilder.AddSetExp("KindOfQuantityId"); //set to null;
+            }
+        else
+            {
+            auto newPrimitiveProperty = newProperty.GetAsPrimitiveProperty();
+            if (newPrimitiveProperty == nullptr)
+                {
+                BeAssert(newPrimitiveProperty != nullptr);
+                return ERROR;
+                }
+
+            KindOfQuantityCP koqCP = newPrimitiveProperty->GetKindOfQuantity();
+            KindOfQuantityId id = ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, *koqCP);
+            if (!id.IsValid())
+                return ERROR;
+
+            sqlUpdateBuilder.AddSetExp("KindOfQuantityId", id.GetValue());
+            }
+        }
+
+
     sqlUpdateBuilder.AddWhereExp("Id", propertyId.GetValue());
     if (sqlUpdateBuilder.IsValid())
         {

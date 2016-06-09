@@ -1210,6 +1210,8 @@ struct ECPropertyChange :ECObjectChange
         StringChange& GetExtendedTypeName() { return Get<StringChange>(SystemId::ExtendedTypeName); }
         BooleanChange& IsReadonly() { return Get<BooleanChange>(SystemId::IsReadonly); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
+        StringChange& GetKindOfQuanity() { return Get<StringChange>(SystemId::KindOfQuantity); }
+        StringChange& GetEnumeration() { return Get<StringChange>(SystemId::Enumeration); }
     };
 
 //=======================================================================================
@@ -1274,6 +1276,8 @@ struct ECSchemaComparer
         BentleyStatus AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType);
         BentleyStatus CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b);
         BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b);
+
+
     public:
         ECSchemaComparer(){}
         ~ECSchemaComparer(){}

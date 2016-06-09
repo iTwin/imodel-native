@@ -486,6 +486,7 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
 
     //if (a.GetMinimumValue() != b.GetMinimumValue())
     //    change.GetMinimumValue().SetValue(a.GetMinimumValue(), b.GetMinimumValue());
+  
 
     auto aNavigation = a.GetAsNavigationProperty();
     auto bNavigation = b.GetAsNavigationProperty();
@@ -502,6 +503,35 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
             change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::Deleted, aNavigation->GetRelationshipClass()->GetFullName());
         else if (!aNavigation->GetRelationshipClass() && bNavigation->GetRelationshipClass())
             change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::New, bNavigation->GetRelationshipClass()->GetFullName());
+        }
+
+    auto aPrimitive = a.GetAsPrimitiveProperty();
+    auto bPrimitive = b.GetAsPrimitiveProperty();
+    if (aPrimitive && aPrimitive)
+        {
+        auto aEnum = aPrimitive->GetEnumeration();
+        auto bEnum = bPrimitive->GetEnumeration();
+        if (aEnum != bEnum)
+            {
+            if (aEnum && !bEnum)
+                change.GetEnumeration().SetValue(ValueId::Deleted, aEnum->GetFullName());
+            else if (!aEnum && bEnum)
+                change.GetEnumeration().SetValue(ValueId::New, bEnum->GetFullName());
+            else
+                change.GetEnumeration().SetValue(aEnum->GetFullName(), bEnum->GetFullName());
+            }
+
+        auto aKoQ = aPrimitive->GetKindOfQuantity();
+        auto bKoQ = bPrimitive->GetKindOfQuantity();
+        if (aEnum != bEnum)
+            {
+            if (aKoQ && !bKoQ)
+                change.GetEnumeration().SetValue(ValueId::Deleted, aKoQ->GetFullName());
+            else if (!aKoQ && bKoQ)
+                change.GetEnumeration().SetValue(ValueId::New, bKoQ->GetFullName());
+            else
+                change.GetEnumeration().SetValue(aKoQ->GetFullName(), bKoQ->GetFullName());
+            }
         }
 
     auto aArray = a.GetAsArrayProperty();
@@ -1265,6 +1295,12 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
     else if (v.GetIsPrimitive())
         {
         propertyChange.IsPrimitive().SetValue(appendType, true);
+        auto primitiveProp = v.GetAsPrimitiveProperty();
+        if (primitiveProp->GetEnumeration())
+            propertyChange.GetEnumeration().SetValue(appendType, primitiveProp->GetEnumeration()->GetFullName());
+
+        if (primitiveProp->GetKindOfQuantity())
+            propertyChange.GetKindOfQuanity().SetValue(appendType, primitiveProp->GetKindOfQuantity()->GetFullName());
         }
     else if (v.GetIsStruct())
         {
@@ -1282,7 +1318,6 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
         {
         return ERROR;
         }
-
     //if (v.IsMaximumValueDefined())
     //    propertyChange.GetMaximumValue().SetValue(appendType, v.GetMaximumValue());
 
