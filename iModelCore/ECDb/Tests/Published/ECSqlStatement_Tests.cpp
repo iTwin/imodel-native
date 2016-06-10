@@ -3445,4 +3445,58 @@ TEST_F(ECSqlStatementTestFixture, SelectAfterImport)
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                     06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
+    {
+    ECDbCR ecdb = SetupECDb("pointsmappedtosharedcolumns.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Base'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                     <Strategy>SharedTable</Strategy>"
+        "                     <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                     <Options>JoinedTablePerDirectSubclass</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Prop1' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                     <Options>SharedColumns</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='Prop2' typeName='double' />"
+        "        <ECProperty propertyName='Center' typeName='point3d' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Sub1(Prop1,Center) VALUES(1.1,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3D(1, DPoint3d::From(1.0, 2.0, 3.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_STREQ("INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,?,140);INSERT INTO [ts_Sub1] ([sc02],[sc03],[sc04],[BaseECInstanceId],ECClassId) VALUES (?,?,?,?,140)", stmt.GetNativeSql());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetX(Center), GetY(Center), GetZ(Center) FROM ts.Sub1 LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1.0, stmt.GetValueDouble(0));
+    ASSERT_EQ(2.0, stmt.GetValueDouble(1));
+    ASSERT_EQ(3.0, stmt.GetValueDouble(2));
+
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.Sub1 WHERE GetX(Center) > 0 AND GetY(Center) > 0 AND GetZ(Center) > 0"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
