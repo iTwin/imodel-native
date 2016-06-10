@@ -32,7 +32,7 @@ PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel cons
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-PointCloudProgressiveDisplay::~PointCloudProgressiveDisplay() 
+PointCloudProgressiveDisplay::~PointCloudProgressiveDisplay()
     {
     INFO_PRINTF("END Display firstPass=%ld progressive=%ld TotalProgressive=%ld", m_firstPassPts, m_progressivePts, m_totalProgressivePts);
     }
@@ -45,7 +45,7 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
     PointCloudVortex::SetViewport(m_ptViewport->GetId());
     VisualizationManager::SetViewportInfo(context, m_model.GetSceneToWorld(), m_sceneRangeWorld);
 
-    // Changing the global density has no effect once points have been loaded. Instead, alter the display query density 
+    // Changing the global density has no effect once points have been loaded. Instead, alter the display query density
     PointCloudVortex::GlobalDensity(1.0f);
 
     auto spatial = context.GetViewport()->GetViewController()._ToSpatialView();
@@ -63,55 +63,11 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
     PointCloudVortex::SetEnabledState(PtEnable::INTENSITY_SHADER, settings.GetUseIntensity());
     PointCloudVortex::SetEnabledState(PtEnable::PLANE_SHADER, settings.GetUsePlane());
     }
-
+         
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
 //----------------------------------------------------------------------------------------
-struct MyPointCloudDraw : Render::PointCloudDraw    //NEEDS_WORK_CONTINUOUS_RENDER temporary
-    {
-    //&&MM QV OPTIMIZATION
-    // qv_addPoints / qv_addPointsFloat
-    //      - use memcpy to copy Rgb values instead of byte per byte.
-    //      - use float and memcpy instead of float per float copy.
-    //      - add range param if we can provide it?
-    //      - Can we call qv_addPoints from multiple threads?
-    // Ask Karin for a good chunk size. currently DRAW_QUERYCAPACITY=1,048,576
-    // can we pre-allocate qv graphic and assigned directly in qv buffer.
-    // Performance difference between qvi_displayPoints and qv_addPoints/qvi_displayElement ?
-
-    //&&MM Pointools query optimization
-    //      - A query that doesn't use global var. and that we can resume. ex: ptViewport
-    //      - A query that will return all points without having to restart over over.
-    //      - Query that return points in floats with an origin. local to the query and not a global setting.
-    //      - Can it supports multiple query? Will it affect ptsTolLoad and loaded voxel?
-    //          ex: full density is started
-    //              full density pause
-    //              low density start and complete
-    //              resume full density.
-    //          
-    //          Same scenario may occurs with multiple viewports. i.e. alternating between 2 queries of a different region.
-    //              
-
-
-    uint32_t m_ptCount;
-    DPoint3dCP m_ptCP;
-    ColorDef const* m_pRgb;
-
-    virtual bool _IsThreadBound() { return false; } // I think we can remove that or somehow rework that concept.
-    virtual bool _GetRange(DPoint3dP range) { return false; }
-    virtual bool _GetOrigin(DPoint3dP origin) { return false; }
-
-    virtual ColorDef const* _GetRgbColors() { return m_pRgb; }
-
-    virtual uint32_t _GetNumPoints() { return m_ptCount; }
-    virtual DPoint3dCP _GetDPoints() { return m_ptCP; }
-    virtual FPoint3dCP _GetFPoints() { return nullptr; }        //&&MM use qv_addPointsFloat
-    };
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2016
-//----------------------------------------------------------------------------------------
-bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicBuilderPtr* pGraphicsPtr, int64_t& pointsToLoad, uint64_t& pointsDrawn, Dgn::RenderContextR context, PtQueryDensity densityType, float density, bool doCheckStop)
+bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsPtr, int64_t& pointsToLoad, uint64_t& pointsDrawn, Dgn::RenderContextR context, PtQueryDensity densityType, float density, bool doCheckStop)
     {
     PointCloudQueryHandlePtr queryHandle(m_model.GetPointCloudSceneP()->GetFrustumQueryHandle());
 
@@ -122,20 +78,15 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicBuilderPtr* pGr
     uint32_t channelFlags = (uint32_t) PointCloudChannelId::Xyz;
     if (m_model.GetPointCloudSceneP()->_HasRGBChannel())
         channelFlags |= (uint32_t) PointCloudChannelId::Rgb;
-    
+
     RefCountedPtr<PointCloudQueryBuffers> queryBuffers = PointCloudQueryBuffers::Create(DRAW_QUERYCAPACITY, channelFlags);
 
     bool queryCompleted = true;
     m_lastTentativeStopped = false;
 
-    auto pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()));
-    Render::GraphicParams graphicParams;
-    graphicParams.SetLineColor(m_model.GetColor());
-    graphicParams.SetFillColor(m_model.GetColor());
-    graphicParams.SetWidth(context.GetViewport()->GetIndexedLineWidth(m_model.GetWeight()));
-    pGraphic->ActivateGraphicParams(graphicParams);
-
     uint32_t buffersCount = 0;
+
+    Dgn::Render::GraphicArray graphicArray;
 
     while (1)
         {
@@ -151,16 +102,59 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicBuilderPtr* pGr
         if (numQueryPoints == 0)
             break;
 
-        // NEEDS_WORK_CONTINUOUS_RENDER temporary
         if(queryBuffers->HasXyz())
-            {          
-            MyPointCloudDraw pointCloudDraw;
-            pointCloudDraw.m_ptCP = queryBuffers->GetXyzChannel()->GetChannelBuffer();
-            pointCloudDraw.m_pRgb = queryBuffers->HasRgb() ? (ColorDef const*) queryBuffers->GetRgbChannel()->GetChannelBuffer() : nullptr;
-            pointCloudDraw.m_ptCount = queryBuffers->GetNumPoints();
+            {  
 
-            pGraphic->AddPointCloud(&pointCloudDraw);
-            pointsDrawn += pointCloudDraw.m_ptCount;
+            //&&MM QV OPTIMIZATION
+            // qv_addPoints / qv_addPointsFloat
+            //      - use memcpy to copy Rgb values instead of byte per byte.
+            //      - use float and memcpy instead of float per float copy.
+            //      - add range param if we can provide it?
+            //      - Can we call qv_addPoints from multiple threads?
+            // Ask Karin for a good chunk size. currently DRAW_QUERYCAPACITY=1,048,576
+            // can we pre-allocate qv graphic and assigned directly in qv buffer.
+            // Performance difference between qvi_displayPoints and qv_addPoints/qvi_displayElement ?
+
+            //&&MM Pointools query optimization
+            //      - A query that doesn't use global var. and that we can resume. ex: ptViewport
+            //      - A query that will return all points without having to restart over over.
+            //      - Query that return points in floats with an origin. local to the query and not a global setting.
+            //      - Can it supports multiple query? Will it affect ptsTolLoad and loaded voxel?
+            //          ex: full density is started
+            //              full density pause
+            //              low density start and complete
+            //              resume full density.
+            //          
+            //          Same scenario may occurs with multiple viewports. i.e. alternating between 2 queries of a different region.
+            //  
+
+            //&&MM Need query in floats NEEDS_WORK_POINT_CLOUD
+            static std::vector<FPoint3d> s_floatsPts;
+            if (s_floatsPts.size() < queryBuffers->GetNumPoints())
+                s_floatsPts.resize(queryBuffers->GetNumPoints());
+
+            ByteCP     pRgb = queryBuffers->HasRgb() ? (ByteCP)queryBuffers->GetRgbChannel()->GetChannelBuffer() : nullptr;
+            DPoint3dCP pXyz = queryBuffers->GetXyzChannel()->GetChannelBuffer();
+            DPoint3d   origin = pXyz[0];
+            uint32_t   numPoints = queryBuffers->GetNumPoints();
+          
+            for (size_t i = 0; i < numPoints; ++i)
+                {
+                s_floatsPts[i].x = (float)(pXyz[i].x - origin.x);
+                s_floatsPts[i].y = (float)(pXyz[i].y - origin.y);
+                s_floatsPts[i].z = (float)(pXyz[i].z - origin.z);
+                }            
+
+            auto graphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+            Render::GraphicParams graphicParams;
+            graphicParams.SetLineColor(m_model.GetColor());
+            graphicParams.SetFillColor(m_model.GetColor());
+            graphicParams.SetWidth(context.GetViewport()->GetIndexedLineWidth(m_model.GetWeight()));
+            graphic->ActivateGraphicParams(graphicParams);
+            graphic->AddPointCloud(queryBuffers->GetNumPoints(), origin, s_floatsPts.data(), pRgb);
+            graphicArray.Add(*graphic);
+
+            pointsDrawn += queryBuffers->GetNumPoints();
             ++buffersCount;
             }
         }
@@ -171,13 +165,18 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicBuilderPtr* pGr
         // From observation, we need to recompute ptsToload otherwise the count is not [always?] updated.
         pointsToLoad = PointCloudVortex::PtsToLoadInViewport(m_model.GetPointCloudSceneP()->GetSceneHandle(), true/*recompute*/);
         }
-        
+
     PointCloudVortex::EndDrawFrameMetrics();
 
-    context.OutputGraphic(*pGraphic, nullptr);
+    if (!graphicArray.m_entries.empty())
+        {
+        auto graphicGroup = context.CreateGroupNode(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()), graphicArray, nullptr);
+        context.OutputGraphic(*graphicGroup, nullptr);
 
-    if (pGraphicsPtr != nullptr)
-        *pGraphicsPtr = pGraphic;
+        if (pGraphicsPtr != nullptr)
+            *pGraphicsPtr = graphicGroup;
+        }
+
     DEBUG_PRINTF("DrawPointCloud outputting %d, ptToload =%ld", buffersCount, pointsToLoad);
 
     return queryCompleted;
@@ -215,7 +214,7 @@ void PointCloudProgressiveDisplay::DrawView (Dgn::RenderContextR context)
 //----------------------------------------------------------------------------------------
 ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::ProgressiveContext& context, WantShow& wantShow)
     {
-    // NEEDS_WORK_CONTINUOUS_RENDER:  Can we do something better than a nextRetryTime?  
+    // NEEDS_WORK_CONTINUOUS_RENDER:  Can we do something better than a nextRetryTime?
     //  ex: if accurate we could use pointsToLoad and PtsLoadedInViewportSinceLastDraw to detect that
     //      we need to redraw.
     if (!m_doLowDensity && !m_lastTentativeStopped && BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
@@ -233,15 +232,21 @@ ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::Pr
         static float density = 0.10f; //&&MM make this an option? used to be 0.05 in Microstation but low density is now defer to progressive display so we can be a bit slower.
         static PtQueryDensity densityType = PtQueryDensity::QUERY_DENSITY_VIEW; // Get only points in memory for a view representation. Point still on disk will get loaded at a later time.
         int64_t pointsToLoad = 0;
-        Dgn::Render::GraphicBuilderPtr pLowDensityGraphic;
+        Dgn::Render::GraphicPtr pLowDensityGraphic;
 
         DrawPointCloud(&pLowDensityGraphic, pointsToLoad, m_firstPassPts, context, densityType, density, false/*checkStop*/);
-        m_doLowDensity = false;
-
+        
         if (pLowDensityGraphic.IsValid())
             {
-            const_cast<PointCloudModel&>(m_model).SaveLowDensityGraphic(context.GetViewportR(), pLowDensityGraphic.GetGraphic());
+            const_cast<PointCloudModel&>(m_model).SaveLowDensityGraphic(context.GetViewportR(), pLowDensityGraphic.get());
             wantShow = WantShow::Yes;
+            m_doLowDensity = false;
+            }
+        else if (0 == pointsToLoad)
+            {
+            // no graphic no points to load: nothing to see in this view.
+            m_doLowDensity = false;
+            return ProgressiveTask::Completion::Finished;
             }
 
         return ProgressiveTask::Completion::Aborted;

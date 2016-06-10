@@ -21,7 +21,9 @@ struct PointCloudRenderer
         PointCloudRenderer(); // disabled
         PointCloudRenderer(PointCloudRenderer const&); // disabled
 
+#if defined (NEEDS_WORK_POINT_CLOUD)
         void            DrawPointBuffer(ViewContextR context, PointCloudDrawParams& buffer) const;
+#endif
         void            ApplyClassification(BePointCloud::PointCloudQueryBuffers& channels, LasClassificationInfo const* pClassifInfo, Dgn::ViewContextR context) const;
 
         uint32_t        m_outputCapacity;

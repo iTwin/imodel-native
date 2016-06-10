@@ -13,26 +13,26 @@
 BEGIN_UNNAMED_NAMESPACE
 
 //=======================================================================================
+// Manage the creation and cleanup of the local ThreeMxTileCache used by ThreeMxFileData
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct ThreeMxCache : RealityData::Storage
+struct ThreeMxTileCache : RealityData::Storage
 {
     uint64_t m_allowedSize = (1024*1024*1024); // 1 Gb
-
     using Storage::Storage;
-    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override;
-    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override;
+    virtual BentleyStatus _PrepareDatabase(Db& db) const override;
+    virtual BentleyStatus _CleanupDatabase(Db& db) const override;
 };
 
 //=======================================================================================
+// This object is created to load a single 3mx file asynchronously. Its virtual methods are called on other threads.
 // @bsiclass                                        Grigas.Petraitis            04/2015
 //=======================================================================================
-struct ThreeMxData : RealityData::Payload
+struct ThreeMxFileData : RealityData::Payload
 {
 protected:
     Scene& m_scene;
     NodePtr m_node;
-    Utf8String m_filename;
     Utf8String m_shortName;
     mutable MxStreamBuffer m_nodeBytes;
     MxStreamBuffer* m_output;
@@ -40,46 +40,40 @@ protected:
 public:
     struct RequestOptions : RealityData::Options
     {
-        RequestOptions(bool synchronous)
-            {
-            m_forceSynchronous = synchronous;
-            m_requestFromSource=true;
-            }
+        RequestOptions(bool synchronous) {m_forceSynchronous=synchronous;}
     };
 
-    ThreeMxData(NodeP node, Scene& scene, MxStreamBuffer* output) : m_scene(scene), m_node(node), m_output(output) 
+    ThreeMxFileData(Utf8CP filename, NodeP node, Scene& scene, MxStreamBuffer* output) : Payload(filename), m_scene(scene), m_node(node), m_output(output) 
         {
         if (node)
-            m_shortName = node->GetChildFile();
+            m_shortName = node->GetChildFile(); // Note: we must save this in the ctor, since it is not safe to call this on other threads.
         }
 
-    Utf8StringCR GetFilename() const {return m_filename;}
     MxStreamBuffer& GetOutput() const {return m_nodeBytes;}
 
-    virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
     virtual void _OnError() override {_OnNotFound();}
     virtual void _OnNotFound() override {BeAssert(false); if (m_node.IsValid()) m_node->SetNotFound();}
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return _InitFrom(url, body);}
-    virtual BentleyStatus _InitFrom(Db& db, Utf8CP id) override;
-    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override;
-    virtual BentleyStatus _Persist(Db& db) const override;
+    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return _LoadFromFile(body);}
+    virtual BentleyStatus _LoadFromStorage(Db& db) override;
+    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override;
+    virtual BentleyStatus _PersistToStorage(Db& db) const override;
 };
 
-DEFINE_REF_COUNTED_PTR(ThreeMxData)
+DEFINE_REF_COUNTED_PTR(ThreeMxFileData)
+DEFINE_REF_COUNTED_PTR(ThreeMxTileCache)
 
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2015
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxData::_InitFrom(Utf8CP filename, ByteStream const& data)
+BentleyStatus ThreeMxFileData::_LoadFromFile(ByteStream const& data)
     {
     if (m_node.IsValid() && !m_node->IsQueued())
         return SUCCESS; // this node was abandoned.
 
     m_nodeBytes = data;
-    m_filename = filename;
 
     if (m_output)
         {
@@ -99,9 +93,9 @@ BentleyStatus ThreeMxData::_InitFrom(Utf8CP filename, ByteStream const& data)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2015
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxData::_InitFrom(Db& db, Utf8CP filename)
+BentleyStatus ThreeMxFileData::_LoadFromStorage(Db& db)
     {
     if (m_node.IsValid() && !m_node->IsQueued())
         return SUCCESS; // this node was abandoned.
@@ -112,13 +106,11 @@ BentleyStatus ThreeMxData::_InitFrom(Db& db, Utf8CP filename)
         if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
             return ERROR;
 
-        Utf8String name = m_shortName.empty() ? filename : m_shortName;
+        Utf8StringCR name = m_shortName.empty() ? m_payloadId : m_shortName;
         stmt->ClearBindings();
         stmt->BindText(1, name, Statement::MakeCopy::No);
         if (BE_SQLITE_ROW != stmt->Step())
             return ERROR;
-
-        m_filename = filename;
 
         const void* data = stmt->GetValueBlob(0);
         int dataSize = stmt->GetValueInt(1);
@@ -126,10 +118,9 @@ BentleyStatus ThreeMxData::_InitFrom(Db& db, Utf8CP filename)
         m_nodeBytes.SetPos(0);
         }
 
-    m_filename = filename;
-    if (m_output)
+    if (nullptr != m_output) // is this is the scene file?
         {
-        *m_output = m_nodeBytes;
+        *m_output = m_nodeBytes;  // yes, just save its data. We're going to load it synchronously
         return SUCCESS;
         }
 
@@ -145,16 +136,17 @@ BentleyStatus ThreeMxData::_InitFrom(Db& db, Utf8CP filename)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2015
+* save the data for a 3mx file into the tile cache. Note that this is also called for the scene file.
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxData::_Persist(Db& db) const
+BentleyStatus ThreeMxFileData::_PersistToStorage(Db& db) const
     {
     if (m_node.IsValid() && m_node->IsAbandoned())
         return SUCCESS;
 
     BeAssert(m_nodeBytes.HasData());
 
-    Utf8String name = m_shortName.empty() ? m_filename : m_shortName;
+    Utf8StringCR name = m_shortName.empty() ? m_payloadId : m_shortName;
     CachedStatementPtr stmt;
     db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_ThreeMx " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)");
 
@@ -172,7 +164,7 @@ BentleyStatus ThreeMxData::_Persist(Db& db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxCache::_PrepareDatabase(BeSQLite::Db& db) const 
+BentleyStatus ThreeMxTileCache::_PrepareDatabase(BeSQLite::Db& db) const 
     {
     if (db.TableExists(TABLE_NAME_ThreeMx))
         return SUCCESS;
@@ -187,7 +179,7 @@ BentleyStatus ThreeMxCache::_PrepareDatabase(BeSQLite::Db& db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxCache::_CleanupDatabase(BeSQLite::Db& db) const 
+BentleyStatus ThreeMxTileCache::_CleanupDatabase(BeSQLite::Db& db) const 
     {
     CachedStatementPtr sumStatement;
     db.GetCachedStatement(sumStatement, "SELECT SUM(DataSize) FROM " TABLE_NAME_ThreeMx);
@@ -252,7 +244,7 @@ RealityData::CacheResult Scene::RequestData(NodeP node, bool synchronous, MxStre
         filePath = m_rootUrl;
         }
 
-    return m_cache->RequestData(*new ThreeMxData(node, *this, output), filePath.c_str(), ThreeMxData::RequestOptions(synchronous));;
+    return m_cache->RequestData(*new ThreeMxFileData(filePath.c_str(), node, *this, output), ThreeMxFileData::RequestOptions(synchronous));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -264,16 +256,15 @@ void Scene::CreateCache()
 
     uint32_t threadCount = std::max((uint32_t) 2,BeThreadUtilities::GetHardwareConcurrency() / 2);
 
-    if (IsHttp())
-        {
-        RefCountedPtr<ThreeMxCache> cache = new ThreeMxCache(threadCount);
-        if (SUCCESS == cache->OpenAndPrepare(m_localCacheName))
-            m_cache->SetStorage(*cache);
-
-        m_cache->SetSource(*new RealityData::HttpSource(threadCount, RealityData::SchedulingMethod::FIFO));
-        }
-    else
-        {
+    if (!IsHttp()) 
+        { // Note: local files do not need a tile cache
         m_cache->SetSource(*new RealityData::FileSource(threadCount, RealityData::SchedulingMethod::FIFO));
+        return;
         }
+
+    ThreeMxTileCachePtr cache = new ThreeMxTileCache(threadCount);
+    if (SUCCESS == cache->OpenAndPrepare(m_localCacheName))
+        m_cache->SetStorage(*cache);
+
+    m_cache->SetSource(*new RealityData::HttpSource(threadCount, RealityData::SchedulingMethod::FIFO));
     }

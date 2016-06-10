@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
-#include <DgnPlatform/ImageUtilities.h>
 #include "WmsSource.h"
 
 #define TABLE_NAME_WmsTileData "WmsTileData"
@@ -30,41 +29,32 @@ struct WmsTileData : RealityData::Payload
     };
 
 private:
-    Utf8String      m_url;
     ByteStream      m_data;
     DateTime        m_creationDate;
     Utf8String      m_contentType;
 
-private:
-    WmsTileData(){}
-
     bool IsSupportedContent(Utf8StringCR contentType) const;
         
 protected:
-    virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, Utf8CP key) override;
-    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return ERROR;}
-    virtual BentleyStatus _Persist(BeSQLite::Db& db) const override;
+    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
+    virtual BentleyStatus _LoadFromStorage(BeSQLite::Db& db) override;
+    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override {return ERROR;}
+    virtual BentleyStatus _PersistToStorage(BeSQLite::Db& db) const override;
 
 public:
-    static RefCountedPtr<WmsTileData> Create() {return new WmsTileData();}    
+    WmsTileData(Utf8CP name) : Payload(name) {}
     ByteStream const& GetData() const  {return m_data;}
     DateTime GetCreationDate() const  {return m_creationDate;}
     Utf8String GetContentType() const  {return m_contentType;}
 };
 
 //----------------------------------------------------------------------------------------
-//-------------------------------  WmsTileData      ----------------------------------------
-//----------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
 bool WmsTileData::_IsExpired() const 
     {
-    return false; //DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());
+    return DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());
     }
 
 //=======================================================================================
@@ -136,9 +126,8 @@ bool WmsTileData::IsSupportedContent(Utf8StringCR contentType) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
+BentleyStatus WmsTileData::_LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
     {    
-    m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
     auto contentTypeIter = header.find("Content-Type");
@@ -158,7 +147,7 @@ BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, Utf8CP key)
+BentleyStatus WmsTileData::_LoadFromStorage(BeSQLite::Db& db)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     wt_OperationForGraphics highPriority;
@@ -195,7 +184,7 @@ BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, Utf8CP key)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db) const
+BentleyStatus WmsTileData::_PersistToStorage(BeSQLite::Db& db) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int bufferSize = (int) GetData().size();
@@ -411,12 +400,13 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     // *** as the database get bigger(I guess 500MB) the first call is very very slow. sorting by string is probably not a good idea either
     //     Maybe one table per server?  and use TileId or hash the url ?
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
-    RefCountedPtr<WmsTileData> pWmsTileData = WmsTileData::Create();
-    if (RealityData::CacheResult::Success != GetRealityDataCache().RequestData(*pWmsTileData, tileUrl.c_str(), WmsTileData::RequestOptions(true)))
+    RefCountedPtr<WmsTileData> pWmsTileData = new WmsTileData(tileUrl.c_str());
+    if (RealityData::CacheResult::Success != GetRealityDataCache().RequestData(*pWmsTileData, WmsTileData::RequestOptions(true)))
         return image;
 
     BeAssert(pWmsTileData.IsValid());
 
+#if defined (NEEDS_WORK_READ_IMAGE)
     auto const& data = pWmsTileData->GetData();
     RgbImageInfo actualImageInfo;
     Utf8StringCR contentType = pWmsTileData->GetContentType();
@@ -446,6 +436,7 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     //&&MM how to tell if we need to enable alpha?
     //     We cannot reuse buffer anymore review...
     alphaBlend = m_mapInfo.m_transparent && actualImageInfo.m_hasAlpha;
+#endif
     return image;
     }
 
