@@ -127,6 +127,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         //! @param[in] newFileName - new name for file. Invalid characters that are not supported by file system will be normalized
         virtual BentleyStatus ModifyFileName(ECInstanceKeyCR instanceKey, Utf8StringCR newFileName) = 0;
 
+        //! Checks if file was modified externally. If so, marks file ChangeStatus as Modified.
+        //! @param[in] instanceKey
+        //! @param[in] syncStatus
+        virtual BentleyStatus DetectFileModification(ECInstanceKeyCR instanceKey, SyncStatus syncStatus = SyncStatus::Ready) = 0;
+
         //! Change whether or not an object is ready to be synced to the server
         virtual BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) = 0;
 

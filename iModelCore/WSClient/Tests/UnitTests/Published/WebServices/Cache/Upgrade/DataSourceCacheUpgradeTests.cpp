@@ -718,4 +718,45 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingRe
     EXPECT_CONTAINS(instances, ECDbHelper::ToPair(cache.FindInstance({"TestSchema.TestClass", "C"})));
     }
 
+//// Left for referance
+//TEST_F(DataSourceCacheUpgradeTests, SetupV11)
+//    {
+//    DataSourceCache cache;
+//    auto paths = GetNewSeedPaths(11, "data");
+//    ASSERT_EQ(SUCCESS, cache.Create(paths.first, paths.second));
+//    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
+//
+//    // Setup test data
+//    ObjectId fileId {"TestSchema.TestClass", "Foo"};
+//    ASSERT_EQ(SUCCESS, cache.LinkInstanceToRoot("Root", fileId));
+//
+//    BeFileName fileToCachePath = StubFile();
+//    EXPECT_TRUE(fileToCachePath.DoesPathExist());
+//
+//    EXPECT_EQ(SUCCESS, cache.CacheFile(fileId, WSFileResponse(fileToCachePath, HttpStatus::OK, "TestTag"), FileCache::Persistent));
+//
+//    // Save
+//    cache.GetECDb().SaveChanges();
+//    cache.Close();
+//    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChanges)
+    {
+    // Arrange
+    auto paths = GetSeedPaths(11, "data");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    // Check
+    auto instanceKey = cache.FindInstance({"TestSchema.TestClass", "Foo"});
+    ASSERT_TRUE(instanceKey.IsValid());
+
+    SimpleWriteToFile("NewTestContent", cache.ReadFilePath(instanceKey));
+
+    EXPECT_EQ(SUCCESS, cache.GetChangeManager().DetectFileModification(instanceKey));
+
+    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache.GetChangeManager().GetFileChange(instanceKey).GetChangeStatus());
+    }
+
 #endif

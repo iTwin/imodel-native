@@ -216,6 +216,8 @@ $(o)UpgraderFromV9ToV10$(oext)                  : $(CacheMkiSourceDir)Persistenc
 
 $(o)UpgraderFromV10ToV11$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV10ToV11.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)UpgraderFromV11ToV12$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV11ToV12.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
 
 $(o)BeSQLiteDbTransactionHandler$(oext)         : $(CacheMkiSourceDir)Transactions/BeSQLiteDbTransactionHandler.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

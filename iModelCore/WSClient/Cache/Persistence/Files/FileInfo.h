@@ -64,6 +64,10 @@ struct FileInfo : public ChangeInfo
         DateTime GetFileCacheDate() const;
         void SetFileCacheDate(DateTimeCR utcDate);
 
+        //! Get date when file was last updated in cache
+        DateTime GetFileUpdateDate() const;
+        void SetFileUpdateDate(DateTimeCR utcDate);
+
         ECInstanceKeyCR GetInstanceKey() const;
 
         JsonValueCR GetExternalFileInfoJson() const;

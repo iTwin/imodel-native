@@ -336,6 +336,7 @@
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />
