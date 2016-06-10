@@ -39,6 +39,7 @@ DEFINE_TASK_TYPEDEFS(DgnDbLockSetResultInfo, DgnDbServerLockSet);
 DEFINE_TASK_TYPEDEFS(DgnDbServerEventConnectionPtr, DgnDbServerEventConnection);
 DEFINE_TASK_TYPEDEFS(bvector<IDgnDbServerEventPtr>, IDgnDbServerEventCollection);
 DEFINE_TASK_TYPEDEFS(IDgnDbServerEventPtr, IDgnDbServerEvent);
+DEFINE_TASK_TYPEDEFS(void, DgnDbServerCancelEvent);
 
 //=======================================================================================
 //! DgnDbLockSet results.
@@ -240,6 +241,9 @@ public:
 
     //! Receive Events from EventService
     DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventTaskPtr    GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Cancel Events from EventService
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr    CancelEventRequest(ICancellationTokenPtr cancellationToken = nullptr);
 
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

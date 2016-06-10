@@ -78,14 +78,6 @@ bool EventServiceClient::Receive(Utf8StringR msgOut, bool longPolling)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-HttpResponse EventServiceClient::Receive(bool longPolling)
-    {
-    return MakeReceiveDeleteRequest(longPolling);
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void EventServiceClient::UpdateSASToken(Utf8StringCR sasToken)

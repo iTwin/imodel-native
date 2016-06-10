@@ -29,10 +29,9 @@ struct EventServiceClient
 
     public:
         EventServiceClient(); //Need a default constructor for DgnDbClientRepository
-        WSCLIENT_EXPORT HttpResponse MakeReceiveDeleteRequest(bool longPolling);
+        WSCLIENT_EXPORT HttpResponse MakeReceiveDeleteRequest(bool longPolling = true);
         WSCLIENT_EXPORT EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId);
         WSCLIENT_EXPORT bool Receive(Utf8StringR msgOut, bool longPolling = true);
-        WSCLIENT_EXPORT HttpResponse Receive(bool longPolling = true);
         WSCLIENT_EXPORT void UpdateSASToken(Utf8StringCR sasToken);
         WSCLIENT_EXPORT void CancelRequest();
     };
