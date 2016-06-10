@@ -944,6 +944,11 @@ template <class POINT> DTMStatusInt MrDTM<POINT>::_CalculateSlopeArea (double&, 
     return DTM_ERROR;
     }
 
+template <class POINT> DTMStatusInt MrDTM<POINT>::_CalculateSlopeArea(double&, double&, const DPoint3d*, int, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
+    {
+    return DTM_ERROR;
+    }
+
 template <class POINT> bool MrDTM<POINT>::_GetTransformation(TransformR)
     {
     return true;
@@ -1382,6 +1387,11 @@ template <class POINT> IDTMVolumeP MrDTMSingleResolutionPointIndexView<POINT>::_
     }
 
 template <class POINT> DTMStatusInt MrDTMSingleResolutionPointIndexView<POINT>::_CalculateSlopeArea (double&, double&, const DPoint3d*, int)
+    {
+    return DTM_ERROR;
+    }
+
+template <class POINT> DTMStatusInt MrDTMSingleResolutionPointIndexView<POINT>::_CalculateSlopeArea(double&, double&, const DPoint3d*, int, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
     {
     return DTM_ERROR;
     }

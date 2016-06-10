@@ -2,7 +2,7 @@
 |
 ** Module Code  bcdtmInsert.c
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -162,16 +162,17 @@ errexit :
 +-----------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmInsert_lineBetweenPointsDtmObject
 (
- BC_DTM_OBJ *dtmP,               /* ==> Pointer To Dtm Object        */
- long       firstPnt,            /* ==> First Tin Point              */
- long       lastPnt,             /* ==> Last  Tin Point              */
- long       drapeOption,         /* ==> Drape Option                 */
- long       insertOption         /* ==> InsertOption                 */
- )
- /*
- ** This Function Inserts A Line Between Two Points In Dtm Object
- **
- ** drapeOption  = 1   Insert As Drape Line
+BC_DTM_OBJ *dtmP,               /* ==> Pointer To Dtm Object        */
+long       firstPnt,            /* ==> First Tin Point              */
+long       lastPnt,             /* ==> Last  Tin Point              */
+long       drapeOption,         /* ==> Drape Option                 */
+long       insertOption,        /* ==> InsertOption                 */
+DTMInsertPointCallback insertPointCallback
+)
+/*
+** This Function Inserts A Line Between Two Points In Dtm Object
+**
+** drapeOption  = 1   Insert As Drape Line
 **              = 2   Insert As Break Line
  ** insertOption = 1   Move Tin Lines That Are Not Linear Features
  **              = 2   Intersect Tin Lines
@@ -324,7 +325,18 @@ BENTLEYDTM_Public int bcdtmInsert_lineBetweenPointsDtmObject
             /*
             **    Add Point To Tin
             */
-            if (bcdtmInsert_addPointAndFixFeaturesToDtmObject(dtmP, firstPnt, p1, p2, p3, bkp, intPntX, intPntY, intPntZ, insertLine, &p4) ) goto errexit;
+            if (bcdtmInsert_addPointAndFixFeaturesToDtmObject(dtmP, firstPnt, p1, p2, p3, bkp, intPntX, intPntY, intPntZ, insertLine, &p4)) goto errexit;
+            if (insertPointCallback)
+                {
+                DPoint3dR pt = *pointAddrP(dtmP, p4);
+                int pts[4];
+                pts[0] = p1;
+                pts[1] = p2;
+                pts[2] = firstPnt;
+                pts[3] = p3;
+
+                insertPointCallback(p4, pt, pt.z, true, pts);
+                }
             /*
             **     Update Temporary Pointer  Array
             */
@@ -3991,7 +4003,8 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
  long insertOption,       /* ==> Insert Option             */
  DPoint3d *stringPtsP,         /* ==> Pointer To String Points  */
  long numStringPts,       /* ==> Number Of String Points   */
- long *startPntP          /* <== Start Point Of Tptr List  */
+ long *startPntP,         /* <== Start Point Of Tptr List  */
+ DTMInsertPointCallback insertPointCallback
 )
 /*
 **
@@ -4053,7 +4066,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
  for( p3d = stringPtsP ; p3d < stringPtsP + numStringPts ; ++p3d )
    {
     if( dbg == 1 )  bcdtmWrite_message(0,0,0,"Inserting Point[%4ld] ** %10.4lf %10.4lf %8.4lf",(long)(p3d-stringPtsP),p3d->x,p3d->y,p3d->z) ;
-    if( bcdtmInsert_storePointInDtmObject(dtmP,drapeOption,insertOption,p3d->x,p3d->y,p3d->z,&dtmPntNum)) goto errexit ;
+    if (bcdtmInsert_storePointInDtmObject(dtmP, drapeOption, insertOption, p3d->x, p3d->y, p3d->z, &dtmPntNum, insertPointCallback)) goto errexit;
     if( dtmP->numPoints - dtmP->numSortedPoints > 1500 )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Resorting Points") ;
@@ -4127,7 +4140,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
     if( *(pntP-1) != *pntP )
       {
        if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Inserting Segment %6ld of %6ld ** From %8ld %8ld",(long)(pntP-pointNumP),numStringPts-1,*(pntP-1),*pntP) ;
-       if( ( insert = bcdtmInsert_lineBetweenPointsDtmObject(dtmP,*(pntP-1),*pntP,drapeOption,insertOption)) != DTM_SUCCESS )
+       if( ( insert = bcdtmInsert_lineBetweenPointsDtmObject(dtmP,*(pntP-1),*pntP,drapeOption,insertOption, insertPointCallback)) != DTM_SUCCESS )
          {
           if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Insert Line = %8ld %8ld Insert Error = %6ld",*(pntP-1),*pntP,insert) ;
           ret = 2 ;
@@ -4196,7 +4209,8 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
  double x,
  double y,
  double z,
- long *dtmPointNumP
+ long *dtmPointNumP,
+ DTMInsertPointCallback insertPointCallback
 )
 /*
 ** This Function Stores A Point In The Tin Object
@@ -4373,6 +4387,31 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
  if( findType > 1 ) { if( bcdtmInsert_addPointToDtmObject(dtmP,x,y,z,&dtmPoint)) goto errexit ; }
  else               dtmPoint = pnt1 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Insert Point = %8ld",dtmPoint) ;
+
+ if (insertPointCallback && findType > 1)
+     {
+     DPoint3dR pt = *pointAddrP(dtmP, dtmPoint);
+     int pts[4];
+     pts[0] = pnt1;
+     pts[1] = pnt2;
+     switch (findType)
+         {
+         case  2:      /* Coincident With Internal Tin Line  */
+             if ((pts[2] = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2)) < 0) goto errexit;
+             if ((pts[3] = bcdtmList_nextClkDtmObject(dtmP, pnt1, pnt2)) < 0) goto errexit;
+             break;
+         case  3:      /* Coincident With External Tin Line  */
+             if ((pts[2] = bcdtmList_nextAntDtmObject(dtmP, pnt1, pnt2)) < 0) goto errexit;
+             pts[3] = dtmP->nullPnt;
+             break;
+         case  4:   /* In Triangle                      */
+             pts[2] = pnt3;
+             pts[3] = dtmP->nullPnt;
+             break;
+         }
+
+     insertPointCallback(dtmPoint, pt, pt.z, findType != 4, pts);
+     }
 /*
 ** Null Void Point
 */
@@ -8632,7 +8671,8 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalDtmFeatureMrDtmObject
  DTMFeatureId **featureIdPP,     // <== Assigned Feature Id's
  long *numFeatureIdsP,             // <== Number Of Assigned Feature Ids
  DPoint3d *featurePtsP,                 // ==> Feature Points
- long numFeaturePts                // ==> Number Of Feature Points
+ long numFeaturePts,               // ==> Number Of Feature Points
+ DTMInsertPointCallback insertPointCallback
 )
 /*
 ** This Function Inserts A DTM Feature Into A Triangulated DTM
@@ -8812,7 +8852,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalDtmFeatureMrDtmObject
 **     Insert Feature Into Tin As A Tptr Polygon
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Dtm Feature") ;
-       insert = bcdtmInsert_internalStringIntoDtmObject(dtmP,drapeOption,insertOption,(*pArrayPP)->pointsP,(*pArrayPP)->numPoints,&startPnt)  ;
+       insert = bcdtmInsert_internalStringIntoDtmObject(dtmP, drapeOption, insertOption, (*pArrayPP)->pointsP, (*pArrayPP)->numPoints, &startPnt, insertPointCallback);
        if( insert == 1 ) goto errexit ;
        if( insert == 2 )
          {
@@ -8863,6 +8903,27 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalDtmFeatureMrDtmObject
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_EXPORT int bcdtmInsert_internalDtmFeatureMrDtmObject
+(
+BC_DTM_OBJ *dtmP,                 // ==> Dtm Object
+DTMFeatureType dtmFeatureType,              // ==> Dtm Feature Type
+long drapeOption,                 // ==> < 1 Drape,2 Break >
+long insertOption,                // ==> < 1 Move Tin Lines That Are Not Linear Features,2 Intersect Tin Lines >
+DTMUserTag userTag,             // ==> User Tag
+DTMFeatureId **featureIdPP,     // <== Assigned Feature Id's
+long *numFeatureIdsP,             // <== Number Of Assigned Feature Ids
+DPoint3d *featurePtsP,                 // ==> Feature Points
+long numFeaturePts                // ==> Number Of Feature Points
+)
+    {
+    return bcdtmInsert_internalDtmFeatureMrDtmObject(dtmP, dtmFeatureType, drapeOption, insertOption, userTag, featureIdPP,
+        numFeatureIdsP, featurePtsP, numFeaturePts, nullptr);
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -9350,5 +9411,55 @@ BENTLEYDTM_Private int bcdtmMath_testForColinearPoints2d(double x1,double y1,dou
  else                                      return(0) ;
 }
 
-
-
+// Binary compatible wrappers.
+/*-----------------------------------------------------------+
+|                                                            |
+|                                                            |
+|                                                            |
++-----------------------------------------------------------*/
+BENTLEYDTM_Public int bcdtmInsert_lineBetweenPointsDtmObject
+(
+BC_DTM_OBJ *dtmP,               /* ==> Pointer To Dtm Object        */
+long       firstPnt,            /* ==> First Tin Point              */
+long       lastPnt,             /* ==> Last  Tin Point              */
+long       drapeOption,         /* ==> Drape Option                 */
+long       insertOption         /* ==> InsertOption                 */
+)
+    {
+    return bcdtmInsert_lineBetweenPointsDtmObject(dtmP, firstPnt, lastPnt, drapeOption, insertOption, nullptr);
+    }
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
+(
+BC_DTM_OBJ *dtmP,        /* ==> Pointer To DTM Object     */
+long drapeOption,        /* ==> Drape Option              */
+long insertOption,       /* ==> Insert Option             */
+DPoint3d *stringPtsP,         /* ==> Pointer To String Points  */
+long numStringPts,       /* ==> Number Of String Points   */
+long *startPntP          /* <== Start Point Of Tptr List  */
+)
+    {
+    return bcdtmInsert_internalStringIntoDtmObject(dtmP, drapeOption, insertOption, stringPtsP, numStringPts, startPntP, nullptr);
+    }
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
+(
+BC_DTM_OBJ *dtmP,
+long drapeOption,
+long internalPoint,
+double x,
+double y,
+double z,
+long *dtmPointNumP
+)
+    {
+    return bcdtmInsert_storePointInDtmObject(dtmP, drapeOption, internalPoint, x, y, z, dtmPointNumP, nullptr);
+    }

@@ -173,6 +173,7 @@ template <class INDEXPOINT> class MrDTM : public MrDTMBase
         virtual BcDTMP           _GetBcDTM() override;
         virtual DTMStatusInt     _GetBoundary(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& boundary) override;
         virtual DTMStatusInt     _CalculateSlopeArea(double&, double&, const DPoint3d*, int) override;
+        virtual DTMStatusInt     _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) override;
         virtual bool             _GetTransformation(TransformR) override;
         virtual DTMStatusInt     _GetTransformDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& transformedDTM, TransformCR) override;
 
@@ -249,6 +250,7 @@ template <class POINT> class MrDTMSingleResolutionPointIndexView : public RefCou
         virtual BcDTMP           _GetBcDTM() override;
         virtual DTMStatusInt     _GetBoundary(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& boundary) override;
         virtual DTMStatusInt     _CalculateSlopeArea(double&, double&, const DPoint3d*, int) override;
+        virtual DTMStatusInt    _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) override;
         virtual bool             _GetTransformation(TransformR) override;
         virtual DTMStatusInt     _GetTransformDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& transformedDTM, TransformCR) override;
 
