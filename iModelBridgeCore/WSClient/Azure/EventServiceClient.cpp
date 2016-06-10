@@ -19,6 +19,7 @@ EventServiceClient::EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repo
     m_userId = userId;
     Utf8String baseAddress = "https://" + m_nameSpace + "." + "servicebus.windows.net/";
     m_fullAddress = baseAddress + repoId + "/Subscriptions/" + userId + "/messages/head?timeout=";
+    m_ct = SimpleCancellationToken::Create ();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -47,6 +48,8 @@ HttpResponse EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
     request.GetHeaders().SetValue("Content-Type", "application/atom+xml;type=entry;charset=utf-8");
     request.GetHeaders().SetAuthorization(m_token);
     request.SetTransferTimeoutSeconds(230);
+    m_ct = SimpleCancellationToken::Create ();
+    request.SetCancellationToken(m_ct);
     return request.Perform();
     }
 
@@ -90,4 +93,10 @@ void EventServiceClient::UpdateSASToken(Utf8StringCR sasToken)
     m_token = sasToken;
     }
 
-
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jeehwan.cho   06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void EventServiceClient::CancelRequest()
+    {
+    m_ct->SetCanceled();
+    }
