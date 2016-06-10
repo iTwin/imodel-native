@@ -443,8 +443,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     HFCPtr<GenericTileStoreType>  pFeatureTileStore = new SMSQLiteFeatureTileStore<PointIndexExtentType>(sqliteFeatureFile);//new TileStoreType(featureFilePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
     //pFeatureTileStore->StoreMasterHeader(NULL, 0);
     pDataIndex->SetFeatureStore(pFeatureTileStore);
-    auto pool = ScalableMeshMemoryPools<PointType>::Get()->GetFeaturePool();
-    pDataIndex->SetFeaturePool(pool);
+   // auto pool = ScalableMeshMemoryPools<PointType>::Get()->GetFeaturePool();
+    //pDataIndex->SetFeaturePool(pool);
     // Remove sources which have been removed or modified
 
     if (BSISUCCESS != RemoveSourcesFrom<MeshIndexType>(*pDataIndex, listRemoveExtent))
@@ -790,7 +790,7 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
         HFCPtr<HRFRasterFile>  pRasterFile;
         HFCPtr<HRARaster>      pRaster;
         // HFCPtr<HRAOnDemandRaster> pOnDemandRaster;
-        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(Utf8String(path.c_str())), TRUE);
         pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
         pObjectStore = new HRSObjectStore(s_rasterMemPool,
                                           pRasterFile,

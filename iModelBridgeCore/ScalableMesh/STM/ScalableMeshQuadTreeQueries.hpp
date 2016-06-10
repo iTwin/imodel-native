@@ -10,12 +10,13 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-
+#if 0
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentPointQuery<POINT, EXTENT>::GlobalPreQuery(SMPointIndex<POINT, EXTENT>& index,
                                                                                                              HPMMemoryManagedVector<POINT>&                  points) 
     {                        
     return HGFViewDependentPointIndexQuery<POINT, EXTENT>::GlobalPreQuery(index, points);         
     }
+
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentPointQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node, 
                                                                                                     HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
@@ -113,7 +114,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentPointQ
       
     return queryResult; 
     }
-
+#endif
 /**----------------------------------------------------------------------------
  Indicates if the provided node is adequate for obtaining result.
  The visible extent is of course provided in the STM GCS and units.
@@ -341,7 +342,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentPointQ
     return IsCorrect;    
     }
 
-
+#if 0
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPointIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                                                                                  HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                                                                                  size_t numSubNodes,
@@ -442,6 +443,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
     assert(!"Incorrect call");
     return false;
     }
+#endif
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
                                                                                                    HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
@@ -750,7 +752,7 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentPointQ
 
 ////////////Scalable Mesh
 
-
+#if 0
 /**----------------------------------------------------------------------------
  ScalableMeshQuadTreeViewDependentMeshQuery
 -----------------------------------------------------------------------------*/
@@ -761,7 +763,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
    
     return false;
     }
-
+#endif
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::GlobalPreQuery(SMPointIndex<POINT, EXTENT>& index,
                                                                                                             BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh) 
     {                                       
@@ -773,7 +775,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     {        
     return HGFViewDependentPointIndexQuery<POINT, EXTENT>::GlobalPreQuery(index, meshNodes);    
     }
-        
+
+#if 0
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node, 
                                                                                                     HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
                                                                                                     size_t                                   numSubNodes,
@@ -782,6 +785,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     assert(!"Must not be called");
     return false;
     }
+#endif
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node, 
                                                                                                     HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
@@ -1628,6 +1632,7 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQu
        
 #endif
 
+#if 0
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                                                                                 HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                                                                                 size_t numSubNodes,
@@ -1636,6 +1641,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
     assert(!"Incorrect call");
     return false;
     }
+#endif
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                                                                                      HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
@@ -1714,6 +1720,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
     return true;
     }
 
+#if 0
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                                                                                             HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                                                                                             size_t numSubNodes,
@@ -1722,6 +1729,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersect
     assert(!"Incorrect call");
     return false;
     }
+#endif
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                                                                                             HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],

@@ -612,7 +612,7 @@ void DifferenceSetWithTracking::ResolveConflicts(bvector<bvector<int32_t>>& merg
             poly2d.push_back(DPoint2d::From(contour[i]));
             }
         if (poly2d.size() < 3) return;
-        auto clipVec = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromShape(&poly2d[0], contour.size(), false, NULL, NULL, NULL));
+        auto clipVec = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromShape(&poly2d[0], contour.size(), false, NULL, NULL, NULL).get());
         // auto    polyface = PolyfaceHeader::CreateVariableSizeIndexed();
         // polyface->AddPolygon(contourData[0]);
         clipVec->ClipPolyface(*polyface, meshOut, true);

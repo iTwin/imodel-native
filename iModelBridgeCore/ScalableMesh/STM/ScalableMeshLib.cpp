@@ -52,14 +52,14 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     //Terminate host objects
     for(bvector<ObjEntry>::iterator itr=m_hostObj.begin(); itr!=m_hostObj.end(); ++itr)
         {
-        IHostObject* pValue(itr->GetValue());
-        TERMINATE_HOST_OBJECT(pValue, onProgramExit);
+        //IHostObject* pValue(itr->GetValue());
+        //TERMINATE_HOST_OBJECT(pValue, onProgramExit);
         }
 
     m_hostObj.clear();
     m_hostVar.clear();
                                 
-    TERMINATE_HOST_OBJECT(m_scalableTerrainModelAdmin, onProgramExit);    
+   // TERMINATE_HOST_OBJECT(m_scalableTerrainModelAdmin, onProgramExit);    
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
     }

@@ -5751,6 +5751,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::PreQue
     return digDown;
     }
 
+#if 0
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, HPMMemoryManagedVector<POINT>& resultPoints)
     {
     HINVARIANTS;    
@@ -5803,7 +5804,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
 
     return digDown;
     }
-
+#endif
 
 
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query(ISMPointIndexQuery<POINT, EXTENT>* queryObject, BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* resultMesh)
@@ -8257,7 +8258,7 @@ template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNbO
 
     return nbObjects;
     }
-
+#if 0
 template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
                                                                                 HPMMemoryManagedVector<POINT>& resultPoints)
     {
@@ -8308,7 +8309,7 @@ template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (I
     // Return number of newly found objects
     return(resultPoints.size()- InitialNumberOfObjects);
     }
-
+#endif
 
 template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
                                                                                 BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* resultMesh)

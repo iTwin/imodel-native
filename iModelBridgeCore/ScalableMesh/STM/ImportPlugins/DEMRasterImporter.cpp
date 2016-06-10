@@ -113,7 +113,7 @@ HUTDEMRasterXYZPointsExtractor*     CreateDEMExtractor                     (cons
 
     try
         {
-        return new HUTDEMRasterXYZPointsExtractor(adaptedPath, GetPoolInstance(), false);
+        return new HUTDEMRasterXYZPointsExtractor(Utf8String(adaptedPath.c_str()), GetPoolInstance(), false);
         }
     catch (...) // TDORAY: Catch only IPP exceptions
         {
@@ -242,7 +242,7 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
         {
         try
             {
-            const HFCPtr<HFCURL> urlPtr = new HFCURLFile(WString(L"file://") + pi_rSourceRef.GetPathCStr());
+            const HFCPtr<HFCURL> urlPtr = new HFCURLFile(Utf8String("file://") + Utf8String(pi_rSourceRef.GetPathCStr()));
             const HRFRasterFileCreator* foundCreatorP = HRFRasterFileFactory::GetInstance()->FindCreator(urlPtr, HFC_READ_ONLY);
             assert(0 != foundCreatorP);
             return true;
@@ -659,7 +659,7 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
         
         // TDORAY: CreateXYZPointsIterator should take a const WString as input but could not be changed due to 8.11.7 backward compatibility issues
         auto_ptr<HUTDEMRasterXYZPointsIterator>
-            pIterator(sourceBase.GetPointExtractor().CreateXYZPointsIteratorWithNoDataValueRemoval(const_cast<WString&>(DestCoordSysKeyName), scaleFactor));
+            pIterator(sourceBase.GetPointExtractor().CreateXYZPointsIteratorWithNoDataValueRemoval(Utf8String(const_cast<WString&>(DestCoordSysKeyName).c_str()), scaleFactor));
         if (0 == pIterator.get())
             return 0;
 

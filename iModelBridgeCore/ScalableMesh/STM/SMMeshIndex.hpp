@@ -3487,7 +3487,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(SMM
     m_mesher3d = mesher3d;
     if (0 == graphStore->LoadMasterHeader(NULL, 0)) graphStore->StoreMasterHeader(NULL, 0);
     m_featureStore = nullptr;
-    m_featurePool = nullptr;
+   // m_featurePool = nullptr;
     m_clipStore = nullptr;
 //    m_clipPool = nullptr;
     s_importedFeatures = 0;
@@ -3856,12 +3856,12 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetFeatur
     {
     m_featureStore = featureStore;
     }
-
+#if 0
 template<class POINT, class EXTENT>  void SMMeshIndex<POINT, EXTENT>::SetFeaturePool(HFCPtr<HPMCountLimitedPool<int32_t>>& featurePool)
     {
     m_featurePool = featurePool;
     }
-
+#endif
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore)
     {
     m_clipStore = clipStore;
@@ -3875,8 +3875,8 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipRe
     m_clipRegistry = clipRegistry;
     }
 
-template<class POINT, class EXTENT>  void SMMeshIndex<POINT, EXTENT>::SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool)
-    {
+//template<class POINT, class EXTENT>  void SMMeshIndex<POINT, EXTENT>::SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool)
+//    {
  //   m_clipPool = clipPool;
 //    if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetPool(m_clipPool);
-    }
+//    }

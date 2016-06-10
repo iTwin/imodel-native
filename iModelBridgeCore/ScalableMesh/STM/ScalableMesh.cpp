@@ -112,7 +112,7 @@ bool s_useSQLFormat = false;
 
 
 namespace {
-
+#if 0
 /*----------------------------------------------------------------------------+
 | Pool Singleton
 +----------------------------------------------------------------------------*/
@@ -122,6 +122,7 @@ template <typename POINT> static HFCPtr<HPMCountLimitedPool<POINT> > PoolSinglet
 
     return pGlobalPointPool;
     }
+#endif
 
 inline const GCS& GetDefaultGCS ()
     {

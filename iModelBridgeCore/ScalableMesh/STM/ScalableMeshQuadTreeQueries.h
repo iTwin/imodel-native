@@ -132,14 +132,14 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
                                                         
         virtual             ~ScalableMeshQuadTreeViewDependentPointQuery() {};
                
-        virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
-                                            HPMMemoryManagedVector<POINT>& points);        
+     /*   virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
+                                            HPMMemoryManagedVector<POINT>& points);   */     
 
         // Specific Query implementation        
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
+        /*virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   HPMMemoryManagedVector<POINT>& resultPoints); 
+                                   HPMMemoryManagedVector<POINT>& resultPoints); */
 
         virtual bool        IsCorrectForCurrentView(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                                     const EXTENT& pi_visibleExtent,                                                    
@@ -226,10 +226,10 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelPointIndexQue
 
         
         // The Query process gathers points up to level depth        
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
+        /*virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   HPMMemoryManagedVector<POINT>& resultPoints);
+                                   HPMMemoryManagedVector<POINT>& resultPoints);*/
 
         
 
@@ -264,10 +264,10 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
 
         
         // The Query process gathers points up to level depth        
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
+      /*  virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   HPMMemoryManagedVector<POINT>& resultPoints);
+                                   HPMMemoryManagedVector<POINT>& resultPoints);*/
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
@@ -325,10 +325,10 @@ public:
 
         
         // The Query process gathers points up to level depth        
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
+      /*  virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   HPMMemoryManagedVector<POINT>& resultPoints);
+                                   HPMMemoryManagedVector<POINT>& resultPoints);*/
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
@@ -368,10 +368,10 @@ public:
 
         
         // The Query process gathers points up to level depth        
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
+       /* virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   HPMMemoryManagedVector<POINT>& resultPoints);
+                                   HPMMemoryManagedVector<POINT>& resultPoints);*/
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
@@ -452,18 +452,18 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                                         
         virtual             ~ScalableMeshQuadTreeViewDependentMeshQuery() {};
                
-        virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
-                                            HPMMemoryManagedVector<POINT>& points);        
+       /* virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
+                                            HPMMemoryManagedVector<POINT>& points);  */      
         virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                             BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);
         virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                             vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
 
         // Specific Query implementation        
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
+      /*  virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   HPMMemoryManagedVector<POINT>& resultPoints); 
+                                   HPMMemoryManagedVector<POINT>& resultPoints); */
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,

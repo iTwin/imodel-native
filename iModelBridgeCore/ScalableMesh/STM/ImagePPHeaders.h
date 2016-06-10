@@ -13,6 +13,7 @@
 #include <ImagePP/all/h/HVE2DComplexShape.h>
 #include <ImagePP/all/h/HVE2DPolySegment.h>
 #include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HGF2DSegment.h>
 #include <ImagePP/all/h/HVE2DSegment.h>
 #include <ImagePP/all/h/HVE2DVoidShape.h>
 #include <ImagePP/all/h/HVE3DPolyLine.h>

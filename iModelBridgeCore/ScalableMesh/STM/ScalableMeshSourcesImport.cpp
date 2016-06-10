@@ -418,12 +418,13 @@ SourcesImporter::Status SourcesImporter::Impl::ImportSDKSources()
         const HVEClipShape* shape = sourceIt->m_importConfig->GetClipShape();
         if (shape != nullptr && !shape->IsEmpty())
             {
-            for (auto& clip : shape->m_clips)
+            //NEEDS_WORK_SM: either make m_clips public or write an accessor
+         /*   for (auto& clip : shape->m_clips)
                 {
                 if (clip.m_isClipMask) continue;
                 DRange3d ext = DRange3d::From(clip.m_pClipShape->GetExtent().GetXMin(), clip.m_pClipShape->GetExtent().GetYMin(), 0, clip.m_pClipShape->GetExtent().GetXMax(), clip.m_pClipShape->GetExtent().GetYMax(), 0);
                 extent.Extend(ext);
-                }
+                }*/
             }
         if (sourceIt->m_importConfig->HasDefaultTargetGCS())
             {

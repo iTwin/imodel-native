@@ -481,10 +481,11 @@ class ScalableMeshPointQuery : public IScalableMeshPointQuery
         virtual int _RemoveAllClip();    
 
     public :
-       
+#if 0     
         //NEEDS_WORK_SM - TEMP in public
         template <class POINT> static int AddPoints(bvector<DPoint3d>&                   points, 
                                                     const HPMMemoryManagedVector<POINT>& pointList) /*const*/;
+#endif
 
         template<class EXTENT> static EXTENT GetExtentFromClipShape(const DPoint3d* pClipShapePts, 
                                                                    int             nbClipShapePts, 

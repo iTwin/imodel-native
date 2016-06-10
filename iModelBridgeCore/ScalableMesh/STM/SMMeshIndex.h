@@ -4,7 +4,7 @@
 #include "SMPointIndex.h"
 #include "Edits/DifferenceSet.h"
 //#include "Edits/ClipUtilities.h"
-#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
+//#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
 #include "Threading/ScalableMeshScheduler.h"
 #include "Edits\ClipRegistry.h"
 #include "InternalUtilityFunctions.h"
@@ -33,7 +33,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 extern ScalableMeshScheduler* s_clipScheduler;
 extern std::mutex s_schedulerLock;
 
-template<> struct PoolItem<DifferenceSet>
+/*template<> struct PoolItem<DifferenceSet>
     {
     typedef HPMIndirectCountLimitedPoolItem<DifferenceSet> Type;
     typedef HPMIndirectCountLimitedPool<DifferenceSet> PoolType;
@@ -48,7 +48,7 @@ inline void HPMIndirectCountLimitedPoolItem<DifferenceSet>::RecomputeCount() con
         m_deepCount += sizeof(set) + set->addedFaces.size()*sizeof(DPoint3d) + set->addedVertices.size() * sizeof(int32_t) +
             set->removedFaces.size() * sizeof(int32_t) + set->removedVertices.size() * sizeof(int32_t);
         }
-    }
+    }*/
 
 template<class POINT, class EXTENT> class ISMPointIndexMesher;
 template<class POINT, class EXTENT> class ISMMeshIndexFilter;
@@ -779,15 +779,15 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
 
         void                SetFeatureStore(HFCPtr<SMPointTileStore<int32_t, EXTENT>>& featureStore);
-        void                SetFeaturePool(HFCPtr<HPMCountLimitedPool<int32_t>>& featurePool);
+       // void                SetFeaturePool(HFCPtr<HPMCountLimitedPool<int32_t>>& featurePool);
         void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);
         void                SetClipRegistry(ClipRegistry* registry);
 
         void                SetPtsIndicesStore(HFCPtr<SMPointTileStore<int32_t, EXTENT>>& ptsIndicesStore);
         void                SetGraphStore(HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>>& graphStore);
-        void                SetGraphPool(HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>>& graphPool);
+      //  void                SetGraphPool(HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>>& graphPool);
         void                SetTexturesStore(HFCPtr<IScalableMeshDataStore<Byte, float, float>>& texturesStore);
-        void                SetTexturesPool(HFCPtr<HPMCountLimitedPool<Byte>>& texturesPool);
+       // void                SetTexturesPool(HFCPtr<HPMCountLimitedPool<Byte>>& texturesPool);
         void                SetUVStore(HFCPtr<SMPointTileStore<DPoint2d, EXTENT>>& uvStore);        
         void                SetUVsIndicesStore(HFCPtr<SMPointTileStore<int32_t, EXTENT>>& uvsIndicesStore);        
 
@@ -801,7 +801,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetUVsIndicesStore() const { return m_uvsIndicesStore; }
         
         HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetFeatureStore() { return m_featureStore; }
-        HFCPtr<HPMCountLimitedPool<int32_t>> GetFeaturePool() { return m_featurePool; }
+        //HFCPtr<HPMCountLimitedPool<int32_t>> GetFeaturePool() { return m_featurePool; }
 
         ClipRegistry* GetClipRegistry()
             {
@@ -813,7 +813,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             return m_clipStore;
             }
 //        HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> GetClipPool() const { return m_clipPool; }
-        void                SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool);
+       // void                SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool);
 
         //IDTMFile::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
         void                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
@@ -856,7 +856,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
         HFCPtr<SMPointTileStore<int32_t, EXTENT>> m_featureStore;
-        HFCPtr<HPMCountLimitedPool<int32_t>> m_featurePool;
+      //  HFCPtr<HPMCountLimitedPool<int32_t>> m_featurePool;
         HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> m_clipStore;
         HFCPtr<ClipRegistry> m_clipRegistry;
        // HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> m_clipPool;

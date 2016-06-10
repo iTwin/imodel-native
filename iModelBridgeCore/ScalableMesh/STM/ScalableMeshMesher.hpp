@@ -687,7 +687,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     {
 //    std::string s;
 //    s += " BEFORE SIZE " + std::to_string(points.size())+"\n";
-    std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPts(DPoint3dZYXTolerancedSortComparison(1e-4, 0));
+    std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPts(DPoint3dZYXTolerancedSortComparison(1e-4,0));
     vector<int32_t> matchedIndices(points.size(),-1);
     vector<int32_t> newIndices(points.size(), -1);
     for (auto& pt : points)
@@ -735,6 +735,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
 //    s += " AFTER SIZE " + std::to_string(points.size());
     }
 
+    void circumcircle(DPoint3d& center, double& radius, const DPoint3d* triangle);
 template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, EXTENT>::UpdateMeshNodeFromGraph(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, MTGGraph * meshGraphStitched, std::vector<DPoint3d>& stitchedPoints, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const
     {
 
@@ -956,13 +957,12 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
                 //bounds.pop();
                 continue;
                 }
-            DPoint3d sphereCenter = DPoint3d::From(0, 0, 0);
-            double sphereRadius = 0;
-        //bound_sphereCompute(&sphereCenter, &sphereRadius, facePoints, 3);
-        //EXTENT neighborExt = node->m_apNeighborNodes[neighborInd][neighborSubInd]->GetContentExtent();
-        if (ExtentOp<EXTENT>::Overlap(neighborExt, ExtentOp<EXTENT>::Create(sphereCenter.x - sphereRadius, sphereCenter.y - sphereRadius,
-            sphereCenter.z, sphereCenter.x + sphereRadius,
-            sphereCenter.y + sphereRadius, sphereCenter.z)) ||
+            DPoint3d center = DPoint3d::From(0, 0, 0);
+            double radius = 0;
+            circumcircle(center, radius, facePoints);
+            if (DRange3d::From(center.x - radius, center.y - radius,
+                center.z, center.x + radius,
+                center.y + radius, center.z).IntersectsWith(neighborExt, 2) ||
             (HasOverlapWithNeighborsXY(meshGraph, currentID, s_useThreadsInStitching ? pts : &(*pointsPtr)[0])))
             {
             for (int i = 0; i < 3; i++)
@@ -1042,6 +1042,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     for (size_t g = 0; g < indices.size(); ++g)
         {
         std::vector<int> indicesForFace;
+        faceIndices.reserve(faceIndices.capacity() + indices[g].size());
         // size_t oldSize = geometryData.size();
         int* pointsInTile = new int[pts[g].size()];
         for (size_t t = 0; t < pts[g].size(); t++) pointsInTile[t] = -1;
@@ -1287,7 +1288,7 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
 
     struct compare3D;
 
-    void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType>& types, bvector<bvector<DPoint3d>>& islandFeatures, const std::vector<DPoint3d>& nodePoints, BC_DTM_OBJ* dtmObjP, const std::vector<HPMStoredPooledVector<int32_t>>& featureDefs);
+    void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType>& types, bvector<bvector<DPoint3d>>& islandFeatures, const std::vector<DPoint3d>& nodePoints, BC_DTM_OBJ* dtmObjP, bvector<bvector<int32_t>>& featureDefs);
     int AddPolygonsToDTMObject(bvector<bvector<DPoint3d>>& polygons, DTMFeatureType type, BC_DTM_OBJ* dtmObjP);
     int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, BC_DTM_OBJ* dtmObjP);
 

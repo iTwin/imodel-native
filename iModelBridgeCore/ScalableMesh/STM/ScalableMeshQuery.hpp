@@ -22,7 +22,7 @@
 
 #include "ScalableMeshQuery.h"
 //#include "InternalUtilityFunctions.h"
-#include <ImagePP/all/h/HPMPooledVector.h>
+//#include <ImagePP/all/h/HPMPooledVector.h>
 #include "Edits\\ClipUtilities.h"
 //#include <QuickVision\qvision.h>
 
@@ -74,7 +74,7 @@ template<class EXTENT> EXTENT ScalableMeshPointQuery::GetExtentFromClipShape(con
     return ExtentOp<EXTENT>::Create(extent.GetXMin(), extent.GetYMin(), zMin, 
                                     extent.GetXMax(), extent.GetYMax(), zMax);
     }
-
+#if 0
 template <class POINT> int ScalableMeshPointQuery::AddPoints(bvector<DPoint3d>&                   points, 
                                                              const HPMMemoryManagedVector<POINT>& pointList) /*const*/
     {        
@@ -85,7 +85,7 @@ template <class POINT> int ScalableMeshPointQuery::AddPoints(bvector<DPoint3d>& 
         
     return SUCCESS;
     }
-
+#endif
 /*----------------------------------------------------------------------------+
 |ScalableMeshFullResolutionPointQuery Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
@@ -115,7 +115,8 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
                                                                         const IScalableMeshQueryParametersPtr& scmQueryParamsPtr) const
     {        
     assert(scmQueryParamsPtr != 0);
-    
+    assert(false);
+#if 0   
     HPMMemoryManagedVector<POINT> pointList(&s_queryMemoryManager);
 
     int         status;
@@ -223,8 +224,9 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
         {
         status = AddPoints<POINT>(points, pointList);
         }
-              
     return status;
+#endif         
+    return S_SUCCESS;
     }
 
 /*----------------------------------------------------------------------------+
@@ -269,7 +271,8 @@ template <class POINT> int ScalableMeshViewDependentPointQuery<POINT>::_Query(bv
     {    
     //MST More validation is required here.
     assert(scmQueryParamsPtr != 0);
-    
+    assert(false);
+#if 0
     HPMMemoryManagedVector<POINT> pointList(&s_queryMemoryManager);    
 
     int            status;
@@ -369,8 +372,9 @@ template <class POINT> int ScalableMeshViewDependentPointQuery<POINT>::_Query(bv
         {         
         status = AddPoints(points, pointList);
         }
-                   
     return status;
+#endif                   
+    return S_SUCCESS;
     }
 
 /*----------------------------------------------------------------------------+
@@ -397,7 +401,8 @@ template <class POINT> int ScalableMeshFixResolutionViewPointQuery<POINT>::_Quer
                                                                                   const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const
     {
     assert(scmQueryParamsPtr != 0);
-    
+    assert(false);
+#if 0   
     HPMMemoryManagedVector<POINT> pointList(&s_queryMemoryManager);   
     IScalableMeshPtr scalableMeshFixResViewPtr; 
 
@@ -450,8 +455,9 @@ template <class POINT> int ScalableMeshFixResolutionViewPointQuery<POINT>::_Quer
     IScalableMeshPointQueryPtr scalableMeshFixViewQueryPtr = scalableMeshFixResViewPtr->GetQueryInterface(SCM_QUERY_FULL_RESOLUTION);  
     IScalableMeshQueryParametersPtr queryParam((const IScalableMeshQueryParametersPtr&)IScalableMeshFullResolutionQueryParams::CreateParams());        
     int status = scalableMeshFixViewQueryPtr->Query(points, 0, 0, queryParam); 
-    
     return status;
+#endif   
+    return SUCCESS;
     }
             
 /*----------------------------------------------------------------------------+
@@ -483,7 +489,8 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(ISc
     {    
     //MST More validation is required here.
     assert(scmQueryParamsPtr != 0);
-
+    assert(false);
+#if 0
     HPMMemoryManagedVector<POINT> pointList(&s_queryMemoryManager);    
 
     int            status;
@@ -595,9 +602,9 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(ISc
         {
         status = ERROR;
         }
-
-    
     return status;
+#endif    
+    return S_SUCCESS;
     }
 
 
@@ -611,7 +618,8 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
     {    
     //MST More validation is required here.
     assert(scmQueryParamsPtr != 0);
-
+    assert(false);
+#if 0
     HPMMemoryManagedVector<POINT> pointList(&s_queryMemoryManager);    
 
     int            status;
@@ -762,8 +770,9 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
         {
         status = S_ERROR;
         }
-
-    return status;    
+    return status;
+#endif
+    return S_SUCCESS;
     }
 
 template <class POINT> ScalableMeshFullResolutionMeshQuery<POINT>::ScalableMeshFullResolutionMeshQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr)
