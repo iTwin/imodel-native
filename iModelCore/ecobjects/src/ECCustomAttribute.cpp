@@ -566,6 +566,32 @@ ECClassCR classDefinition
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECCustomAttributeContainer::RemoveSupplementedCustomAttribute
+(
+Utf8StringCR schemaName,
+Utf8StringCR className
+)
+    {
+    ECCustomAttributeCollection::iterator iter;
+    for (iter = m_supplementedCustomAttributes.begin(); iter != m_supplementedCustomAttributes.end(); iter++)
+        {
+        ECClassCR currentClass = (*iter)->GetClass();
+        ECSchemaCR classSchema = currentClass.GetSchema();
+
+        if (0 == className.compare(currentClass.GetName()) &&
+            0 == schemaName.compare(classSchema.GetName()))
+            {
+            m_supplementedCustomAttributes.erase(iter);
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::RemoveSupplementedCustomAttribute

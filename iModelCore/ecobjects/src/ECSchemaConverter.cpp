@@ -270,9 +270,10 @@ bool ECSchemaConverter::Convert(ECSchemaR schema)
     ECSchemaConverterP eCSchemaConverter = GetSingleton();
     eCSchemaConverter->m_convertedOK = true;
 
-    eCSchemaConverter->ConvertClassLevel(schema);
+    auto classes = GetHierarchicallySortedClasses(schema);
+    eCSchemaConverter->ConvertClassLevel(classes);
 
-    eCSchemaConverter->ConvertPropertyLevel(schema);
+    eCSchemaConverter->ConvertPropertyLevel(classes);
 
     eCSchemaConverter->ConvertSchemaLevel(schema);
 
@@ -292,12 +293,13 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
         IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
         ECSchemaConverterSingleton->AddConverter("EditorCustomAttributes", "StandardValues", scConv);
 
-        IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
-        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
+        // NOTE: Temp disabled until we support KOQs in ECDb.
+        //IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
+        //ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
 
-        IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
-        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
-        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecificationAttr", unitPropConv);
+        //IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
+        //ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
+        //ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecificationAttr", unitPropConv);
 
         // Iterates over the Custom Attributes classes that will be converted. This converter basically
         // handles Custom Attributes that moved into a new schema but with no content change.
@@ -500,9 +502,9 @@ void ECSchemaConverter::ConvertSchemaLevel(ECSchemaR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::ConvertClassLevel(ECSchemaR schema)
+void ECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
     {
-    for (auto const& ecClass : GetHierarchicallySortedClasses(schema))
+    for (auto const& ecClass : classes)
         {
         ProcessCustomAttributeInstance(ecClass->GetCustomAttributes(false), *ecClass, "ECClass:" + ecClass->GetName());
         if (ecClass->IsRelationshipClass())
@@ -522,9 +524,9 @@ void ECSchemaConverter::ConvertClassLevel(ECSchemaR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::ConvertPropertyLevel(ECSchemaR schema)
+void ECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
     {
-    for (auto const& ecClass : GetHierarchicallySortedClasses(schema))
+    for (auto const& ecClass : classes)
         {
         for (auto const& ecProp : ecClass->GetProperties(false))
             {
@@ -606,7 +608,8 @@ bvector<ECClassP> ECSchemaConverter::GetHierarchicallySortedClasses(ECSchemaR sc
     Utf8String defaultOrder = "";
     for (auto const& ecClass : schema.GetClasses())
         {
-        defaultOrder += ecClass->GetName() + ",";
+        if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
+            defaultOrder += ecClass->GetName() + ",";
         classes.push_back(ecClass);
         }
 
@@ -615,11 +618,14 @@ bvector<ECClassP> ECSchemaConverter::GetHierarchicallySortedClasses(ECSchemaR sc
 
     SortClassesByNameAndHierarchy(classes);
     Utf8String sortedOrder = "";
-    std::for_each(classes.begin(), classes.end(), 
-        [&sortedOrder](ECClassP& ecClass) 
-        { 
-        sortedOrder += ecClass->GetName() + ","; 
-        });
+    if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
+        {
+        std::for_each(classes.begin(), classes.end(),
+                      [&sortedOrder](ECClassP& ecClass)
+            {
+            sortedOrder += ecClass->GetName() + ",";
+            });
+        }
 
     LOG.tracev("Default Order For classes in schema: %s", defaultOrder.c_str());
     LOG.tracev("Name and Hierarchical Sorted Order For classes in schema: %s", sortedOrder.c_str());
@@ -635,7 +641,11 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
     //are standard values even added to ecclass or ecschema?
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (nullptr == prop)
-        return ECObjectsStatus::PropertyNotFound;
+        {
+        LOG.warning("StandardValues custom attribute applied to a container which is not a property.  Removing Custom Attribute and skipping.");
+        container.RemoveCustomAttribute(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
+        return ECObjectsStatus::Success;
+        }
 
     ECObjectsStatus status;
     StandardValueInfo sdInfo;
@@ -847,7 +857,10 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         {
         Utf8String fullName = schema.GetFullSchemaName();
         LOG.warningv("Found UnitSpecification custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
-        container.RemoveCustomAttribute("UnitSpecification");
+        container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
+        container.RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
+        container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
+        container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
         return ECObjectsStatus::Success;
         }
 
@@ -856,7 +869,11 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         {
         Utf8String fullName = schema.GetFullSchemaName();
         LOG.errorv("The property %s:%s.%s has a UnitSpecification but it does not resolve to a unit.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
-        return ECObjectsStatus::Error;
+        container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
+        container.RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
+        container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
+        container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
+        return ECObjectsStatus::Success;
         }
 
     Units::UnitCP newUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldUnit.GetName());
@@ -865,7 +882,6 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         Utf8String fullName = schema.GetFullSchemaName();
         LOG.warningv("The property %s:%s.%s has an old unit '%s' that does not resolve to a new unit.  Creating a dummy unit to continue", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldUnit.GetName());
         newUnit = Units::UnitRegistry::Instance().AddDummyUnit(oldUnit.GetName());
-        //return ECObjectsStatus::Error;
         }
 
     KindOfQuantityP newKOQ;
@@ -920,6 +936,8 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     prop->SetKindOfQuantity(newKOQ);
     prop->RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
     prop->RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
+    prop->RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
+    prop->RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
 
     return ECObjectsStatus::Success;
     }
@@ -936,6 +954,7 @@ ECObjectsStatus UnitSpecificationsConverter::Convert(ECSchemaR schema, IECCustom
         }
 
     container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS);
+    container.RemoveSupplementedCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS);
     schema.RemoveReferencedSchema(instance.GetClass().GetSchema().GetSchemaKey());
     return ECObjectsStatus::Success;
     }

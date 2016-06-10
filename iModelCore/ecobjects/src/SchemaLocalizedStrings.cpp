@@ -211,7 +211,7 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
     
     m_empty = false;
 
-    size_t prefixLength = primarySchema.GetName().length();
+    size_t prefixLength = primarySchema.GetName().length() + 1;
     Utf8String lastContainerAccessor = ""; // This is the container accessor for the primary schema
     Utf8String lastCaClassName;
     IECCustomAttributeContainerP caContainer = &primarySchema;

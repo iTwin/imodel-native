@@ -65,29 +65,29 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, Utf8Str
     if (typeName.empty())
         return ECObjectsStatus::ParseError;
 
-    if (typeName.EqualsI (ECXML_TYPENAME_STRING))
+    if (typeName.EqualsIAscii (ECXML_TYPENAME_STRING))
         primitiveType = PRIMITIVETYPE_String;
-    else if (typeName.EqualsI (ECXML_TYPENAME_INTEGER))
+    else if (typeName.EqualsIAscii(ECXML_TYPENAME_INTEGER))
         primitiveType = PRIMITIVETYPE_Integer;
-    else if (typeName.EqualsI (ECXML_TYPENAME_LONG))
+    else if (typeName.EqualsIAscii(ECXML_TYPENAME_LONG))
         primitiveType = PRIMITIVETYPE_Long;
-    else if (typeName.EqualsI (ECXML_TYPENAME_BOOLEAN))
+    else if (typeName.EqualsIAscii(ECXML_TYPENAME_BOOLEAN))
         primitiveType = PRIMITIVETYPE_Boolean;
-    else if (typeName.EqualsI (ECXML_TYPENAME_BOOL))
+    else if (typeName.EqualsIAscii(ECXML_TYPENAME_BOOL))
         primitiveType = PRIMITIVETYPE_Boolean;
-    else if (typeName.EqualsI (ECXML_TYPENAME_DOUBLE))
+    else if (typeName.EqualsIAscii(ECXML_TYPENAME_DOUBLE))
         primitiveType = PRIMITIVETYPE_Double;
-    else if (typeName.EqualsI (ECXML_TYPENAME_POINT2D))
+    else if (typeName.EqualsIAscii(ECXML_TYPENAME_POINT2D))
         primitiveType = PRIMITIVETYPE_Point2D;
-    else if (typeName.EqualsI (ECXML_TYPENAME_POINT3D))
+    else if (typeName.EqualsIAscii(ECXML_TYPENAME_POINT3D))
         primitiveType = PRIMITIVETYPE_Point3D;
-    else if (typeName.EqualsI (ECXML_TYPENAME_DATETIME))
+    else if (typeName.EqualsIAscii(ECXML_TYPENAME_DATETIME))
         primitiveType = PRIMITIVETYPE_DateTime;
-    else if (typeName.EqualsI (ECXML_TYPENAME_BINARY))
+    else if (typeName.EqualsIAscii(ECXML_TYPENAME_BINARY))
         primitiveType = PRIMITIVETYPE_Binary;
-    else if (typeName.StartsWithI(ECXML_TYPENAME_IGEOMETRY_GENERIC))
+    else if (typeName.StartsWithIAscii(ECXML_TYPENAME_IGEOMETRY_GENERIC))
         primitiveType = PRIMITIVETYPE_IGeometry; 
-    else if (typeName.StartsWithI(ECXML_TYPENAME_IGEOMETRY_LEGACY))
+    else if (typeName.StartsWithIAscii(ECXML_TYPENAME_IGEOMETRY_LEGACY))
         primitiveType = PRIMITIVETYPE_IGeometry; 
     else
         return ECObjectsStatus::ParseError;

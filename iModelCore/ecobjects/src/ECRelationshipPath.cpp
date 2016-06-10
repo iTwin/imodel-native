@@ -130,36 +130,6 @@ bool ECRelationshipPath::IsEmpty() const
     return m_rootClass == nullptr && m_relatedClassSpecifiers.empty();
     }
 
-#if 0
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01/2014
-//---------------------------------------------------------------------------------------
-bool ECRelationshipPath::IsAnyClassAtEnd (End end) const
-    {
-    ECClassCP endClass = GetEndClass (end);
-    PRECONDITION (endClass != nullptr, false);
-
-    return IsAnyClass(*endClass);
-    }
-    
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 08/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ECRelationshipPath::TrimLeafEnd(size_t relatedClassSpecifierIndex)
-    {
-    if (relatedClassSpecifierIndex >= m_relatedClassSpecifiers.size())
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    m_relatedClassSpecifiers.erase(m_relatedClassSpecifiers.begin() + relatedClassSpecifierIndex, m_relatedClassSpecifiers.end());
-    return SUCCESS;
-    }
-
-#endif
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01/2014
 //---------------------------------------------------------------------------------------
@@ -484,20 +454,6 @@ void ECRelationshipPath::SetEndClass (ECN::ECClassCR endClass, End end)
         }
     }
     
-#if 0
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus ECRelationshipPath::ReplaceAnyClassAtEnd(ECClassCR replacementClass, End end)
-    {
-    PRECONDITION (IsAnyClassAtEnd (end) && "Can only replace AnyClass at the end", ERROR);
-    SetEndClass (replacementClass, end);
-    return SUCCESS;
-    }
-    
-#endif
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01/2014
 //---------------------------------------------------------------------------------------
