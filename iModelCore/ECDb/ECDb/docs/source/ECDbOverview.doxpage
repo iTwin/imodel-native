@@ -209,6 +209,9 @@
    
     @section ECDbECSchemaUpdateSupportedFeatures ECSchema Update Supported Features
     
+    @note Deleting ECClasses, ECEnumerations, KindOfQuantities, ECProperties is only supported in a major schema version change, i.e. 
+    the major version of the ECSchema must be increased in this case. Otherwise the ECSchema update will fail.
+
     ### ECSchema
     - @b Modify 
         - @ref BentleyApi::ECN::ECSchema::GetDescription "Description"
@@ -226,9 +229,10 @@
                 - does not have subclasses
                 - is not used as constraint class in an @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint"
             - an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" which is mapped as <b>link table</b>
-            - @b Note: The major version of the schema must be increased in this case. Otherwise the ECSchema update will fail.
     - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations"
         - @b Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration"
+    - @ref BentleyApi::ECN::ECSchema::GetKindOfQuantities "KindOfQuantities"
+        - @b Add a new @ref BentleyApi::ECN::KindOfQuantity "KindOfQuantity"
     - @b CustomAttributes on the ECSchema
         - @b Add, @b delete, @b modify
 

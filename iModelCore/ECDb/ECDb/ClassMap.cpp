@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
-ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
+ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMap const& ecDbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty)
     : m_type(type), m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_mapStrategy(mapStrategy), 
     m_isDirty(setIsDirty), m_columnFactory(*this), m_isECInstanceIdAutogenerationDisabled(false)
     {

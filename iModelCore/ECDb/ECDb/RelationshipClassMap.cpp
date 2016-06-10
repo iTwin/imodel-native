@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassMap::RelationshipClassMap(Type type, ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
+RelationshipClassMap::RelationshipClassMap(Type type, ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty)
     : ClassMap(type, ecRelClass, ecDbMap, mapStrategy, setIsDirty),
     m_sourceConstraintMap(ecDbMap.GetECDb().Schemas(), ecRelClass.GetSource()),
     m_targetConstraintMap(ecDbMap.GetECDb().Schemas(), ecRelClass.GetTarget())
@@ -57,11 +57,11 @@ DbColumn* RelationshipClassMap::CreateConstraintColumn(Utf8CP columnName, DbColu
 // @bsimethod                                 Affan.Khan                        12/13
 //---------------------------------------------------------------------------------------
 //static
-bool RelationshipClassMap::ConstraintIncludesAnyClass(ECConstraintClassesList const& constraintClasses)
+bool RelationshipClassMap::ConstraintIncludesAnyClass(ECN::ECRelationshipConstraintClassList const& constraintClasses)
     {
-    for (auto& ecclass : constraintClasses)
+    for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
         {
-        if (IsAnyClass(*ecclass))
+        if (IsAnyClass(constraintClass->GetClass()))
             return true;
         }
 
@@ -78,23 +78,21 @@ void RelationshipClassMap::DetermineConstraintClassIdColumnHandling(bool& addCon
     // * the constraint includes the AnyClass or 
     // * it has more than one classes including subclasses in case of a polymorphic constraint. 
     //So we first determine whether a constraint class id column is needed
-    auto const& constraintClasses = constraint.GetClasses();
+    ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     addConstraintClassIdColumnNeeded = constraintClasses.size() > 1 || ConstraintIncludesAnyClass(constraintClasses);
     //if constraint is polymorphic, and if addConstraintClassIdColumnNeeded is not true yet,
     //we also need to check if the constraint classes have subclasses. If there is at least one, addConstraintClassIdColumnNeeded
     //is set to true;
     if (!addConstraintClassIdColumnNeeded && constraint.GetIsPolymorphic())
-        {
         addConstraintClassIdColumnNeeded = true;
-        }
 
     //if no class id column on the end is required, store the class id directly so that it can be used as literal in the native SQL
     if (!addConstraintClassIdColumnNeeded)
         {
         BeAssert(constraintClasses.size() == 1);
-        auto constraintClass = constraintClasses[0];
-        BeAssert(constraintClass->HasId());
-        defaultConstraintClassId = constraintClass->GetId();
+        ECRelationshipConstraintClassCP constraintClass = constraintClasses[0];
+        BeAssert(constraintClass->GetClass().HasId());
+        defaultConstraintClassId = constraintClass->GetClass().GetId();
         }
     else
         defaultConstraintClassId = ECClassId();
@@ -162,7 +160,7 @@ bool RelationshipClassMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2014
 //---------------------------------------------------------------------------------------
-bool RelationshipConstraintMap::ClassIdMatchesConstraint(ECN::ECClassId candidateClassId) const
+bool RelationshipConstraintMap::ClassIdMatchesConstraint(ECN::ECClassId const& candidateClassId) const
     {
     CacheClassIds();
 
@@ -170,13 +168,6 @@ bool RelationshipConstraintMap::ClassIdMatchesConstraint(ECN::ECClassId candidat
         return true;
 
     return m_ecClassIdCache.find(candidateClassId) != m_ecClassIdCache.end();
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Muhammad.Zaighum                        04/13
-//---------------------------------------------------------------------------------------
-ECN::ECRelationshipConstraintCR RelationshipConstraintMap::GetRelationshipConstraint()const
-    {
-    return m_constraint;
     }
 
 //---------------------------------------------------------------------------------------
@@ -202,47 +193,36 @@ void RelationshipConstraintMap::CacheClassIds() const
     {
     if (!m_isCacheSetup)
         {
-        CacheClassIds(m_constraint.GetClasses(), m_constraint.GetIsPolymorphic());
+        for (ECRelationshipConstraintClassCP constraintClass : m_constraint.GetConstraintClasses())
+            {
+            CacheClassId(constraintClass->GetClass(), m_constraint.GetIsPolymorphic());
+            }
+
         m_isCacheSetup = true;
         }
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2014
+// @bsimethod                                 Krischan.Eberle                    06/2016
 //---------------------------------------------------------------------------------------
-void RelationshipConstraintMap::CacheClassIds(ECConstraintClassesList const& constraintClassList, bool constraintIsPolymorphic) const
+void RelationshipConstraintMap::CacheClassId(ECClassCR ecClass, bool constraintIsPolymorphic) const
     {
-    //runs through all constraint classes, and if recursive is true through subclasses
-    //and caches the class ids as this method here is expensive performance-wise.
-    for (ECClassCP constraintClass : constraintClassList)
+    if (ClassMap::IsAnyClass(ecClass))
         {
-        if (ClassMap::IsAnyClass(*constraintClass))
-            {
-            SetAnyClassMatches();
-            return;
-            }
+        SetAnyClassMatches();
+        return;
+        }
 
-        const ECClassId classId = constraintClass->GetId();
-        CacheClassId(classId);
+    m_ecClassIdCache.insert(ecClass.GetId());
 
-        if (constraintIsPolymorphic)
+    if (constraintIsPolymorphic)
+        {
+        //call into schema manager to ensure that the derived classes are loaded if needed
+        for (ECClassCP derivedClass : m_schemaManager.GetDerivedECClasses(ecClass))
             {
-            //call into schema manager to ensure that the derived classes are loaded if needed
-            ECConstraintClassesList derivedClasses;
-            for (auto derivedClass : m_schemaManager.GetDerivedECClasses(*constraintClass))
-                derivedClasses.push_back(derivedClass->GetEntityClassP());
-            CacheClassIds(derivedClasses, constraintIsPolymorphic);
+            CacheClassId(*derivedClass, constraintIsPolymorphic);
             }
         }
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2014
-//---------------------------------------------------------------------------------------
-void RelationshipConstraintMap::CacheClassId(ECN::ECClassId classId) const
-    {
-    m_ecClassIdCache.insert(classId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -262,7 +242,7 @@ Utf8CP const RelationshipClassEndTableMap::DEFAULT_FKCOLUMNNAME_PREFIX = "Foreig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
+RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty)
     : RelationshipClassMap(Type::RelationshipEndTable, ecRelClass, ecDbMap, mapStrategy, setIsDirty), m_autogenerateForeignKeyColumns(true)
     {}
 
@@ -1279,7 +1259,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relationsh
             return nullptr;
         }
 
-    if (ConstraintIncludesAnyClass(foreignEndConstraint.GetClasses()) || foreignEndTableCount > 1)
+    if (ConstraintIncludesAnyClass(foreignEndConstraint.GetConstraintClasses()) || foreignEndTableCount > 1)
         {
         //! We will create ECClassId column in this case
         endECClassIdColumn = CreateConstraintColumn(columnName.c_str(), columnId, PersistenceType::Persisted);

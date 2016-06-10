@@ -1469,14 +1469,14 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassIdFromRelClass(ECN::ECRelationship
         }
 
     ECRelationshipConstraintR endConstraint = (relEnd == ECRelationshipEnd_Source) ? relClass->GetSource() : relClass->GetTarget();
-    ECConstraintClassesList endClasses = endConstraint.GetClasses();
+    ECRelationshipConstraintClassList const& endClasses = endConstraint.GetConstraintClasses();
     if (endClasses.size() != 1)
         {
         BeAssert(false && "Multiple classes at end. Cannot pick something arbitrary");
         return ECClassId();
         }
 
-    ECClassId classId = endClasses[0]->GetId();
+    ECClassId classId = endClasses[0]->GetClass().GetId();
     BeAssert(classId.IsValid());
     return classId;
     }

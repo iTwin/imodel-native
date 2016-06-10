@@ -735,6 +735,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
                "    </Target>"
                "  </ECRelationshipClass>"
                "  <ECRelationshipClass typeName='SubRel' modifier='Sealed' strength='referencing'>"
+               "   <BaseClass>BaseRel</BaseClass>"
                "    <Source cardinality='(0,N)' polymorphic='True'>"
                "      <Class class='A' />"
                "    </Source>"
@@ -749,24 +750,24 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
     ECInstanceKey a, b;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId() FROM ts.A LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM ts.A LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     a = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
     ASSERT_TRUE(a.IsValid());
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId() FROM ts.B LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM ts.B LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     b = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
     ASSERT_TRUE(b.IsValid());
     }
 
-/*    ECSqlStatement stmt;
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SubRel(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, a.GetECInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, a.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, b.GetECInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, b.GetECClassId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Insert of first relationship: " << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
     //now insert same rel again.
@@ -774,7 +775,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, a.GetECClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, b.GetECInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, b.GetECClassId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());*/
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Insert of duplicate relationship: " << ecdb.GetLastError().c_str();
     }
 
 END_ECDBUNITTESTS_NAMESPACE
