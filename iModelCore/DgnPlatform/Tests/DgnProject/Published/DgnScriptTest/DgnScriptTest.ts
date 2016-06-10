@@ -98,6 +98,32 @@ module DgnScriptTests {
         }
         return pel.Placement.CalculateRange();
     }
+ 
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Paul.Connelly   06/16
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    function expectCondition(expected: boolean, actual: boolean, message: string): boolean {
+        if (expected != actual) {
+            be.Script.ReportError(message + ": expected: " + expected);
+
+        return expected == actual;
+        }
+    }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Paul.Connelly   06/16
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    function expectTrue(actual: boolean, message: string): boolean { return expectCondition(true, actual, message); }
+
+    function expectFalse(actual: boolean, message: string): boolean { return expectCondition(false, actual, message); }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Paul.Connelly   06/16
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    function testBriefcaseManagement(db: be.DgnDb, element: be.DgnElement, model: be.DgnModel) {
+        var lockableId1 = be.LockableId.FromElement(element);
+        expectTrue(lockableId1.IsValid, "lockableId1.IsValid");
+    }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   
@@ -697,6 +723,9 @@ module DgnScriptTests {
         testEcSql(db, 2);
 
         //testFile("d:/tmp/xx.txt");
+
+        //  Test briefcase management API
+        testBriefcaseManagement(db, ele, model);
 
         return 0;
     }

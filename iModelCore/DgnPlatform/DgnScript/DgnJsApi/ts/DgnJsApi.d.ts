@@ -35,6 +35,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
     enum BeSQLiteDbResult { }
 
+    enum BeSQLiteDbOpcode { }
+
     //! Logging serverity level.
     enum LoggingSeverity { }
 
@@ -587,6 +589,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         ToGeometrySource2d(): GeometrySource2dP;
 
         /**
+        * Add any required locks and/or codes to the specified request in preparation for the specified operation
+        * @param request    The request to which to add the required locks and/or codes
+        * @param opcode     The operation to be performed
+        */
+        PopulateRequest(request: RepositoryRequestP, opcode: cxx_enum_class_uint32_t<BeSQLiteDbOpcode>): cxx_enum_class_uint32_t<RepositoryStatus>;
+
+        /**
          * Create a new DgnElement
          * @param model The model that is to contain the new element
          * @param elementClassName The name of the element's ECClass. 
@@ -729,6 +738,14 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         DgnDb: DgnDbP;
         /** Make a DgnModelCode from a string. @param name The name to use. @return The DgnModelCode based on the specified name. */
         static CreateModelCode(name: Bentley_Utf8String): AuthorityIssuedCode;
+
+        /**
+        * Add any required locks and/or codes to the specified request in preparation for the specified operation
+        * @param request    The request to which to add the required locks and/or codes
+        * @param opcode     The operation to be performed
+        */
+        PopulateRequest(request: RepositoryRequestP, opcode: cxx_enum_class_uint32_t<BeSQLiteDbOpcode>): cxx_enum_class_uint32_t<RepositoryStatus>;
+
         OnDispose(): void;
         Dispose(): void;
     }
@@ -1199,6 +1216,130 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         Dispose(): void;
     }
 
+    /* ------------------------------------------ Briefcase Management ------------------------------------------*/
+
+    enum LockableType { }
+
+    enum LockLevel { }
+
+    enum RepositoryStatus { }
+
+    /** Describes the ID of a lockable object */
+    class LockableId implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted {
+        /*** NATIVE_TYPE_NAME = JsLockableId ***/
+        /**
+        * Construct by type and object ID
+        * @param objectType The type of the object
+        * @param objectID   The ID of the object
+        */
+        constructor(objectType: cxx_enum_class_uint8_t<LockableType>, objectId: DgnObjectIdP);
+
+        /** The ID of the object */
+        Id: DgnObjectIdP;
+        /** The type of the object */
+        Type: cxx_enum_class_uint8_t<LockableType>;
+        /** Whether this ID is valid */
+        IsValid: cxx_bool;
+        /** Set this to an invalid ID */
+        Invalidate(): void;
+        /** Tests if the ID matches another ID @param id The other ID */
+        Equals(id: LockableIdP): cxx_bool;
+        /** Creates a LockableId for an element @param element The element */
+        static FromElement(element: DgnElementP): LockableIdP;
+        /** Creates a LockableId for a model @param model The model */
+        static FromModel(model: DgnModelP): LockableIdP;
+        /** Creates a LockableId for a DgnDb @param dgndb The DgnDb */
+        static FromDgnDb(dgndb: DgnDbP): LockableIdP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type LockableIdP = cxx_pointer<LockableId>;
+
+    class DgnLock implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted {
+        /*** NATIVE_TYPE_NAME = JsDgnLock ***/
+        /**
+        * Construct by ID and lock level
+        * @param id     The ID of the lockable object
+        @ @param level  The level at which the object is locked
+        */
+        constructor(id: LockableIdP, level: cxx_enum_class_uint8_t<LockLevel>);
+
+        /** The Id of the lockable object */
+        Id: LockableIdP;
+        /** The level at which the object is locked */
+        Level: cxx_enum_class_uint8_t<LockLevel>;
+        /** Ensure the lock level is no lower than the specified level @param level The minimum level */
+        EnsureLevel(level: cxx_enum_class_uint8_t<LockLevel>): void;
+        /** Sets this to be an invalid lock */
+        Invalidate(): void;
+
+        /**
+        * Create a DgnLock for the specified element
+        * @param element    The locked element
+        * @param level      The level at which the element is locked
+        */
+        static FromElement(element: DgnElementP, level: cxx_enum_class_uint8_t<LockLevel>): DgnLockP;
+
+        /**
+        * Create a DgnLock for the specified model
+        * @param model  The locked model
+        * @param level  The level at which the model is locked
+        */
+        static FromModel(model: DgnModelP, level: cxx_enum_class_uint8_t<LockLevel>): DgnLockP;
+
+        /**
+        * Create a DgnLock for the specified DgnDb
+        * @param dgndb  The locked DgnDb
+        * @param level  The level at which the DgnDb is locked
+        */
+        static FromDgnDb(dgndb: DgnDbP, level: cxx_enum_class_uint8_t<LockLevel>): DgnLockP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DgnLockP = cxx_pointer<DgnLock>;
+
+    /** Represents a request to acquire locks and/or codes, or query the availability thereof */
+    class RepositoryRequest implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted {
+        /*** NATIVE_TYPE_NAME = JsRepositoryRequest ***/
+
+        /**
+        * Create a new, empty request object for the specified briefcase 
+        * @param dgndb      The requesting briefcase
+        * @param operation  The name of the operation for which the request is being made (e.g., a tool name)
+        */
+        static Create(dgndb: DgnDbP, operation: Bentley_Utf8String): RepositoryRequestP;
+
+        /** The briefcase associated with this request */
+        Briefcase: DgnDbP;
+        /** The name of the operation for which the request is being made (e.g., a tool name) */
+        Operation: Bentley_Utf8String;
+
+        /** Attempts to acquire the locks and/or codes from the repository manager on this request's briefcase's behalf */
+        Acquire(): cxx_enum_class_uint32_t<RepositoryStatus>;
+        /** Queries the repository manager to determine if the locks and/or codes in this request are available to be acquired by this request's briefcase */
+        QueryAvailability(): cxx_enum_class_uint32_t<RepositoryStatus>;
+        /** Queries a local cache to determine if the locks and/or codes in this request are available to be acquired by this request's briefcase. Does not contact server, therefore faster than QueryAvailability() but potentially less accurate */
+        FastQueryAvailability(): cxx_enum_class_uint32_t<RepositoryStatus>;
+
+        /** Add a request to exclusively lock an element */
+        AddElement(element: DgnElementP): void;
+        /** Add a request to lock a model at the specified level */
+        AddModel(model: DgnModelP, level: cxx_enum_class_uint8_t<LockLevel>): void;
+        /** Add a request to lock the briefcase at the specified level */
+        AddBriefcase(level: cxx_enum_class_uint8_t<LockLevel>): void;
+        /** Add a request to reserve a code */
+        AddCode(code: AuthorityIssuedCode): void;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type RepositoryRequestP = cxx_pointer<RepositoryRequest>;
+
     /* ------------------------------------------ EC -----------------------------------------------*/
 
     /**
@@ -1481,3 +1622,4 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     }
 
     type ECPropertyCollectionP = cxx_pointer<ECPropertyCollection>;}
+

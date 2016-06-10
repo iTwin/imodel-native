@@ -39,7 +39,7 @@ dgnJsApiTsDir = $(dgnScriptDir)DgnJsApi/ts/
 # Generate our Object Model ts declarations by scanning native code source files for special BEJAVASCRIPT_ comments
 # *** When you define new wrapper clases, add the source file to this list
 # ---------------------------------------------------------------------------------------------------------------
-platformHeaderFilesWithJsDecls = $(DgnPlatformAPISrc)DgnPlatform.h $(DgnPlatformApiSrc)Render.h $(DgnPlatformAPISrc)DgnJsApi.h
+platformHeaderFilesWithJsDecls = $(DgnPlatformAPISrc)DgnPlatform.h $(DgnPlatformApiSrc)Render.h $(DgnPlatformAPISrc)DgnJsApi.h $(DgnPlatformAPISrc)LocksManager.h $(DgnPlatformAPISrc)RepositoryManager.h $(DgnPlatformAPISrc)DgnCodesManager.h $(DgnPlatformAPISrc)DgnPlatformErrors.h
 
 $(dgnScriptGen)DgnJsApiCallbacks.cpp, $(dgnScriptGen)DgnJsApi.ts : $(dgnJsApiTsDir)DgnJsApi.d.ts $(dgnJsApiTsDir)DgnJsApiCallbacksTemplate.cpp $(dgnJsApiTsDir)DgnJsApiProjectionTemplate.h $(platformHeaderFilesWithJsDecls)
     $(msg)

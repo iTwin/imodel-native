@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatform.h>
+#include <BeJavaScriptTools/BeJavaScriptTools.h>
 
 DGNPLATFORM_TYPEDEFS(LockRequest);
 DGNPLATFORM_TYPEDEFS(DgnLock);
@@ -23,11 +24,12 @@ struct DgnChangeSummary;
 //! Enumerates the types of objects that can be locked by a briefcase.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-enum class LockableType
+BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
+enum class LockableType : uint8_t
 {
-    Db, //!< The DgnDb itself.
-    Model, //!< A DgnModel.
-    Element, //!< A DgnElement.
+    Db = 0, //!< The DgnDb itself.
+    Model = 1, //!< A DgnModel.
+    Element = 2, //!< A DgnElement.
 };
 
 //=======================================================================================
@@ -99,11 +101,12 @@ typedef bset<LockableId> LockableIdSet;
 //! 
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-enum class LockLevel
+BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
+enum class LockLevel : uint8_t
 {
-    None, //!< No ownership
-    Shared, //!< Shared ownership
-    Exclusive, //!< Exclusive ownership
+    None = 0, //!< No ownership.
+    Shared = 1, //!< Shared ownership.
+    Exclusive = 2, //!< Exclusive ownership.
 };
 
 //=======================================================================================

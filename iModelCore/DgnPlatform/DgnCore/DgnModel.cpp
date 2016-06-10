@@ -887,7 +887,7 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
                 BeAssert(el.IsValid());
                 if (el.IsValid())
                     {
-                    auto stat = el->PopulateRequest(req, BeSQLite::DbOpcode::Delete, nullptr);
+                    auto stat = el->PopulateRequest(req, BeSQLite::DbOpcode::Delete);
                     if (RepositoryStatus::Success != stat)
                         return stat;
                     }
@@ -899,7 +899,7 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
                 auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
                 if (view.IsValid())
                     {
-                    auto stat = view->PopulateRequest(req, BeSQLite::DbOpcode::Delete, nullptr);
+                    auto stat = view->PopulateRequest(req, BeSQLite::DbOpcode::Delete);
                     if (RepositoryStatus::Success != stat)
                         return stat;
                     }
