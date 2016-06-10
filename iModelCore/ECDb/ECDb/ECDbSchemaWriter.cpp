@@ -200,17 +200,29 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     if (BE_SQLITE_OK != stmt->BindText(3, ecClass.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (ecClass.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ecClass.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+    if (!ecClass.GetInvariantDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(5, ecClass.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+#else
     if (!ecClass.GetDisplayLabel().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecClass.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
-
     if (!ecClass.GetDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(5, ecClass.GetDescription().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
+#endif
 
     if (BE_SQLITE_OK != stmt->BindInt(6, Enum::ToInt(ecClass.GetClassType())))
         return ERROR;
@@ -302,17 +314,30 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECEnumerationCR ecEnum)
     if (BE_SQLITE_OK != stmt->BindText(3, ecEnum.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (ecEnum.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ecEnum.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+    if (!ecEnum.GetInvariantDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+#else
     if (!ecEnum.GetDisplayLabel().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecEnum.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
-
     if (!ecEnum.GetDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetDescription().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
+#endif
+
 
     if (BE_SQLITE_OK != stmt->BindInt(6, (int) ecEnum.GetType()))
         return ERROR;
@@ -362,13 +387,13 @@ BentleyStatus ECDbSchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
 
     if (BE_SQLITE_OK != stmt->BindText(3, koq.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
-
+   
     if (!koq.GetDisplayLabel().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, koq.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
-
+   
     if (!koq.GetDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(5, koq.GetDescription().c_str(), Statement::MakeCopy::No))
@@ -518,17 +543,29 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     if (BE_SQLITE_OK != stmt->BindText(3, ecProperty.GetName(), Statement::MakeCopy::No))
         return ERROR;
 
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (ecProperty.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ecProperty.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+    if (!ecProperty.GetInvariantDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+#else
     if (!ecProperty.GetDisplayLabel().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecProperty.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
-
     if (!ecProperty.GetDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetDescription().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
+#endif
 
     if (BE_SQLITE_OK != stmt->BindInt(6, ecProperty.GetIsReadOnly() ? 1 : 0))
         return ERROR;
@@ -735,17 +772,31 @@ BentleyStatus ECDbSchemaWriter::InsertECSchemaEntry(ECSchemaCR ecSchema)
     if (BE_SQLITE_OK != stmt->BindText(2, ecSchema.GetName().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
+
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (ecSchema.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(3, ecSchema.GetInvariantDisplayLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+    if (!ecSchema.GetInvariantDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ecSchema.GetInvariantDescription().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+#else
     if (!ecSchema.GetDisplayLabel().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(3, ecSchema.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
-
     if (!ecSchema.GetDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ecSchema.GetDescription().c_str(), Statement::MakeCopy::No))
             return ERROR;
         }
+#endif
+
 
     if (BE_SQLITE_OK != stmt->BindText(5, ecSchema.GetNamespacePrefix().c_str(), Statement::MakeCopy::No))
         return ERROR;
@@ -893,7 +944,81 @@ BentleyStatus ECDbSchemaWriter::ReplaceCAEntry(IECInstanceP customAttribute, ECC
     return InsertCAEntry(customAttribute, ecClassId, containerId, containerType, ordinal);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbSchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECPropertyCR oldProperty, ECPropertyCR newProperty) const
+    {
+    //changing from primitive to enum and enum to primitve is supported with same type and enum is unstrict
+    if (oldProperty.GetIsPrimitive() && newProperty.GetIsPrimitive())
+        {
+        PrimitiveECPropertyCP a = oldProperty.GetAsPrimitiveProperty();
+        PrimitiveECPropertyCP b = newProperty.GetAsPrimitiveProperty();
+        ECEnumerationCP aEnum = a->GetEnumeration();
+        ECEnumerationCP bEnum = b->GetEnumeration();
+        if (!aEnum && !bEnum)
+            {
+            error.Sprintf("ECSchema Update failed. ECProperty %s.%s: Changing the type of a Primitive ECProperty is not supported. Cannot convert from '%s' to '%s'",
+                          oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str(), typeChange.GetOld().Value().c_str(), typeChange.GetNew().Value().c_str());
+            return false;
+            }
 
+        if (aEnum && !bEnum)
+            {
+            if (aEnum->GetType() != b->GetType())
+                {
+                error.Sprintf("ECSchema Update failed. ECProperty %s.%s: ECEnumeration specified for property must have same primitive type as new primitive property type",
+                              oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+
+                return false;
+                }
+
+            return true;
+            }
+        if (!aEnum && bEnum)
+            {
+            if (a->GetType() != bEnum->GetType())
+                {
+                error.Sprintf("ECSchema Update failed. ECProperty %s.%s: Primitive type change to ECEnumeration which as different type then existing primitive property",
+                              oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+
+                return false;
+                }
+
+            if (bEnum->GetIsStrict())
+                {
+                error.Sprintf("ECSchema Update failed. ECProperty %s.%s: Type change to a Strict ECEnumeration is not supported.",
+                              oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+
+                return false;
+                }
+
+            return true;
+            }
+
+        if (aEnum && bEnum)
+            {
+            if (aEnum->GetType() != bEnum->GetType())
+                {
+                error.Sprintf("ECSchema Update failed. ECProperty %s.%s: Exisitng ECEnumeration has different primitive type from the new ECEnumeration specified",
+                              oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+
+                return false;
+                }
+            if (bEnum->GetIsStrict())
+                {
+                error.Sprintf("ECSchema Update failed. ECProperty %s.%s: Type change to a Strict ECEnumeration is not supported.",
+                              oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+                }
+            return true;
+            }
+        }
+
+    error.Sprintf("ECSchema Update failed. ECProperty %s.%s: Changing the type of an ECProperty is not supported. Cannot convert from '%s' to '%s'",
+                  oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str(), typeChange.GetOld().Value().c_str(), typeChange.GetNew().Value().c_str());
+
+    return false;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -911,21 +1036,18 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
 
     if (propertyChange.GetTypeName().IsValid())
         {
-        Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the type of an ECProperty is not supported.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-        return ERROR;
+        Utf8String error;
+        if (!IsPropertyTypeChangeSupported(error, propertyChange.GetTypeName(), oldProperty, newProperty))
+            {
+            Issues().Report(ECDbIssueSeverity::Error, error.c_str());
+            return ERROR;
+            }
         }
 
     if (propertyChange.IsStruct().IsValid() || propertyChange.IsStructArray().IsValid() || propertyChange.IsPrimitive().IsValid() ||
         propertyChange.IsPrimitiveArray().IsValid() || propertyChange.IsNavigation().IsValid())
         {
         Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the kind of the ECProperty is not supported.",
-                                  oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-        return ERROR;
-        }
-    if (propertyChange.GetExtendedTypeName().IsValid())
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the ExtendedTypeName of an ECProperty is not supported.",
                                   oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         return ERROR;
         }
@@ -973,14 +1095,28 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
         sqlUpdateBuilder.AddSetExp("Name", propertyChange.GetName().GetNew().Value().c_str());
         }
 
+    if (propertyChange.GetExtendedTypeName().IsValid())
+        {
+        if (propertyChange.GetExtendedTypeName().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("ExtendedTypeName");
+        else
+            sqlUpdateBuilder.AddSetExp("ExtendedTypeName", propertyChange.GetExtendedTypeName().GetNew().Value().c_str());
+        }
+
     if (propertyChange.GetDisplayLabel().IsValid())
         {
-        sqlUpdateBuilder.AddSetExp("DisplayLabel", propertyChange.GetDisplayLabel().GetNew().Value().c_str());
+        if (propertyChange.GetDisplayLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+        else
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", propertyChange.GetDisplayLabel().GetNew().Value().c_str());
         }
 
     if (propertyChange.GetDescription().IsValid())
         {
-        sqlUpdateBuilder.AddSetExp("Description", propertyChange.GetDescription().GetNew().Value().c_str());
+        if (propertyChange.GetDescription().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Description");
+        else
+            sqlUpdateBuilder.AddSetExp("Description", propertyChange.GetDescription().GetNew().Value().c_str());
         }
 
     if (propertyChange.IsReadonly().IsValid())
@@ -990,16 +1126,25 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
 
     if (propertyChange.GetEnumeration().IsValid())
         {
-        if (propertyChange.GetEnumeration().GetState() == ChangeState::Deleted)
+        auto newPrimitiveProperty = newProperty.GetAsPrimitiveProperty();
+        if (newPrimitiveProperty == nullptr)
+            {
+            BeAssert(newPrimitiveProperty != nullptr);
+            return ERROR;
+            }
+
+        if (propertyChange.GetEnumeration().GetNew().IsNull())
             { 
-            sqlUpdateBuilder.AddSetExp("EnumerationId"); //set to null;
+            sqlUpdateBuilder.AddSetExp("PrimitiveType", (int)newPrimitiveProperty->GetType()); //set to null;
+            sqlUpdateBuilder.AddSetToNull("EnumerationId"); //set to null;
             }
         else
             {
-            auto newPrimitiveProperty = newProperty.GetAsPrimitiveProperty();            
-            if (newPrimitiveProperty == nullptr)
+            auto oldPrimitiveProperty = oldProperty.GetAsPrimitiveProperty();
+            if (oldPrimitiveProperty == nullptr)
                 {
-                BeAssert(newPrimitiveProperty != nullptr);
+                Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Only Primitive property can be coverted to ECEnumeration",
+                                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
                 return ERROR;
                 }
 
@@ -1008,6 +1153,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
             if (!id.IsValid())
                 return ERROR;
 
+            sqlUpdateBuilder.AddSetToNull("PrimitiveType"); //SET TO NULL
             sqlUpdateBuilder.AddSetExp("EnumerationId", id.GetValue());
             }
         }
@@ -1016,18 +1162,26 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
         {
         if (propertyChange.GetKindOfQuanity().GetState() == ChangeState::Deleted)
             {
-            sqlUpdateBuilder.AddSetExp("KindOfQuantityId"); //set to null;
+            sqlUpdateBuilder.AddSetToNull("KindOfQuantityId"); //set to null;
             }
         else
             {
-            auto newPrimitiveProperty = newProperty.GetAsPrimitiveProperty();
-            if (newPrimitiveProperty == nullptr)
+            KindOfQuantityCP koqCP = nullptr;
+            if (auto newPrimitiveProperty = newProperty.GetAsPrimitiveProperty())
                 {
-                BeAssert(newPrimitiveProperty != nullptr);
+                koqCP = newPrimitiveProperty->GetKindOfQuantity();
+                }
+            else if (auto newPrimitivePropertyArray = newProperty.GetAsArrayProperty())
+                {
+                koqCP = newPrimitivePropertyArray->GetKindOfQuantity();
+                }
+
+            if (koqCP == nullptr)
+                {
+                BeAssert(koqCP != nullptr);
                 return ERROR;
                 }
 
-            KindOfQuantityCP koqCP = newPrimitiveProperty->GetKindOfQuantity();
             KindOfQuantityId id = ECDbSchemaPersistenceHelper::GetKindOfQuantityId(m_ecdb, *koqCP);
             if (!id.IsValid())
                 return ERROR;
@@ -1241,12 +1395,18 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
 
     if (classChange.GetDisplayLabel().IsValid())
         {
-        updateBuilder.AddSetExp("DisplayLabel", classChange.GetDisplayLabel().GetNew().Value().c_str());
+        if (classChange.GetDisplayLabel().GetNew().IsNull())
+            updateBuilder.AddSetToNull("DisplayLabel");
+        else
+            updateBuilder.AddSetExp("DisplayLabel", classChange.GetDisplayLabel().GetNew().Value().c_str());
         }
 
     if (classChange.GetDescription().IsValid())
         {
-        updateBuilder.AddSetExp("Description", classChange.GetDescription().GetNew().Value().c_str());
+        if (classChange.GetDescription().GetNew().IsNull())
+            updateBuilder.AddSetToNull("Description");
+        else
+            updateBuilder.AddSetExp("Description", classChange.GetDescription().GetNew().Value().c_str());
         }
 
     if (classChange.GetRelationship().IsValid())
@@ -1939,12 +2099,18 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
     
     if (schemaChange.GetDisplayLabel().IsValid())
         {
-        updateBuilder.AddSetExp("DisplayLabel", schemaChange.GetDisplayLabel().GetNew().Value().c_str());
+        if (schemaChange.GetDisplayLabel().GetNew().IsNull())
+            updateBuilder.AddSetToNull("DisplayLabel");
+        else
+            updateBuilder.AddSetExp("DisplayLabel", schemaChange.GetDisplayLabel().GetNew().Value().c_str());
         }
-    
+
     if (schemaChange.GetDescription().IsValid())
         {
-        updateBuilder.AddSetExp("Description", schemaChange.GetDescription().GetNew().Value().c_str());
+        if (schemaChange.GetDescription().GetNew().IsNull())
+            updateBuilder.AddSetToNull("Description");
+        else
+            updateBuilder.AddSetExp("Description", schemaChange.GetDescription().GetNew().Value().c_str());
         }
 
     if (schemaChange.GetVersionMajor().IsValid())
