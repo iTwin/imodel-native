@@ -371,9 +371,10 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, QueryResults& results,
 
     // first, run through the query results seeing if all of the elements are loaded and have their graphics ready
     // NOTE: This is not CheckStop'ed! It must be fast.
-    for (auto& thisScore : results.m_scores)
+    auto end = results.m_scores.rend();
+    for (auto thisScore=results.m_scores.rbegin(); thisScore!=end; ++thisScore)
         {
-        DgnElementCPtr el = pool.FindElement(thisScore.second);
+        DgnElementCPtr el = pool.FindElement(thisScore->second);
         if (!el.IsValid())
             continue;
 
@@ -382,9 +383,9 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, QueryResults& results,
             continue;
 
         if (SUCCESS == context.VisitGeometry(*geomElem))
-            m_scene->Insert(thisScore.second, el);
+            m_scene->Insert(thisScore->second, el);
         else
-            missing.push_back(thisScore.second);
+            missing.push_back(thisScore->second);
         }
 
     context.SetNoStroking(false); // reset the context
@@ -467,9 +468,9 @@ void DgnQueryView::_CreateScene(SceneContextR context)
         BeAssert(false==m_loading);
         AutoRestore<bool> loadFlag(&m_loading,true); // this tells the query thread to pause temporarily so we don't fight over the SQLite mutex
 
-        for (auto it = missing.rbegin(), ritEnd = missing.rend(); it != ritEnd; ++it)
+        for (auto& it : missing)
             {
-            DgnElementCPtr el = pool.GetElement(*it);
+            DgnElementCPtr el = pool.GetElement(it);
             if (!el.IsValid())
                 {
                 BeAssert(false);
@@ -486,12 +487,12 @@ void DgnQueryView::_CreateScene(SceneContextR context)
             if (SUCCESS == context.VisitGeometry(*geomElem))
                 {
                 --missingCount;
-                m_scene->Insert(*it, el);
+                m_scene->Insert(it, el);
                 }
 
             if (context.WasAborted())
                 {
-                WARN_PRINTF("Create Scene aborted on element %ld", it->GetValue());
+                WARN_PRINTF("Create Scene aborted on element %ld", it.GetValue());
                 break;
                 }
             }
@@ -772,10 +773,10 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
     m_minScore = 0.0;
     m_hitLimit = m_plan.GetTargetNumElements();
 
-    if (endTime && m_hitLimit > m_view.m_queryElementPerSecond)
+    if (endTime && m_hitLimit > (m_view.m_queryElementPerSecond * m_plan.GetTimeout()))
         {
-        m_hitLimit = (uint32_t) (m_view.m_queryElementPerSecond);
-        DEBUG_PRINTF("limiting to =%d", m_hitLimit);
+        m_hitLimit = (uint32_t) (m_view.m_queryElementPerSecond * m_plan.GetTimeout());
+        DEBUG_PRINTF("limiting to %d", m_hitLimit);
         }
 
     BeAssert(m_hitLimit>0);
