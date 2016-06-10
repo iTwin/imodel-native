@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnDbServerClient/EventServiceConnection.cpp $
+|     $Source: DgnDbServerClient/DgnDbServerEventConnection.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/EventServiceConnection.h>
+#include <DgnDbServer/Client/DgnDbServerEventConnection.h>
 #include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-EventServiceConnection::EventServiceConnection(Utf8String sasToken, Utf8String nameSpace)
+DgnDbServerEventConnection::DgnDbServerEventConnection(Utf8String sasToken, Utf8String nameSpace)
     {
     m_sasToken = sasToken;
     m_nameSpace = nameSpace;
@@ -23,7 +23,7 @@ EventServiceConnection::EventServiceConnection(Utf8String sasToken, Utf8String n
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-EventServiceConnection::EventServiceConnection(Utf8String sasToken, Utf8String nameSpace, Utf8String subscriptionId) : EventServiceConnection(sasToken, nameSpace)
+DgnDbServerEventConnection::DgnDbServerEventConnection(Utf8String sasToken, Utf8String nameSpace, Utf8String subscriptionId) : DgnDbServerEventConnection(sasToken, nameSpace)
     {
     m_subscriptionId = subscriptionId;
     }
@@ -31,25 +31,25 @@ EventServiceConnection::EventServiceConnection(Utf8String sasToken, Utf8String n
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-EventServiceConnectionPtr EventServiceConnection::Create(Utf8String sasToken, Utf8String nameSpace)
+DgnDbServerEventConnectionPtr DgnDbServerEventConnection::Create(Utf8String sasToken, Utf8String nameSpace)
     {
-    return EventServiceConnectionPtr(new EventServiceConnection(sasToken, nameSpace));
+    return DgnDbServerEventConnectionPtr(new DgnDbServerEventConnection(sasToken, nameSpace));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-EventServiceConnectionPtr EventServiceConnection::Create(Utf8String sasToken, Utf8String nameSpace, Utf8String subscriptionId)
+DgnDbServerEventConnectionPtr DgnDbServerEventConnection::Create(Utf8String sasToken, Utf8String nameSpace, Utf8String subscriptionId)
     {
-    return EventServiceConnectionPtr(new EventServiceConnection(sasToken, nameSpace, subscriptionId));
+    return DgnDbServerEventConnectionPtr(new DgnDbServerEventConnection(sasToken, nameSpace, subscriptionId));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-EventServiceConnectionPtr EventServiceConnection::CreateDefaultInfo()
+DgnDbServerEventConnectionPtr DgnDbServerEventConnection::CreateDefaultInfo()
     {
-    return EventServiceConnectionPtr(new EventServiceConnection
+    return DgnDbServerEventConnectionPtr(new DgnDbServerEventConnection
                                (
                                "SharedAccessSignature sig=TOk40ce29TwpOYCFG7EWqHL5%2bmi9fIDX%2fYA0Ckv7Urs%3d&se=1463758026&skn=EventReceivePolicy&sr=https%3a%2f%2ftesthubjeehwan-ns.servicebus.windows.net%2ftest", 
                                "testhubjeehwan-ns"
@@ -59,7 +59,7 @@ EventServiceConnectionPtr EventServiceConnection::CreateDefaultInfo()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-Utf8String EventServiceConnection::GetSasToken()
+Utf8String DgnDbServerEventConnection::GetSasToken()
     {
     return m_sasToken;
     }
@@ -67,7 +67,7 @@ Utf8String EventServiceConnection::GetSasToken()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-Utf8String EventServiceConnection::GetNamespace()
+Utf8String DgnDbServerEventConnection::GetNamespace()
     {
     return m_nameSpace;
     }
@@ -75,7 +75,7 @@ Utf8String EventServiceConnection::GetNamespace()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             05/2016
 //---------------------------------------------------------------------------------------
-Utf8String EventServiceConnection::GetSubscriptionId()
+Utf8String DgnDbServerEventConnection::GetSubscriptionId()
     {
     return m_subscriptionId;
     }

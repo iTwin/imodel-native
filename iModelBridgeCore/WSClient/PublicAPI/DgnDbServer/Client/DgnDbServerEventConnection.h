@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbServer/Client/EventServiceConnection.h $
+|     $Source: PublicAPI/DgnDbServer/Client/DgnDbServerEventConnection.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,9 +12,9 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-typedef std::shared_ptr<struct EventServiceConnection> EventServiceConnectionPtr;
+typedef std::shared_ptr<struct DgnDbServerEventConnection> DgnDbServerEventConnectionPtr;
 
-struct EventServiceConnection
+struct DgnDbServerEventConnection
     {
     //__PUBLISH_SECTION_END__
     private:
@@ -22,13 +22,13 @@ struct EventServiceConnection
         Utf8String m_nameSpace;
         Utf8String m_subscriptionId;
 
-        EventServiceConnection(Utf8String sasToken, Utf8String nameSpace);
-        EventServiceConnection(Utf8String sasToken, Utf8String nameSpace, Utf8String subscriptionId);
+        DgnDbServerEventConnection(Utf8String sasToken, Utf8String nameSpace);
+        DgnDbServerEventConnection(Utf8String sasToken, Utf8String nameSpace, Utf8String subscriptionId);
         //__PUBLISH_SECTION_START__
     public:
-        DGNDBSERVERCLIENT_EXPORT static EventServiceConnectionPtr Create(Utf8String sasToken, Utf8String nameSpace);
-        DGNDBSERVERCLIENT_EXPORT static EventServiceConnectionPtr Create(Utf8String sasToken, Utf8String nameSpace, Utf8String subscriptionId);
-        DGNDBSERVERCLIENT_EXPORT static EventServiceConnectionPtr CreateDefaultInfo();
+        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventConnectionPtr Create(Utf8String sasToken, Utf8String nameSpace);
+        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventConnectionPtr Create(Utf8String sasToken, Utf8String nameSpace, Utf8String subscriptionId);
+        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventConnectionPtr CreateDefaultInfo();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetSasToken();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetNamespace();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetSubscriptionId();

@@ -255,61 +255,28 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate (ICancellationTokenPt
         });
     }
 
-////---------------------------------------------------------------------------------------
-////@bsimethod                                     Caleb.Shafer	              06/2016
-////---------------------------------------------------------------------------------------
-//EventServiceReceiveTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken) const
-//	{
-//	BeAssert (DgnDbServerHost::IsInitialized ());
-//    if (!m_db.IsValid () || !m_db->IsDbOpen ())
-//        {
-//		return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::FileNotFound));
-//        }
-//    if (!m_repositoryConnection)
-//        {
-//        return CreateCompletedAsyncTask<EventServiceReceiveResult>(EventServiceReceiveResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
-//        }
-//
-//	return m_repositoryConnection->GetEvents(longPolling, cancellationToken);
-//	}
-
-////---------------------------------------------------------------------------------------
-////@bsimethod                                 Arvind.Venkateswaran	              06/2016
-////---------------------------------------------------------------------------------------
-//IDgnDbServerEventTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken) const
-//    {
-//    BeAssert(DgnDbServerHost::IsInitialized());
-//    if (!m_db.IsValid() || !m_db->IsDbOpen())
-//        {
-//        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::FileNotFound));
-//        }
-//    if (!m_repositoryConnection)
-//        {
-//        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
-//        }
-//
-//    return m_repositoryConnection->GetEvent(longPolling, cancellationToken);
-//    }
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventValueTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken) const
+DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
-        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_repositoryConnection)
         {
-        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+        return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
 
     IDgnDbServerEventTaskPtr currentEventTask = m_repositoryConnection->GetEvent(longPolling, cancellationToken);
     auto result = currentEventTask->GetResult();
     if (!result.IsSuccess())
-        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::InternalServerError));
+        {
+        result.GetError().GetDescription();
+        return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(DgnDbServerError::Id::InternalServerError));
+        }
 
     IDgnDbServerEventPtr currentEvent = result.GetValue();
     const type_info& eventType = currentEvent->GetEventType();
@@ -320,34 +287,33 @@ DgnDbServerEventValueTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancell
         {
         DgnDbServerLockEvent& lockEvent = dynamic_cast<DgnDbServerLockEvent&>(*currentEvent);
         Utf8String resultString = "Lock Info-> LockId: " + lockEvent.GetLockId() + " LockType: " + lockEvent.GetLockType();
-        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Success(resultString));
+        return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Success(resultString));
         }
     else if (returnedEventName.ContainsI(revisionEventName))
         {
-        //Todo:: Complete revision event
         DgnDbServerRevisionEvent& revisionEvent = dynamic_cast<DgnDbServerRevisionEvent&>(*currentEvent);
         Utf8String resultString = "Revision Info-> RevisionId: " + revisionEvent.GetRevisionId();
-        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Success(resultString));
+        return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Success(resultString));
         }
     else
         {
-        return CreateCompletedAsyncTask<DgnDbServerEventValueResult>(DgnDbServerEventValueResult::Error(DgnDbServerError::Id::NoEventsFound));
+        return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(DgnDbServerError::Id::NoEventsFound));
         }
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-IDgnDbServerEventsTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken) const
+IDgnDbServerEventCollectionTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
-        return CreateCompletedAsyncTask<IDgnDbServerEventsResult>(IDgnDbServerEventsResult::Error(DgnDbServerError::Id::FileNotFound));
+        return CreateCompletedAsyncTask<IDgnDbServerEventCollectionResult>(IDgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::FileNotFound));
         }
     if (!m_repositoryConnection)
         {
-        return CreateCompletedAsyncTask<IDgnDbServerEventsResult>(IDgnDbServerEventsResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+        return CreateCompletedAsyncTask<IDgnDbServerEventCollectionResult>(IDgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
 
     return m_repositoryConnection->GetEvents(longPolling, cancellationToken);
