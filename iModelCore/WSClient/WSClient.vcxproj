@@ -172,9 +172,8 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevisionEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp" />
-    <ClCompile Include="DgnDbServerClient\EventServiceConnection.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEventConnection.cpp" />
     <ClCompile Include="DgnDbServerClient\EventServiceInfo.cpp" />
-    <ClCompile Include="DgnDbServerClient\EventServiceReceive.cpp" />
     <ClCompile Include="DgnDbServerClient\RepositoryInfo.cpp" />
     <ClCompile Include="Ims\SolrQuery.cpp" />
     <ClCompile Include="Ims\SolrClient.cpp" />
@@ -273,10 +272,9 @@
     <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerLockEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevisionEvent.h" />
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceConnection.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventConnection.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceInfo.h" />
 
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceReceive.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\IDgnDbServerEvent.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h" />    
     <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h" />
