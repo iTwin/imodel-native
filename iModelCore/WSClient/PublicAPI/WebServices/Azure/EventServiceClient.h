@@ -26,11 +26,10 @@ struct EventServiceClient
         Utf8String m_fullAddress;
         Utf8String m_token;
         SimpleCancellationTokenPtr m_ct;
-        HttpResponse MakeReceiveDeleteRequest(bool longPolling);
-        bool Receive(Utf8StringR msgOut, int retry, bool longPolling);
 
     public:
         EventServiceClient(); //Need a default constructor for DgnDbClientRepository
+        WSCLIENT_EXPORT HttpResponse MakeReceiveDeleteRequest(bool longPolling);
         WSCLIENT_EXPORT EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId);
         WSCLIENT_EXPORT bool Receive(Utf8StringR msgOut, bool longPolling = true);
         WSCLIENT_EXPORT HttpResponse Receive(bool longPolling = true);
