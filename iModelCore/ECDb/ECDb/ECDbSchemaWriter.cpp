@@ -1785,6 +1785,45 @@ BentleyStatus ECDbSchemaWriter::UpdateECClasses(ECClassChanges& classChanges, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::UpdateECKindOfQuanitites(ECKindOfQuantityChanges& koqChanges, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema)
+    {
+    if (!koqChanges.IsValid())
+        return SUCCESS;
+
+    for (size_t i = 0; i < koqChanges.Count(); i++)
+        {
+        KindOfQuantityChange& change = koqChanges.At(i);
+        if (change.GetState() == ChangeState::Deleted)
+            {
+            Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting KindOfQuantity from an ECSchema is not supported.",
+                            oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+        else if (change.GetState() == ChangeState::New)
+            {
+            KindOfQuantityCP koq = newSchema.GetKindOfQuantityCP(change.GetId());
+            if (koq == nullptr)
+                {
+                BeAssert(false && "Failed to find kind of quantity");
+                return ERROR;
+                }
+
+            return ImportKindOfQuantity(*koq);
+            }
+        else if (change.GetState() == ChangeState::Modified)
+            {
+            Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. KindOfQuantity %s in ECSchema %s: Changing KindOfQuantity is not supported.",
+                            change.GetId(), oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateECEnumerations(ECEnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
     if (!enumChanges.IsValid())
@@ -1930,8 +1969,12 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
     if (UpdateECEnumerations(schemaChange.Enumerations(), oldSchema, newSchema) == ERROR)
         return ERROR;
 
+    if (UpdateECKindOfQuanitites(schemaChange.KindOfQuantities(), oldSchema, newSchema) == ERROR)
+        return ERROR;
+
     if (UpdateECClasses(schemaChange.Classes(), oldSchema, newSchema) == ERROR)
         return ERROR;
+
 
     return UpdateECCustomAttributes(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, schemaId, schemaChange.CustomAttributes(), oldSchema, newSchema);
     }

@@ -790,6 +790,9 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(UserECDbMapStra
         }
     else
         {
+        BeAssert(!m_allowDuplicateRelationships && "m_allowDuplicateRelationships is expected to only be set in root class");
+        m_allowDuplicateRelationships = DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClassMap->GetClass().GetRelationshipClassCP());
+
         if (baseClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable)
             return EvaluateSharedTableMapStrategy(*baseClassMap, userStrategy);
 
@@ -993,6 +996,27 @@ bool RelationshipMappingInfo::HasKeyProperties(ECN::ECRelationshipConstraint con
     return false;
     }
 
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                10/2015
+//+---------------+---------------+---------------+---------------+---------------+-
+//static
+bool RelationshipMappingInfo::DetermineAllowDuplicateRelationshipsFlagFromRoot(ECRelationshipClassCR baseRelClass)
+    {
+    ECDbLinkTableRelationshipMap linkRelMap;
+    if (ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkRelMap, baseRelClass))
+        {
+        bool allowDuplicateRels = false;
+        linkRelMap.TryGetAllowDuplicateRelationships(allowDuplicateRels);
+        if (allowDuplicateRels)
+            return true;
+        }
+
+    if (!baseRelClass.HasBaseClasses())
+        return false;
+
+    BeAssert(baseRelClass.GetBaseClasses()[0]->GetRelationshipClassCP() != nullptr);
+    return DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseRelClass.GetBaseClasses()[0]->GetRelationshipClassCP());
+    }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2016

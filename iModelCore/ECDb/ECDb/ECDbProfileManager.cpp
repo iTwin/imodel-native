@@ -157,6 +157,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, SchemaVersion const& currentProfileVersion)
     {
     //IMPORTANT: order from low to high version
+    //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
     std::vector<std::unique_ptr<ECDbProfileUpgrader>> upgraders;
     if (currentProfileVersion < SchemaVersion(3, 7, 1, 0))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3710()));

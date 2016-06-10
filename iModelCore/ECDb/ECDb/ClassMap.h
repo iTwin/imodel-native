@@ -112,7 +112,7 @@ struct ClassMap : RefCountedBase
         virtual MappingStatus _OnInitialized() { return MappingStatus::Success; }
 
     protected:
-        ClassMap(Type, ECN::ECClassCR, ECDbMap const&, ECDbMapStrategy, bool setIsDirty);
+        ClassMap(Type, ECN::ECClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
 
         virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&);
         virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&);
@@ -201,16 +201,16 @@ struct ClassMap : RefCountedBase
 struct UnmappedClassMap : public ClassMap
     {
 private:
-    UnmappedClassMap(ECN::ECClassCR ecClass, ECDbMap const& ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) : ClassMap(Type::Unmapped, ecClass, ecdbMap, mapStrategy, setIsDirty) {}
+    UnmappedClassMap(ECN::ECClassCR ecClass, ECDbMap const& ecdbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty) : ClassMap(Type::Unmapped, ecClass, ecdbMap, mapStrategy, setIsDirty) {}
 
-    virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo) override;
-    virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const& classMapInfo) override { return MappingStatus::Success; }
-    virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* baseClassMap) override;
+    virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&) override;
+    virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&) override { return MappingStatus::Success; }
+    virtual BentleyStatus _Load(std::set<ClassMap const*>&, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* baseClassMap) override;
 
 public:
     ~UnmappedClassMap() {}
 
-    static ClassMapPtr Create(ECN::ECClassCR ecClass, ECDbMap const& ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new UnmappedClassMap(ecClass, ecdbMap, mapStrategy, setIsDirty); }
+    static ClassMapPtr Create(ECN::ECClassCR ecClass, ECDbMap const& ecdbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty) { return new UnmappedClassMap(ecClass, ecdbMap, mapStrategy, setIsDirty); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

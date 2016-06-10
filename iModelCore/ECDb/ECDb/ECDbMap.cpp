@@ -344,6 +344,12 @@ MappingStatus ECDbMap::DoMapSchemas()
             GatherRootClasses(*ecClass, doneList, rootClassSet, rootClassList, rootRelationshipList);
             }
         }
+    
+    if (GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Synchronizing existing table to which classes are mapped failed.");
+        return MappingStatus::Error;
+        }
 
     // Starting with the root, recursively map the entire class hierarchy. 
     MappingStatus status = MappingStatus::Success;

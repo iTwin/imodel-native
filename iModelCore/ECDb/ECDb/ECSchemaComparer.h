@@ -11,7 +11,6 @@
 #include <Bentley/Nullable.h>
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//#define KIND_OF_QUANTITY_SUPPORT
 #define INDENT_SIZE 3
 
 struct ECSchemaChange;
@@ -24,9 +23,7 @@ struct ECEnumeratorChange;
 struct ECPropertyValueChange;
 struct ECObjectChange;
 struct ClassTypeChange;
-#ifdef KIND_OF_QUANTITY_SUPPORT
 struct KindOfQuantityChange;
-#endif
 //=======================================================================================
 // @bsienum                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
@@ -391,7 +388,6 @@ struct ECEnumerationChanges : ECChangeArray<ECEnumerationChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-#ifdef KIND_OF_QUANTITY_SUPPORT
 struct ECKindOfQuantityChanges : ECChangeArray<KindOfQuantityChange>
     {
     public:
@@ -402,7 +398,6 @@ struct ECKindOfQuantityChanges : ECChangeArray<KindOfQuantityChange>
             }
         virtual ~ECKindOfQuantityChanges() {}
     };
-#endif
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -854,9 +849,7 @@ struct ECSchemaChange : ECObjectChange
         ECClassChanges& Classes() { return Get<ECClassChanges>(SystemId::Classes); }
         ECEnumerationChanges& Enumerations() { return Get<ECEnumerationChanges>(SystemId::Enumerations); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
-#ifdef KIND_OF_QUANTITY_SUPPORT
         ECKindOfQuantityChanges& KindOfQuantities() { return Get<ECKindOfQuantityChanges>(SystemId::KindOfQuantities); }
-#endif
     };
 
 //=======================================================================================
@@ -1062,7 +1055,6 @@ struct ECPropertyValueChange : ECChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-#ifdef KIND_OF_QUANTITY_SUPPORT
 struct KindOfQuantityChange :ECObjectChange
     {
     public:
@@ -1080,7 +1072,6 @@ struct KindOfQuantityChange :ECObjectChange
         UInt32Change& GetPrecision() { return Get<UInt32Change>(SystemId::Precision); }
         StringChanges& GetAlternativePresentationUnitList() { return Get<StringChanges>(SystemId::AlternativePresentationUnitList); }
     };
-#endif
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -1280,11 +1271,9 @@ struct ECSchemaComparer
         BentleyStatus AppendReferences(ReferenceChanges& changes, ECSchemaReferenceListCR v, ValueId appendType);
         BentleyStatus ConvertECInstanceToValueMap(std::map<Utf8String, ECValue>& map, IECInstanceCR instance);
         BentleyStatus ConvertECValuesCollectionToValueMap(std::map<Utf8String, ECValue>& map, ECValuesCollectionCR values);
-#ifdef KIND_OF_QUANTITY_SUPPORT
         BentleyStatus AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType);
         BentleyStatus CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b);
         BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b);
-#endif
     public:
         ECSchemaComparer(){}
         ~ECSchemaComparer(){}

@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
-ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMap const& ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
+ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMap const& ecDbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty)
     : m_type(type), m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_mapStrategy(mapStrategy), 
     m_isDirty(setIsDirty), m_columnFactory(*this), m_isECInstanceIdAutogenerationDisabled(false)
     {
@@ -625,13 +625,6 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     std::vector<PropertyDbMapping const*> allPropertyMappings;
     classMapping.GetPropertyMappings(allPropertyMappings, true);
 
-    std::set<Utf8CP, CompareIUtf8Ascii> localPropSet;
-    for (auto property : GetClass().GetProperties(false))
-        {
-        localPropSet.insert(property->GetName().c_str());
-        }
-
-    localPropSet.insert(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
     std::set<DbTable*> tables;
     std::set<DbTable*> joinedTables;
 

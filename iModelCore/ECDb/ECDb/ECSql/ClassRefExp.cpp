@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ClassRefExp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -12,42 +12,108 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-using namespace std;
-
 //****************************** ClassNameExp *****************************************
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle            06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Exp::FinalizeParseStatus ClassNameExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
+    {
+    if (mode == FinalizeParseMode::BeforeFinalizingChildren)
+        {
+        if (m_info == nullptr)
+            {
+            BeAssert(false);
+            return FinalizeParseStatus::Error;
+            }
+
+        ECDbPolicy policy = ECDbPolicyManager::GetClassPolicy(m_info->GetMap(), IsValidInECSqlPolicyAssertion::Get());
+        if (!policy.IsSupported())
+            {
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage());
+            return FinalizeParseStatus::Error;
+            }
+
+        return FinalizeParseStatus::Completed;
+        }
+
+    return FinalizeParseStatus::Completed;
+    }
+
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassNameExp::_CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
+BentleyStatus ClassNameExp::_CreatePropertyNameExpList(std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const
     {
-    BeAssert (m_info != nullptr);
-    auto& classMap = m_info->GetMap();
-
-    for(auto propertyMap : classMap.GetPropertyMaps ())
+    if (m_info == nullptr)
         {
-        auto newExp = unique_ptr<PropertyNameExp>(new PropertyNameExp(propertyMap->GetPropertyAccessString(), *this, classMap));
-        addDelegate (newExp);
+        BeAssert(false);
+        return ERROR;
+        }
+
+    ClassMap const& classMap = m_info->GetMap();
+    for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
+        {
+        std::unique_ptr<PropertyNameExp> exp(new PropertyNameExp(propertyMap->GetPropertyAccessString(), *this, classMap));
+        addDelegate(exp);
         }
 
     return SUCCESS;
     }
 
-
-//****************************** RangeClassRefExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RangeClassRefExp::CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const
+bool ClassNameExp::_ContainProperty(Utf8CP propertyName) const
     {
-    return _CreatePropertyNameExpList (addDelegate);
+    if (m_info == nullptr)
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    PropertyMap const* propertyMap = m_info->GetMap().GetPropertyMap(propertyName);
+    return propertyMap != nullptr;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8StringCR ClassNameExp::_GetId() const
+    {
+    if (GetAlias().empty())
+        return m_className;
+
+    return GetAlias();
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool RangeClassRefExp::ContainProperty(Utf8CP propertyName) const
+Utf8String ClassNameExp::_ToString() const
     {
-    return _ContainProperty(propertyName);
+    Utf8String str("ClassName [Catalog: ");
+    str.append(m_catalogName.c_str()).append(", Schema prefix: ").append(m_schemaPrefix.c_str());
+    str.append(", Class: ").append(m_className).append(", Alias: ").append(GetAlias()).append("]");
+    return str;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ClassNameExp::_ToECSql() const
+    {
+    Utf8String tmp;
+    if (!IsPolymorphic())
+        tmp.append("ONLY ");
+
+    tmp.append(GetFullName());
+
+    if (!GetAlias().empty())
+        tmp.append(" ").append(GetAlias());
+    return tmp;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
