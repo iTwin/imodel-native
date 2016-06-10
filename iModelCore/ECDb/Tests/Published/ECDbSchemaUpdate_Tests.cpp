@@ -2104,12 +2104,26 @@ TEST_F(ECSchemaUpdateTests, MajorVersionChange_WithoutMajorVersionIncremented)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
+    SchemaItem MajorVersionChange(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "</ECSchema>", false, "Major Version change without Major Version incremented is expected to be not supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), MajorVersionChange);
+    ASSERT_FALSE(asserted);
+
     SchemaItem decrementedMajorVersion(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
         "</ECSchema>", false, "Schema Update with ECSchema Major Version decremented is expected to be not supported");
 
-    bool asserted = false;
+    asserted = false;
     AssertSchemaImport(asserted, GetECDb(), decrementedMajorVersion);
     ASSERT_FALSE(asserted);
     }
@@ -4400,10 +4414,11 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
         "           <Class class='C' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", true, "can't delete class which is part of relationship constraint.");
+        "</ECSchema>", true, "ECClass can be deleted unless it's the last relationship constraint.");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedConstraintClass);
     ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
     }
 
 //---------------------------------------------------------------------------------------
@@ -4515,6 +4530,119 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
 
     //Verify relationship Instance should be deleted along with deletion of constaint class
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT * FROM ts.RelClass");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Roo' modifier='None'>"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='EndTableRelationship' modifier='Sealed' strength='Embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='Foo' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Roo' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='LinkTableRelationship' modifier='Sealed' strength='referencing' strengthDirection='forward' >"
+        "       <Source cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Foo' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Roo' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem relationshipWithForeignKeyMapping(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Roo' modifier='None'>"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='LinkTableRelationship' modifier='Sealed' strength='referencing' strengthDirection='forward' >"
+        "       <Source cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Foo' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Roo' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", false, "Deleting ECRelationship with ForeignKey Mapping is supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), relationshipWithForeignKeyMapping);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem linkTableECRelationship(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Roo' modifier='None'>"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='EndTableRelationship' modifier='Sealed' strength='Embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='Foo' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Roo' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "Deletion of LinkTable mapped relationship is supported");
+
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), linkTableECRelationship);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteECStructClassUnSupported)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECStructClass typeName='ChangeInfoStruct' modifier='None'>"
+        "       <ECProperty propertyName='ChangeStatus' typeName='int' readOnly='false' />"
+        "   </ECStructClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem deleteStructECClass(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "</ECSchema>", false, "Deleting ECStructClass is expected to be not supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteStructECClass);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
     }
 
 //---------------------------------------------------------------------------------------
