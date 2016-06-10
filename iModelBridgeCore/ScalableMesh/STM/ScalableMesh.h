@@ -154,6 +154,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
             {
             m_transformToUors.InitFrom(storageToUors);
             m_draping->SetTransform(m_transformToUors);
+            ((ScalableMeshVolume*)m_dtmVolume)->SetTransform(m_transformToUors);
             }
 
         void SetAnalysisType(DTMAnalysisType type)

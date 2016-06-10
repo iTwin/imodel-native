@@ -121,4 +121,18 @@ struct DPoint2dZYXTolerancedSortComparison
         }
     };
 
+
+struct DPoint3dYXTolerancedSortComparison
+    {
+    double m_absTol;
+    DPoint3dYXTolerancedSortComparison(double absTol) : m_absTol(absTol)
+        {
+
+        }
+    bool operator() (const DPoint3d& pointA, const DPoint3d &pointB) const
+        {
+        return sort_yx<double>(pointA.x, pointA.y, pointB.x, pointB.y, m_absTol);
+        }
+    };
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE

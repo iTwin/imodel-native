@@ -110,16 +110,18 @@ void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNo
 
         DRange3d range;
         m_scm->GetRange(range);
-        ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
-                                                                               m_scm->GetTerrainDepth(),
-                                                                               ray,
-                                                                               true,
-                                                                               DVec3d::FromStartEnd(m_polylineToDrape[segment], m_polylineToDrape[segment + 1]).Magnitude(),
-                                                                               true ,
-                                                                               ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d,DRange3d>::RaycastOptions::ALL_INTERSECT);
         bvector<IScalableMeshNodePtr> outNodes;
         for (auto& node : inputNodes)
+            {
+            ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
+                                                                                   node->GetLevel(),
+                                                                                   ray,
+                                                                                   true,
+                                                                                   DVec3d::FromStartEnd(m_polylineToDrape[segment], m_polylineToDrape[segment + 1]).Magnitude(),
+                                                                                   true,
+                                                                                   ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
             node->RunQuery(query, outNodes);
+            }
 
         for (auto& node : outNodes)
             {

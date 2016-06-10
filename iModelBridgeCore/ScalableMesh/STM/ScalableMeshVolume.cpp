@@ -149,8 +149,16 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
     bvector<IScalableMeshNodePtr> returnedNodes;
     IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
     DRange3d fileRange;
+    PolyfaceHeaderCP transformedMesh = mesh;
+    PolyfaceHeaderPtr transPtr;
+    if (!m_UorsToStorage.IsIdentity())
+        {
+        transPtr = mesh->Clone();
+        transPtr->Transform(m_UorsToStorage);
+        transformedMesh = transPtr.get();
+        }
     m_scmPtr->GetDTMInterface()->GetRange(fileRange);
-    DRange3d meshRange = mesh->PointRange();
+    DRange3d meshRange = transformedMesh->PointRange();
     DPoint3d box[4] = {
         DPoint3d::From(meshRange.low.x, meshRange.low.y, fileRange.low.z),
         DPoint3d::From(meshRange.low.x, meshRange.high.y, fileRange.low.z),
@@ -171,9 +179,17 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
         bvector<PolyfaceHeaderPtr> volumeMeshVector;
-        totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, *const_cast<PolyfaceHeaderP>(mesh), true, meshRange, volumeMeshVector);
+        totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, *const_cast<PolyfaceHeaderP>(transformedMesh), true, meshRange, volumeMeshVector);
         totalCut += tileCut;
         totalFill += tileFill;
+        }
+    DPoint3d pt;
+    double scaleFactor;
+    if (!m_transform.IsIdentity() && m_transform.IsUniformScale(pt, scaleFactor))
+        {
+        totalCut *= pow(scaleFactor, 3);
+        totalFill *= pow(scaleFactor, 3);
+        totalVolume *= pow(scaleFactor, 3);
         }
 
     if (cut != 0)
@@ -1412,6 +1428,6 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(double& cut, double& f
     return DTMStatusInt::DTM_SUCCESS;
     }
 
-ScalableMeshVolume::ScalableMeshVolume(IScalableMeshPtr scMesh) : m_scmPtr(scMesh.get()), hasRestrictions(false){}
+ScalableMeshVolume::ScalableMeshVolume(IScalableMeshPtr scMesh) : m_scmPtr(scMesh.get()), hasRestrictions(false), m_transform(Transform::FromIdentity()), m_UorsToStorage(Transform::FromIdentity()) {}
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

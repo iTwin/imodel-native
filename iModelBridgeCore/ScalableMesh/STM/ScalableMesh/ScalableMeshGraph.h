@@ -33,6 +33,8 @@ size_t FastCountNodesAroundFace(MTGGraph* graphP, MTGNodeId id);
 
 void PrintGraph(Utf8String path, Utf8String name, MTGGraph* graphP);
 
+size_t CountExteriorFaces(MTGGraph* graphP);
+
 void UntieLoopsFromPolygon(bvector<DPoint3d>& polygon);
 
 bool RemoveKnotsFromGraph(MTGGraph* graphP, std::vector<DPoint3d>& ptsToModify);

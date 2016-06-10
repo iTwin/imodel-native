@@ -2342,6 +2342,7 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     SetDirty(true);
     }
 
+    bool TopologyIsDifferent(const int32_t* indicesA, const size_t nIndicesA, const int32_t* indicesB, const size_t nIndicesB);
 
     //=======================================================================================
     // @description Converts node mesh to a bcdtm object and use that triangle list as the new mesh.
@@ -2350,6 +2351,8 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     //=======================================================================================
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::UpdateNodeFromBcDTM()
     {
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-06-07\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-06-07\\")
     auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
     IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
     BcDTMPtr dtm = nodeP->GetBcDTM().get();
@@ -2389,6 +2392,33 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Update
         }
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> existingPts(GetPointsPtr());
+
+    bool hasPtsToTrack = false;
+/*    DPoint3d pts[3] = { DPoint3d::From(427283.84, 4501839.24, 0),
+    DPoint3d::From(428610.55, 4504064.41,0),
+        DPoint3d::From(435130.82, 450594.72,0)};
+
+    for (size_t i = 0; i < 3; ++i)
+        if (m_nodeHeader.m_nodeExtent.IsContained(pts[i],2)) hasPtsToTrack = true;*/
+
+    if (existingFaces->size() > 0 && existingPts->size() > 0 && hasPtsToTrack)
+        {
+        //should not happen
+            {
+            WString nameStitched = LOG_PATH_STR_W + L"postdtmmesh_1st";
+            LOGSTRING_NODE_INFO_W(this, nameStitched)
+                nameStitched.append(L".m");
+            LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, existingPts->size(), existingFaces->size(), &(*existingPts)[0], &(*existingFaces)[0])
+            }
+        if (newIndices.size() > 0 && newVertices.size() > 0)
+            {
+            WString nameStitched = LOG_PATH_STR_W + L"postdtmmesh_2nd";
+            LOGSTRING_NODE_INFO_W(this, nameStitched)
+                nameStitched.append(L".m");
+            LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
+            }
+        }
+
     if (newIndices.size() > 0 && newVertices.size() > 0)
         {
         existingFaces->clear();

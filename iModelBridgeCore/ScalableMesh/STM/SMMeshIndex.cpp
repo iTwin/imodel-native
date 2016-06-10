@@ -45,3 +45,15 @@ template<> size_t GetSizeInMemory<DifferenceSet>(DifferenceSet* item)
         item->addedUvs.size() * sizeof(DPoint2d);
     return count;
     }
+
+bool TopologyIsDifferent(const int32_t* indicesA, const size_t nIndicesA, const int32_t* indicesB, const size_t nIndicesB)
+    {
+    MTGGraph graphA, graphB;
+    bvector<int> temp;
+    CreateGraphFromIndexBuffer(&graphA, (const long*)indicesA, (int)nIndicesA, (int)nIndicesA, temp, nullptr);
+    CreateGraphFromIndexBuffer(&graphB, (const long*)indicesB, (int)nIndicesB, (int)nIndicesB, temp, nullptr);
+
+    size_t nFacesA = CountExteriorFaces(&graphA);
+    size_t nFacesB = CountExteriorFaces(&graphB);
+    return nFacesA != nFacesB;
+    }

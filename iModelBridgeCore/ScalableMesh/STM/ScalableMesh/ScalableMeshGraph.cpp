@@ -151,7 +151,7 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
             graphP->TryGetLabel(existing[edge], componentLabel, (int&)existingIDs[edge]);
             if (existingIDs[edge] != -1 && existingIDs[edge] >= (int)componentLabels.size()) componentLabels.resize(existingIDs[edge], -1);
             if (currentComponentID == -1 && existingIDs[edge] != -1) currentComponentID = existingIDs[edge];
-            else if (existingIDs[edge] != -1)
+            else if (existingIDs[edge] != -1 && points != nullptr)
                 {
                 int toReplace = componentLabels[currentComponentID];
                 if (points[componentLabels[existingIDs[edge]]].x > points[componentLabels[currentComponentID]].x)
@@ -251,14 +251,18 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
     //at this point faceNodes[0]->faceNodes[1]->faceNodes[2] is a face loop.
     assert(graphP->FSucc(faceNodes[0]) == faceNodes[1] && graphP->FSucc(faceNodes[1]) == faceNodes[2] && graphP->FSucc(faceNodes[2]) == faceNodes[0]);
     assert(graphP->CountNodesAroundFace(faceNodes[0]) == 3 && graphP->CountNodesAroundFace(tmp) == 3);
+
     int oldId = componentLabels[currentComponentID];
-    if (componentLabels[currentComponentID] == -1 || points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[0] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[0] - 1/*]*/;
-    assert(currentComponentID < componentLabels.size() && currentComponentID >= 0);
-    if (componentLabels[currentComponentID]  >= 0 && points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[1] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[1] - 1/*]*/;
-    if (componentLabels[currentComponentID]  >= 0 && points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[2] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[2] - 1/*]*/;
-    for (int id = 0; id < 3; id++)
+    if (points != nullptr)
         {
-        if (existingIDs[id] != -1 && (int)componentLabels.size() > existingIDs[id] && points[componentLabels[currentComponentID]].x > points[componentLabels[existingIDs[id]]].x) componentLabels[currentComponentID] = componentLabels[existingIDs[id]];
+        if (componentLabels[currentComponentID] == -1 || points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[0] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[0] - 1/*]*/;
+        assert(currentComponentID < componentLabels.size() && currentComponentID >= 0);
+        if (componentLabels[currentComponentID] >= 0 && points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[1] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[1] - 1/*]*/;
+        if (componentLabels[currentComponentID] >= 0 && points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[2] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[2] - 1/*]*/;
+        for (int id = 0; id < 3; id++)
+            {
+            if (existingIDs[id] != -1 && (int)componentLabels.size() > existingIDs[id] && points[componentLabels[currentComponentID]].x > points[componentLabels[existingIDs[id]]].x) componentLabels[currentComponentID] = componentLabels[existingIDs[id]];
+            }
         }
     int isTriangleLoopFlipped = 0;
     int flippedEdges[2][3] = { { 0, 1, 2 }, { 2, 1, 0 } };
@@ -1749,6 +1753,32 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
         MTGARRAY_END_SET_LOOP(edgeID, graphP)
             graphP->ClearMask(visitedMask);
         graphP->DropMask(visitedMask);
+        }
+
+    size_t CountExteriorFaces(MTGGraph* graphP)
+        {
+        MTGMask visitedMask = graphP->GrabMask();
+        size_t nFaces = 0;
+        MTGARRAY_SET_LOOP(edgeID, graphP)
+            {
+            if (!graphP->GetMaskAt(edgeID, visitedMask))
+                {
+                if (graphP->GetMaskAt(edgeID, MTG_EXTERIOR_MASK))
+                    {
+                    nFaces++;
+                    MTGARRAY_FACE_LOOP(faceID, graphP, edgeID)
+                        {
+                        graphP->SetMaskAt(faceID, visitedMask);
+                        }
+                    MTGARRAY_END_FACE_LOOP(faceID, graphP, edgeID)
+                    }
+                else graphP->SetMaskAt(edgeID, visitedMask);
+                }
+            }
+        MTGARRAY_END_SET_LOOP(edgeID, graphP)
+            graphP->ClearMask(visitedMask);
+        graphP->DropMask(visitedMask);
+        return nFaces;
         }
 
     void PrintGraph(Utf8String path, Utf8String name, MTGGraph* graphP)

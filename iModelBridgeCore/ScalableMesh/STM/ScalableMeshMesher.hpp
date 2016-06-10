@@ -687,7 +687,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     {
 //    std::string s;
 //    s += " BEFORE SIZE " + std::to_string(points.size())+"\n";
-    std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPts(DPoint3dZYXTolerancedSortComparison(1e-4, 0));
+    std::map<DPoint3d, int32_t, DPoint3dYXTolerancedSortComparison> mapOfPts(DPoint3dYXTolerancedSortComparison(1e-4));
     vector<int32_t> matchedIndices(points.size(),-1);
     vector<int32_t> newIndices(points.size(), -1);
     for (auto& pt : points)
@@ -1294,13 +1294,19 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     //return true;
-    LOG_SET_PATH("E:\\output\\scmesh\\2016-05-29\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-05-29\\")
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-06-07\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-06-07\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 
     if (node->m_nodeHeader.m_nbFaceIndexes == 0) return true;
+    bool hasPtsToTrack = false;
+  /*  DPoint3d pts[3] = { DPoint3d::From(427283.84, 4501839.24, 0),
+        DPoint3d::From(428610.55, 4504064.41, 0),
+        DPoint3d::From(435130.82, 450594.72, 0) };
 
+    for (size_t i = 0; i < 3; ++i)
+        if (node->m_nodeHeader.m_nodeExtent.IsContained(pts[i],2)) hasPtsToTrack = true;*/
   //  if (NULL == node->GetGraphPtr()) node->LoadGraph(s_useThreadsInStitching);
   //  MTGGraph* meshGraphP = node->GetGraphPtr();
   //  if (NULL == meshGraphP) return true;
@@ -1754,6 +1760,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         assert(meshP != 0);
 
 #if SM_OUTPUT_MESHES_STITCHING
+        if (hasPtsToTrack)
         {
         WString nameStitched = LOG_PATH_STR_W + L"posttrimesh_new_";
         LOGSTRING_NODE_INFO_W(node, nameStitched)
@@ -1771,7 +1778,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             pts[1].resize(meshP->GetNbPoints());
 
 #if SM_OUTPUT_MESHES_STITCHING
-           // if (node->GetBlockID().m_integerID == 15)
+            if (hasPtsToTrack)
                 {
                 WString nameStitched = LOG_PATH_STR_W + L"posttrimesh_old_";
                 LOGSTRING_NODE_INFO_W(node, nameStitched)
@@ -1853,14 +1860,15 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
                 node->AddFeatureDefinitionSingleNode((IDTMFile::FeatureType)types[&polyline - &features.front()], polyline, extent);
             }
         }
-#if SM_OUTPUT_MESHES_STITCHING
+//#if SM_OUTPUT_MESHES_STITCHING
+        if (hasPtsToTrack)
             {
             WString nameStitched = LOG_PATH_STR_W + L"poststitchmesh_";
             LOGSTRING_NODE_INFO_W(node, nameStitched)
             nameStitched.append(L".m");
             LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, stitchedPoints.size(), node->m_nodeHeader.m_nbFaceIndexes, newNodePointData, (int32_t*)&newNodePointData[stitchedPoints.size()])
             }
-#endif
+//#endif
 #if SM_TRACE_MESH_STATS
         Utf8String fileName2 = (LOG_PATH_STR);
         LOGSTRING_NODE_INFO(node, fileName2)
