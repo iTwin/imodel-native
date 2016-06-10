@@ -279,6 +279,7 @@
   <ItemGroup>
     <None Include="dependencies.mki" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\5.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
@@ -340,7 +341,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WSClientUnitTests-VS reb WebServices* WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WSClientUnitTests-VS b</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WSClientUnitTests-VS reb WSClientUnitTests* *begtest* -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 -r WSClient -f WSClient -p WSClientUnitTests-VS reb WebServices* WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);WSCLIENT_ENABLE_DUPLICATING_SYMBOLS</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\build\BeGTest\bin\begtest.exe</NMakeOutput>

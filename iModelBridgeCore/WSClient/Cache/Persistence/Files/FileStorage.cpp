@@ -320,6 +320,8 @@ bool copyFile
             return ERROR;
         }
 
+    info.SetFileUpdateDate(DateTime::GetCurrentTimeUtc());
+
     return SUCCESS;
     }
 

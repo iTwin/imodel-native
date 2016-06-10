@@ -97,6 +97,7 @@
     <ClCompile Include="Cache\Persistence\Responses\CachedResponseInfo.cpp" />
     <ClCompile Include="Cache\Persistence\Responses\CachedResponseManager.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\RawWSObjectsReader.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\Upgrader.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderBase.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.cpp" />
@@ -211,6 +212,7 @@
     <ClInclude Include="Cache\Persistence\RepositoryInfoStore.h" />
     <ClInclude Include="Cache\Persistence\Responses\CachedResponseInfo.h" />
     <ClInclude Include="Cache\Persistence\Responses\CachedResponseManager.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\RawWSObjectsReader.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\Upgrader.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderBase.h" />
@@ -341,6 +343,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.06.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.07.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.08.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.09.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\MetaSchema.02.00.ecschema.xml" />
     <Xml Include="WSClient.PartFile.xml">
       <SubType>Designer</SubType>
