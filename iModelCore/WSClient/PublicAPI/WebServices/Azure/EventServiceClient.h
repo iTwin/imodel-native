@@ -25,6 +25,7 @@ struct EventServiceClient
         Utf8String m_userId;
         Utf8String m_fullAddress;
         Utf8String m_token;
+        SimpleCancellationTokenPtr m_ct;
         HttpResponse MakeReceiveDeleteRequest(bool longPolling);
         bool Receive(Utf8StringR msgOut, int retry, bool longPolling);
 
@@ -34,6 +35,7 @@ struct EventServiceClient
         WSCLIENT_EXPORT bool Receive(Utf8StringR msgOut, bool longPolling = true);
         WSCLIENT_EXPORT HttpResponse Receive(bool longPolling = true);
         WSCLIENT_EXPORT void UpdateSASToken(Utf8StringCR sasToken);
+        WSCLIENT_EXPORT void CancelRequest();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
