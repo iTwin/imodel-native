@@ -195,7 +195,7 @@ BeFileName BaseCacheTest::GetTestSchemaPath()
     return testSchemaPath;
     }
 
-std::shared_ptr<DataSourceCache> BaseCacheTest::GetTestCache()
+std::shared_ptr<DataSourceCache> BaseCacheTest::GetTestCache(CacheEnvironment targetEnvironment)
     {
     // Prepare seed files
     if (!s_seedCacheFolderPath.DoesPathExist())
@@ -211,7 +211,7 @@ std::shared_ptr<DataSourceCache> BaseCacheTest::GetTestCache()
 
     // Open target cache
     auto cache = std::make_shared<DataSourceCache>();
-    cache->Open(s_targetCachePath, s_targetEnvironment);
+    cache->Open(s_targetCachePath, targetEnvironment);
     EXPECT_FALSE(nullptr == cache);
     return cache;
     }

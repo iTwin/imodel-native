@@ -54,16 +54,24 @@ BeFileName FileInfo::GetFilePath() const
     if (nullptr == m_pathProvider)
         return BeFileName();
 
+    if (GetFileName().empty())
+        return BeFileName();
+
     return m_pathProvider->GetAbsoluteFilePath(GetLocation(), GetRelativePath());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FileInfo::SetFilePath(FileCache location, BeFileNameCR relativePath, Utf8StringCR fileName)
+void FileInfo::SetFilePath(FileCache location, BeFileName relativeDir, Utf8StringCR fileName)
     {
+    if (!relativeDir.empty())
+        relativeDir.AppendSeparator();
+
+    relativeDir.AppendToPath(BeFileName(fileName));
+
     SetLocation(location);
-    SetRelativePath(relativePath);
+    SetRelativePath(relativeDir);
     SetFileName(fileName);
     }
 

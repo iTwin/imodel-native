@@ -45,12 +45,13 @@ struct FileInfo : public ChangeInfo
             
         //! Get name of the file. 
         Utf8String GetFileName() const;
-        //! Get absolute file path
+
+        //! Get absolute file path. Returns empty if path not fully set
         BeFileName GetFilePath() const;
-        
         //! Set file path. Set fileName to empty if file is not yet cached
-        void SetFilePath(FileCache location, BeFileNameCR relativePath, Utf8StringCR fileName);
-        //! Get relative path for the file
+        void SetFilePath(FileCache location, BeFileName relativeDir, Utf8StringCR fileName);
+
+        //! Get relative dir for the file
         BeFileName GetRelativePath() const;
 
         //! Set cache location

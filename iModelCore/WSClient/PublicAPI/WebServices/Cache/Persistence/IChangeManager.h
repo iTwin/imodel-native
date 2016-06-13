@@ -117,7 +117,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
 
         //! Modify file content for existing object.
         //! @param[in] instanceKey
-        //! @param[in] filePath - path to file that should be cached
+        //! @param[in] filePath - path to file that should override cached file. Will also accept same cached file path.
         //! @param[in] copyFile - pass false to move file to cache and true to copy and leave original
         //! @param[in] syncStatus
         virtual BentleyStatus ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus = SyncStatus::Ready) = 0;
