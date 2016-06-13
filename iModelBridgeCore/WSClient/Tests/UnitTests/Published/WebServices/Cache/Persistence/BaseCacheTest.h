@@ -23,14 +23,14 @@ class BaseCacheTest : public WSClientBaseTest
         static CacheEnvironment s_targetEnvironment;
 
     protected:
-        std::shared_ptr<DataSourceCache> GetTestCache();
+        std::shared_ptr<DataSourceCache> GetTestCache(CacheEnvironment environment = GetTestCacheEnvironment());
         std::shared_ptr<DataSourceCache> CreateTestCache(Utf8StringCR fileName = "newTestCache.ecdb");
         std::shared_ptr<DataSourceCache> CreateTestCache(BeFileName filePath, CacheEnvironment environment);
 
         virtual ECSchemaPtr GetTestSchema();
         virtual ECSchemaPtr GetTestSchema2();
         BeFileName GetTestSchemaPath();
-        CacheEnvironment GetTestCacheEnvironment();
+        static CacheEnvironment GetTestCacheEnvironment();
 
     public:
         static void SetUpTestCase();

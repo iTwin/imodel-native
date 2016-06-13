@@ -948,7 +948,7 @@ BentleyStatus DataSourceCache::RemoveFile(ObjectIdCR objectId)
     if (!info.IsInCache())
         return SUCCESS;
 
-    if (SUCCESS != m_state->GetFileStorage().CleanupCachedFile(info))
+    if (SUCCESS != m_state->GetFileStorage().RemoveStoredFile(info))
         return ERROR;
 
     return SUCCESS;
@@ -1289,12 +1289,12 @@ BentleyStatus DataSourceCache::RemoveRootsByPrefix(Utf8StringCR rootPrefix)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativePath)
+BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativeDir)
     {
     //! TODO: consider removing FileCache parameter and auotmaically use Root persistence instead
     LogCacheDataForMethod();
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
-    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation, &externalRelativePath) ||
+    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation, &externalRelativeDir) ||
         SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
         {
         return ERROR;

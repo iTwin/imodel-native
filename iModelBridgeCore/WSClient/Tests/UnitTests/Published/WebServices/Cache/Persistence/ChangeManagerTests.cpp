@@ -596,20 +596,38 @@ TEST_F(ChangeManagerTests, ModifyFile_CopyFileTrue_CopiesFileToPersistentLocatio
     EXPECT_TRUE(filePath.DoesPathExist());
     }
 
-TEST_F(ChangeManagerTests, ModifyFile_Twice_LeavesChangeNumberAndChangesContentAndRemovesOldFile)
+TEST_F(ChangeManagerTests, ModifyFile_TwiceWithDifferentFiles_LeavesChangeNumberAndChangesContentAndRemovesOldFile)
     {
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     // Act
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("A"), false));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("A", "A.txt"), false));
     auto filePathA = cache->ReadFilePath(instance);
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("B"), false));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("B", "B.txt"), false));
     // Assert
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     EXPECT_EQ(1, cache->GetChangeManager().GetFileChange(instance).GetChangeNumber());
     EXPECT_FALSE(filePathA.DoesPathExist());
     EXPECT_EQ("B", SimpleReadFile(cache->ReadFilePath(instance)));
+    }
+
+TEST_F(ChangeManagerTests, ModifyFile_TwiceWithSameFileName_LeavesChangeNumberAndChangesContentInSameFile)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+    // Act
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("A", "Foo.txt"), false));
+    auto path1 = cache->ReadFilePath(instance);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("B", "Foo.txt"), false));
+    auto path2 = cache->ReadFilePath(instance);
+    // Assert
+    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    EXPECT_EQ(1, cache->GetChangeManager().GetFileChange(instance).GetChangeNumber());
+    EXPECT_TRUE(path1.DoesPathExist());
+    EXPECT_EQ(path1, path2);
+    EXPECT_EQ("B", SimpleReadFile(path1));
     }
 
 TEST_F(ChangeManagerTests, ModifyFile_FileAlreadyCached_ReplacesFileAndSetsChangeStatus)
