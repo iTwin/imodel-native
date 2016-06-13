@@ -106,6 +106,7 @@ struct Task : RefCounted<NonCopyableClass>
         Heal,
         DefineGeometryTexture,
         ReadImage,
+        DestroyTarget,
     };
 
     //! The outcome of the processing of a Task.
@@ -1348,7 +1349,6 @@ protected:
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
     virtual void _OnResized() {}
-
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
@@ -1366,6 +1366,7 @@ public:
         DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
     };
+    virtual void _OnDestroy() {}
     virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
