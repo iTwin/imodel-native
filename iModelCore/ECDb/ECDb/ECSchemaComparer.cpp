@@ -2281,6 +2281,54 @@ void ECPropertyValueChange::_Optimize()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECPropertyValueChange::InitValue(ECN::PrimitiveType type)
+    {
+    if (m_type == type)
+        return SUCCESS;
+
+    if (type == static_cast<ECN::PrimitiveType>(0))
+        {
+        m_value = nullptr;
+        return SUCCESS;
+        }
+
+    switch (type)
+        {
+            case ECN::PRIMITIVETYPE_Binary:
+                m_value = std::unique_ptr<ECChange>(new BinaryChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_Boolean:
+                m_value = std::unique_ptr<ECChange>(new BooleanChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_DateTime:
+                m_value = std::unique_ptr<ECChange>(new DateTimeChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_Double:
+                m_value = std::unique_ptr<ECChange>(new DoubleChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_IGeometry:
+            {
+            LOG.errorv("ECSchemaComparer: Changes in ECProperties of type IGeometry are not supported.");
+            return ERROR;
+            }
+            case ECN::PRIMITIVETYPE_Integer:
+                m_value = std::unique_ptr<ECChange>(new Int32Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_Long:
+                m_value = std::unique_ptr<ECChange>(new Int64Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_Point2D:
+                m_value = std::unique_ptr<ECChange>(new Point2DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_Point3D:
+                m_value = std::unique_ptr<ECChange>(new Point3DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_String:
+                m_value = std::unique_ptr<ECChange>(new StringChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            default:
+                BeAssert(false && "Unexpected value for PrimitiveType");
+                return ERROR;
+        }
+
+    m_type = type;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 ECPropertyValueChange::ECPropertyValueChange(ChangeState state, SystemId systemId, ECChange const* parent, Utf8CP customId)
     : ECChange(state, SystemId::PropertyValue, parent, customId),m_type(static_cast<PrimitiveType>(0))
     {

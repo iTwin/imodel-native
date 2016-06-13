@@ -905,50 +905,7 @@ struct ECPropertyValueChange : ECChange
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
         virtual bool _IsEmpty() const override;
         virtual void _Optimize();
-        BentleyStatus InitValue(ECN::PrimitiveType type)
-            {
-            if (m_type == type)
-                return SUCCESS;
-
-            if (type == static_cast<ECN::PrimitiveType>(0))
-                {
-                m_value = nullptr;
-                return SUCCESS;
-                }
-
-            switch (type)
-                {
-                    case ECN::PRIMITIVETYPE_Binary:
-                        m_value = std::unique_ptr<ECChange>(new BinaryChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case ECN::PRIMITIVETYPE_Boolean:
-                        m_value = std::unique_ptr<ECChange>(new BooleanChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case ECN::PRIMITIVETYPE_DateTime:
-                        m_value = std::unique_ptr<ECChange>(new DateTimeChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case ECN::PRIMITIVETYPE_Double:
-                        m_value = std::unique_ptr<ECChange>(new DoubleChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case ECN::PRIMITIVETYPE_IGeometry:
-                        {
-                        BeAssert(false && "Geometry type is not supported");
-                        return ERROR;
-                        }
-                    case ECN::PRIMITIVETYPE_Integer:
-                        m_value = std::unique_ptr<ECChange>(new Int32Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case ECN::PRIMITIVETYPE_Long:
-                        m_value = std::unique_ptr<ECChange>(new Int64Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case ECN::PRIMITIVETYPE_Point2D:
-                        m_value = std::unique_ptr<ECChange>(new Point2DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case ECN::PRIMITIVETYPE_Point3D:
-                        m_value = std::unique_ptr<ECChange>(new Point3DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case ECN::PRIMITIVETYPE_String:
-                        m_value = std::unique_ptr<ECChange>(new StringChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    default:
-                        BeAssert(false && "Unexpected value for PrimitiveType");
-                        return ERROR;
-                }
-
-            m_type = type;
-            return SUCCESS;
-            }
+        BentleyStatus InitValue(ECN::PrimitiveType type);
 
         template< typename T >
         class Converter
