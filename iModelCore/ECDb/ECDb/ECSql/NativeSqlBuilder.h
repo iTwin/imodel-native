@@ -121,7 +121,10 @@ public:
     void AddSetExp(Utf8CP columnName, uint64_t value) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
     void AddSetExp(Utf8CP columnName, int32_t value) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
     void AddSetExp(Utf8CP columnName, int64_t value) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
+    void AddSetToNull(Utf8CP columnName) { m_updateExpressions.push_back(std::make_pair(columnName, ECN::ECValue())); }
+    void AddWhereExp(Utf8CP columnName, uint64_t value) { m_whereExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
     void AddWhereExp(Utf8CP columnName, int64_t value) { m_whereExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
+    void AddWhereExp(Utf8CP columnName, int32_t value) { m_whereExpressions.push_back(std::make_pair(columnName, ECN::ECValue(value))); }
 
     BentleyStatus ExecuteSql(ECDb const&) const;
     };

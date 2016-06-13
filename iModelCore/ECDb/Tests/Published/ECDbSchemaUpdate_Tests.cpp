@@ -5591,7 +5591,7 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='email' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying ExtendedTypeName is not supported");
+        "</ECSchema>", true);
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), modifiedExtendedType);
     ASSERT_FALSE(asserted);
@@ -6037,7 +6037,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     05/16
+// @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
     {
@@ -6153,6 +6153,9 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
     {
     SchemaItem schemaItem(
@@ -6209,5 +6212,285 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
 
     IECInstancePtr propertyCA = ecProperty->GetCustomAttribute("TestCA");
     ASSERT_TRUE(propertyCA == nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddAndUpdatePropertiesWithEnumAndKoQ)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Length' typeName='double' />" // kindOfQuantity='s1:MyKindOfQuantity'
+        "    <ECProperty propertyName='Homepage' typeName='string' />" // extendedTypeName='URL'
+        "    <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' />" //kindOfQuantity = 's1:MyKindOfQuantity'
+        "    <ECArrayProperty propertyName='Favorites' typeName='string'  minOccurs='0' maxOccurs='unbounded' />"
+        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem deleteAllCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='My KindOfQuantity'"
+        "                    displayLabel='My KindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />"
+        "        <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
+        "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>"
+        "        <ECArrayProperty propertyName='Favorites' typeName='string' extendedTypeName='URL' minOccurs='0' maxOccurs='unbounded' />"
+        "        <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    ASSERT_FALSE(asserted);
+    auto nonStrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ASSERT_TRUE(nonStrictEnum != nullptr);
+    auto myKindOfQuantity = ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
+    ASSERT_TRUE(myKindOfQuantity != nullptr);
+    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(foo != nullptr);
+    
+    auto foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
+    auto foo_homepage = foo->GetPropertyP("Homepage")->GetAsPrimitiveProperty();
+    auto foo_alternativeLengths = foo->GetPropertyP("AlternativeLengths")->GetAsArrayProperty();
+    auto foo_favorites = foo->GetPropertyP("Favorites")->GetAsArrayProperty();
+    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+    ASSERT_TRUE(foo_length != nullptr);
+    ASSERT_TRUE(foo_homepage != nullptr);
+    ASSERT_TRUE(foo_alternativeLengths != nullptr);
+    ASSERT_TRUE(foo_favorites != nullptr);
+    ASSERT_TRUE(foo_type != nullptr);
+    ASSERT_TRUE(foo_length->GetKindOfQuantity() == myKindOfQuantity);
+    ASSERT_TRUE(foo_alternativeLengths->GetKindOfQuantity() == myKindOfQuantity);
+    ASSERT_TRUE(foo_homepage->GetExtendedTypeName() == "URL");
+    ASSERT_TRUE(foo_favorites->GetExtendedTypeName() == "URL");
+    ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToUnStrictEnum)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem deleteAllCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    ASSERT_FALSE(asserted);
+    auto nonStrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ASSERT_TRUE(nonStrictEnum != nullptr);
+    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(foo != nullptr);
+
+    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+    ASSERT_TRUE(foo_type != nullptr);
+    ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToStrictEnum)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem modified(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='StrictEnum' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false);
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, modified);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToAnotherPrimitive)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem modified(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='string' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false);
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, modified);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangingEnumToPrimitive)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='StrictEnum' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem modified(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, modified);
+    auto strictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+    ASSERT_TRUE(strictEnum != nullptr);
+    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(foo != nullptr);
+
+    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+    ASSERT_TRUE(foo_type != nullptr);
+    ASSERT_TRUE(foo_type->GetEnumeration() == nullptr);
+    ASSERT_TRUE(foo_type->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangingEnumToEnum)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='StrictEnum' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem modified(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEnumeration typeName='UnStrictEnum' backingTypeName='int' isStrict='False'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='UnStrictEnum' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, modified);
+    auto strictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+    ASSERT_TRUE(strictEnum != nullptr);
+    auto unstrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "UnStrictEnum");
+    ASSERT_TRUE(unstrictEnum != nullptr);
+
+    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(foo != nullptr);
+
+    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+    ASSERT_TRUE(foo_type != nullptr);
+    ASSERT_TRUE(foo_type->GetEnumeration() == unstrictEnum);
     }
 END_ECDBUNITTESTS_NAMESPACE
