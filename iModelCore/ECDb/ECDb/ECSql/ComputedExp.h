@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ComputedExp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -78,7 +78,7 @@ private:
     virtual Utf8String _ToString() const override;
 
     FinalizeParseStatus CanCompareTypes(ECSqlParseContext&, ComputedExp const& lhs, ComputedExp const& rhs) const;
-    static bool ContainsStructArrayProperty(ECClassCR);
+    static bool ContainsStructArrayProperty(ECN::ECClassCR);
 
 public:
     BinaryBooleanExp(std::unique_ptr<ComputedExp> left, BooleanSqlOperator op, std::unique_ptr<ComputedExp> right);

@@ -7,12 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Ramanujam.Raman                 9 / 2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonReader::JsonReader(ECDbCR ecdb, ECN::ECClassId ecClassId) : m_ecDb(ecdb), m_statementCache(50, "JsonReader ECSqlStatement Cache")
+JsonReader::JsonReader(ECDbCR ecdb, ECClassId ecClassId) : m_ecDb(ecdb), m_statementCache(50, "JsonReader ECSqlStatement Cache")
     {
     m_ecClass = m_ecDb.Schemas().GetECClass(ecClassId);
     BeAssert(m_ecClass != nullptr && "Could not retrieve class with specified id");

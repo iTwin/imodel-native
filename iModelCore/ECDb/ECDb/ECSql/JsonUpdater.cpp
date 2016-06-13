@@ -8,12 +8,14 @@
 #include "ECDbPch.h"
 #include <ECObjects/ECJsonUtilities.h>
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonUpdater::JsonUpdater (ECDbCR ecdb, ECN::ECClassCR ecClass, Utf8CP ecsqlOptions)
+JsonUpdater::JsonUpdater (ECDbCR ecdb, ECClassCR ecClass, Utf8CP ecsqlOptions)
 : m_ecdb (ecdb), m_ecClass (ecClass), m_ecinstanceUpdater (ecdb, ecClass, ecsqlOptions)
     {}
 
@@ -28,7 +30,7 @@ bool JsonUpdater::IsValid () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-IECInstancePtr JsonUpdater::CreateEmptyInstance(ECN::ECClassCR ecClass) const
+IECInstancePtr JsonUpdater::CreateEmptyInstance(ECClassCR ecClass) const
     {
     return ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     }

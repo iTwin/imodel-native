@@ -274,7 +274,7 @@ struct ECSqlPrepareContext
                 Utf8CP GetOrignalECSql() const { return m_originalECSql.c_str(); }
                 bool HasParentOfJoinedTableECSql() const { return !m_parentOfJoinedTableECSql.empty(); }
                 bool HasJoinedTableECSql() const { return !m_joinedTableECSql.empty(); }
-                ECClassCR GetClass() const { return m_class; }
+                ECN::ECClassCR GetClass() const { return m_class; }
 
                 ParameterMap const& GetParameterMap() const { return m_parameterMap; }
                 bool IsUserProvidedECInstanceId()const { return m_ecinstanceIdIsUserProvided; }
@@ -344,30 +344,30 @@ struct ECSqlPrepareContext
 
         ECSqlStatementBase& m_ecsqlStatement;
         ECSqlPrepareContext const* m_parentCtx;
-        ArrayECPropertyCP m_parentArrayProperty;
+        ECN::ArrayECPropertyCP m_parentArrayProperty;
         ECSqlColumnInfo const* m_parentColumnInfo;
         NativeSqlBuilder m_nativeSqlBuilder;
         bool m_nativeStatementIsNoop;
         ExpScopeStack m_scopes;
         SelectionOptions m_selectionOptions;
         std::unique_ptr<JoinedTableInfo> m_joinedTableInfo;
-        ECClassId m_joinedTableClassId;
+        ECN::ECClassId m_joinedTableClassId;
 
     public:
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId);
-        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx, ECN::ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlPrepareContext const& parentCtx);
         //ECSqlPrepareContext is copyable. Using compiler-generated copy ctor and assignment op.
 
         ECDbCR GetECDb() const { return m_ecdb; }
         ECSqlPrepareContext const* GetParentContext() const { return m_parentCtx; }
-        ArrayECPropertyCP GetParentArrayProperty() const { return m_parentArrayProperty; }
+        ECN::ArrayECPropertyCP GetParentArrayProperty() const { return m_parentArrayProperty; }
         ECSqlColumnInfo const* GetParentColumnInfo() const { return m_parentColumnInfo; }
         SelectionOptions const& GetSelectionOptions() const { return m_selectionOptions; }
         SelectionOptions& GetSelectionOptionsR() { return m_selectionOptions; }
         
-        ECClassId GetJoinedTableClassId() const { return m_joinedTableClassId; }
+        ECN::ECClassId GetJoinedTableClassId() const { return m_joinedTableClassId; }
         bool IsParentOfJoinedTable() const { return m_joinedTableClassId.IsValid(); }
         void MarkAsParentOfJoinedTable(ECN::ECClassId classId) { BeAssert(!IsParentOfJoinedTable()); m_joinedTableClassId = classId; }
         JoinedTableInfo const* GetJoinedTableInfo() const { return m_joinedTableInfo.get(); }

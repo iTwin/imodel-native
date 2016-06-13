@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/SystemPropertyECSqlBinder.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,26 +54,7 @@ private:
     Utf8CP SystemPropertyToString() const;
 
 public:
-    SystemPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo, PropertyNameExp const& targetExp, bool isNoop, bool enforceConstraints)
-        : ECSqlBinder(ecsqlStatement, typeInfo, isNoop ? 0 : 1, true, true), m_sqliteIndex(-1), m_constraints(nullptr), m_bindValueIsNull(true), m_isNoop(isNoop)
-        {
-        BeAssert(targetExp.IsSystemProperty());
-        targetExp.TryGetSystemProperty(m_systemProperty);
-
-        //enforce constraints means to check whether the source/target ecclassid matches the relationship constraints
-        if (m_systemProperty != ECSqlSystemProperty::ECInstanceId && enforceConstraints)
-            {
-            auto classRefExp = targetExp.GetClassRefExp();
-            if (classRefExp->GetType() == Exp::Type::ClassName)
-                {
-                auto classNameExp = static_cast<ClassNameExp const*> (classRefExp);
-                auto const& classMap = classNameExp->GetInfo().GetMap();
-                if (classMap.IsRelationshipClassMap())
-                    m_constraints = static_cast<RelationshipClassMap const*> (&classMap);
-                }
-            }
-        }
-
+    SystemPropertyECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&, PropertyNameExp const&, bool isNoop, bool enforceConstraints);
     ~SystemPropertyECSqlBinder() {}
 
     //!Only called in a single case where ECSQL constains source/target ECClassId, but it does not map

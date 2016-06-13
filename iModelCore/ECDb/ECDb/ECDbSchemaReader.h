@@ -36,7 +36,7 @@ struct DbECSchemaEntry
 struct DbECClassEntry
     {
     public:
-        ECClassId m_ecClassId;
+        ECN::ECClassId m_ecClassId;
         ECN::ECClassP m_cachedECClass;
 
         explicit DbECClassEntry(ECN::ECClassCR ecClass) : m_ecClassId(ecClass.GetId())
@@ -100,7 +100,7 @@ struct ECDbSchemaReader
             };
 
         ECDbCR m_db;
-        mutable ECSchemaCache m_cache;
+        mutable ECN::ECSchemaCache m_cache;
         mutable DbECSchemaMap m_ecSchemaCache;
         mutable DbECClassEntryMap m_ecClassCache;
         mutable DbECEnumEntryMap m_ecEnumCache;
@@ -110,8 +110,8 @@ struct ECDbSchemaReader
         ECN::ECSchemaCP GetECSchema(Context&, ECN::ECSchemaId const&, bool loadSchemaEntities) const;
         ECN::ECClassP GetECClass(Context&, ECN::ECClassId const&) const;
         bool TryGetECClassFromCache(ECN::ECClassP&, ECN::ECClassId const&) const;
-        ECEnumerationCP GetECEnumeration(Context&, Utf8CP schemaName, Utf8CP enumName) const;
-        KindOfQuantityCP GetKindOfQuantity(Context&, Utf8CP schemaName, Utf8CP koqName) const;
+        ECN::ECEnumerationCP GetECEnumeration(Context&, Utf8CP schemaName, Utf8CP enumName) const;
+        ECN::KindOfQuantityCP GetKindOfQuantity(Context&, Utf8CP schemaName, Utf8CP koqName) const;
 
         BentleyStatus LoadSchemaEntitiesFromDb(DbECSchemaEntry*, Context&, std::set<DbECSchemaEntry*>& fullyLoadedSchemas) const;
         BentleyStatus LoadECSchemaFromDb(DbECSchemaEntry*&, ECN::ECSchemaId const&) const;
@@ -123,8 +123,8 @@ struct ECDbSchemaReader
         BentleyStatus LoadECSchemaDefinition(DbECSchemaEntry*&, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECN::ECSchemaId const&) const;
 
         BentleyStatus ReadECSchema(DbECSchemaEntry*&, Context&, ECN::ECSchemaId const&, bool loadSchemaEntities) const;
-        BentleyStatus ReadECEnumeration(ECEnumerationP&, Context&, ECN::ECEnumerationId const&) const;
-        BentleyStatus ReadKindOfQuantity(KindOfQuantityP&, Context&, ECN::KindOfQuantityId const&) const;
+        BentleyStatus ReadECEnumeration(ECN::ECEnumerationP&, Context&, ECN::ECEnumerationId const&) const;
+        BentleyStatus ReadKindOfQuantity(ECN::KindOfQuantityP&, Context&, ECN::KindOfQuantityId const&) const;
 
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId const&) const;
 
@@ -135,7 +135,7 @@ struct ECDbSchemaReader
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId const&, bool loadSchemaEntities) const;
         ECN::ECClassCP GetECClass(ECN::ECClassId const&) const;
         ECN::ECEnumerationCP GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
-        KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
+        ECN::KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId const&) const;
         bool TryGetECClassId(ECN::ECClassId&, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;

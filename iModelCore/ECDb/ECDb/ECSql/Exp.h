@@ -36,17 +36,17 @@ public:
         static const int NOT_ARRAY = -1;
 
         Utf8String m_propertyName;
-        ECPropertyCP m_property;
+        ECN::ECPropertyCP m_property;
         int m_arrayIndex;
 
-        void SetProperty(ECPropertyCR property);
+        void SetProperty(ECN::ECPropertyCR property);
         void ClearResolvedProperty() { m_property = nullptr; }
 
     public: 
         Location(Utf8CP name, int arrayIndex) : m_propertyName(name), m_property(nullptr), m_arrayIndex(arrayIndex) { BeAssert(!Utf8String::IsNullOrEmpty(name)); }
             
         Utf8CP GetPropertyName() const { return m_propertyName.c_str(); }
-        ECPropertyCP GetProperty() const { return m_property; }
+        ECN::ECPropertyCP GetProperty() const { return m_property; }
         bool HasArrayIndex() const { return GetArrayIndex() != NOT_ARRAY; }
         int GetArrayIndex() const { return m_arrayIndex; }
 

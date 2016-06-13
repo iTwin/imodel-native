@@ -6,6 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //******************************** PropertyMapSystem ****************************************

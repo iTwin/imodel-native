@@ -111,8 +111,8 @@ struct ECDbMap :NonCopyableClass
         MappingStatus AddClassMap(ClassMapPtr&) const;
         ClassMapsByTable GetClassMapsByTable() const;
         BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
-        std::vector<ECClassCP> GetBaseClassesNotAlreadyMapped(ECClassCR ecclass) const;
-        static void GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList);
+        std::vector<ECN::ECClassCP> GetBaseClassesNotAlreadyMapped(ECN::ECClassCR ecclass) const;
+        static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList);
 
     public:
         explicit ECDbMap(ECDbCR ecdb);
@@ -138,7 +138,6 @@ struct ECDbMap :NonCopyableClass
         LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
         ECDbCR GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
-        std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, bool ignoreJoinedTables) const;
     };
 
 

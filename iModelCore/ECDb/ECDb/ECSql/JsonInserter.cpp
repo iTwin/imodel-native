@@ -8,12 +8,14 @@
 #include "ECDbPch.h"
 #include <ECObjects/ECJsonUtilities.h>
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonInserter::JsonInserter (ECDbCR ecdb, ECN::ECClassCR ecClass) : m_ecClass (ecClass), m_ecinstanceInserter (ecdb, ecClass) {}
+JsonInserter::JsonInserter (ECDbCR ecdb, ECClassCR ecClass) : m_ecClass (ecClass), m_ecinstanceInserter (ecdb, ecClass) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14

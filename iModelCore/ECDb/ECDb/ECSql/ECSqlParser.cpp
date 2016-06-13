@@ -14,6 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 using namespace std;
 using namespace connectivity;
+USING_NAMESPACE_BENTLEY_EC
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    04/2016

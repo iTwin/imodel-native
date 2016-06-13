@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveArrayToColumnECSqlBinder.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,7 +29,7 @@ private:
         ECDbCR m_ecdb;
         uint32_t m_arrayElementIndex;
         uint32_t m_arrayPropertyIndex;
-        IECInstanceP m_instance;
+        ECN::IECInstanceP m_instance;
         ECSqlTypeInfo const& m_arrayTypeInfo;
 
         virtual IECSqlPrimitiveBinder& _BindPrimitive() override;
@@ -49,22 +49,22 @@ private:
         virtual ECSqlStatus _BindPoint3D (DPoint3dCR value) override;
         virtual ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
 
-        ECSqlStatus VerifyType(PrimitiveType type) const;
-        ECSqlStatus SetValue(ECValueCR value);
+        ECSqlStatus VerifyType(ECN::PrimitiveType) const;
+        ECSqlStatus SetValue(ECN::ECValueCR);
 
     public:
         ArrayElementBinder(ECDbCR, ECSqlTypeInfo const& arrayTypeInfo, uint32_t arrayPropertyIndex);
         ~ArrayElementBinder() {}
-        void Initialize(uint32_t arrayElementIndex, IECInstanceR instance);
+        void Initialize(uint32_t arrayElementIndex, ECN::IECInstanceR instance);
         };
 
 private:
     const uint32_t ARRAY_PROPERTY_INDEX = 1;
 
-    mutable StandaloneECInstancePtr m_instance;
+    mutable ECN::StandaloneECInstancePtr m_instance;
     mutable ArrayElementBinder m_arrayElementBinder;
     mutable int m_currentArrayIndex;
-    ECClassCP m_arrayStorageClass;
+    ECN::ECClassCP m_arrayStorageClass;
     uint32_t m_initialCapacity;
     int m_sqliteIndex;
 
@@ -79,7 +79,7 @@ private:
     virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
 
     uint32_t GetCurrentArrayLength() const { return (uint32_t) (m_currentArrayIndex + 1); }
-    StandaloneECInstanceP GetInstance(bool create) const;
+    ECN::StandaloneECInstanceP GetInstance(bool create) const;
 
 public:
     PrimitiveArrayToColumnECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);

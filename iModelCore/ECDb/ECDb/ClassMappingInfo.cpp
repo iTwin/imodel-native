@@ -760,8 +760,8 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(UserECDbMapStra
         {
         //Table retrieval is only needed for the root rel class. Subclasses will use the tables of its base class
         //TODO: How should we handle this properly?
-        m_sourceTables = GetECDbMap().GetTablesFromRelationshipEnd(relClass->GetSource(), true);
-        m_targetTables = GetECDbMap().GetTablesFromRelationshipEnd(relClass->GetTarget(), true);
+        m_sourceTables = GetTablesFromRelationshipEnd(relClass->GetSource(), true);
+        m_targetTables = GetTablesFromRelationshipEnd(relClass->GetTarget(), true);
 
         if (m_sourceTables.empty() || m_targetTables.empty())
             {
@@ -905,7 +905,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(UserECDbMapStr
     const bool foreignKeyEndIsSource = resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
 
     //check that the referenced end tables (including joined tables) are 1 at most
-    std::set<DbTable const*> referencedTables = GetECDbMap().GetTablesFromRelationshipEnd(foreignKeyEndIsSource ? relClass->GetTarget() : relClass->GetSource(), false);
+    std::set<DbTable const*> referencedTables = GetTablesFromRelationshipEnd(foreignKeyEndIsSource ? relClass->GetTarget() : relClass->GetSource(), false);
     if (referencedTables.size() > 1)
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its foreign key end (%s) references more than one table (%s). See API docs for details on the mapping rules.",
@@ -917,8 +917,8 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(UserECDbMapStr
     //For the referenced end we are just interested in the primary table and ignore joined tables.
     const bool ignoreJoinedTableOnSource = !foreignKeyEndIsSource;
     const bool ignoreJoinedTableOnTarget = foreignKeyEndIsSource;
-    m_sourceTables = GetECDbMap().GetTablesFromRelationshipEnd(relClass->GetSource(), ignoreJoinedTableOnSource);
-    m_targetTables = GetECDbMap().GetTablesFromRelationshipEnd(relClass->GetTarget(), ignoreJoinedTableOnTarget);
+    m_sourceTables = GetTablesFromRelationshipEnd(relClass->GetSource(), ignoreJoinedTableOnSource);
+    m_targetTables = GetTablesFromRelationshipEnd(relClass->GetTarget(), ignoreJoinedTableOnTarget);
     
     if (m_sourceTables.empty() || m_targetTables.empty())
         {
@@ -1017,6 +1017,76 @@ bool RelationshipMappingInfo::DetermineAllowDuplicateRelationshipsFlagFromRoot(E
     BeAssert(baseRelClass.GetBaseClasses()[0]->GetRelationshipClassCP() != nullptr);
     return DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseRelClass.GetBaseClasses()[0]->GetRelationshipClassCP());
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd, bool ignoreJoinedTables) const
+    {
+    bool hasAnyClass = false;
+    std::set<ClassMap const*> classMaps = m_ecdbMap.GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+
+    if (hasAnyClass)
+        return std::set<DbTable const*>();
+
+    std::map<DbTable const*, std::set<DbTable const*>> joinedTables;
+    std::set<DbTable const*> tables;
+    for (ClassMap const* classMap : classMaps)
+        {
+        std::vector<DbTable*> const& classPersistInTables = classMap->GetTables();
+        if (classPersistInTables.size() == 1)
+            {
+            tables.insert(classPersistInTables.front());
+            continue;
+            }
+
+        for (DbTable const* table : classPersistInTables)
+            {
+            if (DbTable const* primaryTable = table->GetParentOfJoinedTable())
+                {
+                joinedTables[primaryTable].insert(table);
+                tables.insert(table);
+                }
+            }
+        }
+
+    for (auto const& pair : joinedTables)
+        {
+        DbTable const* primaryTable = pair.first;
+        std::set<DbTable const*> const& joinedTables = pair.second;
+
+        bool isPrimaryTableSelected = tables.find(primaryTable) != tables.end();
+        if (ignoreJoinedTables)
+            {
+            for (auto childTable : primaryTable->GetJoinedTables())
+                tables.erase(childTable);
+
+            tables.insert(primaryTable);
+            continue;
+            }
+
+        if (isPrimaryTableSelected)
+            {
+            for (DbTable const* joinedTable : joinedTables)
+                tables.erase(joinedTable);
+            }
+        }
+
+    if (!ignoreJoinedTables)
+        return tables;
+
+    std::map<PersistenceType, std::set<DbTable const*>> finalListOfTables;
+    for (DbTable const* table : tables)
+        {
+        finalListOfTables[table->GetPersistenceType()].insert(table);
+        }
+
+    return finalListOfTables[PersistenceType::Persisted];
+    }
+
+
+//***************** IndexMappingInfo ****************************************
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2016

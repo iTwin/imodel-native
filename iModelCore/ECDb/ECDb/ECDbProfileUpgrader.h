@@ -98,7 +98,7 @@ private:
     static Utf8CP GetECDbSystemECSchemaXml();
 
     static BentleyStatus ReadECDbSystemSchema(ECN::ECSchemaReadContextR readContext, Utf8CP ecdbFileName);
-    static BentleyStatus ReadSchemaFromDisk(ECN::ECSchemaReadContextR readContext, SchemaKey&, Utf8CP ecdbFileName);
+    static BentleyStatus ReadSchemaFromDisk(ECN::ECSchemaReadContextR readContext, ECN::SchemaKey&, Utf8CP ecdbFileName);
 
 public:
     static DbResult ImportProfileSchemas(ECDbCR);

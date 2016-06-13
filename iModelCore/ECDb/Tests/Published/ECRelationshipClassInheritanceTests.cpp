@@ -672,13 +672,13 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "  </ECRelationshipClass>"
     "</ECSchema>", false, "Subclass must not add ECProperties if base class has FK mapping"));
     
-/*    testSchemas.push_back(
+    testSchemas.push_back(
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                    "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "  </ECEntityClass>"
-                   "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                   "  <ECEntityClass typeName='Element' >"
                    "    <ECProperty propertyName='Code' typeName='string' />"
                    "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
                    "  </ECEntityClass>"
@@ -686,7 +686,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "    <BaseClass>Element</BaseClass>"
                    "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
                    "  </ECEntityClass>"
-                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Sealed' strength='embedding'>"
                    "    <Source cardinality='(0,1)' polymorphic='True'>"
                    "      <Class class='Model' />"
                    "    </Source>"
@@ -694,16 +694,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "      <Class class='Element' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
-                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
-                   "   <BaseClass>ModelHasElements</BaseClass>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
-                   "      <Class class='Model' />"
-                   "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
-                   "      <Class class='PhysicalElement' />"
-                   "    </Target>"
-                   "  </ECRelationshipClass>"
-                   "</ECSchema>", false, "FK end maps to multiple primary tables"));*/
+                   "</ECSchema>", false, "FK end maps to multiple primary tables"));
 
     AssertSchemaImport(testSchemas, "invalidrelinheritance.ecdb");
     }
