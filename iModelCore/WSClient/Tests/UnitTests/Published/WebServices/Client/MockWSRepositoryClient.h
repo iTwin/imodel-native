@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/MockWSRepositoryClient.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,8 +26,6 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
         Utf8String m_id;
 
     public:
-        typedef std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> PackagedAsyncTaskVoidWSError;
-
         static std::shared_ptr<NiceMock<MockWSRepositoryClient>> Create(Utf8StringCR id = "test")
             {
             DefaultValue<AsyncTaskPtr<WSObjectsResult>>::Set(CreateCompletedAsyncTask(WSObjectsResult()));
@@ -61,7 +59,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
 
         MOCK_METHOD1(SetCredentials, void(Credentials credentials));
 
-        MOCK_CONST_METHOD1(VerifyAccess, PackagedAsyncTaskVoidWSError
+        MOCK_CONST_METHOD1(VerifyAccess, AsyncTaskPtr<WSVoidResult>
             (
             ICancellationTokenPtr canncelationToken
             ));
