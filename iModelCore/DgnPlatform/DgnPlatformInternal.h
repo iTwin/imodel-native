@@ -112,4 +112,18 @@ extern double const fc_hugeVal;
 #define DIMLABEL_SECONDARY_MASTUNIT     STRING_LINKAGE_KEY_SecondaryMastUnitLabel
 #define DIMLABEL_SECONDARY_SUBUNIT      STRING_LINKAGE_KEY_SecondarySubUnitLabel
 
+#if !defined (NDEBUG)
+    #define DEBUG_LOGGING 1
+#endif
+
+#if defined (DEBUG_LOGGING)
+#   define DEBUG_PRINTF THREADLOG.debugv
+#   define WARN_PRINTF THREADLOG.warningv
+#   define ERROR_PRINTF THREADLOG.errorv
+#else
+#   define DEBUG_PRINTF(...) 
+#   define WARN_PRINTF(...)
+#   define ERROR_PRINTF(...)
+#endif
+
 #endif // #ifndef __DGNCOREINTERNAL_H__

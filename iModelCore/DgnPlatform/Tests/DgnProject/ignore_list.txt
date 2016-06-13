@@ -34,5 +34,11 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line s
 
 ECInstanceSelectTests.ImportSchema			# This test doesn't really do anything and it takes 40 seconds to run
 
-DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Raman
-DgnECNavigatorTest.PlantElementInfo # Improperly creating a GroupInformationElement when the "NamedGroupOwnsMembers" CA is found - Shaun/Carole
+DependencyRevisionTest.TestDependency # continues to fail intermittently, last time on 61-16q2 winx64 optimized.
+#F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(687): error: Value of: c->GetIntegerProperty(2)
+#Actual: 123
+#Expected: 321
+#F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(688): error: Value of: c->GetIntegerProperty(3)
+#Actual: 456
+#Expected: 654
+

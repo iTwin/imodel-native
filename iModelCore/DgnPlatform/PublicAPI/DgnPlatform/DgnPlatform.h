@@ -147,6 +147,7 @@ DGNPLATFORM_TYPEDEFS(IRepositoryManager)
 DGNPLATFORM_TYPEDEFS(ISolidKernelEntity)
 DGNPLATFORM_TYPEDEFS(ISubEntity)
 DGNPLATFORM_TYPEDEFS(IVariableMonitor)
+DGNPLATFORM_TYPEDEFS (LineStyleContext)
 DGNPLATFORM_TYPEDEFS(LinkElement)
 DGNPLATFORM_TYPEDEFS(LinkModel)
 DGNPLATFORM_TYPEDEFS(NotificationManager)
@@ -898,11 +899,18 @@ enum class StandardView
 struct ColorDef
 {
 private:
-    Byte    m_red;
-    Byte    m_green;
-    Byte    m_blue;
-    Byte    m_alpha;
-    uint32_t* AsUInt32() {return reinterpret_cast<uint32_t*>(this);}
+
+union
+    {
+    uint32_t m_intVal;
+    struct
+        {
+        Byte m_red;
+        Byte m_green;
+        Byte m_blue;
+        Byte m_alpha;
+        };
+    };
 
 public:
     void SetColors(Byte r, Byte g, Byte b, Byte a) {m_red = r; m_green = g; m_blue = b; m_alpha = a;}
@@ -916,14 +924,15 @@ public:
     Byte GetBlue() const {return m_blue;}
     Byte GetAlpha() const {return m_alpha;}
 
-    uint32_t GetValue() const {return *reinterpret_cast<uint32_t const*>(this);}
+    uint32_t GetValue() const {return m_intVal;} //! for use with Render primitives
+    uint32_t GetValueRgba() const {return ColorDef(m_alpha, m_blue, m_green, m_red).GetValue();} //! for use with UI controls
     uint32_t GetValueNoAlpha() const {return 0xffffff & GetValue();}
 
     bool operator==(ColorDef const& rhs) const {return GetValue() == rhs.GetValue();}
     bool operator!=(ColorDef const& rhs) const {return GetValue() != rhs.GetValue();}
 
-    ColorDef() {*AsUInt32() = 0;}
-    explicit ColorDef(uint32_t intval) {*AsUInt32()=intval;}
+    ColorDef() {m_intVal = 0;}
+    explicit ColorDef(uint32_t intval) {m_intVal=intval;}
     ColorDef(Byte red, Byte green, Byte blue, Byte alpha=0) {SetColors(red,green,blue,alpha);}
 
     static ColorDef Black()       {return ColorDef(0,0,0);}

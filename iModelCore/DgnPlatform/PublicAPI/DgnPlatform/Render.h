@@ -366,10 +366,13 @@ private:
     DVec3d      m_endTangent;
     RotMatrix   m_planeByRows;
     TexturePtr  m_texture;
+    bool        m_useLinePixels;
+    uint32_t    m_linePixels;
+
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
-    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context);
+    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context, GeometryParamsR);
 
     void Clear() {m_lStyle = nullptr; m_texture = nullptr;}
     void Init(ILineStyleCP);
@@ -433,8 +436,10 @@ public:
     void SetXElemPhase(double last) {m_xElemPhase = last; m_options.xElemPhaseSet=true;}
     void SetElementClosed(bool closed) {m_options.elementIsClosed = closed;}
     void SetIsCurve(bool isCurve) {m_options.isCurve = isCurve;}
+    bool UseLinePixels() const {return m_useLinePixels;}
+    uint32_t GetLinePixels() const {return m_linePixels;}
+    void SetUseLinePixels(uint32_t linePixels){m_linePixels = linePixels; m_useLinePixels = true;}
 
-    DGNPLATFORM_EXPORT void ConvertLineStyleToTexture(ViewContextR context, bool force);
     bool ContinuationXElems() const {return m_options.continuationXElems;}
     DGNPLATFORM_EXPORT void ClearContinuationData();
     DGNPLATFORM_EXPORT void CheckContinuationData();
@@ -472,7 +477,7 @@ public:
     void SetStartTangent(DVec3dCR startTangent) {m_startTangent = startTangent;}
     void SetEndTangent(DVec3dCR endTangent) {m_endTangent = endTangent;}
 
-    DGNPLATFORM_EXPORT void Cook(ViewContextR);
+    DGNPLATFORM_EXPORT void Cook(ViewContextR, GeometryParamsR);
  };
 
 struct ISprite;
@@ -1255,7 +1260,7 @@ struct Plan
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
-
+    ClipPrimitiveCPtr m_activeVolume;
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 
@@ -1338,6 +1343,7 @@ protected:
     GraphicListPtr     m_terrain;
     GraphicListPtr     m_dynamics;
     Decorations        m_decorations;
+    double             m_frameRateGoal; // frames per second
     BeAtomic<uint32_t> m_graphicsPerSecondScene;
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
@@ -1348,7 +1354,7 @@ protected:
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
 
-    DGNVIEW_EXPORT Target(SystemR);
+    DGNVIEW_EXPORT Target(SystemR, double frameRateGoal);
     DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
@@ -1392,6 +1398,9 @@ public:
     TexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
+    static double DefaultFrameRateGoal() {return 15.0;}
+    double GetFrameRateGoal() const {return m_frameRateGoal;}
+    void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }
