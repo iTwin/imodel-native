@@ -74,6 +74,13 @@
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="UpdateDate" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.10">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="CachedObjectInfo">

@@ -62,16 +62,24 @@ BeFileName FileInfo::GetFilePath() const
     if (nullptr == m_pathProvider)
         return BeFileName();
 
+    if (GetFileName().empty())
+        return BeFileName();
+
     return m_pathProvider->GetAbsoluteFilePath(GetLocation(), GetRelativePath());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FileInfo::SetFilePath(FileCache location, BeFileNameCR relativePath, Utf8StringCR fileName)
+void FileInfo::SetFilePath(FileCache location, BeFileName relativeDir, Utf8StringCR fileName)
     {
+    if (!relativeDir.empty())
+        relativeDir.AppendSeparator();
+
+    relativeDir.AppendToPath(BeFileName(fileName));
+
     SetLocation(location);
-    SetRelativePath(relativePath);
+    SetRelativePath(relativeDir);
     SetFileName(fileName);
     }
 
@@ -165,6 +173,22 @@ DateTime FileInfo::GetFileCacheDate() const
 void FileInfo::SetFileCacheDate(DateTimeCR utcDate)
     {
     m_infoJson[CLASS_CachedFileInfo_PROPERTY_CacheDate] = ECDbHelper::UtcDateToString(utcDate);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 
++---------------+---------------+---------------+---------------+---------------+------*/
+DateTime FileInfo::GetFileUpdateDate() const
+    {
+    return BeJsonUtilities::DateTimeFromValue(m_infoJson[CLASS_CachedFileInfo_PROPERTY_UpdateDate]);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              
++---------------+---------------+---------------+---------------+---------------+------*/
+void FileInfo::SetFileUpdateDate(DateTimeCR utcDate)
+    {
+    m_infoJson[CLASS_CachedFileInfo_PROPERTY_UpdateDate] = ECDbHelper::UtcDateToString(utcDate);
     }
 
 /*--------------------------------------------------------------------------------------+

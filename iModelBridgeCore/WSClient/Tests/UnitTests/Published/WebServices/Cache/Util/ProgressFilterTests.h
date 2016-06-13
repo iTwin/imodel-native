@@ -10,6 +10,5 @@
 
 #include "../../../Utils/WebServicesTestsHelper.h"
 
-class ProgressFilterTests : public ::testing::Test
-    {
-    };
+class ProgressFilterTests : public WSClientBaseTest
+    {};

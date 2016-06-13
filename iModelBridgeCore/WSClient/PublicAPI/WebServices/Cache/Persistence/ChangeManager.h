@@ -57,6 +57,7 @@ struct ChangeManager : public IChangeManager
             uint64_t optionalChangeNumber
             );
 
+        BentleyStatus MarkFileAsModified(struct FileInfo& info, SyncStatus syncStatus);
         BentleyStatus SetupNewRevision(struct ChangeInfo& info);
         InstanceRevisionPtr ReadObjectRevision(ECInstanceKeyCR instanceKey);
         InstanceRevisionPtr ReadRelationshipRevision(ECInstanceKeyCR instanceKey);
@@ -122,6 +123,7 @@ struct ChangeManager : public IChangeManager
 
         WSCACHE_EXPORT BentleyStatus ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus = SyncStatus::Ready) override;
         WSCACHE_EXPORT BentleyStatus ModifyFileName(ECInstanceKeyCR instanceKey, Utf8StringCR newFileName) override;
+        WSCACHE_EXPORT BentleyStatus DetectFileModification(ECInstanceKeyCR instanceKey, SyncStatus syncStatus = SyncStatus::Ready) override;
 
         WSCACHE_EXPORT BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) override;
 

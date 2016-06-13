@@ -14,6 +14,24 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+//! EC ExternalFileInfo root folder identifiers. Internal ECF defined
+enum class ExternalFileInfoRootFolderId
+    {
+    Documents = 0,
+    Temporary = 1,
+    Caches = 2,
+    LocalState = 3
+    };
+
+//! WSCache environment folders identifiers
+//! Correct mapping to EC should be checked with CacheEnvironment::GetRootFolderId()
+enum class FileCache
+    {
+    Persistent = static_cast<int>(ExternalFileInfoRootFolderId::LocalState),
+    Temporary = static_cast<int>(ExternalFileInfoRootFolderId::Temporary),
+    External = static_cast<int>(ExternalFileInfoRootFolderId::Documents)
+    };
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -26,12 +44,11 @@ struct CacheEnvironment
     WSCACHE_EXPORT CacheEnvironment();
     WSCACHE_EXPORT CacheEnvironment(BeFileNameCR persistentDir, BeFileNameCR temporaryDir);
 
-    // For accessing cached files through ExternalFileInfo
-    WSCACHE_EXPORT static int GetPersistentRootFolderId();
-    // For accessing cached files through ExternalFileInfo
-    WSCACHE_EXPORT static int GetTemporaryRootFolderId();
-    // For accessing cached files through ExternalFileInfo
-    WSCACHE_EXPORT static int GetExternalRootFolderId();
+    //! Get environment path for given location
+    WSCACHE_EXPORT BeFileNameCR GetPath(FileCache location);
+
+    //! For accessing cached files through ExternalFileInfo. Example usages include ECDbECPlugin
+    WSCACHE_EXPORT static int GetRootFolderId(FileCache location);
     };
 
 typedef const CacheEnvironment& CacheEnvironmentCR;
