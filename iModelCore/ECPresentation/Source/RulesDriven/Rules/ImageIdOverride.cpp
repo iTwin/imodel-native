@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ImageIdOverride.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -31,7 +31,7 @@ ImageIdOverride::ImageIdOverride (Utf8StringCR condition, int priority, Utf8Stri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ImageIdOverride::_GetXmlElementName ()
+CharCP ImageIdOverride::_GetXmlElementName () const
     {
     return IMAGE_ID_OVERRIDE_XML_NODE_NAME;
     }
@@ -50,7 +50,7 @@ bool ImageIdOverride::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ImageIdOverride::_WriteXml (BeXmlNodeP xmlNode)
+void ImageIdOverride::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID, m_imageIdExpression.c_str ());
 

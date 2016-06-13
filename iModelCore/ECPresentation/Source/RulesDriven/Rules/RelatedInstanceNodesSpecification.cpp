@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/RelatedInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -58,7 +58,7 @@ void RelatedInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP RelatedInstanceNodesSpecification::_GetXmlElementName ()
+CharCP RelatedInstanceNodesSpecification::_GetXmlElementName () const
     {
     return RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -108,7 +108,7 @@ bool RelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
+void RelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYRELATIONSHIP, m_groupByRelationship);

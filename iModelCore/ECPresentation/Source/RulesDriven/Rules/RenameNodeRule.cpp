@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/RenameNodeRule.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -30,7 +30,7 @@ RenameNodeRule::RenameNodeRule (Utf8StringCR condition, int priority)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              dmitrijus.tiazlovas                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP RenameNodeRule::_GetXmlElementName ()
+CharCP RenameNodeRule::_GetXmlElementName () const
     {
     return RENAMENODE_RULE_XML_NODE_NAME;
     }
@@ -46,7 +46,7 @@ bool RenameNodeRule::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              dmitrijus.tiazlovas                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RenameNodeRule::_WriteXml (BeXmlNodeP xmlNode)
+void RenameNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     PresentationRule::_WriteXml (xmlNode);
     }

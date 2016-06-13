@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/CustomNodeSpecification.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -38,7 +38,7 @@ void CustomNodeSpecification::_Accept(PresentationRuleSpecificationVisitor& visi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP CustomNodeSpecification::_GetXmlElementName ()
+CharCP CustomNodeSpecification::_GetXmlElementName () const
     {
     return CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME;
     }
@@ -67,7 +67,7 @@ bool CustomNodeSpecification::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomNodeSpecification::_WriteXml (BeXmlNodeP xmlNode)
+void CustomNodeSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_TYPE, m_type.c_str ());
     xmlNode->AddAttributeStringValue (CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_LABEL, m_label.c_str ());

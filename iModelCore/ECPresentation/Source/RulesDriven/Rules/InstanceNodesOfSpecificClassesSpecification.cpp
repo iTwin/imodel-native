@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/InstanceNodesOfSpecificClassesSpecification.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -51,7 +51,7 @@ void InstanceNodesOfSpecificClassesSpecification::_Accept(PresentationRuleSpecif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP InstanceNodesOfSpecificClassesSpecification::_GetXmlElementName ()
+CharCP InstanceNodesOfSpecificClassesSpecification::_GetXmlElementName () const
     {
     return INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -90,7 +90,7 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceNodesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode)
+void InstanceNodesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_CLASSNAMES, m_classNames.c_str ());
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC, m_arePolymorphic);

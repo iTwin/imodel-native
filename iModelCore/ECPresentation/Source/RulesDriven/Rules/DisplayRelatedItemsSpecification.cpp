@@ -54,7 +54,7 @@ bool DisplayRelatedItemsSpecification::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas              11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayRelatedItemsSpecification::WriteXml (BeXmlNodeP parentXmlNode)
+void DisplayRelatedItemsSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     {
     BeXmlNodeP displayRelatedItemsNode = parentXmlNode->AddEmptyElement (DISPLAYRELATEDITEMS_SPECIFICATION_XML_NODE_NAME);
 

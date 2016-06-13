@@ -54,7 +54,7 @@ void SearchResultInstanceNodesSpecification::_Accept(PresentationRuleSpecificati
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP SearchResultInstanceNodesSpecification::_GetXmlElementName ()
+CharCP SearchResultInstanceNodesSpecification::_GetXmlElementName () const
     {
     return SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -88,7 +88,7 @@ bool SearchResultInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SearchResultInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
+void SearchResultInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
@@ -130,7 +130,7 @@ bvector<SearchQuerySpecification*> const& SearchResultInstanceNodesSpecification
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP SearchQuerySpecification::GetXmlElementName() {return SEARCH_QUERY_SPECIFICATION_XML_NODE_NAME;}
+CharCP SearchQuerySpecification::GetXmlElementName() const {return SEARCH_QUERY_SPECIFICATION_XML_NODE_NAME;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
@@ -152,7 +152,7 @@ bool SearchQuerySpecification::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SearchQuerySpecification::WriteXml (BeXmlNodeP xmlNode)
+void SearchQuerySpecification::WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->SetContent(WString(m_query.c_str(), true).c_str());
     xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME, m_schemaName.c_str());

@@ -39,7 +39,7 @@ ContentRule::~ContentRule ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ContentRule::_GetXmlElementName ()
+CharCP ContentRule::_GetXmlElementName () const
     {
     return CONTENT_RULE_XML_NODE_NAME;
     }
@@ -68,7 +68,7 @@ bool ContentRule::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRule::_WriteXml (BeXmlNodeP xmlNode)
+void ContentRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (CONTENT_RULE_XML_ATTRIBUTE_CUSTOMCONTROL, m_customControl.c_str ());
 

@@ -52,7 +52,7 @@ void SelectedNodeInstancesSpecification::_Accept(PresentationRuleSpecificationVi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP SelectedNodeInstancesSpecification::_GetXmlElementName ()
+CharCP SelectedNodeInstancesSpecification::_GetXmlElementName () const
     {
     return SELECTED_NODE_INSTANCES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -81,7 +81,7 @@ bool SelectedNodeInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectedNodeInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode)
+void SelectedNodeInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED, m_onlyIfNotHandled);
     xmlNode->AddAttributeStringValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLESCHEMANAME, m_acceptableSchemaName.c_str ());

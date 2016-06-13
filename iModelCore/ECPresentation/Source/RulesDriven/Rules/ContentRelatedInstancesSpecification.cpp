@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentRelatedInstancesSpecification.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -48,7 +48,7 @@ void ContentRelatedInstancesSpecification::_Accept(PresentationRuleSpecification
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ContentRelatedInstancesSpecification::_GetXmlElementName ()
+CharCP ContentRelatedInstancesSpecification::_GetXmlElementName () const
     {
     return CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -82,7 +82,7 @@ bool ContentRelatedInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRelatedInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode)
+void ContentRelatedInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeInt32Value  (COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_INSTANCEFILTER, m_instanceFilter.c_str ());

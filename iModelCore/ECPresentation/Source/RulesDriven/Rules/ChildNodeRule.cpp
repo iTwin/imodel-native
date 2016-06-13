@@ -67,7 +67,7 @@ bool SubCondition::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SubCondition::WriteXml (BeXmlNodeP xmlNode)
+void SubCondition::WriteXml (BeXmlNodeP xmlNode) const
     {
     BeXmlNodeP ruleNode = xmlNode->AddEmptyElement (SUB_CONDITION_XML_NODE_NAME);
 
@@ -121,7 +121,7 @@ ChildNodeRule::~ChildNodeRule ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ChildNodeRule::_GetXmlElementName ()
+CharCP ChildNodeRule::_GetXmlElementName () const
     {
     return CHILD_NODE_RULE_XML_NODE_NAME;
     }
@@ -163,7 +163,7 @@ bool ChildNodeRule::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeRule::_WriteXml (BeXmlNodeP xmlNode)
+void ChildNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE, CommonTools::FormatTargetTreeString (m_targetTree));
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING, m_stopFurtherProcessing);
@@ -220,7 +220,7 @@ RootNodeRule::RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNot
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP RootNodeRule::_GetXmlElementName ()
+CharCP RootNodeRule::_GetXmlElementName () const
     {
     return ROOT_NODE_RULE_XML_NODE_NAME;
     }
@@ -239,7 +239,7 @@ bool RootNodeRule::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas             04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootNodeRule::_WriteXml (BeXmlNodeP xmlNode)
+void RootNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeBooleanValue (ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
     ChildNodeRule::_WriteXml (xmlNode);

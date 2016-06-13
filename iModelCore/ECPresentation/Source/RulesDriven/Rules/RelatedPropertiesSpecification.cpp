@@ -79,7 +79,7 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedPropertiesSpecification::WriteXml (BeXmlNodeP parentXmlNode)
+void RelatedPropertiesSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     {
     BeXmlNodeP relatedPropertiesNode = parentXmlNode->AddEmptyElement (RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
 

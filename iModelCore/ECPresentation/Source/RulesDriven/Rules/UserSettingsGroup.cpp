@@ -41,7 +41,7 @@ UserSettingsGroup::~UserSettingsGroup (void)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP UserSettingsGroup::_GetXmlElementName ()
+CharCP UserSettingsGroup::_GetXmlElementName () const
     {
     return USER_SETTINGS_XML_NODE_NAME;
     }
@@ -63,7 +63,7 @@ bool UserSettingsGroup::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettingsGroup::_WriteXml (BeXmlNodeP xmlNode)
+void UserSettingsGroup::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (USER_SETTINGS_XML_ATTRIBUTE_CATEGORY_LABEL, m_categoryLabel.c_str ());
 
@@ -145,7 +145,7 @@ bool UserSettingsItem::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettingsItem::WriteXml (BeXmlNodeP parentXmlNode)
+void UserSettingsItem::WriteXml (BeXmlNodeP parentXmlNode) const
     {
     BeXmlNodeP xmlNode = parentXmlNode->AddEmptyElement (USER_SETTINGS_ITEM_XML_NODE_NAME);
 
