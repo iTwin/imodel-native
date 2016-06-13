@@ -672,7 +672,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "  </ECRelationshipClass>"
     "</ECSchema>", false, "Subclass must not add ECProperties if base class has FK mapping"));
     
-    testSchemas.push_back(
+/*    testSchemas.push_back(
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                    "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
@@ -695,7 +695,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "    </Target>"
                    "  </ECRelationshipClass>"
                    "</ECSchema>", false, "FK end maps to multiple primary tables"));
-
+                   */
     AssertSchemaImport(testSchemas, "invalidrelinheritance.ecdb");
     }
 
