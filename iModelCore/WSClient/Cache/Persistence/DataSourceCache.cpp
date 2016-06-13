@@ -963,17 +963,13 @@ CacheStatus DataSourceCache::RemoveInstance(ObjectIdCR objectId)
 BentleyStatus DataSourceCache::RemoveFile(ObjectIdCR objectId)
     {
     LogCacheDataForMethod();
-    FileInfo fileInfo = m_state->GetFileInfoManager().ReadInfo(objectId);
+    FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
 
-    if (!fileInfo.IsInCache())
-        {
+    if (!info.IsInCache())
         return SUCCESS;
-        }
 
-    if (SUCCESS != m_state->GetFileStorage().CleanupCachedFile(fileInfo.GetFilePath()))
-        {
+    if (SUCCESS != m_state->GetFileStorage().RemoveStoredFile(info))
         return ERROR;
-        }
 
     return SUCCESS;
     }
@@ -1343,12 +1339,12 @@ BentleyStatus DataSourceCache::RemoveRootsByPrefix(Utf8StringCR rootPrefix)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativePath)
+BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativeDir)
     {
     //! TODO: consider removing FileCache parameter and auotmaically use Root persistence instead
     LogCacheDataForMethod();
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
-    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation, &externalRelativePath) ||
+    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation, &externalRelativeDir) ||
         SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
         {
         return ERROR;
@@ -1379,34 +1375,25 @@ FileCache cacheLocation
 
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
     if (!info.IsValid())
-        {
         return ERROR;
-        }
 
     if (!fileResult.IsModified())
         {
         if (!info.IsInCache())
-            {
             return ERROR;
-            }
-
-        info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
         }
     else
         {
         auto path = fileResult.GetFilePath();
         auto eTag = fileResult.GetETag();
-        auto time = DateTime::GetCurrentTimeUtc();
-        if (SUCCESS != m_state->GetFileStorage().CacheFile(info, path, eTag.c_str(), cacheLocation, time, false))
-            {
+        if (SUCCESS != m_state->GetFileStorage().CacheFile(info, path, eTag.c_str(), cacheLocation, false))
             return ERROR;
-            }
         }
 
+    info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
+
     if (SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
-        {
         return ERROR;
-        }
 
     return SUCCESS;
     }

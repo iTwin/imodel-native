@@ -20,6 +20,7 @@
 #include "UpgraderFromV7ToV9.h"
 #include "UpgraderFromV9ToV10.h"
 #include "UpgraderFromV10ToV11.h"
+#include "UpgraderFromV11ToV12.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -55,6 +56,8 @@ BentleyStatus Upgrader::Upgrade(int oldVersion)
             if (SUCCESS != UpgraderFromV9ToV10(adapter).Upgrade()) return ERROR;
         case 10:
             if (SUCCESS != UpgraderFromV10ToV11(adapter).Upgrade()) return ERROR;
+        case 11:
+            if (SUCCESS != UpgraderFromV11ToV12(adapter).Upgrade()) return ERROR;
 
             // Current version, return
             return SUCCESS;

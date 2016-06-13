@@ -50,7 +50,6 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         Json::Value ReadCachedFileInfo(CachedInstanceKeyCR cachedKey);
         Json::Value ReadExternalFileInfo(CachedInstanceKeyCR cachedKey);
         ECInstanceKey InsertFileInfoOwnership(ECInstanceKeyCR ownerKey, ECInstanceKeyCR fileInfoKey);
-        BentleyStatus CleanupExternalFile(JsonValueCR externalFileInfoJson);
         BentleyStatus CheckMaxLastAccessDate(BeFileNameCR fileName, DateTimeCP maxLastAccessDate, bool &shouldSkip);
 
     public:

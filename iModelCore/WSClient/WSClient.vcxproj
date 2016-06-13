@@ -98,6 +98,7 @@
     <ClCompile Include="Cache\Persistence\Responses\CachedResponseInfo.cpp" />
     <ClCompile Include="Cache\Persistence\Responses\CachedResponseManager.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\RawWSObjectsReader.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\Upgrader.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderBase.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.cpp" />
@@ -235,6 +236,7 @@
     <ClInclude Include="Cache\Persistence\RepositoryInfoStore.h" />
     <ClInclude Include="Cache\Persistence\Responses\CachedResponseInfo.h" />
     <ClInclude Include="Cache\Persistence\Responses\CachedResponseManager.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\RawWSObjectsReader.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\Upgrader.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderBase.h" />

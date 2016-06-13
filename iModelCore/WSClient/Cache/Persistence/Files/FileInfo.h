@@ -10,7 +10,7 @@
 
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
-#include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>
+#include <WebServices/Cache/Persistence/CacheEnvironment.h>
 #include "../Changes/ChangeInfo.h"
 #include "../Instances/ObjectInfo.h"
 
@@ -48,12 +48,13 @@ struct FileInfo : public ChangeInfo
             
         //! Get name of the file. 
         Utf8String GetFileName() const;
-        //! Get absolute file path
+
+        //! Get absolute file path. Returns empty if path not fully set
         BeFileName GetFilePath() const;
-        
         //! Set file path. Set fileName to empty if file is not yet cached
-        void SetFilePath(FileCache location, BeFileNameCR relativePath, Utf8StringCR fileName);
-        //! Get relative path for the file
+        void SetFilePath(FileCache location, BeFileName relativeDir, Utf8StringCR fileName);
+
+        //! Get relative dir for the file
         BeFileName GetRelativePath() const;
 
         //! Set cache location
@@ -66,6 +67,10 @@ struct FileInfo : public ChangeInfo
         //! Get date when file was last synced
         DateTime GetFileCacheDate() const;
         void SetFileCacheDate(DateTimeCR utcDate);
+
+        //! Get date when file was last updated in cache
+        DateTime GetFileUpdateDate() const;
+        void SetFileUpdateDate(DateTimeCR utcDate);
 
         CachedInstanceKeyCR GetCachedInstanceKey() const;
 

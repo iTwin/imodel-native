@@ -63,6 +63,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_CachedFileInfo                                        "CachedFileInfo"
 #define CLASS_CachedFileInfo_PROPERTY_CacheDate                     "CacheDate"
 #define CLASS_CachedFileInfo_PROPERTY_CacheTag                      "CacheTag"
+#define CLASS_CachedFileInfo_PROPERTY_UpdateDate                    "UpdateDate"
 
 #define CLASS_ChangeInfo                                            "ChangeInfo"
 #define CLASS_ChangeInfo_PROPERTY_ChangeStatus                      "ChangeStatus"
