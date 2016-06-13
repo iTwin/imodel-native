@@ -47,8 +47,8 @@ void Render::Target::RecordFrameTime(uint32_t count, double seconds, bool isFrom
     if (0 == count)
         return;
 
-    if (seconds < .0001)
-        seconds = .0001;
+    if (seconds < .00001)
+        seconds = .00001;
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
     Render::Target::Debug::SaveGPS(gps);
