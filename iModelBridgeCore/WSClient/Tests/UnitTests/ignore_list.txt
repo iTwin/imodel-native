@@ -46,8 +46,5 @@ DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceC
 # All new unknown/issues here
 #----------------------------------------------------------------------------------------
 
- # Fails after graphite0505 merge - notified Benediktas
-ChangeManagerTests.ModifyObject_ExistingObject_SavesNewValuesToCache
-
  # Crashed 61-16q2, winx64, optimized
 CachingDataSourceTests.SyncCachedData_WSG1AndInitialInstancesReturnsNotFound_RemovesInstancesFromCache
