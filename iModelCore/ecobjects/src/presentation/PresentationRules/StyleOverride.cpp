@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/StyleOverride.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -32,7 +32,7 @@ StyleOverride::StyleOverride (Utf8StringCR condition, int priority, Utf8StringCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP StyleOverride::_GetXmlElementName ()
+CharCP StyleOverride::_GetXmlElementName () const
     {
     return STYLE_OVERRIDE_XML_NODE_NAME;
     }
@@ -57,7 +57,7 @@ bool StyleOverride::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StyleOverride::_WriteXml (BeXmlNodeP xmlNode)
+void StyleOverride::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_FORECOLOR, m_foreColor.c_str ());
     xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_BACKCOLOR, m_backColor.c_str ());

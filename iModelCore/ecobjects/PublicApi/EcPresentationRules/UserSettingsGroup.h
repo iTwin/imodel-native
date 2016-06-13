@@ -28,13 +28,13 @@ struct UserSettingsGroup : public PresentationKey
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP  _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual CharCP  _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool    _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual bool    _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -86,7 +86,7 @@ struct UserSettingsItem
         ECOBJECTS_EXPORT bool            ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes specification to xml node.
-        ECOBJECTS_EXPORT void            WriteXml (BeXmlNodeP parentXmlNode);
+        ECOBJECTS_EXPORT void            WriteXml (BeXmlNodeP parentXmlNode) const;
 
         //! Id of the user setting that will be used to save and access settings value.
         ECOBJECTS_EXPORT Utf8StringCR    GetId (void) const;

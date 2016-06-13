@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/LabelOverride.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -31,7 +31,7 @@ LabelOverride::LabelOverride (Utf8StringCR condition, int priority, Utf8StringCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP LabelOverride::_GetXmlElementName ()
+CharCP LabelOverride::_GetXmlElementName () const
     {
     return LABEL_OVERRIDE_XML_NODE_NAME;
     }
@@ -53,7 +53,7 @@ bool LabelOverride::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LabelOverride::_WriteXml (BeXmlNodeP xmlNode)
+void LabelOverride::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (LABEL_OVERRIDE_XML_ATTRIBUTE_LABEL, m_label.c_str ());
     xmlNode->AddAttributeStringValue (LABEL_OVERRIDE_XML_ATTRIBUTE_DESCRIPTION, m_description.c_str ());

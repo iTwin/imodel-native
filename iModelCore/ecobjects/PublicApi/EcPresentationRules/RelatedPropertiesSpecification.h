@@ -53,7 +53,7 @@ struct RelatedPropertiesSpecification : PresentationRuleSpecification
         ECOBJECTS_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes related properties to xml node.
-        ECOBJECTS_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode);
+        ECOBJECTS_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode) const;
 
         //! Returns direction of relationship that should be selected in the query.
         ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;

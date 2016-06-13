@@ -55,13 +55,13 @@ struct GroupingRule : public PresentationRule
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP      _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual CharCP      _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool        _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -118,13 +118,13 @@ protected:
     ECOBJECTS_EXPORT GroupSpecification (Utf8StringCR contextMenuLabel, Utf8CP defaultLabel = NULL);
 
     //! Returns XmlElement name that is used to read/save this rule information.
-    virtual CharCP _GetXmlElementName () = 0;
+    virtual CharCP _GetXmlElementName () const = 0;
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
     virtual bool _ReadXml (BeXmlNodeP xmlNode) = 0;
 
     //! Writes rule information to given XmlNode.
-    virtual void _WriteXml (BeXmlNodeP xmlNode) = 0;
+    virtual void _WriteXml (BeXmlNodeP xmlNode) const = 0;
     
     //! Allows the visitor to visit this group specification.
     virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const = 0;
@@ -141,7 +141,7 @@ public:
     ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
 
     //! Writes group specification to xml node.
-    ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode);
+    ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode) const;
 
     //! ContextMenu label of this particular grouping option. If not set ECClass or ECProperty DisplayLabel will be used.
     ECOBJECTS_EXPORT Utf8StringCR             GetContextMenuLabel (void) const;
@@ -159,13 +159,13 @@ struct SameLabelInstanceGroup : public GroupSpecification
     {
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
         
         //! Allows the visitor to visit this group specification.
         ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
@@ -192,13 +192,13 @@ struct ClassGroup : public GroupSpecification
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const const;
         
         //! Allows the visitor to visit this group specification.
         ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
@@ -236,13 +236,13 @@ struct PropertyGroup : public GroupSpecification
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
         
         //! Allows the visitor to visit this group specification.
         ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
@@ -301,7 +301,7 @@ struct PropertyRangeGroupSpecification
         ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes specification to xml node.
-        ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode);
+        ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode) const;
 
         //! ImageId of the grouping range node. If not set ECProperty ImageId will be used.
         ECOBJECTS_EXPORT Utf8StringCR             GetLabel (void) const;

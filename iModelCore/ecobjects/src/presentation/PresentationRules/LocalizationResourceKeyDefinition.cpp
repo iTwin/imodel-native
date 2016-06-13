@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/LocalizationResourceKeyDefinition.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -31,7 +31,7 @@ LocalizationResourceKeyDefinition::LocalizationResourceKeyDefinition (int priori
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP LocalizationResourceKeyDefinition::_GetXmlElementName ()
+CharCP LocalizationResourceKeyDefinition::_GetXmlElementName () const
     {
     return LOCALIZATION_DEFINITION_XML_NODE_NAME;
     }
@@ -56,7 +56,7 @@ bool LocalizationResourceKeyDefinition::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LocalizationResourceKeyDefinition::_WriteXml (BeXmlNodeP xmlNode)
+void LocalizationResourceKeyDefinition::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (LOCALIZATION_DEFINITION_XML_ATTRIBUTE_ID, m_id.c_str ());
     xmlNode->AddAttributeStringValue (LOCALIZATION_DEFINITION_XML_ATTRIBUTE_KEY, m_key.c_str ());

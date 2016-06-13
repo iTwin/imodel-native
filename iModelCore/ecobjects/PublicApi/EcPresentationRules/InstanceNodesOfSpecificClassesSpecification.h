@@ -33,13 +33,13 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceNodesOfSpecificClassesSpecification : pub
         ECOBJECTS_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
 
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
+        ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

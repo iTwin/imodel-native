@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRule.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -42,7 +42,7 @@ bool PresentationKey::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationKey::WriteXml (BeXmlNodeP parentXmlNode)
+void PresentationKey::WriteXml (BeXmlNodeP parentXmlNode) const
     {
     BeXmlNodeP ruleNode = parentXmlNode->AddEmptyElement (_GetXmlElementName ());
 
@@ -92,7 +92,7 @@ bool PresentationRule::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRule::_WriteXml (BeXmlNodeP xmlNode)
+void PresentationRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION, m_condition.c_str ());
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED, m_onlyIfNotHandled);

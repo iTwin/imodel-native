@@ -79,7 +79,7 @@ bool ChildNodeSpecification::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeSpecification::WriteXml (BeXmlNodeP parentXmlNode)
+void ChildNodeSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     {
     BeXmlNodeP specificationNode = parentXmlNode->AddEmptyElement (_GetXmlElementName ());
 

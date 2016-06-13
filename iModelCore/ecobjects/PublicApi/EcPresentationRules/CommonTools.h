@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/CommonTools.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -92,9 +92,9 @@ public:
 
     //! Write rules to XmlNode
     template<typename RuleType, typename RuleCollectionType>
-    static void WriteRulesToXmlNode (BeXmlNodeP parentXmlNode, RuleCollectionType& rulesCollection)
+    static void WriteRulesToXmlNode (BeXmlNodeP parentXmlNode, RuleCollectionType const& rulesCollection)
         {
-        for (RuleType* rule: rulesCollection)
+        for (RuleType const* rule: rulesCollection)
             rule->WriteXml (parentXmlNode);
         }
 

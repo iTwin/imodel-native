@@ -36,13 +36,13 @@ protected:
     ECOBJECTS_EXPORT ContentSpecification (int priority);
 
     //! Returns XmlElement name that is used to read/save this rule information.
-    ECOBJECTS_EXPORT virtual CharCP                       _GetXmlElementName () = 0;
+    ECOBJECTS_EXPORT virtual CharCP                       _GetXmlElementName () const = 0;
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECOBJECTS_EXPORT virtual bool                         _ReadXml (BeXmlNodeP xmlNode) = 0;
 
     //! Writes rule information to given XmlNode.
-    ECOBJECTS_EXPORT virtual void                         _WriteXml (BeXmlNodeP xmlNode) = 0;
+    ECOBJECTS_EXPORT virtual void                         _WriteXml (BeXmlNodeP xmlNode) const = 0;
 
 public:
     //! Destructor.
@@ -52,7 +52,7 @@ public:
     ECOBJECTS_EXPORT bool                                 ReadXml (BeXmlNodeP xmlNode);
 
     //! Writes specification to xml node.
-    ECOBJECTS_EXPORT void                                 WriteXml (BeXmlNodeP parentXmlNode);
+    ECOBJECTS_EXPORT void                                 WriteXml (BeXmlNodeP parentXmlNode) const;
 
     //! Priority of the specification, defines the order in which specifications are evaluated and executed.
     ECOBJECTS_EXPORT int                                  GetPriority (void) const;

@@ -41,7 +41,7 @@ GroupingRule::~GroupingRule (void)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP GroupingRule::_GetXmlElementName ()
+CharCP GroupingRule::_GetXmlElementName () const
     {
     return GROUPING_RULE_XML_NODE_NAME;
     }
@@ -91,7 +91,7 @@ bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GroupingRule::_WriteXml (BeXmlNodeP xmlNode)
+void GroupingRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str ());
     xmlNode->AddAttributeStringValue (GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME, m_className.c_str ());
@@ -178,7 +178,7 @@ bool GroupSpecification::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GroupSpecification::WriteXml (BeXmlNodeP parentXmlNode)
+void GroupSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     {
     BeXmlNodeP specificationNode = parentXmlNode->AddEmptyElement (_GetXmlElementName ());
 
@@ -218,7 +218,7 @@ void SameLabelInstanceGroup::_Accept(GroupingRuleSpecificationVisitor& visitor) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP SameLabelInstanceGroup::_GetXmlElementName ()
+CharCP SameLabelInstanceGroup::_GetXmlElementName () const
     {
     return SAMEL_LABEL_INSTANCE_GROUP_XML_NODE_NAME;
     }
@@ -234,7 +234,7 @@ bool SameLabelInstanceGroup::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SameLabelInstanceGroup::_WriteXml (BeXmlNodeP xmlNode)
+void SameLabelInstanceGroup::_WriteXml (BeXmlNodeP xmlNode) const
     {
     //there are no additioanl options
     }
@@ -264,7 +264,7 @@ void ClassGroup::_Accept(GroupingRuleSpecificationVisitor& visitor) const {visit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ClassGroup::_GetXmlElementName ()
+CharCP ClassGroup::_GetXmlElementName () const
     {
     return CLASS_GROUP_XML_NODE_NAME;
     }
@@ -290,7 +290,7 @@ bool ClassGroup::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassGroup::_WriteXml (BeXmlNodeP xmlNode)
+void ClassGroup::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeBooleanValue (GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM, m_createGroupForSingleItem);
     xmlNode->AddAttributeStringValue  (CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME,         m_schemaName.c_str ());
@@ -345,7 +345,7 @@ void PropertyGroup::_Accept(GroupingRuleSpecificationVisitor& visitor) const {vi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP PropertyGroup::_GetXmlElementName ()
+CharCP PropertyGroup::_GetXmlElementName () const
     {
     return PROPERTY_GROUP_XML_NODE_NAME;
     }
@@ -381,7 +381,7 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyGroup::_WriteXml (BeXmlNodeP xmlNode)
+void PropertyGroup::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue  (GROUP_XML_ATTRIBUTE_IMAGEID,                         m_imageId.c_str ());
     xmlNode->AddAttributeBooleanValue (GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM,        m_createGroupForSingleItem);
@@ -469,7 +469,7 @@ bool PropertyRangeGroupSpecification::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyRangeGroupSpecification::WriteXml (BeXmlNodeP parentXmlNode)
+void PropertyRangeGroupSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     {
     BeXmlNodeP specificationNode = parentXmlNode->AddEmptyElement (PROPERTY_RANGE_GROUP_XML_NODE_NAME);
 

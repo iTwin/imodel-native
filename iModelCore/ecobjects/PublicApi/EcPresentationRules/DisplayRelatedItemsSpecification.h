@@ -31,7 +31,7 @@ struct DisplayRelatedItemsSpecification : PresentationRuleSpecification
         ECOBJECTS_EXPORT bool        ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT void        WriteXml (BeXmlNodeP parentXmlNode);
+        ECOBJECTS_EXPORT void        WriteXml (BeXmlNodeP parentXmlNode) const;
 
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT DisplayRelatedItemsSpecification ();

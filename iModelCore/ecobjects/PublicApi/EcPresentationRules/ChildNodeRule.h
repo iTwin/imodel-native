@@ -44,7 +44,7 @@ struct SubCondition
         ECOBJECTS_EXPORT bool                           ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes SubCondition to xml node.
-        ECOBJECTS_EXPORT void                           WriteXml (BeXmlNodeP parentXmlNode);
+        ECOBJECTS_EXPORT void                           WriteXml (BeXmlNodeP parentXmlNode) const;
 
         //! Returns sub-condition string.
         ECOBJECTS_EXPORT Utf8StringCR                   GetCondition (void);
@@ -73,13 +73,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName ();
+        ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -124,13 +124,13 @@ struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName () override;
+        ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName () const override;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
+        ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) const override;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

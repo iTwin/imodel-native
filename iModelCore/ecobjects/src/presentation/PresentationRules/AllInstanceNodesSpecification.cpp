@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/AllInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -46,7 +46,7 @@ void AllInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP AllInstanceNodesSpecification::_GetXmlElementName ()
+CharCP AllInstanceNodesSpecification::_GetXmlElementName () const
     {
     return ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
     }
@@ -72,7 +72,7 @@ bool AllInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AllInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
+void AllInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);

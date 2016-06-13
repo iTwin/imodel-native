@@ -40,13 +40,13 @@ protected:
     ECOBJECTS_EXPORT PresentationKey (int priority);
 
     //! Returns XmlElement name that is used to read/save this rule information.
-    ECOBJECTS_EXPORT virtual CharCP         _GetXmlElementName () = 0;
+    ECOBJECTS_EXPORT virtual CharCP         _GetXmlElementName () const = 0;
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode) = 0;
 
     //! Writes rule information to given XmlNode.
-    ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) = 0;
+    ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const = 0;
 
 public:
     //! Virtual destructor.
@@ -56,7 +56,7 @@ public:
     ECOBJECTS_EXPORT bool                   ReadXml (BeXmlNodeP xmlNode);
 
     //! Writes PresentationRule to xml node.
-    ECOBJECTS_EXPORT void                   WriteXml (BeXmlNodeP parentXmlNode);
+    ECOBJECTS_EXPORT void                   WriteXml (BeXmlNodeP parentXmlNode) const;
 
     //! Priority of the rule, defines the order in which rules are evaluated and executed.
     ECOBJECTS_EXPORT int                    GetPriority (void) const;
@@ -84,7 +84,7 @@ protected:
     ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode);
 
     //! Writes rule information to given XmlNode.
-    ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode);
+    ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) const;
 
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.

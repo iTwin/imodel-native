@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/SortingRule.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -32,7 +32,7 @@ SortingRule::SortingRule (Utf8StringCR condition, int priority, Utf8StringCR sch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP SortingRule::_GetXmlElementName ()
+CharCP SortingRule::_GetXmlElementName () const
     {
     return SORTING_RULE_XML_NODE_NAME;
     }
@@ -66,7 +66,7 @@ bool SortingRule::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SortingRule::_WriteXml (BeXmlNodeP xmlNode)
+void SortingRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_SCHEMANAME,            m_schemaName.c_str ());
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_CLASSNAME,             m_className.c_str ());

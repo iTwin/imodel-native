@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/CheckBoxRule.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -39,7 +39,7 @@ bool      defaultValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP CheckBoxRule::_GetXmlElementName ()
+CharCP CheckBoxRule::_GetXmlElementName () const
     {
     return CHECKBOX_RULE_XML_NODE_NAME;
     }
@@ -64,7 +64,7 @@ bool CheckBoxRule::_ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CheckBoxRule::_WriteXml (BeXmlNodeP xmlNode)
+void CheckBoxRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_PROPERTYNAME, m_propertyName.c_str ());
     xmlNode->AddAttributeBooleanValue (CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE, m_useInversedPropertyValue);
