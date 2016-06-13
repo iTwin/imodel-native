@@ -41,7 +41,7 @@ private:
     BentleyStatus ReplaceCAEntry(ECN::IECInstanceP customAttribute, ECN::ECClassId const&, ECContainerId const&, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
     BentleyStatus DeleteCAEntry(ECN::ECClassId const&, ECContainerId const&, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
-    BentleyStatus UpdateECRelationshipConstraint(ECContainerId const&, SqlUpdateBuilder&, ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR oldConstraint, ECN::ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName);
+    BentleyStatus UpdateECRelationshipConstraint(ECContainerId const&, ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR oldConstraint, ECN::ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName);
     BentleyStatus UpdateECCustomAttributes(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, ECContainerId const&, ECInstanceChanges&, ECN::IECCustomAttributeContainerCR oldClass, ECN::IECCustomAttributeContainerCR newClass);
     BentleyStatus UpdateECClass(ECClassChange&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
     BentleyStatus UpdateECProperty(ECPropertyChange&, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty);

@@ -1204,9 +1204,11 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::UpdateECRelationshipConstraint(ECContainerId const& containerId, SqlUpdateBuilder& sqlUpdateBuilder, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName)
+BentleyStatus ECDbSchemaWriter::UpdateECRelationshipConstraint(ECContainerId const& containerId, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName)
     {
     Utf8CP constraintEndStr = isSource ? "Source" : "Target";
+    SqlUpdateBuilder updater("ec_RelationshipConstraint");
+ 
     if (constraintChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
@@ -1232,7 +1234,14 @@ BentleyStatus ECDbSchemaWriter::UpdateECRelationshipConstraint(ECContainerId con
         }
 
     if (constraintChange.GetRoleLabel().IsValid())
-        sqlUpdateBuilder.AddSetExp("RoleLabel", constraintChange.GetRoleLabel().GetNew().Value().c_str());
+        {
+        updater.AddSetExp("RoleLabel", constraintChange.GetRoleLabel().GetNew().Value().c_str());
+        }
+
+    updater.AddWhereExp("RelationshipEnd", isSource ? ECRelationshipEnd_Source : ECRelationshipEnd_Target);
+    updater.AddWhereExp("RelationshipClassId", containerId.GetValue());
+    if (updater.ExecuteSql(m_ecdb) != SUCCESS)
+        return ERROR;
 
     const ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType = isSource ? ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint : ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint;
     return UpdateECCustomAttributes(containerType, containerId, constraintChange.CustomAttributes(), oldConstraint, newConstraint);
@@ -1433,11 +1442,11 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
             return ERROR;
 
         if (relationshipChange.GetSource().IsValid())
-            if (UpdateECRelationshipConstraint(classId, updateBuilder, relationshipChange.GetSource(), newRel->GetSource(), oldRel->GetSource(), true, oldRel->GetFullName()) == ERROR)
+            if (UpdateECRelationshipConstraint(classId, relationshipChange.GetSource(), newRel->GetSource(), oldRel->GetSource(), true, oldRel->GetFullName()) == ERROR)
                 return ERROR;
 
         if (relationshipChange.GetTarget().IsValid())
-            if (UpdateECRelationshipConstraint(classId, updateBuilder, relationshipChange.GetTarget(), newRel->GetSource(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
+            if (UpdateECRelationshipConstraint(classId,  relationshipChange.GetTarget(), newRel->GetSource(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
                 return ERROR;
         }
 
