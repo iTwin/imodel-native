@@ -773,17 +773,17 @@ TEST_F(BeTextFileTests, WriteToFileWithPrintf)
         //printf directly to file
         writeStatus = m_fileWritePtr->PrintfTo(false, L"Characters: %lc %lc \n", L'a', 65);
         EXPECT_TRUE(TextFileWriteStatus::Success == writeStatus) << "Failed to write to file, used encoding: " << EncodeOptionToString(encoding);
+        
         //printf to file and stdout
-        printf("*\n");
         Utf8String stdoutFileName (GetOutFileName(L"stdoutFile.txt").c_str());
         //FILE fp_old = *stdout;  // preserve the original stdout
         //*stdout = *fopen(stdoutFileName.c_str(), "w");
-        FILE* out = freopen(stdoutFileName.c_str(), "w", stdout);
+        //FILE* out = freopen(stdoutFileName.c_str(), "w", stdout);
         writeStatus = m_fileWritePtr->PrintfTo(true, L"Obrigado omigo!");
         //fclose(out);
         //*stdout = fp_old;  // restore stdout
-        out = freopen("CON", "w", stdout);
-        printf("*\n");
+        //out = freopen("CON", "w", stdout);
+
         EXPECT_TRUE(TextFileWriteStatus::Success == writeStatus) << "Failed to write to file, used encoding: " << EncodeOptionToString(encoding);
         m_fileWritePtr->Close();
         //--------------Verification-------------------------
