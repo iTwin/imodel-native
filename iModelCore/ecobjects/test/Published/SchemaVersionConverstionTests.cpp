@@ -8,6 +8,7 @@
 
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include <Units/Units.h>
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 using namespace BentleyApi::ECN;
@@ -188,21 +189,66 @@ TEST_F(SchemaVersionConversionTests, CanLoadMetaSchemaWithDeliveredConversionSch
     VerifySchema(schema, expectedClasses, unexpectedClasses);
     }
 
+void ValidateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR originalSchema)
+    {
+    for (const auto& ecClass : originalSchema.GetClasses())
+        {
+        ECClassP convertedClass = convertedSchema.GetClassP(ecClass->GetName().c_str());
+        for (const auto& ecProp : ecClass->GetProperties(true))
+            {
+            Unit originalUnit;
+            if (Unit::GetUnitForECProperty(originalUnit, *ecProp))
+                {
+                ECPropertyP convertedProp = convertedClass->GetPropertyP(ecProp->GetName().c_str());
+                KindOfQuantityCP koq = convertedProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+                ASSERT_NE(nullptr, koq) << "Could not find KOQ for property " << ecClass->GetName().c_str() << ":" << ecProp->GetName().c_str();
+                Units::UnitCP convertedUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(originalUnit.GetName());
+                if (nullptr == convertedUnit) // If null it may be a dummy unit added during conversion ... 
+                    convertedUnit = Units::UnitRegistry::Instance().LookupUnit(originalUnit.GetName());
+                ASSERT_NE(nullptr, convertedUnit) << "Could not find converted unit for old unit " << originalUnit.GetName();
+
+                EXPECT_EQ(0, strcmp(convertedUnit->GetName(), koq->GetPersistenceUnit().c_str())) << "Converted unit not correct for " << convertedProp->GetName().c_str();
+                }
+            }
+        }
+    }
+
 TEST_F(SchemaVersionConversionTests, SchemaWithOldUnitSpecifications)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
+    WString testSchemaPath = ECTestFixture::GetTestDataPath(L"OldUnits.01.00.ecschema.xml");
+
     ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"OldUnits.01.00.ecschema.xml").c_str(), *schemaContext);
-    EXPECT_EQ(SchemaReadStatus::Success, status);
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, testSchemaPath.c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
 
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
-
-    WString fullSchemaName;
-    fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
-    fullSchemaName.append(L".ecschema.xml");
-    SchemaWriteStatus ws = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(fullSchemaName.c_str()).c_str(), 3);
-    EXPECT_EQ(SchemaWriteStatus::Success, ws);
+    
+    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr originalSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(originalSchema, testSchemaPath.c_str(), *context2));
+    ValidateUnitsInConvertedSchema(*schema, *originalSchema);
     }
 
+//TEST_F(SchemaVersionConversionTests, OpenPlantSchema)
+//    {
+//    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+//
+//    WString testSchemaPath = L"C:\\Users\\Colin.Kerr.BENTLEY\\Documents\\Schemas\\OPPID 107 4-5-2016\\OP Schemas";
+//    schemaContext->AddSchemaPath(testSchemaPath.c_str());
+//
+//    SchemaKey key("OpenPlant", 1, 0, 7);
+//    ECSchemaPtr schema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+//    ASSERT_TRUE(schema.IsValid());
+//
+//    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+//
+//    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+//    context2->AddSchemaPath(testSchemaPath.c_str());
+//    ECSchemaPtr originalSchema = context2->LocateSchema(key, SchemaMatchType::Exact);
+//    ASSERT_TRUE(originalSchema.IsValid());
+//    schema->WriteToXmlFile(L"C:\\diff\\OpenPlant.01.00.07.ecschema.xml", 3);
+//    ValidateUnitsInConvertedSchema(*schema, *originalSchema);
+//    }
 END_BENTLEY_ECN_TEST_NAMESPACE

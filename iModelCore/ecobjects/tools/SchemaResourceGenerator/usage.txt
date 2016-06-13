@@ -6,7 +6,7 @@ Description:
     and localization supplemental schemas from resx files
 
 Parameter List:
-   inputs              Specifies one or multiple input file paths.
+   inputs              Specifies the input file path. The file needs to be .xliff or .ecschema.xml.
    
    -p    9900-9999     Precedence of schema when the input is a resx file
                        Default is 9900.
@@ -14,30 +14,21 @@ Parameter List:
    -c    cultureName   Only supported when converting from resx to supplemental schema
                        If no culture is provided the culture is determined from the resx filename
 
-   -ns                 No-Supplementation switch. Prevents Schemas from being supplemented.
-
-   -r    paths         Additional paths to look for referenced schemas,
+   -r    refpaths      Additional paths to look for referenced schemas,
                        separated by semicolons.
 
-   -o    path          Specifies a different output directory.
+   -o    outpath       Specifies a different output directory.
                        By default, the same directory as the input file is used.
-
-   -of   filename      Use this parameter to specify the base part of the name like:
-                       <BaseResxFileName>.ecschema.CultureName.resx
-                       By default the output file will be named based on the first input schema.
 
    /?                  Displays this help message.
 
 Examples:
-    SchemaResourceGenerator "c:\test data\House.01.00.02.ecschema.xml" c:\foo\Other.01.00.23.ecschema.xml -of Banana
-        Outputs: c:\testdata\Banana.resx
+    SchemaResourceGenerator "c:\test data\House.01.00.02.ecschema.xml"
+        Outputs: c:\testdata\House.01.00.02.en.xliff
         
     SchemaResourceGenerator c:\SampleSchema.01.00.00.ecschema.xml -ns -r c:\myschema;"c:\other schemas"
-        Outputs: SampleSchema.01.00.00.ecschema.resx
+        Outputs: SampleSchema.01.00.00.en.resx
         
-    SchemaResourceGenerator c:\testdata\House.01.00.00.resx -c en-US
+    SchemaResourceGenerator c:\testdata\House.01.00.00.en.resx -c en-US
         Outputs: House_Supplemental_Localization_en_US.01.00.00.ecschema.xml
-
-    SchemaResourceGenerator c:\dirOfSchema\ -of SchemaStrings
-        Outputs: SchemaStrings.resx
 )***"

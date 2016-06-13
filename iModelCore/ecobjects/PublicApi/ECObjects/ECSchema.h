@@ -39,7 +39,7 @@ struct less_str
 {
 bool operator()(Utf8CP s1, Utf8CP s2) const
     {
-    if (BeStringUtilities::Stricmp(s1, s2) < 0)
+    if (BeStringUtilities::StricmpAscii(s1, s2) < 0)
         return true;
 
     return false;
@@ -222,6 +222,22 @@ struct ECPropertyId : BeInt64Id
     BEINT64_ID_DECLARE_MEMBERS(ECPropertyId, BeInt64Id)
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECEnumerationId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECEnumerationId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct KindOfQuantityId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(KindOfQuantityId, BeInt64Id)
+    };
+
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 struct SupplementedSchemaBuilder;
@@ -334,10 +350,11 @@ public:
 
     //! Retrieves the custom attribute matching the class name.  DoesNot include custom attributes from either base
     //! containers or supplemental custom attributes
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttributeLocal(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttributeLocal(Utf8StringCR schemaName, Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class name.  DoesNot include custom attributes from either base
     //! containers or supplemental custom attributes
@@ -365,6 +382,11 @@ public:
     //! Removes a custom attribute from the container
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
+
+    //! Removes a custom attribute from the container
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
+    //! @param[in]  className   Name of the class of the custom attribute to remove
+    ECOBJECTS_EXPORT bool               RemoveSupplementedCustomAttribute(Utf8StringCR schemaName, Utf8StringCR className);
 
     //! Removes a supplemented custom attribute from the container
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
@@ -440,7 +462,7 @@ struct PrimitiveECProperty;
 Base class for an object which provides the context for an IECTypeAdapter
 @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct IECTypeAdapterContext : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE IECTypeAdapterContext : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -1568,6 +1590,7 @@ friend struct SchemaXmlReaderImpl;
         EnumeratorList m_enumeratorList;
         EnumeratorIterable m_enumeratorIterable;
         bool m_isStrict;
+        mutable ECEnumerationId m_ecEnumerationId;
 
         //  Lifecycle management:  The schema implementation will
         //  serve as a factory for enumerations and will manage their lifecycle.
@@ -1647,6 +1670,12 @@ friend struct SchemaXmlReaderImpl;
         EnumeratorIterable const& GetEnumerators() const { return m_enumeratorIterable; }
         //! Get the amount of enumerators in this enumeration
         size_t GetEnumeratorCount() const { return m_enumeratorList.size(); }
+
+        //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+        ECEnumerationId GetId() const { BeAssert(HasId()); return m_ecEnumerationId; }
+        //! Intended to be called by ECDb or a similar system
+        void SetId(ECEnumerationId id) { BeAssert(!m_ecEnumerationId.IsValid()); m_ecEnumerationId = id; };
+        bool HasId() const { return m_ecEnumerationId.IsValid(); };
     };
 
 //=======================================================================================
@@ -1724,6 +1753,7 @@ struct KindOfQuantity : NonCopyableClass
         Utf8String m_defaultPresentationUnit;
         //! list of alternative presentation Units
         bvector<Utf8String> m_alternativePresentationUnitList;
+        mutable KindOfQuantityId m_kindOfQuantityId;
 
         //  Lifecycle management:  The schema implementation will
         //  serve as a factory for kind of quantities and will manage their lifecycle.
@@ -1790,6 +1820,12 @@ struct KindOfQuantity : NonCopyableClass
         bvector<Utf8String> const& GetAlternativePresentationUnitList() const { return m_alternativePresentationUnitList; };
         //! Gets an editable list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
         bvector<Utf8String>& GetAlternativePresentationUnitListR() { return m_alternativePresentationUnitList; };
+
+        //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+        KindOfQuantityId    GetId() const { BeAssert(HasId()); return m_kindOfQuantityId; }
+        //! Intended to be called by ECDb or a similar system
+        void                SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; };
+        bool                HasId() const { return m_kindOfQuantityId.IsValid(); };
     };
 
 //---------------------------------------------------------------------------------------
@@ -2919,28 +2955,14 @@ private:
         SchemaKey Key;
         };
 
+    bmap<bpair<SchemaKey, SchemaMatchType>, ECSchemaPtr> m_knownSchemas;
     bvector<WString> m_searchPaths;
     SearchPathSchemaFileLocater (bvector<WString> const& searchPaths);
     virtual ~SearchPathSchemaFileLocater();
     static bool TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas);
 
-    void FindEligibleSchemaFiles
-    (
-    bvector<CandidateSchema>& foundFiles, 
-    SchemaKeyR desiredSchemaKey, 
-    SchemaMatchType matchType, 
-    ECSchemaReadContextCR schemaContext
-    );
-
-    void AddCandidateSchemas
-    (
-    bvector<CandidateSchema>& foundFiles,
-    WStringCR schemaPath,
-    WStringCR fileFilter,
-    SchemaKeyR desiredSchemaKey,
-    SchemaMatchType matchType,
-    ECSchemaReadContextCR schemaContext
-    );
+    void FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
+    void AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, WStringCR fileFilter, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
 
     static bool SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs);
 
@@ -3289,6 +3311,10 @@ public:
     //! Removes an ECSchema from the list of referenced schemas
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
     ECOBJECTS_EXPORT ECObjectsStatus            RemoveReferencedSchema(ECSchemaR refSchema);
+
+    //! Removes an ECSchema from the list of referenced schemas
+    //! @param[in]  schemaKey   The key for the schema that should be removed from the list of referenced schemas.  Must be an exact match
+    ECOBJECTS_EXPORT ECObjectsStatus            RemoveReferencedSchema(SchemaKeyCR schemaKey);
 
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema

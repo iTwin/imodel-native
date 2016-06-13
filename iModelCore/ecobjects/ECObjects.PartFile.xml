@@ -23,7 +23,8 @@
         <SubPart PartName="StandardSchemasV3" PartFile="ECStandards" Repository="ECStandards" />
         <SubPart PartName="V3ConversionSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="rapidjson"       PartFile="rapidjson" Repository="Libsrc-RapidJson"/>       
+        <SubPart PartName="rapidjson"       PartFile="rapidjson" Repository="Libsrc-RapidJson"/>
+        <SubPart PartName="UnitsNative"        PartFile="Units"        Repository="Units" />
         <Bindings>
             <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery/$(libprefix)ECObjects$(libext)</Libs>
             <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
@@ -32,7 +33,8 @@
     </Part>
 
     <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
-        <SubPart PartName="PublicAPI" />
+        <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
+        <SubPart PartName="ECObjectsNative" />
         <Bindings>
             <Directory SubPartDirectory="PublishedAPI/ECObjects" SourceName="Delivery/PublishedAPI" ProductDirectoryName="PublishedAPI" Required="false"/>
         </Bindings>
@@ -187,11 +189,11 @@
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjects -dTEST_COLLECTION_PRODUCT=ECObjects-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ECObjects-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="ECObjects-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/ECObjects/Project" />
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
         </Bindings>
     </Part>
 
@@ -306,6 +308,7 @@
         <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="ecobjectsnativeassemblies"    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="unitssnativeassemblies"       LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="ecschemas"                    LibType="Static"    Deliver="false"/>
 
         <ProductDirectory Name="loggingnativeassemblies"            Path="Runtime"/>
@@ -317,7 +320,7 @@
         <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
         <ProductDirectory Name="ecschemas"                          Path="Runtime"/>
         <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
-        
+        <ProductDirectory Name="UnitsNativeAssemblies"              Path="Runtime"/>
     </ProductDirectoryList>
 
     <Product Name="ECObjects">

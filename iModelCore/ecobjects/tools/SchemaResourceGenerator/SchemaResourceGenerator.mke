@@ -35,6 +35,7 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)   
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)Units$(libext)   
 
 %include $(SharedMki)linktool.mki
 

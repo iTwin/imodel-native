@@ -60,6 +60,7 @@ void UnitsTestBase::InitializeUnits (Utf8String testSchemaName, bvector< ECSchem
 
 
         schemaContext = ECSchemaReadContext::CreateContext();
+        schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
         schemaContext->AddSchemaLocater (*schemaLocater);
         m_supplementedSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
         EXPECT_TRUE (m_supplementedSchema.IsValid());

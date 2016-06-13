@@ -9,6 +9,7 @@
 #include "../TestFixture/TestFixture.h"
 
 #include <ECUnits/Units.h>
+#include <Units/Units.h>
 
 using namespace BentleyApi::ECN;
 
@@ -100,6 +101,7 @@ static Utf8CP s_schemaXml =
     "        <ECProperty propertyName=\"FromKOQDimension\" typeName=\"double\">"
     "          <ECCustomAttributes>"
     "              <UnitSpecification xmlns=\"Unit_Attributes.01.00\">"
+    "                  <UnitName />"
     "                  <KindOfQuantityName>LENGTH</KindOfQuantityName>"
     "              </UnitSpecification>"
     "          </ECCustomAttributes>"
@@ -1744,6 +1746,45 @@ TEST_F (UnitsTest, TestUnitSpecifications)
     EXPECT_TRUE (Unit::GetUnitForECProperty (nonStandardUnit, *m_schema->GetClassP ("UnitSpecClass")->GetPropertyP ("FromNonExistentKOQWithUnit")));
     EXPECT_EQ (0, strcmp (nonStandardUnit.GetShortLabel(), "NONEXISTENT_UNIT"));
     EXPECT_EQ (0, strcmp (nonStandardUnit.GetBaseUnitName(), "NONEXISTENT_UNIT"));
+    }
+
+void ValidateConvertedUnits(ECSchemaR convertedSchema, ECSchemaR originalSchema)
+    {
+    for (const auto& ecClass : originalSchema.GetClasses())
+        {
+        ECClassP convertedClass = convertedSchema.GetClassP(ecClass->GetName().c_str());
+        for (const auto& ecProp : ecClass->GetProperties(true))
+            {
+            Unit originalUnit;
+            if (Unit::GetUnitForECProperty(originalUnit, *ecProp))
+                {
+                ECPropertyP convertedProp = convertedClass->GetPropertyP(ecProp->GetName().c_str());
+                KindOfQuantityCP koq = convertedProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+                ASSERT_NE(nullptr, koq) << "Could not find KOQ for property " << ecProp->GetName().c_str();
+                Units::UnitCP convertedUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(originalUnit.GetName());
+                if (nullptr == convertedUnit) // If null it may be a dummy unit added during conversion ... 
+                    convertedUnit = Units::UnitRegistry::Instance().LookupUnit(originalUnit.GetName());
+                ASSERT_NE(nullptr, convertedUnit) << "Could not find converted unit for old unit " << originalUnit.GetName();
+
+                EXPECT_EQ(0, strcmp(convertedUnit->GetName(), koq->GetPersistenceUnit().c_str())) << "Converted unit not correct for " << convertedProp->GetName().c_str();
+                }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                       05/2016
+//+---------------+---------------+---------------+---------------+---------------+------/
+TEST_F(UnitsTest, TestConvertingUnitSpecifications)
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr refSchema;
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refSchema, s_refSchemaXml, *context)) << "Failed to load ref schema";
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, s_schemaXml, *context)) << "Failed to load schema";
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    ValidateConvertedUnits(*schema, *m_schema);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -271,10 +271,11 @@ Utf8StringCR className
 //+---------------+---------------+---------------+---------------+---------------+------
 IECInstancePtr IECCustomAttributeContainer::GetPrimaryCustomAttributeLocal
 (
-    Utf8StringCR className
-    ) const
+Utf8StringCR schemaName,
+Utf8StringCR className
+) const
     {
-    return GetCustomAttributeInternal(className, false, false);
+    return GetCustomAttributeInternal(schemaName, className, false, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -565,6 +566,32 @@ ECClassCR classDefinition
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECCustomAttributeContainer::RemoveSupplementedCustomAttribute
+(
+Utf8StringCR schemaName,
+Utf8StringCR className
+)
+    {
+    ECCustomAttributeCollection::iterator iter;
+    for (iter = m_supplementedCustomAttributes.begin(); iter != m_supplementedCustomAttributes.end(); iter++)
+        {
+        ECClassCR currentClass = (*iter)->GetClass();
+        ECSchemaCR classSchema = currentClass.GetSchema();
+
+        if (0 == className.compare(currentClass.GetName()) &&
+            0 == schemaName.compare(classSchema.GetName()))
+            {
+            m_supplementedCustomAttributes.erase(iter);
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::RemoveSupplementedCustomAttribute
@@ -620,10 +647,17 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
                     status = CustomAttributeReadStatus::SkippedCustomAttributes;
                 }
             if (customAttributeInstance.IsValid())
-                if (ECObjectsStatus::CustomAttributeContainerTypesNotCompatible == SetCustomAttribute(*customAttributeInstance))
+                {
+                ECObjectsStatus caSetStatus = SetCustomAttribute(*customAttributeInstance);
+                if (ECObjectsStatus::Success != caSetStatus)
                     {
-                    status = CustomAttributeReadStatus::InvalidCustomAttributes;
+                    // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
+                    if (ecXmlVersionMajor >= 3)
+                        status = CustomAttributeReadStatus::InvalidCustomAttributes;
+                    else if (CustomAttributeReadStatus::Success == status)
+                        status = CustomAttributeReadStatus::SkippedCustomAttributes;
                     }
+                }
             }
         }
     return status;
