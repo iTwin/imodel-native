@@ -90,25 +90,22 @@ void WSRepositoryClient::SetCredentials(Credentials credentials)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> WSRepositoryClient::VerifyAccess
-(
-ICancellationTokenPtr ct
-) const
+AsyncTaskPtr<WSVoidResult> WSRepositoryClient::VerifyAccess(ICancellationTokenPtr ct) const
     {
-    return m_connection->GetWebApiAndReturnResponse<AsyncResult<void, WSError>>([=] (WebApiPtr webApi)
+    return m_connection->GetWebApiAndReturnResponse<WSVoidResult>([=] (WebApiPtr webApi)
         {
         ObjectId fakeObject("NonExistingSchema.NonExistingClassForCredentialChecking", "nonId");
 
         return
             webApi->SendGetObjectRequest(fakeObject, "", ct)
-            ->Then<AsyncResult<void, WSError>>([=] (WSObjectsResult& result)
+            ->Then<WSVoidResult>([=] (WSObjectsResult& result)
             {
             if (WSError::Id::ClassNotFound == result.GetError().GetId() ||
                 WSError::Id::SchemaNotFound == result.GetError().GetId())
                 {
-                return AsyncResult<void, WSError>::Success();
+                return WSVoidResult::Success();
                 }
-            return AsyncResult<void, WSError>::Error(result.GetError());
+            return WSVoidResult::Error(result.GetError());
             });
         }, ct);
     }

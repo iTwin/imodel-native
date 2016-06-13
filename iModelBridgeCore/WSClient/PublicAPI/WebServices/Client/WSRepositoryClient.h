@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSRepositoryClient.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,6 +39,7 @@ typedef AsyncResult<HttpBodyPtr, WSError>               WSChangesetResult;
 typedef AsyncResult<void, WSError>                      WSUpdateObjectResult;
 typedef AsyncResult<void, WSError>                      WSDeleteObjectResult;
 typedef AsyncResult<void, WSError>                      WSUpdateFileResult;
+typedef AsyncResult<void, WSError>                      WSVoidResult;
 
 #define WSQuery_CustomParameter_NavigationParentId      "navigationParentId"
 
@@ -62,10 +63,7 @@ struct IWSRepositoryClient
         //! Checks if supplied credentials are valid for this repository.
         //! @param[in] ct
         //! @return success if credentials are valid for given repository, else error that occurred
-        virtual std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> VerifyAccess
-            (
-            ICancellationTokenPtr ct = nullptr
-            ) const = 0;
+        virtual AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const = 0;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
@@ -240,10 +238,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT void SetCredentials(Credentials credentials);
 
         //! Check if user can access repository
-        WSCLIENT_EXPORT std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> VerifyAccess
-            (
-            ICancellationTokenPtr ct = nullptr
-            ) const override;
+        WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
