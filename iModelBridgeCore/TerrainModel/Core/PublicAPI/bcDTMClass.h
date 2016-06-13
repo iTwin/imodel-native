@@ -246,6 +246,8 @@ struct BcDTM : RefCounted<TerrainModel::IDTM>
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMVolume* _GetDTMVolume() override;
         virtual DTMStatusInt _GetBoundary (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret) override;
         virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) override;
+        
+		virtual DTMStatusInt _ExportToGeopakTinFile (WCharCP fileNameP) override;
         virtual DTMStatusInt _GetTransformDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation) override;
         virtual bool _GetTransformation (TransformR transformation) override;
         // End IDTM Implementation
