@@ -24,19 +24,16 @@ struct ECDbMap :NonCopyableClass
 
     private:
         mutable BeMutex m_mutex;
+        mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
+        mutable LightweightCache m_lightweightCache;
 
         ECDbCR m_ecdb;
         DbSchema m_dbSchema;
-
-        mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
-        mutable LightweightCache m_lightweightCache;
         SchemaImportContext* m_schemaImportContext;
-
+    private:
         BentleyStatus TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
         ClassMapPtr DoGetClassMap(ECN::ECClassCR) const;
-
         BentleyStatus TryLoadClassMap(ClassMapPtr&, ClassMapLoadContext& ctx, ECN::ECClassCR) const;
-
         MappingStatus DoMapSchemas();
         MappingStatus MapClass(ECN::ECClassCR);
         BentleyStatus SaveDbSchema() const;

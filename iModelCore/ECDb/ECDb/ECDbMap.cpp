@@ -1208,9 +1208,5 @@ BentleyStatus ECDbMap::SaveDbSchema() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IssueReporter const& ECDbMap::Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
-
-
-
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

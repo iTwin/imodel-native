@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct StorageDescription;
 
-struct LightweightCache : NonCopyableClass
+struct LightweightCache final: NonCopyableClass
     {
     public:
         enum class RelationshipEnd : int
@@ -73,7 +73,7 @@ struct LightweightCache : NonCopyableClass
 //! Hold detail about how table partition is described for this class
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
-struct Partition
+struct Partition final
     {
     friend struct StorageDescription;
 
@@ -106,7 +106,7 @@ struct Partition
 //! Represents storage description for a given class map and its derived classes for polymorphic queries
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
-struct StorageDescription : NonCopyableClass
+struct StorageDescription  final: NonCopyableClass
     {
     private:
         ECN::ECClassId m_classId;
