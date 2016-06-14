@@ -232,6 +232,30 @@ void DgnViewport::StartRenderThread()
     BeThreadUtilities::StartNewThread(300*1024, Render::Queue::Main, s_renderQueue); 
     }
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct DestroyTargetTask : Render::NonSceneTask
+{
+    virtual Utf8CP _GetName() const override {return "Destroy Target";}
+    virtual Outcome _Process(StopWatch& timer) override {m_target->_OnDestroy(); return Outcome::Finished;}
+    DestroyTargetTask(Render::Target& target) : NonSceneTask(&target, Operation::DestroyTarget) {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetRenderTarget(Target* newTarget)
+    {
+    DgnDb::VerifyClientThread();
+    if (m_renderTarget.IsValid())
+        RenderQueue().AddAndWait(*new DestroyTargetTask(*m_renderTarget));
+
+    m_renderTarget = newTarget; 
+    m_sync.InvalidateFirstDrawComplete();
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
