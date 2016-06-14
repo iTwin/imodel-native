@@ -1,6 +1,7 @@
 // VortexFeatureFit.cpp : Defines the entry point for the DLL application.
 //
 
+#include <Geom/GeomApi.h>
 #include "Includes.h"
 #include "QueryBuffer.h"
 #include "ClusterAnalyser.h"
@@ -104,7 +105,7 @@ T	FitCylinderToPoints( PThandle query, Cylinder<T> &res_cylinder,
 				(radius > 0 && !cylinder.axis.isZero()) || constrainToAxis);
 #else
             // &&RB TODO: replace wilmagic function with geomlibs function
-            // &&RB TODO: the following geomlibs function call must be tested
+            // &&RB TODO: the following geomlibs function call must be tested in this context
 #endif
 		
 			cen2 = cen;
@@ -127,7 +128,7 @@ T	FitCylinderToPoints( PThandle query, Cylinder<T> &res_cylinder,
 					candidate_pnts, cen, axis, radius, height, true);
 #else
             // &&RB TODO: replace wilmagic function with geomlibs function
-            // &&RB TODO: the following geomlibs function call must be tested
+            // &&RB TODO: the following geomlibs function call must be tested in this context
 #endif
 
 				if (error1 < min_error)
@@ -254,8 +255,16 @@ T	FitPlaneToPoints( QueryBuffer<T> &pointsBuffer, Vector3<T> &planeNormal,
 #else
     const Vector3<T> *candidate_pnts = reinterpret_cast<const Vector3<T> *>(pointsBuffer.getPointsBuffer());
 
-    // &&RB TODO: replace wilmagic function with geomlibs function
-    // &&RB TODO: the following geomlibs function call must be tested
+    // &&RB TODO: the following geomlibs function call must be tested in this context
+    bvector<DPoint3d> geomlibs_points(pointsBuffer.numPntsInQueryIteration());
+    memcpy(geomlibs_points.data(), candidate_pnts, pointsBuffer.numPntsInQueryIteration());
+    DVec3d centroid, moments;
+    RotMatrix axes;
+    DPoint3dOps::PrincipalAxes(geomlibs_points, centroid, axes, moments);
+    // &&RB TODO: set plane object members to proper values from geomlibs centroid, axes and moment structures:
+    //! @param [out] axes principal axes.
+    //! @param [out] moments second moments wrt x,y,z -- sums of (yy+zz,xx+zz,xx+yy)
+    //! @remarks axes are orderd so x is largest moment, y next, z smallest.
     vortex::Plane<T> plane;
 #endif
 

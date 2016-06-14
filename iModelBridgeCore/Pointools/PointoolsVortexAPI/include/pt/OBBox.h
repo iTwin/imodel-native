@@ -497,9 +497,25 @@ void OBBox<T>::merge( const OBBox<T>& box1 )
     q = invLength*q;
     q.ToRotationMatrix(&m_axis[0].x);
 #else
-    // &&RB TODO: replace wilmagic function with geomlibs function
-    //DPoint4d q0, q1;
-    // &&RB TODO: the following geomlibs function call must be tested
+    // &&RB TODO: the following geomlibs function calls must be tested
+    // &&RB TODO: Must check that matrix should be initialized using Row major or column major ordering
+    RotMatrix rm1 = RotMatrix::FromRowVectors(reinterpret_cast<DVec3dCR>(m_axis[0]), reinterpret_cast<DVec3dCR>(m_axis[1]), reinterpret_cast<DVec3dCR>(m_axis[2]));
+    RotMatrix rm2 = RotMatrix::FromRowVectors(reinterpret_cast<DVec3dCR>(box1.m_axis[0]), reinterpret_cast<DVec3dCR>(box1.m_axis[1]), reinterpret_cast<DVec3dCR>(box1.m_axis[2]));
+    DPoint4d q0, q1;
+    bsiRotMatrix_toQuaternion(&rm1, &q0, false); // &&RB TODO: third parameter --> should we transpose or not?
+    bsiRotMatrix_toQuaternion(&rm2, &q1, false); // &&RB TODO: third parameter --> should we transpose or not?
+
+    if (q0.DotProduct(q1) < (T)0)
+    {
+        q1.Negate();
+    }
+    DPoint4d q;
+    q.SumOf(q0, q1);
+    assert(q.MagnitudeXYZW() != 0);
+    T invLength = (T)1.0 / q.MagnitudeXYZW();
+    q.Scale(q, invLength);
+    bsiRotMatrix_fromQuaternion(reinterpret_cast<RotMatrixP>(&m_axis[0].x), &q);
+
 #endif
 
     // Project the input box vertices onto the merged-box axes.  Each axis
@@ -563,7 +579,7 @@ void OBBox<T>::merge( const OBBox<T>& box1 )
     // the new box.  Compute the extents based on the new center.
     for (j = 0; j < 3; ++j)
     {
-		vec3<T> t( (pmax[j] + pmin[j]) * m_axis[j] );
+		vec3<T> t( m_axis[j] * (pmax[j] + pmin[j]));
         translate(  t* (T)0.5 );
 
         extent(j, (pmax[j] - pmin[j])*(T)0.5);

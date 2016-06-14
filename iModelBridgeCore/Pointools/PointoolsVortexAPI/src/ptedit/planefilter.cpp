@@ -46,11 +46,16 @@ void  PlaneSelect::computePlane()
 		plane.normal( (const double*)wplane.Normal );
 		plane.constant( wplane.Constant );
 #else
-        // &&RB TODO: replace wilmagic function with geomlibs function
-        pt::Planed wplane;
-        plane = wplane;
-        // &&RB TODO: the following geomlibs function call must be tested
-
+        // &&RB TODO: the following geomlibs function call must be tested in this context
+        bvector<DPoint3d> geomlibs_points(points.size());
+        memcpy(geomlibs_points.data(), points.data(), points.size());
+        DVec3d centroid, moments;
+        RotMatrix axes;
+        DPoint3dOps::PrincipalAxes(geomlibs_points, centroid, axes, moments);
+        // &&RB TODO: set plane object members to proper values from geomlibs centroid, axes and moment structures:
+        //! @param [out] axes principal axes.
+        //! @param [out] moments second moments wrt x,y,z -- sums of (yy+zz,xx+zz,xx+yy)
+        //! @remarks axes are orderd so x is largest moment, y next, z smallest.
 #endif
 		plane.base();
 	}

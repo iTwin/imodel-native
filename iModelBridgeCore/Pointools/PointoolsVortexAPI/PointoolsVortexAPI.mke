@@ -562,6 +562,4 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)wildmagic$(stlibext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BentleyGeom$(stlibext)
 %endif
 
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BentleyGeom$(stlibext)
-
 %include $(sharedMki)linkLibrary.mki

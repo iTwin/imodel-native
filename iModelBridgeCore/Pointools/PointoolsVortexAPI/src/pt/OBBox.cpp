@@ -126,11 +126,20 @@ OBBoxd	createFittingOBBd(const vector3d *pts, int numPoints)
 	box.extent(2,((double)0.5)*(pmax[2] - pmin[2]));
 
 #else
+    // &&RB TODO: the following geomlibs function call must be tested in this context
+    bvector<DPoint3d> points(numPoints);
+    memcpy(points.data(), pts, numPoints);
+    BENTLEY_NAMESPACE_NAME::Transform transform;
+    DPoint3dOps::PrincipalExtents(points, transform);
+    // &&RB TODO: set box object members to proper values from geomlibs transform structure:
+    //            originWithExtentVectors transform with axes in the direction of principal axes.
+    //                    origin at lower left of a tight (principal axes) bounding box.
+    //                    x,y,z column vectors are full extent along the bounding box.
+    //                    z column is the smallest column.
+    //                    z column has positive z if possible.
+    //                    x column has positive x if possible.
+
     OBBoxd box;
-    // &&RB TODO: the following geomlibs function call must be tested
-    //BoundBox b;
-    //bound_optimizedBoxCompute(&b, reinterpret_cast<DPoint3dP>(const_cast<vector3d*>(pts)), numPoints);
-    // &&RB TODO: set box object members to proper values from geomlibs BoundBox structure
 #endif
 
 	return box;

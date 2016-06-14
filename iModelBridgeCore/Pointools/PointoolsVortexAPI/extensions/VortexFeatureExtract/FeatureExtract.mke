@@ -132,6 +132,7 @@ LINKER_LIBRARIES = \
     %endif
 %endif
 
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BentleyGeom$(stlibext)
 
 %include $(PointoolsVortexAPI)mki\PointoolsVortexAPI_Version.mki
 

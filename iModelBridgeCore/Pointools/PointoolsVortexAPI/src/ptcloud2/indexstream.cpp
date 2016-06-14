@@ -999,7 +999,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 					_n = plane.Normal;
 					_o = plane.Constant * plane.Normal;
 #else
-                    // &&RB TODO: the following geomlibs function call must be tested
+                    // &&RB TODO: the following geomlibs function call must be tested in this context
                     if (false == bsiGeom_planeThroughPoints(reinterpret_cast<DPoint3dP>(&_n), 
                                                             reinterpret_cast<DPoint3dP>(&_origin), 
                                                             reinterpret_cast<DPoint3dCP>(_v), valid_points)) 
