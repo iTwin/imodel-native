@@ -128,7 +128,7 @@ CloudChannelData::CloudChannelData( const pcloud::PointCloud* cloud, uint bitsiz
 	/* create the voxel channel data and set to default */ 
 	if (cloud) // construction from file does not have a cloud pointer
 	{
-		for (int i=0; i<cloud->voxels().size(); i++)
+        for (size_t i = 0; i < cloud->voxels().size(); i++)
 		{
 			const pcloud::Voxel *vox = cloud->voxels()[i];
 			data.push_back( VoxelChannelData(static_cast<uint>(vox->fullPointCount()), (bitsize * multiple) / 8, static_cast<uint>(vox->fullPointCount()), flags) );
@@ -164,7 +164,7 @@ CloudChannelData::CloudChannelData( const pcloud::PointCloud* cloud, uint bitsiz
 //-----------------------------------------------------------------------------
 CloudChannelData::~CloudChannelData()
 {
-	for (int i=0; i<data.size(); i++)
+	for (size_t i=0; i<data.size(); i++)
 	{
 		VoxelChannelData &v = data[i];
 		v.destroy();
@@ -455,7 +455,7 @@ bool UserChannel::writeToBranch( pt::datatree::Branch *branch, bool copy )
 
 		pt::datatree::Branch *leaves = cl->addBranch("leaves");
 
-		for (int j=0; j< c->data.size(); j++)
+		for (size_t j=0; j< c->data.size(); j++)
 		{
 			VoxelChannelData &chd = c->data[j];
 			
@@ -731,7 +731,7 @@ void UserChannel::remFromChannel( const pcloud::Scene *scene )
 		{
 			CloudChannelData *ch = f->second;
 			
-			for (int j=0; j<ch->data.size(); j++)
+			for (size_t j=0; j<ch->data.size(); j++)
 				ch->data[j].destroy();
 			
 			m_data.erase(f);

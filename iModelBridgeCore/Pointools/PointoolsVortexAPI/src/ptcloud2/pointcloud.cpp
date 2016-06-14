@@ -280,7 +280,7 @@ void PointCloud::_computeBounds()
 		/* if there is a user transform, force recompute */ 
 		bool hasXform = ((userTransformationMatrix() != mmatrix4d::identity()) || transform().isDirty()) ? true : false;
 		if (hasXform)
-			for (int i=0; i<_voxels.size(); i++) _voxels[i]->flag( ExtentsDirty, true );
+            for (size_t i = 0; i < _voxels.size(); i++) _voxels[i]->flag(ExtentsDirty, true);
 
 		_root->computeExtents();
 		m_projectBounds.undirtyBounds();
@@ -310,7 +310,7 @@ void PointCloud::buildFromRaw(int n, float *geom, ubyte *rgb, short *intensity, 
 //---------------------------------------------------------------
 void PointCloud::clearData()
 {
-	for (int i=0; i<_voxels.size(); i++)
+	for (size_t i=0; i<_voxels.size(); i++)
 		_voxels[i]->clearChannels();
 }
 //---------------------------------------------------------------
@@ -326,7 +326,7 @@ bool PointCloud::initialize()
 //---------------------------------------------------------------
 void PointCloud::randomizeData()
 {
-	for (int i=0; i<_voxels.size(); i++)
+	for (size_t i=0; i<_voxels.size(); i++)
 		_voxels[i]->initializeChannels();
 }
 //---------------------------------------------------------------

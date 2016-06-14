@@ -40,7 +40,7 @@ int RenderEffectsManager::numOfEffects() const
 /*****************************************************************************/
 RenderEffectI		* RenderEffectsManager::renderEffect(int index)
 {
-	return index < m_effects.size() ? m_effects[ index ] : NULL;
+	return index < (int)m_effects.size() ? m_effects[ index ] : NULL;
 }
 
 /*****************************************************************************/
@@ -52,7 +52,7 @@ RenderEffectI		* RenderEffectsManager::renderEffect(int index)
 /*****************************************************************************/
 const RenderEffectI		* RenderEffectsManager::renderEffect(int index) const
 {
-	return index < m_effects.size() ? m_effects[ index ] : NULL;
+	return index < (int) m_effects.size() ? m_effects[ index ] : NULL;
 }
 
 /*****************************************************************************/

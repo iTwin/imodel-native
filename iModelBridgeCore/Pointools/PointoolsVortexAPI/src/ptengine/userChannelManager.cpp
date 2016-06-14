@@ -316,7 +316,7 @@ int UserChannelManager::saveChannelsToFile( const pt::String &filename, int numC
 	dtree->addNode("num_channels", numChannels);
 	pt::datatree::Branch *br_channels = dtree->addBranch("channels");
 
-	for (int i=0; i<channelsToWrite.size(); i++)
+	for (size_t i=0; i<channelsToWrite.size(); i++)
 	{
 		UserChannel *channel = channelsToWrite[i];
 
@@ -448,7 +448,7 @@ UserChannel *UserChannelManager::createChannelFromLayers( const pt::String &name
 				const pcloud::PointCloud *cloud = scene->cloud(i);
 
 				// populate this cloud channel
-				for (int v=0;v<cloud->voxels().size();v++)
+                for (size_t v = 0; v < cloud->voxels().size(); v++)
 				{
 					pcloud::Voxel *vx = cloud->voxels()[v];
 					VoxelChannelData *vdata = channel->voxelChannel( vx );
@@ -516,7 +516,7 @@ bool		UserChannelManager::applyChannelToLayers( const UserChannel *channel, pclo
 			pcloud::PointCloud *cloud = scene->cloud(i);
 
 			// populate this cloud channel
-			for (int v=0;v<cloud->voxels().size();v++)
+            for (size_t v = 0; v < cloud->voxels().size(); v++)
 			{
 				pcloud::Voxel *vx = cloud->voxels()[v];
 				const VoxelChannelData *vdata = channel->voxelChannel( vx );

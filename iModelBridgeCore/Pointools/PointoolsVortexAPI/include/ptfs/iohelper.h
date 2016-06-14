@@ -352,7 +352,7 @@ namespace ptds
 			_chunksize = _buffersize > READ_BUFFER_CHUNK ? READ_BUFFER_CHUNK : _buffersize;
 			_chunkstart = 0;
 
-			_buffer = new ubyte[_chunksize];
+			_buffer = new ubyte[(size_t)_chunksize];
 			
 			if (_tracker)
 			{
@@ -397,11 +397,11 @@ namespace ptds
 			size += chunkunread;
 
 			/*allocate buffer*/ 
-			ubyte *buffer = new ubyte[size];
+			ubyte *buffer = new ubyte[(size_t) size];
 			
 			/*copy unread stuff into new buffer*/ 
 			if (chunkunread > 0)
-				memcpy(buffer, &_buffer[_chunksize - chunkunread], chunkunread);
+				memcpy(buffer, &_buffer[_chunksize - chunkunread], (size_t) chunkunread);
 			else chunkunread = 0;
 
 			delete [] _buffer;
@@ -546,7 +546,7 @@ namespace ptds
 #endif
             }
 			_buffersize = buffersize;		
-			_buffer = new ubyte[_buffersize];
+			_buffer = new ubyte[(size_t) _buffersize];
 			_commitpos = 0;
 
 			/*shift forward for size*/ 
@@ -643,7 +643,7 @@ namespace ptds
 				}
 			}
 			
-			memcpy(&_buffer[_pos], d, size);
+			memcpy(&_buffer[_pos], d, (size_t) size);
 
 			_pos += size;
 			_tracker->advance(size);
@@ -744,7 +744,7 @@ namespace ptds
 #ifdef _VERBOSE
             std::cout << "     " << "Reserve " << " : fp = " << _tracker->position() << std::endl;
 #endif
-			memset(&_buffer[_pos], 0, size);
+			memset(&_buffer[_pos], 0, (size_t) size);
 
 			_pos += size;
 			_tracker->advance(size);
@@ -796,7 +796,7 @@ namespace ptds
 			ubyte *buff = 0;
 
 			try	{
-				buff = new ubyte[size];
+				buff = new ubyte[(size_t) size];
 			}
 			catch (std::bad_alloc) {
 				_blockErrors.increment();
@@ -804,7 +804,7 @@ namespace ptds
 			}
 			_buffersize = size;
 
-			memcpy(buff, _buffer, _pos);
+			memcpy(buff, _buffer, (size_t) _pos);
 			delete [] _buffer;
 			_buffer = buff;
 			return true;
@@ -826,7 +826,7 @@ namespace ptds
 			}
 			_commitpos += _pos;
 
-			memset(_buffer, 0, _buffersize);
+			memset(_buffer, 0, (size_t) _buffersize);
 			_pos = 0;
 			return true;
 		}

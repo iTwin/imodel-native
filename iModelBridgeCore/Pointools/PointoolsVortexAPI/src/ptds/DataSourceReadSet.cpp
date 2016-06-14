@@ -168,7 +168,7 @@ DataSource::Data *DataSourceReadSet::executeReadSet(DataSource &dataSource, Data
 	if(buffer == NULL)
 	{
 															// Create a new buffer
-		if((buffer = new DataSource::Data[getTotalReadSize()]) == NULL)
+		if((buffer = new DataSource::Data[(size_t) getTotalReadSize()]) == NULL)
 			return NULL;
 
 		bufferAllocated = true;
@@ -251,7 +251,7 @@ ptds::DataSize DataSourceReadSet::transferVoxelData(DataSource::Data *source)
 			std::lock_guard<std::mutex> vlock(voxel->mutex());
 															// Copy from main source buffer to voxel channel buffer
 															// using read source Windowing if using cache
-			memcpy(dest, source, read->getSize());
+            memcpy(dest, source, (size_t) read->getSize());
 															// Set current LOD to the achieved Stream LOD
 			voxel->setCurrentLOD(voxel->getStreamLOD());
 															// Keep track of total amount of data copied

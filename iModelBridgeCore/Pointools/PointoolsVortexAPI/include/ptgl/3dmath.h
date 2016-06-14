@@ -908,7 +908,7 @@ inline void clamp(gl_vector& theVec,const real& low,const real& high)
 */
 inline real RadToDeg(const real& angle)
 {
-	return angle*57.29577951308;
+	return (real)(angle*57.29577951308);
 }
 
 /*!
@@ -918,7 +918,7 @@ inline real RadToDeg(const real& angle)
 */
 inline real DegToRad(const real& angle)
 {
-	return angle*0.01745329251994;
+	return (real) (angle*0.01745329251994);
 }
 
 /*!

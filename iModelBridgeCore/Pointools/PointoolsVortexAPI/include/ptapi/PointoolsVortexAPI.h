@@ -29,7 +29,13 @@
 #define PT_FIT_MODE_USE_SELECTED	0x01
 #define PT_FIT_MODE_USE_INPUT		0x02
 
+// Why we alter the default calling convention? 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #define PTAPI	STDCALL_ATTRIBUTE
+#else
+#define PTAPI
+#endif
+
 
 
 /* view parameters - these operate in current viewport */ 
@@ -56,4 +62,4 @@ PTvoid		PTAPI ptDeleteImage( PThandle image );
 
 /* unit tests */ 
 PTbool	PTAPI _ptUnitTests( PTenum test );
-PTres	PTAPI _ptDiagnostic( PTvoid *data );
+

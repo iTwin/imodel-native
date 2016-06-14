@@ -43,7 +43,9 @@ namespace pt
 	{
 		inline DummyTraceOut() {}
 		inline ~DummyTraceOut(){}
-		template <class T> inline S &operator << (const T &d) { return S() << d; };
+        template <class T> inline S &operator << (const T &d) { m_s << d; return m_s; };
+
+        S m_s;
 	};
 	struct DummyTrace
 	{

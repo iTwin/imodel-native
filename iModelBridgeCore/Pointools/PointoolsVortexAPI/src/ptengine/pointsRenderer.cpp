@@ -55,11 +55,13 @@ PointsRenderer::PointsRenderer( RenderPipelineI *pipeline )
 	m_colGeomGrad = 0;
 	m_activeBuffer = 0;
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB  // getenv is not portable.  This is also a slow function and should be called only once at startup.
 	if (getenv("POINTOOLSDEBUG") 
 		&& strcmp(getenv("POINTOOLSDEBUG"), "41111")==0)
 	{
 		g_showDebugInfo = false;	// not for release
 	}
+#endif
 }
 /*****************************************************************************/
 /**

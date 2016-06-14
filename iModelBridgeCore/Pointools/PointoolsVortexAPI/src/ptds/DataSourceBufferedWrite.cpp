@@ -48,7 +48,7 @@ bool DataSourceBufferedWrite::allocateBuffer( DataSource::Size sz )
 {
 	try
 	{
-		m_buffer = new DataSource::Data[sz];
+		m_buffer = new DataSource::Data[(size_t)sz];
 		m_bufferSize = sz;
 		return true;
 	}
@@ -84,7 +84,7 @@ DataSource::Size DataSourceBufferedWrite::writeBytes( const DataSource::Data *bu
 	if (!checkSize(numBytes)) 
 		flush();
 
-	memcpy(&m_buffer[m_position], buffer, numBytes);
+	memcpy(&m_buffer[m_position], buffer, (size_t) numBytes);
 	m_position += numBytes;
 
 	return numBytes;

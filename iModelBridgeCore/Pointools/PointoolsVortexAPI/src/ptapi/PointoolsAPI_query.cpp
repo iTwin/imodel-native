@@ -1592,7 +1592,7 @@ namespace querydetail
 			
 			int64_t count = 0;
 
-			for (int i=0; i<gather.voxels.size(); i++)
+			for (size_t i=0; i<gather.voxels.size(); i++)
 			{
 				pcloud::Voxel *v = gather.voxels[i];
 
@@ -4449,7 +4449,7 @@ struct FrustumQuery : public Query
 			0, 0, (PTubyte)layerMask );
 		}
 		/* run query on voxel list */ 
-		for (int i=0; i<voxels.size(); i++)
+		for (size_t i=0; i<voxels.size(); i++)
 		{
 			if (!reader.voxel(voxels[i])) 
 				break;
@@ -4505,7 +4505,7 @@ struct FrustumQuery : public Query
 	{
 		if (_writer)
 		{
-			for (int i=0; i<voxels.size(); i++)
+			for (size_t i=0; i<voxels.size(); i++)
 			{
 				if (!_writer->voxel(voxels[i]))
 					break;

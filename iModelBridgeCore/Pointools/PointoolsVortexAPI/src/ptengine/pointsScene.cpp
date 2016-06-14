@@ -253,7 +253,7 @@ void PointsScene::addScene(pcloud::Scene *sc)
 
 		if (pc->root())
 		{
-			for (int j=0; j<pc->voxels().size(); j++)
+            for (size_t j = 0; j < pc->voxels().size(); j++)
 				_voxels.push_back(pc->voxels()[j]);
 		}
 	}
@@ -387,11 +387,11 @@ void PointsScene::removeScene(pcloud::Scene *sc, bool del)
 	for (VOXELSLIST::iterator it = _voxels.begin(); it != _voxels.end(); it++)
 		voxmap.insert(VOXMAP::value_type(*it, it));
 
-	for (uint i=0; i<sc->size(); i++)
+	for (int i=0; i<(int)sc->size(); i++)
 	{
 		if ((*sc)[i]->root())
 		{
-			for (int j=0; j<(*sc)[i]->voxels().size(); j++)
+            for (size_t j = 0; j < (*sc)[i]->voxels().size(); j++)
 			{
 				VOXMAP::iterator V = voxmap.find((*sc)[i]->voxels()[j]);
 				if (V!= voxmap.end()) _voxels.erase(V->second);
@@ -455,7 +455,7 @@ void PointsScene::getBounds(pt::BoundingBoxD &bb)
 	//if (_boundsDirty)
 	{
 		_bb.clear();
-		for (int i=0; i<_scenes.size() ; i++)
+        for (size_t i = 0; i < _scenes.size(); i++)
 		{
 //			_scenes[i]->update();
 			_bb.expandBy(_scenes[i]->projectBounds().bounds());
@@ -473,7 +473,7 @@ void PointsScene::clear(bool freeMemory)
     std::unique_lock<std::mutex> listlock(_listusemutex);
 
 	/* notify observers */ 
-	for (uint sc=0; sc<_scenes.size(); sc++)
+	for (size_t sc=0; sc<_scenes.size(); sc++)
 	{
 		FILE_OBS_LIST::iterator i = _fileObs.begin();
 		while (i != _fileObs.end())
@@ -504,7 +504,7 @@ bool PointsScene::visitVoxels(PointsVisitor *visitor, bool load)
 		-pt::Project3D::project().registration().matrix()(3,1), 
 		-pt::Project3D::project().registration().matrix()(3,2));
 
-	for (uint s=0; s<_scenes.size(); s++)
+	for (size_t s=0; s<_scenes.size(); s++)
 	{
 		pcloud::Scene* scene = _scenes[s];
 		visitor->currentScene = scene;
@@ -542,7 +542,7 @@ bool PointsScene::visitVoxels(PointsVisitor *visitor, bool load)
 //-----------------------------------------------------------------------------
 void PointsScene::visitPointClouds( PointsVisitor *visitor )
 {
-	for (uint s=0; s<_scenes.size(); s++)
+	for (size_t s=0; s<_scenes.size(); s++)
 	{
 		pcloud::Scene* scene = _scenes[s];
 		visitor->currentScene = scene;
@@ -565,8 +565,7 @@ void PointsScene::visitPointClouds( PointsVisitor *visitor )
 //-----------------------------------------------------------------------------
 void PointsScene::visitNodes( PointsVisitor *visitor, bool visible_only ) 
 {
-	int numScenes = static_cast<int>(_scenes.size());
-	for (int sc=0; sc<numScenes; sc++)
+	for (size_t sc=0; sc<_scenes.size(); sc++)
 	{
 		pcloud::Scene* scene = _scenes[sc];
 		if (!visible_only || scene->displayInfo().visible())

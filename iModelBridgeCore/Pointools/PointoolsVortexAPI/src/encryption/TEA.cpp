@@ -144,7 +144,7 @@ void CTEA::Encrypt(char const* in, char* result, size_t n)
 	//n should be > 0 and multiple of m_blockSize
 	if(n<1 || n%m_blockSize!=0)
 		throw runtime_error(string(sm_szErrorMsg6));
-	int i;
+	size_t i;
 	char const* pin;
 	char* presult;
 	if(CBC == m_iMode) //CBC mode, using the Chain
@@ -187,7 +187,7 @@ void CTEA::Decrypt(char const* in, char* result, size_t n)
 	//n should be > 0 and multiple of m_blockSize
 	if(n<1 || n%m_blockSize!=0)
 		throw runtime_error(string(sm_szErrorMsg6));
-	int i;
+    size_t i;
 	char const* pin;
 	char* presult;
 	if(CBC == m_iMode) //CBC mode, using the Chain

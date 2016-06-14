@@ -49,7 +49,7 @@ ColourGradient *ColourGradientManager::getGradientByName( const pt::String &name
 const pt::String &ColourGradientManager::gradientName( int index ) const
 {
 	static pt::String none("");
-	return index < m_gradients.size() ? m_gradients[index]->m_name : none;	
+	return index < (int)m_gradients.size() ? m_gradients[index]->m_name : none;	
 }
 	
 /*****************************************************************************/
@@ -61,7 +61,7 @@ const pt::String &ColourGradientManager::gradientName( int index ) const
 /*****************************************************************************/
 ColourGradient *ColourGradientManager::getGradientByIndex( int index )
 {
-	return index < m_gradients.size() ? m_gradients[index] : 0;
+	return index < (int) m_gradients.size() ? m_gradients[index] : 0;
 }
 
 /*****************************************************************************/
@@ -88,7 +88,7 @@ const ColourGradient *ColourGradientManager::getGradientByName( const pt::String
 /*****************************************************************************/
 const ColourGradient *ColourGradientManager::getGradientByIndex( int index ) const
 {
-	return index < m_gradients.size() ? m_gradients[index] : 0;
+	return index < (int) m_gradients.size() ? m_gradients[index] : 0;
 }
 
 

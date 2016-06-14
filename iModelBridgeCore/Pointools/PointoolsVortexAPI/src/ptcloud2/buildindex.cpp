@@ -95,7 +95,7 @@ namespace pcindex
 
 				/*redistribute points*/ 
 				int size[] = {0,0,0,0,0,0,0,0};
-				ubyte* node = new ubyte[_pointCount];
+                ubyte* node = new ubyte[(size_t) _pointCount];
 
 				BoundingBox bb;
 				for (i=0;i<_pointCount; i++)
@@ -313,7 +313,7 @@ Node* BuildIndex::buildUniformPointsTree(std::vector<ChannelData*> &cd,
 	ubyte* rgb = 0;
 	short* intensity = 0;
 
-	for (int i=0; i<cd.size(); i++)
+	for (size_t i=0; i<cd.size(); i++)
 	{
 		switch (cd[i]->channel)
 		{

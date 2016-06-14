@@ -538,7 +538,7 @@ int SceneClassManager::numImportFileTypes(const wchar_t *typeDesc)
 	
 	int c= 0;
 
-	for (int i=0; i<_importfiletypes.size(); i++)
+	for (size_t i=0; i<_importfiletypes.size(); i++)
 		if (datatypeStrCmp(_importfiledatatypes[i], typeDesc)) c++;
 
 	return c;
@@ -549,7 +549,7 @@ int SceneClassManager::numExportFileTypes(const wchar_t *typeDesc)
 
 	int c= 0;
 
-	for (int i=0; i<_exportfiletypes.size(); i++)
+	for (size_t i=0; i<_exportfiletypes.size(); i++)
 		if (datatypeStrCmp(_exportfiledatatypes[i], typeDesc)) c++;
 
 	return c;
@@ -559,7 +559,7 @@ const ptds::FileType &SceneClassManager::importFileType(int i, const wchar_t *ty
 	if (!typeDesc) return _importfiletypes[i]; 
 
 	int t=0;
-	for (int c=0; c<_importfiletypes.size(); c++)
+	for (size_t c=0; c<_importfiletypes.size(); c++)
 	{
 		if (datatypeStrCmp(_importfiledatatypes[c], typeDesc))
 		{
@@ -574,7 +574,7 @@ const ptds::FileType &SceneClassManager::exportFileType(int i, const wchar_t *ty
 	if (!typeDesc) return _exportfiletypes[i]; 
 
 	int t=0;
-	for (int c=0; c<_exportfiletypes.size(); c++)
+	for (size_t c=0; c<_exportfiletypes.size(); c++)
 	{
 		if (datatypeStrCmp(_exportfiledatatypes[c], typeDesc))
 		{
@@ -728,7 +728,9 @@ void Project3D::addScene(Scene3D *sc)
 {
 	PTTRACE("SceneClassManager::addScene(Scene3D *scene)");
 
-	for (int i=0; i<m_scenesv.size(); i++) if (sc == m_scenesv[i]) return;
+	for (size_t i=0; i<m_scenesv.size(); i++)
+        if (sc == m_scenesv[i]) 
+            return;
 		
 	sc->parent(this);
 	m_scenes.insert( SCENEMAP::value_type(sc->identifier(), sc) );
@@ -758,7 +760,7 @@ Scene3D* Project3D::scene(const wchar_t* id)
 bool Project3D::isSceneValid(Scene3D *scene)
 {
 															// For all scenes
-	for (int i=0; i < m_scenesv.size(); i++) 
+	for (size_t i=0; i < m_scenesv.size(); i++)
 	{
 															// If scene found, record found
 		if (m_scenesv[i] == scene)
@@ -837,7 +839,7 @@ void Project3D::removeAllScenes()
 
 	/* destructor of sceneclassmanager has already been called at this point */ 
 	/* class manager should delete scene data */ 
-	for (int i=0; i<m_scenesv.size(); i++)
+	for (size_t i=0; i<m_scenesv.size(); i++)
 	{
 		Scene3D *sc = m_scenesv[i];
 		SceneClassManager *m = SceneClassManager::manager(sc->typeDescriptor());

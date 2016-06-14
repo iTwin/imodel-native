@@ -200,7 +200,7 @@ ptds::DataSize StreamDataSource::transferReadSetVoxelData(DataSourceReadSet &rea
             std::lock_guard<std::mutex> lock(voxel->mutex());
 															// Copy from main source buffer to voxel channel buffer
 															// using read source Windowing if using cache
-			memcpy(dest, source, read->getSize());
+            memcpy(dest, source, (size_t) read->getSize());
 															// Set current LOD to the achieved Stream LOD
 			voxel->setCurrentLOD(voxel->getStreamLOD());
 															// Keep track of total amount of data copied
@@ -240,7 +240,7 @@ bool StreamDataSource::verifyReadSet(PTRMI::DataBuffer::Data *buffer, DataSource
 
 		ptds::DataSize readSize = read->getSize();
 
-		if((newBuffer = new DataSource::Data[readSize]) == NULL)
+		if((newBuffer = new DataSource::Data[(size_t) readSize]) == NULL)
 		{
 			dataSource->setReadSetEnabled(previousReadSetEnabled);
 			return false;
@@ -249,7 +249,7 @@ bool StreamDataSource::verifyReadSet(PTRMI::DataBuffer::Data *buffer, DataSource
 		dataSource->movePointerTo(read->getPosition());
 		dataSource->readBytes(newBuffer, readSize);
 		
-		if(memcmp(bufferPosition, newBuffer, readSize) != 0)
+		if(memcmp(bufferPosition, newBuffer, (size_t) readSize) != 0)
 		{
 			dataSource->setReadSetEnabled(previousReadSetEnabled);
 			return false;

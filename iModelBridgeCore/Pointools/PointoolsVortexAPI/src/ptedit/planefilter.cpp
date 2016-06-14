@@ -63,7 +63,7 @@ void  PlaneSelect::computePlane()
 	fence.clear();
 	if (points.size() >= 3)
 	{
-		for (int i=0; i<points.size(); i++)
+		for (size_t i=0; i<points.size(); i++)
 		{
 			vec2<double> p2;
 			plane.to2D(points[i], p2);

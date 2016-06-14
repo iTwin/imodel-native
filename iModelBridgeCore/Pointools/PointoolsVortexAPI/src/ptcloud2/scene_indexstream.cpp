@@ -174,11 +174,10 @@ PTTRACE_FUNC
 
 /* insert clouds without data or structure	*/
 /* this is header data						*/
-    int i, g;
 
 	std::vector<pcloud::PointCloud *> gclouds;
 
-	for (g=0; g<buildInfo->stream->numGroups(); g++)
+	for (int g=0; g<buildInfo->stream->numGroups(); g++)
 	{
 		IndexStream::CloudGroup *group = buildInfo->stream->setGroup(g);
 		if (group->clouds.size() <= 1) group->combine = false;
@@ -187,7 +186,7 @@ PTTRACE_FUNC
 		if (group->combine)
 		{
 			/* record which scene cloud this will be*/ 
-			for (i=0;i<group->clouds.size(); i++)
+			for (size_t i=0;i<group->clouds.size(); i++)
 			{
 				IndexStream::CloudInfo *cloudinfo = group->clouds[i];
                 cloudinfo->_cloudPosInScene = static_cast<uint>(_clouds.size());
@@ -197,7 +196,7 @@ PTTRACE_FUNC
 					ScanPosition *sp = addScanPosition(cloudinfo->matrix);
 					
 					/* add the scan images in here */ 
-					for (int im = 0; im<cloudinfo->images.size(); im++)
+                    for (size_t im = 0; im < cloudinfo->images.size(); im++)
 					{
                         sp->addImage(cloudinfo->images[im]);
 					}
@@ -211,7 +210,7 @@ PTTRACE_FUNC
 		}
 		else /* not combined */ 
 		{
-			for (i=0; i<buildInfo->stream->numClouds(); i++)
+			for (int i=0; i<buildInfo->stream->numClouds(); i++)
 			{
 				/* record which scene cloud this will be*/ 
 				buildInfo->stream->cloudInfo(i)->_cloudPosInScene = static_cast<uint>(_clouds.size());
@@ -233,7 +232,7 @@ PTTRACE_FUNC
 						ScanPosition *sp = addScanPosition(cloudinfo->matrix);
 						
 						/* add the scan images in here */ 
-						for (int im = 0; im<cloudinfo->images.size(); im++)
+						for (size_t im = 0; im<cloudinfo->images.size(); im++)
 							sp->addImage(cloudinfo->images[im]);
 					}
 				}
@@ -241,8 +240,8 @@ PTTRACE_FUNC
 		}
 		/* set up matrices							*/ 
 		if (!group->combine)
-			for (i=0; i<gclouds.size(); i++)
-				gclouds[i]->registration().matrix( buildInfo->stream->cloudInfo(i)->matrix );	
+			for (size_t i=0; i<gclouds.size(); i++)
+				gclouds[i]->registration().matrix( buildInfo->stream->cloudInfo((int)i)->matrix );	
 				
 		/* note that combined clouds have a single  */ 
 		/* matrix, this is dealt with later			*/ 
@@ -283,10 +282,10 @@ int Scene::readSinglePass( SceneBuildData *buildInfo )
 	pt::vector3s *normals = 0;
 
 	/*Allocations						*/ 
-	pt::vector3 *geom = new pt::vector3[cloud_info->numPoints];
-	if (cloud_info->hasRGB()) rgb = new ubyte[cloud_info->numPoints*3];
-	if (cloud_info->hasIntensity()) intensity = new short[cloud_info->numPoints];
-	if (cloud_info->hasNormals())	normals = new pt::vector3s[cloud_info->numPoints];
+	pt::vector3 *geom = new pt::vector3[(size_t) cloud_info->numPoints];
+	if (cloud_info->hasRGB()) rgb = new ubyte[(size_t) cloud_info->numPoints*3];
+	if (cloud_info->hasIntensity()) intensity = new short[(size_t) cloud_info->numPoints];
+	if (cloud_info->hasNormals())	normals = new pt::vector3s[(size_t)cloud_info->numPoints];
 
 	/*start cloud read again			*/ 
 	buildInfo->stream->readCloud( buildInfo->cloudIndex );
@@ -551,7 +550,7 @@ int Scene::readMultiPass( SceneBuildData *buildInfo )
 		(*const_cast<pt::BoundingBoxD*>(&root->extents())) = xbd;
 		(*const_cast<pt::BoundingBoxD*>(&pc->projectBounds().bounds())) = xbd;
 		pt::vector3d cntr(buildInfo->stream->xbounds().center().x, buildInfo->stream->xbounds().center().y, buildInfo->stream->xbounds().center().z);
-		for (int i=0; i<pc->voxels().size(); i++)
+        for (size_t i = 0; i < pc->voxels().size(); i++)
 		{
 			const_cast<pt::BoundingBoxD*>(&pc->voxels()[i]->extents())->translateBy(cntr);
 		}
@@ -586,7 +585,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 	/*do write in manageable chunks (ie < MAX_WRITE_BYTES)*/ 
 	std::queue<Voxel*> voxels;
 
-	for (int i=0; i<pc->voxels().size(); i++) 
+	for (size_t i=0; i<pc->voxels().size(); i++) 
 		voxels.push(pc->voxels()[i]);
 
 	/* check how much memory is available */ 
