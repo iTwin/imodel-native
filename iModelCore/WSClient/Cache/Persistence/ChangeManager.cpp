@@ -347,7 +347,7 @@ BentleyStatus ChangeManager::DetectFileModification(ECInstanceKeyCR instanceKey,
 
     time_t modifiedMs = modifiedSeconds * 1000;
 
-    time_t updatedMs;
+    int64_t updatedMs;
     if (SUCCESS != info.GetFileUpdateDate().ToUnixMilliseconds(updatedMs))
         return ERROR;
 
