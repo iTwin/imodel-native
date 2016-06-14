@@ -368,6 +368,8 @@ bool copyFile
             }
         }
 
+    info.SetFileUpdateDate(DateTime::GetCurrentTimeUtc());
+    
     return SUCCESS;
     }
 

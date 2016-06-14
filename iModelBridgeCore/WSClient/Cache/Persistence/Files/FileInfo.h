@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Files/FileInfo.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -62,6 +62,9 @@ struct FileInfo : public ChangeInfo
 
         DateTime GetFileCacheDate() const;
         void SetFileCacheDate(DateTimeCR utcDate);
+
+        DateTime GetFileUpdateDate() const;
+        void SetFileUpdateDate(DateTimeCR utcDate);
 
         CachedInstanceKeyCR GetCachedInstanceKey() const;
 

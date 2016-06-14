@@ -316,35 +316,77 @@ BentleyStatus ChangeManager::DeleteObject(ECInstanceKeyCR instanceKey, SyncStatu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus)
+BentleyStatus ChangeManager::MarkFileAsModified(FileInfo& info, SyncStatus syncStatus)
+    {
+    if (SUCCESS != SetupNewRevision(info))
+        return ERROR;
+
+    info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
+    info.SetChangeStatus(ChangeStatus::Modified);
+    info.SetSyncStatus(syncStatus);
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::DetectFileModification(ECInstanceKeyCR instanceKey, SyncStatus syncStatus)
     {
     ObjectInfo objInfo = m_objectInfoManager.ReadInfo(instanceKey);
     if (!objInfo.IsInCache())
-        {
         return ERROR;
-        }
 
+    FileInfo info = m_fileInfoManager.ReadInfo(objInfo.GetCachedInstanceKey());
+    if (info.GetChangeStatus() == ChangeStatus::Modified)
+        return SUCCESS;
+
+    time_t modifiedSeconds;
+    if (BeFileNameStatus::Success != info.GetFilePath().GetFileTime(nullptr, nullptr, &modifiedSeconds))
+        return ERROR;
+
+    time_t modifiedMs = modifiedSeconds * 1000;
+
+    time_t updatedMs;
+    if (SUCCESS != info.GetFileUpdateDate().ToUnixMilliseconds(updatedMs))
+        return ERROR;
+
+    if (modifiedMs <= updatedMs)
+        return SUCCESS;
+
+    if (SUCCESS != MarkFileAsModified(info, syncStatus))
+        return ERROR;
+
+    return m_fileInfoManager.SaveInfo(info);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus)
+    {
+    if (!filePath.DoesPathExist())
+        return ERROR;
+        
+    ObjectInfo objInfo = m_objectInfoManager.ReadInfo(instanceKey);
+    if (!objInfo.IsInCache())
+        return ERROR;
+        
     FileInfo info = m_fileInfoManager.ReadInfo(objInfo.GetCachedInstanceKey());
     if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
         {
         BeAssert(false && "Cannot change modified file while syncing");
         return ERROR;
         }
-
-    if (SUCCESS != SetupNewRevision(info))
-        {
+    
+    if (SUCCESS != m_fileStorage.CacheFile(info, filePath, nullptr, FileCache::Persistent, DateTime::GetCurrentTimeUtc(), copyFile))
         return ERROR;
-        }
 
-    info.SetChangeStatus(ChangeStatus::Modified);
-    info.SetSyncStatus(syncStatus);
-
-    if (SUCCESS != m_fileStorage.CacheFile(info, filePath, nullptr, FileCache::Persistent, DateTime::GetCurrentTimeUtc(), copyFile) ||
-        SUCCESS != m_fileInfoManager.SaveInfo(info))
-        {
-        BeAssert(false);
+    if (SUCCESS != MarkFileAsModified(info, syncStatus))
         return ERROR;
-        };
+
+    if (SUCCESS != m_fileInfoManager.SaveInfo(info))
+        return ERROR;
 
     return SUCCESS;
     }
