@@ -18,7 +18,7 @@
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
-#include "../../../Cache/Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
 #include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 
