@@ -502,7 +502,6 @@ TEST_F(ChangeManagerTests, DetectFileModification_FileNotChanged_HasNoChanges)
     auto cache = GetTestCache();
     auto instance = cache->FindInstance(StubFileInCache(*cache));
     // Act
-    BeThreadUtilities::BeSleep(1000); // Workaround for BeFileName::GetFileTime returning in accurate time. Remove this if it gets fixed.
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance));
     // Assert
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
@@ -515,7 +514,6 @@ TEST_F(ChangeManagerTests, DetectFileModification_FileNotChangedAndLocationChang
     auto instance = cache->FindInstance(StubFileInCache(*cache, FileCache::Temporary));
     ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(cache->FindInstance(instance), FileCache::Persistent));
     // Act
-    BeThreadUtilities::BeSleep(1000); // Workaround for BeFileName::GetFileTime returning in accurate time. Remove this if it gets fixed.
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance));
     // Assert
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
