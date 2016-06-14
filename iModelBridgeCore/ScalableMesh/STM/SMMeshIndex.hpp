@@ -43,7 +43,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
                  m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_displayDataPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_diffSetsItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                 m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
+                 m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                 m_dtmPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
     {
     m_SMIndex = meshIndex;
     m_mesher2_5d = mesher2_5d;
@@ -85,7 +86,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                 m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                 m_displayDataPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                 m_diffSetsItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
+                m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                m_dtmPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
     {
     m_SMIndex = pi_rpParentNode->m_SMIndex;
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
@@ -125,7 +127,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      m_displayDataPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                   m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                   m_diffSetsItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                  m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
+                  m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                  m_dtmPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
     {
     m_SMIndex = pi_rpParentNode->m_SMIndex;
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
@@ -172,7 +175,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                       m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                       m_displayDataPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                       m_diffSetsItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                      m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
+                                                                                      m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                                                                                      m_dtmPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
                  
     {
     m_SMIndex = meshIndex;
@@ -220,7 +224,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                      m_displayDataPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                      m_diffSetsItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                     m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
+                                                                                     m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                                                                                     m_dtmPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
 
     {
     m_SMIndex = meshIndex;
@@ -441,6 +446,8 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
 
         GetMemoryPool()->RemoveItem(m_featurePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::LinearFeature, (uint64_t)m_SMIndex);
         if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetFeatureStore() != nullptr)dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetFeatureStore()->DestroyBlock(GetBlockID());
+       
+        GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex);
         }
                 
     HINVARIANTS;
@@ -501,7 +508,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
     
     if (!m_destroyed)
         {
-        const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)->m_tileBcDTM = nullptr;
+       // const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)->m_tileBcDTM = nullptr;
 
  //       if (!m_graphVec.Discarded()) StoreGraph();
  //       else if (m_graphVec.GetBlockID().IsValid())  m_nodeHeader.m_graphID = m_graphVec.GetBlockID();
@@ -532,6 +539,9 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
 
         GetMemoryPool()->RemoveItem(m_featurePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::LinearFeature, (uint64_t)m_SMIndex);
         m_featurePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+        GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex);
+        m_dtmPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
         }
 
@@ -2426,7 +2436,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Update
         existingPts->clear();
         existingPts->push_back(&newVertices[0], (int) newVertices.size());
         }
-    m_tileBcDTM = nullptr;
+    //m_tileBcDTM = nullptr;
+    GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex);
+    m_dtmPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     }
 
 //=======================================================================================
@@ -2447,6 +2459,16 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     if (!rasterBox.IntersectsWith(contentExtent)) return;
     if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
     
+
+    DPoint3d pts[1] = { DPoint3d::From(432034, 4504173, 0)};
+
+    for (size_t i = 0; i < 1; ++i)
+        if (this->m_nodeHeader.m_nodeExtent.IsContained(pts[i], 2))
+            {
+            volatile int a = 1;
+            a = a;
+            }
+
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
     double unitsPerPixelX = (contentExtent.high.x - contentExtent.low.x) / textureWidthInPixels;
     double unitsPerPixelY = (contentExtent.high.y - contentExtent.low.y) / textureHeightInPixels;

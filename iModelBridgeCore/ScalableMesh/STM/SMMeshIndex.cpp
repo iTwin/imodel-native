@@ -46,6 +46,12 @@ template<> size_t GetSizeInMemory<DifferenceSet>(DifferenceSet* item)
     return count;
     }
 
+template<> size_t GetSizeInMemory<BcDTMPtr>(BcDTMPtr* item)
+    {
+    size_t count = (item->get() == nullptr ? 0 : ((*item)->GetTinHandle() == nullptr ? 0 : sizeof(BC_DTM_OBJ) + (*item)->GetPointCount() *(sizeof(DPoint3d) + sizeof(DTM_TIN_NODE)+ sizeof(DTM_CIR_LIST)*6)));
+    return count;
+    }
+
 bool TopologyIsDifferent(const int32_t* indicesA, const size_t nIndicesA, const int32_t* indicesB, const size_t nIndicesB)
     {
     MTGGraph graphA, graphB;
