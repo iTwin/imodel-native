@@ -166,6 +166,22 @@ void FileInfo::SetFileCacheDate(DateTimeCR utcDate)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 
++---------------+---------------+---------------+---------------+---------------+------*/
+DateTime FileInfo::GetFileUpdateDate() const
+    {
+    return BeJsonUtilities::DateTimeFromValue(m_infoJson[CLASS_CachedFileInfo_PROPERTY_UpdateDate]);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              
++---------------+---------------+---------------+---------------+---------------+------*/
+void FileInfo::SetFileUpdateDate(DateTimeCR utcDate)
+    {
+    m_infoJson[CLASS_CachedFileInfo_PROPERTY_UpdateDate] = ECDbHelper::UtcDateToString(utcDate);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonValueCR FileInfo::GetExternalFileInfoJson() const

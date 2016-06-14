@@ -563,6 +563,50 @@ TEST_F(ChangeManagerTests, DeleteRelationship_DeletedRelationship_Error)
     ASSERT_EQ(ERROR, status);
     }
 
+TEST_F(ChangeManagerTests, DetectFileModification_NonExistingObject_Error)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto nonExistingInstance = StubNonExistingInstanceKey(*cache);
+    // Act
+    ASSERT_EQ(ERROR, cache->GetChangeManager().DetectFileModification(nonExistingInstance));
+    }
+
+TEST_F(ChangeManagerTests, DetectFileModification_InstanceWithoutFile_Error)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache);
+    // Act
+    ASSERT_EQ(ERROR, cache->GetChangeManager().DetectFileModification(instance));
+    }
+
+TEST_F(ChangeManagerTests, DetectFileModification_FileNotModified_HasNoChanges)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = cache->FindInstance(StubFileInCache(*cache));
+    // Act
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance));
+    // Assert
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    }
+
+TEST_F(ChangeManagerTests, DetectFileModification_FileModified_HasChanges)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = cache->FindInstance(StubFileInCache(*cache));
+    // Act
+    BeThreadUtilities::BeSleep(1000); // Workarround for BeFileName::GetFileTime returning in accurate time. Remove this if it gets fixed.
+
+    SimpleWriteToFile("NewTestContent", cache->ReadFilePath(instance));  
+       
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance));
+    // Assert
+    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    }
+
 TEST_F(ChangeManagerTests, ModifyFile_NonExistingObject_Error)
     {
     // Arrange
