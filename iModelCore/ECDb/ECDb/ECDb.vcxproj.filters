@@ -387,6 +387,9 @@
     <ClInclude Include="IssueReporter.h">
       <Filter>ECDb</Filter>
     </ClInclude>
+    <ClInclude Include="LightweightCache.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -709,6 +712,9 @@
     <ClCompile Include="DebugWriter.cpp" />
     <ClCompile Include="IssueReporter.cpp">
       <Filter>ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="LightweightCache.cpp">
+      <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
