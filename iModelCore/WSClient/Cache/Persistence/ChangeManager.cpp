@@ -350,9 +350,9 @@ BentleyStatus ChangeManager::DetectFileModification(ECInstanceKeyCR instanceKey,
     if (BeFileNameStatus::Success != info.GetFilePath().GetFileTime(nullptr, nullptr, &modifiedSeconds))
         return ERROR;
 
-    time_t modifiedMs = modifiedSeconds * 1000;
+    int64_t modifiedMs = modifiedSeconds * 1000;
 
-    time_t updatedMs;
+    int64_t updatedMs;
     if (SUCCESS != info.GetFileUpdateDate().ToUnixMilliseconds(updatedMs))
         return ERROR;
 
