@@ -417,7 +417,7 @@ namespace IndexECPlugin.Source
                 }
 
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
-            List<RequestedEntity> wmsRequestedEntities = new List<RequestedEntity>();
+            List<RequestedEntity> indexRequestedEntities = new List<RequestedEntity>();
             List<RequestedEntity> usgsRequestedEntities = new List<RequestedEntity>();
             for ( int i = 0; i < requestedEntitiesECArray.Count; i++ )
                 {
@@ -426,7 +426,7 @@ namespace IndexECPlugin.Source
 
                 if ( requestedEntity.ID.Length != IndexConstants.USGSIdLenght )
                     {
-                    wmsRequestedEntities.Add(requestedEntity);
+                    indexRequestedEntities.Add(requestedEntity);
                     }
                 else
                     {
@@ -442,7 +442,10 @@ namespace IndexECPlugin.Source
             selectedRegion = selectedRegionStr.Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries).Select(str => Convert.ToDouble(str)).ToList();
 
             // Create data source.
-            List<WmsSourceNet> wmsSourceList = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
+            List<WmsSourceNet> wmsSourceList;// = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
+            List<RealityDataSourceNet> basicSourceList;
+
+            RealityDataPackager(sender, connection, queryModule, indexRequestedEntities, coordinateSystem, out basicSourceList, out wmsSourceList);
 
             List<Tuple<RealityDataSourceNet, string>> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
 
@@ -455,6 +458,13 @@ namespace IndexECPlugin.Source
             ModelGroupNet modelGroup = ModelGroupNet.Create();
             PinnedGroupNet pinnedGroup = PinnedGroupNet.Create();
             TerrainGroupNet terrainGroup = TerrainGroupNet.Create();
+
+            foreach ( RealityDataSourceNet realityDataSource in basicSourceList )
+                {
+                //We put these in imgGroup temporarily, since we have no way to classify these yet.
+
+                imgGroup.AddData(realityDataSource);
+                }
 
             foreach ( WmsSourceNet wmsSource in wmsSourceList )
                 {
@@ -558,13 +568,13 @@ namespace IndexECPlugin.Source
                 }
             }
 
-        private List<RealityDataSourceNet> RealityDataPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities)
+        private void RealityDataPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities, string coordinateSystem, out List<RealityDataSourceNet> RDSNList, out List<WmsSourceNet> WMSList)
             {
-            List<RealityDataSourceNet> RDSNList = new List<RealityDataSourceNet>();
-
+            RDSNList = new List<RealityDataSourceNet>();
+            WMSList = new List<WmsSourceNet>();
             if ( basicRequestedEntities.Count == 0 )
                 {
-                return RDSNList;
+                return;
                 }
 
             IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBaseToMetadata") as IECRelationshipClass;
@@ -577,13 +587,23 @@ namespace IndexECPlugin.Source
 
             IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
 
+            IECClass wmsSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSSource");
+            RelatedInstanceSelectCriteria wmsSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, wmsSourceClass), false);
+
+            IECRelationshipClass serverRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "ServerToSpatialDataSource") as IECRelationshipClass;
+            IECClass wmsServerClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSServer");
+            RelatedInstanceSelectCriteria wmsServerRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(serverRelClass, RelatedInstanceDirection.Backward, wmsServerClass), false);
+
             ECQuery query = new ECQuery(spatialEntityClass);
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties = new List<IECProperty>();
-            //query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Id"));
+            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Id"));
+            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Footprint"));
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(basicRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
             query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
+            query.SelectClause.SelectedRelatedInstances.Add(wmsSourceRelCrit);
+            wmsSourceRelCrit.SelectedRelatedInstances.Add(wmsServerRelCrit);
 
             metadataRelCrit.SelectAllProperties = false;
             metadataRelCrit.SelectedProperties = new List<IECProperty>();
@@ -593,6 +613,19 @@ namespace IndexECPlugin.Source
             dataSourceRelCrit.SelectedProperties = new List<IECProperty>();
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
+            dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
+            dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "LocationInCompound"));
+
+            wmsSourceRelCrit.SelectAllProperties = false;
+            wmsSourceRelCrit.SelectedProperties = new List<IECProperty>();
+            wmsSourceRelCrit.SelectedProperties.Add(wmsSourceClass.First(prop => prop.Name == "Layers"));
+
+            wmsServerRelCrit.SelectAllProperties = false;
+            wmsServerRelCrit.SelectedProperties = new List<IECProperty>();
+            wmsServerRelCrit.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "Legal"));
+            wmsServerRelCrit.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "GetMapURL"));
+            wmsServerRelCrit.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "GetMapURLQuery"));
+            wmsServerRelCrit.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "Version"));
 
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
@@ -601,228 +634,133 @@ namespace IndexECPlugin.Source
             foreach ( IECInstance spatialEntity in queriedSpatialEntities )
                 {
 
-                IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
-                IECInstance firstMetadata = firstMetadataRel.Target;
+                //IECRelationshipInstance firstWMSSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource");
+                if ( spatialEntity.GetRelationshipInstances().Any(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource") )
+                    {
+                    WMSList.Add(CreateWMSSource(spatialEntity, coordinateSystem, basicRequestedEntities));
+                    }
+                else
+                    {
 
-                IECRelationshipInstance firstDataSourceRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource");
-                IECInstance firstSpatialDataSource = firstDataSourceRel.Target;
+                    IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
+                    IECInstance firstMetadata = firstMetadataRel.Target;
 
-                string uri = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
-                string type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
-                string copyright = firstMetadata.GetPropertyValue("Legal").StringValue;
-                string id = "";
-                string provider = "";
-                UInt64 filesize = 0;
-                string fileInCompound = "";
-                string metadata = "";
-                List<string> sisterFiles = new List<string>();
+                    IECRelationshipInstance firstDataSourceRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "SpatialDataSource");
+                    IECInstance firstSpatialDataSource = firstDataSourceRel.Target;
 
-                RDSNList.Add(RealityDataSourceNet.Create(uri, type, copyright, id, provider, filesize, fileInCompound, metadata, sisterFiles));
+                    UInt64 filesize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : (UInt64)((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
+
+                    string uri = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
+                    string type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
+                    string copyright = (firstMetadata.GetPropertyValue("Legal") == null || firstMetadata.GetPropertyValue("Legal").IsNull) ? null : firstMetadata.GetPropertyValue("Legal").StringValue;
+                    string id = spatialEntity.GetPropertyValue("Id").StringValue;
+                    string provider = "";
+                    string fileInCompound = (firstSpatialDataSource.GetPropertyValue("LocationInCompound") == null || firstSpatialDataSource.GetPropertyValue("LocationInCompound").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("LocationInCompound").StringValue;
+                    string metadata = "";
+                    List<string> sisterFiles = new List<string>();
+
+                    RDSNList.Add(RealityDataSourceNet.Create(uri, type, copyright, id, provider, filesize, fileInCompound, metadata, sisterFiles));
+                    }
                 }
-
-            return RDSNList;
-
             }
 
-        private List<WmsSourceNet> WmsPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, string coordinateSystem, List<RequestedEntity> dbRequestedEntities)
+        private WmsSourceNet CreateWMSSource (IECInstance spatialEntity, string coordinateSystem, List<RequestedEntity> requestedEntities)
             {
-            List<WmsSourceNet> wmsMapInfoList = new List<WmsSourceNet>();
+            IECRelationshipInstance wmsSourceRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
+                                                                                                             relInst.Target.ClassDefinition.Name == "WMSSource");
+            IECInstance wmsSource = wmsSourceRel.Target;
 
-            if ( dbRequestedEntities.Count == 0 )
+            IECRelationshipInstance wmsServerRel = wmsSource.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "ServerToSpatialDataSource" &&
+                                                                                                       relInst.Source.ClassDefinition.Name == "WMSServer");
+            IECInstance wmsServer = wmsServerRel.Source;
+
+            string entityId = spatialEntity.GetPropertyValue("Id").StringValue;
+            string polygonString = spatialEntity.GetPropertyValue("Footprint").StringValue;
+
+            PolygonModel model;
+            try
                 {
-                return wmsMapInfoList;
+                model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
+                }
+            catch ( JsonSerializationException )
+                {
+                //Log.Logger.error("Package creation aborted. The polygon format is not valid");
+                throw new Bentley.Exceptions.UserFriendlyException(String.Format("The polygon format of the database entry {0} is not valid.", entityId));
                 }
 
-            if ( coordinateSystem == null )
-                {
-                //Log.Logger.error("Package creation aborted. Coordinate system was not included");
-                throw new Bentley.Exceptions.UserFriendlyException("Please enter a coordinate system when requesting this type of data.");
-                }
-
-            if ( dbRequestedEntities.Any( reqEnt => reqEnt.SelectedFormat == null || reqEnt.SelectedStyle == null) )
-                {
-                throw new Bentley.Exceptions.UserFriendlyException("Please specify a SelectedFormat and a SelectedStyle for each WMS entity requested.");
-                }
-
-            IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
-
-            IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
-            IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
-            RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, dataSourceClass), true);
-
-            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBaseToMetadata") as IECRelationshipClass;
-            IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
-            //RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
-
-            ECQuery query = new ECQuery(spatialEntityClass);
-            query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Id"));
-            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Footprint"));
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(dbRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
-            query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
-            //query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
-
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
-
-            var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
-
-            List<MapInfo> mapInfoList = new List<MapInfo>();
-
-            foreach ( IECInstance spatialEntity in queriedSpatialEntities )
-                {
-                string polygonString = spatialEntity.GetPropertyValue("Footprint").StringValue;
-
-                //query = new ECQuery(metadataClass);
-                //query.SelectClause.SelectAllProperties = false;
-                //query.SelectClause.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
-                //query.WhereClause = new WhereCriteria(new RelatedCriterion();
-
-                string entityId = spatialEntity.GetPropertyValue("Id").StringValue;
-
-                IECRelationshipInstance firstRel = spatialEntity.GetRelationshipInstances().First();
-                IECInstance firstSpatialDataSource = firstRel.Target;
-
-                //WMSSource table query *******************************
-
-                IECClass wmsSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSSource");
-
-                query = new ECQuery(wmsSourceClass);
-                query.SelectClause.SelectAllProperties = false;
-                query.SelectClause.SelectedProperties = new List<IECProperty>();
-                query.SelectClause.SelectedProperties.Add(wmsSourceClass.First(prop => prop.Name == "Layers"));
-                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(firstSpatialDataSource.InstanceId));
-
-                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
-
-                var queriedWMSSourceClass = ExecuteQuery(queryModule, connection, query, null);
-
-                //***********************************************************************
-
-                //Server table query **************************************
-
-                IECRelationshipClass ServerRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "ServerToSpatialDataSource") as IECRelationshipClass;
-                IECClass serverClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Server");
+            MapInfo mapInfo = new MapInfo
+            {
+                GetMapURL = wmsServer.GetPropertyValue("GetMapURL").StringValue,
+                GetMapURLQuery = (wmsServer.GetPropertyValue("GetMapURLQuery") == null || wmsServer.GetPropertyValue("GetMapURLQuery").IsNull) ? null : wmsServer.GetPropertyValue("GetMapURLQuery").StringValue,
+                Version = wmsServer.GetPropertyValue("Version").StringValue,
+                Layers = (wmsSource.GetPropertyValue("Layers") == null || wmsSource.GetPropertyValue("Layers").IsNull) ? null : wmsSource.GetPropertyValue("Layers").StringValue,
+                CoordinateSystem = coordinateSystem,
+                SelectedStyle = requestedEntities.First(e => e.ID == entityId).SelectedStyle,
+                SelectedFormat = requestedEntities.First(e => e.ID == entityId).SelectedFormat,
+                Legal = (wmsServer.GetPropertyValue("Legal") == null || wmsServer.GetPropertyValue("Legal").IsNull) ? null : wmsServer.GetPropertyValue("Legal").StringValue,
+                Footprint = model.points
+            };
 
 
-                query = new ECQuery(serverClass);
-
-                query.SelectClause.SelectAllProperties = false;
-                query.SelectClause.SelectedProperties = new List<IECProperty>();
-                query.WhereClause = new WhereCriteria(new RelatedCriterion(new QueryRelatedClassSpecifier(ServerRelClass, RelatedInstanceDirection.Forward, dataSourceClass), new WhereCriteria(new ECInstanceIdExpression(firstSpatialDataSource.InstanceId))));
-
-                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
-
-                var queriedServer = ExecuteQuery(queryModule, connection, query, null);
-
-                //**************************************************************
-
-                //WMSServer table query
-
-                IECClass wmsServerClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSServer");
-
-                query = new ECQuery(wmsServerClass);
-                query.SelectClause.SelectAllProperties = false;
-                query.SelectClause.SelectedProperties = new List<IECProperty>();
-                query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "Legal"));
-                query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "GetMapURL"));
-                query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "GetMapURLQuery"));
-                query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "Version"));
-                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(queriedServer.First().InstanceId));
-
-                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
-
-                var queriedWMSServer = ExecuteQuery(queryModule, connection, query, null);
-
-                PolygonModel model;
-                try
-                    {
-                    model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
-                    }
-                catch ( JsonSerializationException )
-                    {
-                    //Log.Logger.error("Package creation aborted. The polygon format is not valid");
-                    throw new Bentley.Exceptions.UserFriendlyException(String.Format("The polygon format of the database entry {0} is not valid.", entityId));
-                    }
-
-                MapInfo info = new MapInfo
-                {
-                    GetMapURL = queriedWMSServer.First().GetPropertyValue("GetMapURL").StringValue,
-                    GetMapURLQuery = queriedWMSServer.First().GetPropertyValue("GetMapURLQuery").StringValue,
-                    Version = queriedWMSServer.First().GetPropertyValue("Version").StringValue,
-                    Layers = queriedWMSSourceClass.First().GetPropertyValue("Layers").StringValue,
-                    CoordinateSystem = coordinateSystem,
-                    SelectedStyle = dbRequestedEntities.First(e => e.ID == entityId).SelectedStyle,
-                    SelectedFormat = dbRequestedEntities.First(e => e.ID == entityId).SelectedFormat,
-                    Legal = queriedWMSServer.First().GetPropertyValue("Legal").StringValue,
-                    Footprint = model.points
-                };
-
-                mapInfoList.Add(info);
-                }
 
             // Create WmsSource.
 
-            foreach ( var mapInfo in mapInfoList )
+            // Extract min/max values for bbox.
+            IEnumerator<double[]> pointsIt = mapInfo.Footprint.GetEnumerator();
+            double minX = 90.0;
+            double maxX = -90.0;
+            double minY = 180.0;
+            double maxY = -180.0;
+            double temp = 0.0;
+            while ( pointsIt.MoveNext() )
                 {
-                // Extract min/max values for bbox.
-                IEnumerator<double[]> pointsIt = mapInfo.Footprint.GetEnumerator();
-                double minX = 90.0;
-                double maxX = -90.0;
-                double minY = 180.0;
-                double maxY = -180.0;
-                double temp = 0.0;
-                while ( pointsIt.MoveNext() )
-                    {
-                    //x
-                    temp = pointsIt.Current[0];
-                    if ( minX > temp )
-                        minX = temp;
-                    if ( maxX < temp )
-                        maxX = temp;
+                //x
+                temp = pointsIt.Current[0];
+                if ( minX > temp )
+                    minX = temp;
+                if ( maxX < temp )
+                    maxX = temp;
 
-                    //y
-                    temp = pointsIt.Current[1];
-                    if ( minY > temp )
-                        minY = temp;
-                    if ( maxY < temp )
-                        maxY = temp;
-                    }
-
-                //&&JFC Workaround for the moment (until we add a csType column in the database). 
-                // We suppose CRS for version 1.3, SRS for 1.1.1 and below.
-                string csType = "CRS";
-                if ( !mapInfo.Version.Equals("1.3.0") )
-                    csType = "SRS";
-
-                // We need to remove extra characters at the end of the vendor specific since 
-                // this part is at the end of the GetMap query that will be created later.
-                string vendorSpecific = mapInfo.GetMapURLQuery;
-                if ( vendorSpecific.EndsWith("&") )
-                    vendorSpecific = vendorSpecific.TrimEnd('&');
-
-                List<string> sisterFiles = new List<string>();
-
-                wmsMapInfoList.Add(WmsSourceNet.Create(mapInfo.GetMapURL.TrimEnd('?'),      // Url
-                                                       mapInfo.Legal,                       // Copyright
-                                                       "",                                  // Id
-                                                       "",                                  // Provider
-                                                       0,                                   // Filesize
-                                                       "",                                  // Metadata
-                                                       sisterFiles,                         // Sister files
-                                                       mapInfo.GetMapURL.TrimEnd('?'),      // Url
-                                                       minX, minY, maxX, maxY,              // Bbox min/max values
-                                                       mapInfo.Version,                     // Version
-                                                       mapInfo.Layers,                      // Layers (comma-separated list)
-                                                       csType,                              // Coordinate System Type
-                                                       mapInfo.CoordinateSystem,            // Coordinate System Label
-                                                       10, 10,                              // MetaWidth and MetaHeight
-                                                       mapInfo.SelectedStyle,               // Styles (comma-separated list)
-                                                       mapInfo.SelectedFormat,              // Format
-                                                       vendorSpecific,                      // Vendor Specific
-                                                       true));                              // Transparency
+                //y
+                temp = pointsIt.Current[1];
+                if ( minY > temp )
+                    minY = temp;
+                if ( maxY < temp )
+                    maxY = temp;
                 }
-            return wmsMapInfoList;
+
+            //&&JFC Workaround for the moment (until we add a csType column in the database). 
+            // We suppose CRS for version 1.3, SRS for 1.1.1 and below.
+            string csType = "CRS";
+            if ( !mapInfo.Version.Equals("1.3.0") )
+                csType = "SRS";
+
+            // We need to remove extra characters at the end of the vendor specific since 
+            // this part is at the end of the GetMap query that will be created later.
+            string vendorSpecific = mapInfo.GetMapURLQuery;
+            if ( vendorSpecific.EndsWith("&") )
+                vendorSpecific = vendorSpecific.TrimEnd('&');
+
+            List<string> sisterFiles = new List<string>();
+
+            return WmsSourceNet.Create(mapInfo.GetMapURL.TrimEnd('?'),      // Url
+                                       mapInfo.Legal,                       // Copyright
+                                       "",                                  // Id
+                                       "",                                  // Provider
+                                       0,                                   // Filesize
+                                       "",                                  // Metadata
+                                       sisterFiles,                         // Sister files
+                                       mapInfo.GetMapURL.TrimEnd('?'),      // Url
+                                       minX, minY, maxX, maxY,              // Bbox min/max values
+                                       mapInfo.Version,                     // Version
+                                       mapInfo.Layers,                      // Layers (comma-separated list)
+                                       csType,                              // Coordinate System Type
+                                       mapInfo.CoordinateSystem,            // Coordinate System Label
+                                       10, 10,                              // MetaWidth and MetaHeight
+                                       mapInfo.SelectedStyle,               // Styles (comma-separated list)
+                                       mapInfo.SelectedFormat,              // Format
+                                       vendorSpecific,                      // Vendor Specific
+                                       true);                              // Transparency
             }
 
         private OsmSourceNet OsmPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<double> regionOfInterest)
@@ -950,44 +888,44 @@ namespace IndexECPlugin.Source
                 IECInstance datasourceInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == dataSourceClass.Name).Target;
 
                 string metadata = null;
-                if ( !datasourceInstance.GetPropertyValue("Metadata").IsNull )
+                if ( !(datasourceInstance.GetPropertyValue("Metadata") == null || datasourceInstance.GetPropertyValue("Metadata").IsNull) )
                     {
                     metadata = datasourceInstance.GetPropertyValue("Metadata").StringValue;
                     }
 
                 string url = null;
-                if ( !datasourceInstance.GetPropertyValue("MainURL").IsNull )
+                if ( !(datasourceInstance.GetPropertyValue("MainURL") == null || datasourceInstance.GetPropertyValue("MainURL").IsNull) )
                     {
                     url = datasourceInstance.GetPropertyValue("MainURL").StringValue;
                     }
 
                 string type = null;
-                if ( !datasourceInstance.GetPropertyValue("DataSourceType").IsNull )
+                if ( !(datasourceInstance.GetPropertyValue("DataSourceType") == null || datasourceInstance.GetPropertyValue("DataSourceType").IsNull) )
                     {
                     type = datasourceInstance.GetPropertyValue("DataSourceType").StringValue;
                     }
 
                 string copyright = null;
-                if ( !metadataInstance.GetPropertyValue("Legal").IsNull )
+                if ( !(metadataInstance.GetPropertyValue("Legal") == null || metadataInstance.GetPropertyValue("Legal").IsNull) )
                     {
                     copyright = metadataInstance.GetPropertyValue("Legal").StringValue;
                     }
 
                 string id = null;
-                if ( !datasourceInstance.GetPropertyValue("Id").IsNull )
+                if ( !(datasourceInstance.GetPropertyValue("Id") == null || datasourceInstance.GetPropertyValue("Id").IsNull) )
                     {
                     id = datasourceInstance.GetPropertyValue("Id").StringValue;
                     }
 
                 long fileSize = 0;
-                if(!datasourceInstance["FileSize"].IsNull)
+                if(!(datasourceInstance["FileSize"] == null || datasourceInstance["FileSize"].IsNull))
                     {
                     fileSize = (long) datasourceInstance.GetPropertyValue("FileSize").NativeValue;
                     }
                 ulong uFileSize = (fileSize > 0) ? (ulong) fileSize : 0;
 
                 string location = null;
-                if ( !datasourceInstance.GetPropertyValue("LocationInCompound").IsNull )
+                if ( !(datasourceInstance.GetPropertyValue("LocationInCompound") == null || datasourceInstance.GetPropertyValue("LocationInCompound").IsNull ))
                     {
                     location = datasourceInstance.GetPropertyValue("LocationInCompound").StringValue;
                     }
