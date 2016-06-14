@@ -3717,11 +3717,10 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFor
     WString uvIndice_store_path = pi_pOutputDirPath + L"uvindices\\";
     WString texture_store_path = pi_pOutputDirPath + L"textures\\";
 
-    // Create streaming stores (only the point store will manage the headers
-    po_pPointStore = new StreamingPointStoreType(point_store_path, pi_pCompress, true);
-    po_pIndiceStore = new StreamingIndiceStoreType(indice_store_path, pi_pCompress);
-    po_pUVStore = new StreamingUVStoreType(uv_store_path, pi_pCompress);
-    po_pUVIndiceStore = new StreamingIndiceStoreType(uvIndice_store_path);
+    po_pPointStore = new StreamingPointStoreType(point_store_path, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);
+    po_pIndiceStore = new StreamingIndiceStoreType(indice_store_path, StreamingIndiceStoreType::SMStreamingDataType::INDICES, pi_pCompress);
+    po_pUVStore = new StreamingUVStoreType(uv_store_path, StreamingUVStoreType::SMStreamingDataType::UVS, pi_pCompress);
+    po_pUVIndiceStore = new StreamingIndiceStoreType(uvIndice_store_path, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES);
     po_pTextureStore = new StreamingTextureTileStoreType(texture_store_path.c_str());
 
     }
