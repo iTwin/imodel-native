@@ -235,9 +235,13 @@ BentleyStatus FileStorage::CacheFile(FileInfo& info, BeFileNameCR filePath, Utf8
     {
     LOG.infov(L"Caching file: %ls", filePath.c_str());
 
-    info.SetFileCacheTag(cacheTag);
+    if (SUCCESS != StoreFile(info, filePath, location, nullptr, copyFile))
+        return ERROR;
 
-    return StoreFile(info, filePath, location, nullptr, copyFile);
+    info.SetFileCacheTag(cacheTag);
+    info.SetFileUpdateDate(DateTime::GetCurrentTimeUtc());
+
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -304,8 +308,6 @@ BentleyStatus FileStorage::StoreFile(FileInfoR info, BeFileNameCR filePathIn, Fi
         if (SUCCESS != RemoveStoredFile(oldAbsolutePath, oldLocation, &newAbsolutePath))
             return ERROR;
         }
-
-    info.SetFileUpdateDate(DateTime::GetCurrentTimeUtc());
 
     return SUCCESS;
     }
