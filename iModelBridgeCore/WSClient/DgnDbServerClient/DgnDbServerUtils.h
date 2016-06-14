@@ -71,6 +71,7 @@ namespace ServerSchema
         static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
         static Utf8CP ConflictingLocks = "ConflictingLocks";
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
+        static Utf8CP IsReadOnly = "IsReadOnly";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     }
