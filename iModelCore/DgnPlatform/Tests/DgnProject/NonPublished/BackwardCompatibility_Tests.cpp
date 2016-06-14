@@ -25,7 +25,7 @@ struct BackwardsCompatibilityTests : public DgnDbTestFixture
     {
     private:
         StatusInt CreateArbitraryElement(DgnElementPtr& out, DgnModelR model);
-        CompatibilityStatus insertTestElementsAndModels();
+        CompatibilityStatus insertTestElement();
 
     protected:
         CompatibilityStatus VerifyElementsAndModels();
@@ -64,7 +64,7 @@ StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-CompatibilityStatus BackwardsCompatibilityTests::insertTestElementsAndModels()
+CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
     {
     DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("newModel")));
@@ -91,13 +91,7 @@ CompatibilityStatus BackwardsCompatibilityTests::insertTestElementsAndModels()
 CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
     {
     CompatibilityStatus status = CompatibilityStatus::Success;
-    if (!m_db->IsReadonly())
-        {
-        status = insertTestElementsAndModels();
-        if (status != CompatibilityStatus::Success)
-            return status;
-        }
-
+    insertTestElement();
     DgnModels::Iterator modelsIterator = m_db->Models().MakeIterator();
     for (DgnModels::Iterator::Entry modelEntry : modelsIterator)
         {
@@ -170,70 +164,65 @@ Utf8CP BackwardsCompatibilityTests::getCompatibilityStatusString(CompatibilitySt
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     {
-    Utf8String activeStream = "DgnDb61-16Q2";
-
-    BeFileName compatibilityRoot;
-    BeTest::GetHost().GetDocumentsRoot(compatibilityRoot);
-    compatibilityRoot.AppendToPath(L"DgnDb");
-    compatibilityRoot.AppendToPath(L"CompatibilityRoot");
-    compatibilityRoot.AppendToPath(L"DgnDb*");
+    BeFileName srcFilesPath;
+    BeTest::GetHost().GetDocumentsRoot(srcFilesPath);
+    srcFilesPath.AppendToPath(L"DgnDb");
+    srcFilesPath.AppendToPath(L"CompatibilityRoot");
+    srcFilesPath.AppendToPath(L"DgnDb61-16Q2");
+    srcFilesPath.AppendToPath(L"*.idgndb");
 
     BeFileName outputRoot;
     BeTest::GetHost().GetOutputRoot(outputRoot);
 
     BeFileName resultsFilePath = outputRoot;
-    resultsFilePath.AppendToPath(L"CompatibilityResults_").AppendA(activeStream.c_str()).AppendA(".csv");
+    resultsFilePath.AppendToPath(L"CompatibilityResults_0601.csv");
 
     FILE *f;
     f = fopen(resultsFilePath.GetNameUtf8().c_str(), "a");
     if (f != NULL)
         {
-        fprintf(f, "FileName, ConvertedThrough, TestedIn, FileOpeningStatus\n");
+        fprintf(f, "FileName, PublishedThrough, TestedIn, FileOpeningStatus\n");
         }
     else
-        ASSERT_TRUE(false) << "Error opening csv file";
+        ASSERT_TRUE(false)<<"Error opening csv file";
 
-    BeFileListIterator dirIterator(compatibilityRoot, false);
-    BeFileName dirName;
-    while (dirIterator.GetNextFileName(dirName) != ERROR)
+    BeFileListIterator filesIterator(srcFilesPath, false);
+    BeFileName dbName;
+
+    while (filesIterator.GetNextFileName(dbName) != ERROR)
         {
-        //printf("DirectoryName: %ls\n", dirName.GetFileNameWithoutExtension().c_str());
-        if (BeFileName(dirName.GetFileNameWithoutExtension()) == BeFileName(activeStream))
+        //printf ("dgndb Name: %s", fileName.GetNameUtf8 ().c_str ());
+        BeFileName outputFilePath = outputRoot;
+        outputFilePath.AppendToPath(dbName.GetFileNameAndExtension().c_str());
+        //printf("dgndb Name: %s", outputFilePath.GetNameUtf8().c_str());
+
+        BeFileNameStatus copyFileStatus = BeFileName::BeCopyFile(dbName, outputFilePath);
+        CompatibilityStatus stat = CompatibilityStatus::Success;
+        bool writeStatus;
+        if (BeFileNameStatus::Success == copyFileStatus)
             {
-            continue;
-            }
-
-        BeFileName sourceFilesPath = dirName;
-        sourceFilesPath.AppendToPath(L"*.ibim");
-
-        BeFileListIterator filesIterator(sourceFilesPath, false);
-        BeFileName dbName;
-
-        while (filesIterator.GetNextFileName(dbName) != ERROR)
-            {
-            //printf ("dgndb Name: %s", dbName.GetNameUtf8 ().c_str ());
-            BeFileName outputFilePath = outputRoot;
-            outputFilePath.AppendToPath(dbName.GetFileNameAndExtension().c_str());
-            //printf("dgndb Name: %s", outputFilePath.GetNameUtf8().c_str());
-
-            BeFileNameStatus copyFileStatus = BeFileName::BeCopyFile(dbName, outputFilePath);
-            CompatibilityStatus stat = CompatibilityStatus::Success;
-            if (BeFileNameStatus::Success == copyFileStatus)
+            DbResult status;
+            m_db = DgnDb::OpenDgnDb(&status, outputFilePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+            if (DbResult::BE_SQLITE_OK == status && m_db.IsValid())
                 {
-                DbResult status;
-                m_db = DgnDb::OpenDgnDb(&status, outputFilePath, DgnDb::OpenParams(Db::OpenMode::Readonly));
-                if (DbResult::BE_SQLITE_OK == status && m_db.IsValid())
-                    {
-                    stat = VerifyElementsAndModels();
-                    }
+                stat = VerifyElementsAndModels();
+                if (stat == CompatibilityStatus::Success)
+                    writeStatus = true;
                 else
-                    {
-                    stat = CompatibilityStatus::ERROR_FileOpeningFailed;
-                    }
-                fprintf(f, "%ls, %ls, %s, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), dirName.GetFileNameWithoutExtension().c_str(), activeStream.c_str(), getCompatibilityStatusString(stat));
+                    writeStatus = false;
                 }
             else
-                fprintf(f, "%ls, %ls, %s %s\n", dbName.GetFileNameAndExtension().c_str(), dirName.GetFileNameWithoutExtension().c_str(), activeStream.c_str(), "Error Copying File");
+                {
+                stat = CompatibilityStatus::ERROR_FileOpeningFailed;
+                writeStatus = false;
+                }
+
+            if (writeStatus)
+                fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
+            else
+                fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
             }
+        else
+            fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", dbName.GetFileNameAndExtension().c_str(), "Error Copying File");
         }
     }
