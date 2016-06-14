@@ -262,6 +262,33 @@
     - @b CustomAttributes on the ECProperty
         - @b Add, @b delete, @b modify
 
+    #### Primitive ECProperty
+    - @b Modify 
+        - @ref BentleyApi::ECN::PrimitiveECProperty::GetExtendedTypeName "ExtendedTypeName"
+        - @ref BentleyApi::ECN::PrimitiveECProperty::GetEnumeration "ECEnumeration"
+            - It is possible to 
+                - assign an ECEnumeration to an ECProperty that was an ordinary primitive property before
+                - change the ECEnumeration of an ECProperty to another ECEnumeration
+                - remove the ECEnumeration from the ECProperty, so that it becomes an ordinary primitive property
+            - This is possible only if
+                - the involved ECEnumerations are @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "not strict"
+                - the @ref BentleyApi::ECN::ECEnumeration::GetType "underlying type" of the involved ECEnumerations is the same,
+                or if the @ref BentleyApi::ECN::PrimitiveECProperty::GetType "property type" and the ECEnumeration's underlying type is the same.
+        - @ref BentleyApi::ECN::PrimitiveECProperty::GetKindOfQuantity "KindOfQuantity"
+            - It is possible to 
+                - assign a KindOfQuantity to an ECProperty that didn't have one before
+                - change the KindOfQuantity of an ECProperty to another KindOfQuantity
+                - remove the KindOfQuantity from the ECProperty
+
+    #### Primitive Array ECProperty
+    - @b Modify 
+        - @ref BentleyApi::ECN::ArrayECProperty::GetExtendedTypeName "ExtendedTypeName"
+        - @ref BentleyApi::ECN::ArrayECProperty::GetKindOfQuantity "KindOfQuantity"
+            - It is possible to 
+                - assign a KindOfQuantity to an ECProperty that didn't have one before
+                - change the KindOfQuantity of an ECProperty to another KindOfQuantity
+                - remove the KindOfQuantity from the ECProperty
+
     ### ECRelationshipConstraint
     - @b Modify 
         - @ref BentleyApi::ECN::ECRelationshipConstraint::GetRoleLabel "RoleLabel"
