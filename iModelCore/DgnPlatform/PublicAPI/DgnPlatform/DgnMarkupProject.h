@@ -234,9 +234,10 @@ public:
 
     //! Save an image as the backdrop for this redline model.
     //! @param source the image source 
+    //! @param isTopDown        If true, the RGB image in imageData is assumed to start at the upper left. Else, it is assumed to start from the lower left and go up.
     //! @param fitToX If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!               If false, the image is stretched to fit the height of the sheet, and the image width is computed.
-    DGNPLATFORM_EXPORT void StoreImageData(Render::ImageSourceCR source, bool fitToX);
+    DGNPLATFORM_EXPORT void StoreImageData(Render::ImageSourceCR source, bool isTopDown, bool fitToX);
 
 /** @name Association to DgnDb */
 /** @{ */

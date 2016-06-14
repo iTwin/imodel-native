@@ -1223,10 +1223,10 @@ void RedlineModel::StoreImageData(Render::Image const& imageData, bool isTopDown
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageData(ImageSourceCR source, bool fitToX)
+void RedlineModel::StoreImageData(ImageSourceCR source, bool isTopDown, bool fitToX)
     {
     Render::Image image(source);
-    StoreImageData(image, imageInfoIn.m_isTopDown, fitToX, /*compresssImageProperty*/false);
+    StoreImageData(image, isTopDown, fitToX, /*compresssImageProperty*/false);
     }
 
 /*---------------------------------------------------------------------------------**//**
