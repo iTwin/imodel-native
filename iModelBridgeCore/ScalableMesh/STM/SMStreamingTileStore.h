@@ -1287,6 +1287,11 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     assert(ERROR_PATH_NOT_FOUND != GetLastError());
                     }
 
+                if (0 == CreateDirectoryW(m_pathToPoints.c_str(), NULL))
+                    {
+                    assert(ERROR_PATH_NOT_FOUND != GetLastError());
+                    }
+
                 if (haveHeaders)
                     {
                     if (0 == CreateDirectoryW(m_pathToHeaders.c_str(), NULL))

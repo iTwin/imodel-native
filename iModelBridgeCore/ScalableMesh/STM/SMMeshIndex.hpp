@@ -3732,19 +3732,11 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFor
                                                                                           HFCPtr<StreamingIndiceStoreType>& po_pUVIndiceStore,
                                                                                           HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const
     {
-    // Set paths
-    WString point_store_path = pi_pOutputDirPath + L"points\\";
-    WString indice_store_path = pi_pOutputDirPath + L"indices\\";
-    WString uv_store_path = pi_pOutputDirPath + L"uvs\\";
-    WString uvIndice_store_path = pi_pOutputDirPath + L"uvindices\\";
-    WString texture_store_path = pi_pOutputDirPath + L"textures\\";
-
-    po_pPointStore = new StreamingPointStoreType(point_store_path, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);
-    po_pIndiceStore = new StreamingIndiceStoreType(indice_store_path, StreamingIndiceStoreType::SMStreamingDataType::INDICES, pi_pCompress);
-    po_pUVStore = new StreamingUVStoreType(uv_store_path, StreamingUVStoreType::SMStreamingDataType::UVS, pi_pCompress);
-    po_pUVIndiceStore = new StreamingIndiceStoreType(uvIndice_store_path, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES);
-    po_pTextureStore = new StreamingTextureTileStoreType(texture_store_path.c_str());
-
+    po_pPointStore = new StreamingPointStoreType(pi_pOutputDirPath, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);
+    po_pIndiceStore = new StreamingIndiceStoreType(pi_pOutputDirPath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, pi_pCompress);
+    po_pUVStore = new StreamingUVStoreType(pi_pOutputDirPath, StreamingUVStoreType::SMStreamingDataType::UVS, pi_pCompress);
+    po_pUVIndiceStore = new StreamingIndiceStoreType(pi_pOutputDirPath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES);
+    po_pTextureStore = new StreamingTextureTileStoreType(pi_pOutputDirPath);
     }
 
 /**----------------------------------------------------------------------------
