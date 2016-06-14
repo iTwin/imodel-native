@@ -467,12 +467,12 @@ MappingStatus ECDbMap::DoMapSchemas()
     // Construct and initialize the class map
     if (ecRelationshipClass != nullptr)
         {
-        for (ECClassCP endECClassToLoad : GetClassesFromRelationshipEnd(ecRelationshipClass->GetSource()))
+        for (ECClassCP endECClassToLoad : GetFlattenListOfClassesFromRelationshipEnd(ecRelationshipClass->GetSource()))
             {
             ctx.AddConstraintClass(*endECClassToLoad);
             }
 
-        for (ECClassCP endECClassToLoad : GetClassesFromRelationshipEnd(ecRelationshipClass->GetTarget()))
+        for (ECClassCP endECClassToLoad : GetFlattenListOfClassesFromRelationshipEnd(ecRelationshipClass->GetTarget()))
             {
             ctx.AddConstraintClass(*endECClassToLoad);
             }
@@ -1026,32 +1026,27 @@ BentleyStatus ECDbMap::CreateClassIdColumnIfNecessary(DbTable& table, bset<Class
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
+std::vector<ECClassCP> ECDbMap::GetFlattenListOfClassesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
     {
-    //for recursive lambdas, iOS requires us to define the lambda variable before assigning the actual function to it.
-    std::function<void(std::vector<ECClassCP>&, ECClassP, bool)> gatherClassesDelegate;
-    gatherClassesDelegate =
-        [this, &gatherClassesDelegate] (std::vector<ECClassCP>& classes, ECClassP ecClass, bool includeSubclasses)
+    std::vector<ECClassCP> constraintClasses;
+    LightweightCache::RelationshipEnd endOfInterest = &relationshipEnd.GetRelationshipClass().GetSource() == &relationshipEnd ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
+    for (auto const& constraintKey : GetLightweightCache().GetConstraintClassesForRelationshipClass(relationshipEnd.GetRelationshipClass().GetId()))
         {
-        classes.push_back(ecClass);
-        if (includeSubclasses)
+        if (Enum::Contains(endOfInterest, constraintKey.second))
             {
-            for (auto childClass : ecClass->GetDerivedClasses())
+            ECClassCP constrantClass = GetECDb().Schemas().GetECClass(constraintKey.first);
+            if (constrantClass == nullptr)
                 {
-                gatherClassesDelegate(classes, childClass, includeSubclasses);
+                BeAssert(false && "Failed to read ECClass");
+                constraintClasses.clear();
+                return constraintClasses;
                 }
-            }
-        };
 
-    bool isPolymorphic = relationshipEnd.GetIsPolymorphic();
-    std::vector<ECClassCP> classes;
-    for (ECClassCP ecClass : relationshipEnd.GetClasses())
-        {
-        ECClassP ecClassP = const_cast<ECClassP> (ecClass);
-        gatherClassesDelegate(classes, ecClassP, isPolymorphic);
+            constraintClasses.push_back(constrantClass);
+            }
         }
 
-    return classes;
+    return constraintClasses;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1071,7 +1066,6 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
 
     std::map<PersistenceType, std::set<DbTable const*>> tables;
     bool abstractEndPoint = relationshipEnd.GetClasses().size() == 1 && relationshipEnd.GetClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
-    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
     for (ClassMap const* classMap : classMaps)
         {
         if (abstractEndPoint)
