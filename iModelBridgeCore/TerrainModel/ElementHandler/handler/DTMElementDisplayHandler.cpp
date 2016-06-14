@@ -1411,7 +1411,7 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
             drawCutInfo->_SetWasNotCut (false);
 
         DPlane3d dplane;
-        cutPlane._GetPlane (dplane, true);
+        cutPlane._GetPlane(dplane, false);
 
         if (dplane.normal.z == 0)
             {
@@ -1436,7 +1436,9 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                 left = planeRange.low.x;
                 right = planeRange.high.x;
 
-                DVec3d xDir = DVec3d::FromNormalizedCrossProduct(dplane.normal, DVec3d::From(0, 0, 1));
+                DVec3d xDir;
+
+                matrix.GetColumn(xDir, 0);
                 DPoint3d res[2];
                 res[0] = DPoint3d::FromSumOf(dplane.origin, 1, xDir, left);
                 res[1] = DPoint3d::FromSumOf(dplane.origin, 1, xDir, right);
@@ -1509,7 +1511,7 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
             return SUCCESS;
             }
         }
-    return ERROR;
+        return T_Super::_DrawCut(thisElm, cutPlane, context);
     }
 
 void DTMElementDisplayHandler::_GetPathDescription (ElementHandleCR element, WStringR string, const DisplayPath* path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr)
