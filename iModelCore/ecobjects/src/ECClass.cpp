@@ -2245,6 +2245,15 @@ bool isSource
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                       06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClassCR  ECRelationshipConstraint::GetRelationshipClass() const
+    {
+    BeAssert(m_relClass != nullptr);
+    return *m_relClass;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraint::~ECRelationshipConstraint
@@ -2261,7 +2270,7 @@ ECRelationshipConstraint::~ECRelationshipConstraint
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
     {
-    return &(m_relClass->GetSchema());
+    return &(GetRelationshipClass().GetSchema());
     }
 
 /*---------------------------------------------------------------------------------**//**

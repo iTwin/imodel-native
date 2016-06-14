@@ -2132,6 +2132,8 @@ public:
  
     ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint(); //!< Destructor
 
+    //! Return relationshipClass to which this constraint is associated
+    ECOBJECTS_EXPORT   ECRelationshipClassCR  GetRelationshipClass() const;
     //! Sets the label of the constraint role in the relationship.
     ECOBJECTS_EXPORT ECObjectsStatus            SetRoleLabel (Utf8StringCR value);
     //! Gets the label of the constraint role in the relationship.
