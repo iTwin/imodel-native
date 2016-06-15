@@ -13,21 +13,24 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             65/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerLockEvent::DgnDbServerLockEvent(Utf8String repoId, Utf8String userId, Utf8String lockId, Utf8String lockType, Utf8String date)
+DgnDbServerLockEvent::DgnDbServerLockEvent(Utf8String repoId, Utf8String userId, Utf8String objectId, Utf8String lockType,  Utf8String lockLevel, Utf8String briefcaseId, Utf8String releasedWithRevision, Utf8String date)
     {
     m_repoId = repoId;
     m_userId = userId;
-    m_lockId = lockId;
+    m_objectId = objectId;
     m_lockType = lockType;
+    m_lockLevel = lockLevel;
+    m_briefcaseId = briefcaseId;
+    m_releasedWithRevision = releasedWithRevision;
     m_date = date;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerLockEvent> DgnDbServerLockEvent::Create(Utf8String repoId, Utf8String userId, Utf8String lockId, Utf8String lockType, Utf8String date)
+std::shared_ptr<struct DgnDbServerLockEvent> DgnDbServerLockEvent::Create(Utf8String repoId, Utf8String userId, Utf8String objectId, Utf8String lockType, Utf8String lockLevel, Utf8String briefcaseId, Utf8String releasedWithRevision, Utf8String date)
     {
-    return std::shared_ptr<struct DgnDbServerLockEvent>(new DgnDbServerLockEvent(repoId, userId, lockId, lockType, date));
+    return std::shared_ptr<struct DgnDbServerLockEvent>(new DgnDbServerLockEvent(repoId, userId, objectId, lockType, lockLevel, briefcaseId, releasedWithRevision, date));
     }
 
 //---------------------------------------------------------------------------------------
@@ -57,9 +60,9 @@ Utf8String DgnDbServerLockEvent::GetDate()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetLockId()
+Utf8String DgnDbServerLockEvent::GetObjectId()
     {
-    return m_lockId;
+    return m_objectId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -68,6 +71,30 @@ Utf8String DgnDbServerLockEvent::GetLockId()
 Utf8String DgnDbServerLockEvent::GetLockType()
     {
     return m_lockType;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Caleb.Shafer						06/2016
+//---------------------------------------------------------------------------------------
+Utf8String DgnDbServerLockEvent::GetLockLevel()
+    {
+    return m_lockLevel;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Caleb.Shafer						06/2016
+//---------------------------------------------------------------------------------------
+Utf8String DgnDbServerLockEvent::GetBriefcaseId()
+    {
+    return m_briefcaseId;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Caleb.Shafer						06/2016
+//---------------------------------------------------------------------------------------
+Utf8String DgnDbServerLockEvent::GetReleasedWithRevision()
+    {
+    return m_releasedWithRevision;
     }
 
 //---------------------------------------------------------------------------------------
