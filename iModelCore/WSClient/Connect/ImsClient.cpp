@@ -9,12 +9,11 @@
 #include <WebServices/Connect/ImsClient.h>
 
 #include <Bentley/Base64Utilities.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 #include <WebServices/Connect/SamlToken.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 ImsClientPtr s_client;
 

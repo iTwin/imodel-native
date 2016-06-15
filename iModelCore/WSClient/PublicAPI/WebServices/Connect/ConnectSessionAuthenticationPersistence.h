@@ -10,13 +10,12 @@
 
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <DgnClientFx/DgnClientApp.h>
-#include <DgnClientFx/Utils/SecureStore.h>
+#include <BeSecurity/SecureStore.h>
 #include <mutex>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Vytautas.Barkauskas    01/2016

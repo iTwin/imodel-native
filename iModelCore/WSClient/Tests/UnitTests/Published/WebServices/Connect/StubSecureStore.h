@@ -8,15 +8,13 @@
 
 #pragma once
 
-#include <DgnClientFx/Utils/SecureStore.h>
+#include <BeSecurity/SecureStore.h>
 #include <Bentley/Base64Utilities.h>
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct StubSecureStore : public ISecureStore
+struct StubSecureStore : public SecurityISecureStore
     {
     Json::Value values;
     Json::Value legacyValues;

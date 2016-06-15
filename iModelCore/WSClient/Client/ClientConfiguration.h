@@ -2,13 +2,13 @@
 |
 |     $Source: Client/ClientConfiguration.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 

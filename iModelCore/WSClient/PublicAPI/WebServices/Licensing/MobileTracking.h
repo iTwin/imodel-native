@@ -2,14 +2,14 @@
  |
  |     $Source: PublicAPI/WebServices/Licensing/MobileTracking.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/DateTime.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 #include <WebServices/Client/WebServicesClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE

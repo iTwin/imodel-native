@@ -10,13 +10,13 @@
 
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <DgnClientFx/DgnClientApp.h>
-#include <DgnClientFx/Utils/SecureStore.h>
+#include <BeSecurity/SecureStore.h>
 #include <mutex>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_SECURITY
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
@@ -29,7 +29,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
         static std::once_flag s_shared_once;
 
         mutable BeMutex m_cs;
-        ILocalState& m_localState;
+        IJsonLocalState& m_localState;
         std::shared_ptr<ISecureStore> m_secureStore;
 
         mutable SamlTokenPtr m_token;
@@ -40,7 +40,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
     private:
         ConnectAuthenticationPersistence
             (
-            ILocalState* customLocalState = nullptr,
+            IJsonLocalState* customLocalState = nullptr,
             std::shared_ptr<ISecureStore> customSecureStore = nullptr
             );
 
@@ -53,7 +53,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
         //! once in application lifecycle. Default behavior does not require initialization.
         WSCLIENT_EXPORT static void CustomInitialize
             (
-            ILocalState* customLocalState = nullptr,
+            IJsonLocalState* customLocalState = nullptr,
             std::shared_ptr<ISecureStore> customSecureStore = nullptr
             );
 

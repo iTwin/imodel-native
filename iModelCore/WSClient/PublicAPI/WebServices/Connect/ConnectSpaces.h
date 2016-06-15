@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Connect/ConnectSpaces.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,10 +15,10 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
 #include <DgnClientFx/DgnClientFxCommon.h>
-#include <DgnClientFx/Utils/Http/Credentials.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
-#include <DgnClientFx/Utils/Threading/WorkerThreadPool.h>
+#include <BeHttp/Credentials.h>
+#include <BeHttp/HttpClient.h>
+#include <BeHttp/ProxyHttpHandler.h>
+#include <Bentley/Tasks/WorkerThreadPool.h>
 #include <WebServices/Connect/SamlToken.h>
 
 // Work --> UI
@@ -47,7 +47,6 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE 
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 //=======================================================================================
 //! @deprecated
 //! @private

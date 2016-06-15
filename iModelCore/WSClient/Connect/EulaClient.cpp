@@ -10,7 +10,7 @@
 #include <WebServices/Connect/EulaClient.h>
 
 #include <WebServices/Configuration/UrlProvider.h>
-#include <DgnClientFx/Utils/Http/HttpRequest.h>
+#include <BeHttp/HttpRequest.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 

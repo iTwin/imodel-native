@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSRepositoryClient.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,8 +10,8 @@
 
 #include <WebServices/Client/WebServicesClient.h>
 
-#include <DgnClientFx/Utils/Threading/AsyncResult.h>
-#include <DgnClientFx/Utils/Threading/LimitingTaskQueue.h>
+#include <Bentley/Tasks/AsyncResult.h>
+#include <Bentley/Tasks/LimitingTaskQueue.h>
 #include <WebServices/Client/ObjectId.h>
 #include <WebServices/Client/Response/WSCreateObjectResponse.h>
 #include <WebServices/Client/Response/WSFileResponse.h>
@@ -23,8 +23,6 @@
 #include <Bentley/bset.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 //--------------------------------------------------------------------------------------+
 // WebServices Client API for connecting to BWSG server data source.

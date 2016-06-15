@@ -10,7 +10,7 @@
 
 #include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 #include <curl/curl.h>
 
 TEST_F(ImsClientTests, RequestToken_ProdUrls_RetrievesToken)

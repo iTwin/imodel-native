@@ -58,7 +58,7 @@ struct UrlProvider
         static bool s_isInitialized;
         static UrlProvider::Environment s_env;
         static int64_t s_cacheTimeoutMs;
-        static ILocalState* s_localState;
+        static IJsonLocalState* s_localState;
         static IBuddiClientPtr s_buddi;
         static IHttpHandlerPtr s_customHandler;
 
@@ -76,7 +76,7 @@ struct UrlProvider
         WSCLIENT_EXPORT static void Initialize(
             Environment env,
             int64_t cacheTimeoutMs = DefaultTimeout,
-            ILocalState* customlocalState = nullptr,
+            IJsonLocalState* customlocalState = nullptr,
             IBuddiClientPtr customBuddi = nullptr,
             IHttpHandlerPtr customHandler = nullptr
             );

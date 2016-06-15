@@ -10,7 +10,6 @@
 #include "WSErrorTests.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 TEST_F(WSErrorTests, Ctor_Default_SetsStatusNone)
     {

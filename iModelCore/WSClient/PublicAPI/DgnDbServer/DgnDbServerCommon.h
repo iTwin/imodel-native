@@ -10,8 +10,9 @@
 #include <Bentley/Bentley.h>
 #include <WebServices/WebServices.h>
 #include <WebServices/Client/WSError.h>
-#include <DgnClientFx/Utils/Threading/AsyncResult.h>
-#include <DgnClientFx/Utils/Threading/AsyncTask.h>
+#include <Bentley/Tasks/AsyncResult.h>
+#include <Bentley/Tasks/AsyncTask.h>
+#include <DgnPlatform/DgnPlatformApi.h>
 
 #define BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace DgnDbServer {
 #define END_BENTLEY_DGNDBSERVER_NAMESPACE      } END_BENTLEY_NAMESPACE

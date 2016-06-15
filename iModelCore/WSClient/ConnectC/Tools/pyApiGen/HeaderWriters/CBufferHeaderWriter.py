@@ -37,7 +37,7 @@ class CBufferHeaderWriter(HeaderWriter):
 
     def __write_includes(self):
         self._file.write('#include <WebServices/ConnectC/{0}Public.h>\n'.format(self._api.get_api_acronym()))
-        self._file.write('#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>\n')
+        self._file.write('#include <BeHttp/ProxyHttpHandler.h>\n')
 
     def __write_defines(self):
         count = 1

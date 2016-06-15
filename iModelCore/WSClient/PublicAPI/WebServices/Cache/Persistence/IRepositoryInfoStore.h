@@ -2,13 +2,13 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/IRepositoryInfoStore.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnClientFx/Utils/Threading/AsyncTask.h>
+#include <Bentley/Tasks/AsyncTask.h>
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
 #include <WebServices/Client/WSClient.h>
 

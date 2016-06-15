@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/MockBuddiClient.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,6 @@
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 using namespace ::testing;
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+

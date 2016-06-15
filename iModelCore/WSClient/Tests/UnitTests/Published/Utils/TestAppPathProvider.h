@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/TestAppPathProvider.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,8 +11,6 @@
 #include <DgnClientFx/DgnClientFxCommon.h>
 
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014

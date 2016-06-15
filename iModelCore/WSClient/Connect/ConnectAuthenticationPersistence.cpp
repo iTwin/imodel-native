@@ -11,7 +11,6 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 #define SecureStoreNameSpace_Connect    "Connect"
 #define SecureStoreKey_Token            "Token"
@@ -27,7 +26,7 @@ std::once_flag ConnectAuthenticationPersistence::s_shared_once;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::CustomInitialize
 (
-ILocalState* customLocalState,
+IJsonLocalState* customLocalState,
 std::shared_ptr<ISecureStore> customSecureStore
 )
     {
@@ -53,11 +52,11 @@ ConnectAuthenticationPersistencePtr ConnectAuthenticationPersistence::GetShared(
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectAuthenticationPersistence::ConnectAuthenticationPersistence
 (
-ILocalState* customLocalState,
+IJsonLocalState* customLocalState,
 std::shared_ptr<ISecureStore> customSecureStore
 ) :
 m_localState(customLocalState ? *customLocalState : DgnClientFxCommon::LocalState()),
-m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>(&m_localState)),
+m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>(m_localState)),
 m_onUserChangedKey(0)
     {}
 
@@ -186,7 +185,7 @@ void ConnectAuthenticationPersistence::UpgradeIfNeeded() const
     // TODO: remove when Graphite0503 apps are no longer running
 
     // Old username storage
-    Json::Value username = m_localState.GetValue("Connect", "Username");
+    Json::Value username = m_localState.GetJsonValue("Connect", "Username");
     if (username.isNull())
         {
         return;
@@ -212,5 +211,5 @@ void ConnectAuthenticationPersistence::UpgradeIfNeeded() const
     // Remove old data
     m_secureStore->LegacyClearValue("ConnectLogin", username.asCString());
     m_secureStore->LegacyClearValue("ConnectToken", "Token");
-    m_localState.SaveValue("Connect", "Username", Json::nullValue);
+    m_localState.SaveJsonValue("Connect", "Username", Json::nullValue);
     }

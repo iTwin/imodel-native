@@ -9,13 +9,13 @@
 //__PUBLISH_SECTION_START__
 
 #include "../Client/WebServicesClient.h"
-#include <DgnClientFx/Utils/Http/HttpError.h>
-#include <DgnClientFx/Utils/Http/HttpResponse.h>
-#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+#include <BeHttp/HttpError.h>
+#include <BeHttp/HttpResponse.h>
+#include <Bentley/Tasks/AsyncResult.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_HTTP
 
 //--------------------------------------------------------------------------------------+
 // WebServices Client API for connecting to Azure blob storage.

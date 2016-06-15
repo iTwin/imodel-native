@@ -16,7 +16,7 @@
 //--------------------------------------------------------------------------------------+
 
 #include <WebServices/ConnectC/CWSCCPublic.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 
 #define BUFF_TYPE_CONNECTUSER 1
 #define BUFF_TYPE_ORGANIZATION 2

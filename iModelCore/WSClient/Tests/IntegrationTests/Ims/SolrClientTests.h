@@ -9,7 +9,7 @@
 #pragma once
 
 #include <WebServicesTestsHelper.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 
 struct SolrClientTests : public WSClientBaseTest
     {

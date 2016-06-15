@@ -2,11 +2,11 @@
 |
 |     $Source: Client/WSQuery.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 
 #define WSQUERY_OPTION_Select   "$select"
 #define WSQUERY_OPTION_Filter   "$filter"

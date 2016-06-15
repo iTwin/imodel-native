@@ -9,7 +9,7 @@
 #include "WSClientTests.h"
 
 #include <Bentley/BeDebugLog.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Client/WSClient.h>
 
 TEST_F (WSClientTests, GetServerInfo_TMAPrereleaseServer_UsesCorrectVersion)

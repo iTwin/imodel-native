@@ -11,11 +11,11 @@
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/BeVersion.h>
-#include <DgnClientFx/Utils/Http/Credentials.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
-#include <DgnClientFx/Utils/Http/HttpResponse.h>
-#include <DgnClientFx/Utils/Http/HttpStatus.h>
-#include <DgnClientFx/Utils/Threading/AsyncTask.h>
+#include <BeHttp/Credentials.h>
+#include <BeHttp/HttpClient.h>
+#include <BeHttp/HttpResponse.h>
+#include <BeHttp/HttpStatus.h>
+#include <Bentley/Tasks/AsyncTask.h>
 #include <WebServices/Cache/CachingDataSource.h>
 #include <WebServices/Cache/Util/ECDbHelper.h>
 #include <WebServices/Client/ObjectId.h>
@@ -25,7 +25,6 @@
 #include <iostream>
 #include <ostream>
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 std::ostream& operator << (std::ostream &o, WSError::Status status);

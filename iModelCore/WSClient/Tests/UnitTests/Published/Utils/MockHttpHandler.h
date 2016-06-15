@@ -2,15 +2,13 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/MockHttpHandler.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include "WebServicesUnitTests.h"
-#include <DgnClientFx/Utils/Http/IHttpHandler.h>
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+#include <BeHttp/IHttpHandler.h>
 
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
