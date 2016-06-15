@@ -26,10 +26,30 @@ struct DgnDbServerLockEvent : public IDgnDbServerEvent
         Utf8String m_lockLevel;
         Utf8String m_briefcaseId;
         Utf8String m_releasedWithRevision;
-        DgnDbServerLockEvent(Utf8String repoId, Utf8String userId, Utf8String objectId, Utf8String lockType, Utf8String lockLevel, Utf8String briefcaseId, Utf8String releasedWithRevision, Utf8String date);
+        DgnDbServerLockEvent
+                            (
+                            Utf8String repoId, 
+                            Utf8String userId, 
+                            Utf8String objectId, 
+                            Utf8String lockType, 
+                            Utf8String lockLevel, 
+                            Utf8String briefcaseId, 
+                            Utf8String releasedWithRevision, 
+                            Utf8String date
+                            );
 
     public:
-        DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<struct DgnDbServerLockEvent> Create(Utf8String repoId, Utf8String userId, Utf8String objectId, Utf8String lockType, Utf8String lockLevel, Utf8String briefcaseId, Utf8String releasedWithRevision, Utf8String date);
+        DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<struct DgnDbServerLockEvent> Create
+                                                                                           (
+                                                                                           Utf8String repoId, 
+                                                                                           Utf8String userId, 
+                                                                                           Utf8String objectId, 
+                                                                                           Utf8String lockType, 
+                                                                                           Utf8String lockLevel, 
+                                                                                           Utf8String briefcaseId, 
+                                                                                           Utf8String releasedWithRevision, 
+                                                                                           Utf8String date
+                                                                                           );
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetRepoId();
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetUserId();
         DGNDBSERVERCLIENT_EXPORT virtual const type_info& GetEventType();
