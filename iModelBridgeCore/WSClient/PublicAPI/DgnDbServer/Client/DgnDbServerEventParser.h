@@ -13,6 +13,8 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
+typedef std::shared_ptr<struct IDgnDbServerEventParser> IDgnDbServerEventParserPtr;
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Arvind.Venkateswaran   06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -42,8 +44,12 @@ struct IDgnDbServerEventParser
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgnDbServerEventParser : public IDgnDbServerEventParser
     {
+    private:
+        DgnDbServerEventParser();
+
     public:
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerEventParser();
+        DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<DgnDbServerEventParser> Create();
+        
         DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventPtr ParseEventasJson
             (
             Utf8CP responseContentType,
