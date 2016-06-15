@@ -283,13 +283,13 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancel
     if (returnedEventName.ContainsI(lockEventName))
         {
         DgnDbServerLockEvent& lockEvent = dynamic_cast<DgnDbServerLockEvent&>(*currentEvent);
-        Utf8String resultString = "Lock Info-> LockId: " + lockEvent.GetLockId() + " LockType: " + lockEvent.GetLockType();
+        Utf8String resultString = "Lock Info-> LockId: " + lockEvent.GetObjectId() + " LockType: " + lockEvent.GetLockType() + " Date: " + lockEvent.GetDate();
         return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Success(resultString));
         }
     else if (returnedEventName.ContainsI(revisionEventName))
         {
         DgnDbServerRevisionEvent& revisionEvent = dynamic_cast<DgnDbServerRevisionEvent&>(*currentEvent);
-        Utf8String resultString = "Revision Info-> RevisionId: " + revisionEvent.GetRevisionId();
+        Utf8String resultString = "Revision Info-> RevisionId: " + revisionEvent.GetRevisionId() + " Date: " + revisionEvent.GetDate();
         return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Success(resultString));
         }
     else
