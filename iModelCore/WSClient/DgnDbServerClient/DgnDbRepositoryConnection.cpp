@@ -248,7 +248,6 @@ Json::Value CreateLockInstanceJson
 (
 bvector<uint64_t> const& ids,
 BeBriefcaseId            briefcaseId,
-Utf8StringCR             description,
 Utf8StringCR             releasedWithRevisionId,
 LockableType             type,
 LockLevel                level
@@ -256,7 +255,6 @@ LockLevel                level
     {
     Json::Value properties;
 
-    properties[ServerSchema::Property::Description]          = description;
     properties[ServerSchema::Property::BriefcaseId]          = briefcaseId.GetValue();
     properties[ServerSchema::Property::ReleasedWithRevision] = releasedWithRevisionId;
     RepositoryJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
@@ -283,7 +281,6 @@ WSChangeset&                     changeset,
 WSChangeset::ChangeState const&  changeState,
 bvector<uint64_t> const&         ids,
 BeBriefcaseId                    briefcaseId,
-Utf8StringCR                     description,
 Utf8StringCR                     releasedWithRevisionId,
 LockableType                     type,
 LockLevel                        level
@@ -292,7 +289,7 @@ LockLevel                        level
     if (ids.empty ())
         return;
     ObjectId lockObject (ServerSchema::Schema::Repository, ServerSchema::Class::MultiLock, "MultiLock");
-    changeset.AddInstance (lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson (ids, briefcaseId, description, releasedWithRevisionId, type, level)));
+    changeset.AddInstance (lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson (ids, briefcaseId, releasedWithRevisionId, type, level)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -319,10 +316,8 @@ bool                            includeOnlyExclusive = false
             objects[index].push_back (lock.GetId ().GetValue ());
         }
 
-    Utf8String description = ""; //needswork: Currently DgnDb doesn't pass us a description for locks. Do we really need it?
-
     for (int i = 0; i < 9; ++i)
-        AddToInstance(changeset, changeState, objects[i], briefcaseId, description, releasedWithRevisionId, static_cast<LockableType>(i / 3), static_cast<LockLevel>(i % 3));
+        AddToInstance(changeset, changeState, objects[i], briefcaseId, releasedWithRevisionId, static_cast<LockableType>(i / 3), static_cast<LockLevel>(i % 3));
     }
 
 //---------------------------------------------------------------------------------------
