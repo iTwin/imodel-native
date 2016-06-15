@@ -43,6 +43,7 @@ struct IDgnDbServerEventParser
 struct DgnDbServerEventParser : public IDgnDbServerEventParser
     {
     public:
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerEventParser();
         DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventPtr ParseEventasJson
             (
             Utf8CP responseContentType,
