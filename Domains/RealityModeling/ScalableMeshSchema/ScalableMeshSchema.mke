@@ -31,7 +31,11 @@ CompileOptionsMki               = $(SrcScMeshSchema)ScalableMeshSchema.mki
 meshmodelDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
                                   $(BuildContext)PublicAPI/DgnPlatform/DgnPlatform.h \
                                   $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaCommon.h           \
-                                  $(ScMeshSchemaPublicApiSrc)IMeshSpatialModel.h            
+                                  $(ScMeshSchemaPublicApiSrc)IMeshSpatialModel.h  \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshHandler.h \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshDomain.h \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaApi.h \
+                                  $(SrcScMeshSchema)ScalableMeshDisplayCacheManager.h
 always:
     !~@mkdir $(o)
 
@@ -55,6 +59,13 @@ MultiCompileDepends=$(_MakeFileSpec)
 #   Compile portable source
 #--------------------------------------------------------------------------------------
 $(o)IMeshSpatialModel$(oext)        : $(SrcScMeshSchema)IMeshSpatialModel.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshHandler$(oext)        : $(SrcScMeshSchema)ScalableMeshHandler.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshDomain$(oext)        : $(SrcScMeshSchema)ScalableMeshDomain.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshDisplayCacheManager$(oext)        : $(SrcScMeshSchema)ScalableMeshDisplayCacheManager.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -87,7 +98,9 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                                 $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
                                 $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ScalableMesh$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)qvision$(libext)
 
 
 #$(SYSTEM_LIBRARIES)
