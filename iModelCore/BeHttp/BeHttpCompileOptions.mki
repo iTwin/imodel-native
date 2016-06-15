@@ -1,0 +1,34 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BeHttpCompileOptions.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+ENABLE_CPP_CX_EXTENSIONS = 1
+
+# target platform needs to be defined (this is included before mdl.mki when it is included by PreCompileHeader.mke)
+%if !defined (__mdlMKI__)
+    %include mdl.mki
+%endif
+
+%if $(TARGET_PLATFORM)=="Windows"
+    # Ignore inheritance via dominance warning
+    cDefs + -wd4250
+	#Ignore unknown pragmas (i.e. pragma mark)
+	cDefs + -wd4068
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Building the BeHttp library
+#--------------------------------------------------------------------------------------
+nameToDefine = __BEHTTP_BUILD__
+%include cdefapnd.mki
+
+#--------------------------------------------------------------------------------------
+#   iOS-specific
+#--------------------------------------------------------------------------------------
+AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
+# Ignore unknown pragmas
+LLVMCommonCompOpts + -Wno-unknown-pragmas

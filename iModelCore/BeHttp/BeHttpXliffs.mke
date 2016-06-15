@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: BeHttpXliffs.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+ContextDeliveryDir  = $(OutputRootDir)BuildContexts/BeHttp/Delivery/
+
+SQLANG_CHeader = $(_MakeFilePath)BeHttp/HttpError.xliff.h
+SQLANG_Xliff   = $(OutputRootDir)build/BeHttp/BeHttp_en.xliff
+%include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki

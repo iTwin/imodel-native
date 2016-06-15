@@ -1,0 +1,133 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Http.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+HttpHeaders =
+HttpHeaders + $(BeHttpPublicApiDir)AuthenticationHandler.h
+HttpHeaders + $(BeHttpPublicApiDir)Credentials.h
+HttpHeaders + $(BeHttpPublicApiDir)DefaultHttpHandler.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpBody.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpClient.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpConfigurationHandler.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpError.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpHeaders.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpRequest.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpResponse.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpStatus.h
+HttpHeaders + $(BeHttpPublicApiDir)Http.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpStatusHelper.h
+HttpHeaders + $(BeHttpPublicApiDir)IHttpHandler.h
+HttpHeaders + $(BeHttpPublicApiDir)ProxyHttpHandler.h
+
+#---------------------------------------------------------------------------------------+
+#   Setup HTTP library
+#---------------------------------------------------------------------------------------+
+%if !defined (HTTP_LIB)
+	%if $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTx86" || $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTARM"
+		HTTP_LIB = CASABLANCA
+	%else
+		HTTP_LIB = CURL
+	%endif
+%endif
+
+%if $(HTTP_LIB) == "CASABLANCA"
+    dirToSearch = $(BuildContext)VendorAPI/casablanca/
+    %include cincapnd.mki
+    
+    nameToDefine = HTTP_LIB_CASABLANCA
+    %include cdefapnd.mki
+    
+%elif $(HTTP_LIB) == "CURL"
+    nameToDefine = HTTP_LIB_CURL
+    %include cdefapnd.mki
+    
+%endif
+
+#---------------------------------------------------------------------------------------+
+#   Files to compile 
+#---------------------------------------------------------------------------------------+
+$(o)AuthenticationHandler$(oext)            : $(BeHttpSourceDir)AuthenticationHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)Credentials$(oext)                      : $(BeHttpSourceDir)Credentials.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)DefaultHttpHandler$(oext)               : $(BeHttpSourceDir)DefaultHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpClient$(oext)                       : $(BeHttpSourceDir)HttpClient.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpConfigurationHandler$(oext)         : $(BeHttpSourceDir)HttpConfigurationHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpHeaders$(oext)                      : $(BeHttpSourceDir)HttpHeaders.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpBody$(oext)                         : $(BeHttpSourceDir)HttpBody.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpResponse$(oext)                     : $(BeHttpSourceDir)HttpResponse.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpError$(oext)                        : $(BeHttpSourceDir)HttpError.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpStatusHelper$(oext)                 : $(BeHttpSourceDir)HttpStatusHelper.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)IHttpHandler$(oext)                     : $(BeHttpSourceDir)IHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpRequest$(oext)                      : $(BeHttpSourceDir)HttpRequest.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)ProxyHttpHandler$(oext)                 : $(BeHttpSourceDir)ProxyHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+%if $(HTTP_LIB) == "CASABLANCA"
+    $(o)CasablancaHttpRequest$(oext)        : $(BeHttpSourceDir)Casablanca/CasablancaHttpRequest.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+    $(o)CasablancaHttpHandler$(oext)        : $(BeHttpSourceDir)Casablanca/CasablancaHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+    $(o)CasablancaTaskRunner$(oext)         : $(BeHttpSourceDir)Casablanca/CasablancaTaskRunner.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+%elif $(HTTP_LIB) == "CURL"
+    $(o)CurlPool$(oext)                     : $(BeHttpSourceDir)Curl/CurlPool.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+    $(o)CurlHttpRequest$(oext)              : $(BeHttpSourceDir)Curl/CurlHttpRequest.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+    $(o)CurlHttpHandler$(oext)              : $(BeHttpSourceDir)Curl/CurlHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+    $(o)NotificationPipe$(oext)             : $(BeHttpSourceDir)Curl/NotificationPipe.cpp $(HttpHeaders) ${MultiCompileDepends}
+    
+    $(o)CurlTaskRunner$(oext)               : $(BeHttpSourceDir)Curl/CurlTaskRunner.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+    $(o)ThreadCurlHttpHandler$(oext)        : $(BeHttpSourceDir)Curl/ThreadCurlHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+    %if $(TARGET_PLATFORM)=="iOS"
+        $(o)ApplicationEvents$(oext)        : $(BeHttpSourceDir)Curl/ApplicationEvents.mm $(HttpHeaders) ${MultiCompileDepends}
+    %endif
+
+%endif
+
+%if $(TARGET_PLATFORM)=="iOS"
+    $(o)NetworkIndicator$(oext)             : $(BeHttpSourceDir)NetworkIndicator.mm $(HttpHeaders) ${MultiCompileDepends}
+%else
+	$(o)NetworkIndicator$(oext)				: $(BeHttpSourceDir)NetworkIndicator.cpp $(HttpHeaders) ${MultiCompileDepends}
+%endif
+
+#---------------------------------------------------------------------------------------+
+#   Set up linker libraries
+#---------------------------------------------------------------------------------------+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86" || $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    # Win32 sockets for Web
+    LINKER_LIBRARIES            + "WS2_32.Lib"
+    
+    # HTTP client configuration
+    LINKER_LIBRARIES            + "Winhttp.Lib"
+%endif
+
+%if $(HTTP_LIB) == "CASABLANCA"
+    LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCasablanca$(libext)
+
+%elif $(HTTP_LIB) == "CURL"
+    LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCurl$(stlibext)
+    LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(stlibext)
+%endif
+
+#---------------------------------------------------------------------------------------+
+#   Deliver assets
+#---------------------------------------------------------------------------------------+
+$(BuildContext)Delivery/http/cabundle.pem : $(BeHttpSourceDir)Curl/cabundle.pem
+    $(LinkFirstDepToFirstTarget)
