@@ -179,21 +179,22 @@ static void fixDirSeparators(WCharP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::SetNameA (CharCP name)
+BeFileNameR BeFileName::SetNameA (CharCP name)
     {
     WString nameW (name, BentleyCharEncoding::Locale);
     SetName(nameW.c_str());
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::SetName(WCharCP name)
+BeFileNameR BeFileName::SetName (WCharCP name)
     {
     if (!name)
         {
         Clear();
-        return;
+        return *this;
         }
 
     // also accept URI style names
@@ -201,15 +202,17 @@ void BeFileName::SetName(WCharCP name)
         name += 7;
 
     FixPathName(*this, name, true);
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::SetNameUtf8(Utf8CP name)
+BeFileNameR BeFileName::SetNameUtf8 (Utf8CP name)
     {
     WString nameW (name, BentleyCharEncoding::Utf8);
     SetName(nameW.c_str());
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -282,12 +285,13 @@ void BeFileName::OverrideNameParts(WCharCP overrideName)
 
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::BuildName(WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext) 
+BeFileNameR BeFileName::BuildName (WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext) 
     {
     WString combinedPath;
     BeFileName::BuildName(combinedPath, dev, dir, name, ext);
 
     SetName(combinedPath.c_str());
+    return *this;
     }
 
 //---------------------------------------------------------------------------------------
@@ -645,18 +649,19 @@ void BeFileName::AppendSeparator(WStringR path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::AppendSeparator()
+BeFileNameR BeFileName::AppendSeparator ()
     {
     AppendSeparator(*this);
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::PopDir()
+BeFileNameR BeFileName::PopDir ()
     {
     if (this->length() == 0)
-        return;
+        return *this;
 
     WString::iterator lastChar = this->end()-1;
         
@@ -668,6 +673,7 @@ void BeFileName::PopDir()
         --lastChar;
 
     this->erase(lastChar, this->end());
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2038,7 +2044,7 @@ BeFileNameStatus BeFileName::CheckAccess(WCharCP fn, BeFileNameAccess req)
 /*----------------------------------------------------------------------------------*//**
 * Remove quotes around a string.  Often used for file names with spaces around them. (Unicode)
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    BeFileName::RemoveQuotes()
+BeFileNameR BeFileName::RemoveQuotes ()
     {
     /* check for quoted file names */
     if (this->at(0) == L'\"')
@@ -2047,6 +2053,7 @@ void    BeFileName::RemoveQuotes()
         if (!this->empty() && this->at(this->size()-1) == L'\"')
             this->resize(this->size() - 1);
         }
+    return *this;
     }
 
 //---------------------------------------------------------------------------------------
