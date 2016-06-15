@@ -20,6 +20,14 @@ DgnDbServerEventParser::DgnDbServerEventParser() {}
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
+std::shared_ptr<DgnDbServerEventParser> DgnDbServerEventParser::Create()
+    {
+    return std::shared_ptr<DgnDbServerEventParser>(new DgnDbServerEventParser());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 bool StringHelper(bmap<Utf8String, Utf8String>& entitymap, Utf8String original)
     {
     bmap<Utf8String, Utf8String>::iterator data = entitymap.begin();

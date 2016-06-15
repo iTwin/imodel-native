@@ -127,7 +127,7 @@ void DgnDbServerEventParserTests::SetUp()
 TEST_F(DgnDbServerEventParserTests, LockEventTests)
     {
     //Check for valid values as Json
-    DgnDbServerEventParser *parser = new DgnDbServerEventParser();
+    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
     IDgnDbServerEventPtr validPtr = parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
     EXPECT_NE(nullptr, validPtr);
     EXPECT_EQ(DgnDbServerEventType::LockEvent, parser->GetEventType(validPtr));
@@ -142,7 +142,7 @@ TEST_F(DgnDbServerEventParserTests, LockEventTests)
 TEST_F(DgnDbServerEventParserTests, RevisionEventTests)
     {
     //Check for valid values
-    DgnDbServerEventParser *parser = new DgnDbServerEventParser();
+    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
     IDgnDbServerEventPtr validPtr = parser->ParseEventasJson(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());
     EXPECT_NE(nullptr, validPtr);
     EXPECT_EQ(DgnDbServerEventType::RevisionEvent, parser->GetEventType(validPtr));
@@ -156,7 +156,7 @@ TEST_F(DgnDbServerEventParserTests, RevisionEventTests)
 
 TEST_F(DgnDbServerEventParserTests, InvalidEventTests)
     {
-    DgnDbServerEventParser *parser = new DgnDbServerEventParser();
+    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
     EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmpty()));
     EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmptyJson()));
     EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalid()));
@@ -173,7 +173,7 @@ TEST_F(DgnDbServerEventParserTests, InvalidEventTests)
 
 TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
     {
-    DgnDbServerEventParser *parser = new DgnDbServerEventParser();
+    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
     EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseEmptyContentType(), StubHttpResponseValidLockEvent()));
     EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseInvalidContentType(), StubHttpResponseValidLockEvent()));
     EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidLockEvent()));
