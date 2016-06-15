@@ -718,9 +718,9 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
         HFCPtr<TileStoreType> pTileStore;
         HFCPtr<StreamingPointStoreType>  pStreamingTileStore;
-        HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingIndiceTileStore;
-        HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, YProtPtExtentType >> pStreamingUVTileStore;
-        HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingUVsIndicesTileStore;
+        HFCPtr<StreamingIndiceStoreType> pStreamingIndiceTileStore;
+        HFCPtr<StreamingUVStoreType> pStreamingUVTileStore;
+        HFCPtr<StreamingIndiceStoreType> pStreamingUVsIndicesTileStore;
         HFCPtr<StreamingTextureTileStore> pStreamingTextureTileStore;
 
         HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pIndiceTileStore;
@@ -748,22 +748,16 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     auto position = m_path.find_last_of(L".stm");
                     auto filenameWithoutExtension = m_path.substr(0, position - 3);
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"quebeccityvg\\");
+                    WString azureDatasetName(L"marseille/");
                     // NEEDS_WORK_SM - Check existence of the following directories
-                    WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream\\" : azureDatasetName);
-                    WString groupedStreamingFilePath = streamingSourcePath + L"headers\\";
-                    WString point_store_path         = streamingSourcePath + L"points\\";
-                    WString indice_store_path        = streamingSourcePath + L"indices\\";
-                    WString uv_store_path            = streamingSourcePath + L"uvs\\";
-                    WString uvIndice_store_path      = streamingSourcePath + L"uvindices\\";
-                    WString texture_store_path       = streamingSourcePath + L"textures\\";
+                    WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
 
                     // NEEDS_WORK_SM - Need to stream textures as well
-                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, AreDataCompressed(), true, groupedStreamingFilePath, s_stream_from_grouped_store);
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(indice_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
-                    pStreamingUVTileStore = new StreamingUVStoreType(uv_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(uvIndice_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
-                    pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
+                    pStreamingTileStore = new StreamingPointStoreType(streamingSourcePath, StreamingPointStoreType::SMStreamingDataType::POINTS, AreDataCompressed(), s_stream_from_grouped_store);
+                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, AreDataCompressed());
+                    pStreamingUVTileStore = new StreamingUVStoreType(streamingSourcePath, StreamingUVStoreType::SMStreamingDataType::UVS, AreDataCompressed());
+                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, AreDataCompressed());
+                    pStreamingTextureTileStore = new StreamingTextureTileStore(streamingSourcePath);
                     m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
                                                             &*pStreamingIndiceTileStore,

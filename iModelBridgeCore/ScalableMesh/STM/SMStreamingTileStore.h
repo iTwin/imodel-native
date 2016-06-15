@@ -77,6 +77,12 @@ public:
             }
         assert(this->IsLoaded());
         }
+    void UnLoad()
+        {
+        m_pIsLoaded = false;
+        m_pIsLoading = false;
+        this->clear();
+        }
     void SetLoaded()
         {
         m_pIsLoaded = true;
@@ -364,9 +370,9 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
     public:
         template<typename Function>
         distributor(Function function
-                    , unsigned int concurrency = std::thread::hardware_concurrency()
-                    //, unsigned int concurrency = 2
-                    , typename Queue::size_type max_items_per_thread = 1
+                    //, unsigned int concurrency = std::thread::hardware_concurrency()
+                    , unsigned int concurrency = 2
+                    , typename Queue::size_type max_items_per_thread = 100
                     )
             : capacity{ concurrency * max_items_per_thread }
             {
@@ -1217,43 +1223,77 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (!block.IsLoaded())
                 {
                 wstringstream ss;
-                ss << m_path << L"p_" << blockID.m_integerID << L".bin";
+                ss << m_pathToPoints << L"p_" << blockID.m_integerID << L".bin";
                 auto filename = ss.str();
                 block.SetDataSource(filename.c_str());
                 block.SetStore(m_stream_store);
                 block.Load();
                 }
-            assert(block.IsLoaded());
+            assert(block.IsLoaded() && !block.empty());
             return block;
             }
 
     public:
+        enum SMStreamingDataType
+            {
+            POINTS,
+            INDICES,
+            UVS,
+            UVINDICES
+            };
+
         // Constructor / Destructor
 
-        SMStreamingPointTaggedTileStore(const WString& path, bool compress = true, bool haveHeaders = false, WString headers_path = L"", bool areNodeHeadersGrouped = false)
-            :m_path(path),
+        SMStreamingPointTaggedTileStore(const WString& path, SMStreamingDataType type, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
+            :m_rootDirectory(path),
+            m_pathToPoints(path),
             m_pathToHeaders(headers_path),
             m_use_node_header_grouping(areNodeHeadersGrouped),
-            m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;BlobEndpoint=https://scalablemesh.azureedge.net;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
-            //m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
+            //m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;BlobEndpoint=https://scalablemesh.azureedge.net;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
+            m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
             m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")
             {
+            bool haveHeaders = false;
+            switch (type)
+                {
+                case SMStreamingDataType::POINTS:
+                    m_pathToPoints += L"points/";
+                    haveHeaders = true; // only points can carry node header information
+                    break;
+                case SMStreamingDataType::INDICES:
+                    m_pathToPoints += L"indices/";
+                    break;
+                case SMStreamingDataType::UVS:
+                    m_pathToPoints += L"uvs/";
+                    break;
+                case SMStreamingDataType::UVINDICES:
+                    m_pathToPoints += L"uvindices/";
+                    break;
+                default:
+                    assert(!"Unkown data type for streaming");
+                }
+            if (haveHeaders && m_pathToHeaders.empty())
+                {
+                // Set default path to headers relative to root directory
+                m_pathToHeaders = m_rootDirectory + L"headers/";
+                }
+
             if (s_stream_from_disk)
                 {
                 // Create base directory structure to store information if not already done
                 // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-                if (0 == CreateDirectoryW(m_path.c_str(), NULL))
+                if (0 == CreateDirectoryW(m_rootDirectory.c_str(), NULL))
+                    {
+                    assert(ERROR_PATH_NOT_FOUND != GetLastError());
+                    }
+
+                if (0 == CreateDirectoryW(m_pathToPoints.c_str(), NULL))
                     {
                     assert(ERROR_PATH_NOT_FOUND != GetLastError());
                     }
 
                 if (haveHeaders)
                     {
-                    if (m_pathToHeaders.empty())
-                        {
-                        // Set default path to headers relative to points path
-                        m_pathToHeaders = m_path + L"../headers/";
-                        }
                     if (0 == CreateDirectoryW(m_pathToHeaders.c_str(), NULL))
                         {
                         assert(ERROR_PATH_NOT_FOUND != GetLastError());
@@ -1304,7 +1344,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 masterHeader["isTerrain"] = true;
 
                 // Write to file
-                auto filename = (m_path + L"..\\MasterHeader.sscm").c_str();
+                auto filename = (m_rootDirectory + L"MasterHeader.sscm").c_str();
                 BeFile file;
                 uint64_t buffer_size;
                 auto jsonWriter = [&file, &indexHeader, &buffer_size](BeFile& file, Json::Value& object) {
@@ -1341,7 +1381,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 if (m_use_node_header_grouping || s_stream_from_grouped_store)
                     {
                     wstringstream ss;
-                    ss << m_path << L"../MasterHeaderWithGroups.bin";
+                    ss << m_rootDirectory << L"MasterHeaderWithGroups.bin";
                     auto filename = ss.str();
                     if (m_nodeHeaderGroups.empty())
                         {
@@ -1444,7 +1484,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     {
                     // For this particular implementation the header size is unused ... The indexHeader is unique and of known size
                     BeFile file;
-                    auto filename = (m_path + L"..\\MasterHeader.sscm").c_str();
+                    auto filename = (m_rootDirectory + L"MasterHeader.sscm").c_str();
                     if (BeFileStatus::Success != OPEN_FILE(file, filename, BeFileAccess::Read))//file.Open(filename, BeFileAccess::Read, BeFileSharing::None))
                         {
                         //assert(!"Local master header could not be found"); // possible during SM generation
@@ -1474,7 +1514,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     //	return SMPointTaggedTileStore::StoreMasterHeader(indexHeader, headerSize);
                     }
                 else {
-                    auto blob_name = m_path + L"..//MasterHeader.sscm";
+                    auto blob_name = m_rootDirectory + L"MasterHeader.sscm";
                     m_stream_store.DownloadBlob(blob_name.c_str(), [indexHeader, &headerSize](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
                         {
                         if (buffer.empty())
@@ -1518,7 +1558,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (NULL != DataTypeArray && countData > 0)
                 {
                 wstringstream ss;
-                ss << m_path << L"p_" << blockIDConvert << L".bin";
+                ss << m_pathToPoints << L"p_" << blockIDConvert << L".bin";
                 auto filename = ss.str();
                 BeFile file;
                 auto fileOpened = OPEN_FILE(file, filename.c_str(), BeFileAccess::Write);
@@ -1852,8 +1892,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (s_stream_from_grouped_store)
                 {
                 auto group = this->GetGroup(blockID);
-                auto node_header = group->GetNodeHeader(ConvertBlockID(blockID));
+                auto node_header = group->GetNodeHeader(blockID.m_integerID);
                 ReadNodeHeaderFromBinary(header, group->GetRawHeaders(node_header.offset), node_header.size);
+                //group->removeNodeData(blockID.m_integerID);
                 }
             else {
                 //auto nodeHeader = this->GetNodeHeaderJSON(blockID);
@@ -1869,10 +1910,12 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         virtual size_t LoadBlock(POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
             auto& block = this->GetBlock(blockID);
+            auto blockSize = block.size();
             assert(block.size() <= maxCountData * sizeof(POINT));
-            memcpy(DataTypeArray, block.data(), block.size());
+            memmove(DataTypeArray, block.data(), block.size());
+            block.UnLoad();
 
-            return block.size();
+            return blockSize;
             }
 
         virtual bool DestroyBlock(HPMBlockID blockID)
@@ -1881,8 +1924,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             }
 
     private:
-
-        WString m_path;
+        WString m_rootDirectory;
+        WString m_pathToPoints;
         WString m_pathToHeaders;
         bool m_use_node_header_grouping;
         // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
