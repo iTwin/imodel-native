@@ -28,7 +28,7 @@ namespace DgnDbServerEvent
     static Utf8CP UserId = "userId";
     namespace LockEvent
         {
-        static Utf8CP LockId = "LockId";
+        static Utf8CP ObjectId = "ObjectId";
         static Utf8CP LockType = "LockType";
         static Utf8CP Date = "Date";
         }
