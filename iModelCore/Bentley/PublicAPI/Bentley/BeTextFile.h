@@ -62,7 +62,7 @@ typedef RefCountedPtr<struct BeTextFile>  BeTextFilePtr;
 //! Reads and Writes Text Files regardless of whether they are encoded on disk as locale-encoded ASCII, UTF8, or UTF16.
 //! @ingroup GROUP_File
 //=======================================================================================
-struct  BeTextFile : public RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE BeTextFile : public RefCountedBase
     {
     static const uint32_t BUFFER_SIZE = 100;
 private:

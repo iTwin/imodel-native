@@ -163,7 +163,7 @@ void BentleyApi::BeAssertFunctions::DefaultAssertionFailureHandler (WCharCP mess
         return;
 #endif
 
-    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv (L"ASSERTION FAILURE: %ls (%ls:%d)\n", message, file, line);
+    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->fatalv (L"ASSERTION FAILURE: %ls (%ls:%d)\n", message, file, line);
 
     #ifndef NDEBUG
         #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
@@ -588,6 +588,12 @@ bool BeTest::EqTol (int    v1, int    v2, int    tol) {return  abs(v1-v2) <= tol
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BeTest::EqStr (Utf8CP s1, Utf8CP s2, bool ignoreCase)
     {
+    if (nullptr == s1)              // Amazingly, gtest STREQ supports NULL arguments, so we must emulate that.
+        return (nullptr == s2);
+
+    if (nullptr == s2)
+        return (nullptr == s1);
+
     if (ignoreCase)
         return 0 == BeStringUtilities::Stricmp (s1, s2);
     else
@@ -653,7 +659,7 @@ BeTest::ExpectedResult::~ExpectedResult() THROW_SPECIFIER(CharCP)
     if (m_message.empty())
         return;
     BeTest::IncrementErrorCount ();
-    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->errorv ("%s\n", m_message.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->fatalv ("%s\n", m_message.c_str());
     if (m_abortImmediately)
         {
         if (BeTest::GetBreakOnFailure())
@@ -912,7 +918,7 @@ void    BeTest::RecordFailedTest (testing::Test const& t)
     Utf8String tname = t.GetTestCaseNameA();
     tname.append (".");
     tname.append (t.GetTestNameA());
-    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->errorv ("%s FAILED\n", tname.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->fatalv ("%s FAILED\n", tname.c_str());
     s_failedTests.insert (tname);
     }
 

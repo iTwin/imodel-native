@@ -144,15 +144,15 @@ public:
     // BeFileName& operator=(BeFileName const& from) { *this = from; return *this;}
 
     //! Clear the value of this BeFileName.
-    void Clear() {clear();}
+    BeFileNameR Clear() { clear(); return *this; }
 
     //! Change the value of this BeFileName.
     //! @param[in] name The new value for this BeFileName. If NULL, the value is cleared.
-    BENTLEYDLL_EXPORT void SetName(WCharCP name);
-    void SetName(WStringCR name) {assign(name);}
+    BENTLEYDLL_EXPORT BeFileNameR SetName(WCharCP name);
+    BeFileNameR SetName(WStringCR name) { assign(name); return *this; }
 
     //! Build a BeFileName from parts of a pathname. Any values that are NULL are omitted.
-    BENTLEYDLL_EXPORT void BuildName(WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext);
+    BENTLEYDLL_EXPORT BeFileNameR BuildName (WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext);
 
     //! Build a WString from parts of a pathname. Any values that are NULL are omitted.
     BENTLEYDLL_EXPORT static void BuildName(WStringR combinedPath, WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext);
@@ -173,13 +173,13 @@ public:
     BENTLEYDLL_EXPORT static void AppendSeparator(WStringR dir);
 
     //! Make sure this filename ends with a directory separator
-    BENTLEYDLL_EXPORT void AppendSeparator();
+    BENTLEYDLL_EXPORT BeFileNameR AppendSeparator();
 
     //! Append string.
-    void AppendString(WCharCP string) {append(string);}
+    BeFileNameR AppendString(WCharCP string) { append(string); return *this; }
 
     //! Remove enclosing quotes
-    BENTLEYDLL_EXPORT void RemoveQuotes();
+    BENTLEYDLL_EXPORT BeFileNameR RemoveQuotes();
 
     //! Creates a shortened version of this path by removing leading path components until maxLength is reached. The resulting string is NOT a valid path, but is suitable for UI presentations. If the path is shortened, "..." will be prepended.
     //! @note Result is undefined when maxLength is less than or equal to 3.
@@ -197,13 +197,13 @@ public:
     //! Convert the filename into a null-terminated multibyte string according to the current locale (ACP).
     //! @param[out] name The buffer into which the conversion is made. Must be of size MAX_PATH.
     //! @private
-    BENTLEYDLL_EXPORT void GetNameA (char name[MAX_PATH]) const;
+    BENTLEYDLL_EXPORT void GetNameA(char name[MAX_PATH]) const;
 
     //! Convert the filename into a null-terminated multibyte string according to the current locale (ACP).
     //! @param[out] name The buffer into which the conversion is made. Must be numChars bytes.
     //! @param[in] numBytes Number of bytes in name.
     //! @private
-    BENTLEYDLL_EXPORT void GetNameA (CharP name, size_t numBytes) const;
+    BENTLEYDLL_EXPORT void GetNameA(CharP name, size_t numBytes) const;
 
     //! Get the UTF8 encoded name from this BeFileName.
     BENTLEYDLL_EXPORT Utf8String GetNameUtf8() const;
@@ -213,13 +213,14 @@ public:
 
     //! Change the value of this BeFileName using a multibyte null terminated string in the current locale.
     //! @private
-    BENTLEYDLL_EXPORT void SetNameA (CharCP name);
+    BENTLEYDLL_EXPORT BeFileNameR SetNameA (CharCP name);
 
     //! Change the value of this BeFileName using a UTF8 encoded string.
-    void SetNameUtf8(Utf8String name) {SetNameUtf8(name.c_str());}
+    BeFileNameR SetNameUtf8 (Utf8String name) { return SetNameUtf8 (name.c_str()); }
 
     //! Change the value of this BeFileName using a UTF8 encoded string.
-    BENTLEYDLL_EXPORT void SetNameUtf8(Utf8CP name);
+    BENTLEYDLL_EXPORT BeFileNameR SetNameUtf8 (Utf8CP name);
+
 /** @} */
 
 /** @name Parse a filename */
@@ -257,7 +258,7 @@ public:
     void ParseNameNoClear(WStringP dev, WStringP dir, WStringP name, WStringP ext) const {ParseNameNoClear(dev, dir, name, ext, c_str());}
 
     //! Remove the right-most component from the path. If this BeFileName contains a single directory (or otherwise contains no directory separators), it becomes empty as a result of this function.
-    BENTLEYDLL_EXPORT void PopDir();
+    BENTLEYDLL_EXPORT BeFileNameR PopDir();
 
     //! Returns the complete directory (including drive, if any) from path. Has terminating separator.
     //! @deprecated Use instance version of BeFileName::GetDirectoryName instead
@@ -380,12 +381,6 @@ public:
 
     //! Test if a filename is an absolute path.
     BENTLEYDLL_EXPORT bool IsAbsolutePath() const;
-
-    //! Test if a filename is an URL.
-    BENTLEYDLL_EXPORT bool IsUrl() const;
-
-    //! Test if a filename is an URL.
-    BENTLEYDLL_EXPORT static bool IsUrl(WCharCP filename);
 
     //! Get the name from this BeFileName.
     WCharCP GetName() const {return c_str();}

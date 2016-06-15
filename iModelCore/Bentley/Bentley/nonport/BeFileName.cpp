@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
     #include <windows.h>
     #include <objbase.h>
     #include <sys/utime.h>
@@ -72,10 +72,10 @@ USING_NAMESPACE_BENTLEY
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String toUtf8 (wchar_t const* w)
+static Utf8String toUtf8(wchar_t const* w)
     {
     Utf8String u;
-    BeStringUtilities::WCharToUtf8 (u, w);
+    BeStringUtilities::WCharToUtf8(u, w);
     return u;
     }
 
@@ -83,19 +83,19 @@ static Utf8String toUtf8 (wchar_t const* w)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString fromUtf8 (char const* u)
+static WString fromUtf8(char const* u)
     {
     WString w;
-    BeStringUtilities::Utf8ToWChar (w, u);
+    BeStringUtilities::Utf8ToWChar(w, u);
     return w;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus beStat (T_Stat64& status, wchar_t const* fn)
+static BentleyStatus beStat(T_Stat64& status, wchar_t const* fn)
     {
-    int e = stat (toUtf8(fn).c_str(), &status);
+    int e = stat(toUtf8(fn).c_str(), &status);
     return (e==-1)? ERROR: SUCCESS;
     }
 #endif
@@ -103,21 +103,21 @@ static BentleyStatus beStat (T_Stat64& status, wchar_t const* fn)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                  04/11
 +---------------+---------------+---------------+---------------+--------------+------*/
-BeFileName::BeFileName (CharCP name, bool isUtf8)
+BeFileName::BeFileName(CharCP name, bool isUtf8)
     {
     if (isUtf8)
-        SetNameUtf8 (name);
+        SetNameUtf8(name);
     else
-        SetNameA (name);
+        SetNameA(name);
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                   08/12
 +---------------+---------------+---------------+---------------+--------------+------*/
-BeFileName::BeFileName (CharCP name, BentleyCharEncoding encoding)
+BeFileName::BeFileName(CharCP name, BentleyCharEncoding encoding)
     {
     if (BentleyCharEncoding::Utf8 == encoding)
-        SetNameUtf8 (name);
+        SetNameUtf8(name);
     else
         SetNameA (name);
     }
@@ -127,7 +127,7 @@ BeFileName::BeFileName (CharCP name, BentleyCharEncoding encoding)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeFileName::GetNameA (char name[MAX_PATH]) const 
     {
-    BeStringUtilities::WCharToCurrentLocaleChar (name, this->c_str(), MAX_PATH);
+    BeStringUtilities::WCharToCurrentLocaleChar(name, this->c_str(), MAX_PATH);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -135,28 +135,28 @@ void BeFileName::GetNameA (char name[MAX_PATH]) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeFileName::GetNameA (CharP name, size_t numBytes) const 
     {
-    BeStringUtilities::WCharToCurrentLocaleChar (name, this->c_str(), numBytes);
+    BeStringUtilities::WCharToCurrentLocaleChar(name, this->c_str(), numBytes);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeFileName::GetNameUtf8 () const
+Utf8String BeFileName::GetNameUtf8() const
     {
-    return toUtf8 (this->c_str());
+    return toUtf8(this->c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeFileName::GetUri () const
+Utf8String BeFileName::GetUri() const
     {
-    Utf8String nameUtf8 (this->c_str());
-    Utf8String uri (nameUtf8[0] == '/' ? "file://" : "file:///");
-    uri.append (nameUtf8.c_str());
+    Utf8String nameUtf8(this->c_str());
+    Utf8String uri(nameUtf8[0] == '/' ? "file://" : "file:///");
+    uri.append(nameUtf8.c_str());
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    uri.ReplaceAll ("\\", "/");
+    uri.ReplaceAll("\\", "/");
 #endif
 
     return uri;
@@ -166,7 +166,7 @@ Utf8String BeFileName::GetUri () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void fixDirSeparators (WCharP name)
+static void fixDirSeparators(WCharP name)
     {
     for (WCharP p = name; *p; p++)
         {
@@ -179,47 +179,50 @@ static void fixDirSeparators (WCharP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::SetNameA (CharCP name)
+BeFileNameR BeFileName::SetNameA (CharCP name)
     {
     WString nameW (name, BentleyCharEncoding::Locale);
-    SetName (nameW.c_str());
+    SetName(nameW.c_str());
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::SetName (WCharCP name)
+BeFileNameR BeFileName::SetName (WCharCP name)
     {
     if (!name)
         {
-        Clear ();
-        return;
+        Clear();
+        return *this;
         }
 
     // also accept URI style names
-    if (0 == wcsncmp (name, L"file:///", 8))
+    if (0 == wcsncmp(name, L"file:///", 8))
         name += 7;
 
-    FixPathName (*this, name, true);
+    FixPathName(*this, name, true);
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::SetNameUtf8 (Utf8CP name)
+BeFileNameR BeFileName::SetNameUtf8 (Utf8CP name)
     {
     WString nameW (name, BentleyCharEncoding::Utf8);
-    SetName (nameW.c_str());
+    SetName(nameW.c_str());
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName::BeFileName (FileNameParts mask, WCharCP fullName)
+BeFileName::BeFileName(FileNameParts mask, WCharCP fullName)
     {
     WString    fileDev, fileDir, fileBase, fileExt;
-    ParseName (&fileDev, &fileDir, &fileBase, &fileExt, fullName);
-    BuildName ((mask & Device)    ? fileDev.c_str() : NULL, 
+    ParseName(&fileDev, &fileDir, &fileBase, &fileExt, fullName);
+    BuildName((mask & Device)    ? fileDev.c_str() : NULL, 
                (mask & Directory) ? fileDir.c_str() : NULL, 
                (mask & Basename)  ? fileBase.c_str() : NULL, 
                (mask & Extension) ? fileExt.c_str() : NULL);
@@ -228,39 +231,39 @@ BeFileName::BeFileName (FileNameParts mask, WCharCP fullName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::SupplyDefaultNameParts (WCharCP defaultName)
+void BeFileName::SupplyDefaultNameParts(WCharCP defaultName)
     {
     WString dev, dir, name, ext;
-    ParseName (&dev, &dir, &name, &ext);
+    ParseName(&dev, &dir, &name, &ext);
 
     WString defdev, defdir, defname, defext;
-    ParseName (&defdev, &defdir, &defname, &defext, defaultName);
+    ParseName(&defdev, &defdir, &defname, &defext, defaultName);
 
     if (dev.empty()) dev = defdev;
     if (dir.empty()) dir = defdir;
     if (name.empty()) name = defname;
     if (ext.empty()) ext = defext;
     
-    BuildName (dev.c_str(), dir.c_str(), name.c_str(), ext.c_str());
+    BuildName(dev.c_str(), dir.c_str(), name.c_str(), ext.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::OverrideNameParts (WCharCP overrideName)
+void BeFileName::OverrideNameParts(WCharCP overrideName)
     {
     WString dev, dir, name, ext;
-    ParseName (&dev, &dir, &name, &ext, overrideName);
+    ParseName(&dev, &dir, &name, &ext, overrideName);
 
     WString defdev, defdir, defname, defext;
-    ParseName (&defdev, &defdir, &defname, &defext);
+    ParseName(&defdev, &defdir, &defname, &defext);
 
     if (dev.empty()) dev = defdev;
     if (dir.empty()) dir = defdir;
     if (name.empty()) name = defname;
     if (ext.empty()) ext = defext;
     
-    BuildName (dev.c_str(), dir.c_str(), name.c_str(), ext.c_str());
+    BuildName(dev.c_str(), dir.c_str(), name.c_str(), ext.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -282,55 +285,56 @@ void BeFileName::OverrideNameParts (WCharCP overrideName)
 
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::BuildName (WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext) 
+BeFileNameR BeFileName::BuildName (WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext) 
     {
     WString combinedPath;
-    BeFileName::BuildName (combinedPath, dev, dir, name, ext);
+    BeFileName::BuildName(combinedPath, dev, dir, name, ext);
 
-    SetName (combinedPath.c_str ());
+    SetName(combinedPath.c_str());
+    return *this;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2012
 //---------------------------------------------------------------------------------------
-void BeFileName::BuildName (WStringR combinedPath, WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext)
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
+void BeFileName::BuildName(WStringR combinedPath, WCharCP dev, WCharCP dir, WCharCP name, WCharCP ext)
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
     {
     WChar outPath[4*MAX_PATH];
-    if (0 != _wmakepath_s (outPath, 4*MAX_PATH, dev, dir, name, ext))
+    if (0 != _wmakepath_s(outPath, 4*MAX_PATH, dev, dir, name, ext))
         *outPath = 0;
     
     combinedPath = outPath;
     }
 #elif defined (__unix__)
     {
-    combinedPath.clear ();
-    combinedPath.reserve (MAX_PATH);
+    combinedPath.clear();
+    combinedPath.reserve(MAX_PATH);
 
     // dev is ignored for unix.
     if (dir && *dir)
         {
-        combinedPath.append (dir);
+        combinedPath.append(dir);
 
-        size_t backOfPath = combinedPath.length () - 1;
+        size_t backOfPath = combinedPath.length() - 1;
         if ((WCSDIR_SEPARATOR_CHAR != combinedPath[backOfPath]) && (WCSALT_DIR_SEPARATOR_CHAR != combinedPath[backOfPath]))
-            combinedPath.append (WCSDIR_SEPARATOR);
+            combinedPath.append(WCSDIR_SEPARATOR);
         }
 
     if (name && *name)
         {
-        combinedPath.append (name);
+        combinedPath.append(name);
         }
 
     if (ext && *ext)
         {
         if (L'.' != *ext)
-            combinedPath.append (L".");
+            combinedPath.append(L".");
 
-        combinedPath.append (ext);
+        combinedPath.append(ext);
         }
 
-    BeAssert (combinedPath.length () < MAX_PATH-1);
+    BeAssert(combinedPath.length() < MAX_PATH-1);
     }
 #else
 #error unknown runtime
@@ -339,11 +343,11 @@ void BeFileName::BuildName (WStringR combinedPath, WCharCP dev, WCharCP dir, WCh
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    YogeshSajanikar 05/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::ParseNameNoClear (WStringP dev, WStringP dir, WStringP name, WStringP ext, WCharCP fullName)
+void BeFileName::ParseNameNoClear(WStringP dev, WStringP dir, WStringP name, WStringP ext, WCharCP fullName)
     {
     WString devStr, dirStr, nameStr, extStr;
 
-    BeFileName::ParseName (&devStr, &dirStr, &nameStr, &extStr, fullName);
+    BeFileName::ParseName(&devStr, &dirStr, &nameStr, &extStr, fullName);
 
     if (NULL != dev && ! devStr.empty())
         *dev = devStr;
@@ -358,20 +362,19 @@ void BeFileName::ParseNameNoClear (WStringP dev, WStringP dir, WStringP name, WS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::ParseName (WStringP dev, WStringP dir, WStringP name, WStringP ext, WCharCP fullName)
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
+void BeFileName::ParseName(WStringP dev, WStringP dir, WStringP name, WStringP ext, WCharCP fullName)
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
     {   // Windows implementation
     if (!fullName || !*fullName)
         return;
 
     wchar_t fileDev[MAX_PATH], fileDir[4*MAX_PATH], fileBase[MAX_PATH], fileExt[MAX_PATH];
 
-    // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString fullNameFixed;
-    FixPathName (fullNameFixed, fullName, true);
+    FixPathName(fullNameFixed, fullName, true);
 
     // NOTE: _wsplitpath_s can deal with either windows or unix directory separators
-    if ( (NULL == fullName) || (0 == *fullName) || (0 != _wsplitpath_s (fullNameFixed.c_str(), fileDev, MAX_PATH, fileDir, 4*MAX_PATH, fileBase, MAX_PATH, fileExt, MAX_PATH)) )
+    if ( (NULL == fullName) || (0 == *fullName) || (0 != _wsplitpath_s(fullNameFixed.c_str(), fileDev, MAX_PATH, fileDir, 4*MAX_PATH, fileBase, MAX_PATH, fileExt, MAX_PATH)) )
         {
         // set all outputs to empty strings.
         fileDev[0] = fileDir[0] = fileBase[0] = fileExt[0] = 0;
@@ -379,28 +382,28 @@ void BeFileName::ParseName (WStringP dev, WStringP dir, WStringP name, WStringP 
 
     if (NULL != dev)
         {
-        size_t len = wcslen (fileDev);
+        size_t len = wcslen(fileDev);
         if ( (len > 0) && (':' == fileDev[len-1]) )
             fileDev[len-1] = 0;
-        dev->assign (fileDev);
+        dev->assign(fileDev);
         }
 
     if (NULL != dir)
         {
-        dir->assign (fileDir);
+        dir->assign(fileDir);
         }
 
     if (NULL != name)
         {
-        name->assign (fileBase);
+        name->assign(fileBase);
         }
 
     if (NULL != ext)
         {
         if ('.' == fileExt[0])
-            ext->assign (&fileExt[1]);
+            ext->assign(&fileExt[1]);
         else
-            ext->assign (fileExt);
+            ext->assign(fileExt);
         }
     }
 #elif defined (__unix__)
@@ -414,7 +417,7 @@ void BeFileName::ParseName (WStringP dev, WStringP dir, WStringP name, WStringP 
 
     // device always empty in unix.
     if (NULL != dev)
-        dev->clear ();
+        dev->clear();
 
     if (NULL == fullName)
         {
@@ -427,40 +430,40 @@ void BeFileName::ParseName (WStringP dev, WStringP dir, WStringP name, WStringP 
         WCharCP lastDirSeparator;
 
         // handle the case where fullName has Windows backslashes
-        wcsncpy (fullNameFixedW, fullName, MAX_PATH);
+        wcsncpy(fullNameFixedW, fullName, MAX_PATH);
         fullNameFixedW[MAX_PATH-1] = 0;
-        fixDirSeparators (fullNameFixedW);
+        fixDirSeparators(fullNameFixedW);
 
         // look for the last directory separator
-        if (NULL == (lastDirSeparator = wcsrchr (fullNameFixedW, WCSDIR_SEPARATOR_CHAR)))
+        if (NULL == (lastDirSeparator = wcsrchr(fullNameFixedW, WCSDIR_SEPARATOR_CHAR)))
             {
             if (NULL != dir)
-                dir->clear ();
+                dir->clear();
 
-            wcsncpy (baseNameW, fullNameFixedW, MAX_PATH);
+            wcsncpy(baseNameW, fullNameFixedW, MAX_PATH);
             }
         else
             {
             if (NULL != dir)
-                dir->assign (fullNameFixedW, 1+(lastDirSeparator-fullNameFixedW));
+                dir->assign(fullNameFixedW, 1+(lastDirSeparator-fullNameFixedW));
 
-            wcsncpy (baseNameW, lastDirSeparator+1, MAX_PATH);
+            wcsncpy(baseNameW, lastDirSeparator+1, MAX_PATH);
             }
 
         // split the basename into name and extension.
-        if (NULL != (lastDot = wcsrchr (baseNameW, '.')))
+        if (NULL != (lastDot = wcsrchr(baseNameW, '.')))
             *lastDot = 0;
         }
 
     if (NULL != name)
-        name->assign (baseNameW);
+        name->assign(baseNameW);
 
     if (NULL != ext)
         {
         if (NULL == lastDot)
-            ext->clear ();
+            ext->clear();
         else
-            ext->assign (lastDot+1);
+            ext->assign(lastDot+1);
         }
     }
 #else
@@ -470,12 +473,12 @@ void BeFileName::ParseName (WStringP dev, WStringP dir, WStringP name, WStringP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Brandon.Bohrer  12/2011
 //---------------------------------------------------------------------------------------
-WString BeFileName::GetDirectoryName (WCharCP path)
+WString BeFileName::GetDirectoryName(WCharCP path)
     {
     WString dev, dir;
 
-    ParseName (&dev, &dir, NULL, NULL, path);
-    return WString (BeFileName (dev.c_str (), dir.c_str (), NULL, NULL).GetName ());
+    ParseName(&dev, &dir, NULL, NULL, path);
+    return WString(BeFileName(dev.c_str(), dir.c_str(), NULL, NULL).GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -484,18 +487,18 @@ WString BeFileName::GetDirectoryName (WCharCP path)
 BeFileName BeFileName::GetDirectoryName() const
     {
     WString dev, dir;
-    ParseName (&dev, &dir, NULL, NULL, GetName());
-    return BeFileName (dev.c_str(), dir.c_str(), NULL, NULL);
+    ParseName(&dev, &dir, NULL, NULL, GetName());
+    return BeFileName(dev.c_str(), dir.c_str(), NULL, NULL);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Brandon.Bohrer  12/2011
 //---------------------------------------------------------------------------------------
-WString BeFileName::GetDirectoryWithoutDevice (WCharCP path)
+WString BeFileName::GetDirectoryWithoutDevice(WCharCP path)
     {
     WString dir;
-    ParseName (NULL, &dir, NULL, NULL, path);
-    return WString (BeFileName (NULL, dir.c_str (), NULL, NULL).GetName ());
+    ParseName(NULL, &dir, NULL, NULL, path);
+    return WString(BeFileName(NULL, dir.c_str(), NULL, NULL).GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -504,17 +507,17 @@ WString BeFileName::GetDirectoryWithoutDevice (WCharCP path)
 BeFileName BeFileName::GetDirectoryWithoutDevice() const
     {
     WString dir;
-    ParseName (NULL, &dir, NULL, NULL, GetName());
-    return BeFileName (NULL, dir.c_str(), NULL, NULL);
+    ParseName(NULL, &dir, NULL, NULL, GetName());
+    return BeFileName(NULL, dir.c_str(), NULL, NULL);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Brandon.Bohrer  12/2011
 //---------------------------------------------------------------------------------------
-WString BeFileName::GetExtension (WCharCP path)
+WString BeFileName::GetExtension(WCharCP path)
     {
     WString ext;
-    ParseName (NULL, NULL, NULL, &ext, path);
+    ParseName(NULL, NULL, NULL, &ext, path);
     return ext;
     }
 
@@ -524,17 +527,17 @@ WString BeFileName::GetExtension (WCharCP path)
 WString BeFileName::GetExtension() const
     {
     WString ext;
-    ParseName (NULL, NULL, NULL, &ext, GetName());
+    ParseName(NULL, NULL, NULL, &ext, GetName());
     return ext;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Brandon.Bohrer  12/2011
 //---------------------------------------------------------------------------------------
-WString BeFileName::GetFileNameWithoutExtension (WCharCP path)
+WString BeFileName::GetFileNameWithoutExtension(WCharCP path)
     {
     WString base;
-    ParseName (NULL, NULL, &base, NULL, path);
+    ParseName(NULL, NULL, &base, NULL, path);
     return base;
     }
 
@@ -544,17 +547,17 @@ WString BeFileName::GetFileNameWithoutExtension (WCharCP path)
 WString BeFileName::GetFileNameWithoutExtension() const
     {
     WString base;
-    ParseName (NULL, NULL, &base, NULL, GetName());
+    ParseName(NULL, NULL, &base, NULL, GetName());
     return base;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Brandon.Bohrer  12/2011
 //---------------------------------------------------------------------------------------
-WString BeFileName::GetDevice (WCharCP path)
+WString BeFileName::GetDevice(WCharCP path)
     {
     WString dev;
-    ParseName (&dev, NULL, NULL, NULL, path);
+    ParseName(&dev, NULL, NULL, NULL, path);
     return dev;
     }
 
@@ -564,18 +567,18 @@ WString BeFileName::GetDevice (WCharCP path)
 WString BeFileName::GetDevice() const
     {
     WString dev;
-    ParseName (&dev, NULL, NULL, NULL, GetName());
+    ParseName(&dev, NULL, NULL, NULL, GetName());
     return dev;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BeFileName::IsAbsolutePath () const
+bool BeFileName::IsAbsolutePath() const
     {
     if (empty())
         return false;
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
     return (at(0) == '\\' || (length() > 2 && at(1)== ':'));
 #elif defined (__unix__)
     return at(0) == '/';
@@ -584,76 +587,60 @@ bool BeFileName::IsAbsolutePath () const
 #endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BeFileName::IsUrl() const
-    {
-    return IsUrl(c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BeFileName::IsUrl(WCharCP filename)
-    {
-    return NULL != filename && 0 == wcsncmp(L"http:", filename, 5);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Keith.Bentley                   12/07
 //---------------------------------------------------------------------------------------
-void BeFileName::AppendToPath (WStringR path, WCharCP val)
+void BeFileName::AppendToPath(WStringR path, WCharCP val)
     {
     if (!val || !*val)
         return;
 
-    WString newPath (path.c_str());
+    WString newPath(path.c_str());
     if (!newPath.empty())
-        AppendSeparator (newPath);
+        AppendSeparator(newPath);
 
-    newPath.append (val);
-    FixPathName (path, newPath.c_str(), true);
+    newPath.append(val);
+    FixPathName(path, newPath.c_str(), true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Sam.Wilson      08/11
 //---------------------------------------------------------------------------------------
-BeFileNameR BeFileName::AppendToPath (WCharCP val)
+BeFileNameR BeFileName::AppendToPath(WCharCP val)
     {
     if (!val || !*val)
         return *this;
 
-    WString newPath (GetName());
+    WString newPath(GetName());
     if (!newPath.empty())
-        AppendSeparator (newPath);
+        AppendSeparator(newPath);
 
-    newPath.append (val);
-    SetName (newPath.c_str());
+    newPath.append(val);
+    SetName(newPath.c_str());
     return *this;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Barry.Bentley  01/12
 //---------------------------------------------------------------------------------------
-BeFileNameR BeFileName::AppendExtension (WCharCP extension)
+BeFileNameR BeFileName::AppendExtension(WCharCP extension)
     {
     if ( (NULL == extension) || (0 == *extension) )
         return *this;
 
-    WString newPath (GetName());
-    if ('.' != at (newPath.length()-1))
-        newPath.append (L".");
+    WString newPath(GetName());
+    if ('.' != at(newPath.length()-1))
+        newPath.append(L".");
 
-    newPath.append (extension);
-    SetName (newPath.c_str());
+    newPath.append(extension);
+    SetName(newPath.c_str());
     return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::AppendSeparator (WStringR path)
+void BeFileName::AppendSeparator(WStringR path)
     {
     if (path.empty() || (*(path.end()-1) != WCSDIR_SEPARATOR_CHAR))
         path.append (WCSDIR_SEPARATOR);
@@ -662,18 +649,19 @@ void BeFileName::AppendSeparator (WStringR path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::AppendSeparator ()
+BeFileNameR BeFileName::AppendSeparator ()
     {
-    AppendSeparator (*this);
+    AppendSeparator(*this);
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::PopDir ()
+BeFileNameR BeFileName::PopDir ()
     {
     if (this->length() == 0)
-        return;
+        return *this;
 
     WString::iterator lastChar = this->end()-1;
         
@@ -684,31 +672,32 @@ void BeFileName::PopDir ()
     while (lastChar > this->begin() && *lastChar != WCSDIR_SEPARATOR_CHAR)
         --lastChar;
 
-    this->erase (lastChar, this->end());
+    this->erase(lastChar, this->end());
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                     JoshSchifter    02/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void util_findDirComponents (bvector<WString>& pathComponents, WCharCP directory)
+static void util_findDirComponents(bvector<WString>& pathComponents, WCharCP directory)
     {
     WString path(directory);
 
-    path.ReplaceAll (WCSALT_DIR_SEPARATOR, WCSDIR_SEPARATOR);
-    BeStringUtilities::Split (path.c_str(), WCSDIR_SEPARATOR, NULL, pathComponents);
+    path.ReplaceAll(WCSALT_DIR_SEPARATOR, WCSDIR_SEPARATOR);
+    BeStringUtilities::Split(path.c_str(), WCSDIR_SEPARATOR, NULL, pathComponents);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                     JoshSchifter    02/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-static uint32_t util_findIdenticalStrings (bvector<WString> const& setOne, bvector<WString> const& setTwo)
+static uint32_t util_findIdenticalStrings(bvector<WString> const& setOne, bvector<WString> const& setTwo)
     {
     size_t iSame;
     for (iSame=0; ; iSame++)
         {
         if (setOne.size() <= iSame || setTwo.size() <= iSame)
             break;
-        if (0 != BeStringUtilities::Wcsicmp (setOne[iSame].c_str(), setTwo[iSame].c_str()))
+        if (0 != BeStringUtilities::Wcsicmp(setOne[iSame].c_str(), setTwo[iSame].c_str()))
             break;
         }
     return (uint32_t) iSame;
@@ -717,27 +706,27 @@ static uint32_t util_findIdenticalStrings (bvector<WString> const& setOne, bvect
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                     JoshSchifter    02/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void util_buildRelativePath (WStringR relativePath, bvector<WString> const& targetPathComponents, uint32_t numSame, uint32_t numBeyondSameInRoot)
+static void util_buildRelativePath(WStringR relativePath, bvector<WString> const& targetPathComponents, uint32_t numSame, uint32_t numBeyondSameInRoot)
     {
     relativePath.clear();
 
     for (;numBeyondSameInRoot >0; numBeyondSameInRoot--)
         {
-        relativePath.append (L"..");
-        relativePath.append (WCSDIR_SEPARATOR);
+        relativePath.append(L"..");
+        relativePath.append(WCSDIR_SEPARATOR);
         }
 
     for (size_t iRelativePath = numSame; iRelativePath < targetPathComponents.size(); iRelativePath++)
         {
-        relativePath.append (targetPathComponents[iRelativePath]);
-        relativePath.append (WCSDIR_SEPARATOR);
+        relativePath.append(targetPathComponents[iRelativePath]);
+        relativePath.append(WCSDIR_SEPARATOR);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                     JoshSchifter    02/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeFileName::FindRelativePath (WStringR outRelativePath, WCharCP targetFileName, WCharCP rootFileName)
+void BeFileName::FindRelativePath(WStringR outRelativePath, WCharCP targetFileName, WCharCP rootFileName)
     {
     WString             targetDir;
     WString             targetDevice;
@@ -747,30 +736,30 @@ void BeFileName::FindRelativePath (WStringR outRelativePath, WCharCP targetFileN
     WString             rootDevice;
     WString             rootDir;
 
-    BeFileName::ParseName (&rootDevice, &rootDir, NULL, NULL, rootFileName);
-    BeFileName::ParseName (&targetDevice, &targetDir, &targetName, &targetExtension, targetFileName);
+    BeFileName::ParseName(&rootDevice, &rootDir, NULL, NULL, rootFileName);
+    BeFileName::ParseName(&targetDevice, &targetDir, &targetName, &targetExtension, targetFileName);
 
-    if ( (0 == BeStringUtilities::Wcsicmp (targetDevice.c_str(), rootDevice.c_str())) )
+    if ( (0 == BeStringUtilities::Wcsicmp(targetDevice.c_str(), rootDevice.c_str())) )
         {
         bvector<WString>    targetDirComponents;
         bvector<WString>    rootDirComponents;
 
-        util_findDirComponents (rootDirComponents, rootDir.c_str());
-        util_findDirComponents (targetDirComponents, targetDir.c_str());
+        util_findDirComponents(rootDirComponents, rootDir.c_str());
+        util_findDirComponents(targetDirComponents, targetDir.c_str());
 
         // find the number of paths beyond those that are the same in the root. That's how many we have to back up.
-        uint32_t    componentsSame = util_findIdenticalStrings (rootDirComponents, targetDirComponents);
+        uint32_t    componentsSame = util_findIdenticalStrings(rootDirComponents, targetDirComponents);
         uint32_t    componentsBeyondSameInRoot = (uint32_t) rootDirComponents.size() - componentsSame;
 
         WString     targetRelativeDir;
 
-        util_buildRelativePath (targetRelativeDir, targetDirComponents, componentsSame, componentsBeyondSameInRoot);
-        BeFileName::BuildName (outRelativePath, NULL, targetRelativeDir.c_str(), targetName.c_str(), targetExtension.c_str());
+        util_buildRelativePath(targetRelativeDir, targetDirComponents, componentsSame, componentsBeyondSameInRoot);
+        BeFileName::BuildName(outRelativePath, NULL, targetRelativeDir.c_str(), targetName.c_str(), targetExtension.c_str());
         return;
         }
 
     // if we got here, couldn't find relative path.
-    outRelativePath.assign (targetFileName);
+    outRelativePath.assign(targetFileName);
     }
 
 namespace { /* unnamed */
@@ -786,23 +775,23 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    02/06
     +---------------+---------------+---------------+---------------+-----------+------*/
-    /* ctor */  DirectoryStack () : m_leadSep(false) {}
-    void        PushLeadSeparator () { m_leadSep = true; }
+    /* ctor */  DirectoryStack() : m_leadSep(false) {}
+    void        PushLeadSeparator() { m_leadSep = true; }
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    02/06
     +---------------+---------------+---------------+---------------+-----------+------*/
-    StatusInt   ToDirString (WStringR outStr)
+    StatusInt   ToDirString(WStringR outStr)
         {
         outStr.clear();
 
         if (m_leadSep)
-            outStr.append (WCSDIR_SEPARATOR);
+            outStr.append(WCSDIR_SEPARATOR);
 
         FOR_EACH (WString const& dirName, m_stack)
             {
-            outStr.append (dirName);
-            outStr.append (WCSDIR_SEPARATOR);
+            outStr.append(dirName);
+            outStr.append(WCSDIR_SEPARATOR);
             }
 
         return SUCCESS;
@@ -811,19 +800,19 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    02/06
     +---------------+---------------+---------------+---------------+-----------+------*/
-    StatusInt   Push (WCharCP newDir)
+    StatusInt   Push(WCharCP newDir)
         {
         if (0 == newDir || '\0' == newDir[0])
             return ERROR;
 
-        m_stack.push_back (newDir);
+        m_stack.push_back(newDir);
         return SUCCESS;
         }
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    02/06
     +---------------+---------------+---------------+---------------+-----------+------*/
-    StatusInt   Pop  ()
+    StatusInt   Pop()
         {
         if (0 >= m_stack.size())
             return ERROR;
@@ -838,7 +827,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeFileName::ResolveRelativePath (WStringR outFullPath, WCharCP relativeFileName, WCharCP basePath)
+BentleyStatus BeFileName::ResolveRelativePath(WStringR outFullPath, WCharCP relativeFileName, WCharCP basePath)
     {
     WString             relativeDir;
     WString             relativeDevice;
@@ -849,13 +838,13 @@ BentleyStatus BeFileName::ResolveRelativePath (WStringR outFullPath, WCharCP rel
     WString             baseDir;
 
     bool        hasLeadSeparator = false;
-    BeFileName::ParseName (&baseDevice, &baseDir, NULL, NULL, basePath);
-    BeFileName::ParseName (&relativeDevice, &relativeDir, &relativeName, &relativeExtension, relativeFileName);
+    BeFileName::ParseName(&baseDevice, &baseDir, NULL, NULL, basePath);
+    BeFileName::ParseName(&relativeDevice, &relativeDir, &relativeName, &relativeExtension, relativeFileName);
 
     if ( ! relativeDevice.empty())
         {
         // If the input path is absolute, then we cannot make a path relative to basePath
-        outFullPath.assign (relativeFileName);
+        outFullPath.assign(relativeFileName);
         return SUCCESS;
         }
 
@@ -867,17 +856,17 @@ BentleyStatus BeFileName::ResolveRelativePath (WStringR outFullPath, WCharCP rel
     bvector<WString>    relativeDirComponents;
     bvector<WString>    baseDirComponents;
 
-    util_findDirComponents (relativeDirComponents, relativeDir.c_str());
-    util_findDirComponents (baseDirComponents, baseDir.c_str());
+    util_findDirComponents(relativeDirComponents, relativeDir.c_str());
+    util_findDirComponents(baseDirComponents, baseDir.c_str());
 
     DirectoryStack  dirStack;
 
     if (hasLeadSeparator)
-        dirStack.PushLeadSeparator ();
+        dirStack.PushLeadSeparator();
 
     // Push the base path onto a stack.
     FOR_EACH (WStringCR dirComponent, baseDirComponents)
-        dirStack.Push (dirComponent.c_str());
+        dirStack.Push(dirComponent.c_str());
 
     // Push or Pop based on each dir in the relative path.
     FOR_EACH (WStringCR dirComponent, relativeDirComponents)
@@ -889,15 +878,15 @@ BentleyStatus BeFileName::ResolveRelativePath (WStringR outFullPath, WCharCP rel
             continue;
 
         if (dirComponent.EqualsI (L".."))
-            dirStack.Pop ();
+            dirStack.Pop();
         else
-            dirStack.Push (dirComponent.c_str());
+            dirStack.Push(dirComponent.c_str());
         }
 
     WString fullPath;
-    dirStack.ToDirString (fullPath);
+    dirStack.ToDirString(fullPath);
 
-    BeFileName::BuildName (outFullPath, baseDevice.c_str(), fullPath.c_str(), relativeName.c_str(), relativeExtension.c_str());
+    BeFileName::BuildName(outFullPath, baseDevice.c_str(), fullPath.c_str(), relativeName.c_str(), relativeExtension.c_str());
     return SUCCESS;
     }
 
@@ -916,7 +905,7 @@ typedef bmap<WString,double>  T_ServerMap;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool UNCPathExists (WCharCP filename)
+static bool UNCPathExists(WCharCP filename)
     {
     static T_ServerMap *s_timedOutUNCServers;
 
@@ -924,30 +913,30 @@ static bool UNCPathExists (WCharCP filename)
     WCharCP    serverName = &filename[2];
     WCharCP    endServerName;
 
-    if (NULL == (endServerName = wcschr (serverName, '\\')))
+    if (NULL == (endServerName = wcschr(serverName, '\\')))
         {
-        assert (false);
-        endServerName = serverName + wcslen (serverName);
+        assert(false);
+        endServerName = serverName + wcslen(serverName);
         }
 
     // make a local copy of just the UNC server part of the name.
     ptrdiff_t   numChars        = endServerName - serverName;
-    WCharP      localServerName = (WCharP) _alloca ( (numChars+1) * sizeof (WChar));
-    wcsncpy (localServerName, serverName, numChars);
+    WCharP      localServerName = (WCharP) _alloca( (numChars+1) * sizeof (WChar));
+    wcsncpy(localServerName, serverName, numChars);
     localServerName[numChars] = 0;
 
     double timeNow = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     T_ServerMap::iterator   entry;
-    if ( (NULL != s_timedOutUNCServers) && (s_timedOutUNCServers->end() != (entry = s_timedOutUNCServers->find (localServerName))) )
+    if ( (NULL != s_timedOutUNCServers) && (s_timedOutUNCServers->end() != (entry = s_timedOutUNCServers->find(localServerName))) )
         {
         if ( (timeNow - entry->second) < RETRY_AFTER_MILLISECONDS)
             return false;
         else
-            s_timedOutUNCServers->erase (entry);
+            s_timedOutUNCServers->erase(entry);
         }
 
     // if we got here, we didn't find it, or it's been too long since we last tried it.
-#if defined(BENTLEY_WINRT)
+#if defined (BENTLEY_WINRT)
     bool exists = -1 != _waccess(filename,0);
 #else
     bool exists = TO_BOOL(::PathFileExistsW(filename));
@@ -970,24 +959,23 @@ static bool UNCPathExists (WCharCP filename)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BeFileName::DoesPathExist(WCharCP path)
     {
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
     if ((NULL != path) && ('\\' == path[0]) && ('\\' == path[1]) && ('?' != path[2]))
-        return UNCPathExists (path);
+        return UNCPathExists(path);
 
-    // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString pathFixed;
-    BeFileNameStatus status = FixPathName (pathFixed, path, false);
+    BeFileNameStatus status = FixPathName(pathFixed, path, false);
     
     if (BeFileNameStatus::Success != status)
         return false;
     
-    return -1 != _waccess (pathFixed.c_str(), 0);
+    return -1 != _waccess(pathFixed.c_str(), 0);
 
 #elif defined (__unix__)
 
     Utf8String pathUtf8;
-    BeStringUtilities::WCharToUtf8 (pathUtf8, path);
-    return (-1 != access (pathUtf8.c_str (), F_OK));
+    BeStringUtilities::WCharToUtf8(pathUtf8, path);
+    return (-1 != access(pathUtf8.c_str(), F_OK));
 
 #else
 #error unknown runtime
@@ -999,7 +987,7 @@ bool BeFileName::DoesPathExist(WCharCP path)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BeFileName::IsDirectory() const
     {
-    return BeFileName::IsDirectory (this->GetName());
+    return BeFileName::IsDirectory(this->GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1009,11 +997,10 @@ bool BeFileName::IsDirectory(WCharCP path)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
-    // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString pathFixed;
-    FixPathName (pathFixed, path, false);
+    FixPathName(pathFixed, path, false);
 
-    BeFileName resolvedPath (pathFixed);
+    BeFileName resolvedPath(pathFixed);
     
     // resolve the target if it's a link.
     if (IsSymbolicLink(pathFixed.c_str()) && (SUCCESS != GetTargetOfSymbolicLink(resolvedPath, pathFixed.c_str())))
@@ -1031,7 +1018,7 @@ bool BeFileName::IsDirectory(WCharCP path)
 #elif defined (__unix__)
 
     struct stat info;
-    if (0 != stat (Utf8String(path).c_str (), &info))
+    if (0 != stat(Utf8String(path).c_str(), &info))
         return false;
     return S_ISDIR(info.st_mode);
 
@@ -1044,7 +1031,7 @@ bool BeFileName::IsDirectory(WCharCP path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool isRelativePath (WCharCP path)
+bool isRelativePath(WCharCP path)
     {
     if ('.' == path[0])
         return true;
@@ -1061,9 +1048,9 @@ bool isRelativePath (WCharCP path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool hasExtendedPathPrefix (WCharCP path)
+bool hasExtendedPathPrefix(WCharCP path)
     {
-    return (0 == wcsncmp (path, WINDOWS_EXTENDED_PATH_PREFIX, wcslen (WINDOWS_EXTENDED_PATH_PREFIX)));
+    return (0 == wcsncmp(path, WINDOWS_EXTENDED_PATH_PREFIX, wcslen(WINDOWS_EXTENDED_PATH_PREFIX)));
     }
 #endif
 
@@ -1076,39 +1063,39 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
         return  BeFileNameStatus::IllegalName;
 
     // skip over any leading whitespace
-    for (; *src && iswspace (*src); src++)
+    for (; *src && iswspace(*src); src++)
         ;
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
     bool extendedPathPrefixNeeded = false;
 
-    if (isRelativePath (src))
+    if (isRelativePath(src))
         {
         // Windows does not allow relative path names to be >= MAX_PATH
-        if (wcslen (src) >= MAX_PATH)
+        if (wcslen(src) >= MAX_PATH)
             return  BeFileNameStatus::IllegalName;
         }
     else
         {
         // Need the "extended path prefix" if name would be too long and if prefix is not already there
         // MAX_PATH - 12 is the maximum length for a directory name (keeping room for an 8.3 filename)
-        if ((wcslen (src) >= (MAX_PATH - 12)) && !hasExtendedPathPrefix (src))
+        if ((wcslen(src) >= (MAX_PATH - 12)) && !hasExtendedPathPrefix(src))
             extendedPathPrefixNeeded = true;
         }
 
-    size_t numToAllocate = wcslen (src) + 1;
+    size_t numToAllocate = wcslen(src) + 1;
     if (extendedPathPrefixNeeded)
-        numToAllocate += wcslen (WINDOWS_EXTENDED_PATH_PREFIX);
+        numToAllocate += wcslen(WINDOWS_EXTENDED_PATH_PREFIX);
         
-    ScopedArray<WChar, (MAX_PATH * sizeof (WChar))> tmp1Buff (numToAllocate);
+    ScopedArray<WChar, (MAX_PATH * sizeof (WChar))> tmp1Buff(numToAllocate);
     WCharP tmp1 = tmp1Buff.GetData();
     WCharP dst=tmp1;
 
     if (extendedPathPrefixNeeded)
         {
-        wcscpy (dst, WINDOWS_EXTENDED_PATH_PREFIX);
-        dst += wcslen (WINDOWS_EXTENDED_PATH_PREFIX);
+        wcscpy(dst, WINDOWS_EXTENDED_PATH_PREFIX);
+        dst += wcslen(WINDOWS_EXTENDED_PATH_PREFIX);
         }
 
     for (; *src; ++src, ++dst)
@@ -1128,12 +1115,12 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
     //Remove dots, compress relative paths, etc.
     ScopedArray<WChar, (MAX_PATH * sizeof (WChar))> tmpBuff(wcslen(tmp1) + 1);
     WCharP tmp = tmpBuff.GetData();
-    wcscpy (tmp, tmp1);
+    wcscpy(tmp, tmp1);
 
   #if defined (BENTLEY_WIN32)
 
     // NOTE: PathCanonicalizeW does not support names >= MAX_PATH
-    if (wcslen (tmp1) < MAX_PATH)
+    if (wcslen(tmp1) < MAX_PATH)
         {
         WCharCP root = ::PathSkipRootW(tmp1);
         if (NULL != root)
@@ -1161,7 +1148,7 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
 
   #endif
 
-    path.assign (tmp);
+    path.assign(tmp);
     path.Trim();
     return  BeFileNameStatus::Success;
 
@@ -1170,16 +1157,16 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
   #if !defined (ANDROID)
     // realpath is unreliable on Android
     char buf[MAX_PATH];
-    if (realpath (toUtf8(src).c_str(), buf))
+    if (realpath(toUtf8(src).c_str(), buf))
         {
-        BeStringUtilities::Utf8ToWChar (path, buf);
+        BeStringUtilities::Utf8ToWChar(path, buf);
         
         if (keepTrailingSeparator)
             {
             // realpath removes trailing separators which can cause problems downstream
-            WCharCP lastSrcChar = src += wcslen (src) - 1;
+            WCharCP lastSrcChar = src += wcslen(src) - 1;
             if (WCSDIR_SEPARATOR_CHAR == *lastSrcChar)
-                BeFileName::AppendSeparator (path);
+                BeFileName::AppendSeparator(path);
             }
         
         return BeFileNameStatus::Success;
@@ -1187,8 +1174,8 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
   #endif
 
     //  File does not exist. Do some simple fix-ups.
-    path.reserve (wcslen (src));
-    path.resize (0);
+    path.reserve(wcslen(src));
+    path.resize(0);
     int prevc=0;
     for (WCharCP p = src; *p; p++)
         {
@@ -1203,12 +1190,12 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
             continue;
             }
         // *** WIP_LINUX: remove ..
-        path.push_back (c);
+        path.push_back(c);
         prevc = c;
         }
     
     if (!keepTrailingSeparator && (WCSDIR_SEPARATOR_CHAR == path.end()[-1]))
-        path.resize (path.size()-1);
+        path.resize(path.size()-1);
 
     path.Trim();
     return  BeFileNameStatus::Success;
@@ -1221,7 +1208,7 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeGetFullPathName (WStringR path, WCharCP src)
+BeFileNameStatus BeFileName::BeGetFullPathName(WStringR path, WCharCP src)
     {
 #if defined (BENTLEY_WIN32)
 
@@ -1240,7 +1227,7 @@ BeFileNameStatus BeFileName::BeGetFullPathName (WStringR path, WCharCP src)
         return  BeFileNameStatus::Success;
         }
 
-    ScopedArray<wchar_t> longFileName (PathSize+1);
+    ScopedArray<wchar_t> longFileName(PathSize+1);
     GetFullPathNameW (src, PathSize+1, longFileName.GetData(), NULL);
     path = longFileName.GetData();
     return  BeFileNameStatus::Success;
@@ -1254,7 +1241,7 @@ BeFileNameStatus BeFileName::BeGetFullPathName (WStringR path, WCharCP src)
 #elif defined (__unix__)
 
     char        fullName[PATH_MAX];
-    if (realpath (toUtf8(src).c_str(), fullName) != NULL)
+    if (realpath(toUtf8(src).c_str(), fullName) != NULL)
         path = fromUtf8(fullName);
     else
         path = src;
@@ -1269,10 +1256,10 @@ BeFileNameStatus BeFileName::BeGetFullPathName (WStringR path, WCharCP src)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeGetFullPathName ()
+BeFileNameStatus BeFileName::BeGetFullPathName()
     {
     WString fn;
-    BeFileNameStatus status = BeGetFullPathName (fn, this->c_str());
+    BeFileNameStatus status = BeGetFullPathName(fn, this->c_str());
     if (BeFileNameStatus::Success != status)
         return status;
 
@@ -1283,10 +1270,10 @@ BeFileNameStatus BeFileName::BeGetFullPathName ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::CreateNewDirectory (WCharCP inPath)
+BeFileNameStatus BeFileName::CreateNewDirectory(WCharCP inPath)
     {
     WString path;
-    BeFileNameStatus fileNameStatus = FixPathName (path, inPath, false);
+    BeFileNameStatus fileNameStatus = FixPathName(path, inPath, false);
     if (BeFileNameStatus::Success != fileNameStatus)
         return  fileNameStatus;
 
@@ -1296,14 +1283,14 @@ BeFileNameStatus BeFileName::CreateNewDirectory (WCharCP inPath)
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
     // skip drive letter and its trailing slash
-    WCharCP root = path.c_str ();
+    WCharCP root = path.c_str();
 
     bool isUnc = ('\\' == path[0]) && ('\\' == path[1]);
     if ( !isUnc )
         while (':' != *root && 0 != *root)
             root++;
     root += 2;
-    BeAssert (root < path.c_str () + path.size ());
+    BeAssert(root < path.c_str() + path.size());
 
     WString fullpath;
     size_t start = root ? root-path.c_str() : 0;
@@ -1312,7 +1299,7 @@ BeFileNameStatus BeFileName::CreateNewDirectory (WCharCP inPath)
     while (fullpath.size() < path.size())
         {
         size_t end = path.find(L"\\", start);
-        fullpath.assign (path.substr (0, end));
+        fullpath.assign(path.substr(0, end));
         start = end+1;
 
         ++nameSectionCount;
@@ -1341,7 +1328,7 @@ BeFileNameStatus BeFileName::CreateNewDirectory (WCharCP inPath)
 #elif defined (__unix__)
 
     Utf8String pathUtf8;
-    BeStringUtilities::WCharToUtf8 (pathUtf8, inPath);
+    BeStringUtilities::WCharToUtf8(pathUtf8, inPath);
 
     // ANDROID WIP: need a better permissions strategy !!!
     mode_t mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH;
@@ -1352,23 +1339,23 @@ BeFileNameStatus BeFileName::CreateNewDirectory (WCharCP inPath)
 
     do
         {
-        size_t end = pathUtf8.find ("/", start);
-        Utf8String partialPath = pathUtf8.substr (0, end);
+        size_t end = pathUtf8.find("/", start);
+        Utf8String partialPath = pathUtf8.substr(0, end);
         
         if (Utf8String::npos == end)
-            start = pathUtf8.size ();
+            start = pathUtf8.size();
         else
             start = end + 1;
 
-        if (0 != mkdir (partialPath.c_str (), mode))
+        if (0 != mkdir(partialPath.c_str(), mode))
             {
             if (EEXIST != errno)
                 {
                 int  errval = errno;
                 char errstr[128];
-                strncpy (errstr, strerror(errval), sizeof(errstr));
+                strncpy(errstr, strerror(errval), sizeof(errstr));
                 errstr[sizeof(errstr)-1] = 0;
-                NativeLogging::LoggingManager::GetLogger(L"DgnPlatform")->warningv (L"BeFileName::CreateNewDirectory (%s) - %d %s", partialPath.c_str(), errval, errstr);
+                NativeLogging::LoggingManager::GetLogger(L"DgnPlatform")->warningv(L"BeFileName::CreateNewDirectory (%s) - %d %s", partialPath.c_str(), errval, errstr);
                 return BeFileNameStatus::CantCreate;
                 }
             }
@@ -1385,27 +1372,27 @@ BeFileNameStatus BeFileName::CreateNewDirectory (WCharCP inPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeDeleteFile () const
+BeFileNameStatus BeFileName::BeDeleteFile() const
     {
-    return BeFileName::BeDeleteFile (this->GetName());
+    return BeFileName::BeDeleteFile(this->GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeDeleteFile (WCharCP fileNameP)
+BeFileNameStatus BeFileName::BeDeleteFile(WCharCP fileNameP)
     {
-    if (!DoesPathExist (fileNameP))
+    if (!DoesPathExist(fileNameP))
         return BeFileNameStatus::FileNotFound;
 
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString fileNameFixed;
-    FixPathName (fileNameFixed, fileNameP, true);
+    FixPathName(fileNameFixed, fileNameP, true);
 
     WIN32_FILE_ATTRIBUTE_DATA wasAttributes;
-    memset (&wasAttributes, 0, sizeof(wasAttributes));
+    memset(&wasAttributes, 0, sizeof(wasAttributes));
     ::GetFileAttributesExW (fileNameFixed.c_str(), GetFileExInfoStandard, &wasAttributes);
     ::SetFileAttributesW (fileNameFixed.c_str(), FILE_ATTRIBUTE_NORMAL);   // remove read-only attribute (and anything else that might be in the way)
     
@@ -1419,7 +1406,7 @@ BeFileNameStatus BeFileName::BeDeleteFile (WCharCP fileNameP)
 
 #elif defined (__unix__)
     
-    return remove (toUtf8(fileNameP).c_str()) == 0? BeFileNameStatus::Success: BeFileNameStatus::CantDeleteFile;
+    return remove(toUtf8(fileNameP).c_str()) == 0? BeFileNameStatus::Success: BeFileNameStatus::CantDeleteFile;
 
 #else
 #error unknown runtime
@@ -1432,28 +1419,28 @@ BeFileNameStatus BeFileName::BeDeleteFile (WCharCP fileNameP)
 BeFileNameStatus BeFileName::EmptyDirectory(WCharCP inPath)
     {
     WString path2;
-    BeFileNameStatus stat = FixPathName (path2, inPath, false);
+    BeFileNameStatus stat = FixPathName(path2, inPath, false);
     if (BeFileNameStatus::Success != stat)
         return  stat;
-    BeFileName path (path2.c_str());
+    BeFileName path(path2.c_str());
 
     if (!DoesPathExist(path))
         return  BeFileNameStatus::FileNotFound;
 
     BeFileName filename;
     bool       isDir;
-    for (BeDirectoryIterator dir (path); dir.GetCurrentEntry(filename,isDir,true) == SUCCESS; dir.ToNext())
+    for (BeDirectoryIterator dir(path); dir.GetCurrentEntry(filename,isDir,true) == SUCCESS; dir.ToNext())
         {
         if (isDir)
             {
-            stat = EmptyAndRemoveDirectory (filename);
+            stat = EmptyAndRemoveDirectory(filename);
             if (BeFileNameStatus::Success != stat)
                 return  stat;
             }
         else
             {
-            SetFileReadOnly (filename, false);
-            stat = BeDeleteFile (filename);
+            SetFileReadOnly(filename, false);
+            stat = BeDeleteFile(filename);
             if (stat != BeFileNameStatus::Success)
                 return  stat;
             }
@@ -1472,16 +1459,16 @@ BeFileNameStatus BeFileName::EmptyAndRemoveDirectory(WCharCP inPath)
         return status;
 
     WString path2;
-    FixPathName (path2, inPath, false);
-    BeFileName path (path2.c_str());
+    FixPathName(path2, inPath, false);
+    BeFileName path(path2.c_str());
 
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
     return (0 == ::RemoveDirectoryW(path)) ? BeFileNameStatus::CantDeleteDir : BeFileNameStatus::Success;
 
 #elif defined (__unix__)
 
-    return (-1 == rmdir (toUtf8(path).c_str())) ? BeFileNameStatus::CantDeleteDir : BeFileNameStatus::Success;
+    return (-1 == rmdir(toUtf8(path).c_str())) ? BeFileNameStatus::CantDeleteDir : BeFileNameStatus::Success;
 
 #else
 #error unknown runtime
@@ -1491,44 +1478,44 @@ BeFileNameStatus BeFileName::EmptyAndRemoveDirectory(WCharCP inPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::CloneDirectory (WCharCP sourceDirIn, WCharCP destDirIn, bool includeSubDirs)
+BeFileNameStatus BeFileName::CloneDirectory(WCharCP sourceDirIn, WCharCP destDirIn, bool includeSubDirs)
     {
     WString sourceDir2;
-    BeFileNameStatus stat = FixPathName (sourceDir2, sourceDirIn, false);
+    BeFileNameStatus stat = FixPathName(sourceDir2, sourceDirIn, false);
     if (BeFileNameStatus::Success != stat)
         return  stat;
 
-    BeFileName sourceDir (sourceDir2.c_str());
+    BeFileName sourceDir(sourceDir2.c_str());
 
     if (!IsDirectory(sourceDir))
         return  BeFileNameStatus::FileNotFound;
 
     WString destDir2;
-    stat = FixPathName (destDir2, destDirIn, false);
+    stat = FixPathName(destDir2, destDirIn, false);
     if (BeFileNameStatus::Success != stat)
         return  stat;
     
-    BeFileName destDir (destDir2.c_str());
+    BeFileName destDir(destDir2.c_str());
 
-    stat = CreateNewDirectory (destDir);
+    stat = CreateNewDirectory(destDir);
     if (BeFileNameStatus::Success != stat)
         return  stat;
     
     BeFileName filename;
     bool       isDir;
-    for (BeDirectoryIterator dir (sourceDir); dir.GetCurrentEntry(filename,isDir,true) == SUCCESS; dir.ToNext())
+    for (BeDirectoryIterator dir(sourceDir); dir.GetCurrentEntry(filename,isDir,true) == SUCCESS; dir.ToNext())
         {
-        BeFileName basename (BeFileName::NameAndExt, filename);
-        BeFileName destname (NULL, destDir, basename, NULL);
+        BeFileName basename(BeFileName::NameAndExt, filename);
+        BeFileName destname(NULL, destDir, basename, NULL);
         if (isDir)
             {
             if (!includeSubDirs)
                 continue;
 
-            stat = CloneDirectory (filename, destname, true);
+            stat = CloneDirectory(filename, destname, true);
             }
         else
-            stat = BeCopyFile (filename, destname);
+            stat = BeCopyFile(filename, destname);
 
         if (BeFileNameStatus::Success != stat)
             return  stat;
@@ -1538,11 +1525,11 @@ BeFileNameStatus BeFileName::CloneDirectory (WCharCP sourceDirIn, WCharCP destDi
     }
 
 
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-    static bool CallWindowsCopyFile (WCharCP sourceFile, WCharCP destinationFile, bool failIfFileExists)
+    static bool CallWindowsCopyFile(WCharCP sourceFile, WCharCP destinationFile, bool failIfFileExists)
         {
     #if defined (BENTLEY_WIN32)
 
@@ -1551,12 +1538,12 @@ BeFileNameStatus BeFileName::CloneDirectory (WCharCP sourceDirIn, WCharCP destDi
     #else
 
         COPYFILE2_EXTENDED_PARAMETERS xparms;
-        memset (&xparms, 0, sizeof(xparms));
+        memset(&xparms, 0, sizeof(xparms));
         xparms.dwSize = sizeof (xparms);
         if (failIfFileExists)
             xparms.dwCopyFlags |= COPY_FILE_FAIL_IF_EXISTS;
 
-        return S_OK == CopyFile2 (sourceFile, destinationFile, &xparms);
+        return S_OK == CopyFile2(sourceFile, destinationFile, &xparms);
 
     #endif
     }
@@ -1565,26 +1552,26 @@ BeFileNameStatus BeFileName::CloneDirectory (WCharCP sourceDirIn, WCharCP destDi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeCopyFile (BeFileNameCR sourceFile, BeFileNameCR destinationFile, bool failIfFileExists)
+BeFileNameStatus BeFileName::BeCopyFile(BeFileNameCR sourceFile, BeFileNameCR destinationFile, bool failIfFileExists)
     {
-    return BeFileName::BeCopyFile (sourceFile.GetName(), destinationFile.GetName(), failIfFileExists);
+    return BeFileName::BeCopyFile(sourceFile.GetName(), destinationFile.GetName(), failIfFileExists);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dan.East        11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeCopyFile (WCharCP sourceFile, WCharCP destinationFile, bool failIfFileExists)
+BeFileNameStatus BeFileName::BeCopyFile(WCharCP sourceFile, WCharCP destinationFile, bool failIfFileExists)
     {
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString fixedSourceFile;
-    FixPathName (fixedSourceFile, sourceFile, true);
+    FixPathName(fixedSourceFile, sourceFile, true);
 
     WString fixedDestinationFile;
-    FixPathName (fixedDestinationFile, destinationFile, true);
+    FixPathName(fixedDestinationFile, destinationFile, true);
 
-    if (0 == CallWindowsCopyFile (fixedSourceFile.c_str(), fixedDestinationFile.c_str(), failIfFileExists))
+    if (0 == CallWindowsCopyFile(fixedSourceFile.c_str(), fixedDestinationFile.c_str(), failIfFileExists))
         {
         int errorNum = ::GetLastError();
 
@@ -1598,7 +1585,7 @@ BeFileNameStatus BeFileName::BeCopyFile (WCharCP sourceFile, WCharCP destination
         }
 
     // CopyFile retains the read-only attribute if the source is read-only. We need to clear it.
-    SetFileReadOnly (destinationFile, false);
+    SetFileReadOnly(destinationFile, false);
 
     return BeFileNameStatus::Success;
 
@@ -1609,30 +1596,33 @@ BeFileNameStatus BeFileName::BeCopyFile (WCharCP sourceFile, WCharCP destination
     int     bytesRead, bytesWritten;
     FILE    *sFile, *dFile;
 
-    if (!(sFile = fopen (toUtf8(sourceFile).c_str(), "rb"))) 
+    if (failIfFileExists && BeFileName(destinationFile).DoesPathExist())
         return BeFileNameStatus::AccessViolation;
-    if (!(dFile = fopen (toUtf8(destinationFile).c_str(), "w+b"))) 
+
+    if (!(sFile = fopen(toUtf8(sourceFile).c_str(), "rb"))) 
+        return (ENOENT==errno)? BeFileNameStatus::FileNotFound: BeFileNameStatus::AccessViolation;
+    if (!(dFile = fopen(toUtf8(destinationFile).c_str(), "w+b"))) 
         {
-        fclose (sFile);
+        fclose(sFile);
         return BeFileNameStatus::AccessViolation;
         }
 
-    fseek (sFile, 0L, SEEK_SET);
-    fseek (dFile, 0L, SEEK_SET);
+    fseek(sFile, 0L, SEEK_SET);
+    fseek(dFile, 0L, SEEK_SET);
 
-    buffer = (char *) malloc (COPY_BUFFER_SIZE);
+    buffer = (char *) malloc(COPY_BUFFER_SIZE);
     bytesRead = bytesWritten = 0;
     do
         {
-        bytesRead = fread (buffer, 1, COPY_BUFFER_SIZE, sFile);
+        bytesRead = fread(buffer, 1, COPY_BUFFER_SIZE, sFile);
         if (bytesRead > 0)
-            bytesWritten = fwrite (buffer, bytesRead, 1, dFile);
+            bytesWritten = fwrite(buffer, bytesRead, 1, dFile);
         }
     while ((bytesRead > 0) && (bytesWritten > 0));
 
-    free (buffer);
-    fclose (sFile);
-    fclose (dFile);
+    free(buffer);
+    fclose(sFile);
+    fclose(dFile);
 
     return BeFileNameStatus::Success;
 
@@ -1644,15 +1634,15 @@ BeFileNameStatus BeFileName::BeCopyFile (WCharCP sourceFile, WCharCP destination
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeMoveFile (BeFileNameCR source, BeFileNameCR target, int numRetries)
+BeFileNameStatus BeFileName::BeMoveFile(BeFileNameCR source, BeFileNameCR target, int numRetries)
     {
-    return BeFileName::BeMoveFile (source.GetName(), target.GetName(), numRetries);
+    return BeFileName::BeMoveFile(source.GetName(), target.GetName(), numRetries);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeMoveFile (WCharCP source, WCharCP target, int numRetries)
+BeFileNameStatus BeFileName::BeMoveFile(WCharCP source, WCharCP target, int numRetries)
     {
     for (;;)
         {
@@ -1660,17 +1650,17 @@ BeFileNameStatus BeFileName::BeMoveFile (WCharCP source, WCharCP target, int num
 
         // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
         WString fixedSource;
-        FixPathName (fixedSource, source, true);
+        FixPathName(fixedSource, source, true);
 
         WString fixedTarget;
-        FixPathName (fixedTarget, target, true);
+        FixPathName(fixedTarget, target, true);
 
         if (0 != ::MoveFileExW (fixedSource.c_str(), fixedTarget.c_str(), MOVEFILE_COPY_ALLOWED/*Needed when changing drive*/))
             return  BeFileNameStatus::Success;
 
 #elif defined (__unix__)
 
-        if (0 == rename (toUtf8(source).c_str(), toUtf8(target).c_str()))
+        if (0 == rename(toUtf8(source).c_str(), toUtf8(target).c_str()))
             return  BeFileNameStatus::Success;
 
 #else
@@ -1680,7 +1670,7 @@ BeFileNameStatus BeFileName::BeMoveFile (WCharCP source, WCharCP target, int num
         if (numRetries-- == 0)
             return BeFileNameStatus::UnknownError;
 
-        BeThreadUtilities::BeSleep (1000); // sleep for a second
+        BeThreadUtilities::BeSleep(1000); // sleep for a second
         }
     }
 
@@ -1689,19 +1679,19 @@ BeFileNameStatus BeFileName::BeMoveFile (WCharCP source, WCharCP target, int num
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BeFileName::IsFileReadOnly() const
     {
-    return IsFileReadOnly (GetName());
+    return IsFileReadOnly(GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BeFileName::IsFileReadOnly (WCharCP fileName)
+bool BeFileName::IsFileReadOnly(WCharCP fileName)
     {
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString fileNameFixed;
-    FixPathName (fileNameFixed, fileName, true);
+    FixPathName(fileNameFixed, fileName, true);
 
     WIN32_FILE_ATTRIBUTE_DATA attributes;
     if (!GetFileAttributesExW (fileNameFixed.c_str(), GetFileExInfoStandard, &attributes))
@@ -1712,7 +1702,7 @@ bool BeFileName::IsFileReadOnly (WCharCP fileName)
 #elif defined (__unix__)
 
     struct stat info;
-    if (0 != stat (Utf8String(fileName).c_str (), &info))
+    if (0 != stat(Utf8String(fileName).c_str(), &info))
         return false;
 
     return (info.st_mode & S_IWRITE) == 0;
@@ -1725,21 +1715,21 @@ bool BeFileName::IsFileReadOnly (WCharCP fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::SetFileReadOnly (bool readOnly) const
+BeFileNameStatus BeFileName::SetFileReadOnly(bool readOnly) const
     {
-    return BeFileName::SetFileReadOnly (this->GetName(), readOnly);
+    return BeFileName::SetFileReadOnly(this->GetName(), readOnly);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dan.East        11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::SetFileReadOnly (WCharCP fileName, bool readOnly)
+BeFileNameStatus BeFileName::SetFileReadOnly(WCharCP fileName, bool readOnly)
     {
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString fileNameFixed;
-    FixPathName (fileNameFixed, fileName, true);
+    FixPathName(fileNameFixed, fileName, true);
 
     WIN32_FILE_ATTRIBUTE_DATA attributes;
     if (!GetFileAttributesExW (fileNameFixed.c_str(), GetFileExInfoStandard, &attributes))
@@ -1756,8 +1746,8 @@ BeFileNameStatus BeFileName::SetFileReadOnly (WCharCP fileName, bool readOnly)
 #elif defined (__unix__)
     
     struct stat statbuf;
-    Utf8String ufilename = toUtf8 (fileName);
-    if (stat (ufilename.c_str(), &statbuf) == -1)
+    Utf8String ufilename = toUtf8(fileName);
+    if (stat(ufilename.c_str(), &statbuf) == -1)
         return BeFileNameStatus::FileNotFound;
 
     mode_t mode = statbuf.st_mode;
@@ -1767,7 +1757,7 @@ BeFileNameStatus BeFileName::SetFileReadOnly (WCharCP fileName, bool readOnly)
     else
         mode |=  S_IWRITE;
 
-    chmod (ufilename.c_str(), mode);
+    chmod(ufilename.c_str(), mode);
     return BeFileNameStatus::Success;
 
 #else
@@ -1778,33 +1768,33 @@ BeFileNameStatus BeFileName::SetFileReadOnly (WCharCP fileName, bool readOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::GetFileSize (uint64_t& sz) const
+BeFileNameStatus BeFileName::GetFileSize(uint64_t& sz) const
     {
-    return BeFileName::GetFileSize (sz, this->GetName());
+    return BeFileName::GetFileSize(sz, this->GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::GetFileSize (uint64_t& sz, WCharCP fileName)
+BeFileNameStatus BeFileName::GetFileSize(uint64_t& sz, WCharCP fileName)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
     WString fileNameFixed;
 
     // resolve the target if it's a link.
-    if (IsSymbolicLink (fileName))
+    if (IsSymbolicLink(fileName))
         {
         BeFileName resolvedPath;
-        if (SUCCESS != GetTargetOfSymbolicLink (resolvedPath, fileName))
+        if (SUCCESS != GetTargetOfSymbolicLink(resolvedPath, fileName))
             return BeFileNameStatus::UnknownError;
 
-        fileNameFixed.assign (resolvedPath.GetName());
+        fileNameFixed.assign(resolvedPath.GetName());
         }
     else
         {
         // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
-        FixPathName (fileNameFixed, fileName, true);
+        FixPathName(fileNameFixed, fileName, true);
         }
     
     WIN32_FILE_ATTRIBUTE_DATA fileAttributeData;
@@ -1819,7 +1809,7 @@ BeFileNameStatus BeFileName::GetFileSize (uint64_t& sz, WCharCP fileName)
 #else
 
     T_Stat64 status;
-    if (beStat (status, fileName) != SUCCESS)
+    if (beStat(status, fileName) != SUCCESS)
         return BeFileNameStatus::FileNotFound;
 
     sz = status.st_size;
@@ -1831,9 +1821,9 @@ BeFileNameStatus BeFileName::GetFileSize (uint64_t& sz, WCharCP fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeGetDiskFreeSpace (uint64_t& freeBytes, BeFileNameCR dirName)
+BeFileNameStatus BeFileName::BeGetDiskFreeSpace(uint64_t& freeBytes, BeFileNameCR dirName)
     {
-    return BeFileName::BeGetDiskFreeSpace (freeBytes, dirName.GetName());
+    return BeFileName::BeGetDiskFreeSpace(freeBytes, dirName.GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1841,13 +1831,13 @@ BeFileNameStatus BeFileName::BeGetDiskFreeSpace (uint64_t& freeBytes, BeFileName
 * be checked later.
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeGetDiskFreeSpace (uint64_t& freeBytes, WCharCP dirName)
+BeFileNameStatus BeFileName::BeGetDiskFreeSpace(uint64_t& freeBytes, WCharCP dirName)
     {
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString dirNameFixed;
-    FixPathName (dirNameFixed, dirName, false);
+    FixPathName(dirNameFixed, dirName, false);
 
     if (0 == ::GetDiskFreeSpaceExW (dirNameFixed.c_str(), (PULARGE_INTEGER) &freeBytes, NULL, NULL))
         return BeFileNameStatus::UnknownError;     // couldn't determine disk space.
@@ -1855,7 +1845,7 @@ BeFileNameStatus BeFileName::BeGetDiskFreeSpace (uint64_t& freeBytes, WCharCP di
 #elif defined (__unix__)
 
     struct statfs   statusblk;
-    int status = statfs (toUtf8(dirName).c_str(), &statusblk);
+    int status = statfs(toUtf8(dirName).c_str(), &statusblk);
     if (status != 0)
         return BeFileNameStatus::UnknownError;
     freeBytes = statusblk.f_bavail * statusblk.f_bsize;
@@ -1870,33 +1860,33 @@ BeFileNameStatus BeFileName::BeGetDiskFreeSpace (uint64_t& freeBytes, WCharCP di
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::GetFileTime (time_t* ctime, time_t* atime, time_t* mtime) const
+BeFileNameStatus BeFileName::GetFileTime(time_t* ctime, time_t* atime, time_t* mtime) const
     {
-    return BeFileName::GetFileTime (ctime, atime, mtime, this->GetName());
+    return BeFileName::GetFileTime(ctime, atime, mtime, this->GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::GetFileTime (time_t* ctime, time_t* atime, time_t* mtime, WCharCP fileName)
+BeFileNameStatus BeFileName::GetFileTime(time_t* ctime, time_t* atime, time_t* mtime, WCharCP fileName)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString fileNameFixed;
-    FixPathName (fileNameFixed, fileName, true);
+    FixPathName(fileNameFixed, fileName, true);
 
     WIN32_FILE_ATTRIBUTE_DATA fileAttributeData;
     if (GetFileAttributesExW (fileNameFixed.c_str(), GetFileExInfoStandard, &fileAttributeData))
         {
         if (ctime)
-            *ctime = (uint64_t) (BeTimeUtilities::ConvertFiletimeToUnixMillisDouble (fileAttributeData.ftCreationTime) / 1000.0);
+            *ctime = (uint64_t) (BeTimeUtilities::ConvertFiletimeToUnixMillisDouble(fileAttributeData.ftCreationTime) / 1000.0);
 
         if (atime)
-            *atime = (uint64_t) (BeTimeUtilities::ConvertFiletimeToUnixMillisDouble (fileAttributeData.ftLastAccessTime) / 1000.0);
+            *atime = (uint64_t) (BeTimeUtilities::ConvertFiletimeToUnixMillisDouble(fileAttributeData.ftLastAccessTime) / 1000.0);
 
         if (mtime)
-            *mtime = (uint64_t) (BeTimeUtilities::ConvertFiletimeToUnixMillisDouble (fileAttributeData.ftLastWriteTime) / 1000.0);
+            *mtime = (uint64_t) (BeTimeUtilities::ConvertFiletimeToUnixMillisDouble(fileAttributeData.ftLastWriteTime) / 1000.0);
 
         return BeFileNameStatus::Success;
         }
@@ -1926,15 +1916,15 @@ BeFileNameStatus BeFileName::GetFileTime (time_t* ctime, time_t* atime, time_t* 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::SetFileTime (time_t const* atime, time_t const* mtime) const
+BeFileNameStatus BeFileName::SetFileTime(time_t const* atime, time_t const* mtime) const
     {
-    return BeFileName::SetFileTime (this->GetName(), atime, mtime);
+    return BeFileName::SetFileTime(this->GetName(), atime, mtime);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::SetFileTime (WCharCP fileName, time_t const* atime, time_t const* mtime)
+BeFileNameStatus BeFileName::SetFileTime(WCharCP fileName, time_t const* atime, time_t const* mtime)
     {
 #if defined (BENTLEY_WIN32)
 
@@ -1957,19 +1947,19 @@ BeFileNameStatus BeFileName::SetFileTime (WCharCP fileName, time_t const* atime,
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString fileNameFixed;
-    FixPathName (fileNameFixed, fileName, true);
+    FixPathName(fileNameFixed, fileName, true);
 
     int fh;
     if (_wsopen_s(&fh, fileNameFixed.c_str(), _O_RDWR | _O_BINARY, _SH_DENYNO, 0) != 0)
-        return(BeFileNameStatus::FileNotFound);
+        return (BeFileNameStatus::FileNotFound);
     ::SetFileTime((HANDLE)_get_osfhandle(fh), NULL, pAccessTime, pModifTime);
     _close(fh);
 
-#elif defined(BENTLEY_WINRT)
+#elif defined (BENTLEY_WINRT)
 
     time_t atimeOriginal, mtimeOriginal;
 
-    BeFileNameStatus fileNameStatus = GetFileTime (NULL, &atimeOriginal, &mtimeOriginal, fileName);
+    BeFileNameStatus fileNameStatus = GetFileTime(NULL, &atimeOriginal, &mtimeOriginal, fileName);
     if (BeFileNameStatus::Success != fileNameStatus)
         return fileNameStatus;
 
@@ -1987,9 +1977,9 @@ BeFileNameStatus BeFileName::SetFileTime (WCharCP fileName, time_t const* atime,
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString fileNameFixed;
-    FixPathName (fileNameFixed, fileName, true);
+    FixPathName(fileNameFixed, fileName, true);
 
-    _wutime64 (fileNameFixed.c_str(), &ut);
+    _wutime64(fileNameFixed.c_str(), &ut);
     
 #elif defined (__unix__)
 
@@ -2023,27 +2013,27 @@ BeFileNameStatus BeFileName::SetFileTime (WCharCP fileName, time_t const* atime,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::CheckAccess (BeFileNameAccess req) const
+BeFileNameStatus BeFileName::CheckAccess(BeFileNameAccess req) const
     {
-    return BeFileName::CheckAccess (this->GetName(), req);
+    return BeFileName::CheckAccess(this->GetName(), req);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::CheckAccess (WCharCP fn, BeFileNameAccess req)
+BeFileNameStatus BeFileName::CheckAccess(WCharCP fn, BeFileNameAccess req)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString fileNameFixed;
-    FixPathName (fileNameFixed, fn, false);
+    FixPathName(fileNameFixed, fn, false);
 
-    int i = _waccess (fileNameFixed.c_str(), (int)req);
+    int i = _waccess(fileNameFixed.c_str(), (int)req);
 
 #elif defined (__unix__)
 
-    int i = access (toUtf8(fn).c_str(), (int)req);
+    int i = access(toUtf8(fn).c_str(), (int)req);
 
 #else
 #error unknown runtime
@@ -2054,15 +2044,16 @@ BeFileNameStatus BeFileName::CheckAccess (WCharCP fn, BeFileNameAccess req)
 /*----------------------------------------------------------------------------------*//**
 * Remove quotes around a string.  Often used for file names with spaces around them. (Unicode)
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    BeFileName::RemoveQuotes ()
+BeFileNameR BeFileName::RemoveQuotes ()
     {
     /* check for quoted file names */
     if (this->at(0) == L'\"')
         {
-        assign (this->substr (1, this->size()));
-        if (!this->empty() && this->at (this->size()-1) == L'\"')
-            this->resize (this->size() - 1);
+        assign(this->substr(1, this->size()));
+        if (!this->empty() && this->at(this->size()-1) == L'\"')
+            this->resize(this->size() - 1);
         }
+    return *this;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2109,7 +2100,7 @@ WString BeFileName::Abbreviate(size_t maxLength) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BeFileName::IsSymbolicLink() const
     {
-    return BeFileName::IsSymbolicLink (this->GetName());
+    return BeFileName::IsSymbolicLink(this->GetName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2121,7 +2112,7 @@ bool BeFileName::IsSymbolicLink(WCharCP path)
     
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString pathFixed;
-    FixPathName (pathFixed, path, false);
+    FixPathName(pathFixed, path, false);
     
     WIN32_FILE_ATTRIBUTE_DATA fileAttributeData;
     if (GetFileAttributesExW (pathFixed.c_str(), GetFileExInfoStandard, &fileAttributeData))
@@ -2192,7 +2183,7 @@ static BentleyStatus getImmediateTargetOfSymLink(BeFileNameR target, WCharCP pat
 
     // FixPathName adds the "extended path prefix" if name length >= MAX_PATH
     WString pathFixed;
-    if (BeFileNameStatus::Success != BeFileName::FixPathName (pathFixed, path, true))
+    if (BeFileNameStatus::Success != BeFileName::FixPathName(pathFixed, path, true))
         return ERROR;
 
     HANDLE hFile = ::CreateFileW(pathFixed.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, (FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS), 0);
@@ -2271,21 +2262,21 @@ BentleyStatus BeFileName::GetTargetOfSymbolicLink(BeFileNameR target, WCharCP pa
 * Generates a temporary filename
 * @bsimethod                                                    BernMcCarty     06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeGetTempFileName (BeFileName& tempFileName, BeFileName const& pathToUseIn, WCharCP prefixString)
+BeFileNameStatus BeFileName::BeGetTempFileName(BeFileName& tempFileName, BeFileName const& pathToUseIn, WCharCP prefixString)
     {
-#if defined (BENTLEY_WIN32) || (defined(BENTLEY_WINRT) && _MSC_VER >= 1900)
-    BeFileName pathToUse (pathToUseIn);
+#if defined (BENTLEY_WIN32) || (defined (BENTLEY_WINRT) && _MSC_VER >= 1900)
+    BeFileName pathToUse(pathToUseIn);
     if (!*pathToUse.GetName())
-        BeGetTempPath (pathToUse);
+        BeGetTempPath(pathToUse);
 
     WChar      tempName[4096];
 
-    wcscpy (tempName, tempFileName);
+    wcscpy(tempName, tempFileName);
 
     if (0 == ::GetTempFileNameW (pathToUse, prefixString, 0, tempName))
         return BeFileNameStatus::CantCreate;
 
-    tempFileName.SetName (tempName);
+    tempFileName.SetName(tempName);
     return BeFileNameStatus::Success;
 #else
     return BeFileNameStatus::UnknownError;
@@ -2295,33 +2286,33 @@ BeFileNameStatus BeFileName::BeGetTempFileName (BeFileName& tempFileName, BeFile
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameStatus BeFileName::BeGetTempPath (BeFileName& tempPath)
+BeFileNameStatus BeFileName::BeGetTempPath(BeFileName& tempPath)
     {
-#if defined (BENTLEY_WIN32) || (defined(BENTLEY_WINRT) && _MSC_VER >= 1900)
+#if defined (BENTLEY_WIN32) || (defined (BENTLEY_WINRT) && _MSC_VER >= 1900)
     WChar       tempName[MAX_PATH * 5];
 
     if (0 == ::GetTempPathW (_countof(tempName), tempName))
         return BeFileNameStatus::CantCreate;
 
-    tempPath = BeFileName (tempName);
+    tempPath = BeFileName(tempName);
     return BeFileNameStatus::Success;
 #else
     return BeFileNameStatus::UnknownError;
 #endif
     }
 
-BeFileNameStatus BeFileName::GetCwd (WStringR currentDirectory)
+BeFileNameStatus BeFileName::GetCwd(WStringR currentDirectory)
     {
-#if defined (BENTLEY_WIN32) || (defined(BENTLEY_WINRT) && _MSC_VER >= 1900)
+#if defined (BENTLEY_WIN32) || (defined (BENTLEY_WINRT) && _MSC_VER >= 1900)
     wchar_t cwdPath[MAX_PATH];
-    _wgetcwd (cwdPath, _countof(cwdPath));
-    currentDirectory.assign (cwdPath);
+    _wgetcwd(cwdPath, _countof(cwdPath));
+    currentDirectory.assign(cwdPath);
     return BeFileNameStatus::Success;
-#elif defined(BENTLEY_WINRT) && _MSC_VER < 1900
+#elif defined (BENTLEY_WINRT) && _MSC_VER < 1900
     return BeFileNameStatus::UnknownError;
 #else
     char cwdPath[MAX_PATH];
-    getcwd (cwdPath, sizeof(cwdPath));
+    getcwd(cwdPath, sizeof(cwdPath));
     currentDirectory.AssignA (cwdPath);
     return BeFileNameStatus::Success;
 #endif

@@ -252,6 +252,12 @@
     <ClInclude Include="..\PublicAPI\Bentley\BeVersion.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicAPI\Bentley\BeAtomic.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\Bentley\Nullable.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\PublicAPI\Bentley\stg\__BENTLEY_INTERNAL_ONLY__">

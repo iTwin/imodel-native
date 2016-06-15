@@ -39,7 +39,7 @@ TEST(Utf8StringTest,ThreadSafeRead)
         };
     
     int threadCount = std::thread::hardware_concurrency();
-    if (threadCount == 0) // Unable to get hardware thread count – use default.
+    if (threadCount == 0) // Unable to get hardware thread count use default.
         {
         threadCount = 2;
         }
@@ -163,7 +163,21 @@ TEST(Utf8StringTest, EndsWith_Utf8String)
 
     EXPECT_FALSE(Utf8String("ABC").EndsWith(Utf8String("abc")));
     }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          02/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, EndsWithIAscii)
+    {
+    EXPECT_FALSE(Utf8String("ABC").EndsWithIAscii(""));
 
+    EXPECT_TRUE(Utf8String("ABC").EndsWithIAscii("BC"));
+
+    EXPECT_TRUE(Utf8String("ABC").EndsWithIAscii("ABC"));
+
+    EXPECT_FALSE(Utf8String("ABC").EndsWithIAscii("ABCD"));
+
+    EXPECT_TRUE(Utf8String("ABC").EndsWithIAscii("abc"));
+    }
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma                 06/15
 //---------------------------------------------------------------------------------------
@@ -262,6 +276,11 @@ TEST(Utf8StringTest, StartsWith)
     EXPECT_TRUE(Utf8String("ABC").StartsWithI("abc"));
     EXPECT_FALSE(Utf8String("ABC").StartsWithI("abcd"));
     EXPECT_FALSE(Utf8String("ABC").StartsWithI(""));
+
+    // Check Ascii
+    EXPECT_TRUE(Utf8String("ABC").StartsWithIAscii("abc"));
+    EXPECT_FALSE(Utf8String("ABC").StartsWithIAscii("abcd"));
+    EXPECT_FALSE(Utf8String("ABC").StartsWithIAscii(""));
     }
 //---------------------------------------------------------------------------------------
 // @betest                                      Umar.Hayat                          01/16
@@ -371,4 +390,41 @@ TEST(Utf8StringTest, IsAscii)
     Utf8CP utf8Str = (Utf8CP)str;
     Utf8String inStr(utf8Str);
     EXPECT_FALSE(inStr.IsAscii());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          04/16
+//---------------------------------------------------------------------------------------
+static void VerifyVSPrintf (Utf8CP expectedStr, Utf8CP fmt, ...)
+    {
+    va_list args;
+    va_start(args, fmt);
+    Utf8String str;
+    str.VSprintf(fmt, args);
+    va_end(args);
+    EXPECT_TRUE(str.Equals(expectedStr))<<"Expected: "<<expectedStr<<"\nActual: "<<str.c_str();
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          04/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, VSprintf)
+    {
+    VerifyVSPrintf("Test", "Test");
+    VerifyVSPrintf("Test no. 5", "%s no. %d", "Test", 5);
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          06/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, Compare)
+    {
+    Utf8String str(" abc ");
+    EXPECT_FALSE(str.CompareTo(" ABC ") == 0);
+    EXPECT_TRUE(str.CompareToI(" ABC ") == 0);
+    EXPECT_TRUE(str.CompareToIAscii(" ABC ") == 0);
+    EXPECT_TRUE(str.CompareToIAscii(Utf8String(" ABC ")) == 0);
+
+    EXPECT_TRUE(str.Equals(" abc "));
+    EXPECT_FALSE(str.Equals(" ABC "));
+    EXPECT_TRUE(str.EqualsI(" abc "));
+    EXPECT_TRUE(str.EqualsIAscii(" ABC "));
+    EXPECT_TRUE(str.EqualsIAscii(Utf8String(" ABC ")));
     }

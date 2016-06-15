@@ -18,107 +18,118 @@
     <ClCompile Include="NonPublished\fileatp.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Http\HttpBody\HttpFileBodyTests.cpp" />
-    <ClCompile Include="Published\Http\HttpBody\HttpMultipartBodyTests.cpp" />
-    <ClCompile Include="Published\Http\HttpBody\HttpRangeBodyTests.cpp" />
-    <ClCompile Include="Published\Http\HttpBody\HttpStringBodyTests.cpp" />
-    <ClCompile Include="Published\Http\AuthenticationHandlerTests.cpp" />
-    <ClCompile Include="Published\Http\BaseMockHttpHandlerTest.cpp" />
-    <ClCompile Include="Published\Http\HttpClientTests.cpp" />
-    <ClCompile Include="Published\Http\HttpHeadersTests.cpp" />
-    <ClCompile Include="Published\Http\MockHttpHandler.cpp" />
-    <ClCompile Include="Published\Http\ProxyHttpHandlerTests.cpp" />
-    <ClCompile Include="Published\Http\WebTestsHelper.cpp" />
-    <ClCompile Include="Published\Threading\AsyncResultTests.cpp" />
-    <ClCompile Include="Published\Threading\AsyncTaskTests.cpp" />
-    <ClCompile Include="Published\Threading\CancellationTokenTests.cpp" />
-    <ClCompile Include="Published\Threading\LimitingTaskQueueTests.cpp" />
-    <ClCompile Include="Published\Threading\UniqueTaskHolderTests.cpp" />
-    <ClCompile Include="Published\Threading\UniqueTasksHolderTests.cpp" />
-    <ClCompile Include="Published\Threading\WorkerThreadTests.cpp" />
-    <ClCompile Include="Published\Base64UtilitiesTests.cpp" />
-    <ClCompile Include="Published\BeFile_Test.cpp" />
-    <ClCompile Include="Published\BeFileIterator_Tests.cpp" />
-    <ClCompile Include="Published\BeFileName_test.cpp" />
-    <ClCompile Include="Published\BeNumerical_Test.cpp" />
-    <ClCompile Include="Published\BeStringUtilities_tests.cpp" />
-    <ClCompile Include="Published\BeTextFile_Test.cpp" />
-    <ClCompile Include="Published\BeThread_Tests.cpp" />
-    <ClCompile Include="Published\BeTimeUtilities_test.cpp" />
-    <ClCompile Include="Published\bmap_test.cpp" />
-    <ClCompile Include="Published\bset_test.cpp" />
-    <ClCompile Include="Published\bvector_test.cpp" />
-    <ClCompile Include="Published\Cpp_Test.cpp" />
-    <ClCompile Include="Published\DateTime_DstAnalysis.cpp" />
-    <ClCompile Include="Published\DateTime_Tests.cpp" />
-    <ClCompile Include="Published\DateTimeTestDataset.cpp" />
-    <ClCompile Include="Published\DateTimeTestHelpers.cpp" />
-    <ClCompile Include="Published\DirectoryObserverTests.cpp" />
-    <ClCompile Include="Published\FSTest.cpp" />
-    <ClCompile Include="Published\OsEnvUnitTests.cpp" />
-    <ClCompile Include="Published\printf_test.cpp" />
-    <ClCompile Include="Published\printf_test2.cpp" />
-    <ClCompile Include="Published\RefCounted_test.cpp" />
-    <ClCompile Include="Published\scanf_test.cpp" />
-    <ClCompile Include="Published\shared_mutex.cpp" />
-    <ClCompile Include="Published\TestsHelper.cpp" />
-    <ClCompile Include="Published\Utf8String_test.cpp" />
-    <ClCompile Include="Published\valueformat_test.cpp" />
-    <ClCompile Include="Published\ValuePrinter.cpp" />
-    <ClCompile Include="Published\VersionTests.cpp" />
-    <ClCompile Include="Published\WString_test.cpp" />
-    <ClCompile Include="Published\Tasks\AsyncResultTests.cpp" />
-    <ClCompile Include="Published\Tasks\AsyncTaskTests.cpp" />
-    <ClCompile Include="Published\Tasks\CancellationTokenTests.cpp" />
-    <ClCompile Include="Published\Tasks\LimitingTaskQueueTests.cpp" />
-    <ClCompile Include="Published\Tasks\UniqueTaskHolderTests.cpp" />
-    <ClCompile Include="Published\Tasks\UniqueTasksHolderTests.cpp" />
-    <ClCompile Include="Published\Tasks\WorkerThreadTests.cpp" />
+    <ClCompile Include="Published\BeFileName_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeNumerical_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\WString_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeTimeUtilities_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\bmap_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\bset_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\bvector_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Cpp_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\OsEnvUnitTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\printf_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\printf_test2.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\scanf_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DateTime_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DateTime_DstAnalysis.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DateTimeTestHelpers.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DateTimeTestDataset.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeStringUtilities_tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeTextFile_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Utf8String_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\valueformat_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Base64UtilitiesTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeFile_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeFileIterator_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeThread_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\RefCounted_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\shared_mutex.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\VersionTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Md5_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SHA1_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="BentleyUnitTests.PartFile.xml" />
     <None Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Published\Http\HttpBody\HttpFileBodyTests.h" />
-    <ClInclude Include="Published\Http\HttpBody\HttpMultipartBodyTests.h" />
-    <ClInclude Include="Published\Http\HttpBody\HttpRangeBodyTests.h" />
-    <ClInclude Include="Published\Http\HttpBody\HttpStringBodyTests.h" />
-    <ClInclude Include="Published\Http\AuthenticationHandlerTests.h" />
-    <ClInclude Include="Published\Http\BaseMockHttpHandlerTest.h" />
-    <ClInclude Include="Published\Http\HttpClientTests.h" />
-    <ClInclude Include="Published\Http\HttpHeadersTests.h" />
-    <ClInclude Include="Published\Http\MockAuthenticationHandler.h" />
-    <ClInclude Include="Published\Http\MockHttpHandler.h" />
-    <ClInclude Include="Published\Http\ProxyHttpHandlerTests.h" />
-    <ClInclude Include="Published\Http\WebTestsHelper.h" />
-    <ClInclude Include="Published\Threading\AsyncResultTests.h" />
-    <ClInclude Include="Published\Threading\AsyncTaskTests.h" />
-    <ClInclude Include="Published\Threading\CancellationTokenTests.h" />
-    <ClInclude Include="Published\Threading\LimitingTaskQueueTests.h" />
-    <ClInclude Include="Published\Threading\MockCancellationListener.h" />
-    <ClInclude Include="Published\Threading\ThreadingTestsHelper.h" />
-    <ClInclude Include="Published\Threading\UniqueTaskHolderTests.h" />
-    <ClInclude Include="Published\Threading\UniqueTasksHolderTests.h" />
-    <ClInclude Include="Published\Threading\WorkerThreadTests.h" />
-    <ClInclude Include="Published\Base64UtilitiesTests.h" />
-    <ClInclude Include="Published\bunique_ptr_test.h" />
-    <ClInclude Include="Published\DateTimeTestDataset.h" />
-    <ClInclude Include="Published\DateTimeTestHelpers.h" />
-    <ClInclude Include="Published\DirectoryObserverTests.h" />
-    <ClInclude Include="Published\FSTest.h" />
-    <ClInclude Include="Published\shared_mutex.h" />
-    <ClInclude Include="Published\TestsHelper.h" />
-    <ClInclude Include="Published\ValuePrinter.h" />
-    <ClInclude Include="Published\VersionTests.h" />
-    <ClInclude Include="Published\Tasks\AsyncResultTests.h" />
-    <ClInclude Include="Published\Tasks\AsyncTaskTests.h" />
-    <ClInclude Include="Published\Tasks\CancellationTokenTests.h" />
-    <ClInclude Include="Published\Tasks\LimitingTaskQueueTests.h" />
-    <ClInclude Include="Published\Tasks\MockCancellationListener.h" />
-    <ClInclude Include="Published\Tasks\UniqueTaskHolderTests.h" />
-    <ClInclude Include="Published\Tasks\UniqueTasksHolderTests.h" />
-    <ClInclude Include="Published\Tasks\WorkerThreadTests.h" />
-    <ClInclude Include="Published\Tasks\TasksTestsHelper.h" />
+    <ClInclude Include="Published\DateTimeTestHelpers.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\DateTimeTestDataset.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\bunique_ptr_test.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\shared_mutex.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\VersionTests.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Published\datetimedstanalysis.logging.config.xml">
+      <Filter>Published</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

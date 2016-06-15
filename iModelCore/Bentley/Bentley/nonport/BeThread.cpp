@@ -35,6 +35,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/WString.h>
+#include <thread>
 #include <mutex>
 #include <condition_variable>
 
@@ -138,6 +139,14 @@ void* BeThreadLocalStorage::GetValueAsPointer()
 #else
 #error unknown runtime
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t BeThreadUtilities::GetHardwareConcurrency()
+    {
+    return std::thread::hardware_concurrency();
     }
 
 //=======================================================================================
