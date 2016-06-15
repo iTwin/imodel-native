@@ -1335,6 +1335,12 @@ struct System
 //=======================================================================================
 struct Target : RefCounted<NonCopyableClass>
 {
+    struct SceneParameters
+        {
+        double m_saesNpcSq;     // smallest attempted element size (NPC squared)
+        SceneParameters(double n = 0) : m_saesNpcSq(n) {}
+        };
+
 protected:
     bool               m_abort;
     System&            m_system;
@@ -1367,7 +1373,7 @@ public:
         static void Show();
     };
     virtual void _OnDestroy() {}
-    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
+    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, SceneParameters const& parms = SceneParameters()) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
