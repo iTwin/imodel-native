@@ -610,9 +610,11 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
         StatusInt Load()
             {
-            unique_lock<mutex> lk(m_pGroupMutex);
+            unique_lock<mutex> lk(m_pGroupMutex, std::try_to_lock);
             if (m_pIsLoading)
                 {
+                //auto& nodeHeader = this->GetNodeHeader(priorityNodeID);
+                //if (nodeHeader.size > 0) std::cout << "priority node ("<< priorityNodeID << ") ready but waiting for group to load" << std::endl;
                 m_pGroupCV.wait(lk, [this] {return !m_pIsLoading; });
                 }
             else {
@@ -679,7 +681,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 uint8_t* rawHeader = new uint8_t[10000];
                 auto& nodeHeader = this->GetNodeHeader(nodeId);
                 auto headerSize = this->GetSingleNodeFromStore(nodeId, rawHeader);
-                std::unique_lock<std::mutex> lock(rawHeadersUpdateMutex);
+                std::lock_guard<std::mutex> lock(rawHeadersUpdateMutex);
                 nodeHeader.size = headerSize;
                 nodeHeader.offset = currentPosition;
                 memmove(this->m_pRawHeaders.data() + currentPosition, rawHeader, nodeHeader.size);
@@ -688,11 +690,11 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 });
             for (auto nodeHeader : *m_pGroupHeader) nodeLoader(std::move(nodeHeader.blockid));
 #ifdef DEBUG_GROUPS
-            std::cout << "waiting for nodes to process..." << std::endl;
+            std::cout << "[" << this->GetID() << "] waiting for nodes to process..." << std::endl;
 #endif
             nodeLoader.Wait();
 #ifdef DEBUG_GROUPS
-            std::cout << "num processed node Ids: " << numProcessedNodeId << std::endl;
+            std::cout << "[" << this->GetID() << "] num processed node Ids: " << numProcessedNodeId << std::endl;
 #endif
             }
 
@@ -890,7 +892,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             assert(group != nullptr);
             if (!group->IsLoaded())
                 {
-                group->Load();
+                group->Load(/*blockID.m_integerID*/);
                 }
             return group;
             }
