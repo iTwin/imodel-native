@@ -45,15 +45,17 @@ struct ITerrainTileIterator : public RefCountedBase
 struct ITerrainTexture : public RefCountedBase
     {
     virtual BentleyStatus _LoadTexture(uint32_t& width, uint32_t& height, bvector<Byte>& dataRGBA) const = 0;
+    virtual BentleyStatus _GetDimensions(uint32_t& width, uint32_t& height) const = 0;
     virtual BentleyStatus _GetMeshPartsIterator(ITerrainTileIteratorPtr& iterator) const = 0;
     virtual BentleyStatus _GetRange(DRange3dR range) const = 0;
     virtual ITextureTileId const& _GetId() const = 0;
 
     public:
-        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus LoadTexture(uint32_t& width, uint32_t& height, bvector<Byte>& dataRGBA) const;
-        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetMeshPartsIterator(ITerrainTileIteratorPtr& iterator) const; 
-        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetRange(DRange3dR range) const;
-        SCALABLEMESH_SCHEMA_EXPORT ITextureTileId const& GetId() const;
+        SCALABLEMESHSCHEMA_EXPORT BentleyStatus LoadTexture(uint32_t& width, uint32_t& height, bvector<Byte>& dataRGBA) const;
+        SCALABLEMESHSCHEMA_EXPORT BentleyStatus GetDimensions(uint32_t& width, uint32_t& height) const;
+        SCALABLEMESHSCHEMA_EXPORT BentleyStatus GetMeshPartsIterator(ITerrainTileIteratorPtr& iterator) const; 
+        SCALABLEMESHSCHEMA_EXPORT BentleyStatus GetRange(DRange3dR range) const;
+        SCALABLEMESHSCHEMA_EXPORT ITextureTileId const& GetId() const;
     };
 
 struct IMeshSpatialModel : Dgn::SpatialModel
