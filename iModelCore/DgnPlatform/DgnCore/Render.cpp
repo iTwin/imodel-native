@@ -235,11 +235,11 @@ void DgnViewport::StartRenderThread()
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
-struct DestroyTargetTask : Render::NonSceneTask
+struct DestroyTargetTask : Render::SceneTask
 {
     virtual Utf8CP _GetName() const override {return "Destroy Target";}
     virtual Outcome _Process(StopWatch& timer) override {m_target->_OnDestroy(); return Outcome::Finished;}
-    DestroyTargetTask(Render::Target& target) : NonSceneTask(&target, Operation::DestroyTarget) {}
+    DestroyTargetTask(Render::Target& target) : SceneTask(&target, Operation::DestroyTarget) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -254,7 +254,6 @@ void DgnViewport::SetRenderTarget(Target* newTarget)
     m_renderTarget = newTarget; 
     m_sync.InvalidateFirstDrawComplete();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15

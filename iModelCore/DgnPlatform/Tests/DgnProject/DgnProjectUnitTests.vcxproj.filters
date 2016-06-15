@@ -85,9 +85,6 @@
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\DgnLink_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\NamedVolume_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -276,6 +273,12 @@
     </ClCompile>
     <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp">
       <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\LinkElement_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\LinearDimension_Test.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
