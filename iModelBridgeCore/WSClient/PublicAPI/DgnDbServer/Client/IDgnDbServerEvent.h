@@ -24,14 +24,17 @@ namespace DgnDbServerEvent
     static Utf8CP UserId = "userId";
     namespace LockEvent
         {
-        static Utf8CP LockId = "LockId";
+        static Utf8CP ObjectId = "ObjectId";
         static Utf8CP LockType = "LockType";
+        static Utf8CP LockLevel = "LockLevel";
+        static Utf8CP BriefcaseId = "BriefcaseId";
+        static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
         static Utf8CP Date = "Date";
         }
     namespace RevisionEvent
         {
         static Utf8CP RevisionId = "RevisionId";
-        static Utf8CP ConnectionId = "connectionId";
+        static Utf8CP RevisionIndex = "RevisionIndex";
         static Utf8CP Date = "Date";
         }
     }
