@@ -154,6 +154,7 @@ public:
 };
 
 //=======================================================================================
+// Base class for all Render::Tasks that define a scene. SceneTasks always replace all NonSceneTasks queued for the same target.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct SceneTask : Task
@@ -164,6 +165,9 @@ struct SceneTask : Task
 };
 
 //=======================================================================================
+// Base class for all Render::Tasks that do NOT define a scene. That means that subclasses of this class merely
+// perform some action (e.g. drawing a frame) on the previously-established scene.
+// Any queued-but-not-yet-processed NonSceneTasks are replaced by any requests to queue a new SceneTask for the same target.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct NonSceneTask : Task
