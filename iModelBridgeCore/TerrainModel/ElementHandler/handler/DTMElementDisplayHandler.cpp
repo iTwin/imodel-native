@@ -1413,7 +1413,7 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
         DPlane3d dplane;
         cutPlane._GetPlane(dplane, false);
 
-        if (dplane.normal.z == 0)
+        if (fabs(dplane.normal.z) < mgds_fc_nearZero)
             {
             CutGraphicsContainerCP       cutGraphics;
             if (NULL == (cutGraphics = context.GetCutGraphicsCache (thisElm, context.GetCurrDisplayPath(), cutPlane)))
@@ -1429,13 +1429,9 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                 RotMatrix matrix;
                 cutPlane._GetClipRange(clipMask, range2d, matrix);
 
-                double left;
-                double right;
-
                 DRange3d planeRange = DRange3d::From(range2d.low.x, range2d.low.y, 0, range2d.high.x, range2d.high.y, 0);
-                left = planeRange.low.x;
-                right = planeRange.high.x;
-
+                double left = planeRange.low.x;
+                double right = planeRange.high.x;
                 DVec3d xDir;
 
                 matrix.GetColumn(xDir, 0);
