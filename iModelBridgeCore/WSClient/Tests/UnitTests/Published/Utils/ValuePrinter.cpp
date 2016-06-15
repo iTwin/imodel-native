@@ -67,9 +67,6 @@ std::ostream& operator << (std::ostream &o, FileCache location)
     {
     static std::map<FileCache, Utf8String> names
         {
-        TO_VALUE_STRING_PAIR(FileCache::Existing),
-        TO_VALUE_STRING_PAIR(FileCache::ExistingOrPersistent),
-        TO_VALUE_STRING_PAIR(FileCache::ExistingOrTemporary),
         TO_VALUE_STRING_PAIR(FileCache::Persistent),
         TO_VALUE_STRING_PAIR(FileCache::Temporary)
         };
@@ -134,10 +131,10 @@ std::ostream& operator << (std::ostream &o, DateTimeCR date)
 
 std::ostream& operator << (std::ostream &o, ECClassCR value)
     {
-    o << value.GetFullName();
+    o << Utf8String(value.GetFullName());
     return o;
     }
-
+    
 std::ostream& operator << (std::ostream &o, ECValueCR value)
     {
     o << Utf8String(value.ToString());
@@ -277,6 +274,7 @@ std::ostream& operator << (std::ostream &o, WSError::Status status)
         TO_VALUE_STRING_PAIR(WSError::Status::None),
         TO_VALUE_STRING_PAIR(WSError::Status::Canceled),
         TO_VALUE_STRING_PAIR(WSError::Status::ConnectionError),
+        TO_VALUE_STRING_PAIR(WSError::Status::CertificateError),
         TO_VALUE_STRING_PAIR(WSError::Status::ServerNotSupported),
         TO_VALUE_STRING_PAIR(WSError::Status::ReceivedError),
         };
@@ -457,6 +455,11 @@ void PrintTo(const Utf8String& value, ::std::ostream* os)
     }
 
 void PrintTo(const WString& value, ::std::ostream* os)
+    {
+    PrintTo(Utf8String(value), os);
+    }
+
+void PrintTo(const BeFileName& value, ::std::ostream* os)
     {
     PrintTo(Utf8String(value), os);
     }

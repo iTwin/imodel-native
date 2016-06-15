@@ -23,6 +23,7 @@ struct SchemaManager
 
     private:
         ECSchemaPtr LoadSchema(SchemaKey key, ECSchemaReadContext& context);
+        ECSchemaPtr LoadSchema(BeFileNameCR schemaPath, ECSchemaReadContext& context);
         BentleyStatus LoadSchemas(const std::vector<BeFileName>& schemaPaths, std::vector<ECSchemaPtr>& schemasOut);
         BentleyStatus FixLegacySchema(ECSchema& schema, ECSchemaReadContextR context);
         Utf8String ToFullNameListString(const std::vector<ECSchemaPtr>& schemas);

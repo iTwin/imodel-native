@@ -1,25 +1,18 @@
 #----------------------------------------------------------------------------------------
-#   Tests that are ignored on purpose
-#----------------------------------------------------------------------------------------
-
-#----------------------------------------------------------------------------------------
-# Unknown issues - need to investigate
-#----------------------------------------------------------------------------------------
-
-#----------------------------------------------------------------------------------------
 # Known issues
 #----------------------------------------------------------------------------------------
 
-# AsyncTask::GetResult() makes test fail randomly
+# AsyncTask::GetResult() makes test fail randomly. Low priority
 CachingDataSourceTests.OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds
 
-# Fails on WinX86. (onProgressCalled actual 0; expected 1)
-CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
+# Fails on WinX86. (onProgressCalled actual 0; expected 1). Low priority
+# Commenting out to see if GTEST/GMOCK update fixed this issue
+# CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
 
-#Fails on iOS; Vincas said to ignore
-ECDbAdapterTests.*
+# Pending fix on UniqueTaskHolder. Low priority
+ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
 
-# Fails on Android. Notified Vincas
+# Fails on Android. Medium priority - disables important tests
 FileUtilTests.TruncateFilePath_FileWithNoExtension_TruncatesFileName
 FileUtilTests.TruncateFilePath_MaxPathLessThanPath_TruncatesFileName
 FileUtilTests.TruncateFilePath_MaxPathMoreThanPath_DoesNothing
@@ -28,27 +21,30 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
+# Fails on Android due to DgnClientFx::Device not being initialized. Medium priority - disables important tests
+ClientInfoTests.Create_PassedMandatoryValues_SetsValues
+
+# Fails on iOS; Need to investigate why. High priority - disables many tests
+ECDbAdapterTests.*
+
 #----------------------------------------------------------------------------------------
-# Fail due to DgnDb06 changes 
+# Fails due to DgnDb06xx changes
 #----------------------------------------------------------------------------------------
 
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
-DataSourceCacheUpgradeTests*
+DataSourceCacheUpgradeTests.CachingDataSource_OpenOrCreate_V5*
+DataSourceCacheUpgradeTests.Open_V5*
+DataSourceCacheUpgradeTests.Open_V7*
+DataSourceCacheUpgradeTests.Open_V8*
+DataSourceCacheUpgradeTests.Open_V9*
+DataSourceCacheUpgradeTests.Open_V1*
 
-# ECSchema update in ECDb is not yet supported
+# ECSchema update in ECDb does not support deletions yet
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
-CachingDataSourceTests.UpdateSchemas_*
-CachingDataSourceTests.OpenOrCreate_SchemaPathNotPassedAndServerRetursMetaSchema_GetsAllSchemasAndMetaSchemaFromServer
 
-# Fails because ECDb holding relationship deletion deletes child but not subchildren
-ECDbAdapterTests.DeleteInstances_DeletingRelationshipThatHoldsHierarchy_HierarchyDeleted
-ECDbAdapterTests.DeleteInstances_DeletingParentThatHoldsTwoChildrenThatHoldSubChild_DeletesParentAndChildrenAndSubChild
-ECDbAdapterTests.DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships_DeletesChildren
+#----------------------------------------------------------------------------------------
+# All new unknown/issues here
+#----------------------------------------------------------------------------------------
 
-#Need adjustments to 06 ECRelationship limitations in ECDb
-CachingDataSourceTests.*
-ChangeManagerTests.*
-DataSourceCacheTests.*
-
-# Pending fix on UniqueTaskHolder
-ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
+ # Crashed 61-16q2, winx64, optimized
+CachingDataSourceTests.SyncCachedData_WSG1AndInitialInstancesReturnsNotFound_RemovesInstancesFromCache

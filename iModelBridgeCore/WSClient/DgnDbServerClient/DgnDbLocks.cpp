@@ -65,13 +65,14 @@ DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request const& req, DgnDbR db)
+IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request const& req, DgnDbR db, bool queryOnly)
     {
+    auto purpose = queryOnly ? IBriefcaseManager::RequestPurpose::Query : IBriefcaseManager::RequestPurpose::Acquire;
     if (!m_connection)
-        return Response (RepositoryStatus::ServerUnavailable);
+        return Response (purpose, req.Options(), RepositoryStatus::ServerUnavailable);
 
     if (req.Locks ().IsEmpty ())
-        return IBriefcaseManager::Response (RepositoryStatus::Success);
+        return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
 
     Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
 
@@ -80,11 +81,23 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
     auto result = m_connection->AcquireLocks (req.Locks (), db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
-        return IBriefcaseManager::Response (RepositoryStatus::Success);
+        if (queryOnly)
+            {
+            // NEEDSWORK_LOCKS: Handle queryOnly...this is a hack
+            DgnLockSet locks;
+            for (auto const& lock : req.Locks().GetLockSet())
+                locks.insert(DgnLock(lock.GetLockableId(), LockLevel::None));
+
+            auto retVal = _Demote(locks, req.Codes(), db);
+            BeAssert(RepositoryStatus::Success == retVal);
+            return IBriefcaseManager::Response(purpose, req.Options(), retVal);
+            }
+
+        return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
         }
     else
         {
-        Response           response (RepositoryStatus::ServerUnavailable);
+        Response           response (purpose, req.Options(), RepositoryStatus::ServerUnavailable);
         DgnDbServerError&  error = result.GetError ();
 
         if (DgnDbServerError::Id::LockOwnedByAnotherBriefcase == error.GetId ())
@@ -157,12 +170,13 @@ RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db)
+RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
     {
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
     // NEEDSWORK_LOCKS: Handle codes
+    // NEEDSWORK_LOCKS: Handle unavailable locks + codes
     auto result = m_connection->QueryLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {

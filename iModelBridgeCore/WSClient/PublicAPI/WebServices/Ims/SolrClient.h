@@ -35,7 +35,7 @@ struct ISolrClient
         virtual Utf8StringCR GetCollectionPath() const = 0;
 
         //! Send query request using a SolrQuery. Send an HttpRequest to the Ims Search API Url.
-        //! @param[in] query
+        //! @param[in] query	The request
         virtual AsyncTaskPtr<SolrGetResult> SendGetRequest(SolrQueryCR query = SolrQuery()) const = 0;
     };
 
@@ -53,10 +53,10 @@ struct SolrClient : public ISolrClient
         SolrClient(Utf8String serverUrl, Utf8String solrPath, IHttpHeaderProviderPtr defaultHeadersProvider, IHttpHandlerPtr customHandler = nullptr);
 
     public:
-        //! @param[in] serverUrl - address to supported server/site (i.e. qa-waz-search.bentley.com/token)
-        //! @param[in] collectionPath - The path to the Solr Service (i.e. IMS/User/, GPR/ProductRegistry/, Notification/)
-        //! @param[in] clientInfo - client infomation for licensing and other information
-        //! @param[in] customHandler - custom http handler - Default: nullptr.
+        //! @param[in] serverUrl Address to supported server/site (i.e. qa-waz-search.bentley.com/token)
+        //! @param[in] collectionPath The path to the Solr Service (i.e. IMS/User/, GPR/ProductRegistry/, Notification/)
+        //! @param[in] clientInfo Client infomation for licensing and other information
+        //! @param[in] customHandler [Optional] custom http handler
         WSCLIENT_EXPORT static std::shared_ptr<SolrClient> Create
             (
             Utf8StringCR serverUrl,
@@ -66,7 +66,7 @@ struct SolrClient : public ISolrClient
             );
 
         //! Accessor function for Solr API base url
-        //! @return baseUrl - address to supported server/site (i.e. qa-waz-search.bentley.com/token)
+        //! @return baseUrl Address to supported server/site (i.e. qa-waz-search.bentley.com/token)
         WSCLIENT_EXPORT Utf8StringCR GetBaseUrl() const override;
 
         //! Accessor function for Solr API Collection Path
@@ -74,7 +74,7 @@ struct SolrClient : public ISolrClient
         WSCLIENT_EXPORT Utf8StringCR GetCollectionPath() const override;
 
         //! Send query request using a SolrQuery. Send an HttpRequest to the Solr REST Url.
-        //! @param[in] query
+        //! @param[in] query [Optional] The SolrQuery used to construct the get request url
         WSCLIENT_EXPORT AsyncTaskPtr<SolrGetResult> SendGetRequest(SolrQueryCR query = SolrQuery()) const override;
     };
 

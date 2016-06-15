@@ -111,7 +111,7 @@
     <ClCompile Include="Connect\SamlToken.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Licensing\MobileTracking.cpp">
+    <ClCompile Include="Licensing\UsageTrackingData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Licensing\UsageTracking.cpp">
@@ -417,6 +417,27 @@
     <ClCompile Include="ConnectC\CWSCCInternal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Azure\AzureBlobStorageClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cache\Util\ECInstanceKeyFilter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\CWSCCBufferGen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaGen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -530,7 +551,7 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Licensing\MobileTracking.h">
+    <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTrackingData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTracking.h">
@@ -794,9 +815,6 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECExpressionHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Cache\Util\JsonUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonDiff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -896,6 +914,9 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ImsClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Ims\SolrQuery.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -923,6 +944,54 @@
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cache\Schemas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsResponse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Compatibility\Schemas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferGenPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectC\CWSCCBufferGen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\SessionInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -931,6 +1000,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.01.01.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Bentley_SP_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\MetaSchema_Supplemental_ECDbMapping.02.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\ProjectContent_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheLegacySupportSchema.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.01.ecschema.xml" />
@@ -940,9 +1010,12 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.05.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.06.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.07.ecschema.xml" />
-    <Xml Include="Cache\Persistence\ECSchemas\MetaSchema.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.00.ecschema.xml" />
-    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\ProjectContent_Supplemental_ECDbMapping.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\WSCacheMetaSchema.03.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\eBAttributes_V3Conversion.02.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Issue_Supplemental_ECDbMapping.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.08.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\FileAccess_V3Conversion.01.00.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />
@@ -968,5 +1041,6 @@
     <None Include="ConnectC\ConnectC.mki" />
     <None Include="CWSClientCLib.mke" />
     <None Include="CWSClientCPrewire.mke" />
+    <None Include=".hgignore" />
   </ItemGroup>
 </Project>

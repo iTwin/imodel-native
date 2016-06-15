@@ -8,8 +8,22 @@
 #include <WebServices/Client/WSClient.h>
 #include "WSClientTests.h"
 #include "MockServerInfoListener.h"
+#include "../../../../../../DgnClientFx/PublicAPI/DgnClientFx/Device.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+void WSClientTests::SetUp() 
+    {
+    BaseMockHttpHandlerTest::SetUp();
+
+#if defined (__ANDROID__)
+    // WIP06 - DgnClientFx is not initialized, need to initialize APIs seperately
+    if (Device::GetDeviceId().empty())
+        {
+        Device::CacheAndroidDeviceId("TEST_DEVICE_ID");
+        }
+#endif
+    }
 
 TEST_F(WSClientTests, SendGetInfoRequest_Called_SendsGetPluginsUrl)
     {

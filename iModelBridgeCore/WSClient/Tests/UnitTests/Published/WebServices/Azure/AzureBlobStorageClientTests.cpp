@@ -15,7 +15,7 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSucce
     {
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
 
-    BeFileName fileName = BeFileName("testFile");
+    BeFileName fileName = StubFilePath();
 
     GetHandler().ExpectRequests(1);
     GetHandler().ForFirstRequest([=] (HttpRequestCR request)

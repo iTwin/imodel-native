@@ -49,9 +49,9 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
             bset<ECInstanceKey>& allInstancesBeingDeletedOut
             );
         size_t CountHoldingParents(ECInstanceKeyCR instanceKey, const bset<ECInstanceKey>* parentsToIgnore);
-        BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId instanceId, bset<ECInstanceKey>& additionalToDeleteOut);
 
-        BentleyStatus DeleteInstance(ECClassId classId, ECInstanceId instanceId);
+        BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId instanceId, bset<ECInstanceKey>& additionalToDeleteOut);
+        BentleyStatus DeleteInstancesDirectly(const ECInstanceKeyMultiMap& instances);
 
     public:
         WSCACHE_EXPORT ECDbAdapter(ObservableECDb& ecDb);

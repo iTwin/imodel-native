@@ -253,16 +253,14 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId so
         WITH RECURSIVE 
             RelationshipConstraintClasses (RelationshipClassId, RelationshipEnd, IsPolymorphic, ClassId, NestingLevel) AS
             (
-            SELECT RC.RelationshipClassId, RCC.RelationshipEnd, RC.IsPolymorphic, RCC.ClassId, 0
+            SELECT RC.RelationshipClassId, RC.RelationshipEnd, RC.IsPolymorphic, RCC.ClassId, 0
                 FROM ec_RelationshipConstraint RC
                 INNER JOIN ec_RelationshipConstraintClass RCC
-                    ON  RC.RelationshipClassId = RCC.RelationshipClassId
-                    AND RC.RelationshipEnd = RCC.RelationshipEnd
+                    ON  RC.Id = RCC.ConstraintId
             UNION
             SELECT RCC.RelationshipClassId, RCC.RelationshipEnd, RCC.IsPolymorphic, BC.ClassId, NestingLevel + 1
                 FROM RelationshipConstraintClasses RCC
-                INNER JOIN ec_BaseClass BC
-                    ON BC.BaseClassId = RCC.ClassId
+                INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = RCC.ClassId
                 WHERE RCC.IsPolymorphic = 1
                 ORDER BY 2 DESC
             )
@@ -1091,52 +1089,36 @@ BentleyStatus ECDbAdapter::OnBeforeDelete(ECClassCR ecClass, ECInstanceId instan
 BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instances)
     {
     if (instances.empty())
-        {
         return SUCCESS;
-        }
 
     bset<ECInstanceKey> allInstancesBeingDeleted;
     if (SUCCESS != FindInstancesBeingDeleted(instances, allInstancesBeingDeleted))
-        {
         return ERROR;
-        }
 
     bset<ECInstanceKey> additionalInstancesSet;
+    ECInstanceKeyMultiMap allInstancesBeingDeletedMap;
+
     for (ECInstanceKeyCR key : allInstancesBeingDeleted)
         {
         ECClassCP ecClass = GetECClass(key);
         if (nullptr == ecClass)
-            {
             return ERROR;
-            }
+
         for (auto listener : m_deleteListeners)
             {
             if (SUCCESS != listener->OnBeforeDelete(*ecClass, key.GetECInstanceId(), additionalInstancesSet))
-                {
                 return ERROR;
-                }
             }
+
+        allInstancesBeingDeletedMap.insert({key.GetECClassId(), key.GetECInstanceId()});
         }
 
-    for (auto pair : instances)
-        {
-        if (SUCCESS != DeleteInstance(pair.first, pair.second))
-            {
-            return ERROR;
-            }
-        }
-
-    // Cleanup holding relationship hierarchies
-    if (SUCCESS != m_ecDb->Purge(ECDb::PurgeMode::HoldingRelationships))
-        {
+    if (SUCCESS != DeleteInstancesDirectly(allInstancesBeingDeletedMap))
         return ERROR;
-        }
 
     ECInstanceKeyMultiMap additionalInstancesMap;
     for (auto& key : additionalInstancesSet)
-        {
-        additionalInstancesMap.Insert(key.GetECClassId(), key.GetECInstanceId());
-        }
+        additionalInstancesMap.insert({key.GetECClassId(), key.GetECInstanceId()});
 
     return DeleteInstances(additionalInstancesMap);
     }
@@ -1144,25 +1126,33 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbAdapter::DeleteInstance(ECClassId classId, ECInstanceId instanceId)
+BentleyStatus ECDbAdapter::DeleteInstancesDirectly(const ECInstanceKeyMultiMap& instances)
     {
-    Utf8PrintfString key("DeleteInstance:%llu", classId.GetValue());
-    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+    for (auto it = instances.begin(); it != instances.end();)
         {
-        ECClassCP ecClass = GetECClass(classId);
-        if (nullptr == ecClass)
+        ECClassId ecClassId = it->first;
+        auto classInstances = instances.equal_range(ecClassId);
+        it = classInstances.second;
+
+        ECInstanceIdSet ids;
+        for (auto ciit = classInstances.first; ciit != classInstances.second; ++ciit)
             {
-            return bastring();
+            ids.insert(ciit->second);
             }
-        return "DELETE FROM ONLY " + ecClass->GetECSqlName() + " WHERE ECInstanceId = ? ";
-        });
 
-    statement->BindId(1, instanceId);
+        Utf8PrintfString key("DeleteInstancesDirectly:%llu", ecClassId.GetValue());
+        auto statement = m_statementCache.GetPreparedStatement(key, [&]
+            {
+            ECClassCP ecClass = GetECClass(ecClassId);
+            if (nullptr == ecClass)
+                return bastring();
+            return "DELETE FROM ONLY " + ecClass->GetECSqlName() + " WHERE InVirtualSet(?, ECInstanceId) ";
+            });
 
-    DbResult result;
-    if (BE_SQLITE_DONE != (result = statement->Step()))
-        {
-        return ERROR;
+        statement->BindInt64(1, (int64_t) &ids); // WIP06: use BindVirtualSet() when available
+        DbResult result;
+        if (BE_SQLITE_DONE != (result = statement->Step()))
+            return ERROR;
         }
 
     return SUCCESS;

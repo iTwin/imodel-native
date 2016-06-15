@@ -23,24 +23,27 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
     static bmap<Utf8String, DgnDbServerError::Id> map;
     if (map.empty())
         {
-        map["DgnDbServer.MissingRequiredProperties"] = Id::MissingRequiredProperties;
-        map["DgnDbServer.InvalidBriefcase"] = Id::InvalidBriefcase;
-        map["DgnDbServer.AnotherUserPushing"] = Id::AnotherUserPushing;
-        map["DgnDbServer.RevisionAlreadyExists"] = Id::RevisionAlreadyExists;
-        map["DgnDbServer.RevisionDoesNotExists"] = Id::RevisionDoesNotExist;
-        map["DgnDbServer.FileIsNotUploaded"] = Id::FileIsNotUploaded;
-        map["DgnDbServer.RevisionExistsButNoBackingFile"] = Id::RevisionExistsButNoBackingFile;
-        map["DgnDbServer.RepositoryIsNotInitialized"] = Id::RepositoryIsNotInitialized;
-        map["DgnDbServer.RevisionPointsToBadDgnDb"] = Id::RevisionPointsToBadDgnDb;
-        map["DgnDbServer.DgnDbServerOperationFailed"] = Id::DgnDbServerOperationFailed;
-        map["DgnDbServer.PullIsRequired"] = Id::PullIsRequired;
-        map["DgnDbServer.MaximumNumberOfBriefcasesPerUser"] = Id::MaximumNumberOfBriefcasesPerUser;
+        map["DgnDbServer.MissingRequiredProperties"]                 = Id::MissingRequiredProperties;
+        map["DgnDbServer.InvalidBriefcase"]                          = Id::InvalidBriefcase;
+        map["DgnDbServer.AnotherUserPushing"]                        = Id::AnotherUserPushing;
+        map["DgnDbServer.RevisionAlreadyExists"]                     = Id::RevisionAlreadyExists;
+        map["DgnDbServer.RevisionDoesNotExist"]                      = Id::RevisionDoesNotExist;
+        map["DgnDbServer.FileIsNotUploaded"]                         = Id::FileIsNotUploaded;
+        map["DgnDbServer.RevisionExistsButNoBackingFile"]            = Id::RevisionExistsButNoBackingFile;
+        map["DgnDbServer.RepositoryIsNotInitialized"]                = Id::RepositoryIsNotInitialized;
+        map["DgnDbServer.RevisionPointsToBadDgnDb"]                  = Id::RevisionPointsToBadDgnDb;
+        map["DgnDbServer.DgnDbServerOperationFailed"]                = Id::DgnDbServerOperationFailed;
+        map["DgnDbServer.PullIsRequired"]                            = Id::PullIsRequired;
+        map["DgnDbServer.MaximumNumberOfBriefcasesPerUser"]          = Id::MaximumNumberOfBriefcasesPerUser;
         map["DgnDbServer.MaximumNumberOfBriefcasesPerUserPerMinute"] = Id::MaximumNumberOfBriefcasesPerUserPerMinute;
-        map["DgnDbServer.DatabaseTemporarilyLocked"] = Id::DatabaseTemporarilyLocked;
-        map["DgnDbServer.RepositoryAlreadyExists"] = Id::RepositoryAlreadyExists;
-        map["DgnDbServer.RepositoryDoesNotExists"] = Id::RepositoryDoesNotExist;
-        map["DgnDbServer.LockDoesNotExists"] = Id::LockDoesNotExist;
-        map["DgnDbServer.LockOwnedByAnotherBriefcase"] = Id::LockOwnedByAnotherBriefcase;
+        map["DgnDbServer.DatabaseTemporarilyLocked"]                 = Id::DatabaseTemporarilyLocked;
+        map["DgnDbServer.RepositoryAlreadyExists"]                   = Id::RepositoryAlreadyExists;
+        map["DgnDbServer.RepositoryDoesNotExist"]                    = Id::RepositoryDoesNotExist;
+        map["DgnDbServer.LockDoesNotExist"]                          = Id::LockDoesNotExist;
+        map["DgnDbServer.LockOwnedByAnotherBriefcase"]               = Id::LockOwnedByAnotherBriefcase;
+        map["DgnDbServer.BriefcaseDoesNotBelongToUser"]              = Id::BriefcaseDoesNotBelongToUser;
+        map["DgnDbServer.UserAlreadyExists"]                         = Id::UserAlreadyExists;
+        map["DgnDbServer.UserDoesNotExist"]                          = Id::UserDoesNotExist;
         }
 
     auto it = map.find(errorIdString);

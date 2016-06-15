@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_HTTP
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSObjectsResponse
     {
-    private:
+    protected:
         HttpBodyPtr m_httpBody;
         bool        m_isModified;
         Utf8String  m_eTag;
@@ -33,7 +33,7 @@ struct WSObjectsResponse
         std::shared_ptr<WSObjectsReader> m_reader;
         mutable std::shared_ptr<WSObjectsReader::Instances> m_readerInstances;
 
-    private:
+    protected:
         JsonValueR GetJsonValuePrivate() const;
         std::shared_ptr<rapidjson::Document> GetRapidJsonDocumentPrivate() const;
 

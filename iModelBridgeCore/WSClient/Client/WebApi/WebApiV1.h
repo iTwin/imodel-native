@@ -73,7 +73,6 @@ struct WebApiV1 : public WebApi
         static void GetParametersFromObjectCreationJson
             (
             JsonValueCR objectCreationJson,
-            ObjectIdR newObjectId,
             Utf8StringR propertiesOut,
             ObjectIdR relObjectId,
             ObjectIdR parentObjectIdOut
@@ -175,6 +174,15 @@ struct WebApiV1 : public WebApi
 
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,

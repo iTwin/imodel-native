@@ -286,8 +286,12 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         virtual CacheStatus RemoveInstance(ObjectIdCR objectId) = 0;
         //! Removes cached file from disk
         virtual BentleyStatus RemoveFile(ObjectIdCR objectId) = 0;
-        //! Removes files that are not linked to Full persistence roots. See SetupRoot for more info
-        virtual BentleyStatus RemoveFilesInTemporaryPersistence() = 0;
+        //! Removes files that are not linked to Full persistence roots. If not NULL, maxLastAccessDate
+        //! limits the deletion to files not accessed since then. See SetupRoot for more info
+        //! @param[in] maxLastAccessDate If non-null, determines the maximum access time value on files to
+        //! be deleted. Temporary files last accessed since the supplied DateTime will not be deleted.
+        //! Temporary files last accessed on or before the supplied DateTime will be deleted.
+        virtual BentleyStatus RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate = nullptr) = 0;
         //! Removes root and deletes linked instances that are not held by other roots
         virtual BentleyStatus RemoveRoot(Utf8StringCR rootName) = 0;
         //! Removes roots by prefix and deletes linked instances that are not held by other roots
@@ -345,6 +349,13 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! Recursively get all instances connected to root. More efficient way for checking if multiple instances are held by root
         virtual BentleyStatus ReadInstancesConnectedToRootMap(Utf8StringCR rootName, ECInstanceKeyMultiMap& instancesOut, uint8_t depth = UINT8_MAX) = 0;
 
+        //! Recursively get all cached instances held by specific instance in cache
+        virtual BentleyStatus ReadInstanceHierarchy
+            (
+            ECInstanceKeyCR instance,
+            ECInstanceKeyMultiMap& instancesOut
+            ) = 0;
+
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Instance persistence
         //--------------------------------------------------------------------------------------------------------------------------------+
@@ -368,10 +379,18 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //  Cached file managment
         //--------------------------------------------------------------------------------------------------------------------------------+
 
-        // Change or prepare instance file cache location. Will move file if location changed.
-        virtual BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation) = 0;
-        // Returns FileCache location that is setup for given instasnce - Temporary or Persistent
-        virtual FileCache     GetFileCacheLocation(ObjectIdCR objectId) = 0;
+        //! Change or prepare object file cache location. Will move file if location changed
+        //! @param objectId
+        //! @param cacheLocation - location where file should be stored. Aligns with cache CacheEnvironment 
+        //! @param externalRelativeDir - only applies to FileCache::External and will fail with other locations as they manage paths automatically.
+        //! Examples:
+        //! "" - store file in the root of external directory
+        //! "FolderA/FolderB/", "FolderA/FolderB" - store file in subfolder of external directory
+        virtual BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativeDir = BeFileName()) = 0;
+        //! Returns FileCache location that is setup for given object
+        //! @param objectId
+        //! @param defaultLocation - return value if object has no file cache location set
+        virtual FileCache     GetFileCacheLocation(ObjectIdCR objectId, FileCache defaultLocation = FileCache::Temporary) = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

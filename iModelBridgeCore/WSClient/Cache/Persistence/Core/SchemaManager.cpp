@@ -137,6 +137,25 @@ ECSchemaPtr SchemaManager::LoadSchema(SchemaKey key, ECSchemaReadContext& contex
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr SchemaManager::LoadSchema(BeFileNameCR schemaPath, ECSchemaReadContext& context)
+    {
+    SchemaKey key;
+    SchemaKey::ParseSchemaFullName(key, Utf8String(schemaPath.GetFileNameAndExtension()).c_str());
+    ECSchemaPtr schema = context.LocateSchema(key, SchemaMatchType::Exact);
+
+    if (!schema.IsNull())
+        return schema;
+
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, schemaPath.GetName(), context);
+    if (SchemaReadStatus::Success != status)
+        return nullptr;
+
+    return schema;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaManager::LoadSchemas
@@ -147,25 +166,18 @@ std::vector<ECSchemaPtr>& schemasOut
     {
     ECSchemaReadContextPtr context = SchemaContext::CreateReadContext();
     for (BeFileNameCR schemaPath : schemaPaths)
-        {
         context->AddSchemaPath(schemaPath.GetDirectoryName());
-        }
+
     context->AddSchemaLocater(m_db.GetSchemaLocater());
 
     for (BeFileName schemaPath : schemaPaths)
         {
-        ECSchemaPtr schema;
-        SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, schemaPath.GetName(), *context);
-        if (SchemaReadStatus::Success != status &&
-            SchemaReadStatus::DuplicateSchema != status)
-            {
+        ECSchemaPtr schema = LoadSchema(schemaPath, *context);
+        if (schema.IsNull())
             return ERROR;
-            }
 
         if (SUCCESS != FixLegacySchema(*schema, *context))
-            {
             return ERROR;
-            }
 
         schemasOut.push_back(schema);
         }
@@ -178,32 +190,25 @@ std::vector<ECSchemaPtr>& schemasOut
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadContextR context)
     {
-    Utf8String versionStr = ECSchema::FormatSchemaVersion(schema.GetVersionMajor(), schema.GetVersionMinor());
+    Utf8String versionStr = SchemaKey::FormatLegacySchemaVersion(schema.GetVersionMajor(), schema.GetVersionMinor());
     Utf8String supplName = schema.GetName() + "_Supplemental_ECDbMapping." + versionStr + ".ecschema.xml";
 
     BeFileName supplPath = SchemaContext::GetSupportMappingDir();
     supplPath.AppendToPath(BeFileName(supplName));
 
     if (!supplPath.DoesPathExist())
-        {
         return SUCCESS;
-        }
 
-    ECSchemaPtr supplSchema;
-    ECSchema::ReadFromXmlFile(supplSchema, supplPath, context);
+    ECSchemaPtr supplSchema = LoadSchema(supplPath, context);
     if (supplSchema.IsNull())
-        {
         return ERROR;
-        }
 
     bvector<ECSchemaP> supplSchemas;
     supplSchemas.push_back(supplSchema.get());
 
     SupplementedSchemaBuilder builder;
     if (SupplementedSchemaStatus::Success != builder.UpdateSchema(schema, supplSchemas))
-        {
         return ERROR;
-        }
 
     return SUCCESS;
     }

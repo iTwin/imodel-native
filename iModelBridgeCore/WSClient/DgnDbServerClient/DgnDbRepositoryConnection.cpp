@@ -65,11 +65,11 @@ void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageCli
 //---------------------------------------------------------------------------------------
 void RepositoryInfoParser (RepositoryInfoR repositoryInfo, Utf8StringCR repositoryUrl, Utf8StringCR repositoryId, JsonValueCR value)
     {
-    DateTime uploadedDate = DateTime();
-    DateTime::FromString(uploadedDate, static_cast<Utf8CP>(value[ServerSchema::Property::UploadedDate].asCString()));
+    DateTime createdDate = DateTime();
+    DateTime::FromString(createdDate, static_cast<Utf8CP>(value[ServerSchema::Property::CreatedDate].asCString()));
     repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(), value[ServerSchema::Property::FileId].asString(), 
                                     value[ServerSchema::Property::URL].asString(), value[ServerSchema::Property::FileName].asString(), value[ServerSchema::Property::Description].asString(),
-                                    value[ServerSchema::Property::UserUploaded].asString(), uploadedDate);
+                                    value[ServerSchema::Property::MergedRevisionId].asString(), value[ServerSchema::Property::UserCreated].asString(), createdDate);
     }
 
 //---------------------------------------------------------------------------------------
@@ -124,7 +124,8 @@ AuthenticationHandlerPtr authenticationHandler
         if (!result.IsSuccess())
             return DgnDbRepositoryConnectionResult::Error(result.GetError());
 
-        if (!repositoryConnection->GetRepositoryInfo().GetFileURL().empty())
+        //if (!repositoryConnection->GetRepositoryInfo().GetFileURL().empty())
+        if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
             repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
         return DgnDbRepositoryConnectionResult::Success(repositoryConnection);

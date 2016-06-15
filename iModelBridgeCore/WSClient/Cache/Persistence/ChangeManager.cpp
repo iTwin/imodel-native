@@ -21,7 +21,7 @@
 #include "Instances/ObjectInfoManager.h"
 #include "Instances/RelationshipInfoManager.h"
 #include "Responses/CachedResponseManager.h"
-#include "../Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -202,14 +202,14 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
         return ERROR;
         }
 
+    Json::Value instanceJson;
+    if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJson, instanceKey))
+        return ERROR;
+
     if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
-        Json::Value instanceJson;
-        if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJson, instanceKey) ||
-            SUCCESS != m_changeInfoManager.SaveBackupInstance(info, instanceJson))
-            {
+        if (SUCCESS != m_changeInfoManager.SaveBackupInstance(info, instanceJson))
             return ERROR;
-            }
         }
 
     if (SUCCESS != SetupNewRevision(info))
@@ -228,7 +228,12 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
     rapidjson::Document propertiesRapidJson;
     JsonUtil::ToRapidJson(properties, propertiesRapidJson);
 
-    if (SUCCESS != m_instanceCacheHelper.UpdateExistingInstanceData(info, propertiesRapidJson))
+    rapidjson::Document instanceRapidJson;
+    JsonUtil::ToRapidJson(instanceJson, instanceRapidJson);
+
+    JsonUtil::DeepCopy(propertiesRapidJson, instanceRapidJson);
+
+    if (SUCCESS != m_instanceCacheHelper.UpdateExistingInstanceData(info, instanceRapidJson))
         {
         return ERROR;
         }
@@ -316,35 +321,81 @@ BentleyStatus ChangeManager::DeleteObject(ECInstanceKeyCR instanceKey, SyncStatu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus)
+BentleyStatus ChangeManager::MarkFileAsModified(FileInfo& info, SyncStatus syncStatus)
+    {
+    if (SUCCESS != SetupNewRevision(info))
+        return ERROR;
+
+    info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
+    info.SetChangeStatus(ChangeStatus::Modified);
+    info.SetSyncStatus(syncStatus);
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::DetectFileModification(ECInstanceKeyCR instanceKey, SyncStatus syncStatus)
     {
     ObjectInfo objInfo = m_objectInfoManager.ReadInfo(instanceKey);
     if (!objInfo.IsInCache())
-        {
         return ERROR;
-        }
 
+    FileInfo info = m_fileInfoManager.ReadInfo(objInfo.GetCachedInstanceKey());
+    if (info.GetChangeStatus() == ChangeStatus::Modified)
+        return SUCCESS;
+
+    time_t modifiedSeconds;
+    if (BeFileNameStatus::Success != info.GetFilePath().GetFileTime(nullptr, nullptr, &modifiedSeconds))
+        return ERROR;
+
+    int64_t modifiedMs = modifiedSeconds * 1000;
+
+    int64_t updatedMs;
+    if (SUCCESS != info.GetFileUpdateDate().ToUnixMilliseconds(updatedMs))
+        return ERROR;
+
+    if (modifiedMs <= updatedMs)
+        return SUCCESS;
+
+    if (SUCCESS != MarkFileAsModified(info, syncStatus))
+        return ERROR;
+
+    return m_fileInfoManager.SaveInfo(info);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus)
+    {
+    if (!filePath.DoesPathExist())
+        return ERROR;
+        
+    ObjectInfo objInfo = m_objectInfoManager.ReadInfo(instanceKey);
+    if (!objInfo.IsInCache())
+        return ERROR;
+        
     FileInfo info = m_fileInfoManager.ReadInfo(objInfo.GetCachedInstanceKey());
     if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
         {
         BeAssert(false && "Cannot change modified file while syncing");
         return ERROR;
         }
-
-    if (SUCCESS != SetupNewRevision(info))
+    
+    if (info.GetFilePath() != filePath)
         {
-        return ERROR;
+        FileCache location = info.GetLocation(FileCache::Persistent);
+        if (SUCCESS != m_fileStorage.CacheFile(info, filePath, nullptr, location, copyFile))
+            return ERROR;
         }
 
-    info.SetChangeStatus(ChangeStatus::Modified);
-    info.SetSyncStatus(syncStatus);
-
-    if (SUCCESS != m_fileStorage.CacheFile(info, filePath, nullptr, FileCache::Persistent, DateTime::GetCurrentTimeUtc(), copyFile) ||
-        SUCCESS != m_fileInfoManager.SaveInfo(info))
-        {
-        BeAssert(false);
+    if (SUCCESS != MarkFileAsModified(info, syncStatus))
         return ERROR;
-        };
+
+    if (SUCCESS != m_fileInfoManager.SaveInfo(info))
+        return ERROR;
 
     return SUCCESS;
     }
@@ -361,11 +412,6 @@ BentleyStatus ChangeManager::ModifyFileName(ECInstanceKeyCR instanceKey, Utf8Str
         }
 
     FileInfo info = m_fileInfoManager.ReadInfo(objInfo.GetCachedInstanceKey());
-    if (info.GetChangeStatus() != ChangeStatus::Modified)
-        {
-        BeAssert(false && "Only modified file name changing is allowed");
-        return ERROR;
-        }
 
     if (IsSyncActive())
         {
@@ -563,6 +609,38 @@ BentleyStatus ChangeManager::SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStat
         }
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::AddCreatedInstanceToResponse(CachedResponseKeyCR cachedResponseKey, ECInstanceKeyCR instanceKey)
+    {
+    ResponseKey responseKey = m_responseManager.ConvertResponseKey(cachedResponseKey);
+    if (!responseKey.IsValid())
+        return ERROR;
+
+    ObjectInfo info = m_objectInfoManager.ReadInfo(instanceKey);
+    if (ChangeStatus::Created != info.GetChangeStatus())
+        return ERROR;
+
+    return m_responseManager.AddAdditionalInstance(responseKey, info.GetInfoKey());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::RemoveCreatedInstanceFromResponse(CachedResponseKeyCR cachedResponseKey, ECInstanceKeyCR instanceKey)
+    {
+    ResponseKey responseKey = m_responseManager.ConvertResponseKey(cachedResponseKey);
+    if (!responseKey.IsValid())
+        return ERROR;
+
+    ObjectInfo info = m_objectInfoManager.ReadInfo(instanceKey);
+    if (ChangeStatus::Created != info.GetChangeStatus())
+        return ERROR;
+
+    return m_responseManager.RemoveAdditionalInstance(responseKey, info.GetInfoKey());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -834,11 +912,13 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         return ERROR;
         }
 
+    // Deleted
     if (revision.GetChangeStatus() == ChangeStatus::Deleted && currentRevision)
         {
         return m_hierarchyManager.DeleteInstance(info.GetInfoKey());
         }
 
+    // Modified
     if (revision.GetChangeStatus() == ChangeStatus::Modified)
         {
         if (currentRevision)
@@ -862,11 +942,15 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         return ERROR;
         }
 
+    // Created
     if (revision.GetChangeStatus() != ChangeStatus::Created)
         {
         BeAssert(false && "Change status is unsupported for commit");
         return ERROR;
         }
+
+    if (SUCCESS != m_responseManager.RemoveAdditionalInstance(info.GetInfoKey()))
+        return ERROR;
 
     ObjectId newId = revision.GetObjectId();
     if (newId.remoteId.empty() || newId.remoteId == info.GetObjectId().remoteId)
@@ -988,11 +1072,8 @@ BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
         }
 
     info.ClearChangeInfo();
-    if (SUCCESS != m_fileStorage.SetFileCacheLocation(info, FileCache::Temporary) ||
-        SUCCESS != m_fileInfoManager.SaveInfo(info))
-        {
+    if (SUCCESS != m_fileInfoManager.SaveInfo(info))
         return ERROR;
-        }
 
     return SUCCESS;
     }

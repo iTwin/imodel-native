@@ -2,12 +2,12 @@
 |
 |     $Source: Cache/Util/JsonDiff.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <WebServices/Cache/Util/JsonDiff.h>
-#include "JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace rapidjson;
@@ -61,7 +61,8 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJsonIn, RapidJsonValueCR newJsonIn
             continue;
             }
 
-        RapidJsonValueCR oldValue = oldJson[newMemberItr->name.GetString()];
+        static rapidjson::Value s_nullValue(kNullType);
+        RapidJsonValueCR oldValue = oldJson.HasMember(newMemberItr->name.GetString()) ? oldJson[newMemberItr->name.GetString()] : s_nullValue;
 
         if (newMemberItr->value.GetType() == kObjectType)
             {

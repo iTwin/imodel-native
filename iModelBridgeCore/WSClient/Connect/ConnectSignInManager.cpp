@@ -36,7 +36,7 @@ m_localState(localState ? *localState : DgnClientFxCommon::LocalState()),
 m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(m_localState))
     {
     m_persistence = GetPersistenceMatchingAuthenticationType();
-    UpdateSignInIfNeeded();
+    CheckAndUpdateToken();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -70,7 +70,7 @@ ConnectSignInManagerPtr ConnectSignInManager::Create(IImsClientPtr client, IJson
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::UpdateSignInIfNeeded()
+void ConnectSignInManager::CheckAndUpdateToken()
     {
     if (!IsSignedIn())
         return;
@@ -87,7 +87,7 @@ void ConnectSignInManager::Configure(Configuration config)
     BeMutexHolder lock(m_cs);
     m_config = config;
     m_tokenProviders.clear();
-    UpdateSignInIfNeeded();
+    CheckAndUpdateToken();
     }
 
 /*--------------------------------------------------------------------------------------+

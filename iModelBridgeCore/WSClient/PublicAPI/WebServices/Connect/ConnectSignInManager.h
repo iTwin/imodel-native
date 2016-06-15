@@ -79,7 +79,6 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
     private:
         ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore);
 
-        void UpdateSignInIfNeeded();
         void CheckUserChange();
         void StoreSignedInUser();
 
@@ -149,6 +148,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! See IConnectTokenProvider API for more info how to use it
         //! @param rpUri relying party URI to use token for
         WSCLIENT_EXPORT IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri);
+
+        //! Check if token expired and renew/handle expiration
+        WSCLIENT_EXPORT void CheckAndUpdateToken();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

@@ -23,6 +23,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestApplication.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
+    <ClInclude Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.h" />
     <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
     <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
     <ClInclude Include="Published\Utils\MockTests.h" />
@@ -40,6 +41,8 @@
     <ClInclude Include="Published\WebServices\Cache\MockCachingDataSource.h" />
     <ClInclude Include="Published\WebServices\Cache\MockQueryProvider.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\BaseCacheTest.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.h" />
@@ -136,7 +139,7 @@
     <ClInclude Include="Published\Utils\Web\WebTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Client\ChunkedUploadRequestTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
-    <ClInclude Include="Published\WebServices\Licensing\MobileTrackingTests.h" />
+    <ClInclude Include="Published\WebServices\Licensing\UsageTrackingDataTests.h" />
     <ClInclude Include="Published\WebServices\Client\MockServerInfoListener.h" />
     <ClInclude Include="Published\WebServices\Client\MockWSClient.h" />
     <ClInclude Include="Published\WebServices\Client\MockWSRepositoryClient.h" />
@@ -161,6 +164,7 @@
     <ClCompile Include="BackDoor\TestApplication.cpp" />
     <ClCompile Include="BackDoor\TestEnvironment.cpp" />
     <ClCompile Include="BackDoor\DgnClientFxViewportHelpers.cpp" />
+    <ClCompile Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.cpp" />
     <ClCompile Include="NonPublished\CordovaPluginTests.cpp" />
     <ClCompile Include="NonPublished\ConfigurableUiTests.cpp" />
     <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
@@ -187,6 +191,8 @@
     <ClCompile Include="Published\WebServices\Cache\CachingTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\BaseCacheTest.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.cpp" />
@@ -265,7 +271,7 @@
     <ClCompile Include="Published\ViewportTests.cpp" />
     <ClCompile Include="Published\UnitTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ChunkedUploadRequestTests.cpp" />
-    <ClCompile Include="Published\WebServices\Licensing\MobileTrackingTests.cpp" />
+    <ClCompile Include="Published\WebServices\Licensing\UsageTrackingDataTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ObjectIdTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\PassportTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSObjectsReaderV1Tests.cpp" />
@@ -283,6 +289,12 @@
   <ItemGroup>
     <None Include="BuildTests.mke" />
     <None Include="Prewire.mke" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\5.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\9.zip" />
     <None Include="AssetsDelivery.mke" />
   </ItemGroup>
   <ItemGroup>
@@ -351,7 +363,7 @@
     <NMakeBuildCommandLine>bb $(BB2N0) -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WSClient-Gtest -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb $(BB2N0) -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest -c</NMakeCleanCommandLine>
-    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);USE_GTEST</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx86\build\BeGTest\bin\begtest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(OutRoot)Winx86\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx86\BuildContexts\WSClient\PublicAPI;$(IncludePath)</IncludePath>

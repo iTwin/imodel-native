@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSRepositoryClient.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -48,6 +48,8 @@ IWSSchemaProviderPtr schemaProvider,
 IHttpHandlerPtr customHandler
 )
     {
+    BeAssert(!serverUrl.empty());
+    BeAssert(!repositoryId.empty());
     BeAssert(nullptr != clientInfo);
     auto configuration = std::make_shared<ClientConfiguration>(serverUrl, repositoryId, clientInfo, schemaProvider, customHandler);
     return std::shared_ptr<WSRepositoryClient>(new WSRepositoryClient(std::make_shared<ClientConnection>(configuration)));
@@ -88,25 +90,22 @@ void WSRepositoryClient::SetCredentials(Credentials credentials)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> WSRepositoryClient::VerifyAccess
-(
-ICancellationTokenPtr ct
-) const
+AsyncTaskPtr<WSVoidResult> WSRepositoryClient::VerifyAccess(ICancellationTokenPtr ct) const
     {
-    return m_connection->GetWebApiAndReturnResponse<AsyncResult<void, WSError>>([=] (WebApiPtr webApi)
+    return m_connection->GetWebApiAndReturnResponse<WSVoidResult>([=] (WebApiPtr webApi)
         {
         ObjectId fakeObject("NonExistingSchema.NonExistingClassForCredentialChecking", "nonId");
 
         return
             webApi->SendGetObjectRequest(fakeObject, "", ct)
-            ->Then<AsyncResult<void, WSError>>([=] (WSObjectsResult& result)
+            ->Then<WSVoidResult>([=] (WSObjectsResult& result)
             {
             if (WSError::Id::ClassNotFound == result.GetError().GetId() ||
                 WSError::Id::SchemaNotFound == result.GetError().GetId())
                 {
-                return AsyncResult<void, WSError>::Success();
+                return WSVoidResult::Success();
                 }
-            return AsyncResult<void, WSError>::Error(result.GetError());
+            return WSVoidResult::Error(result.GetError());
             });
         }, ct);
     }
@@ -241,6 +240,24 @@ ICancellationTokenPtr ct
     return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult>([=] (WebApiPtr webApi)
         {
         return webApi->SendCreateObjectRequest(objectCreationJson, filePath, uploadProgressCallback, ct);
+        }, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones     05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSCreateObjectResult> WSRepositoryClient::SendCreateObjectRequest
+(
+ObjectIdCR objectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult> ([=] (WebApiPtr webApi)
+        {
+        return webApi->SendCreateObjectRequest (objectId, objectCreationJson, filePath, uploadProgressCallback, ct);
         }, ct);
     }
 

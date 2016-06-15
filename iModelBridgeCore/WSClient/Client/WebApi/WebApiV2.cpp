@@ -2,23 +2,30 @@
 |
 |     $Source: Client/WebApi/WebApiV2.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include "WebApiV2.h"
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
 
-#define HEADER_SkipToken "SkipToken"
+#define HEADER_SkipToken                "SkipToken"
+#define HEADER_MasAllowRedirect         "Mas-Allow-Redirect"
+#define HEADER_MasFileAccessUrlType     "Mas-File-Access-Url-Type"
+#define HEADER_MasUploadConfirmationId  "Mas-Upload-Confirmation-Id"
 
-const BeVersion WebApiV2::s_maxTestedWebApi(2, 3);
+#define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
+#define VALUE_True                      "true"
+
+const BeVersion WebApiV2::s_maxTestedWebApi(2, 4);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 WebApiV2::WebApiV2(std::shared_ptr<const ClientConfiguration> configuration, WSInfo info) :
 WebApi(configuration),
-m_info(info)
+m_info(info),
+m_azureClient(AzureBlobStorageClient::Create(configuration->GetHttpHandler()))
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -41,10 +48,14 @@ bool WebApiV2::IsSupported(WSInfoCR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetWebApiUrl() const
+Utf8String WebApiV2::GetWebApiUrl(BeVersion webApiVersion) const
     {
     BeVersion webApiVersionToUse = m_info.GetWebApiVersion();
-    if (webApiVersionToUse > s_maxTestedWebApi)
+    if (!webApiVersion.IsEmpty())
+        {
+        webApiVersionToUse = webApiVersion;
+        }
+    else if (webApiVersionToUse > s_maxTestedWebApi)
         {
         webApiVersionToUse = s_maxTestedWebApi; // Limit queries to tested WebApi version
         }
@@ -63,17 +74,17 @@ Utf8String WebApiV2::GetWebApiUrl() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetRepositoryUrl(Utf8StringCR repositoryId) const
+Utf8String WebApiV2::GetRepositoryUrl(Utf8StringCR repositoryId, BeVersion webApiVersion) const
     {
-    return GetWebApiUrl() + "Repositories/" + HttpClient::EscapeString(repositoryId);
+    return GetWebApiUrl(webApiVersion) + "Repositories/" + HttpClient::EscapeString(repositoryId);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetUrl(Utf8StringCR path, Utf8StringCR queryString) const
+Utf8String WebApiV2::GetUrl(Utf8StringCR path, Utf8StringCR queryString, BeVersion webApiVersion) const
     {
-    Utf8String url = GetRepositoryUrl(m_configuration->GetRepositoryId());
+    Utf8String url = GetRepositoryUrl(m_configuration->GetRepositoryId(), webApiVersion);
 
     if (!path.empty())
         {
@@ -260,20 +271,6 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(HttpResponse& response, const O
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSFileResult WebApiV2::ResolveFileResponse(HttpResponse& response, BeFileName filePath) const
-    {
-    HttpStatus status = response.GetHttpStatus();
-    if (HttpStatus::OK == status ||
-        HttpStatus::NotModified == status)
-        {
-        return WSFileResult::Success(WSFileResponse(filePath, status, response.GetHeaders().GetETag()));
-        }
-    return WSFileResult::Error(response);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
 AsyncTaskPtr<WSRepositoriesResult> WebApiV2::SendGetRepositoriesRequest
 (
 const bvector<Utf8String>& types,
@@ -350,20 +347,77 @@ HttpRequest::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    Utf8String url = GetUrl(CreateFileSubPath(objectId));
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetRequest(url, eTag);
+    BeVersion webApiVersion;
+    bool isExternalFileAccessSupported = m_info.GetWebApiVersion() >= BeVersion(2, 4);
+    if (isExternalFileAccessSupported)
+        webApiVersion = BeVersion(2, 4);
 
+    Utf8String url = GetUrl(CreateFileSubPath(objectId), "", webApiVersion);
+    HttpRequest request = CreateFileDownloadRequest(url, filePath, eTag, downloadProgressCallback, ct);
+
+    if (isExternalFileAccessSupported)
+        {
+        request.GetHeaders().SetValue(HEADER_MasAllowRedirect, VALUE_True);
+        request.SetFollowRedirects(false);
+        }
+
+    auto finalResult = std::make_shared<WSFileResult>();
+    return request.PerformAsync()->Then([=] (HttpResponse& response)
+        {
+        if (HttpStatus::TemporaryRedirect != response.GetHttpStatus())
+            {
+            *finalResult = ResolveFileDownloadResponse(response, filePath);
+            return;
+            }
+
+        Utf8String redirectUrl = response.GetHeaders().GetLocation();
+        HttpRequest request = CreateFileDownloadRequest(redirectUrl, filePath, eTag, downloadProgressCallback, ct);
+        request.PerformAsync()->Then([=] (HttpResponse& response)
+            {
+            *finalResult = ResolveFileDownloadResponse(response, filePath);
+            });
+        })
+            ->Then<WSFileResult>([=]
+            {
+            return *finalResult;
+            });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+HttpRequest WebApiV2::CreateFileDownloadRequest
+(
+Utf8StringCR url,
+BeFileNameCR filePath,
+Utf8StringCR eTag,
+HttpRequest::ProgressCallbackCR onProgress,
+ICancellationTokenPtr ct
+) const
+    {
+    HttpRequest request = m_configuration->GetHttpClient().CreateGetRequest(url);
     request.SetResponseBody(HttpFileBody::Create(filePath));
     request.SetRetryOptions(HttpRequest::ResumeTransfer, 0);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::FileDownload);
-    request.SetDownloadProgressCallback(downloadProgressCallback);
+    request.SetDownloadProgressCallback(onProgress);
     request.SetCancellationToken(ct);
+    request.GetHeaders().SetIfNoneMatch(eTag);
+    return request;
+    }
 
-    return request.PerformAsync()->Then<WSFileResult>([this, filePath] (HttpResponse& httpResponse)
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+WSFileResult WebApiV2::ResolveFileDownloadResponse(HttpResponse& response, BeFileName filePath) const
+    {
+    HttpStatus status = response.GetHttpStatus();
+    if (HttpStatus::OK == status ||
+        HttpStatus::NotModified == status)
         {
-        return  ResolveFileResponse(httpResponse, filePath);
-        });
+        return WSFileResult::Success(WSFileResponse(filePath, status, response.GetHeaders().GetETag()));
+        }
+    return WSFileResult::Error(response);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -461,14 +515,40 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
-    Utf8String className = objectCreationJson["instance"]["className"].asString();
-    Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString();
+    ObjectId objectId;
+    objectId.schemaName = objectCreationJson["instance"]["schemaName"].asString();
+    objectId.className = objectCreationJson["instance"]["className"].asString();
+    objectId.remoteId = objectCreationJson["instance"]["instanceId"].asString();
 
-    Utf8String url = GetUrl(CreateClassSubPath(schemaName, className));
-    if (!instanceId.empty())
+    return SendCreateObjectRequest(objectId, objectCreationJson, filePath, uploadProgressCallback, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+AsyncTaskPtr<WSCreateObjectResult> WebApiV2::SendCreateObjectRequest
+(
+ObjectIdCR objectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    if (objectId.schemaName.empty() || objectId.className.empty())
         {
-        url += "/" + instanceId;
+        BeAssert(false && "Either schemaName or className passed into WebApiV2::SendCreateObjectRequest is empty. Both are required to be valid.");
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError()));
+        }
+
+    BeAssert(objectId.schemaName.Equals(objectCreationJson["instance"]["schemaName"].asString()));
+    BeAssert(objectId.className.Equals(objectCreationJson["instance"]["className"].asString()));
+
+    Utf8String url = GetUrl(CreateClassSubPath(objectId.schemaName, objectId.className));
+
+    if (!objectId.remoteId.empty())
+        {
+        url += "/" + objectId.remoteId;
         }
 
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
@@ -564,22 +644,82 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    BeVersion webApiVersion;
+    bool isExternalFileAccessSupported = m_info.GetWebApiVersion() >= BeVersion(2, 4);
+    if (isExternalFileAccessSupported)
+        webApiVersion = BeVersion(2, 4);
+
     BeFile beFile;
     beFile.Open(filePath, BeFileAccess::Read);
 
-    Utf8String url = GetUrl(CreateFileSubPath(objectId));
+    Utf8String url = GetUrl(CreateFileSubPath(objectId), "", webApiVersion);
     ChunkedUploadRequest request("PUT", url, m_configuration->GetHttpClient());
 
     request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSUpdateFileResult>([] (HttpResponse& httpResponse)
+    if (isExternalFileAccessSupported)
         {
-        if (HttpStatus::OK == httpResponse.GetHttpStatus())
+        request.GetHandshakeRequest().GetHeaders().SetValue(HEADER_MasAllowRedirect, VALUE_True);
+        request.GetHandshakeRequest().SetFollowRedirects(false);
+        }
+
+    auto finalResult = std::make_shared<WSUpdateFileResult>();
+    return request.PerformAsync()->Then([=] (HttpResponse& response)
+        {
+        if (HttpStatus::OK == response.GetHttpStatus())
             {
-            return WSUpdateFileResult::Success();
+            finalResult->SetSuccess();
+            return;
             }
-        return WSUpdateFileResult::Error(httpResponse);
-        });
+
+        if (HttpStatus::TemporaryRedirect != response.GetHttpStatus())
+            {
+            finalResult->SetError(response);
+            return;
+            }
+
+        Utf8String redirectUrl = response.GetHeaders().GetLocation();
+        Utf8String redirectType = response.GetHeaders().GetValue(HEADER_MasFileAccessUrlType);
+        Utf8String confirmationId = response.GetHeaders().GetValue(HEADER_MasUploadConfirmationId);
+
+        if (redirectType != VALUE_FileAccessUrlType_Azure)
+            {
+            LOG.errorv("Header field '%s' contains not supported value: '%s'", HEADER_MasFileAccessUrlType, redirectType.c_str());
+            finalResult->SetError(WSError::CreateServerNotSupportedError());
+            return;
+            }
+
+        m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult result)
+            {
+            if (!result.IsSuccess())
+                {
+                finalResult->SetError(result.GetError());
+                return;
+                }
+
+            if (confirmationId.empty())
+                {
+                finalResult->SetSuccess();
+                return;
+                }
+
+            HttpRequest request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
+            request.GetHeaders().SetValue(HEADER_MasUploadConfirmationId, confirmationId);
+            request.PerformAsync()->Then([=] (HttpResponse& response)
+                {
+                if (HttpStatus::OK != response.GetHttpStatus())
+                    {
+                    finalResult->SetError(response);
+                    return;
+                    }
+                finalResult->SetSuccess();
+                });
+            });
+        })
+            ->Then<WSUpdateFileResult>([=]
+            {
+            return *finalResult;
+            });
     }

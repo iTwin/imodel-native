@@ -10,7 +10,6 @@
 #include <iomanip>
 #include <Bentley/Base64Utilities.h>
 
-
 const uint32_t AzureBlobStorageClient::Timeout::Connection::Default = 30;
 const uint32_t AzureBlobStorageClient::Timeout::Transfer::FileDownload = 30;
 const uint32_t AzureBlobStorageClient::Timeout::Transfer::Upload = 30;

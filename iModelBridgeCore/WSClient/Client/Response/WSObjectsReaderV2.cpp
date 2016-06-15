@@ -2,12 +2,13 @@
 |
 |  $Source: Client/Response/WSObjectsReaderV2.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
 
+static rapidjson::Value s_nullJsonValue(rapidjson::Type::kNullType);
 static rapidjson::Value s_emptyJsonObject(rapidjson::Type::kObjectType);
 static rapidjson::Value s_emptyArrayJsonObject(rapidjson::Type::kArrayType);
 
@@ -171,7 +172,7 @@ WSObjectsReader::RelationshipInstance WSObjectsReaderV2::GetRelationshipInstance
         return RelationshipInstance(shared_from_this());
         }
 
-    const rapidjson::Value* instanceProperties = &(*relationshipInstance)["properties"];
+    const rapidjson::Value* instanceProperties = relationshipInstance->HasMember("properties") ? &(*relationshipInstance)["properties"] : &s_nullJsonValue;
     if (instanceProperties->IsNull())
         {
         instanceProperties = &s_emptyJsonObject;
@@ -231,4 +232,18 @@ Utf8String WSObjectsReaderV2::GetInstanceETag(const rapidjson::Value* instance) 
         }
 
     return eTag;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::SizeType WSObjectsReaderV2::GetRelationshipInstanceCount(const rapidjson::Value* relationshipInstances) const
+    {
+    if (nullptr == relationshipInstances)
+        return 0;
+
+    if (!relationshipInstances->IsArray())
+        return 0;
+
+    return relationshipInstances->Size();
     }

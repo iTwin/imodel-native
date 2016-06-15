@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/DataSourceCacheCommon.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,15 +12,6 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-enum class FileCache
-    {
-    Temporary,
-    Persistent,
-    Existing,
-    ExistingOrTemporary,
-    ExistingOrPersistent
-    };
-
 enum class CacheRootPersistence
     {
     Full = 0,
@@ -29,7 +20,6 @@ enum class CacheRootPersistence
     };
 
 // TODO: remove
-
 // JSON specific properties
 #define DataSourceCache_PROPERTY_LocalInstanceId        "$ECInstanceId"
 #define DataSourceCache_PROPERTY_ClassKey               "$ECClassKey"
