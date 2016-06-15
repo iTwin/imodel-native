@@ -12,6 +12,7 @@
             <IsUserSpecific>False</IsUserSpecific>
         </SupplementalSchemaMetaData>
     </ECCustomAttributes>
+
     <ECClass typeName="Environment">
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb requires one table for relationship end -->
@@ -23,6 +24,7 @@
             </ClassMap>
         </ECCustomAttributes>
     </ECClass>
+
     <ECClass typeName="ProjectType">
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb requires one table for relationship end -->
@@ -34,6 +36,7 @@
             </ClassMap>
         </ECCustomAttributes>
     </ECClass>
+
     <ECRelationshipClass typeName="ItemAddress" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
@@ -44,6 +47,7 @@
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
+
     <ECRelationshipClass typeName="SavedSearchParent" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
@@ -54,4 +58,48 @@
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="SavedSearchResult" >
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="SpatialObjectLocation" >
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="WorkflowStates" >
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map this embedding relationship -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <!-- Change strength to referencing
+    <ECRelationshipClass typeName="WorkflowStates" displayLabel="States of workflow" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECProperty propertyName="OrderIndex" typeName="int" description="Zero based index of State in a Workflow." displayLabel="Order Index" readOnly="True" />
+        <Source cardinality="(0,N)" roleLabel="Workflow containing states" polymorphic="True">
+            <Class class="Workflow" />
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="State of workflow" polymorphic="True">
+            <Class class="State" />
+        </Target>
+    </ECRelationshipClass> -->
 </ECSchema>

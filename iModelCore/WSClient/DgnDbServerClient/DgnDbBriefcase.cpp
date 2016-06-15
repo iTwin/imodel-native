@@ -90,20 +90,20 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(HttpRequest::Progre
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPush(HttpRequest::ProgressCallbackCR downloadCallback, HttpRequest::ProgressCallbackCR uploadCallback,
+DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPush(Utf8CP description, HttpRequest::ProgressCallbackCR downloadCallback, HttpRequest::ProgressCallbackCR uploadCallback,
                                                                  ICancellationTokenPtr cancellationToken, int attemptsCount) const
     {
-    return PullMergeAndPushRepeated(downloadCallback, uploadCallback, cancellationToken, attemptsCount);
+    return PullMergeAndPushRepeated(description, downloadCallback, uploadCallback, cancellationToken, attemptsCount);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Andrius.Zonys                  01/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(HttpRequest::ProgressCallbackCR downloadCallback, HttpRequest::ProgressCallbackCR uploadCallback,
+DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP description, HttpRequest::ProgressCallbackCR downloadCallback, HttpRequest::ProgressCallbackCR uploadCallback,
                                                                      ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay) const
     {
     DgnDbServerRevisionMergeResultPtr finalResult = std::make_shared<DgnDbServerRevisionMergeResult>();
-    return PullMergeAndPushInternal(downloadCallback, uploadCallback, cancellationToken)
+    return PullMergeAndPushInternal(description, downloadCallback, uploadCallback, cancellationToken)
         ->Then([=] (DgnDbServerRevisionMergeResultCR result)
         {
         if (result.IsSuccess())
@@ -146,7 +146,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(HttpReq
 
         // Sleep.
         std::this_thread::sleep_for(std::chrono::milliseconds(currentDelay));
-        PullMergeAndPushRepeated(downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, delay)->Then([=] (DgnDbServerRevisionMergeResultCR result)
+        PullMergeAndPushRepeated(description, downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, delay)->Then([=] (DgnDbServerRevisionMergeResultCR result)
             {
             if (result.IsSuccess())
                 finalResult->SetSuccess(result.GetValue());
@@ -162,7 +162,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(HttpReq
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::ProgressCallbackCR downloadCallback,
+DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP description, HttpRequest::ProgressCallbackCR downloadCallback,
     HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
@@ -193,9 +193,12 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(HttpReq
         DgnDbServerHost::Forget (host, false);
         if (!revision.IsValid ())
             {
+            // No changes. Return success.
             finalResult->SetSuccess(result.GetValue());
             return;
             }
+
+        revision->SetSummary(description);
 
         Utf8String revisionId = revision->GetId();
         m_repositoryConnection->Push(revision, m_db->GetBriefcaseId (), uploadCallback, cancellationToken)->Then

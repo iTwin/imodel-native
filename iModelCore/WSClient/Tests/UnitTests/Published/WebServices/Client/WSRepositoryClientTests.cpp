@@ -14,7 +14,7 @@
 #include <Bentley/Base64Utilities.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <WebServices/Client/WSChangeset.h>
-#include "../../../../../Cache/Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 #include "MockWSSchemaProvider.h"
 
@@ -379,7 +379,7 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1_SendsGetRequestWithF
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    BeFileName fileName = BeFileName("testFile");
+    BeFileName fileName = StubFilePath();
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
@@ -398,8 +398,6 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1Connect_SendsGetReque
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    BeFileName fileName = BeFileName("testFile");
-
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseBentleyConnectV1());
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
@@ -411,41 +409,39 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1Connect_SendsGetReque
         return StubHttpResponse();
         });
 
-    client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, fileName, "TestETag")->Wait();
+    client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath(), "TestETag")->Wait();
     }
 
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseFound_SendsGetRequestToLocation)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    BeFileName fileName = BeFileName("testFile");
+    BeFileName fileName = StubFilePath();
 
     GetHandler().ExpectRequests(3);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseBentleyConnectV1());
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Found, "", {{"Location", "http://file.location/"}}));
     GetHandler().ForRequest(3, [=] (HttpRequestCR request)
         {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_EQ("http://file.location/", request.GetUrl());
-        EXPECT_EQ("TestETag", Utf8String(request.GetHeaders().GetIfNoneMatch()));
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
         EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
         return StubHttpResponse();
         });
 
-    client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, fileName, "TestETag")->Wait();
+    client->SendGetFileRequest(StubObjectId(), fileName)->Wait();
     }
 
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseOK_ReturnsServerNotSupported)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    BeFileName fileName = BeFileName("testFile");
-
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseBentleyConnectV1());
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK));
 
-    auto result = client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, fileName)->GetResult();
+    auto result = client->SendGetFileRequest(StubObjectId(), StubFilePath())->GetResult();
     EXPECT_EQ(WSError::Status::ServerNotSupported, result.GetError().GetStatus());
     }
 
@@ -453,13 +449,15 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2_SendsCorrectUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    BeFileName fileName = BeFileName("testFile");
+    BeFileName fileName = StubFilePath();
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
 
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
         EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
@@ -469,6 +467,149 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2_SendsCorrectUrl)
 
     auto response = client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, fileName)->GetResult();
     EXPECT_TRUE(response.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24_SendsCorrectUrlAndAllowRedirectHeader)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    BeFileName fileName = StubFilePath();
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
+        EXPECT_STREQ("true", request.GetHeaders().GetValue("Mas-Allow-Redirect"));
+
+        HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
+        EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, fileName)->GetResult();
+    EXPECT_TRUE(response.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndAzureRedirectReceived_DownloadsFileFromExternalLocation)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    BeFileName fileName = StubFilePath();
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {"Location", "https://foo.com/boo"},
+                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}});
+        });
+    GetHandler().ForRequest(3, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
+
+        HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
+        EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendGetFileRequest(StubObjectId(), fileName)->GetResult();
+    EXPECT_TRUE(response.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectReceived_DownloadsAnyway)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    BeFileName fileName = StubFilePath();
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {"Location", "https://foo.com/boo"},
+                {"Mas-File-Access-Url-Type", "SomethingNotSupportedHere"}});
+        });
+    GetHandler().ForRequest(3, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
+
+        HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
+        EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendGetFileRequest(StubObjectId(), fileName)->GetResult();
+    EXPECT_TRUE(response.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectStatusReceived_Error)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    BeFileName fileName = StubFilePath();
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::Found, "", {
+                {"Location", "https://foo.com/boo"},
+                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}});
+        });
+
+    auto response = client->SendGetFileRequest(StubObjectId(), fileName)->GetResult();
+    EXPECT_FALSE(response.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2ETagSet_SendsAndReceivesETag)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("RequestETag", request.GetHeaders().GetIfNoneMatch());
+        return StubHttpResponse(HttpStatus::OK, "", {{"ETag", "ResponseETag"}});
+        });
+
+    auto result = client->SendGetFileRequest(StubObjectId(), StubFilePath(), "RequestETag")->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_EQ("ResponseETag", result.GetValue().GetETag());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24ETagSetAndReceivedAzureRedirect_SendsAndReceivesETag)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("RequestETag", request.GetHeaders().GetIfNoneMatch());
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {"Location", "https://foo.com/boo"},
+                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}}); 
+        });
+    GetHandler().ForRequest(3, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
+        EXPECT_STREQ("RequestETag", request.GetHeaders().GetIfNoneMatch()); // TODO: azure etag?
+        return StubHttpResponse(HttpStatus::OK, "", {{"ETag", "ResponseETag"}}); // TODO: azure etag?
+        });
+
+    auto result = client->SendGetFileRequest(StubObjectId(), StubFilePath(), "RequestETag")->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_STREQ("ResponseETag", result.GetValue().GetETag().c_str());
     }
 
 //TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV2ButNoSchemaInObjectId_ReturnsError)
@@ -661,7 +802,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1SkipTokenSuppliedAndSen
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
-        EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
         return StubHttpResponse(HttpStatus::OK, StubInstances().ToJsonWebApiV1(),
         {{"SkipToken", "ServerSkipToken"}, {"Content-Type", "application/json"}});
         });
@@ -680,7 +821,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApi2SkipTokenEmpty_DoesNotSe
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
-        EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
         return StubHttpResponse();
         });
 
@@ -739,6 +880,51 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11_ErrorNotSuppor
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11WithObjectId_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "className" : "TestClass",
+                "properties" : { "TestProperty" : "TestValue" }
+                }
+            })");
+    ObjectId objectId("", "TestClass", "");
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi11());
+
+    auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithInvalidObjectIdAndCorrectJson_EmptyError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "className" : "TestClass",
+                "properties" : { "TestProperty" : "TestValue" }
+                }
+            })");
+    ObjectId objectId;
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    BeTest::SetFailOnAssert(false);
+    auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
+    BeTest::SetFailOnAssert(true);
+    EXPECT_EQ(WSError::Id::Unknown, result.GetError().GetId());
+    }
+
+
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithCorrectJson_TakesClassInfoFromJsonAndSendsPropertiesWithRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -763,6 +949,33 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithCorrectJson_
         });
 
     client->SendCreateObjectRequest(objectCreationJson)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndCorrectJson_TakesClassInfoFromJsonAndSendsPropertiesWithRequest)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "className" : "TestClass",
+                "properties" : { "TestProperty" : "TestValue" }
+                }
+            })");
+    ObjectId objectId("", "TestClass", "");
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("POST", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v1.2/DataSources/foo/Objects/TestClass", request.GetUrl().c_str());
+        EXPECT_EQ(objectCreationJson["instance"]["properties"], request.GetRequestBody()->AsJson());
+        return StubHttpResponse();
+        });
+
+    client->SendCreateObjectRequest(objectId, objectCreationJson)->Wait();
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithOneRelationship_RelatedInstanceTreatedAsParentInRequest)
@@ -796,6 +1009,40 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithOneRelations
         });
 
     client->SendCreateObjectRequest(objectCreationJson)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndOneRelationship_RelatedInstanceTreatedAsParentInRequest)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "className" : "TestClass",
+                "properties" : {},
+                "relationshipInstances" :
+                    [{
+                    "relatedInstance" :
+                        {
+                        "instanceId" : "ParentId",
+                        "className" : "ParentClass"
+                        }
+                    }]
+                }
+            })");
+    ObjectId objectId("", "TestClass", "");
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("POST", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v1.2/DataSources/foo/Objects/TestClass?parentClass=ParentClass&parentObjectId=ParentId", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    client->SendCreateObjectRequest(objectId, objectCreationJson)->Wait();
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithNestedRelationship_DoesNotSendCreateRequestAndReturnsError)
@@ -836,6 +1083,45 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithNestedRelati
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndNestedRelationship_DoesNotSendCreateRequestAndReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "className" : "TestClass",
+                "properties" : {},
+                "relationshipInstances" :
+                    [{
+                    "relatedInstance" :
+                        {
+                        "instanceId" : "ParentId",
+                        "className" : "ParentClass",
+                        "relationshipInstances" :
+                            [{
+                            "relatedInstance" :
+                                {
+                                "instanceId" : "ParentId2",
+                                "className" : "ParentClass2"
+                                }
+                            }]
+                        }
+                    }]
+                }
+            })");
+    ObjectId objectId("", "TestClass", "");
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Status::ReceivedError, result.GetError().GetStatus());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithMoreThanOneRelationship_DoesNotSendCreateRequestAndReturnsError)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -857,6 +1143,54 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithMoreThanOneR
     ASSERT_FALSE(result.IsSuccess());
     EXPECT_EQ(WSError::Status::ReceivedError, result.GetError().GetStatus());
     EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndMoreThanOneRelationship_DoesNotSendCreateRequestAndReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "className" : "TestClass",
+                "properties" : {},
+                "relationshipInstances" : [{}, {}]
+                }
+            })");
+    ObjectId objectId("", "TestClass", "");
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Status::ReceivedError, result.GetError().GetStatus());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithInvalidObjectIdAndCorrectJson_EmptyError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "TestSchema",
+                "className" : "TestClass",
+                "properties": {}
+                }
+            })");
+    ObjectId objectId;
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    BeTest::SetFailOnAssert(false);
+    auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
+    BeTest::SetFailOnAssert(true);
+    EXPECT_EQ(WSError::Id::Unknown, result.GetError().GetId());
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithCorrectJson_TakesClassInfoFromJsonAndSendsObjectCreationJsonWithRequest)
@@ -886,6 +1220,34 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithCorrectJson_
     client->SendCreateObjectRequest(objectCreationJson)->Wait();
     }
 
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdAndCorrectJson_TakesClassInfoFromJsonAndSendsObjectCreationJsonWithRequest)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "TestSchema",
+                "className" : "TestClass",
+                "properties": {}
+                }
+            })");
+    ObjectId objectId("TestSchema", "TestClass", "");
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("POST", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass", request.GetUrl().c_str());
+        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        return StubHttpResponse();
+        });
+
+    client->SendCreateObjectRequest(objectId, objectCreationJson)->Wait();
+    }
+
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndRootInstanceContainsId_IdAddedToUrlToAllowRelatedInstanceModifications)
     {
     // TODO: unify WebApi 1 and 2 to have SendChangeRequest that would accept changeset. WebApi 1 would be limited to single instance changes.
@@ -913,6 +1275,64 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndRootInstanceC
         });
 
     client->SendCreateObjectRequest(objectCreationJson)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdThatDoesNotHaveRemoteIdAndRootInstanceContainsId_IdNotAddedToUrl)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "TestSchema",
+                "className" : "TestClass",
+                "instanceId" : "TestId",
+                "properties": {}
+                }
+            })");
+    ObjectId objectId("TestSchema", "TestClass", "");
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("POST", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass", request.GetUrl().c_str());
+        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        return StubHttpResponse();
+        });
+
+    client->SendCreateObjectRequest(objectId, objectCreationJson)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdThatDoesHaveRemoteIdAndRootInstanceContainsId_IdAddedToUrlToAllowRelatedInstanceModifications)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "TestSchema",
+                "className" : "TestClass",
+                "instanceId" : "TestId",
+                "properties": {}
+                }
+            })");
+    ObjectId objectId("TestSchema", "TestClass", "TestId");
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("POST", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId", request.GetUrl().c_str());
+        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        return StubHttpResponse();
+        });
+
+    client->SendCreateObjectRequest(objectId, objectCreationJson)->Wait();
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2FormatResponseFromResponseId)
@@ -951,6 +1371,43 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2F
     EXPECT_EQ(expectedObject, response.GetValue().GetObject());
     }
 
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectId_ConstructsWSG2FormatResponseFromResponseId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Created, R"({ "id" : "NewId" })"));
+
+    Json::Value creationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName": "TestSchema",
+                "className": "TestClass",
+                "properties": {}
+                }
+            })");
+    ObjectId objectId("TestSchema", "TestClass", "");
+    auto response = client->SendCreateObjectRequest(objectId, creationJson)->GetResult();
+
+    ASSERT_TRUE(response.IsSuccess());
+    Json::Value expectedObject = ToJson(
+        R"( {
+            "changedInstance" :
+                {
+                "instanceAfterChange" :
+                    {
+                    "schemaName": "TestSchema",
+                    "className": "TestClass",
+                    "instanceId": "NewId"
+                    }
+                }
+            })");
+
+    EXPECT_EQ(expectedObject, response.GetValue().GetObject());
+    }
+
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationshipWithWSChangeset_ConstructsWSG2FormatResponseForWSChangeset)
     {
     // Arrange
@@ -960,7 +1417,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationship
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Created, R"({ "id" : "NewRemoteId" })"));
 
-    WSChangeset changeset (WSChangeset::Format::SingeInstance);
+    WSChangeset changeset(WSChangeset::Format::SingeInstance);
     changeset
         .AddInstance({"TestSchema.TestClass", "LocalId"}, WSChangeset::Created, nullptr)
         .AddRelatedInstance(ObjectId("TestRelSchema.TestRelClass", "RelId"), WSChangeset::Created, ECRelatedInstanceDirection::Forward, {"TestSchema.ParentClass", "ParentId"}, WSChangeset::Existing, nullptr);
@@ -975,7 +1432,49 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationship
     JsonUtil::ToRapidJson(response.GetValue().GetObject(), responseJson);
 
     bmap<ObjectId, ObjectId> ids;
-    EXPECT_EQ (SUCCESS, changeset.ExtractNewIdsFromResponse(responseJson, [&] (ObjectId oldId, ObjectId newId)
+    EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(responseJson, [&] (ObjectId oldId, ObjectId newId)
+        {
+        ids[oldId] = newId;
+        return SUCCESS;
+        }));
+
+    EXPECT_EQ(2, ids.size());
+
+    auto it = ids.find(ObjectId("TestSchema.TestClass", "LocalId"));
+    ASSERT_FALSE(it == ids.end());
+    EXPECT_EQ(ObjectId("TestSchema.TestClass", "NewRemoteId"), it->second);
+
+    it = ids.find(ObjectId("TestRelSchema.TestRelClass", "RelId"));
+    ASSERT_FALSE(it == ids.end());
+    EXPECT_EQ(ObjectId("TestRelSchema", "TestRelClass", ""), it->second);
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndRelationshipWithWSChangeset_ConstructsWSG2FormatResponseForWSChangeset)
+    {
+    // Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Created, R"({ "id" : "NewRemoteId" })"));
+
+    WSChangeset changeset(WSChangeset::Format::SingeInstance);
+    changeset
+        .AddInstance({"TestSchema.TestClass", "LocalId"}, WSChangeset::Created, nullptr)
+        .AddRelatedInstance(ObjectId("TestRelSchema.TestRelClass", "RelId"), WSChangeset::Created, ECRelatedInstanceDirection::Forward, {"TestSchema.ParentClass", "ParentId"}, WSChangeset::Existing, nullptr);
+    ObjectId objectId("TestSchema", "TestClass", "LocalId");
+
+    // Act
+    auto response = client->SendCreateObjectRequest(objectId, ToJson(changeset.ToRequestString()))->GetResult();
+    ASSERT_TRUE(response.IsSuccess());
+
+    // Assert
+    auto a = response.GetValue().GetObject().toStyledString();
+    rapidjson::Document responseJson;
+    JsonUtil::ToRapidJson(response.GetValue().GetObject(), responseJson);
+
+    bmap<ObjectId, ObjectId> ids;
+    EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(responseJson, [&] (ObjectId oldId, ObjectId newId)
         {
         ids[oldId] = newId;
         return SUCCESS;
@@ -1016,6 +1515,32 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponseJ
     EXPECT_EQ(responseObject, response.GetValue().GetObject());
     }
 
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectId_PassesResponseJsonAsObject)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    Json::Value responseObject = ToJson(R"({ "testMember" : "testValue" })");
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Created, responseObject.toStyledString()));
+
+    Json::Value creationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName": "TestSchema",
+                "className": "TestClass",
+                "properties": {}
+                }
+            })");
+    ObjectId objectId("TestSchema", "TestClass", "");
+
+    auto response = client->SendCreateObjectRequest(objectId, creationJson)->GetResult();
+
+    ASSERT_TRUE(response.IsSuccess());
+    EXPECT_EQ(responseObject, response.GetValue().GetObject());
+    }
+
 #ifdef USE_GTEST
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithFilePath_AddsFileNameToContentDisposition)
     {
@@ -1035,6 +1560,25 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithFilePath_Add
     client->SendCreateObjectRequest(StubWSObjectCreationJson(), filePath)->Wait();
     }
 
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndFilePath_AddsFileNameToContentDisposition)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    auto filePath = StubFile();
+    auto fileName = Utf8String(filePath.GetFileNameAndExtension());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_THAT(request.GetHeaders().GetContentDisposition(), HasSubstr(fileName.c_str()));
+        return StubHttpResponse();
+        });
+
+    ObjectId objectId("TestSchema", "TestClass", "");
+    client->SendCreateObjectRequest(objectId, StubWSObjectCreationJson(), filePath)->Wait();
+    }
+
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithFilePath_AddsFileNameToContentDisposition)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -1051,6 +1595,25 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithFilePath_Add
         });
 
     client->SendCreateObjectRequest(StubWSObjectCreationJson(), filePath)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdAndFilePath_AddsFileNameToContentDisposition)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    auto filePath = StubFile();
+    auto fileName = Utf8String(filePath.GetFileNameAndExtension());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_THAT(request.GetHeaders().GetContentDisposition(), HasSubstr(fileName.c_str()));
+        return StubHttpResponse();
+        });
+
+    ObjectId objectId("TestSchema", "TestClass", "");
+    client->SendCreateObjectRequest(objectId, StubWSObjectCreationJson(), filePath)->Wait();
     }
 #endif
 
@@ -1317,6 +1880,113 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2_SendsPutRequest)
         });
 
     client->SendUpdateFileRequest({"TestSchema.TestClass", "TestId"}, StubFile("TestContent"))->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24_SendsPutRequestWithAllowRedirect)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
+        EXPECT_STREQ("true", request.GetHeaders().GetValue("Mas-Allow-Redirect"));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
+    EXPECT_TRUE(response.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectAndAzureUploadSuccessful_SendsConfirmationToServer)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 5);
+    GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
+    GetHandler().ExpectRequest([=] (HttpRequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {"Location", "https://foozure.com/boo"},
+                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"},
+                {"Mas-Upload-Confirmation-Id", "TestUploadId"}});
+        });
+    GetHandler().ExpectRequest([=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+    GetHandler().ExpectRequest([=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foozure.com/boo&comp=blocklist", request.GetUrl().c_str());
+        return StubHttpResponse(HttpStatus::OK);
+        });
+    GetHandler().ExpectRequest([=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
+        EXPECT_STREQ("TestUploadId", request.GetHeaders().GetValue("Mas-Upload-Confirmation-Id"));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
+    EXPECT_TRUE(response.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectWithoutConfirmationIdAndAzureUploadSuccessful_DoesNotSendConfirmationToServer)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 4);
+    GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
+    GetHandler().ExpectRequest([=] (HttpRequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {"Location", "https://foozure.com/boo"},
+                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}});
+        });
+    GetHandler().ExpectRequest([=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+    GetHandler().ExpectRequest([=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foozure.com/boo&comp=blocklist", request.GetUrl().c_str());
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
+    EXPECT_TRUE(response.IsSuccess());
+    }
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectAndUnknownUrlType_ReturnsError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    BeFileName fileName = StubFilePath();
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::Found, "", {
+                {"Location", "https://foo.com/boo"},
+                {"Mas-File-Access-Url-Type", "SomethingNotSupportedHere"},
+        });
+        });
+
+    auto response = client->SendUpdateFileRequest(StubObjectId(), fileName)->GetResult();
+    EXPECT_FALSE(response.IsSuccess());
+    EXPECT_EQ(WSError::Status::ServerNotSupported, response.GetError().GetStatus());
     }
 
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV11AndNoDefaultSchema_Fails)

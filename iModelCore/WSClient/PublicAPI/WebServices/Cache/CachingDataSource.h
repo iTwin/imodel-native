@@ -47,6 +47,7 @@ struct CachingDataSource :
         IWSRepositoryClientPtr                      m_client;
         std::shared_ptr<ICacheTransactionManager>   m_cacheTransactionManager;
         std::shared_ptr<IRepositoryInfoStore>       m_infoStore;
+        std::unique_ptr<struct SessionInfo>         m_sessionInfo;
 
         WorkerThreadPtr                             m_cacheAccessThread;
         SimpleCancellationTokenPtr                  m_cancellationToken;
@@ -70,6 +71,7 @@ struct CachingDataSource :
         ICancellationTokenPtr CreateCancellationToken(ICancellationTokenPtr ct);
 
         SchemaKey ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaId);
+        SchemaKey ExtractSchemaKey(JsonValueCR schemaDef);
 
         TempFilePtr GetTempFile(Utf8StringCR fileName, ObjectIdCR objectId); // TODO: create mockable file manager
         TempFilePtr GetTempFileForSchema(SchemaKeyCR schemaKey);
@@ -85,8 +87,6 @@ struct CachingDataSource :
 
         void NotifyOnCacheSchemaChangedListeners();
         CachedResponseKey CreateSchemaListResponseKey(CacheTransactionCR txn);
-
-        static BeFileName GetMetaSchemaPath();
 
         AsyncTaskPtr<DataOriginResult> CacheObjects
             (
@@ -165,7 +165,7 @@ struct CachingDataSource :
             (
             ObjectIdCR objectId,
             DataOrigin origin,
-            IDataSourceCache::JsonFormat format,
+            IDataSourceCache::JsonFormat format = IDataSourceCache::JsonFormat::Raw,
             ICancellationTokenPtr ct = nullptr
             ) override;
 

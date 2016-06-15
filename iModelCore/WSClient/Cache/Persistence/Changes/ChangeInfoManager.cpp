@@ -11,7 +11,7 @@
 #include <WebServices/Cache/Util/ECDbHelper.h>
 #include <WebServices/Cache/Util/JsonDiff.h>
 #include "../Core/CacheSchema.h"
-#include "../../Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -395,29 +395,24 @@ BentleyStatus ChangeInfoManager::SaveBackupInstance(ObjectInfoCR info, Utf8CP se
         statement->BindText(1, serializedInstance, IECSqlBinder::MakeCopy::No);
         statement->BindId(2, backupId);
         if (statement->Step() != BE_SQLITE_DONE)
-            {
             return ERROR;
-            }
-        }
-    else
-        {
-        auto statement = m_statementCache.GetPreparedStatement("ChangeInfoManager::SaveBackupInstance:Insert", [&]
-            {
-            return "INSERT INTO " ECSql_InstanceBackup " ([" CLASS_InstanceBackup_PROPERTY_Instance "]) VALUES (?) ";
-            });
-        statement->BindText(1, serializedInstance, IECSqlBinder::MakeCopy::No);
-        ECInstanceKey backupKey;
-        if (statement->Step(backupKey) != BE_SQLITE_DONE)
-            {
-            return ERROR;
-            }
 
-        auto relClass = m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ChangeInfoToInstanceBackup);
-        if (!m_dbAdapter.RelateInstances(relClass, info.GetInfoKey(), backupKey).IsValid())
-            {
-            return ERROR;
-            }
+        return SUCCESS;
         }
+
+    auto statement = m_statementCache.GetPreparedStatement("ChangeInfoManager::SaveBackupInstance:Insert", [&]
+        {
+        return "INSERT INTO " ECSql_InstanceBackup " ("
+            "[" CLASS_InstanceBackup_PROPERTY_InfoId "], "
+            "[" CLASS_InstanceBackup_PROPERTY_Instance "]) "
+            "VALUES (?, ?) ";
+        });
+    statement->BindId(1, info.GetInfoKey().GetECInstanceId());
+    statement->BindText(2, serializedInstance, IECSqlBinder::MakeCopy::No);
+    ECInstanceKey backupKey;
+    if (statement->Step(backupKey) != BE_SQLITE_DONE)
+        return ERROR;
+
 
     return SUCCESS;
     }
@@ -427,22 +422,13 @@ BentleyStatus ChangeInfoManager::SaveBackupInstance(ObjectInfoCR info, Utf8CP se
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ChangeInfoManager::DeleteBackupInstance(ObjectInfoCR info)
     {
-    auto backupId = FindBackupInstance(info);
-    if (!backupId.IsValid())
-        {
-        return SUCCESS;
-        }
-
     auto statement = m_statementCache.GetPreparedStatement("ChangeInfoManager::DeleteBackupInstance", [&]
         {
-        return "DELETE FROM ONLY " ECSql_InstanceBackup " WHERE ECInstanceId = ? ";
+        return "DELETE FROM ONLY " ECSql_InstanceBackup " WHERE " CLASS_InstanceBackup_PROPERTY_InfoId " = ? ";
         });
-    statement->BindId(1, backupId);
+    statement->BindId(1, info.GetInfoKey().GetECInstanceId());
     if (statement->Step() != BE_SQLITE_DONE)
-        {
         return ERROR;
-        }
-
     return SUCCESS;
     }
 
@@ -454,10 +440,9 @@ ECInstanceId ChangeInfoManager::FindBackupInstance(ObjectInfoCR info)
     auto statement = m_statementCache.GetPreparedStatement("ChangeInfoManager::FindBackupInstance", [&]
         {
         return
-            "SELECT backup.ECInstanceId "
-            "FROM ONLY " ECSql_InstanceBackup " backup "
-            "JOIN ONLY " ECSql_ChangeInfoToInstanceBackup " rel ON rel.TargetECInstanceId = backup.ECInstanceId "
-            "WHERE rel.SourceECInstanceId = ? "
+            "SELECT ECInstanceId "
+            "FROM ONLY " ECSql_InstanceBackup " "
+            "WHERE [" CLASS_InstanceBackup_PROPERTY_InfoId "] = ? "
             "LIMIT 1 ";
         });
     statement->BindId(1, info.GetInfoKey().GetECInstanceId());

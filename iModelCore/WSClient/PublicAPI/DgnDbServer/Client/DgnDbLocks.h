@@ -33,10 +33,10 @@ private:
 protected:
     DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
-    virtual Response                                _ProcessRequest       (Request const& req, DgnDbR db) override;
+    virtual Response                                _ProcessRequest       (Request const& req, DgnDbR db, bool queryOnly) override;
     virtual RepositoryStatus                        _Demote               (DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
     virtual RepositoryStatus                        _Relinquish           (Resources which, DgnDbR db) override;
-    virtual RepositoryStatus                        _QueryHeldResources   (DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) override;
+    virtual RepositoryStatus                        _QueryHeldResources   (DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
     virtual RepositoryStatus                        _QueryStates          (DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks,
                                                                            DgnCodeSet const& codes) override;
 

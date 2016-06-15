@@ -209,12 +209,12 @@ struct DataSourceCache : public IDataSourceCache
         WSCACHE_EXPORT BentleyStatus RemoveResponses(Utf8StringCR name) override;
         WSCACHE_EXPORT CacheStatus RemoveInstance(ObjectIdCR objectId) override;
         WSCACHE_EXPORT BentleyStatus RemoveFile(ObjectIdCR objectId) override;
-        WSCACHE_EXPORT BentleyStatus RemoveFilesInTemporaryPersistence() override;
+        WSCACHE_EXPORT BentleyStatus RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate = nullptr) override;
         WSCACHE_EXPORT BentleyStatus RemoveRoot(Utf8StringCR rootName) override;
         WSCACHE_EXPORT BentleyStatus RemoveRootsByPrefix(Utf8StringCR rootPrefix) override;
 
         //--------------------------------------------------------------------------------------------------------------------------------+
-        //  Working with roots
+        //  Working with roots and cache structure
         //--------------------------------------------------------------------------------------------------------------------------------+
 
         WSCACHE_EXPORT bool DoesRootExist(Utf8StringCR rootName) override;
@@ -253,6 +253,12 @@ struct DataSourceCache : public IDataSourceCache
             uint8_t depth = UINT8_MAX
             ) override;
 
+        WSCACHE_EXPORT BentleyStatus ReadInstanceHierarchy
+            (
+            ECInstanceKeyCR instance,
+            ECInstanceKeyMultiMap& instancesOut
+            ) override;
+
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Instance persistence
         //--------------------------------------------------------------------------------------------------------------------------------+
@@ -266,8 +272,8 @@ struct DataSourceCache : public IDataSourceCache
         //  Cached file managment
         //--------------------------------------------------------------------------------------------------------------------------------+
 
-        WSCACHE_EXPORT BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation) override;
-        WSCACHE_EXPORT FileCache     GetFileCacheLocation(ObjectIdCR objectId) override;
+        WSCACHE_EXPORT BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativeDir = BeFileName()) override;
+        WSCACHE_EXPORT FileCache     GetFileCacheLocation(ObjectIdCR objectId, FileCache defaultLocation = FileCache::Temporary) override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

@@ -16,9 +16,9 @@ struct DgnDbServerError : public Tasks::AsyncError
     public:
         enum class Id
             {
-            Unknown,
+            Unknown = -1,
             //DgnDbServer Errors
-            MissingRequiredProperties,
+            MissingRequiredProperties = 1,
             InvalidBriefcase,
             BriefcaseDoesNotBelongToUser,
             AnotherUserPushing,
@@ -37,6 +37,8 @@ struct DgnDbServerError : public Tasks::AsyncError
             RepositoryDoesNotExist,
             LockDoesNotExist,
             LockOwnedByAnotherBriefcase,
+            UserAlreadyExists,
+            UserDoesNotExist,
 
             //WebServices Errors
             LoginFailed,

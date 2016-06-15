@@ -51,13 +51,18 @@ TEST_F(WSErrorTests, Ctor_CanceledHttpResponse_SetsStatusCanceled)
     EXPECT_EQ(WSError::Status::Canceled, error.GetStatus());
     }
 
-TEST_F(WSErrorTests, Ctor_HttpResponseWithConnectionStatusNonOkOrCanceled_SetsStatusNetworkErrorsOccurred)
+TEST_F(WSErrorTests, Ctor_HttpResponseWithConnectionStatusNonOkOrCanceled_SetsStatusConnectionError)
     {
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::None)).GetStatus());
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::CouldNotConnect)).GetStatus());
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::ConnectionLost)).GetStatus());
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::Timeout)).GetStatus());
     EXPECT_EQ(WSError::Status::ConnectionError, WSError(StubHttpResponse(ConnectionStatus::UnknownError)).GetStatus());
+    }
+
+TEST_F(WSErrorTests, Ctor_HttpResponseWithCertificateError_SetsStatusCertificateError)
+    {
+    EXPECT_EQ(WSError::Status::CertificateError, WSError(StubHttpResponse(ConnectionStatus::CertificateError)).GetStatus());
     }
 
 TEST_F(WSErrorTests, Ctor_JsonErrorFormatHasMissingField_SetsStatusServerNotSupported)
@@ -277,6 +282,36 @@ TEST_F(WSErrorTests, Ctor_ErrorFileNotFound_SetsIdFileNotFound)
     EXPECT_EQ(WSError::Id::FileNotFound, error.GetId());
     }
 
+TEST_F(WSErrorTests, Ctor_HttpErrorCanceled_Canceled)
+    {
+    HttpError httpError(ConnectionStatus::Canceled, HttpStatus::None);
+    WSError error(httpError);
+    EXPECT_EQ(WSError::Status::Canceled, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_EQ("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
+    }
+
+TEST_F(WSErrorTests, Ctor_HttpErrorConnectionError_ConnectionError)
+    {
+    HttpError httpError(ConnectionStatus::CouldNotConnect, HttpStatus::None);
+    WSError error(httpError);
+    EXPECT_EQ(WSError::Status::ConnectionError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_EQ(httpError.GetMessage(), error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
+    }
+
+TEST_F(WSErrorTests, Ctor_HttpErrorNotFound_IdUnknown)
+    {
+    HttpError httpError(ConnectionStatus::OK, HttpStatus::NotFound);
+    WSError error(httpError);
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_EQ(httpError.GetMessage(), error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
+    }
+
 TEST_F(WSErrorTests, GetData_ReturnsData)
     {
     auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null, "customProperty":"TestData"})";
@@ -325,3 +360,4 @@ TEST_F(WSErrorTests, GetData_Xml)
 
     EXPECT_EQ(Json::Value::null, error.GetData());
     }
+    

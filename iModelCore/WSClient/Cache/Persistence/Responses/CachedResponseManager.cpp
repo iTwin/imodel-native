@@ -38,6 +38,7 @@ m_responsePageClass(m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedRespo
 m_responseToParentClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToParent)),
 m_responseToHolderClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToHolder)),
 m_responseToResponsePageClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToResponsePage)),
+m_responseToAdditionalInstanceClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToAdditionalInstance)),
 
 m_responsePageToResultClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponsePageToResult)),
 m_responsePageToResultWeakClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponsePageToResultWeak)),
@@ -570,6 +571,60 @@ const InstanceCacheHelper::CachedInstances& instances
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::AddAdditionalInstance(ResponseKeyCR responseKey, CachedObjectInfoKeyCR instanceInfoKey)
+    {
+    auto info = ReadInfo(responseKey);
+    if (!info.IsCached())
+        {
+        if (SUCCESS != InsertInfo(info))
+            return ERROR;
+        if (SUCCESS != SetResponseCompleted(responseKey, true))
+            return ERROR;
+        }
+
+    if (!m_dbAdapter.RelateInstances(m_responseToAdditionalInstanceClass, info.GetInfoKey(), instanceInfoKey).IsValid())
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::RemoveAdditionalInstance(ResponseKeyCR responseKey, CachedObjectInfoKeyCR instanceInfoKey)
+    {
+    auto info = ReadInfo(responseKey);
+    if (!info.IsCached())
+        return ERROR;
+
+    return m_dbAdapter.DeleteRelationship(m_responseToAdditionalInstanceClass, info.GetInfoKey(), instanceInfoKey);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::RemoveAdditionalInstance(CachedObjectInfoKeyCR instanceInfoKey)
+    {
+    auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::RemoveAdditionalInstance", [&]
+        {
+        return "DELETE FROM ONLY " + m_responseToAdditionalInstanceClass->GetECSqlName() + " WHERE TargetECInstanceId = ?";
+        });
+
+    statement->BindId(1, instanceInfoKey.GetECInstanceId());
+
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
+        {}
+
+    if (BE_SQLITE_DONE != status)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::ReadResponse
@@ -608,6 +663,10 @@ BentleyStatus CachedResponseManager::ReadResponseInstanceKeys(CacheNodeKeyCR res
             return ERROR;
             }
         }
+
+    if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(responseKey, *m_responseToAdditionalInstanceClass, keysOut))
+        return ERROR;
+
     return SUCCESS;
     }
 
@@ -624,12 +683,16 @@ BentleyStatus CachedResponseManager::ReadResponseObjectIds(CacheNodeKeyCR respon
             return ERROR;
             }
         }
+        
+    if (SUCCESS != m_objectInfoManager.ReadCachedInstanceIds(responseKey, *m_responseToAdditionalInstanceClass, objectIdsOut))
+        return ERROR;
+
     return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 Utf8String CachedResponseManager::ReadResponsePageCacheTag(ResponseKeyCR responseKey, uint64_t page)
     {
     auto statement = GetSelectPagePropertyStatement(responseKey, page, CLASS_CachedResponsePageInfo_PROPERTY_CacheTag);

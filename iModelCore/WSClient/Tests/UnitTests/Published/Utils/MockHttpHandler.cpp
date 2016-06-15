@@ -21,15 +21,17 @@ MockHttpHandler::MockHttpHandler()
     m_expectedRequests = EXPECTED_COUNT_ANY;
     m_onAnyRequestCallback = [&] (HttpRequestCR request)
         {
-        Utf8PrintfString message
-            (
-            "\n"
-            "Uninteresting HttpRequest was performed: %s \n"
-            "Got %u requests.",
-            request.GetUrl().c_str(),
-            m_perfomedRequests
-            );
-        BeDebugLog(message.c_str());
+        if (m_expectedRequests == EXPECTED_COUNT_ANY)
+            {
+            BeDebugLog(Utf8PrintfString(
+                "\n%s(%u): \n"
+                "Uninteresting HttpRequest was performed: %s\n"
+                "Got %u requests.",
+                m_file.c_str(), m_line,
+                request.GetUrl().c_str(),
+                m_perfomedRequests
+                ).c_str());
+            }
 
         return HttpResponse(HttpResponseContent::Create(HttpStringBody::Create()), "", ConnectionStatus::CouldNotConnect, HttpStatus::None);
         };
@@ -40,9 +42,23 @@ MockHttpHandler::MockHttpHandler()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MockHttpHandler::~MockHttpHandler()
     {
-    if (m_expectedRequests != EXPECTED_COUNT_ANY)
+    if (m_expectedRequests == EXPECTED_COUNT_ANY)
+        return;
+
+    if (m_file.empty())
         {
         EXPECT_EQ(m_expectedRequests, m_perfomedRequests);
+        }
+    else if (m_expectedRequests != m_perfomedRequests)
+        {
+        BeDebugLog(Utf8PrintfString(
+            "\n%s(%u): error: Request count does not match expectation\n"
+            "  Actual: %d\n"
+            "Expected: %d",
+            m_file.c_str(), m_line,
+            m_perfomedRequests,
+            m_expectedRequests
+            ).c_str());
         }
     }
 
@@ -66,16 +82,15 @@ AsyncTaskPtr<HttpResponse> MockHttpHandler::PerformRequest(HttpRequestCR request
 
         if (m_expectedRequests != EXPECTED_COUNT_ANY && m_expectedRequests < m_perfomedRequests)
             {
-            Utf8PrintfString message
-                (
-                    "\n"
-                    "Unexpected HttpRequest: %s \n"
-                    "Expected %lld requests. Got %u requests.",
-                    request.GetUrl().c_str(),
-                    m_expectedRequests,
-                    m_perfomedRequests
-                    );
-            BeDebugLog(message.c_str());
+            BeDebugLog(Utf8PrintfString(
+                "\n%s(%u): error: Unexpected HttpRequest\n"
+                "Received: %u requests. Current: %s\n"
+                "Expected: %lld requests",
+                m_file.c_str(), m_line,
+                m_perfomedRequests,
+                request.GetUrl().c_str(),
+                m_expectedRequests
+                ).c_str());
             }
 
         if (m_onSpecificRequestMap.find(m_perfomedRequests) != m_onSpecificRequestMap.end())
@@ -92,9 +107,12 @@ AsyncTaskPtr<HttpResponse> MockHttpHandler::PerformRequest(HttpRequestCR request
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler& MockHttpHandler::ExpectRequests(uint32_t count)
+MockHttpHandler& MockHttpHandler::ExpectRequests(uint32_t count, Utf8CP file, unsigned line)
     {
     m_expectedRequests = count;
+    m_file = file;
+    m_line = line;
+    m_onSpecificRequestMap.clear();
     return *this;
     }
 
@@ -103,8 +121,30 @@ MockHttpHandler& MockHttpHandler::ExpectRequests(uint32_t count)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MockHttpHandler& MockHttpHandler::ExpectOneRequest()
     {
-    m_expectedRequests = 1;
-    return *this;
+    return ExpectRequests(1);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+MockHttpHandler& MockHttpHandler::ExpectRequest(OnResponseCallback callback)
+    {
+    auto requestNumber = 0;
+
+    auto it = m_onSpecificRequestMap.rbegin();
+    if (it != m_onSpecificRequestMap.rend())
+        requestNumber = it->first;
+
+    requestNumber++;
+    return ForRequest(requestNumber, callback);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+MockHttpHandler& MockHttpHandler::ExpectRequest(HttpResponseCR response)
+    {
+    return ExpectRequest([=] (HttpRequestCR) { return response; });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -122,10 +162,7 @@ MockHttpHandler&  MockHttpHandler::ForRequest(uint32_t requestNumber, OnResponse
 +---------------+---------------+---------------+---------------+---------------+------*/
 MockHttpHandler&  MockHttpHandler::ForRequest(uint32_t requestNumber, HttpResponseCR response)
     {
-    return ForRequest(requestNumber, [=] (HttpRequestCR)
-        {
-        return response;
-        });
+    return ForRequest(requestNumber, [=] (HttpRequestCR) { return response; });
     }
 
 /*--------------------------------------------------------------------------------------+

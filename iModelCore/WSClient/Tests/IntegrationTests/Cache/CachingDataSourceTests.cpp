@@ -18,6 +18,7 @@
 #include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
+#include "../../../Cache/Util/JsonUtil.h"
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
 #include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 
@@ -101,8 +102,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds
     CachedResponseKey key(txn.GetCache().FindOrCreateRoot(nullptr), "Foo");
     txn.Commit();
 
-    auto objResult = ds->GetObjects(key, WSQuery("SharedContentSchema", "Project"), 
-        ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
+    auto objResult = ds->GetObjects(key, WSQuery("SharedContentSchema", "Project"),
+                                    ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
     ASSERT_TRUE(objResult.IsSuccess());
     }
 
@@ -125,12 +126,111 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFile_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    UrlProvider::Initialize(UrlProvider::Dev, UrlProvider::DefaultTimeout, &m_localState);
+    Utf8String serverUrl = "https://dev-wsg20-eus.cloudapp.net";
+    Utf8String repositoryId = "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing";
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
+
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
+
+    auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
+    ASSERT_FALSE(nullptr == ds);
+
+    Utf8String fileName = "CachingDataSourceTests-Foo.txt";
+    Utf8String fileContent = "Test data";
+
+    // List all files and cleanup previous one
+    auto filesResult = ds->GetClient()->SendQueryRequest(WSQuery("PersonalPublishing", "PublishedFile"))->GetResult();
+    ASSERT_TRUE(filesResult.IsSuccess());
+    for (auto file : filesResult.GetValue().GetInstances())
+        {
+        BeDebugLog(JsonUtil::ToStyledString(file.GetProperties()).c_str());
+        if (file.GetProperties()["Name"].GetString() == fileName)
+            ASSERT_TRUE(ds->GetClient()->SendDeleteObjectRequest(file.GetObjectId())->GetResult().IsSuccess());
+        }
+
+    // Create new file
+    auto txn = ds->StartCacheTransaction();
+    auto fileClass = txn.GetCache().GetAdapter().GetECClass("PersonalPublishing.PublishedFile");
+    ASSERT_FALSE(nullptr == fileClass);
+
+    Json::Value properties;
+    properties["Name"] = fileName;
+    auto fileKey = txn.GetCache().GetChangeManager().CreateObject(*fileClass, properties);
+    ASSERT_TRUE(fileKey.IsValid());
+    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(fileKey, StubFile(fileContent, fileName), true));
+    txn.Commit();
+
+    // Sync new file
+    auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    ASSERT_TRUE(result.GetValue().empty());
+
+    // Download file
+    ObjectId fileId = ds->StartCacheTransaction().GetCache().FindInstance(fileKey);
+    auto fileResult = ds->GetFile(fileId, ICachingDataSource::DataOrigin::RemoteData, nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(fileResult.IsSuccess());
+    auto path = fileResult.GetValue().GetFilePath();
+    EXPECT_EQ(fileContent, SimpleReadFile(path));
+    EXPECT_EQ(fileName, Utf8String(path.GetFileNameAndExtension()));
+    }
+
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.ProjectContent--c4d60664-1226-4d4f-8beb-7d0e372ccc06";
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
+
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net";
+    Utf8String repositoryId = "IssuePlugin--default";
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
+
+    cachePath = BeFileName(StubFilePath("punchlistcache.ecdb"));
+    DataSourceCache::DeleteCacheFromDisk(cachePath, StubCacheEnvironemnt());
+
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://QA-SELECTserver.bentley.com/LicensingProxy";
+    Utf8String repositoryId = "BentleyCONNECT--Main";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
@@ -233,24 +333,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     Credentials creds("twc", "admin");
     BeFileName cachePath = GetTestCachePath();
 
-    auto info = std::make_shared<ClientInfo>("Bentley-MapMobile", BeVersion(5,4), "77def89a-7e50-4f0e-a4c7-24fb6044dbfb", 
-        "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG24SharePointPluginRepository_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://viltest2-5.bentley.com/ws24";
-    Utf8String repositoryId = "Bentley.SP--http~3A~2F~2Fviltest2-10";
-    Credentials creds(R"(.\administrator)", "Q!w2e3r4");
-    BeFileName cachePath = GetTestCachePath();
+    auto info = std::make_shared<ClientInfo>("Bentley-MapMobile", BeVersion(5, 4), "77def89a-7e50-4f0e-a4c7-24fb6044dbfb",
+                                             "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -275,36 +359,39 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository
     ASSERT_FALSE(nullptr == ds);
     BentleyStatus status;
 
-    ObjectId uploadsFolderId {"PW_WSG", "Project", "acd8be01-f097-461d-837a-63afeea9a8ea"};
+    /* pw:\\VILTEST2-5.bentley.com:PW_Mobile_SS3\Documents\VRA\WSClientIntegrationTests\CachingDataSourceTests\Uploads\ */
+    ObjectId uploadsFolderId {"PW_WSG", "Project", "30ff82ee-0a91-42ca-9dd6-c941e577be94"};
     ObjectId uploadsFolderNavNodeId {"Navigation", "NavNode", "ECObjects--" + uploadsFolderId.schemaName + "-" + uploadsFolderId.className + "-" + uploadsFolderId.remoteId};
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, uploadsFolderId));
-    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, uploadsFolderNavNodeId));
-    txn.Commit();
-    }
+    if (true)
+        {
+        auto txn = ds->StartCacheTransaction();
+        ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, uploadsFolderId));
+        ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, uploadsFolderNavNodeId));
+        txn.Commit();
+        }
 
     auto navigationResult = ds->GetNavigationChildren(uploadsFolderNavNodeId, CachingDataSource::DataOrigin::RemoteData, nullptr)->GetResult();
     ASSERT_TRUE(navigationResult.IsSuccess());
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    auto& uploadedInstanceNavNodes = navigationResult.GetValue().GetJson();
-    for (auto& uploadedInstanceNavNode : uploadedInstanceNavNodes)
+    if (true)
         {
-        ObjectId uploadedInstanceId
-            (
+        auto txn = ds->StartCacheTransaction();
+        auto& uploadedInstanceNavNodes = navigationResult.GetValue().GetJson();
+        for (auto& uploadedInstanceNavNode : uploadedInstanceNavNodes)
+            {
+            ObjectId uploadedInstanceId
+                (
                 uploadedInstanceNavNode["Key_SchemaName"].asString(),
                 uploadedInstanceNavNode["Key_ClassName"].asString(),
                 uploadedInstanceNavNode["Key_InstanceId"].asString()
                 );
 
-        ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("DeletedInstances", uploadedInstanceId));
-        ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteObject(txn.GetCache().FindInstance(uploadedInstanceId)));
+            ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("DeletedInstances", uploadedInstanceId));
+            ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteObject(txn.GetCache().FindInstance(uploadedInstanceId)));
+            }
+        txn.Commit();
         }
-    txn.Commit();
-    }
 
     Json::Value newDocument = ToJson(
         R"({
@@ -312,21 +399,22 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository
         "CreateTime" : "2014-06-03T08:59:58.673Z"
         })");
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    auto ecClass = txn.GetCache().GetAdapter().GetECClass("PW_WSG", "Document");
-    auto ecRelClass = txn.GetCache().GetAdapter().GetECRelationshipClass("PW_WSG", "DocumentParent");
+    if (true)
+        {
+        auto txn = ds->StartCacheTransaction();
+        auto ecClass = txn.GetCache().GetAdapter().GetECClass("PW_WSG", "Document");
+        auto ecRelClass = txn.GetCache().GetAdapter().GetECRelationshipClass("PW_WSG", "DocumentParent");
 
-    auto documentKey = txn.GetCache().GetChangeManager().CreateObject(*ecClass, newDocument);
+        auto documentKey = txn.GetCache().GetChangeManager().CreateObject(*ecClass, newDocument);
 
-    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(documentKey, StubFile("TestContent", "'Foo file'.txt"), false));
-    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("NewDocument", txn.GetCache().FindInstance(documentKey)));
+        ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(documentKey, StubFile("TestContent", "'Foo file'.txt"), false));
+        ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("NewDocument", txn.GetCache().FindInstance(documentKey)));
 
-    auto folderKey = txn.GetCache().FindInstance(uploadsFolderId);
-    auto relationshipKey = txn.GetCache().GetChangeManager().CreateRelationship(*ecRelClass, documentKey, folderKey);
-    ASSERT_TRUE(relationshipKey.IsValid());
-    txn.Commit();
-    }
+        auto folderKey = txn.GetCache().FindInstance(uploadsFolderId);
+        auto relationshipKey = txn.GetCache().GetChangeManager().CreateRelationship(*ecRelClass, documentKey, folderKey);
+        ASSERT_TRUE(relationshipKey.IsValid());
+        txn.Commit();
+        }
 
     Json::Value newProject = ToJson(
         R"({
@@ -334,36 +422,38 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository
         "CreateTime" : "2014-06-03T08:59:58.673Z"
         })");
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    auto ecClass = txn.GetCache().GetAdapter().GetECClass("PW_WSG", "Project");
-    auto ecRelClass = txn.GetCache().GetAdapter().GetECRelationshipClass("PW_WSG", "ProjectParent");
+    if (true)
+        {
+        auto txn = ds->StartCacheTransaction();
+        auto ecClass = txn.GetCache().GetAdapter().GetECClass("PW_WSG", "Project");
+        auto ecRelClass = txn.GetCache().GetAdapter().GetECRelationshipClass("PW_WSG", "ProjectParent");
 
-    auto projectKey = txn.GetCache().GetChangeManager().CreateObject(*ecClass, newProject);
-    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("NewProject", txn.GetCache().FindInstance(projectKey)));
-    auto folderKey = txn.GetCache().FindInstance(uploadsFolderId);
-    auto relationshipKey = txn.GetCache().GetChangeManager().CreateRelationship(*ecRelClass, projectKey, folderKey);
-    ASSERT_TRUE(relationshipKey.IsValid());
-    txn.Commit();
-    }
+        auto projectKey = txn.GetCache().GetChangeManager().CreateObject(*ecClass, newProject);
+        ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("NewProject", txn.GetCache().FindInstance(projectKey)));
+        auto folderKey = txn.GetCache().FindInstance(uploadsFolderId);
+        auto relationshipKey = txn.GetCache().GetChangeManager().CreateRelationship(*ecRelClass, projectKey, folderKey);
+        ASSERT_TRUE(relationshipKey.IsValid());
+        txn.Commit();
+        }
 
     auto syncResult = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
     ASSERT_TRUE(syncResult.IsSuccess());
 
-    {
-    auto txn = ds->StartCacheTransaction();
-    Json::Value newInstances;
-    status = txn.GetCache().ReadInstancesLinkedToRoot("NewDocument", newInstances);
-    ASSERT_EQ(SUCCESS, status);
-    ASSERT_EQ(1, newInstances.size());
-    auto newInstance = newInstances[0];
+    if (true)
+        {
+        auto txn = ds->StartCacheTransaction();
+        Json::Value newInstances;
+        status = txn.GetCache().ReadInstancesLinkedToRoot("NewDocument", newInstances);
+        ASSERT_EQ(SUCCESS, status);
+        ASSERT_EQ(1, newInstances.size());
+        auto newInstance = newInstances[0];
 
-    auto newKey = txn.GetCache().GetAdapter().GetInstanceKeyFromJsonInstance(newInstance);
+        auto newKey = txn.GetCache().GetAdapter().GetInstanceKeyFromJsonInstance(newInstance);
 
-    status = txn.GetCache().GetChangeManager().ModifyFile(newKey, StubFile("TestContentModified"), false);
-    ASSERT_EQ(SUCCESS, status);
-    txn.Commit();
-    }
+        status = txn.GetCache().GetChangeManager().ModifyFile(newKey, StubFile("TestContentModified"), false);
+        ASSERT_EQ(SUCCESS, status);
+        txn.Commit();
+        }
 
     syncResult = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
     ASSERT_TRUE(syncResult.IsSuccess());
@@ -432,12 +522,12 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG2PWSpatialQuery_Succeeds)
 
     query->SetSelect("*,SpatialLocation.*");
     query->SetFilter("geo.intersects("
-        "SpatialLocation.Location,geometry'Polygon(("
-        "20.896001+53.065279,"
-        "20.896001+57.105292,"
-        "26.872565+57.105292,"
-        "26.872565+53.065279,"
-        "20.896001+53.065279))')");
+                     "SpatialLocation.Location,geometry'Polygon(("
+                     "20.896001+53.065279,"
+                     "20.896001+57.105292,"
+                     "26.872565+57.105292,"
+                     "26.872565+53.065279,"
+                     "20.896001+53.065279))')");
     query->SetSkip(0);
     query->SetTop(100);
 
@@ -566,7 +656,7 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
 
     Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net";
     Utf8String repositoryId = "IssuePlugin--default";
-    Credentials credentials("bcc_user4@mailinator.com", "member#4");
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
     cachePath = BeFileName(StubFilePath("punchlistcache.ecdb"));
@@ -625,7 +715,7 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
             auto relClass = txn.GetCache().GetAdapter().GetECRelationshipClass("Issue.IssueAttachmentRel");
             ECInstanceKey result(resultClass->GetId(), txn.GetCache().GetAdapter().FindInstance(resultClass));
             Json::Value properties;
-            properties["FileName"] = Utf8PrintfString("Test-%d-%s.txt", i, BeGuid().ToString().c_str()) ;
+            properties["FileName"] = Utf8PrintfString("Test-%d-%s.txt", i, BeGuid().ToString().c_str());
             auto attachment = txn.GetCache().GetChangeManager().CreateObject(*attachmentClass, properties);
             auto relationship = txn.GetCache().GetChangeManager().CreateRelationship(*relClass, result, attachment);
             ASSERT_TRUE(relationship.IsValid());

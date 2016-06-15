@@ -14,7 +14,8 @@
 
 #include "../Core/CacheSchema.h"
 #include "../Hierarchy/HierarchyManager.h"
-#include "../../Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
+
 #include "../../Logging.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -36,7 +37,7 @@ m_objectInfoManager(objectInfoManager),
 m_relationshipInfoManager(relationshipInfoManager),
 m_changeInfoManager(changeInfoManager),
 m_inserters(dbAdapter.GetECDb()),
-m_updaters(dbAdapter.GetECDb())
+m_updaters(dbAdapter.GetECDb(), "ReadonlyPropertiesAreUpdatable")
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -154,6 +155,11 @@ ICancellationTokenPtr ct
         auto key = info.GetCachedInstanceKey();
         cachedInstance = key.GetInstanceKey();
         cachedInstancesInOut.AddInstance(instance.GetObjectId(), key);
+
+        if (IChangeManager::ChangeStatus::Deleted == changeStatus)
+            {
+            cachedInstancesInOut.MarkDeleted(cachedInstance);
+            }
         }
     else
         {
@@ -193,7 +199,8 @@ ICancellationTokenPtr ct
             return ERROR;
             }
 
-        if (cachedInstance.IsValid())
+        if (!cachedInstancesInOut.IsDeleted(cachedInstance) && 
+            !cachedInstancesInOut.IsDeleted(relatedInstance))
             {
             if (SUCCESS != CacheRelationshipInstance(relationshipInstance, cachedInstance, relatedInstance, cachedInstancesInOut))
                 {
@@ -452,6 +459,22 @@ bset<ObjectId> InstanceCacheHelper::CachedInstances::GetCachedInstanceObjectIds(
 const bmap<ObjectId, ECInstanceKey>& InstanceCacheHelper::CachedInstances::GetCachedInstancesByObjectId() const
     {
     return m_cachedInstancesByObjectId;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceCacheHelper::CachedInstances::MarkDeleted(ECInstanceKeyCR instanceKey)
+    {
+    m_deletedInstances.insert(instanceKey);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceCacheHelper::CachedInstances::IsDeleted(ECInstanceKeyCR instanceKey) const
+    {
+    return m_deletedInstances.find(instanceKey) != m_deletedInstances.end();
     }
 
 /*--------------------------------------------------------------------------------------+

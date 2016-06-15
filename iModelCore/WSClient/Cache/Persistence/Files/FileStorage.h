@@ -25,14 +25,15 @@ struct FileStorage
         std::shared_ptr<ValueIncrementor> m_folderNameIncrementor;
 
     private:
-        BeFileName CreateNewRelativeCachedFilePath(BeFileNameCR currentFilePath, bool isPersistent);
-        static BeFileName CreateNewFilePath(BeFileNameCR oldFilePath, Utf8String newFileName);
+        static BeFileName CreateFileStoragePath(BeFileName rootDir, WStringCR cacheName);
+        BeFileName CreateNewRelativeCacheDir();
 
-        static BentleyStatus CreateNewCachedFileFolderName(Utf8StringR folderNameOut);
+        BentleyStatus StoreFile(FileInfoR info, BeFileNameCR filePath, FileCache location, BeFileNameCP relativeDir, bool copyFile);
+        BentleyStatus FixFileNameIfNeeded(FileCache location, BeFileNameCR relativeDir, Utf8String& fileName);
+
         static BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
-        static BentleyStatus GetIsFilePersistent(bool& isPersistent, FileCache cacheLocation, FileInfoCR existingFileInfo);
         static BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
-        static BeFileName GetFileCacheFolderPath(BeFileName rootDir, WStringCR cacheName);
+        static BentleyStatus RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCP newFilePath = nullptr);
 
     public:
         FileStorage
@@ -42,23 +43,16 @@ struct FileStorage
             CacheEnvironmentCR environment
             );
 
-        BentleyStatus SetFileCacheLocation(FileInfo& info, FileCache cacheLocation);
-        BentleyStatus CacheFile(
-            FileInfo& info,
-            BeFileNameCR suppliedFilePath,
-            Utf8CP cacheTag,
-            FileCache cacheLocation,
-            DateTimeCR cacheDateUtc,
-            bool copyFile
-            );
+        BentleyStatus SetFileCacheLocation(FileInfo& info, FileCache location, BeFileNameCP externalRelativeDir = nullptr);
+        BentleyStatus CacheFile(FileInfo& info, BeFileNameCR filePath, Utf8CP cacheTag, FileCache location, bool copyFile);
 
         static BentleyStatus DeleteFileCacheDirectories(CacheEnvironmentCR fullEnvironment);
         static CacheEnvironment CreateCacheEnvironment(BeFileNameCR cacheFilePath, CacheEnvironmentCR inputEnvironment);
 
-        BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath);
-        BentleyStatus RemoveContainingFolder(BeFileNameCR filePath);
-        BentleyStatus CleanupCachedFile(BeFileNameCR filePath);
-        BentleyStatus RenameCachedFile(FileInfoR info, Utf8StringCR newFileName);
+        BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath);
+
+        BentleyStatus RemoveStoredFile(FileInfoCR info);
+        BentleyStatus RenameCachedFile(FileInfoR info, Utf8String newFileName);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

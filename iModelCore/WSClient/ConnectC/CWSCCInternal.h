@@ -8,8 +8,13 @@
 #ifndef __CWSCINTERNAL_H__
 #define __CWSCINTERNAL_H__
 
-#include "WSLocalState.h"
 #include "CWSCCPrivate.h"
-#include "CWSCCGenBuffer.h"
+#include "CWSCCBufferGen.h"
+#include "ConnectWsgGlobal/GlobalSchemaBufferGen.h"
+
+#include <WebServices/ConnectC/CWSCCPublic.h>
+#include <WebServices/ConnectC/CWSCCBufferGenPublic.h>
+#include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h>
+#include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaGenPublic.h>
 
 #endif // __CLIENTINTERNAL_H__

@@ -140,7 +140,6 @@
     <!-- // ConnectWebServicesClientC lib                                          // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-<!--
     <Part Name="ConnectWebServicesClientC">
         <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
         <SubPart PartName="ConnectWebServicesClientC-Library" />
@@ -170,7 +169,7 @@
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
         </Bindings>
     </Part>
--->
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -413,11 +412,11 @@
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=WSClient -dTEST_COLLECTION_PRODUCT=WSClient-Tests -dSHARED_LIBRARIES=DgnClientFx,WebServicesClient,WebServicesCache -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=WSClient-Tests -dSHARED_LIBRARIES=DgnClientFx,WebServicesClient,WebServicesCache -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="WSClient-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/WSClient/Project" />
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
         </Bindings>
     </Part>
 
@@ -425,6 +424,10 @@
         <SubPart PartName="AndroidJUnit" LibType="Static"/>
         <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
+
+    <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=WSClient-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="WSClient-AndroidJUnit"/>
+    </Part>
 
     <!-- ********************** -->
     <!-- **** iOSXCTest **** -->
@@ -442,6 +445,10 @@
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
+    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=WSClient-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="WSClient-iOSXCTest"/>
+    </Part>
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // Integration Tests - used for debugging                                 // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -449,6 +456,7 @@
     <Part Name="WSClientIntegrationTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="ConnectWebServicesClientC" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />

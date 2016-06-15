@@ -38,7 +38,7 @@ bset<UrlProvider::UrlDescriptor*> s_urlRegistry;
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
     "Mobile.ConnectEula",
     "https://dev-agreement-eus.cloudapp.net/rest",
-    "https://dev-agreement-eus.cloudapp.net/rest",
+    "https://qa-agreement-eus.cloudapp.net/rest",
     "https://connect-agreement.bentley.com/rest",
     &s_urlRegistry
     );
@@ -128,6 +128,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::Passport(
     "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
     "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
     "https://ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageAndFeatureTrackingAPI(
+    "Mobile.UsageAndFeatureTrackingAPI",
+    "https://qa-selectserver.bentley.com/LicensingProxy",
+    "https://qa-selectserver.bentley.com/LicensingProxy",
+    "https://SELECTserver.bentley.com/LicensingProxy",
     &s_urlRegistry
     );
 

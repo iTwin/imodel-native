@@ -50,8 +50,6 @@ std::ostream& operator << (std::ostream &o, const ECInstanceKeyMultiMap::value_t
 std::ostream& operator << (std::ostream &o, SchemaReadStatus value);
 
 std::ostream& operator << (std::ostream &o, BeFileNameStatus value);
-
-std::ostream& operator << (std::ostream &o, BeFileNameStatus value);
 std::ostream& operator << (std::ostream &o, BeFileStatus value);
 
 namespace rapidjson
@@ -60,8 +58,14 @@ namespace rapidjson
     void PrintTo(const Document& value, ::std::ostream* os);
     }
 
-// Duplicating symbols with DgnClientFx SDK UnitTests, enable with custom builds only
-// #define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
+// DEPRECATED: Duplicating symbols with DgnClientFx SDK UnitTests
+// Now tests are build seperately for each library so no duplication should occur
+// In case of Aggregate build set Environment Variable (BUILD_AGGREGATE_TESTS) which will make (#define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS) in active
+
+#ifndef BUILD_FOR_AGGREGATE_TESTS
+#define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
+#endif
+
 #ifdef WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
 
 std::ostream& operator << (std::ostream &o, CredentialsCR creds);
@@ -75,8 +79,9 @@ namespace Json
     void PrintTo(const Value& value, ::std::ostream* os);
     }
 
-void PrintTo(const WString& value, ::std::ostream* os);
 void PrintTo(const Utf8String& value, ::std::ostream* os);
+void PrintTo(const WString& value, ::std::ostream* os);
+void PrintTo(const BeFileName& value, ::std::ostream* os);
 void PrintTo(BentleyStatus value, ::std::ostream* os);
 END_BENTLEY_NAMESPACE
 

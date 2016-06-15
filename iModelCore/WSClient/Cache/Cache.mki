@@ -39,9 +39,11 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiPublicApiDir)Util/ECCustomAttributeHelper.h                   \
     $(CacheMkiPublicApiDir)Util/ECDbAdapter.h                               \
     $(CacheMkiPublicApiDir)Util/JsonDiff.h                                  \
+    $(CacheMkiPublicApiDir)Util/JsonUtil.h                                  \
     $(CacheMkiPublicApiDir)Util/ECDbDebugInfo.h                             \
     $(CacheMkiPublicApiDir)Util/ECDbHelper.h                                \
     $(CacheMkiPublicApiDir)Util/ECExpressionHelper.h                        \
+    $(CacheMkiPublicApiDir)Util/ECInstanceKeyFilter.h                       \
     $(CacheMkiPublicApiDir)Util/ECSqlAdapterCache.h                         \
     $(CacheMkiPublicApiDir)Util/ECSqlStatementCache.h                       \
     $(CacheMkiPublicApiDir)Util/ExtendedData.h                              \
@@ -91,11 +93,11 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV5ToCurrent.h       \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV7ToV9.h            \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV9ToV10.h           \
+    $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV10ToV11.h          \
     $(CacheMkiSourceDir)SyncCachedDataTask.h                                \
     $(CacheMkiSourceDir)SyncCachedInstancesSeperatelyTask.h                 \
     $(CacheMkiSourceDir)SyncCachedInstancesTask.h                           \
-    $(CacheMkiSourceDir)SyncLocalChangesTask.h                              \
-    $(CacheMkiSourceDir)Util/JsonUtil.h
+    $(CacheMkiSourceDir)SyncLocalChangesTask.h                              
     
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -213,6 +215,10 @@ $(o)UpgraderFromV7ToV9$(oext)                   : $(CacheMkiSourceDir)Persistenc
 
 $(o)UpgraderFromV9ToV10$(oext)                  : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV9ToV10.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)UpgraderFromV10ToV11$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV10ToV11.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)UpgraderFromV11ToV12$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV11ToV12.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
 
 $(o)BeSQLiteDbTransactionHandler$(oext)         : $(CacheMkiSourceDir)Transactions/BeSQLiteDbTransactionHandler.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
@@ -236,6 +242,8 @@ $(o)ECDbDebugInfo$(oext)                        : $(CacheMkiSourceDir)Util/ECDbD
 $(o)ECDbHelper$(oext)                           : $(CacheMkiSourceDir)Util/ECDbHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ECExpressionHelper$(oext)                   : $(CacheMkiSourceDir)Util/ECExpressionHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ECInstanceKeyFilter$(oext)                  : $(CacheMkiSourceDir)Util/ECInstanceKeyFilter.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatementCache$(oext)                  : $(CacheMkiSourceDir)Util/ECSqlStatementCache.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

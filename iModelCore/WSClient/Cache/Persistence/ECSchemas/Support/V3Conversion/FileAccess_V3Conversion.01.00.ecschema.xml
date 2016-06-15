@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="FileAccess" nameSpacePrefix="rest_fa" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECRelationshipClass typeName="FileAccessKeyTo" >
+        <ECCustomAttributes>
+            <!-- ECv3 does not support AnyClass relationships -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+</ECSchema>

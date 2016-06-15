@@ -42,7 +42,7 @@ struct InstanceCacheHelper
         ChangeInfoManager&          m_changeInfoManager;
 
         ECSqlAdapterCache<JsonInserter> m_inserters;
-        ECSqlAdapterCache<JsonUpdater> m_updaters;
+        ECSqlAdapterCacheWithOptions<JsonUpdater> m_updaters;
 
     private:
         BentleyStatus CacheInstance
@@ -107,6 +107,7 @@ struct InstanceCacheHelper::CachedInstances
     private:
         bset<CachedInstanceKey> m_cachedInstances;
         bmap<ObjectId, ECInstanceKey> m_cachedInstancesByObjectId;
+        bset<ECInstanceKey> m_deletedInstances;
 
     public:
         void AddInstance(ObjectIdCR objectId, CachedInstanceKeyCR key);
@@ -117,6 +118,9 @@ struct InstanceCacheHelper::CachedInstances
         const bset<CachedInstanceKey>& GetCachedInstances() const;
         bset<ObjectId> GetCachedInstanceObjectIds() const;
         const bmap<ObjectId, ECInstanceKey>& GetCachedInstancesByObjectId() const;
+
+        void MarkDeleted(ECInstanceKeyCR instanceKey);
+        bool IsDeleted(ECInstanceKeyCR instanceKey) const;
     };
 
 /*--------------------------------------------------------------------------------------+

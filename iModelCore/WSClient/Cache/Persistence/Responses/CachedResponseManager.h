@@ -36,6 +36,7 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
         ECRelationshipClassCP   m_responseToParentClass;
         ECRelationshipClassCP   m_responseToHolderClass;
         ECRelationshipClassCP   m_responseToResponsePageClass;
+        ECRelationshipClassCP   m_responseToAdditionalInstanceClass;
 
         ECClassCP               m_responsePageClass;
         ECRelationshipClassCP   m_responsePageToResultClass;
@@ -52,6 +53,7 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
             CacheNodeKeyCR pageKey,
             const InstanceCacheHelper::CachedInstances& instances
             );
+
 
         BentleyStatus MarkTemporaryInstancesAsPartial
             (
@@ -112,6 +114,13 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
         BentleyStatus UpdatePageCachedDate(ResponseKeyCR responseKey, uint64_t page);
         //! Insert query info and update page cache date and relate response instances
         BentleyStatus SavePage(ResponseKeyCR responseKey, uint64_t page, Utf8StringCR cacheTag, const InstanceCacheHelper::CachedInstances& instances);
+        
+        //! Add additional instance to response that will not be managed with it but will be returned as one of cached
+        BentleyStatus AddAdditionalInstance(ResponseKeyCR responseKey, CachedObjectInfoKeyCR instanceInfoKey);
+        //! Remove additional instance
+        BentleyStatus RemoveAdditionalInstance(ResponseKeyCR responseKey, CachedObjectInfoKeyCR instanceInfoKey);
+        //! Remove additional instance from any responses, will keep responses intact
+        BentleyStatus RemoveAdditionalInstance(CachedObjectInfoKeyCR instanceInfoKey);
 
         //! Read response instances. Relationships not included. 
         //! @param readCallback will be called for each successfull query, caller is responsible for extracting data.

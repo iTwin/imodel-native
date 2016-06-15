@@ -97,7 +97,7 @@
     <ClInclude Include="Published\WebServices\Client\WSInfoTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSQueryTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSRepositoryClientTests.h" />
-    <ClInclude Include="Published\WebServices\Licensing\MobileTrackingTests.h" />
+    <ClInclude Include="Published\WebServices\Licensing\UsageTrackingDataTests.h" />
     <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
     <ClInclude Include="Published\WebServices\Configuration\BuddiClientTests.h" />
@@ -156,6 +156,9 @@
     <ClInclude Include="Published\WebServices\Connect\IdentityAuthenticationPersistenceTests.h" />
     <ClInclude Include="Published\WebServices\IMS\SolrQueryTests.h" />
     <ClInclude Include="Published\WebServices\IMS\SolrClientTests.h" />
+    <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -285,7 +288,7 @@
     <ClCompile Include="Published\WebServices\Client\WSInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSQueryTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSRepositoryClientTests.cpp" />
-    <ClCompile Include="Published\WebServices\Licensing\MobileTrackingTests.cpp" />
+    <ClCompile Include="Published\WebServices\Licensing\UsageTrackingDataTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />
@@ -325,11 +328,20 @@
     <ClCompile Include="Published\WebServices\Connect\IdentityAuthenticationPersistenceTests.cpp" />
     <ClCompile Include="Published\WebServices\IMS\SolrQueryTests.cpp" />
     <ClCompile Include="Published\WebServices\IMS\SolrClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
     <None Include="Prewire.mke" />
     <None Include="AssetsDelivery.mke" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\9.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\5.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />
