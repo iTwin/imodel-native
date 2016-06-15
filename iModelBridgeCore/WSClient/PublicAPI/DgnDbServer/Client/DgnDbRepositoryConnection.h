@@ -36,9 +36,6 @@ DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbLockSetResultInfo, DgnDbServerLockSet);
-DEFINE_TASK_TYPEDEFS(DgnDbServerEventConnectionPtr, DgnDbServerEventConnection);
-DEFINE_TASK_TYPEDEFS(bvector<IDgnDbServerEventPtr>, IDgnDbServerEventCollection);
-DEFINE_TASK_TYPEDEFS(IDgnDbServerEventPtr, IDgnDbServerEvent);
 DEFINE_TASK_TYPEDEFS(void, DgnDbServerCancelEvent);
 
 //=======================================================================================
