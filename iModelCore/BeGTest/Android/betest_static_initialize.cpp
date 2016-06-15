@@ -18,6 +18,7 @@ static BeFileName s_assetsDir;
 static BeFileName s_docsDir;
 static BeFileName s_tempDir;
 static BeFileName s_localStateDir;
+static BeFileName s_testOutputRoot;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2012
@@ -69,7 +70,9 @@ void BeTestHost::_GetOutputRoot (BeFileName& path)
     //  The "local state directory" is a writable directory that is private to the activity. 
     //  Android does not automatically delete files or clean up this directory.
     //  So, it's a good place to create documents that are manipulated by the tests.
-    path = s_localStateDir; 
+    //  We need to isolate the test scratch documents in their own subdirectory, however, so that
+    //  we can clean them up at the start of the run.
+    path = s_testOutputRoot; 
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -130,6 +133,12 @@ RefCountedPtr<BeTestHost> BeTestHost::Create ()
     return new BeTestHost;
     }
 
+static void recreateDir(BeFileNameCR dirName)
+    {
+    BeFileName::EmptyAndRemoveDirectory(dirName.c_str());
+    BeFileName::CreateNewDirectory(dirName.c_str());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -143,10 +152,25 @@ jstring         tempDir,
 jstring         localStateDir
 )
     {
+#ifdef DEBUG_BETEST_STARTUP
+    fprintf(stderr, "Java_com_bentley_test_TestActivity_initializeJni. Waiting");
+    int i = 0;
+    static bool s_loop = true;
+    while (s_loop)
+        {
+        //            BeThreadUtilities::BeSleep (1);
+        if (i++ % 10000 == 0)
+            printf(".");
+        }
+#endif
+
     BeJStringUtilities::InitWStringFromJString (env, s_assetsDir, assetsDir);
     BeJStringUtilities::InitWStringFromJString (env, s_docsDir, docsDir);
     BeJStringUtilities::InitWStringFromJString (env, s_tempDir, tempDir);
     BeJStringUtilities::InitWStringFromJString (env, s_localStateDir, localStateDir);
+
+    s_testOutputRoot = s_localStateDir;
+    s_testOutputRoot.AppendToPath(L"Output");
 
     static bool s_cleaned;
     if (!s_cleaned)
@@ -154,7 +178,7 @@ jstring         localStateDir
         // Delete any files that may be hanging around since the last run
         s_cleaned = true;
         BeFileName::EmptyDirectory(s_tempDir);
-        BeFileName::EmptyDirectory(s_localStateDir);
+        recreateDir(s_testOutputRoot);
         }
 
     // ensure known locations have trailing separators for consistency with DgnClientFx

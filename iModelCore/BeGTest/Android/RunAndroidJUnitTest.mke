@@ -1,0 +1,71 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Android/RunAndroidJUnitTest.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if !defined (BENTLEY_RUN_ANDROIDJUNITTEST)
+    %warn To run Android JUnit tests, define BENTLEY_RUN_ANDROIDJUNITTEST
+    %return
+%endif
+
+%include mdl.mki
+
+baseDir             = $(_MakeFilePath)
+
+%if $(TARGET_PLATFORM)!="Android"
+    %error This makefile should be used only when TARGET_PLATFORM is Android
+%endif
+
+%ifndef ANDROIDJUNIT_PRODUCT
+    %error Define ANDROIDJUNIT_PRODUCT as the name of the Product in the output directory that contains the specified test suite.
+%endif
+
+ANDROIDJUNITPROJ=$(OutputRootDir)Product/$(ANDROIDJUNIT_PRODUCT)/project/
+
+%ifndef ANDROIDJUNIT_OUTPUT_DIR
+    ANDROIDJUNIT_OUTPUT_DIR=$(OutputRootDir)build/RunANJU/$(ANDROIDJUNIT_PRODUCT)/
+%endif
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+always:
+    $(rmdirRecursiveCmd) ${ANDROIDJUNIT_OUTPUT_DIR}
+    $(rmdirRecursiveCmd) $(OutputRootDir)build/RunAndroidJUnitTest
+    %return
+%endif
+
+always:
+    !~@mkdir ${ANDROIDJUNIT_OUTPUT_DIR}
+
+# Check to see if a device is attached
+adbCmd = ${ANDROID_SDK_ROOT}/platform-tools/adb
+always:
+    $(adbCmd) devices > NUL
+    $(adbCmd) devices > ${ANDROIDJUNIT_OUTPUT_DIR}/devices
+
+%if $[@readfile ${ANDROIDJUNIT_OUTPUT_DIR}/devices]=="List of devices attached  "
+    %error No Android device attached. Cannot run unit tests.
+    %return
+%endif
+
+logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/RunAndroidJUnitTest.log
+
+${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt): $(_makefilespec)
+    >$@
+adb logcat BeTestX:* doOpenChoice:* ICU_DATA_FILE:* TestRunner:I BeSQLiteDb:* BeSQLite:* ECDbMap:F ECObjectsNative:F Units:F test:F wpa_supplicant:F msm8660.gralloc:F libEGL:F com.samsung.app:F TODmobile:F TelephonyManager:F EmailWidget:F APNews:F PowerManagerService:F *:E
+    <
+
+%message Run 
+%message ${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt)
+%message in another shell to monitor progress
+
+teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
+
+always:
+    $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
+    -adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | $(teeCmd) $(logFile)
+    %if !defined (BEGTEST_IGNORE_FAILURES)
+        python $(baseDIr)CheckResultsForFailures.py $(logFile)
+    %endif
+

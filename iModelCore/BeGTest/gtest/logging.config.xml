@@ -62,7 +62,11 @@
      specified not explicitly specifed in a category node.
 -->
 
-    <category name="ECDb">
+  <category name="Performance">
+    <priority value="info"/>
+  </category>
+
+  <category name="ECDb">
         <priority value="fatal"/>
     </category>
 

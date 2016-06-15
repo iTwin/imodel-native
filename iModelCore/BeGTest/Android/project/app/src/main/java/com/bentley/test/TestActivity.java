@@ -72,13 +72,7 @@ public class TestActivity extends Activity implements SurfaceHolder.Callback
     public void extractAssets ()
     	{
     	if (s_didExtractAssets)
-    		return;
-
-        if (!s_didInitialize)
-            {
-            Log.e (LOG_TAG, "Extracting assets before initialization!");
             return;
-            }
 
     	extractAssets(this, getApplicationInfo().dataDir, ASSETS_MANIFEST);
     	s_didExtractAssets = true;

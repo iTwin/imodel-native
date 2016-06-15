@@ -46,7 +46,7 @@ public class __FIXTURE__ extends ActivityInstrumentationTestCase2<TestActivity>
     @Override
     protected void tearDown () throws Exception 
         { 
-        TestActivity.uninitializeSqlang ();
+        //TestActivity.uninitializeSqlang ();
         if (null != m_activity)
             {
             Log.d ("BeTestX", "tearDown - m_activity.finish()");

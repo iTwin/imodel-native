@@ -69,6 +69,8 @@
         <ProductDirectory Name="ConstructionAssemblies"             Deliver="false" LibType="static"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          Path="Assemblies"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="UnitsNativeAssemblies"              Path="Assemblies"/>
+        <ProductDirectory Name="UnitsNativeAssemblies"              Deliver="false" LibType="static"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies"           Path="Assemblies"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies"           Deliver="false" LibType="static"/>
         <ProductDirectory Name="PPNativeAssemblies"                 Path="Assemblies"/>
@@ -108,6 +110,8 @@
         <ProductDirectory Name="ConstructionLibs"                   Path="Libs" LibType="static"/>
         <ProductDirectory Name="ECObjectsLibs"                      Path="Libs"/>
         <ProductDirectory Name="ECObjectsLibs"                      Path="Libs" LibType="static"/>
+        <ProductDirectory Name="UnitsLibs"                          Path="Libs"/>
+        <ProductDirectory Name="UnitsLibs"                          Path="Libs" LibType="static"/>
         <ProductDirectory Name="PromiseKitLibs"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
@@ -187,8 +191,8 @@
         <ProductDirectory Name="GdalData" Deliver="false"/>
         <ProductDirectory Name="ImagePPAssemblies" Deliver="false"/>
         <ProductDirectory Name="ImagePPAssemblies" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="RasterAssemblies" Deliver="false"/>
-        <ProductDirectory Name="RasterAssemblies" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="RealityAssemblies" Deliver="false"/>
+        <ProductDirectory Name="RealityAssemblies" Deliver="false" LibType="static"/>
         <ProductDirectory Name="PointCloudAssemblies" Deliver="false"/>
         <ProductDirectory Name="PointCloudAssemblies" Deliver="false" LibType="static"/>
         <ProductDirectory Name="PointoolsAssemblies"  Deliver="false"/>
@@ -239,6 +243,7 @@
     <Part Name="AndroidJUnitTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="Android*">
         <SubPart PartName="Base" LibType="Static"/>
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+        <SubPart PartName="DgnClientSdkTools-AndroidShared" PartFile="DgnClientFx" Repository="DgnClientFx"/>
     </Part>
 
     <!-- *********************************************************************************************** -->

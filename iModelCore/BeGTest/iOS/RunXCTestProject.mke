@@ -1,0 +1,58 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iOS/RunXCTestProject.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if !defined (BENTLEY_RUN_XCTEST_DEVICE_NAME)
+    %warn To run XCTests, define BENTLEY_RUN_XCTEST_DEVICE_NAME as the name of the attached iOS device to use.
+    %return
+%endif
+
+%include mdl.mki
+
+%if $(TARGET_PLATFORM)!="iOS"
+    %error This makefile should be used only when TARGET_PLATFORM is iOS
+%endif
+
+%ifndef XCTEST_PRODUCT
+    %error Define XCTEST_PRODUCT as the name of the Product in the output directory that contains BeTestiOS.xcodeproj for the specified test suite.
+%endif
+
+XCODEPROJ=$(OutputRootDir)Product/$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
+
+%ifnofile $(XCODEPROJ)
+    %error $(XCODEPROJ) not found.
+%endif
+
+%ifndef XCTEST_OUTPUT_DIR
+    XCTEST_OUTPUT_DIR=$(OutputRootDir)build/RunXCTest/$(XCTEST_PRODUCT)/
+%endif
+
+logFile = ${XCTEST_OUTPUT_DIR}/XCTest.log
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+always:
+    $(rmdirRecursiveCmd) ${XCTEST_OUTPUT_DIR}
+
+    %return
+%endif
+
+# Note we often get an error when copying resources to the device the first time we try to run a given set of tests. 
+# The solution is simply to re-try the command.
+
+always:
+    !~@mkdir ${XCTEST_OUTPUT_DIR}
+    -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &> $(logfile)
+    python $(baseDir)CheckForRetry.py $(logfile) > ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt
+    %if " " != $[@findstring "retry", $[@readfile ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt]]
+        |Retrying...
+        -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &> $(logfile)
+    %endif
+    %if !defined (BEGTEST_IGNORE_FAILURES)
+        python $(baseDIr)CheckResultsForFailures.py $(logFile) $(XCODEPROJ)
+    %endif
+
+
+
