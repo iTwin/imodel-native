@@ -8,11 +8,14 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <DgnDbServer/DgnDbServerCommon.h>
+#include <DgnDbServer/Client/DgnDbServerResult.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 typedef std::shared_ptr<struct DgnDbServerEventConnection> DgnDbServerEventConnectionPtr;
+
+DEFINE_TASK_TYPEDEFS(DgnDbServerEventConnectionPtr, DgnDbServerEventConnection);
 
 struct DgnDbServerEventConnection
     {
