@@ -2,6 +2,10 @@
 
 #include <string>
 #include <map>
+#include <chrono>
+#include <mutex>
+
+#define	MANAGER_DEFAULT_ACCESS_TIMEOUT	30 * 1000
 
 
 template<typename T> class Manager
@@ -19,30 +23,45 @@ protected:
 public:
 
 
-	typedef typename ItemMap::iterator	Iterator;
+	typedef typename ItemMap::iterator			Iterator;
+	typedef typename std::chrono::milliseconds	Timeout;
 
 protected:
 
 	ItemMap								items;
 
-protected:
+	std::recursive_timed_mutex			itemMutex;
+	Timeout								accessTimeout;
 
 protected:
 
-	virtual						 	   ~Manager			(void);
+protected:
 
-	T				*					create			(const ItemName &name, T *item);
-	bool								destroy			(const ItemName &name);
-	bool								destroy			(T *item, bool deleteItem);
-	bool								destroyAll		(void);
+								 	    Manager				(void);
+	virtual						 	   ~Manager				(void);
 
-	ItemCount							getCount		(void);
+	T				*					create				(const ItemName &name, T *item);
+	bool								destroy				(const ItemName &name);
+	bool								destroy				(T *item, bool deleteItem);
+	bool								destroyAll			(void);
 
-	T				*					get				(const ItemName &name);
-	Iterator							getEntry		(const ItemName &name);
-	Iterator							getEntry		(T *item);
+	ItemCount							getCount			(void);
+
+	T				*					get					(const ItemName &name);
+	Iterator							getEntry			(const ItemName &name);
+	Iterator							getEntry			(T *item);
+
+	void								setAccessTimeout	(Timeout timeMilliseconds);
+	Timeout								getAccessTimeout	(void);
+
 };
 
+
+template<typename T>
+inline Manager<T>::Manager(void)
+{
+	setAccessTimeout(Timeout(MANAGER_DEFAULT_ACCESS_TIMEOUT));
+}
 
 template<typename T>
 inline Manager<T>::~Manager(void)
@@ -53,7 +72,12 @@ inline Manager<T>::~Manager(void)
 template<typename T>
 inline T * Manager<T>::create(const ItemName & name, T * item)
 {
+	if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
+		return nullptr;
+		
 	items[name] = item;
+
+	itemMutex.unlock();
 
 	return item;
 }
@@ -61,12 +85,20 @@ inline T * Manager<T>::create(const ItemName & name, T * item)
 template<typename T>
 inline bool Manager<T>::destroy(const ItemName & name)
 {
+	if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
+		return false;
+
+	itemMutex.unlock();
+
 	return false;
 }
 
 template<typename T>
 inline bool Manager<T>::destroy(T * item, bool deleteItem)
 {
+	if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
+		return false;
+
 	Iterator it = getEntry(item);
 
 	if (it != items.end())
@@ -78,8 +110,12 @@ inline bool Manager<T>::destroy(T * item, bool deleteItem)
 
 		items.erase(it);
 
+		itemMutex.unlock();
+
 		return true;
 	}
+
+	itemMutex.unlock();
 
 	return false;
 }
@@ -87,47 +123,93 @@ inline bool Manager<T>::destroy(T * item, bool deleteItem)
 template<typename T>
 inline bool Manager<T>::destroyAll(void)
 {
+	if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
+		return false;
+
+	itemMutex.unlock();
+
 	return false;
 }
 
 template<typename T>
 inline typename Manager<T>::ItemCount Manager<T>::getCount(void)
 {
-	return items.count();
+	if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
+		return 0;
+
+	ItemCount numItems = items.count();
+
+	itemMutex.unlock();
+
+	return numItems;
 }
 
 template<typename T>
 inline T * Manager<T>::get(const ItemName & name)
 {
 	Iterator it;
-	
+
+	if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
+		return false;
+
 	if ((it = getEntry(name)) != items.end())
 	{
+		itemMutex.unlock();
 		return it->second;
 	}
 
-	return NULL;
+	itemMutex.unlock();
+
+	return nullptr;
 }
 
 template<typename T>
 inline typename Manager<T>::Iterator Manager<T>::getEntry(const ItemName &name)
 {
-	return items.find(name);
+	if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
+		return Iterator();
+
+	Iterator it = items.find(name);
+
+	itemMutex.unlock();
+
+	return it;
 }
 
 template<typename T>
 inline typename Manager<T>::Iterator Manager<T>::getEntry(T * item)
 {
-	if (item == NULL)
-		return items.end();
-
 	Iterator it;
+
+	if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
+		return Iterator();
+
+	if (item == nullptr)
+	{
+		it = items.end();
+		itemMutex.unlock();
+		return it;
+	}
 
 	for (it = items.begin(); it != items.end() && it->second != item; it++)
 	{
 	}
 
+	itemMutex.unlock();
+
 	return it;
+}
+
+template<typename T>
+inline void Manager<T>::setAccessTimeout(Timeout timeMilliseconds)
+{
+	accessTimeout = timeMilliseconds;
+}
+
+template<typename T>
+inline typename Manager<T>::Timeout Manager<T>::getAccessTimeout(void)
+{
+	return accessTimeout;
 }
 
 

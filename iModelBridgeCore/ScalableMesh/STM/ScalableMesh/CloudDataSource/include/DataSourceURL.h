@@ -12,13 +12,19 @@ const wchar_t	DATA_SOURCE_URL_WINDOWS_DEVICE_SEPARATOR_STR[2] = L":";
 const wchar_t	DATA_SOURCE_URL_WINDOWS_FILE_SEPARATOR			= L'\\';
 const wchar_t	DATA_SOURCE_URL_WINDOWS_FILE_SEPARATOR_STR[2]	= L"\\";
 
+const wchar_t	DATA_SOURCE_URL_DIR_UP_STR[3]					= L"..";
+
 const wchar_t	DATA_SOURCE_VIRTUAL_URL_SEPARATOR				= L'.';
 const wchar_t	DATA_SOURCE_VIRTUAL_URL_SEPARATOR_STR[2]		= L".";
+
 
 
 class DataSourceURL : public std::wstring
 {
 
+protected:
+
+	DataSourceStatus		normalizeDirUp			(DataSourceURL &str);
 
 public:
 
@@ -30,6 +36,7 @@ public:
 		DataSourceStatus	getFilePath				(std::wstring &filePath) const;
 
 		DataSourceStatus	normalize				(void);
+		DataSourceStatus	normalizeDirUp			(void);
 
 		DataSourceStatus	getDirectory			(unsigned int directoryIndex, DataSourceURL &dest) const;
 		DataSourceStatus	getPathAfterDirectory	(unsigned int directoryIndex, DataSourceURL &dest) const;
@@ -41,4 +48,5 @@ public:
 		DataSourceStatus	collapseDirectories		(DataSourceURL &result) const;
 
 		DataSourceStatus	append					(const DataSourceURL &directory);
+
 };

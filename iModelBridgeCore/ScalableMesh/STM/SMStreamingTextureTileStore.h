@@ -35,7 +35,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     }
 
 
-				DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer> &dest, DataSourceBuffer::BufferSize destSize) const
+				DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
 				{
 					if (dataSourceAccount == nullptr)
 						return nullptr;
@@ -53,13 +53,12 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
 				void Load(DataSourceAccount *dataSourceAccount, uint32_t m_pID)
 				{
-					std::unique_ptr<DataSource::Buffer>			dest;
+					std::unique_ptr<DataSource::Buffer[]>		dest;
 					DataSource								*	dataSource;
 					DataSource::DataSize						readSize;
 
 					wstringstream ss;
 					ss << m_DataSource << L"t_" << m_pID << L".bin";
-					auto filename = ss.str();
 
 					DataSourceURL	dataSourceURL(ss.str());
 
@@ -77,12 +76,18 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
 					dataSource->close();
 
-					size_t UncompressedSize = reinterpret_cast<size_t&>(dest.get()[0]);
-					uint32_t compressedSize = (uint32_t) readSize - sizeof(size_t);
+					if (readSize > 0)
+					{
+						m_Width = reinterpret_cast<int&>(dest.get()[0]);
+						m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
+						m_NbChannels = reinterpret_cast<int&>(dest.get()[2 * sizeof(int)]);
+						m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
 
-					auto DataTypeArray = new uint8_t[UncompressedSize];
-					memcpy(DataTypeArray, &dest.get()[0] + sizeof(size_t), compressedSize);
-					this->DecompressTexture(DataTypeArray, compressedSize, (uint32_t)UncompressedSize);
+						auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
+						uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
+
+						DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
+					}
 
 					m_IsLoaded = true;
 				}

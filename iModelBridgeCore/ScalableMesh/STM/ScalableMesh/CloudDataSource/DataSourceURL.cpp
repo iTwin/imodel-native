@@ -9,13 +9,13 @@ DataSourceURL::DataSourceURL(void)
 
 DataSourceURL::DataSourceURL(wchar_t * str) : std::wstring(str)
 {
-	normalize();
+
 }
 
 
 DataSourceURL::DataSourceURL(const std::wstring &str) : std::wstring(str)
 {
-	normalize();
+
 }
 
 
@@ -46,6 +46,50 @@ DataSourceStatus DataSourceURL::normalize(void)
 {
 															// Normalize windows file separators to forward slash
 	findAndReplace(std::wstring(DATA_SOURCE_URL_WINDOWS_FILE_SEPARATOR_STR), std::wstring(DATA_SOURCE_URL_SEPARATOR_STR));
+
+	normalizeDirUp();
+
+	return DataSourceStatus();
+}
+
+// Folder1/Folder2/Folder3/../../Folder4/../File.blob
+
+// a/b/../file.bin
+
+DataSourceStatus DataSourceURL::normalizeDirUp(void)
+{
+	return normalizeDirUp(*this);
+}
+
+
+DataSourceStatus DataSourceURL::normalizeDirUp(DataSourceURL &s)
+{
+	size_t			f;
+	size_t			g;
+	DataSourceURL	n;
+
+	f = s.find(DATA_SOURCE_URL_DIR_UP_STR, 0);
+
+	if (f != npos && f != 0)
+	{
+		DataSourceURL	pre;
+
+		pre = s.substr(0, f - 1);
+
+		g = pre.find_last_of(DATA_SOURCE_URL_SEPARATOR);
+
+		if (g != npos)
+		{
+			n = s.substr(0, g);
+			n += DATA_SOURCE_URL_SEPARATOR;
+
+			n += s.substr(f + 3, length() - (f + 3));
+
+			normalizeDirUp(n);
+		}
+	}
+
+	*this = s;
 
 	return DataSourceStatus();
 }
@@ -145,8 +189,10 @@ DataSourceStatus DataSourceURL::collapseDirectories(DataSourceURL & result) cons
 
 DataSourceStatus DataSourceURL::append(const DataSourceURL & path)
 {
-	if(length() > 0 && path.length() > 0)
+	if (length() > 0 && path.length() > 0 && (*this)[length() - 1] != DATA_SOURCE_URL_SEPARATOR && (*this)[length() - 1] != DATA_SOURCE_URL_WINDOWS_FILE_SEPARATOR)
+	{
 		*this += DATA_SOURCE_URL_SEPARATOR;
+	}
 
 	*this += path;
 

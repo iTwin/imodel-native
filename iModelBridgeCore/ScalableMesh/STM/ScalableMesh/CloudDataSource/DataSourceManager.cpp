@@ -17,21 +17,14 @@ DataSourceManager::DataSourceManager(void) : DataSourceServiceManager(*this)
 
 DataSource * DataSourceManager::createDataSource(const DataSourceName & name, const DataSourceAccount::AccountName & accountName, const DataSourceStoreConfig * config)
 {
-	(void) config;
+	(void)						config;
 
-	DataSource				*	source = nullptr;
 	DataSourceAccount		*	account;
 
 	if ((account = DataSourceServiceManager::getAccount(accountName)) == NULL)
 		return nullptr;
 
-	if ((source = account->createDataSource()) == nullptr)
-		return nullptr;
-
-	if (Manager<DataSource>::create(name, source) == NULL)
-		return nullptr;
-
-	return source;
+	return createDataSource(name, *account, config);
 }
 
 
@@ -45,7 +38,10 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName &name, Dat
 		return nullptr;
 
 	if (Manager<DataSource>::create(name, source) == NULL)
+	{
+		account.destroyDataSource(source);
 		return nullptr;
+	}
 
 	return source;
 }
