@@ -57,6 +57,12 @@ struct ScalableMeshDraping : IDTMDraping
             {
             m_type = type;
             }
+            
+
+            void ClearNodes()
+                {
+                m_nodeSelection.clear();
+                }
     };
 
 struct MeshTraversalStep

@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
-const wchar_t* s_path = L"E:\\output\\scmesh\\2016-05-31\\";
+const wchar_t* s_path = L"E:\\output\\scmesh\\2016-06-04\\";
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
@@ -1405,7 +1405,7 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
     vector<int32_t> indices(poly->GetPointIndexCount());
     memcpy(&indices[0], poly->GetPointIndexCP(), poly->GetPointIndexCount()*sizeof(int32_t));
     bmap<int32_t, int32_t> allPts;
-    bmap<DPoint2d, int32_t, DPoint2dZYXTolerancedSortComparison> allUvs(DPoint2dZYXTolerancedSortComparison(1e-4));
+    bmap<DPoint2d, int32_t, DPoint2dZYXTolerancedSortComparison> allUvs(DPoint2dZYXTolerancedSortComparison(1e-10));
     for (size_t i = 0; i < poly->GetPointIndexCount(); ++i)
         {
         DPoint3d pt;
@@ -1423,6 +1423,8 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
         DPoint2d uvCoords[3];
         if (!faceToUVMap.GetFacet(&indices[i], uvCoords))
             {
+            if (poly->Param().size() == 0)
+                poly->Param().push_back(DPoint2d::From(0.0, 0.0));
             nFaceMisses++;
             poly->PointIndex().push_back(allPts[indices[i]] + 1);
             poly->PointIndex().push_back(allPts[indices[i + 1]] + 1);
@@ -1472,6 +1474,10 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
         stats << std::to_string(poly->GetParamCP()[poly->GetParamIndexCP()[i] - 1].x) + " " + std::to_string(poly->GetParamCP()[poly->GetParamIndexCP()[i] - 1].y) << std::endl;
         stats << std::to_string(poly->GetParamCP()[poly->GetParamIndexCP()[i+1] - 1].x) + " " + std::to_string(poly->GetParamCP()[poly->GetParamIndexCP()[i + 1] - 1].y) << std::endl;
         stats << std::to_string(poly->GetParamCP()[poly->GetParamIndexCP()[i+2] - 1].x) + " " + std::to_string(poly->GetParamCP()[poly->GetParamIndexCP()[i + 2] - 1].y) << std::endl;
+        stats << " UVINDICES :" << std::endl;
+        stats << std::to_string(poly->GetParamIndexCP()[i] - 1) << std::endl;
+        stats << std::to_string(poly->GetParamIndexCP()[i + 1] - 1)<< std::endl;
+        stats << std::to_string(poly->GetParamIndexCP()[i + 2] - 1) << std::endl;
     }
     stats.close();
 #endif

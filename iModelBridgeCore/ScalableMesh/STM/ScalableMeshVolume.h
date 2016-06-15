@@ -23,6 +23,8 @@ struct ScalableMeshVolume : IDTMVolume
         IScalableMesh* m_scmPtr;
         bool hasRestrictions;
         uint64_t m_restrictedId;
+        Transform m_transform;
+        Transform m_UorsToStorage;
 
         double _ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr smTile, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, DRange3d meshExtent, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
     protected:
@@ -37,7 +39,13 @@ struct ScalableMeshVolume : IDTMVolume
         DTMStatusInt _ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
     public:
         ScalableMeshVolume(IScalableMeshPtr scMesh);
-        ScalableMeshVolume(){}
+        ScalableMeshVolume() : m_transform(Transform::FromIdentity()), m_UorsToStorage(Transform::FromIdentity()) {}
+
+        void SetTransform(TransformR transform)
+            {
+            m_transform = transform;
+            m_UorsToStorage = m_transform.ValidatedInverse();
+            }
         //double ComputeVolumeCutAndFillForTile(PolyfaceHeaderPtr terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
     };
 

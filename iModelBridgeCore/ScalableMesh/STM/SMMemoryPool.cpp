@@ -314,7 +314,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
     m_memPoolItems[binInd][itemInd] = poolItem;
     m_lastAccessTime[binInd][itemInd] = clock();
 
-    poolItem->SetPoolItemId(itemInd);            
+    poolItem->SetPoolItemId(binInd*s_binSize + itemInd);
 
     m_memPoolItemMutex[binInd][itemInd]->unlock();
 

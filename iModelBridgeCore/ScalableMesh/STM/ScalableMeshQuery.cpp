@@ -1643,12 +1643,12 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         }
     int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, &pts[0], (int)pts.size(), &indices[0], (int)indices.size() / 3);
 
-    bool dbg = false;
+    volatile bool dbg = false;
     if (dbg)
         {
         for (auto& idx : indices) idx += 1;
         size_t nIndices = indices.size();
-        WString nameBefore = WString(L"E:\\output\\scmesh\\2016-03-14\\") + L"fpostgetmesh_";
+        WString nameBefore = WString(L"E:\\output\\scmesh\\2016-06-03\\") + L"fpostgetmesh_";
         DRange3d range;
         bcdtm->GetRange(range);
         nameBefore.append(to_wstring(range.low.x).c_str());
