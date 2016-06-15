@@ -538,13 +538,16 @@ IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEventFromString(
     size_t jsonPart1 = jsonString.find_first_of('{');
     size_t jsonPart2 = jsonString.find_last_of('}');
     Utf8String actualJsonPart = jsonString.substr(jsonPart1, jsonPart2);
-    if (0 == (BeStringUtilities::Stricmp("Bentley.DgnDbServer.Common.LockEvent", contentType)))
+    if (0 == (BeStringUtilities::Stricmp("LockEvent", contentType)))
         {
         bmap<Utf8String, Utf8String> entitymap;
         entitymap.Insert(DgnDbServerEvent::RepoId, "");
         entitymap.Insert(DgnDbServerEvent::UserId, "");
-        entitymap.Insert(DgnDbServerEvent::LockEvent::LockId, "");
+        entitymap.Insert(DgnDbServerEvent::LockEvent::ObjectId, "");
         entitymap.Insert(DgnDbServerEvent::LockEvent::LockType, "");
+        entitymap.Insert(DgnDbServerEvent::LockEvent::LockLevel, "");
+        entitymap.Insert(DgnDbServerEvent::LockEvent::BriefcaseId, "");
+        entitymap.Insert(DgnDbServerEvent::LockEvent::ReleasedWithRevision, "");
         entitymap.Insert(DgnDbServerEvent::LockEvent::Date, "");
 
         if (!EventServiceStringHelper(entitymap, actualJsonPart))
@@ -553,17 +556,21 @@ IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEventFromString(
                                            (
                                             entitymap[DgnDbServerEvent::RepoId],
                                             entitymap[DgnDbServerEvent::UserId],
-                                            entitymap[DgnDbServerEvent::LockEvent::LockId],
+                                            entitymap[DgnDbServerEvent::LockEvent::ObjectId],
                                             entitymap[DgnDbServerEvent::LockEvent::LockType],
+                                            entitymap[DgnDbServerEvent::LockEvent::LockLevel],
+                                            entitymap[DgnDbServerEvent::LockEvent::BriefcaseId],
+                                            entitymap[DgnDbServerEvent::LockEvent::ReleasedWithRevision],
                                             entitymap[DgnDbServerEvent::LockEvent::Date]
                                            );
         }
-    else if (0 == (BeStringUtilities::Stricmp("Bentley.DgnDbServer.Common.RevisionEvent", contentType)))
+    else if (0 == (BeStringUtilities::Stricmp("RevisionEvent", contentType)))
         {
         bmap<Utf8String, Utf8String> entitymap;
         entitymap.Insert(DgnDbServerEvent::RepoId, "");
         entitymap.Insert(DgnDbServerEvent::UserId, "");
         entitymap.Insert(DgnDbServerEvent::RevisionEvent::RevisionId, "");
+        entitymap.Insert(DgnDbServerEvent::RevisionEvent::RevisionIndex, "");
         entitymap.Insert(DgnDbServerEvent::RevisionEvent::Date, "");
 
         if (!EventServiceStringHelper(entitymap, actualJsonPart))
@@ -573,6 +580,7 @@ IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEventFromString(
                                                 entitymap[DgnDbServerEvent::RepoId],
                                                 entitymap[DgnDbServerEvent::UserId],
                                                 entitymap[DgnDbServerEvent::RevisionEvent::RevisionId],
+                                                entitymap[DgnDbServerEvent::RevisionEvent::RevisionIndex],
                                                 entitymap[DgnDbServerEvent::RevisionEvent::Date]
                                                );
         }
@@ -590,7 +598,7 @@ IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEventFromJson(Ut
     size_t jsonPosStart = jsonString.find_first_of('{');
     size_t jsonPosEnd = jsonString.find_last_of('}');
     Utf8String actualJsonPart = jsonString.substr(jsonPosStart, jsonPosEnd);
-    if (0 == (BeStringUtilities::Stricmp("Bentley.DgnDbServer.Common.LockEvent", contentType)))
+    if (0 == (BeStringUtilities::Stricmp("LockEvent", contentType)))
         {
         Json::Reader reader;
         Json::Value data(Json::objectValue);
@@ -599,21 +607,27 @@ IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEventFromJson(Ut
             !data.isArray() &&
             data.isMember(DgnDbServerEvent::RepoId) &&
             data.isMember(DgnDbServerEvent::UserId) &&
-            data.isMember(DgnDbServerEvent::LockEvent::LockId) &&
+            data.isMember(DgnDbServerEvent::LockEvent::ObjectId) &&
             data.isMember(DgnDbServerEvent::LockEvent::LockType) &&
+            data.isMember(DgnDbServerEvent::LockEvent::LockLevel) &&
+            data.isMember(DgnDbServerEvent::LockEvent::BriefcaseId) &&
+            data.isMember(DgnDbServerEvent::LockEvent::ReleasedWithRevision) &&
             data.isMember(DgnDbServerEvent::LockEvent::Date)
            )
             return DgnDbServerLockEvent::Create
                                                 (
                                                  data[DgnDbServerEvent::RepoId].asString(),
                                                  data[DgnDbServerEvent::UserId].asString(),
-                                                 data[DgnDbServerEvent::LockEvent::LockId].asString(),
+                                                 data[DgnDbServerEvent::LockEvent::ObjectId].asString(),
                                                  data[DgnDbServerEvent::LockEvent::LockType].asString(),
+                                                 data[DgnDbServerEvent::LockEvent::LockLevel].asString(),
+                                                 data[DgnDbServerEvent::LockEvent::BriefcaseId].asString(),
+                                                 data[DgnDbServerEvent::LockEvent::ReleasedWithRevision].asString(),
                                                  data[DgnDbServerEvent::LockEvent::Date].asString()
                                                 );
         return nullptr;
         }
-    else if (0 == (BeStringUtilities::Stricmp("Bentley.DgnDbServer.Common.RevisionEvent", contentType)))
+    else if (0 == (BeStringUtilities::Stricmp("RevisionEvent", contentType)))
         {
         Json::Reader reader;
         Json::Value data(Json::objectValue);
@@ -623,6 +637,7 @@ IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEventFromJson(Ut
             data.isMember(DgnDbServerEvent::RepoId) &&
             data.isMember(DgnDbServerEvent::UserId) &&
             data.isMember(DgnDbServerEvent::RevisionEvent::RevisionId) &&
+            data.isMember(DgnDbServerEvent::RevisionEvent::RevisionIndex) &&
             data.isMember(DgnDbServerEvent::RevisionEvent::Date)
             )
             return DgnDbServerRevisionEvent::Create
@@ -630,6 +645,7 @@ IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEventFromJson(Ut
                                                     data[DgnDbServerEvent::RepoId].asString(),
                                                     data[DgnDbServerEvent::UserId].asString(),
                                                     data[DgnDbServerEvent::RevisionEvent::RevisionId].asString(),
+                                                    data[DgnDbServerEvent::RevisionEvent::RevisionIndex].asString(),
                                                     data[DgnDbServerEvent::RevisionEvent::Date].asString()
                                                    );
         return nullptr;

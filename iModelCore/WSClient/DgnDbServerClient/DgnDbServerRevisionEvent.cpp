@@ -13,20 +13,21 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             65/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionEvent::DgnDbServerRevisionEvent(Utf8String repoId, Utf8String userId, Utf8String revisionId, Utf8String date)
+DgnDbServerRevisionEvent::DgnDbServerRevisionEvent(Utf8String repoId, Utf8String userId, Utf8String revisionId, Utf8String revisionIndex, Utf8String date)
     {
     m_repoId = repoId;
     m_userId = userId;
     m_revisionId = revisionId;
+    m_revisionIndex = revisionIndex;
     m_date = date;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerRevisionEvent> DgnDbServerRevisionEvent::Create(Utf8String repoId, Utf8String userId, Utf8String revisionId, Utf8String date)
+std::shared_ptr<struct DgnDbServerRevisionEvent> DgnDbServerRevisionEvent::Create(Utf8String repoId, Utf8String userId, Utf8String revisionId, Utf8String revisionIndex, Utf8String date)
     {
-    return std::shared_ptr<struct DgnDbServerRevisionEvent>(new DgnDbServerRevisionEvent(repoId, userId, revisionId, date));
+    return std::shared_ptr<struct DgnDbServerRevisionEvent>(new DgnDbServerRevisionEvent(repoId, userId, revisionId, revisionIndex, date));
     }
 
 //---------------------------------------------------------------------------------------
@@ -59,6 +60,14 @@ Utf8String DgnDbServerRevisionEvent::GetDate()
 Utf8String DgnDbServerRevisionEvent::GetRevisionId()
     {
     return m_revisionId;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Caleb.Shafer						06/2016
+//---------------------------------------------------------------------------------------
+Utf8String DgnDbServerRevisionEvent::GetRevisionIndex()
+    {
+    return m_revisionIndex;
     }
 
 //---------------------------------------------------------------------------------------
