@@ -521,8 +521,23 @@ void circumcircle(DPoint3d& center, double& radius, const DPoint3d* triangle)
     radius = sqrt(det1*det1 + det2*det2 - 4 * det*detR) / (2 * abs(det));
     }
 
+void circumcircle2(DPoint3d& center, double& radius, const DPoint3d* triangle)
+    {
+    double det = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, 1, triangle[1].x, triangle[1].y, 1, triangle[2].x, triangle[2].y, 1).Determinant();
+    double mags[3] = { triangle[0].MagnitudeSquaredXY(),
+        triangle[1].MagnitudeSquaredXY(),
+        triangle[2].MagnitudeSquaredXY() };
+    double det1 = 0.5*(RotMatrix::FromRowValues(mags[0], triangle[0].y, 1, mags[1], triangle[1].y, 1, mags[2], triangle[2].y, 1).Determinant());
+    double det2 = 0.5*RotMatrix::FromRowValues(triangle[0].x, mags[0], 1, triangle[1].x, mags[1], 1, triangle[2].x, mags[2], 1).Determinant();
+    center.x = det1 /  det;
+    center.y = det2 / det;
+    double detR = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, mags[0], triangle[1].x, triangle[1].y, mags[1], triangle[2].x, triangle[2].y, mags[2]).Determinant();
+    radius = sqrt(detR/det + DPoint3d::From(det1, det2, 0).MagnitudeSquaredXY()/(det*det));
+    }
+
 void SelectPointsToStitch(bvector<DPoint3d>& stitchedPoints, MTGGraph* meshGraph, DRange3d& neighborExt, bvector<DPoint3d>& pts)
     {
+    DRange3d nodeExt = DRange3d::From(pts);
     std::queue<MTGNodeId> bounds;
     MTGARRAY_SET_LOOP(edgeID, meshGraph)
         {
@@ -580,9 +595,12 @@ void SelectPointsToStitch(bvector<DPoint3d>& stitchedPoints, MTGGraph* meshGraph
             bounds.push(meshGraph->EdgeMate(currentID));
             continue;
             }
+        for (size_t i = 0; i < 3; ++i) facePoints[i].DifferenceOf(facePoints[i], nodeExt.low);
         DPoint3d center = DPoint3d::From(0, 0, 0);
         double radius = 0;
         circumcircle(center, radius, facePoints);
+        for (size_t i = 0; i < 3; ++i) facePoints[i].SumOf(facePoints[i], nodeExt.low);
+        center.SumOf(center, nodeExt.low);
         if (DRange3d::From(center.x - radius, center.y - radius,
             center.z, center.x + radius,
             center.y + radius, center.z).IntersectsWith(neighborExt, 2))
@@ -835,14 +853,14 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
 #endif
 
-    WString stmFileName(argv[1]);
-    RunPrecisionTest(stmFileName);
+   /* WString stmFileName(argv[1]);
+    RunPrecisionTest(stmFileName);*/
 
 
     //RunDTMClipTest();
     //RunDTMTriangulateTest();
     //RunDTMSTMTriangulateTest();
-    //RunSelectPointsTest();
+    RunSelectPointsTest();
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
     std::cout << "THE END" << std::endl;
