@@ -15,6 +15,11 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
+DgnDbServerEventParser::DgnDbServerEventParser() {}
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 bool StringHelper(bmap<Utf8String, Utf8String>& entitymap, Utf8String original)
     {
     bmap<Utf8String, Utf8String>::iterator data = entitymap.begin();
@@ -22,9 +27,9 @@ bool StringHelper(bmap<Utf8String, Utf8String>& entitymap, Utf8String original)
         {
         Utf8String entity = data->first;
         size_t entityPos = (0 == (BeStringUtilities::Stricmp("Date", entity.c_str()))) ? original.find_first_of(entity.c_str()) : original.rfind(entity.c_str());
-
         if (Utf8String::npos == entityPos)
             return false;
+
         Utf8String sub1 = original.substr(entityPos, original.length());
         size_t entityValueStart = sub1.find_first_of(':');
         Utf8String sub2 = sub1.substr(entityValueStart + 2, sub1.length());
@@ -45,8 +50,14 @@ Utf8CP responseContentType,
 Utf8String responseString
 ) const
     {
+    if (Utf8String::IsNullOrEmpty(responseString.c_str()) || Utf8String::IsNullOrEmpty(responseContentType))
+        return nullptr;
+
     size_t jsonPosStart = responseString.find_first_of('{');
     size_t jsonPosEnd = responseString.find_last_of('}');
+    if (jsonPosStart == Utf8String::npos || jsonPosEnd == Utf8String::npos)
+        return nullptr;
+
     Utf8String actualJsonPart = responseString.substr(jsonPosStart, jsonPosEnd);
     if (0 == (BeStringUtilities::Stricmp(IDgnDbServerEvent::GetEventName(DgnDbServerEventType::LockEvent).c_str(), responseContentType)))
         {
@@ -65,16 +76,16 @@ Utf8String responseString
             data.isMember(DgnDbServerEvent::LockEvent::Date)
             )
             return DgnDbServerLockEvent::Create
-            (
-            data[DgnDbServerEvent::RepoId].asString(),
-            data[DgnDbServerEvent::UserId].asString(),
-            data[DgnDbServerEvent::LockEvent::ObjectId].asString(),
-            data[DgnDbServerEvent::LockEvent::LockType].asString(),
-            data[DgnDbServerEvent::LockEvent::LockLevel].asString(),
-            data[DgnDbServerEvent::LockEvent::BriefcaseId].asString(),
-            data[DgnDbServerEvent::LockEvent::ReleasedWithRevision].asString(),
-            data[DgnDbServerEvent::LockEvent::Date].asString()
-            );
+                                               (
+                                                data[DgnDbServerEvent::RepoId].asString(),
+                                                data[DgnDbServerEvent::UserId].asString(),
+                                                data[DgnDbServerEvent::LockEvent::ObjectId].asString(),
+                                                data[DgnDbServerEvent::LockEvent::LockType].asString(),
+                                                data[DgnDbServerEvent::LockEvent::LockLevel].asString(),
+                                                data[DgnDbServerEvent::LockEvent::BriefcaseId].asString(),
+                                                data[DgnDbServerEvent::LockEvent::ReleasedWithRevision].asString(),
+                                                data[DgnDbServerEvent::LockEvent::Date].asString()
+                                               );
         return nullptr;
         }
     else if (0 == (BeStringUtilities::Stricmp(IDgnDbServerEvent::GetEventName(DgnDbServerEventType::RevisionEvent).c_str(), responseContentType)))
@@ -91,13 +102,13 @@ Utf8String responseString
             data.isMember(DgnDbServerEvent::RevisionEvent::Date)
             )
             return DgnDbServerRevisionEvent::Create
-            (
-            data[DgnDbServerEvent::RepoId].asString(),
-            data[DgnDbServerEvent::UserId].asString(),
-            data[DgnDbServerEvent::RevisionEvent::RevisionId].asString(),
-            data[DgnDbServerEvent::RevisionEvent::RevisionIndex].asString(),
-            data[DgnDbServerEvent::RevisionEvent::Date].asString()
-            );
+                                                   (
+                                                    data[DgnDbServerEvent::RepoId].asString(),
+                                                    data[DgnDbServerEvent::UserId].asString(),
+                                                    data[DgnDbServerEvent::RevisionEvent::RevisionId].asString(),
+                                                    data[DgnDbServerEvent::RevisionEvent::RevisionIndex].asString(),
+                                                    data[DgnDbServerEvent::RevisionEvent::Date].asString()
+                                                   );
         return nullptr;
         }
     else
@@ -113,9 +124,15 @@ Utf8CP responseContentType,
 Utf8String responseString
 ) const
     {
-    size_t jsonPart1 = responseString.find_first_of('{');
-    size_t jsonPart2 = responseString.find_last_of('}');
-    Utf8String actualJsonPart = responseString.substr(jsonPart1, jsonPart2);
+    if (Utf8String::IsNullOrEmpty(responseString.c_str()) || Utf8String::IsNullOrEmpty(responseContentType))
+        return nullptr;
+
+    size_t jsonPosStart = responseString.find_first_of('{');
+    size_t jsonPosEnd = responseString.find_last_of('}');
+    if (jsonPosStart == Utf8String::npos || jsonPosEnd == Utf8String::npos)
+        return nullptr;
+
+    Utf8String actualJsonPart = responseString.substr(jsonPosStart, jsonPosEnd);
     if (0 == (BeStringUtilities::Stricmp(IDgnDbServerEvent::GetEventName(DgnDbServerEventType::LockEvent).c_str(), responseContentType)))
         {
         bmap<Utf8String, Utf8String> entitymap;
@@ -131,16 +148,16 @@ Utf8String responseString
         if (!StringHelper(entitymap, actualJsonPart))
             return nullptr;
         return DgnDbServerLockEvent::Create
-            (
-            entitymap[DgnDbServerEvent::RepoId],
-            entitymap[DgnDbServerEvent::UserId],
-            entitymap[DgnDbServerEvent::LockEvent::ObjectId],
-            entitymap[DgnDbServerEvent::LockEvent::LockType],
-            entitymap[DgnDbServerEvent::LockEvent::LockLevel],
-            entitymap[DgnDbServerEvent::LockEvent::BriefcaseId],
-            entitymap[DgnDbServerEvent::LockEvent::ReleasedWithRevision],
-            entitymap[DgnDbServerEvent::LockEvent::Date]
-            );
+                                           (
+                                            entitymap[DgnDbServerEvent::RepoId],
+                                            entitymap[DgnDbServerEvent::UserId],
+                                            entitymap[DgnDbServerEvent::LockEvent::ObjectId],
+                                            entitymap[DgnDbServerEvent::LockEvent::LockType],
+                                            entitymap[DgnDbServerEvent::LockEvent::LockLevel],
+                                            entitymap[DgnDbServerEvent::LockEvent::BriefcaseId],
+                                            entitymap[DgnDbServerEvent::LockEvent::ReleasedWithRevision],
+                                            entitymap[DgnDbServerEvent::LockEvent::Date]
+                                           );
         }
     else if (0 == (BeStringUtilities::Stricmp(IDgnDbServerEvent::GetEventName(DgnDbServerEventType::RevisionEvent).c_str(), responseContentType)))
         {
@@ -154,13 +171,13 @@ Utf8String responseString
         if (!StringHelper(entitymap, actualJsonPart))
             return nullptr;
         return DgnDbServerRevisionEvent::Create
-            (
-            entitymap[DgnDbServerEvent::RepoId],
-            entitymap[DgnDbServerEvent::UserId],
-            entitymap[DgnDbServerEvent::RevisionEvent::RevisionId],
-            entitymap[DgnDbServerEvent::RevisionEvent::RevisionIndex],
-            entitymap[DgnDbServerEvent::RevisionEvent::Date]
-            );
+                                               (
+                                                entitymap[DgnDbServerEvent::RepoId],
+                                                entitymap[DgnDbServerEvent::UserId],
+                                                entitymap[DgnDbServerEvent::RevisionEvent::RevisionId],
+                                                entitymap[DgnDbServerEvent::RevisionEvent::RevisionIndex],
+                                                entitymap[DgnDbServerEvent::RevisionEvent::Date]
+                                               );
         }
     else
         {
