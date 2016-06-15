@@ -85,7 +85,9 @@ static vector<std::wstring> s_GetFileNameVector()
     //&&MM that path should come from the asset directory(symlink during build) or
     // from a config file ?
     //&&MM pss and dem are missing from the the test case.
-    BeFileName sourcePath("D:\\Dataset\\DEM" );
+    BeFileName sourcePath("D:\\Dataset\\Images_Files\\_forATPs\\PSS");
+//    BeFileName sourcePath("D:\\Dataset\\Images_Files\\_forATPs\\Images");
+//    BeFileName sourcePath("D:\\Dataset\\Images_Files\\_forATPs\\DEM");
 
     const WString glob = L"*";
 
@@ -95,24 +97,7 @@ static vector<std::wstring> s_GetFileNameVector()
     for (auto& actualName : fileList)
         {
         if (actualName.IsDirectory() ||
-            actualName.ContainsI(L"thumb.db") ||                                    // Ignore thumnail windows files.
-            actualName.ContainsI(L"NITF\\PasSupportees") ||
-            actualName.ContainsI(L"ErdasImg\\ImagesInvalides") ||
-            actualName.ContainsI(L"iTIFF\\xFileNotSupported") ||
-            actualName.ContainsI(L"TIF\\xFileNotSupported") ||
-            actualName.ContainsI(L"Pict\\xFileNotSupported") ||
-            actualName.ContainsI(L"CAL\\xFileNotSupported (Type2-tiled)") ||
-            actualName.ContainsI(L"BMP\\xFileNotSupported") ||
-            actualName.ContainsI(L"Bil\\xFileNotSupported") ||
-            actualName.ContainsI(L"Images\\DOQ") ||
-            actualName.ContainsI(L"Images\\EPX") ||
-            actualName.ContainsI(L"Images\\MultiChannel_(XCH)\\Flashpix") ||
-            actualName.ContainsI(L"Images\\jpeg\\Jpeg_InvalidWorldFiles") ||
-            actualName.ContainsI(L"Images\\ECW\\TooBigImage") ||
-            actualName.ContainsI(L"Images\\ECW\\TC31T1\\2005_mosaic_colour.ecw") ||                         // too big for .itiff
-            actualName.ContainsI(L"Images\\MrSid\\Group_East_Color.sid") ||                                 // too big for .itiff
-            actualName.ContainsI(L"Images\\MrSid\\TC00T1\\3185375_1760645.sid") ||                          // too big for .itiff
-            actualName.ContainsI(L"Images\\Jpeg2000\\J2K_W_Infrared")                                       // Not supported
+            actualName.ContainsI(L"thumb.db")                                     // Ignore thumnail windows files.
             )
             continue;
 
@@ -427,6 +412,9 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         auto positionStart = GetParam().find(L"Images\\");
         if (positionStart == WString::npos)                     // Try with DEM if Images not there.
             positionStart = GetParam().find(L"DEM\\");
+        if (positionStart == WString::npos)                     // Try with PSS if Images not there.
+            positionStart = GetParam().find(L"PSS\\");
+
         auto positionEnd = GetParam().find(L"\\", positionStart + 7);
         WString folderNameToAppend(GetParam().substr(positionStart, positionEnd - positionStart).c_str());
         outputFilePath.AppendToPath(folderNameToAppend.c_str());
@@ -442,6 +430,8 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         auto pos = GetParam().find(L"Images");
         if (pos == WString::npos)                     // Try with DEM if Images not there.
             pos = GetParam().find(L"DEM");
+        if (pos == WString::npos)                     // Try with PSS if Images not there.
+            pos = GetParam().find(L"PSS");
         WString newNameFile(GetParam().substr(pos).c_str());
         newNameFile.ReplaceAll(L"\\", L"_");
         outputFilePath.AppendToPath(newNameFile.c_str());
@@ -838,9 +828,7 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
 //
 //:>+--------------------------------------------------------------------------------------
 INSTANTIATE_TEST_CASE_P(AllRastersInDirectory, ExportTester,
-                        ::testing::ValuesIn(s_GetFileNameVector()));
-
-
+                        ::testing::ValuesIn(s_GetFileNameVector()));    
 
 // #else
 // 

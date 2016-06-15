@@ -173,7 +173,7 @@ HRFUSgsSDTSDEMCapabilities::HRFUSgsSDTSDEMCapabilities()
     Add((HFCPtr<HRFCapability>&)pGeocodingCapability);
 
     // Tag capability
-
+    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeVerticalUnitRatioToMeter));
     }
 
 HFC_IMPLEMENT_SINGLETON(HRFUSgsSDTSDEMCreator)
