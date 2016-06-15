@@ -51,217 +51,13 @@
     <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi/Bentley">
         <SubPart PartName="Base"/>
         <Bindings>
-            <Directory SourceName="Delivery/PublishedApi/Bentley/Bentley" SubPartDirectory="PublishedApi/Bentley/Bentley" />
-            <Directory SourceName="Delivery/PublishedApi/Bentley/Logging" SubPartDirectory="PublishedApi/Bentley/Logging" />
+            <Directory SourceName="Delivery/PublishedApi/Bentley" SubPartDirectory="PublishedApi/Bentley" />
         </Bindings>
     </Part>
 	
-    <Part Name="BeHttpPublicAPI" BentleyBuildMakeFile="BeHttp/prewire.mke" ApiNumber="G06">
-        <SubPart PartName="Base" />
-        <SubPart PartName="PublicAPI"            PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="rapidjson"            PartFile="rapidjson"        Repository="Libsrc-RapidJson"/>
-        <SubPart PartName="PublicAPI"            PartFile="BeOpenSSL"        Repository="Libsrc-openssl"/>
-        <SubPart PartName="PublicAPI"            PartFile="BeCasablanca"     Repository="Libsrc-casablanca"/>
-        <SubPart PartName="PublicAPI"            PartFile="BeSQLite"         Repository="BeSQLite"/>
-        <SubPart PartName="PublicAPI"            PartFile="BeCurl"           Repository="Libsrc-Curl"/>
-        <Bindings>
-            <PublicAPI Domain="BeHttp" />
-        </Bindings>
-    </Part>
-         
-    <Part Name="BeHttpPublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi/BeHttp  +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
-        <SubPart PartName="BeHttpPublicAPI" />
-        <Bindings>
-            <Directory SourceName="Delivery/PublishedApi/BeHttp/BeHttp" SubPartDirectory="PublishedApi/BeHttp/BeHttp" />
-            <Directory SourceName="Delivery/PublishedApi/BeHttp/BeJsonCpp" SubPartDirectory="PublishedApi/BeHttp/BeJsonCpp" />
-            <Directory SourceName="Delivery/PublishedApi/BeHttp/json" SubPartDirectory="PublishedApi/BeHttp/json" />
-            <Directory SourceName="Delivery/PublishedApi/BeHttp/rapidjson" SubPartDirectory="PublishedApi/BeHttp/rapidjson" />
-            <Directory SourceName="Delivery/PublishedApi/BeHttp/BeSQLite" SubPartDirectory="PublishedApi/BeHttp/BeSQLite" />
-            <Directory SourceName="Delivery/PublishedApi/BeHttp/Bentley" SubPartDirectory="PublishedApi/BeHttp/Bentley" />
-            <Directory SourceName="Delivery/PublishedApi/BeHttp/Logging" SubPartDirectory="PublishedApi/BeHttp/Logging" />
-        </Bindings>
-    </Part>
-	
-    <Part Name="BeHttpLibrary" BentleyBuildMakeFile="BeHttp/BeHttp.mke" ApiNumber="G06">
-        <SubPart PartName="BeHttpPublicAPI" />
-        <SubPart PartName="BentleyDll"/>
-        <SubPart PartName="BeHttpLibrary-Curl"/>
-        <SubPart PartName="BeHttpLibrary-Casablanca"/>
-        <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="rapidjson"       PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
-        <SubPart PartName="BeSQLite"        PartFile="BeSQLite"     Repository="BeSQLite"/>
-        <Bindings>
-            <Libs ProductDirectoryName="BeHttpLibs">Delivery/BeHttp/$(libprefix)BeHttp$(libext)</Libs>
-            <Assemblies ProductDirectoryName="BeHttpNativeAssemblies">Delivery/BeHttp/$(shlibprefix)BeHttp$(ApiNumber)$(shlibext)</Assemblies>
-            <Directory ProductDirectoryName="BeHttpAssets" SourceName="Delivery/BeHttp/http"/>
-        </Bindings>
-    </Part>
-    
-    <Part Name="BeHttpLibrary-Curl" ExcludePlatforms="WinRT*">
-        <SubPart PartName="BeCurl"          PartFile="BeCurl"       Repository="Libsrc-Curl"/>
-    </Part>
-    
-    <Part Name="BeHttpLibrary-Casablanca" OnlyPlatforms="WinRT*">
-        <SubPart PartName="BeCasablanca"    PartFile="BeCasablanca" Repository="Libsrc-casablanca"/>
-    </Part>
-    
-    <Part Name="BeHttp">
-        <SubPart PartName="BeHttpPublishedAPI" />
-        <SubPart PartName="BeHttpLibrary" />
-        <SubPart PartName="BeHttp-Xliffs"/>
-    </Part>
-    
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // L10N                                                                   // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-
-    <Part Name="BeHttp-Xliffs" BentleyBuildMakeFile="BeHttp/BeHttpXliffs.mke">
-        <Bindings>
-            <Files ProductDirectoryName="BeHttpXliffs" Required="false" SubPartDirectory="xliffs">
-                Delivery/xliffs/BeHttp_en.xliff
-            </Files>
-        </Bindings>
-    </Part>
-
-    <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
-    <Part Name="L10N-BeHttpXliffs-en" OnlyPlatforms="x64"
-        BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
-        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/Bentley/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-BeHttp/en/">
-        <SubPart PartName="BeHttp-Xliffs" />
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-cs" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=cs">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/BeHttp_cs.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-de" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=de">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/BeHttp_de.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-es" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=es">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/BeHttp_es.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-fi" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fi">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/BeHttp_fi.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-fr" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fr">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/BeHttp_fr.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-it" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=it">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/BeHttp_it.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-ja" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ja">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/BeHttp_ja.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-ko" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ko">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/BeHttp_ko.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-nl" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=nl">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/BeHttp_nl.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-pl" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pl">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/BeHttp_pl.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-pt" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pt">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/BeHttp_pt.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-ru" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ru">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/BeHttp_ru.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-sv" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=sv">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/BeHttp_sv.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-tr" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=tr">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/BeHttp_tr.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-zh-cn" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-cn">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/BeHttp_zh-cn.xliff</Files>
-        </Bindings>
-    </Part>
-
-    <!-- Translated Xliffs are linked into the BuildContext here -->
-    <Part Name="L10N-BeHttpXliffs-zh-tw" BentleyBuildMakeFile="BeHttp/l10n-BeHttp.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-tw">
-        <RequiredRepository>l10n-BeHttp</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="L10N-BeHttpXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/BeHttp_zh-tw.xliff</Files>
-        </Bindings>
-    </Part>
-
     <!-- ******************************** Unit Tests ************************************** -->
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="BentleyDll"/>
-        <SubPart PartName="BeHttpLibrary" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Bentley" SubPartDirectory="UnitTests/Bentley"> Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
@@ -277,7 +73,6 @@
     <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="PublishedApi" />
-		<SubPart PartName="BeHttpPublishedAPI" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
@@ -329,7 +124,7 @@
         <SubProduct ProductName="Bentley-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/Bentley/Project" />
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/Project" />
         </Bindings>
     </Part>
 
@@ -345,7 +140,7 @@
         <SubProduct ProductName="Bentley-Tests"/>
         <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/Bentley/Project" />
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/Project" />
         </Bindings>
     </Part>
 
