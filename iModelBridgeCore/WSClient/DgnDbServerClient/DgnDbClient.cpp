@@ -186,6 +186,7 @@ Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR rep
     instance[ServerSchema::SchemaName] = ServerSchema::Schema::Admin;
     instance[ServerSchema::ClassName] = ServerSchema::Class::Repository;
     JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+    properties[ServerSchema::Property::ProjectId] = "default";
     properties[ServerSchema::Property::Description] = description;
     properties[ServerSchema::Property::RepositoryName] = repositoryName;
     properties[ServerSchema::Property::FileId] = repositoryGuid;
