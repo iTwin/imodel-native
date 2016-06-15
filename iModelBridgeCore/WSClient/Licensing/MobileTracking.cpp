@@ -2,13 +2,11 @@
  |
  |     $Source: Licensing/MobileTracking.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Licensing/MobileTracking.h>
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015

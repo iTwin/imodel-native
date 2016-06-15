@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncLocalChangesTask.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Cache/Util/FileUtil.h>
 #include <WebServices/Client/WSChangeset.h>
-#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
+#include <BeHttp/HttpStatusHelper.h>
 
 #include "Util/JsonUtil.h"
 

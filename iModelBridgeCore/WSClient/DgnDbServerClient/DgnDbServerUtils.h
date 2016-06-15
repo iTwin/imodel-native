@@ -8,7 +8,7 @@
 #pragma once
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/DgnDbServerResult.h>
-#include <DgnClientFx/Utils/Http/HttpRequest.h>
+#include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/LocksManager.h>
 
@@ -115,7 +115,7 @@ struct CallbackQueue
         void Notify();
         struct Callback
             {
-            DgnClientFx::Utils::HttpRequest::ProgressCallback callback;
+            Http::HttpRequest::ProgressCallback callback;
             CallbackQueue& m_queue;
             double m_bytesTransfered;
             double m_bytesTotal;
@@ -123,11 +123,11 @@ struct CallbackQueue
             };
         friend struct CallbackQueue::Callback;
         bvector<std::shared_ptr<CallbackQueue::Callback>> m_callbacks;
-        DgnClientFx::Utils::HttpRequest::ProgressCallbackCR m_callback;
+        Http::HttpRequest::ProgressCallbackCR m_callback;
     public:
-        CallbackQueue(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback);
+        CallbackQueue(Http::HttpRequest::ProgressCallbackCR callback);
 
-        DgnClientFx::Utils::HttpRequest::ProgressCallbackCR NewCallback();
+        Http::HttpRequest::ProgressCallbackCR NewCallback();
     };
 
 //=======================================================================================

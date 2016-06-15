@@ -2,20 +2,18 @@
  |
  |     $Source: Licensing/UsageTracking.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Licensing/UsageTracking.h>
 #include <Bentley/Base64Utilities.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 
 #ifndef BENTLEY_WINRT
 #include <openssl/evp.h>
 #endif
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 static IHttpHandlerPtr s_httpHandler;
 static bool s_usageTrackingInitialized = false;

@@ -12,7 +12,7 @@
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/IConnectTokenProvider.h>
 #include <WebServices/Connect/IImsClient.h>
-#include <DgnClientFx/Utils/Threading/UniqueTaskHolder.h>
+#include <Bentley/Tasks/UniqueTaskHolder.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

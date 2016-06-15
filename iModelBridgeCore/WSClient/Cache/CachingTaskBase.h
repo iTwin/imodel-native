@@ -8,13 +8,11 @@
 
 #pragma once
 
-#include <DgnClientFx/Utils/Threading/AsyncTask.h>
+#include <Bentley/Tasks/AsyncTask.h>
 #include <WebServices/Cache/CachingDataSource.h>
 #include <atomic>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Benediktas.Lipnickas   10/2013

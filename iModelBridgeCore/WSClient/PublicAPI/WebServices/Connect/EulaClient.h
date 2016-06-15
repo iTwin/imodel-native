@@ -10,7 +10,7 @@
 
 #include <WebServices/WebServices.h>
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
-#include <DgnClientFx/Utils/Http/IHttpHandler.h>
+#include <BeHttp/IHttpHandler.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE 
 

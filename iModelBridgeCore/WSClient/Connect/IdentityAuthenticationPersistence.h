@@ -10,12 +10,12 @@
 
 #include <WebServices/WebServices.h>
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
-#include <DgnClientFx/Utils/SecureStore.h>
+#include <BeSecurity/SecureStore.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_SECURITY
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2016
@@ -25,12 +25,12 @@ struct EXPORT_VTABLE_ATTRIBUTE IdentityAuthenticationPersistence : public IConne
     {
     private:
         mutable BeMutex m_cs;
-        ILocalState& m_localState;
+        IJsonLocalState& m_localState;
         std::shared_ptr<ISecureStore> m_secureStore;
         mutable SamlTokenPtr m_token;
 
     public:
-        WSCLIENT_EXPORT IdentityAuthenticationPersistence(ILocalState* localState = nullptr, std::shared_ptr<ISecureStore> secureStore = nullptr);
+        WSCLIENT_EXPORT IdentityAuthenticationPersistence(IJsonLocalState* localState = nullptr, std::shared_ptr<ISecureStore> secureStore = nullptr);
         virtual ~IdentityAuthenticationPersistence() {}
 
         WSCLIENT_EXPORT void SetToken(SamlTokenPtr token) override;

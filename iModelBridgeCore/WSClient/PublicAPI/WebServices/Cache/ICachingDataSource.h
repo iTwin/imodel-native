@@ -13,8 +13,8 @@
 #include <WebServices/Cache/WebServicesCache.h>
 
 #include <Bentley/bset.h>
-#include <DgnClientFx/Utils/Threading/AsyncResult.h>
-#include <DgnClientFx/Utils/Threading/WorkerThread.h>
+#include <Bentley/Tasks/AsyncResult.h>
+#include <Bentley/Tasks/WorkerThread.h>
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
 #include <WebServices/Cache/Transactions/CacheTransaction.h>
 #include <WebServices/Cache/IQueryProvider.h>
@@ -23,7 +23,6 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 typedef std::shared_ptr<struct ICachingDataSource> ICachingDataSourcePtr;
 
 /*--------------------------------------------------------------------------------------+

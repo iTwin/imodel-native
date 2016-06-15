@@ -9,15 +9,14 @@
 #include <WebServices/Connect/ConnectSpaces.h>
 
 #include <DgnClientFx/DgnClientApp.h>
-#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
-#include <DgnClientFx/Utils/Threading/WorkerThreadPool.h>
+#include <BeHttp/HttpStatusHelper.h>
+#include <Bentley/Tasks/WorkerThreadPool.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define MESSAGE_STRING_FIELD(x) messageObj[(x)].asCString()

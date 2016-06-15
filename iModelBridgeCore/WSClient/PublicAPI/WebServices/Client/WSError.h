@@ -9,17 +9,17 @@
 //__PUBLISH_SECTION_START__
 
 #include <iostream>
-#include "Bentley/bmap.h"
-#include "BeJsonCpp/BeJsonUtilities.h"
-
+#include <Bentley/bmap.h>
+#include <Bentley/Tasks/AsyncError.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
+#include <BeHttp/HttpError.h>
+#include <BeHttp/HttpResponse.h>
 #include <WebServices/Client/WebServicesClient.h>
-#include <DgnClientFx/Utils/Threading/AsyncError.h>
-#include <DgnClientFx/Utils/Http/HttpError.h>
-#include <DgnClientFx/Utils/Http/HttpResponse.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_TASKS
+USING_NAMESPACE_BENTLEY_HTTP
 
 struct WSError;
 typedef WSError& WSErrorR;

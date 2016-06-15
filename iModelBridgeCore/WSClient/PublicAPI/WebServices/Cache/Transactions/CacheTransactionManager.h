@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Transactions/CacheTransactionManager.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,7 +12,7 @@
 #include <WebServices/Cache/Transactions/BeSQLiteDbTransactionHandler.h>
 #include <WebServices/Cache/Transactions/CacheTransaction.h>
 #include <WebServices/Cache/Transactions/ICacheTransactionManager.h>
-#include <DgnClientFx/Utils/Threading/WorkerThread.h>
+#include <Bentley/Tasks/WorkerThread.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

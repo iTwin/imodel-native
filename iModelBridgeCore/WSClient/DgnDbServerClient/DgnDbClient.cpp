@@ -15,7 +15,6 @@
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BriefcaseFileNameCallback DgnDbClient::DefaultFileNameCallback = [](BeFileName baseDirectory, BeBriefcaseId briefcase, RepositoryInfoCR repositoryInfo)
@@ -81,7 +80,7 @@ void DgnDbClient::SetServerURL(Utf8StringCR serverUrl)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
-void DgnDbClient::SetCredentials(DgnClientFx::Utils::CredentialsCR credentials)
+void DgnDbClient::SetCredentials(CredentialsCR credentials)
     {
     m_credentials = credentials;
     m_repositoryManager->SetCredentials(credentials);

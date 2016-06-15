@@ -16,8 +16,6 @@ using namespace ::std;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
-
 TEST_F(SolrClientTests, Ctor_ValidBaseUrl_SetsValidBaseUrl)
     {
     Utf8String collection("IMS/User");

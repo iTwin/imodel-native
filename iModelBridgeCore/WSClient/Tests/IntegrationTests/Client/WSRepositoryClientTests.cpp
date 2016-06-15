@@ -16,7 +16,7 @@
 #include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <curl/curl.h>
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/StubInstances.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,6 @@
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 // Class for mocking server returned instances to use in cache tests
 struct StubInstances

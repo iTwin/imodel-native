@@ -14,12 +14,10 @@
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
 #include <WebServices/Client/ClientInfo.h>
-#include <DgnClientFx/Utils/Http/Credentials.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/Credentials.h>
+#include <BeHttp/HttpClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef AsyncResult<SamlTokenPtr, HttpError> SamlTokenResult;
 

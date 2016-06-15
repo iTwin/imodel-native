@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/IQueryProvider.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,7 @@
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
 #include <WebServices/Cache/Transactions/CacheTransaction.h>
 #include <WebServices/Client/WSQuery.h>
-#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+#include <Bentley/Tasks/AsyncResult.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

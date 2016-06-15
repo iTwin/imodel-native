@@ -2,21 +2,19 @@
 |
 |     $Source: Client/ServerInfoProvider.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <WebServices/Client/WSClient.h>
-#include <DgnClientFx/Utils/Threading/WorkerThread.h>
-#include <DgnClientFx/Utils/Threading/AsyncTask.h>
+#include <Bentley/Tasks/WorkerThread.h>
+#include <Bentley/Tasks/AsyncTask.h>
 #include <set>
 
 #include "ClientConnection.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef AsyncResult<WSInfo, HttpResponse> WSInfoHttpResult;
 

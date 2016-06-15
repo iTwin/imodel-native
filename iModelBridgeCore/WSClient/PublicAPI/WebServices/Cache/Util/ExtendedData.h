@@ -11,7 +11,7 @@
 #include <WebServices/Cache/WebServicesCache.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <ECDb/ECDb.h>
-#include <DgnClientFx/Utils/Http/Credentials.h>
+#include <BeHttp/Credentials.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

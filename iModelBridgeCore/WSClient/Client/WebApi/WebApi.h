@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,8 +14,6 @@
 #include "../ClientConfiguration.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef std::shared_ptr<struct WebApi> WebApiPtr;
 

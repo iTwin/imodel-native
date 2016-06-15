@@ -17,11 +17,11 @@ BEGIN_BENTLEY_DGNCLIENTFX_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockLocalState : public ILocalState
+struct MockLocalState : public IJsonLocalState
     {
     public:
-        MOCK_METHOD3 (_SaveValue, void (Utf8CP nameSpace, Utf8CP key, JsonValueCR value));
-        MOCK_CONST_METHOD2 (_GetValue, Json::Value (Utf8CP nameSpace, Utf8CP key));
+        MOCK_METHOD3 (_SaveValue, void (Utf8CP nameSpace, Utf8CP key, Utf8StringCR value));
+        MOCK_CONST_METHOD2 (_GetValue, Utf8String (Utf8CP nameSpace, Utf8CP key));
     };
 #endif
 

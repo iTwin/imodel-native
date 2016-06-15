@@ -2,13 +2,13 @@
 |
 |     $Source: Tests/IntegrationTests/Configuration/BuddiClientTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuddiClientTests.h"
 
 #include <WebServices/Configuration/BuddiClient.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 
 TEST_F(BuddiClientTests, GetRegions_Default_ReturnsSomeRegions)
     {

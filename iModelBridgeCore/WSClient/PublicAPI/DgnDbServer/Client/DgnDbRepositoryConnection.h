@@ -14,11 +14,11 @@
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
-#include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
+#include <BeHttp/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbRepositoryConnection);

@@ -22,7 +22,7 @@
 #include <WebServices/Connect/ConnectTokenProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Connect/ImsClient.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"

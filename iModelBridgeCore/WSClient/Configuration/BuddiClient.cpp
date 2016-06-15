@@ -2,12 +2,12 @@
  |
  |     $Source: Configuration/BuddiClient.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Configuration/BuddiClient.h>
-#include <DgnClientFx/Utils/Http/HttpError.h>
+#include <BeHttp/HttpError.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
