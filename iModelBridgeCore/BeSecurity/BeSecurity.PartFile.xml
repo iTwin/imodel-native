@@ -18,7 +18,7 @@
         </Bindings>
     </Part>
          
-    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi/BeSecurity +dPUBLISHAPI_VENDORAPI=json">
+    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json">
         <SubPart PartName="PublicAPI" />
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/BeSecurity" />
