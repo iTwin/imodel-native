@@ -94,14 +94,12 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
         BENTLEYDLL_EXPORT void UnregisterOnCompletedListener (std::shared_ptr<OnAsyncTaskCompletedListener> listener);
 
         BENTLEYDLL_EXPORT void AddThenTask (std::shared_ptr<AsyncTask> task, std::shared_ptr<ITaskScheduler> scheduler = nullptr);
-
         BENTLEYDLL_EXPORT void RemoveSubTask (std::shared_ptr<AsyncTask> task);
-
         BENTLEYDLL_EXPORT void AddParentTask (std::shared_ptr<AsyncTask> task);
-
         BENTLEYDLL_EXPORT void RemoveParentTask (std::shared_ptr<AsyncTask> task);
-
         BENTLEYDLL_EXPORT bset<std::shared_ptr<AsyncTask>> GetParentTasks ();
+
+        BENTLEYDLL_EXPORT static void PushTaskToDefaultSheduler(std::shared_ptr<AsyncTask> task);
 
     public:
         BENTLEYDLL_EXPORT AsyncTask ();
@@ -110,8 +108,24 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
 
         BENTLEYDLL_EXPORT void AddSubTask (std::shared_ptr<AsyncTask> task);
 
-        //! Create task that will complete once all tasks in set are completed.
-        BENTLEYDLL_EXPORT static std::shared_ptr<PackagedAsyncTask<void>> WhenAll (bset<std::shared_ptr<AsyncTask>> tasks);
+        //! Create task that will complete once all task in container are completed.
+        //! @param tasks - contains std::shared_ptr<AsyncTask> or derived type tasks
+        template<typename C>
+        static std::shared_ptr<PackagedAsyncTask<void>> WhenAll (C tasks)
+            {
+            auto whenAll = std::make_shared<PackagedAsyncTask<void>>([]{});
+            for (auto task : tasks)
+                whenAll->AddSubTask(task);
+
+            // To avoid race condition when adding task might end just before we add it
+            // iterate trought all tasks and remove completed.
+            for (auto task : tasks)
+                if (task->IsCompleted())
+                    whenAll->RemoveSubTask(task);
+
+            PushTaskToDefaultSheduler(whenAll);
+            return whenAll;
+            }
         
         //! Check if task has completed its execution and has no more sub tasks left
         BENTLEYDLL_EXPORT bool IsCompleted () const;

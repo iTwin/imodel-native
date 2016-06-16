@@ -7,7 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../TestsHelper.h"
+//#include "../TestsHelper.h"
+#include <Bentley/BeTest.h>
 
 class LimitingTaskQueueTests : public ::testing::Test
     {

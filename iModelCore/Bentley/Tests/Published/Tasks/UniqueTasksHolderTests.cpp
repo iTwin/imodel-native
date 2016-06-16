@@ -11,7 +11,12 @@
 #include <Bentley/Tasks/UniqueTaskHolder.h>
 #include <Bentley/Tasks/WorkerThread.h>
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+template<typename T>
+static bset<T> StubBSet (std::initializer_list<T> list)
+    {
+    bset<T> set (list.begin (), list.end ());
+    return set;
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas

@@ -9,7 +9,6 @@
 
 #include <Bentley/DirectoryObserver.h>
 #include <Bentley/BeTest.h>
-#include "TestsHelper.h"
 #include <Bentley/BeTimeUtilities.h>
 
 //#define OBSERVER_DEBUG 1
@@ -18,9 +17,7 @@
 #else
 #define LOG_OBSERVER(...) {}
 #endif
-USING_NAMESPACE_BENTLEY_HTTP
-USING_NAMESPACE_BENTLEY_TASKS
-BEGIN_BENTLEY_UNIT_TESTS_NAMESPACE
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 Mantas.Ragauskas    06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -40,8 +37,6 @@ struct ObserverCallbackPredicate : IConditionVariablePredicate
         return m_isCallbackWorkingRef;
         }
     };
-
-
 
 //=======================================================================================
 // @bsiclass                                        Mantas.Ragauskas            02/2015
@@ -151,4 +146,3 @@ public:
         ASSERT_FALSE(fileName.DoesPathExist());
         }
     };
-END_BENTLEY_UNIT_TESTS_NAMESPACE

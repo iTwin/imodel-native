@@ -11,8 +11,6 @@
 #include <Bentley/Tasks/WorkerThread.h>
 #include <Bentley/Tasks/WorkerThreadPool.h>
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
-
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------

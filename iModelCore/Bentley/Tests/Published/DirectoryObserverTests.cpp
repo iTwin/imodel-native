@@ -8,8 +8,9 @@
 
 #include "DirectoryObserverTests.h"
 #include <Bentley/BeThread.h>
+#include <Bentley/Tasks/Tasks.h>
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_TASKS
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Mantas.Ragauskas   06/2015

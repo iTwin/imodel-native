@@ -61,6 +61,7 @@ struct AsyncTasksManager
         //! that could cause other code to hang or deadlock.
         BENTLEYDLL_EXPORT static std::shared_ptr<ITaskScheduler> GetDefaultScheduler ();
 
-        BENTLEYDLL_EXPORT static void StopThreadingAndWait();    };
+        BENTLEYDLL_EXPORT static void StopThreadingAndWait();
+    };
 
 END_BENTLEY_TASKS_NAMESPACE

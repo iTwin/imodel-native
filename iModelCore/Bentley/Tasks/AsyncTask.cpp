@@ -310,32 +310,6 @@ void AsyncTask::AddThenTask (std::shared_ptr<AsyncTask> task, std::shared_ptr<IT
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<PackagedAsyncTask<void>> AsyncTask::WhenAll (bset<std::shared_ptr<AsyncTask>> tasks)
-    {
-    auto task = std::make_shared<PackagedAsyncTask<void>> ([]
-        {});
-
-    for (auto taskToWait : tasks)
-        {
-        task->AddSubTask (taskToWait);
-        }
-
-    // To avoid race condition when adding task might end just before we add it, iterate trought all tasks and remove completed.
-    for (auto taskToWait : tasks)
-        {
-        if (taskToWait->IsCompleted ())
-            {
-            task->RemoveSubTask (taskToWait);
-            }
-        }
-
-    AsyncTasksManager::GetDefaultScheduler ()->Push (task);
-    return task;
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Pranciskus.Ambrazas    03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IsAsyncTaskCompletedPredicate : IConditionVariablePredicate
@@ -354,9 +328,8 @@ public:
 void AsyncTask::Wait ()
     {
     IsAsyncTaskCompletedPredicate predicate(*this);
-    m_completedCV.WaitOnCondition(&predicate, m_completedCV.Infinite);
+    m_completedCV.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
     }
-
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -367,6 +340,14 @@ void AsyncTask::WaitFor (int milliseconds)
     m_completedCV.WaitOnCondition(&predicate, milliseconds);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTask::PushTaskToDefaultSheduler(std::shared_ptr<AsyncTask> task)
+    {
+    AsyncTasksManager::GetDefaultScheduler()->Push(task);
+    }
+
 BEGIN_BENTLEY_TASKS_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
@@ -374,9 +355,7 @@ BEGIN_BENTLEY_TASKS_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<void> CreateCompletedAsyncTask ()
     {
-    auto task = std::make_shared<PackagedAsyncTask<void>> ([=]
-        {
-        });
+    auto task = std::make_shared<PackagedAsyncTask<void>> ([=]{});
     task->Execute ();
     return task;
     }

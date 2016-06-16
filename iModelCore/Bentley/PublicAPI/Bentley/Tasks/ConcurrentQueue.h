@@ -138,7 +138,7 @@ struct ConcurrentQueue
         void ProtectedWaitAndPop (D& poppedValue, BeMutexHolder& lk)
             {
             EmptyQueuePredicate predicate(m_queue, false);
-            m_isNotEmptyCV.ProtectedWaitOnCondition(lk, &predicate, m_isNotEmptyCV.Infinite);
+            m_isNotEmptyCV.ProtectedWaitOnCondition(lk, &predicate, BeConditionVariable::Infinite);
 
             DataContainer dataContainer = m_queue.top ();
             m_queue.pop ();
@@ -152,7 +152,7 @@ struct ConcurrentQueue
         void WaitUntilEmpty () const
             {
             EmptyQueuePredicate predicate(m_queue, true);
-            m_isEmptyCV.WaitOnCondition(&predicate, m_isEmptyCV.Infinite);
+            m_isEmptyCV.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
             }
     };
 END_BENTLEY_TASKS_NAMESPACE

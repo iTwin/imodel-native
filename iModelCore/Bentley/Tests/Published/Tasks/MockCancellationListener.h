@@ -7,12 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../TestsHelper.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/Tasks/Tasks.h>
 #include <Bentley/Tasks/CancellationToken.h>
 
 using namespace ::testing;
-
-BEGIN_BENTLEY_UNIT_TESTS_NAMESPACE
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+
@@ -25,5 +24,3 @@ struct MockCancellationListener : public ICancellationListener
     };
 
 #endif
-
-END_BENTLEY_UNIT_TESTS_NAMESPACE

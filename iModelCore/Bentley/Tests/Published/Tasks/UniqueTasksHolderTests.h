@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../TestsHelper.h"
+#include <Bentley/BeTest.h>
 
 class UniqueTasksHolderTests : public ::testing::Test
     {

@@ -44,7 +44,7 @@ struct AsyncTaskRunnerPool : public ITaskScheduler, public std::enable_shared_fr
             };
 
     private:
-        bool m_initializeFlag = false;
+        bool m_initializeFlag;
         BeMutex m_mutex;
 
     protected:

@@ -10,8 +10,6 @@
 
 #include <Bentley/Tasks/AsyncResult.h>
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
-
 TEST_F (AsyncResultTests, Ctor_ErrorTypeOnly_IsSuccessFalse)
     {
     AsyncResult<void, Utf8String> result;

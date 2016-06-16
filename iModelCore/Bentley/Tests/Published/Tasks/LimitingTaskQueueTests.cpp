@@ -10,8 +10,6 @@
 #include <Bentley/Tasks/WorkerThread.h>
 #include "TasksTestsHelper.h"
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
-
 TEST_F (LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPushed)
     {
     auto thread1 = WorkerThread::Create ("TestThread");

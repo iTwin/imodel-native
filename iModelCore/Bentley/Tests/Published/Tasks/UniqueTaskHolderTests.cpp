@@ -11,8 +11,6 @@
 #include <Bentley/Tasks/UniqueTaskHolder.h>
 #include <Bentley/Tasks/WorkerThread.h>
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
-
 TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledTwice_ExecutesJustFirstTask)
     {
     auto thread = WorkerThread::Create ("TestThread");

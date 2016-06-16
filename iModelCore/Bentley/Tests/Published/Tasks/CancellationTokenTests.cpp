@@ -13,9 +13,6 @@
 
 #include "MockCancellationListener.h"
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
-
-
 #ifdef USE_GTEST
 TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_ListenerPassed_TakesByWeakPointer)
     {

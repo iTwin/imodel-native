@@ -467,6 +467,15 @@ public:
 
 };
 
+#define EXPECT_CONTAINS(container, value)                                       \
+    EXPECT_FALSE (std::find (container.begin (), container.end (), value) == container.end ())
+
+#define EXPECT_NCONTAIN(container, value)                                       \
+    EXPECT_TRUE (std::find (container.begin (), container.end (), value) == container.end ())
+
+#define EXPECT_BETWEEN(smallerValue, value, biggerValue)                        \
+    EXPECT_LE (smallerValue, value);                                            \
+    EXPECT_GE (biggerValue, value)
 
 END_BENTLEY_NAMESPACE
 

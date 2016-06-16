@@ -23,7 +23,8 @@ std::shared_ptr<IAsyncTaskRunnerFactory> runnerFactory
 m_runnerCount (runnerCount), 
 m_name (name),
 m_started (false), 
-m_runnerFactory (runnerFactory)
+m_runnerFactory (runnerFactory),
+m_initializeFlag(false)
     {
     if (m_runnerFactory == nullptr)
         {

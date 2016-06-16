@@ -16,8 +16,6 @@
 
 #include <atomic>
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
-
 TEST_F(AsyncTaskTests, IsCompleted_TaskNotExecuted_False)
     {
     auto task = std::make_shared<PackagedAsyncTask<void>>([] { });
