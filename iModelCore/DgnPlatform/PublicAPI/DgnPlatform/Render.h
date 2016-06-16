@@ -1371,7 +1371,7 @@ protected:
 public:
     struct Debug
     {
-        static void SaveGPS(int);
+        static void SaveGPS(int, double);
         DGNPLATFORM_EXPORT static void SaveSceneTarget(int);
         DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
@@ -1409,7 +1409,14 @@ public:
     TexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
-    static double DefaultFrameRateGoal() {return 15.0;}
+    static double DefaultFrameRateGoal() 
+        {
+#ifdef BENTLEY_CONFIG_OS_WINDOWS // *** WIP - we are trying to predict the likely graphics performance of the box.
+        return 25.0; // Plan for the best on Windows (desktop) computers.
+#else
+        return 5.0; // Plan for the worst on mobile devices
+#endif
+        }
     double GetFrameRateGoal() const {return m_frameRateGoal;}
     void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
