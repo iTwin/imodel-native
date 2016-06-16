@@ -41,7 +41,6 @@ using namespace std;
 #include <Vu/VuApi.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
-
 #include <ImagePP/h/ImageppAPI.h>
 
 #include <ImagePP\all\h\HFCURLFile.h>
@@ -60,6 +59,8 @@ using namespace std;
 
 #include <GeoCoord/BaseGeoCoord.h>
 
+#include <BeJpeg\BeJpeg.h>
+
 
 //#define ABORT(ERROR + 1)
 
@@ -76,6 +77,206 @@ enum
     ACCELERATOR_CPU = 0,
     ACCELERATOR_GPU
     };
+
+void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+	{	
+	BeXmlStatus status;
+	WString stmFileName;
+	status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
+
+	if (status != BEXML_Success)
+		{
+		printf("ERROR : stmFileName attribute not found\r\n");
+		}
+	else
+		{
+		WString outputDir;
+		int maxLevel;
+		bool exportTexture;
+
+		assert(ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode) == true);
+
+		if (status == SUCCESS)
+			{
+			StatusInt status;
+			IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+			//Initialize the origin
+			DRange3d range;
+			stmFile->GetRange(range);
+			DPoint3d translateToOrigin;
+			translateToOrigin.x = (range.high.x + range.low.x) / 2;
+			translateToOrigin.y = (range.high.y + range.low.y) / 2;
+			translateToOrigin.z = (range.high.z + range.low.z) / 2;
+			translateToOrigin.Negate();
+
+			if (stmFile != 0)
+				{				
+				IScalableMeshMeshQueryPtr meshQueryInterface = stmFile->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+
+				for (int level = 0; level <= maxLevel; level++)
+					{
+					//Infos for 1 level
+					clock_t totalClock = clock();
+					int64_t totalPointCount = 0;
+					int64_t totalParamCount = 0;
+					
+					bvector<IScalableMeshNodePtr> returnedNodes;
+					IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+					params->SetLevel(level);
+					meshQueryInterface->Query(returnedNodes, 0, 0, params);
+
+					//The level we're at
+					WChar levelChar[10];
+					swprintf(levelChar, L"%i", level);
+					WString levelString(levelChar);
+
+					//The tile we're at
+					int nbTile = 0;
+
+					//Folder name
+					//WString folderName = outputDir + L"\\Level" + levelString + L"\\";
+					WString folderName = outputDir + L"\\";
+
+					for (auto& node : returnedNodes)
+						{
+						//Infos for 1 tile
+						clock_t nodeClock = clock();
+						int64_t pointCount = 0;
+						int64_t paramCount = 0;
+						int64_t pointIndexCount = 0;
+						int64_t nodeId = node->GetNodeId();
+
+						//The tile we're at
+						WChar numberChar[10];
+						swprintf(numberChar, L"%I64d", nodeId);
+						WString number(numberChar);
+						
+						//File name
+						WString materialName = number;
+						WString binFileName = folderName + materialName + L".bin";
+
+						//Bin file
+						FILE* outBin;
+						outBin = _wfopen(binFileName.c_str(), L"wb");
+
+						//Get mesh
+						bvector<bool> clips;
+						IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+						if (node->IsTextured())
+							flags->SetLoadTexture(true);
+						IScalableMeshMeshPtr mesh = node->GetMesh(flags, clips);
+						const PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
+
+						//Get infos
+						pointCount = polyface->GetPointCount();
+						paramCount = polyface->GetParamCount();
+						pointIndexCount = polyface->GetPointIndexCount();
+						totalPointCount += pointCount;
+						totalParamCount += paramCount;
+
+						IScalableMeshTexturePtr texture = node->GetTexture();
+						bool isTextured = node->IsTextured();
+
+						//write node id
+						fwrite(&nodeId, sizeof(int64_t), 1, outBin);
+
+						//write if textured
+						fwrite(&isTextured, sizeof(bool), 1, outBin);
+
+						//write v
+						fwrite(&pointCount, sizeof(int64_t), 1, outBin);
+						DPoint3dCP p = polyface->GetPointCP();
+						double* points = new double[pointCount * 3];
+						int j = 0;
+						for (int64_t i = 0; i < pointCount; i++)
+							{
+							DPoint3d point = p[i];
+
+							point.Add(translateToOrigin);
+
+							points[j] = point.x;
+							points[j + 1] = point.z;
+							points[j + 2] = -point.y;
+							j += 3;
+							}
+						fwrite(points, sizeof(double), pointCount * 3, outBin);
+
+						//write uv
+						if (isTextured)
+							{
+							fwrite(&paramCount, sizeof(int64_t), 1, outBin);
+							DPoint2dCP param = polyface->GetParamCP();
+							double* params = new double[paramCount * 2];
+							j = 0;
+							for (int64_t i = 0; i < paramCount; i++)
+								{
+								DPoint2d uv = param[i];
+
+								params[j] = uv.x;
+								params[j + 1] = uv.y;
+								j += 2;
+								}
+							fwrite(params, sizeof(double), paramCount * 2, outBin);
+							}
+
+						//write faces
+						fwrite(&pointIndexCount, sizeof(int64_t), 1, outBin);
+						//vertices indice
+						int32_t* facesV = new int32_t[pointIndexCount];
+						for (int64_t i = 0; i < pointIndexCount; i += 3)
+							{
+							//zero-based index
+							facesV[i] = polyface->GetPointIndexCP()[i] - 1;
+							facesV[i + 1] = polyface->GetPointIndexCP()[i + 1] - 1;
+							facesV[i + 2] = polyface->GetPointIndexCP()[i + 2] - 1;
+							}
+						fwrite(facesV, sizeof(int32_t), pointIndexCount, outBin);
+						//uv indice
+						if (isTextured)
+							{
+							int32_t* facesUV = new int32_t[pointIndexCount];
+							for (int64_t i = 0; i < pointIndexCount; i += 3)
+								{
+								//zero-based index
+								facesUV[i] = polyface->GetParamIndexCP()[i] - 1;
+								facesUV[i + 1] = polyface->GetParamIndexCP()[i + 1] - 1;
+								facesUV[i + 2] = polyface->GetParamIndexCP()[i + 2] - 1;
+								}
+							fwrite(facesUV, sizeof(int32_t), pointIndexCount, outBin);
+							}
+
+						//write texture
+						if (isTextured)
+							{
+							const uint8_t* data = texture->GetData();
+							fwrite(data, sizeof(byte), texture->GetSize(), outBin);
+							}
+
+						nodeClock = clock() - nodeClock;
+						double delay = (double)nodeClock / CLOCKS_PER_SEC;
+
+						fwprintf(pResultFile, L"%s,%I64d,%I64d,%.5f\n", materialName.c_str(), pointCount, paramCount, delay);
+
+						nbTile++;
+
+						//Close file for this tile
+						fclose(outBin);
+
+						}//end for nodes
+
+					totalClock = clock() - totalClock;
+					double delay = (double)totalClock / CLOCKS_PER_SEC;
+					fwprintf(pResultFile, L"Total for level %i,%I64d,%I64d,%.5f\n", level, totalPointCount, totalParamCount, delay);
+
+					}//end for level
+
+				}
+			else
+				printf("Error loading stm file");
+			}
+		}
+	}
 
 void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
