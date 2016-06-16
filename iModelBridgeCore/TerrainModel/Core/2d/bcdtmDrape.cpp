@@ -2831,7 +2831,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
          else if( fndType == 4 ) 
            {
             zdp = pzl - pzs ;            
-            zdn = endPointP->z - nzs;   
+            zdn = endPointP->z - nzs;
             process = 0 ;
            } 
 /*

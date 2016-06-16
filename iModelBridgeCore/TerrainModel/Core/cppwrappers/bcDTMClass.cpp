@@ -1429,6 +1429,7 @@ DTMStatusInt BcDTM::_DrapeLinear(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDraped
     return status;
     }
 
+
 bool BcDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
     return _GetProjectedPointOnDTM(pointOnDTM, w2vMap, testPoint);
@@ -1437,7 +1438,7 @@ bool BcDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR t
 bool BcDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
     long startFlag, endFlag;
-    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && endFlag == 0);
+    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && (endFlag == 0 || endFlag==2));
     }
 
 /*----------------------------------------------------------------------+
@@ -4107,6 +4108,15 @@ DTMStatusInt BcDTM::_CalculateSlopeArea (double& flatArea, double& slopeArea, DP
     return (DTMStatusInt)_CalculateSlopeArea (&flatArea, &slopeArea, const_cast<DPoint3d*>(pts), numPoints);
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Elenie.Godzaridis  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DTMStatusInt BcDTM::_CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
+    {
+    DTMStatusInt retval = _CalculateSlopeArea(flatArea, slopeArea, pts, numPoints);
+    progressiveCallback(retval,flatArea, slopeArea);
+    return retval;
+    }
 
 /*---------------------------------------------------------------------------------------
 * @bsiclass                                                     Daryl.Holmwood  12/10

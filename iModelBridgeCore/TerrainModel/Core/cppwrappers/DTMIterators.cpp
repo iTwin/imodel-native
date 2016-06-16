@@ -771,6 +771,7 @@ errexit:
 void DTMMeshEnumerator::ScanAndMarkRegions () const
     {  
     m_regionPointMask.resize (m_dtmP->numPoints);
+    std::fill_n(m_regionPointMask.begin(), m_dtmP->numPoints, false);
     DTMFeatureEnumeratorPtr regionEnumerator = DTMFeatureEnumerator::Create (*m_dtm.get ());
     regionEnumerator->ExcludeAllFeatures ();
     regionEnumerator->IncludeFeature (DTMFeatureType::Region);

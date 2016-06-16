@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmTrg.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel\Core\bcDTMBaseDef.h>
@@ -7546,11 +7546,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_addVoidsToInternalDtmObject (BC_DTM_OBJ* dtmP)
         do
             {
             // Check if there is a valid link here
-            if (nodeAddrP (dtmP, pnt)->hPtr == linePnt)
+            if (nodeAddrP(dtmP, pnt)->hPtr == linePnt || nodeAddrP(dtmP, linePnt)->hPtr == pnt)
                 {
                 // Not this link.
                 }
-            else if (HasFeatureLinkSTM (dtmP, pnt, linePnt) == 1 && HasFeatureLink (dtmP, linePnt, pnt) == 1)
+            else if (HasFeatureLinkSTM(dtmP, pnt, linePnt) == 1 && HasFeatureLink(dtmP, linePnt, pnt) == 1 && bcdtmFlag_testInsertPoint(dtmP, pnt) == 0 && bcdtmFlag_testInsertPoint(dtmP, linePnt)== 0)
                 {
                 // if not then we need to create a void.
                 long endPnt = linePnt;
@@ -7600,11 +7600,16 @@ errexit:
     goto cleanup;
     }
 
+double timeSpentTriangulating = 0;
+size_t nOfTriangulations = 0;
+
 BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 (
  BC_DTM_OBJ *dtmP //  Pointer To DTM Object
  )
     {
+    nOfTriangulations++;
+    clock_t timeAtStart = clock();
     int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
     long dtmFeature;
     DPoint3dP trgPtsP = nullptr;
@@ -7749,6 +7754,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 
     if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Triangulating STM Triangles Completed");
     if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Triangulating STM Triangles Error");
+    timeSpentTriangulating += clock() - timeAtStart;
     return (ret);
 
     // Error Exit
@@ -7757,3 +7763,47 @@ errexit:
     if (ret == DTM_SUCCESS) ret = DTM_ERROR;
     goto cleanup;
     }
+
+BENTLEYDTM_EXPORT DTMStatusInt bcdtmObject_storeTrianglesInDtmObject(BC_DTM_OBJ* dtmP, DTMFeatureType dtmFeatureType, DPoint3dCP points, int numPoints, int* pointIndex, int numTriangles)
+    {
+    long firstPointIndex = dtmP->numPoints;
+    DTMFeatureId dtmFeatureId;
+ 
+    // Add the points.
+    if (bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::RandomSpots, DTM_NULL_USER_TAG, 1, &dtmFeatureId, points, numPoints))
+        return DTM_ERROR;
+ 
+    dtmP->memFeatures += numTriangles;
+ 
+    if (bcdtmObject_allocateFeaturesMemoryDtmObject(dtmP))
+        return DTM_ERROR;
+ 
+    for (int i = 0; i < numTriangles; i++)
+        {
+        BC_DTM_FEATURE* dtmFeatureP = ftableAddrP(dtmP, dtmP->numFeatures);
+ 
+        dtmFeatureP->dtmFeatureState = DTMFeatureState::OffsetsArray;
+        dtmFeatureP->dtmFeatureType = (DTMFeatureType)dtmFeatureType;
+        dtmFeatureP->internalToDtmFeature = dtmP->nullPnt;
+        dtmFeatureP->dtmFeaturePts._64bitPad = 0;
+        dtmFeatureP->dtmUserTag = DTM_NULL_USER_TAG;
+        dtmFeatureP->numDtmFeaturePts = 4;
+        //if (indexOption == 1)
+        dtmFeatureP->dtmFeatureId = DTM_NULL_FEATURE_ID;
+        //if (indexOption == 2)
+        //    dtmFeatureP->dtmFeatureId = *userFeatureIdP;
+        //if (indexOption == 3)
+        //    {
+        //    *userFeatureIdP = dtmFeatureP->dtmFeatureId = dtmP->dtmFeatureIndex;
+        //    ++dtmP->dtmFeatureIndex;
+        //    }
+        dtmFeatureP->dtmFeaturePts.offsetPI = bcdtmMemory_allocate(dtmP, 4 * sizeof(long));
+        long* offsetP = bcdtmMemory_getPointerOffset(dtmP, dtmFeatureP->dtmFeaturePts.offsetPI);
+        for (int j = 0; j < 3; j++)
+            *offsetP++ = firstPointIndex + *pointIndex++;
+        *offsetP = firstPointIndex + *(pointIndex - 3);
+        dtmP->numFeatures++;
+        }
+    return DTM_SUCCESS;
+    }
+

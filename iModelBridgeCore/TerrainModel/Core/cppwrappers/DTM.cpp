@@ -35,6 +35,14 @@ DTMStatusInt IDTM::CalculateSlopeArea (double& flatArea, double& slopeArea, DPoi
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Elenie.Godzaridis 03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DTMStatusInt IDTM::CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
+    {
+    return _CalculateSlopeArea(flatArea, slopeArea, pts, numPoints, progressiveCallback, isCancelledCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sylvain.Pucci   08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 IDTMDraping* IDTM::GetDTMDraping ()
@@ -99,6 +107,7 @@ DTMStatusInt IDTMDraping::DrapeLinear (DTMDrapedLinePtr& ret, DPoint3dCP pts, in
     return _DrapeLinear(ret, pts, numPoints);
     }
 
+
 bool IDTMDraping::ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
     return _ProjectPoint(pointOnDTM, w2vMap, testPoint);
@@ -108,6 +117,7 @@ bool IDTMDraping::DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspec
     {
     return _DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector);
     }
+
 
 DTMStatusInt IDTMDrainage::GetDescentTrace (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxpondDepth)
     {
