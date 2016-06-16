@@ -31,15 +31,21 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 
-#define EXPECT_CONTAINS(container, value)                                       \
-    EXPECT_FALSE(std::find(container.begin(), container.end(), value) == container.end())
+#ifndef EXPECT_CONTAINS
+    #define EXPECT_CONTAINS(container, value)                                       \
+        EXPECT_FALSE(std::find(container.begin(), container.end(), value) == container.end())
+#endif
 
-#define EXPECT_NCONTAIN(container, value)                                       \
-    EXPECT_TRUE(std::find(container.begin(), container.end(), value) == container.end())
+#ifndef EXPECT_NCONTAIN
+    #define EXPECT_NCONTAIN(container, value)                                       \
+        EXPECT_TRUE(std::find(container.begin(), container.end(), value) == container.end())
+#endif
 
-#define EXPECT_BETWEEN(smallerValue, value, biggerValue)                        \
-    EXPECT_LE(smallerValue, value);                                             \
-    EXPECT_GE(biggerValue, value);
+#ifndef EXPECT_BETWEEN
+    #define EXPECT_BETWEEN(smallerValue, value, biggerValue)                        \
+        EXPECT_LE(smallerValue, value);                                             \
+        EXPECT_GE(biggerValue, value);
+#endif
 
 // Operator for comparisons
 bool operator <= (const DateTime& lhs, const DateTime& rhs);

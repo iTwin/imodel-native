@@ -10,7 +10,6 @@
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 TEST_F (UsageTrackingDataTests, ToJson_With_ProjectID)
     {

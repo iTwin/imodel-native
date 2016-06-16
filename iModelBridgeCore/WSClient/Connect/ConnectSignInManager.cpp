@@ -386,5 +386,5 @@ void ConnectSignInManager::StoreSignedInUser()
     {
     UserInfo info = GetUserInfo();
     BeAssert(!info.username.empty());
-    m_localState.SaveValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser, m_secureStore->Encrypt(info.username.c_str()));
+    m_localState.SaveJsonValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser, m_secureStore->Encrypt(info.username.c_str()));
     }
