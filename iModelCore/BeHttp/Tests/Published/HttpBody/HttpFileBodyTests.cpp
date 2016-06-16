@@ -8,7 +8,7 @@
 
 #include "HttpFileBodyTests.h"
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 TEST_F (HttpFileBodyTests, AsString_NoFileAtPath_ReturnsEmptyString)
     {

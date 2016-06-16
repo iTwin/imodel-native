@@ -9,7 +9,7 @@
 #include <BeHttp/ProxyHttpHandler.h>
 #include "ProxyHttpHandlerTests.h"
 #include "WebTestsHelper.h"
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithProxyUrl_RequestWithProxyUrl)
     {

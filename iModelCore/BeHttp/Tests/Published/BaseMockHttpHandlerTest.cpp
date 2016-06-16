@@ -9,7 +9,7 @@
 #include "BaseMockHttpHandlerTest.h"
 #include <BeSQLite/L10N.h>
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 BaseMockHttpHandlerTest::BaseMockHttpHandlerTest ()
 :

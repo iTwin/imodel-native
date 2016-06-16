@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../../TestsHelper.h"
+#include "../TestsHelper.h"
 #include "../WebTestsHelper.h"
 class HttpMultipartBodyTests : public ::testing::Test
     {

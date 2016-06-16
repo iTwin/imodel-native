@@ -8,7 +8,7 @@
 
 #include "HttpHeadersTests.h"
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 TEST_F(HttpHeadersTests, SetValue_EmptyString_RemovesValue)
     {
     HttpHeaders headers;

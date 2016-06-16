@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "../TestsHelper.h"
+#include "TestsHelper.h"
 #include "WebTestsHelper.h"
 
-BEGIN_BENTLEY_UNIT_TESTS_NAMESPACE
+BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
 
 class BaseMockHttpHandlerTest
     {
@@ -26,4 +26,4 @@ public:
     std::shared_ptr<MockHttpHandler> GetHandlerPtr () const;
     };
 
-END_BENTLEY_UNIT_TESTS_NAMESPACE
+END_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE

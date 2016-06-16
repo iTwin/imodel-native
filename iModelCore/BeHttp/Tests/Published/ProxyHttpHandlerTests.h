@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../TestsHelper.h"
+#include "TestsHelper.h"
 USING_NAMESPACE_BENTLEY_HTTP
 class ProxyHttpHandlerTests : public ::testing::Test
     {

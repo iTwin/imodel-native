@@ -10,11 +10,11 @@
 
 #include <BeHttp/HttpClient.h>
 #include <map>
-#include "../TestsHelper.h"
+#include "TestsHelper.h"
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
-BEGIN_BENTLEY_UNIT_TESTS_NAMESPACE
 
+BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
@@ -52,4 +52,4 @@ public:
     MockHttpHandler& ForAnyRequest (HttpResponseCR response);
     };
 
-END_BENTLEY_UNIT_TESTS_NAMESPACE
+END_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE

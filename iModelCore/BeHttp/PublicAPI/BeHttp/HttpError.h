@@ -23,8 +23,8 @@ private:
     ConnectionStatus m_connectionStatus;
     HttpStatus m_httpStatus;
 
-    static Utf8String GetDescription(ConnectionStatus connectionStatus, HttpStatus httpStatus);
-    static Utf8String GetMessage(ConnectionStatus connectionStatus, HttpStatus httpStatus);
+    static Utf8String CreateDescription(ConnectionStatus connectionStatus, HttpStatus httpStatus);
+    static Utf8String CreateMessage(ConnectionStatus connectionStatus, HttpStatus httpStatus);
 
 public:
     BEHTTP_EXPORT HttpError();

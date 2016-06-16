@@ -57,7 +57,9 @@ private:
     HttpResponseContentPtr   m_content;
     
 public:
+    //! Create invalid response with ConnectionStatus::None
     BEHTTP_EXPORT HttpResponse();
+    //! Create response
     BEHTTP_EXPORT HttpResponse(HttpResponseContentPtr responseData, Utf8CP effectiveUrl, ConnectionStatus connectionStatus, HttpStatus httpStatus);
 
     // Get last used url where response came from

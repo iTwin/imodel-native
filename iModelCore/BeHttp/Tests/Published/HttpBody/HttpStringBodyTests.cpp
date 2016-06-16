@@ -8,7 +8,7 @@
 
 #include "HttpStringBodyTests.h"
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 TEST_F (HttpStringBodyTests, AsString_Empty_ReturnsEmptyString)
     {

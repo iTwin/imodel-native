@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../TestsHelper.h"
+#include "TestsHelper.h"
 #include "WebTestsHelper.h"
 class HttpClientTests : public ::testing::Test
     {

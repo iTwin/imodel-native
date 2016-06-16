@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../../TestsHelper.h"
+#include "../TestsHelper.h"
 #include "../WebTestsHelper.h"
-#include "../../FSTest.h"
+#include "../FSTest.h"
 
 class HttpFileBodyTests : public ::testing::Test
     {

@@ -11,7 +11,7 @@
 #include <gmock/gmock.h>
 #endif
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 #ifdef USE_GTEST
 
 bmap<Utf8String, Utf8String> GetHttpHeaders(Utf8String key, Utf8String value)

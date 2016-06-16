@@ -8,7 +8,7 @@
 
 #include "HttpRangeBodyTests.h"
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 TEST_F (HttpRangeBodyTests, AsString_FullRange_ReturnsSameString)
     {

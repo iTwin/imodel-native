@@ -10,7 +10,7 @@
 
 #include <BeHttp/HttpClient.h>
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 TEST_F (HttpClientTests, CreateRequest_UrlAndMethodPassed_SetsUrlAndMethod)
     {
     HttpClient client;

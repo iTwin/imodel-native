@@ -84,11 +84,29 @@ std::shared_ptr<ProxyHttpHandler> ProxyHttpHandler::GetFiddlerProxyIfReachable (
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<ProxyHttpHandler> ProxyHttpHandler::GetProxyIfReachable (Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler)
     {
-    HttpResponse response = HttpRequest (proxyUrl, "GET", customHandler).PerformAsync ()->GetResult ();
+    return GetProxyIfReachable(proxyUrl, Credentials(), customHandler);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones     05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<ProxyHttpHandler> ProxyHttpHandler::GetProxyIfReachable(Utf8StringCR proxyUrl, CredentialsCR proxyCredentials, IHttpHandlerPtr customHandler)
+    {
+    HttpRequest request = HttpRequest(proxyUrl, "GET", customHandler);
+    if (proxyCredentials.IsValid ())
+        {
+        request.SetProxy (proxyUrl);
+        request.SetProxyCredentials (proxyCredentials);
+        }
+
+    HttpResponse response = request.PerformAsync()->GetResult();
 
     if (HttpStatus::OK == response.GetHttpStatus ())
         {
-        return std::make_shared<ProxyHttpHandler> (proxyUrl, customHandler);
+        std::shared_ptr<ProxyHttpHandler> proxyHttpHandler = std::make_shared<ProxyHttpHandler> (proxyUrl, customHandler);
+        if (proxyCredentials.IsValid ())
+            proxyHttpHandler->SetProxyCredentials (proxyCredentials);
+        return proxyHttpHandler;
         }
     else
         {

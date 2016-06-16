@@ -8,7 +8,7 @@
 #include "MockHttpHandler.h"
 #include <Bentley/BeDebugLog.h>
 
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 #define EXPECTED_COUNT_ANY -1
 

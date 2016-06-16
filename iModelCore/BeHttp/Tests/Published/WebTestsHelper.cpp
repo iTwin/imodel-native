@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "WebTestsHelper.h"
-USING_NAMESPACE_BENTLEY_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 
 HttpRequest UnitTests::StubHttpRequest (Utf8StringCR url, Utf8StringCR method, Utf8StringCR body, const bmap<Utf8String, Utf8String>& headers)

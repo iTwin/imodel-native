@@ -41,10 +41,22 @@ struct ProxyHttpHandler : public IHttpHandler
         //! Perform HttpRequest with proxy URL
         BEHTTP_EXPORT virtual Tasks::AsyncTaskPtr<HttpResponse> PerformRequest (HttpRequestCR request) override;
 
-        //! Returns ProxyHttpHandler for specified proxy if reachable
+        /*!
+         * GetProxyIfReachable is mainly used for debugging. Consider using the constructor for production code.<br>
+         * Returns ProxyHttpHandler for specified proxy if reachable.
+         */
         BEHTTP_EXPORT static std::shared_ptr<ProxyHttpHandler> GetProxyIfReachable (Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler = nullptr);
 
-        //! Returns ProxyHttpHandler for default Fiddler proxy if reachable
+        /*!
+         * GetProxyIfReachable is mainly used for debugging. Consider using the constructor for production code.<br>
+         * Returns ProxyHttpHandler for specified proxy if reachable and credentials are valid.
+         */
+        BEHTTP_EXPORT static std::shared_ptr<ProxyHttpHandler> GetProxyIfReachable(Utf8StringCR proxyUrl, CredentialsCR proxyCredentials, IHttpHandlerPtr customHandler = nullptr);
+
+        /*!
+         * GetFiddlerProxyIfReachable is mainly used for debugging. Consider using the constructor for production code.<br>
+         * Returns ProxyHttpHandler for default Fiddler proxy if reachable.
+         */
         BEHTTP_EXPORT static std::shared_ptr<ProxyHttpHandler> GetFiddlerProxyIfReachable (IHttpHandlerPtr customHandler = nullptr);
     };
 

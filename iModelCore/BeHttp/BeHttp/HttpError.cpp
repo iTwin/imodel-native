@@ -35,7 +35,7 @@ HttpError(httpResponse.GetConnectionStatus(), httpResponse.GetHttpStatus())
 HttpError::HttpError(ConnectionStatus connectionStatus, HttpStatus httpStatus) :   
 m_connectionStatus(connectionStatus),
 m_httpStatus(httpStatus),
-AsyncError(GetMessage(connectionStatus, httpStatus), GetDescription(connectionStatus, httpStatus))
+AsyncError(CreateMessage(connectionStatus, httpStatus), CreateDescription(connectionStatus, httpStatus))
     {
     }
 
@@ -66,7 +66,7 @@ Utf8String HttpError::GetDisplayMessage() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               Julius.Cepukenas      02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String HttpError::GetMessage(ConnectionStatus connectionStatus, HttpStatus httpStatus)
+Utf8String HttpError::CreateMessage(ConnectionStatus connectionStatus, HttpStatus httpStatus)
     {
     if (connectionStatus != ConnectionStatus::OK)
         {
@@ -93,7 +93,6 @@ Utf8String HttpError::GetConnectionErrorDisplayMessage (ConnectionStatus connect
         case ConnectionStatus::UnknownError:        return HttpErrorLocalizedString (MSG_ConnectionStatus_UnknownStatus);
         
         case ConnectionStatus::Canceled:
-            BeAssert (false && "User should not get errors about canceled connections");
             return "";
         
         case ConnectionStatus::OK:
@@ -150,7 +149,7 @@ Utf8String HttpError::GetDisplayDescription() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               Julius.Cepukenas      02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String HttpError::GetDescription(ConnectionStatus connectionStatus, HttpStatus httpStatus)
+Utf8String HttpError::CreateDescription(ConnectionStatus connectionStatus, HttpStatus httpStatus)
     {
     // We don't have description if connection failed.
     if (connectionStatus != ConnectionStatus::OK)
