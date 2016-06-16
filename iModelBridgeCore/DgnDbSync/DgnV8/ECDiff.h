@@ -304,6 +304,15 @@ struct DiffNameComparer
     bool operator()(Utf8CP s1, Utf8CP s2) const { return (strcmp(s1, s2) < 0);}
     };
 
+//=======================================================================================
+// For case-insensitive Utf8CP comparisons in STL collections.
+// @bsistruct
+//+===============+===============+===============+===============+===============+======
+struct DiffNameComparerI
+    {
+    bool operator()(Utf8CP s1, Utf8CP s2) const { return (BeStringUtilities::StricmpAscii(s1, s2) < 0); }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -496,8 +505,8 @@ private:
             DiffType  GetType() const { return m_diffType; }
             ECDiffNodeP GetNode ()  {return m_diff;}
         };
-    typedef bmap<Utf8CP, ClassMergeInfo, DiffNameComparer> ClassMergeInfoMap;
-    typedef bmap<Utf8CP, DiffType, DiffNameComparer> PropertyMergeInfoMap;
+    typedef bmap<Utf8CP, ClassMergeInfo, DiffNameComparerI> ClassMergeInfoMap;
+    typedef bmap<Utf8CP, DiffType, DiffNameComparerI> PropertyMergeInfoMap;
     typedef bmap<Utf8String, ECClassCP> ClassByNameMap;
 
     ECSchemaPtr m_mergeSchema;
