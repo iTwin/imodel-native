@@ -47,11 +47,17 @@ void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector
             {
 
             if (featureDefs[i].size() > 4)
+                {
+                if (!feature.back().AlmostEqual(feature.front())) feature.push_back(feature.front());
                 voidFeatures.push_back(feature);
+                }
             types.push_back((DTMFeatureType)featureDefs[i][0]);
             }
         else if ((DTMFeatureType)featureDefs[i][0] == DTMFeatureType::Island)
+            {
+            if (!feature.back().AlmostEqual(feature.front())) feature.push_back(feature.front());
             islandFeatures.push_back(feature);
+            }
         else bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)featureDefs[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
         }
     }
@@ -146,9 +152,43 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
     bvector<bvector<DPoint3d>> newUnifiedPoly;
     HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
     HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
+    bvector<bool> used(polygons.size(),false);
+    VuPolygonClassifier vu(1e-8, 0);
+
+    for (auto& poly : polygons)
+        {
+        if (used[&poly - &polygons[0]]) continue;
+
+        //pre-compute the union of polys with this function because apparently sometimes Unify hangs
+        for (auto& poly2:polygons)
+            { 
+            if (&poly == &poly2) continue;
+            if (used[&poly2 - &polygons[0]]) continue;
+            if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size()))
+                {
+                used[&poly2 - &polygons[0]] = true;
+                vu.ClassifyAUnionB(poly, poly2);
+                bvector<DPoint3d> xyz;
+                for (; vu.GetFace(xyz);)
+                    {
+                    if (bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size()) < 0) continue;
+                    else
+                        {
+                        //  postFeatureBoundary.push_back(xyz);
+                        poly = xyz;
+
+                        }
+
+                    }
+                }
+
+            }
+        }
+
     for (auto& poly : polygons)
         {
         if (!choosePolygonInSet(&poly - &polygons.front(), poly)) continue;
+        if (used[&poly - &polygons[0]]) continue;
         UntieLoopsFromPolygon(poly);
         HArrayAutoPtr<double> tempBuffer(new double[poly.size() * 2]);
 
@@ -168,4 +208,18 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 
     AddLoopsFromShape(newUnifiedPoly, allPolyShape->GetLightShape(), afterPolygonAdded);
     polygons = newUnifiedPoly;
+    }
+
+void circumcircle(DPoint3d& center, double& radius, const DPoint3d* triangle)
+    {
+    double det = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, 1, triangle[1].x, triangle[1].y, 1, triangle[2].x, triangle[2].y, 1).Determinant();
+    double mags[3] = { triangle[0].MagnitudeSquaredXY(),
+        triangle[1].MagnitudeSquaredXY(),
+        triangle[2].MagnitudeSquaredXY() };
+    double det1 = 0.5*(RotMatrix::FromRowValues(mags[0], triangle[0].y, 1, mags[1], triangle[1].y, 1, mags[2], triangle[2].y, 1).Determinant());
+    double det2 = 0.5*RotMatrix::FromRowValues(triangle[0].x, mags[0], 1, triangle[1].x, mags[1], 1, triangle[2].x, mags[2], 1).Determinant();
+    center.x = det1 / det;
+    center.y = det2 / det;
+    double detR = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, mags[0], triangle[1].x, triangle[1].y, mags[1], triangle[2].x, triangle[2].y, mags[2]).Determinant();
+    radius = sqrt(detR / det + DPoint3d::From(det1, det2, 0).MagnitudeSquaredXY() / (det*det));
     }

@@ -21,6 +21,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <TerrainModel/Core/DTMIterators.h>
 #include "..\STM\LogUtils.h"
 #include <random>
+#include <queue>
+#include "..\STM\ScalableMesh\ScalableMeshGraph.h"
 
 void SortPoints(bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
     {
@@ -86,6 +88,42 @@ void MakeDTM(TerrainModel::BcDTMPtr& dtmP, bvector<DPoint3d>& allVerts, bvector<
     status = bcdtmObject_triangulateStmTrianglesDtmObject(dtmP->GetTinHandle());
     assert(status == SUCCESS);
 
+
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmP);
+    en->SetMaxTriangles(2000000);
+    bvector<DPoint3d> newVertices;
+    bvector<int32_t> newIndices;
+    std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-12, 0));
+    for (PolyfaceQueryP pf : *en)
+        {
+        PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+        vec->CopyFrom(*pf);
+        for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+            {
+            DPoint3d face[3];
+            int32_t idx[3] = { -1, -1, -1 };
+            for (size_t i = 0; i < 3; ++i)
+                {
+                face[i] = addedFacets->GetPointCP()[i];
+                idx[i] = mapOfPoints.count(face[i]) != 0 ? mapOfPoints[face[i]] : -1;
+                }
+            for (size_t i = 0; i < 3; ++i)
+                {
+                if (idx[i] == -1)
+                    {
+                    newVertices.push_back(face[i]);
+                    idx[i] = (int)newVertices.size();
+                    mapOfPoints[face[i]] = idx[i] - 1;
+                    }
+                else idx[i]++;
+                }
+            newIndices.push_back(idx[0]);
+            newIndices.push_back(idx[1]);
+            newIndices.push_back(idx[2]);
+            }
+        }
+    WString name = L"E:\\makeTM\\test.m";
+    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
     /*bvector<DTMFeatureId> listIds;
     DTMFeatureCallback browseVoids = [] (DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg) ->int
         {
@@ -442,6 +480,209 @@ void RunDTMSTMTriangulateTest()
     MakeDTM(bcdtm, allVerts, allIndices);
     }
 
+void LoadMesh(bvector<DPoint3d>& vertices, bvector<int>& indices, WString& path)
+    {
+    FILE* mesh = _wfopen(path.c_str(), L"rb");
+    size_t nVerts = 0;
+    size_t nIndices = 0;
+    fread(&nVerts, sizeof(size_t), 1, mesh);
+    vertices.resize(nVerts);
+    fread(&vertices[0], sizeof(DPoint3d), nVerts, mesh);
+    fread(&nIndices, sizeof(size_t), 1, mesh);
+    indices.resize(nIndices);
+    fread(&indices[0], sizeof(int32_t), nIndices, mesh);
+    fclose(mesh);
+    }
+
+struct compare3D
+    {
+    bool operator()(const DPoint3d& a, const DPoint3d& b) const
+        {
+        if (a.x < b.x) return true;
+        if (a.x > b.x) return false;
+        if (a.y < b.y) return true;
+        if (a.y > b.y) return false;
+        if (a.z < b.z) return true;
+        return false;
+        }
+    };
+
+void circumcircle(DPoint3d& center, double& radius, const DPoint3d* triangle)
+    {
+    double det = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, 1, triangle[1].x, triangle[1].y, 1, triangle[2].x, triangle[2].y, 1).Determinant();
+    double vals[3] = { (triangle[0].x * triangle[0].x + triangle[0].y * triangle[0].y),
+        (triangle[1].x * triangle[1].x + triangle[1].y * triangle[1].y),
+        (triangle[2].x * triangle[2].x + triangle[2].y * triangle[2].y) };
+    double det1 = -(RotMatrix::FromRowValues(vals[0], triangle[0].y, 1, vals[1], triangle[1].y, 1, vals[2], triangle[2].y, 1).Determinant());
+    double det2 = RotMatrix::FromRowValues(vals[0], triangle[0].x, 1, vals[1], triangle[1].x, 1, vals[2], triangle[2].x, 1).Determinant();
+    center.x = -det1 / (2 * det);
+    center.y = -det2 / (2 * det);
+    double detR = RotMatrix::FromRowValues(vals[0], triangle[0].x, triangle[0].y, vals[1], triangle[1].x, triangle[1].y, vals[2], triangle[2].x, triangle[2].y).Determinant();
+    radius = sqrt(det1*det1 + det2*det2 - 4 * det*detR) / (2 * abs(det));
+    }
+
+void circumcircle2(DPoint3d& center, double& radius, const DPoint3d* triangle)
+    {
+    double det = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, 1, triangle[1].x, triangle[1].y, 1, triangle[2].x, triangle[2].y, 1).Determinant();
+    double mags[3] = { triangle[0].MagnitudeSquaredXY(),
+        triangle[1].MagnitudeSquaredXY(),
+        triangle[2].MagnitudeSquaredXY() };
+    double det1 = 0.5*(RotMatrix::FromRowValues(mags[0], triangle[0].y, 1, mags[1], triangle[1].y, 1, mags[2], triangle[2].y, 1).Determinant());
+    double det2 = 0.5*RotMatrix::FromRowValues(triangle[0].x, mags[0], 1, triangle[1].x, mags[1], 1, triangle[2].x, mags[2], 1).Determinant();
+    center.x = det1 /  det;
+    center.y = det2 / det;
+    double detR = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, mags[0], triangle[1].x, triangle[1].y, mags[1], triangle[2].x, triangle[2].y, mags[2]).Determinant();
+    radius = sqrt(detR/det + DPoint3d::From(det1, det2, 0).MagnitudeSquaredXY()/(det*det));
+    }
+
+void SelectPointsToStitch(bvector<DPoint3d>& stitchedPoints, MTGGraph* meshGraph, DRange3d& neighborExt, bvector<DPoint3d>& pts)
+    {
+    DRange3d nodeExt = DRange3d::From(pts);
+    std::queue<MTGNodeId> bounds;
+    MTGARRAY_SET_LOOP(edgeID, meshGraph)
+        {
+        int vtx = -1;
+        meshGraph->TryGetLabel(edgeID, 0, vtx);
+        if (meshGraph->GetMaskAt(edgeID, MTG_BOUNDARY_MASK))
+            {
+            bounds.push(edgeID);
+            }
+        }
+    MTGARRAY_END_SET_LOOP(edgeID, meshGraph)
+        //get face of current edge
+
+        MTGNodeId face[3];
+    MTGNodeId mate[3];
+    DPoint3d facePoints[3];
+    int faceIdx[3];
+    MTGMask visitedMask = meshGraph->GrabMask();
+    std::set<DPoint3d, compare3D> hasBeenAdded;
+    while (bounds.size() > 0)
+        {
+        MTGNodeId currentID = bounds.front();
+        bounds.pop();
+        if (!meshGraph->GetMaskAt(currentID, MTG_BOUNDARY_MASK) || meshGraph->GetMaskAt(currentID, visitedMask))
+            {
+            if (meshGraph->GetMaskAt(currentID, MTG_EXTERIOR_MASK) && !meshGraph->GetMaskAt(currentID, visitedMask) && !meshGraph->GetMaskAt(meshGraph->EdgeMate(currentID), visitedMask)) bounds.push(meshGraph->EdgeMate(currentID));
+            meshGraph->SetMaskAt(currentID, visitedMask);
+            continue;
+            }
+        meshGraph->SetMaskAt(currentID, visitedMask);
+        int edgeAroundFace = 0, vIndex;
+
+        MTGARRAY_FACE_LOOP(aroundFaceIndex, meshGraph, currentID)
+            {
+            if (edgeAroundFace < 3)
+                {
+                face[edgeAroundFace] = aroundFaceIndex;
+                mate[edgeAroundFace] = meshGraph->EdgeMate(aroundFaceIndex);
+                meshGraph->TryGetLabel(aroundFaceIndex, 0, vIndex);
+                assert(vIndex > 0);
+                if (vIndex <= 0)break;
+                faceIdx[edgeAroundFace] = vIndex;
+
+                DPoint3d pt = pts[vIndex - 1];
+                facePoints[edgeAroundFace] = DPoint3d::FromXYZ(pt.x, pt.y, pt.z);
+                }
+            edgeAroundFace++;
+            if (edgeAroundFace > 3)break;
+            }
+
+        MTGARRAY_END_FACE_LOOP(aroundFaceIndex, meshGraph, currentID)
+            if (edgeAroundFace < 3) continue;
+        if (edgeAroundFace > 3)
+            {
+            bounds.push(meshGraph->EdgeMate(currentID));
+            continue;
+            }
+        for (size_t i = 0; i < 3; ++i) facePoints[i].DifferenceOf(facePoints[i], nodeExt.low);
+        DPoint3d center = DPoint3d::From(0, 0, 0);
+        double radius = 0;
+        circumcircle(center, radius, facePoints);
+        for (size_t i = 0; i < 3; ++i) facePoints[i].SumOf(facePoints[i], nodeExt.low);
+        center.SumOf(center, nodeExt.low);
+        if (DRange3d::From(center.x - radius, center.y - radius,
+            center.z, center.x + radius,
+            center.y + radius, center.z).IntersectsWith(neighborExt, 2))
+            {
+            for (int i = 0; i < 3; i++)
+                {
+                meshGraph->TryGetLabel(face[i], 0, vIndex);
+                assert(vIndex > 0);
+                if (hasBeenAdded.count(facePoints[i]) == 0)
+                    {
+                    stitchedPoints.push_back(facePoints[i]);
+                    hasBeenAdded.insert(facePoints[i]);
+                    }
+            
+                if (!meshGraph->GetMaskAt(mate[i], MTG_EXTERIOR_MASK))
+                    {
+                    meshGraph->SetMaskAt(mate[i], MTG_BOUNDARY_MASK);
+                    // meshGraph->SetMaskAt(meshGraph->EdgeMate(face[i]), visitedMask);
+                    bounds.push(mate[i]);
+                    meshGraph->ClearMaskAt(face[i], MTG_BOUNDARY_MASK);
+                    meshGraph->SetMaskAt(face[i], MTG_EXTERIOR_MASK);
+                    }
+                else
+                    {
+                    meshGraph->DropEdge(face[i]);
+                    }
+                }
+            }
+        else
+            {
+            for (int i = 0; i < 3; i++)
+                {
+                meshGraph->TryGetLabel(face[i], 0, vIndex);
+                assert(vIndex > 0);
+                if (hasBeenAdded.count(facePoints[i]) == 0)
+                    {
+                    stitchedPoints.push_back(facePoints[i]);
+                    hasBeenAdded.insert(facePoints[i]);
+                    }
+               
+                }
+            // if (!meshGraph->GetMaskAt(meshGraph->FSucc(currentID), visitedMask)) bounds.push(meshGraph->FSucc(currentID));
+            if (meshGraph->GetMaskAt(meshGraph->FSucc(meshGraph->EdgeMate(currentID)), MTG_EXTERIOR_MASK) && !meshGraph->GetMaskAt(meshGraph->FSucc(meshGraph->EdgeMate(currentID)), visitedMask)) bounds.push(meshGraph->FSucc(meshGraph->EdgeMate(currentID)));
+            if (bounds.size() == 0)
+                {
+                MTGARRAY_SET_LOOP(edgeID, meshGraph)
+                    {
+                    if (!meshGraph->GetMaskAt(edgeID, visitedMask) && meshGraph->GetMaskAt(edgeID, MTG_BOUNDARY_MASK) && !meshGraph->GetMaskAt(edgeID, MTG_EXTERIOR_MASK))
+                        {
+                        bounds.push(edgeID);
+                        break;
+                        }
+                    }
+                MTGARRAY_END_SET_LOOP(boundaryEdgeID, meshGraph)
+                }
+            }
+        }
+    meshGraph->ClearMask(visitedMask);
+    meshGraph->DropMask(visitedMask);
+    }
+
+void RunSelectPointsTest()
+    {
+    WString pathMeshes = L"E:\\makeTM\\select";
+    WString path = pathMeshes + WString(L".m");
+    bvector<DPoint3d> allVerts1;
+    bvector<int32_t> allIndices1;
+    LoadMesh(allVerts1, allIndices1, path);
+    WString path2 = pathMeshes + WString(L"2.m");
+    bvector<DPoint3d> allVerts2;
+    bvector<int32_t> allIndices2;
+    LoadMesh(allVerts2, allIndices2, path);
+
+    DRange3d range2 = DRange3d::From(allVerts2);
+    MTGGraph g;
+    bvector<int> componentPointsId;
+    ScalableMesh::CreateGraphFromIndexBuffer(&g, (const long*)&allIndices1[0], (int)allIndices1.size(), (int)allVerts1.size(), componentPointsId, &allVerts1[0]);
+
+    bvector<DPoint3d> stitchedPts;
+    SelectPointsToStitch(stitchedPts,&g, range2, allVerts1);
+    }
+
 int wmain(int argc, wchar_t* argv[])
 {
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
@@ -618,7 +859,8 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
     //RunDTMClipTest();
     //RunDTMTriangulateTest();
-    RunDTMSTMTriangulateTest();
+    //RunDTMSTMTriangulateTest();
+    RunSelectPointsTest();
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
     std::cout << "THE END" << std::endl;

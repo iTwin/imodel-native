@@ -153,14 +153,11 @@ public:
     return maxCountData;    
     }
 
-    size_t LoadCompressedBlock(Byte* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+    size_t LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
         {
-        bvector<uint8_t> ptData;
         size_t uncompressedSize = 0;
-        m_smSQLiteFile->GetTexture(blockID.m_integerID, ptData, uncompressedSize);
-        assert(ptData.size() < maxCountData*sizeof(uint8_t));
-        memcpy(DataTypeArray, ptData.data(), ptData.size());
-        return ptData.size();
+        m_smSQLiteFile->GetTexture(blockID.m_integerID, DataTypeArray, uncompressedSize);
+        return DataTypeArray.size();
         }
 
     virtual bool DestroyBlock(HPMBlockID blockID)

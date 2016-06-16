@@ -284,6 +284,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                                 nodePts.push_back(PointOp<POINT>::Create(pts.back().x, pts.back().y, pts.back().z));
                                 const_cast<int32_t&>(defs[i][j]) = (int32_t)pts.size() - 1;
                                 pointsMap.insert(std::make_pair(pts.back(), (int32_t)pts.size() - 1));
+                                feature.push_back(pts[defs[i][j]]);
                                 }
                             else
                                 {
@@ -293,29 +294,32 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                             s += "AFTER: " + std::to_string(node->m_featureDefinitions[i][j]) + "\n";
 #endif
                             }
+
+                    {
+/*                    WString namePoly = L"e:\\output\\scmesh\\2016-06-14\\postfeaturepoly_";
+                    namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
+                    namePoly.append(L"_");
+                    namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+                    namePoly.append(L"_");
+                    namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+                    namePoly.append(L"_");
+                    namePoly.append(to_wstring(i).c_str());
+                    namePoly.append(L".p");
+                    if (feature.size() > 0)
+                        {
+                        FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
+                        size_t boundSize = feature.size();
+                        fwrite(&boundSize, sizeof(size_t), 1, polyCliPFile);
+                        fwrite(&feature[0], sizeof(DPoint3d), feature.size(), polyCliPFile);
+                        fclose(polyCliPFile);
+                        }*/
+                        }
                         linearFeaturesPtr->reserve(count);
                         for (size_t i = linearFeaturesPtr->size(); i < count; ++i) linearFeaturesPtr->push_back(INT_MAX);
                         if (linearFeaturesPtr->size() > 0)node->SaveFeatureDefinitions(const_cast<int32_t*>(&*linearFeaturesPtr->begin()), count, defs);
 #if SM_TRACE_FEATURE_DEFS
                         s += "\n\n----\n\n";
 #endif
-                        /*                        WString namePoly = L"d:\\stitching\\features\\postfeaturepoly_";
-                                                namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
-                                                namePoly.append(L"_");
-                                                namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                                                namePoly.append(L"_");
-                                                namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                                                namePoly.append(L"_");
-                                                namePoly.append(to_wstring(i).c_str());
-                                                namePoly.append(L".p");
-                                                if (feature.size() > 0)
-                                                {
-                                                FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
-                                                size_t boundSize = feature.size();
-                                                fwrite(&boundSize, sizeof(size_t), 1, polyCliPFile);
-                                                fwrite(&feature[0], sizeof(DPoint3d), feature.size(), polyCliPFile);
-                                                fclose(polyCliPFile);
-                                                }*/
                         }
                     }
 #if SM_TRACE_FEATURE_DEFS
@@ -356,39 +360,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                         }
                     graphPtr->SetData(newGraph);
                     graphPtr->SetDirty();
-                    // node->GetGraphPtr()->SortNodesBasedOnLabel(0);
-                    //CreateGraphFromIndexBuffer(node->GetGraphPtr(), (const long*)meshP->GetFaceIndexes(), (int)meshP->GetNbFaceIndexes(), (int)nodePts.size(),componentPointsId, meshP->GetPoints());
-                   // node->SetGraphDirty();
-                   // node->StoreGraph();
+
                     }
-                /*  MTGGraph* meshGraph = node->GetGraphPtr();
-                   MTGMask visitedMask = meshGraph->GrabMask();
-                   MTGARRAY_SET_LOOP(edgeID, meshGraph)
-                   {
-                   bool isComponent = true;
-                   int vtx = -1;
-                   meshGraph->TryGetLabel(edgeID, 1, vtx);
-                   //if (vtx > 0) for (int j = 0; j < componentPointsId.size() && !isComponent; j++) if (componentPointsId[j] == vtx - 1) isComponent = true;
-                   if (isComponent && meshGraph->GetMaskAt(edgeID, MTG_EXTERIOR_MASK))
-                   {
-                   MTGARRAY_FACE_LOOP(extID, meshGraph, edgeID)
-                   {
-                   if (meshGraph->GetMaskAt(extID, visitedMask) || !meshGraph->GetMaskAt(extID, MTG_EXTERIOR_MASK)) break;
-                   MTGARRAY_FACE_LOOP(faceID, meshGraph, meshGraph->EdgeMate(extID))
-                   {
-                   int vtx2 = -1;
-                   meshGraph->TryGetLabel(faceID, 0, vtx2);
-                   faceIndexes.push_back(vtx2);
-                   }
-                   MTGARRAY_END_FACE_LOOP(faceID, meshGraph, meshGraph->EdgeMate(extID))
-                   meshGraph->SetMaskAt(extID, visitedMask);
-                   }
-                   MTGARRAY_END_FACE_LOOP(extID, meshGraph, edgeID)
-                   }
-                   }
-                   MTGARRAY_END_SET_LOOP(edgeID, meshGraph)
-                   meshGraph->ClearMask(visitedMask);
-                   meshGraph->DropMask(visitedMask);*/
                 if (componentPointsId.size() > 0)
                     {
                     if (node->m_nodeHeader.m_meshComponents == nullptr) node->m_nodeHeader.m_meshComponents = new int[componentPointsId.size()];
@@ -428,10 +401,14 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 stats.close();
 #endif
 #if 0//SM_OUTPUT_MESHES_STITCHING
-                WString nameBefore = LOG_PATH_STR_W + L"postmeshmesh_";
-                LOGSTRING_NODE_INFO_W(node, nameBefore)
-                    nameBefore.append(L".m");
-                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, pts.size(), node->m_nodeHeader.m_nbFaceIndexes, &pts[0], node->GetPtsIndicePtr());
+                if (node->GetBlockID().m_integerID == 2702)
+                    {
+                    WString nameBefore = LOG_PATH_STR_W + L"postmeshmesh_";
+                    LOGSTRING_NODE_INFO_W(node, nameBefore)
+                        nameBefore.append(L".m");
+                    auto indPtr = node->GetPtsIndicePtr();
+                    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, pts.size(), node->m_nodeHeader.m_nbFaceIndexes, &pts[0], &(*indPtr)[0]);
+                    }
 #endif
                 isMeshingDone = true;
 
@@ -687,7 +664,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     {
 //    std::string s;
 //    s += " BEFORE SIZE " + std::to_string(points.size())+"\n";
-    std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPts(DPoint3dZYXTolerancedSortComparison(1e-4, 0));
+    std::map<DPoint3d, int32_t, DPoint3dYXTolerancedSortComparison> mapOfPts(DPoint3dYXTolerancedSortComparison(1e-4));
     vector<int32_t> matchedIndices(points.size(),-1);
     vector<int32_t> newIndices(points.size(), -1);
     for (auto& pt : points)
@@ -698,6 +675,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         matchedIndices[&pt - &points[0]] = mapOfPts[pt3d];
         }
     vector<POINT> newSet;
+    newSet.reserve(points.size());
    /* for (auto it = mapOfPts.begin(); it != mapOfPts.end(); ++it)
         {
         newSet.push_back(PointOp<POINT>::Create(it->first.x, it->first.y, it->first.z));
@@ -735,6 +713,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
 //    s += " AFTER SIZE " + std::to_string(points.size());
     }
 
+    void circumcircle(DPoint3d& center, double& radius, const DPoint3d* triangle);
 template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, EXTENT>::UpdateMeshNodeFromGraph(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, MTGGraph * meshGraphStitched, std::vector<DPoint3d>& stitchedPoints, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const
     {
 
@@ -888,7 +867,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     POINT* pts = nullptr;
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-          
+    DRange3d nodeExt = node->m_nodeHeader.m_nodeExtent;
     if (s_useThreadsInStitching)
         {                
         node->LockPts();
@@ -956,13 +935,28 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
                 //bounds.pop();
                 continue;
                 }
-            DPoint3d sphereCenter = DPoint3d::From(0, 0, 0);
-            double sphereRadius = 0;
-        //bound_sphereCompute(&sphereCenter, &sphereRadius, facePoints, 3);
-        //EXTENT neighborExt = node->m_apNeighborNodes[neighborInd][neighborSubInd]->GetContentExtent();
-        if (ExtentOp<EXTENT>::Overlap(neighborExt, ExtentOp<EXTENT>::Create(sphereCenter.x - sphereRadius, sphereCenter.y - sphereRadius,
-            sphereCenter.z, sphereCenter.x + sphereRadius,
-            sphereCenter.y + sphereRadius, sphereCenter.z)) ||
+            bool isColinear = false;
+            if (facePoints[0].AlmostEqualXY(facePoints[1]) || facePoints[1].AlmostEqualXY(facePoints[2]) || facePoints[2].AlmostEqualXY(facePoints[0])) isColinear = true;
+            else
+                {
+                DSegment3d triSeg = DSegment3d::From(facePoints[0], facePoints[1]);
+                double param;
+                DPoint3d closestPt;
+                triSeg.ProjectPointXY(closestPt, param, facePoints[2]);
+                if (closestPt.AlmostEqualXY(facePoints[2])) isColinear = true;
+                }
+            DPoint3d center = DPoint3d::From(0, 0, 0);
+            double radius = 0;
+            if (!isColinear)
+                {
+                for (size_t i = 0; i < 3; ++i) facePoints[i].DifferenceOf(facePoints[i], nodeExt.low);
+                circumcircle(center, radius, facePoints);
+                for (size_t i = 0; i < 3; ++i) facePoints[i].SumOf(facePoints[i], nodeExt.low);
+                center.SumOf(center, nodeExt.low);
+                }
+            if (isColinear||DRange3d::From(center.x - radius, center.y - radius,
+                center.z, center.x + radius,
+                center.y + radius, center.z).IntersectsWith(neighborExt, 2) ||
             (HasOverlapWithNeighborsXY(meshGraph, currentID, s_useThreadsInStitching ? pts : &(*pointsPtr)[0])))
             {
             for (int i = 0; i < 3; i++)
@@ -1042,6 +1036,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     for (size_t g = 0; g < indices.size(); ++g)
         {
         std::vector<int> indicesForFace;
+        faceIndices.reserve(faceIndices.capacity() + indices[g].size());
         // size_t oldSize = geometryData.size();
         int* pointsInTile = new int[pts[g].size()];
         for (size_t t = 0; t < pts[g].size(); t++) pointsInTile[t] = -1;
@@ -1287,20 +1282,26 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
 
     struct compare3D;
 
-    void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType>& types, bvector<bvector<DPoint3d>>& islandFeatures, const std::vector<DPoint3d>& nodePoints, BC_DTM_OBJ* dtmObjP, const std::vector<HPMStoredPooledVector<int32_t>>& featureDefs);
+    void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType>& types, bvector<bvector<DPoint3d>>& islandFeatures, const std::vector<DPoint3d>& nodePoints, BC_DTM_OBJ* dtmObjP, bvector<bvector<int32_t>>& featureDefs);
     int AddPolygonsToDTMObject(bvector<bvector<DPoint3d>>& polygons, DTMFeatureType type, BC_DTM_OBJ* dtmObjP);
     int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, BC_DTM_OBJ* dtmObjP);
 
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     //return true;
-    LOG_SET_PATH("E:\\output\\scmesh\\2016-05-29\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-05-29\\")
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-06-14\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-06-14\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 
     if (node->m_nodeHeader.m_nbFaceIndexes == 0) return true;
+    //bool hasPtsToTrack = false;
+   /* DPoint3d pts[3] = { DPoint3d::From(431508.19, 4500522, 0),
+        DPoint3d::From(434180.54, 4506349.5, 0) ,
+        DPoint3d::From(433999, 4506298.02, 0) };
 
+    for (size_t i = 0; i < 3; ++i)
+        if (node->m_nodeHeader.m_nodeExtent.IsContained(pts[i], 2)) hasPtsToTrack = true;*/
   //  if (NULL == node->GetGraphPtr()) node->LoadGraph(s_useThreadsInStitching);
   //  MTGGraph* meshGraphP = node->GetGraphPtr();
   //  if (NULL == meshGraphP) return true;
@@ -1346,10 +1347,14 @@ for (size_t i = 0; i < pointsPtr->size(); i++)
     if (s_useThreadsInStitching) node->UnlockPts();
 
 #if SM_OUTPUT_MESHES_STITCHING
-WString nameBefore = LOG_PATH_STR_W + L"prestitchmesh_";
-LOGSTRING_NODE_INFO_W(node, nameBefore)
-nameBefore.append(L".m");
-LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, nodePoints.size(), node->m_nodeHeader.m_nbFaceIndexes, (&node[0]), &(*node->GetPtsIndicePtr())[0]);
+    if (node->m_nodeHeader.m_level <= 6)
+        {
+        WString nameBefore = LOG_PATH_STR_W + L"pl_stitchmesh_";
+        LOGSTRING_NODE_INFO_W(node, nameBefore)
+            nameBefore.append(L".m");
+        auto indPtr = node->GetPtsIndicePtr();
+        LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, nodePoints.size(), node->m_nodeHeader.m_nbFaceIndexes, (&nodePoints[0]), &(*indPtr)[0]);
+        }
 #endif
 bvector<bvector<DPoint3d>> boundary;
 EXTENT ext = node->GetContentExtent();
@@ -1483,7 +1488,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     bvector<bvector<DPoint3d>> voidFeatures;
     bvector<bvector<DPoint3d>> islandFeatures;
     bvector<DTMFeatureType> types;
-    VuPolygonClassifier vu;
+    VuPolygonClassifier vu(1e-6,0);
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
     bvector<bvector<int32_t>> defs;
     if (linearFeaturesPtr->size() > 0) node->GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
@@ -1498,7 +1503,8 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         if (bound.size() > 2)
             {
             if (!bsiDPoint3d_pointEqualTolerance(&bound.front(), &bound.back(), 1e-8)) bound.push_back(bound.front());
-            /*WString namePoly = L"E:\\output\\scmesh\\2016-01-28\\poly_";
+#if SM_OUTPUT_MESHES_STITCHING
+            WString namePoly = LOG_PATH_STR_W+L"poly_";
             namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
             namePoly.append(L"_");
             namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
@@ -1513,7 +1519,8 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             size_t boundSize = bound.size();
             fwrite(&boundSize, sizeof(size_t), 1, polyCliPFile);
             fwrite(&bound[0], sizeof(DPoint3d), bound.size(), polyCliPFile);
-            fclose(polyCliPFile);*/
+            fclose(polyCliPFile);
+#endif
             std::set<DPoint3d, DPoint3dZYXTolerancedSortComparison> allPts(DPoint3dZYXTolerancedSortComparison(1e-6, 0));
             bool addedBound = false;
             for (auto& pt : bound)
@@ -1550,6 +1557,24 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 
                                 }
                             }
+#if SM_OUTPUT_MESHES_STITCHING
+                        WString namePoly = LOG_PATH_STR_W+L"postF_";
+                        namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
+                        namePoly.append(L"_");
+                        namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
+                        namePoly.append(L"_");
+                        namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+                        namePoly.append(L"_");
+                        namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+                        namePoly.append(L"_");
+                        namePoly.append(to_wstring(&bound - &boundary[0]).c_str());
+                        namePoly.append(L".p");
+                        FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
+                        size_t boundSize = intersectBound.size();
+                        fwrite(&boundSize, sizeof(size_t), 1, polyCliPFile);
+                        fwrite(&intersectBound[0], sizeof(DPoint3d), intersectBound.size(), polyCliPFile);
+                        fclose(polyCliPFile);
+#endif
                         postFeatureBoundary.push_back(intersectBound);
                         break;
                         }
@@ -1696,8 +1721,8 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         {
         for (auto& feature : voidFeatures)
             {
-            if (skipFeatures[&feature - &voidFeatures[0]]) continue;
-           /* WString namePoly = LOG_PATH_STR_W+L"featurepoly_";
+#if SM_OUTPUT_MESHES_STITCHING
+            WString namePoly = LOG_PATH_STR_W+L"featurepoly_";
             namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
             namePoly.append(L"_");
             namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
@@ -1712,7 +1737,9 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             size_t boundSize = feature.size();
             fwrite(&boundSize, sizeof(size_t), 1, polyCliPFile);
             fwrite(&feature[0], sizeof(DPoint3d), feature.size(), polyCliPFile);
-            fclose(polyCliPFile);*/
+            fclose(polyCliPFile);
+#endif
+            if (skipFeatures[&feature - &voidFeatures[0]]) continue;
             status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, types[&feature- &voidFeatures[0]], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, (DPoint3d*)&(feature[0]), (long)feature.size());
             assert(status == SUCCESS);
             }
@@ -1724,7 +1751,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     status = AddPolygonsToDTMObject(stitchedNeighborsBoundary, DTMFeatureType::Breakline, dtmObjP);
 
 #if SM_OUTPUT_MESHES_STITCHING
-   // if (node->GetBlockID().m_integerID == 628)
+    //if (hasPtsToTrack)
         {
         WString dtmFileName(LOG_PATH_STR_W);
         dtmFileName.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
@@ -1754,6 +1781,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         assert(meshP != 0);
 
 #if SM_OUTPUT_MESHES_STITCHING
+        if (node->m_nodeHeader.m_level <= 6)
         {
         WString nameStitched = LOG_PATH_STR_W + L"posttrimesh_new_";
         LOGSTRING_NODE_INFO_W(node, nameStitched)
@@ -1771,12 +1799,12 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             pts[1].resize(meshP->GetNbPoints());
 
 #if SM_OUTPUT_MESHES_STITCHING
-           // if (node->GetBlockID().m_integerID == 15)
+            if (node->m_nodeHeader.m_level <= 6)
                 {
                 WString nameStitched = LOG_PATH_STR_W + L"posttrimesh_old_";
                 LOGSTRING_NODE_INFO_W(node, nameStitched)
                 nameStitched.append(L".m");
-                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, nodePoints.size(), indices[0].size(), &pts[0][0], (int32_t*)&indices[0][0])
+                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, nodePoints.size(), indices[0].size(), &nodePoints[0], (int32_t*)&indices[0][0])
                 }
 #endif
             memcpy(&pts[1][0], meshP->GetPoints(), sizeof(DPoint3d)*pts[1].size());
@@ -1793,6 +1821,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     bvector<bvector<DPoint3d>> features;
     bvector<DTMFeatureType> types;
     node->ReadFeatureDefinitions(features, types);
+
     assert(node->m_nodeHeader.m_nbFaceIndexes == 0 || newNodePointData != nullptr);
     //node->setNbPointsUsedForMeshIndex(0);
     
@@ -1844,16 +1873,36 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 		if (s_useThreadsInStitching) node->UnlockPts();
 				
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
-        if (linearFeaturesPtr->size() > 0)
+        linearFeaturesPtr->clear();
+        if (features.size() > 0)
             {
 //            for (auto& def : node->m_featureDefinitions) if (!def.Discarded()) def.Discard();
             for (auto& polyline : features)
                 {
                 DRange3d extent = DRange3d::From(polyline);
+                    {
+                    WString namePoly = L"E:\\output\\scmesh\\2016-06-14\\afterstitchpoly_";
+                    namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
+                    namePoly.append(L"_");
+                    namePoly.append(std::to_wstring(node->GetBlockID().m_integerID).c_str());
+                    namePoly.append(L"_");
+                    namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+                    namePoly.append(L"_");
+                    namePoly.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
+                    namePoly.append(L"_");
+                    namePoly.append(to_wstring(&polyline - &features[0]).c_str());
+                    namePoly.append(L".p");
+                    FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
+                    size_t boundSize = polyline.size();
+                    fwrite(&boundSize, sizeof(size_t), 1, polyCliPFile);
+                    fwrite(&polyline[0], sizeof(DPoint3d), polyline.size(), polyCliPFile);
+                    fclose(polyCliPFile);
+                    }
                 node->AddFeatureDefinitionSingleNode((IDTMFile::FeatureType)types[&polyline - &features.front()], polyline, extent);
             }
         }
 #if SM_OUTPUT_MESHES_STITCHING
+        if (node->m_nodeHeader.m_level <= 6)
             {
             WString nameStitched = LOG_PATH_STR_W + L"poststitchmesh_";
             LOGSTRING_NODE_INFO_W(node, nameStitched)

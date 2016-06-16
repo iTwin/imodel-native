@@ -718,9 +718,9 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
         HFCPtr<TileStoreType> pTileStore;
         HFCPtr<StreamingPointStoreType>  pStreamingTileStore;
-        HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingIndiceTileStore;
-        HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, YProtPtExtentType >> pStreamingUVTileStore;
-        HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingUVsIndicesTileStore;
+        HFCPtr<StreamingIndiceStoreType> pStreamingIndiceTileStore;
+        HFCPtr<StreamingUVStoreType> pStreamingUVTileStore;
+        HFCPtr<StreamingIndiceStoreType> pStreamingUVsIndicesTileStore;
         HFCPtr<StreamingTextureTileStore> pStreamingTextureTileStore;
 
         HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pIndiceTileStore;
@@ -748,22 +748,16 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     auto position = m_path.find_last_of(L".stm");
                     auto filenameWithoutExtension = m_path.substr(0, position - 3);
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"quebeccityvg\\");
+                    WString azureDatasetName(L"marseille/");
                     // NEEDS_WORK_SM - Check existence of the following directories
-                    WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream\\" : azureDatasetName);
-                    WString groupedStreamingFilePath = streamingSourcePath + L"headers\\";
-                    WString point_store_path         = streamingSourcePath + L"points\\";
-                    WString indice_store_path        = streamingSourcePath + L"indices\\";
-                    WString uv_store_path            = streamingSourcePath + L"uvs\\";
-                    WString uvIndice_store_path      = streamingSourcePath + L"uvindices\\";
-                    WString texture_store_path       = streamingSourcePath + L"textures\\";
+                    WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
 
                     // NEEDS_WORK_SM - Need to stream textures as well
-                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, AreDataCompressed(), true, groupedStreamingFilePath, s_stream_from_grouped_store);
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(indice_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
-                    pStreamingUVTileStore = new StreamingUVStoreType(uv_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(uvIndice_store_path, AreDataCompressed(), false, groupedStreamingFilePath);
-                    pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
+                    pStreamingTileStore = new StreamingPointStoreType(streamingSourcePath, StreamingPointStoreType::SMStreamingDataType::POINTS, AreDataCompressed(), s_stream_from_grouped_store);
+                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, AreDataCompressed());
+                    pStreamingUVTileStore = new StreamingUVStoreType(streamingSourcePath, StreamingUVStoreType::SMStreamingDataType::UVS, AreDataCompressed());
+                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, AreDataCompressed());
+                    pStreamingTextureTileStore = new StreamingTextureTileStore(streamingSourcePath);
                     m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
                                                             &*pStreamingIndiceTileStore,
@@ -1178,6 +1172,7 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
     bvector<DPoint3d> transPts(numPoints);
     memcpy(&transPts[0], pts, numPoints*sizeof(DPoint3d));
     uorsToStorage.Multiply(&transPts[0], numPoints);
+    for (auto& pt : transPts) pt.z = 0.0;
     if (meshQueryInterface->Query(returnedNodes, &transPts[0], numPoints, params) != SUCCESS)
         return DTM_ERROR;
     bvector<IScalableMeshNodePtr>* fullResolutionReturnedNodes = new bvector<IScalableMeshNodePtr> (returnedNodes);
@@ -1197,13 +1192,36 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         DRange3d nodeExt = node->GetContentExtent();
         DPoint3d rangePts[5] = { DPoint3d::From(nodeExt.low.x, nodeExt.low.y, 0), DPoint3d::From(nodeExt.high.x, nodeExt.low.y, 0), DPoint3d::From(nodeExt.high.x, nodeExt.high.y, 0),
             DPoint3d::From(nodeExt.low.x, nodeExt.high.y, 0), DPoint3d::From(nodeExt.low.x, nodeExt.low.y, 0) };
-        DTM_POLYGON_OBJ* polyP = NULL;
-        long intersectFlag;
+       // DTM_POLYGON_OBJ* polyP = NULL;
+       // long intersectFlag;
         bool restrictToPoly = true;
-        if (DTM_SUCCESS != bcdtmPolygon_intersectPointArrayPolygons(&rangePts[0], 5, &transPts[0], numPoints, &intersectFlag, &polyP, 1e-8, 1e-8) || intersectFlag == 0) restrictToPoly = false;
-        if (polyP != NULL) free(polyP);
+        /*if (DTM_SUCCESS != bcdtmPolygon_intersectPointArrayPolygons(&rangePts[0], 5, &transPts[0], numPoints, &intersectFlag, &polyP, 1e-8, 1e-8) || intersectFlag == 0) restrictToPoly = false;
+        if (polyP != NULL) free(polyP);*/
+        const CurveVectorPtr dtmBoundary = CurveVector::CreateLinear(rangePts, 5,CurveVector::BOUNDARY_TYPE_Outer, false);
+        const CurveVectorPtr activeBoundary = CurveVector::CreateLinear(transPts, CurveVector::BOUNDARY_TYPE_Outer, false);
+        const CurveVectorPtr intersection = CurveVector::AreaIntersection(*activeBoundary, *dtmBoundary);
+        if (!intersection.IsValid() || intersection.IsNull()) restrictToPoly = false;
         BcDTMPtr dtmP = node->GetBcDTM();
-        if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, restrictToPoly ? &transPts[0] : 0, restrictToPoly?numPoints:0);
+        if (restrictToPoly)
+            {
+            double flat, slope;
+            bvector<bvector<bvector<DPoint3d>>> allGeom;
+            intersection->CollectLinearGeometry(allGeom);
+            for (auto& geom : allGeom)
+                for (auto& lineString : geom)
+                    {
+                    if (dtmP != nullptr)
+                        {
+                        if (DTM_SUCCESS == dtmP->CalculateSlopeArea(&flat, &slope, &lineString[0], (int)lineString.size()))
+                            {
+                            flatAreaTile += flat;
+                            slopeAreaTile += slope;
+                            }
+                        }
+                    }
+            }
+        else
+          if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile,  0, 0);
         flatArea += flatAreaTile;
         slopeArea += slopeAreaTile;
         }
@@ -1239,13 +1257,38 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                 DRange3d nodeExt = node->GetContentExtent();
                 DPoint3d rangePts[5] = { DPoint3d::From(nodeExt.low.x, nodeExt.low.y, 0), DPoint3d::From(nodeExt.low.x, nodeExt.high.y, 0), DPoint3d::From(nodeExt.high.x, nodeExt.high.y, 0),
                     DPoint3d::From(nodeExt.high.x, nodeExt.low.y, 0), DPoint3d::From(nodeExt.low.x, nodeExt.low.y, 0) };
-                DTM_POLYGON_OBJ* polyP = NULL;
-                long intersectFlag;
+               // DTM_POLYGON_OBJ* polyP = NULL;
+               // long intersectFlag;
                 bool restrictToPoly = true;
-                if (DTM_SUCCESS != bcdtmPolygon_intersectPointArrayPolygons(&rangePts[0], 5, &pts[0], numPoints, &intersectFlag, &polyP, 1e-8, 1e-8) || intersectFlag == 0) restrictToPoly = false;
-                if (polyP != NULL) free(polyP);
+                //if (DTM_SUCCESS != bcdtmPolygon_intersectPointArrayPolygons(&rangePts[0], 5, &pts[0], numPoints, &intersectFlag, &polyP, 1e-8, 1e-8) || intersectFlag == 0) restrictToPoly = false;
+                //if (polyP != NULL) free(polyP);
+                const CurveVectorPtr dtmBoundary = CurveVector::CreateLinear(rangePts, 5, CurveVector::BOUNDARY_TYPE_Outer, false);
+                const CurveVectorPtr activeBoundary = CurveVector::CreateLinear(pts, numPoints, CurveVector::BOUNDARY_TYPE_Outer, false);
+                const CurveVectorPtr intersection = CurveVector::AreaIntersection(*activeBoundary, *dtmBoundary);
+                if (!intersection.IsValid() || intersection.IsNull()) restrictToPoly = false;
                 BcDTMPtr dtmP = node->GetBcDTM();
-                if (dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, restrictToPoly ? pts : 0, restrictToPoly?numPoints:0) == DTM_SUCCESS) retval = DTM_SUCCESS;
+                if (restrictToPoly)
+                    {
+                    double flat, slope;
+                    bvector<bvector<bvector<DPoint3d>>> allGeom;
+                    intersection->CollectLinearGeometry(allGeom);
+                    for (auto& geom : allGeom)
+                        for (auto& lineString : geom)
+                            {
+                            if (dtmP != nullptr)
+                                {
+                                if (DTM_SUCCESS == dtmP->CalculateSlopeArea(&flat, &slope, &lineString[0], (int)lineString.size()))
+                                    {
+                                    retval = DTM_SUCCESS;
+                                    flatAreaTile += flat;
+                                    slopeAreaTile += slope;
+                                    }
+                                }
+                            }
+                    
+                    }
+                else
+                if (dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, 0,0) == DTM_SUCCESS) retval = DTM_SUCCESS;
                 
                 flatAreaFull += flatAreaTile;
                 slopeAreaFull += slopeAreaTile;

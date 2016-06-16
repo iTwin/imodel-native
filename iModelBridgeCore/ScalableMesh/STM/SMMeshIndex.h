@@ -281,8 +281,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
         if (!SMMemoryPool::GetInstance()->GetItem<MTGGraph>(poolMemItemPtr, m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)m_SMIndex) && loadGraph)
-            {
-            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
+            {          
             RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(GetBlockID().m_integerID, GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph, (uint64_t)m_SMIndex));
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
             m_graphPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
@@ -300,8 +299,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
         if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::DiffSet, (uint64_t)m_SMIndex))
-            {
-            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
+            {      
             RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericVectorItem<DifferenceSet>(GetBlockID().m_integerID, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore().GetPtr(), SMPoolDataTypeDesc::DiffSet, (uint64_t)m_SMIndex));
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
             m_diffSetsItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
@@ -309,6 +307,35 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             poolMemItemPtr = storedMemoryPoolItem.get();
             const_cast<atomic<size_t>&>(m_nbClips) = poolMemItemPtr->size();
             }
+        return poolMemItemPtr;
+        }
+
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> GetTileDTM()
+        {
+        std::lock_guard<std::mutex> lock(m_dtmLock); //don't want to add item twice
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> poolMemItemPtr;
+
+
+        if (!SMMemoryPool::GetInstance()->GetItem<BcDTMPtr>(poolMemItemPtr, m_dtmPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex))
+            {
+            RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> storedMemoryPoolItem(new SMMemoryPoolGenericBlobItem<BcDTMPtr>(nullptr, 0, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex));
+            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
+            m_dtmPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+            assert(m_dtmPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            poolMemItemPtr = storedMemoryPoolItem.get();
+            bvector<bool> clips;
+            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+            auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
+            IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
+            auto meshP = nodeP->GetMesh(flags, clips);
+            if (meshP != nullptr)
+                {
+                auto ptrP = storedMemoryPoolItem->EditData();
+                if (ptrP == nullptr) storedMemoryPoolItem->SetData(new BcDTMPtr(BcDTM::Create()));
+                meshP->GetAsBcDTM(*storedMemoryPoolItem->EditData());
+                }
+            }
+
         return poolMemItemPtr;
         }
 
@@ -707,7 +734,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
   //  mutable vector<HPMStoredPooledVector<int32_t>> m_featureDefinitions;
     atomic<size_t> m_nbClips;
-    BcDTMPtr m_tileBcDTM;
+    //BcDTMPtr m_tileBcDTM;
     std::mutex m_dtmLock;
     mutable SMMemoryPoolItemId m_graphPoolItemId;
     private:
@@ -724,6 +751,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable SMMemoryPoolItemId m_diffSetsItemId;
         mutable SMMemoryPoolItemId m_displayDataPoolItemId;  
         mutable SMMemoryPoolItemId m_featurePoolItemId;
+        mutable SMMemoryPoolItemId m_dtmPoolItemId;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
        // mutable bool m_isGraphLoaded;                
