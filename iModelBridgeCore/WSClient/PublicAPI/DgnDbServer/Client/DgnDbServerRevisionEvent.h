@@ -7,13 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/Client/IDgnDbServerEvent.h>
+#include <DgnDbServer/Client/DgnDbServerEvent.h>
 #include <DgnDbServer/DgnDbServerCommon.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-struct DgnDbServerRevisionEvent : public IDgnDbServerEvent
+struct DgnDbServerRevisionEvent : public DgnDbServerEvent::GenericEvent
     {
     private:
         Utf8String m_repoId;

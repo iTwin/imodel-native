@@ -101,22 +101,22 @@ Utf8CP StubHttpResponseInvalidContentType()
 
 Utf8CP StubHttpResponseValidLockEventContentType()
     {
-    return IDgnDbServerEvent::GetEventName(DgnDbServerEventType::LockEvent).c_str();
+    return DgnDbServerEvent::GenericEvent::GetEventName(DgnDbServerEvent::DgnDbServerEventType::LockEvent).c_str();
     }
 
 Utf8CP StubHttpResponseInvalidLockEventContentType()
     {
-    return IDgnDbServerEvent::GetEventName(DgnDbServerEventType::UnknownEventType).c_str();
+    return DgnDbServerEvent::GenericEvent::GetEventName(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
 
 Utf8CP StubHttpResponseValidRevisionEventContentType()
     {
-    return IDgnDbServerEvent::GetEventName(DgnDbServerEventType::RevisionEvent).c_str();
+    return DgnDbServerEvent::GenericEvent::GetEventName(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent).c_str();
     }
 
 Utf8CP StubHttpResponseInvalidRevisionEventContentType()
     {
-    return IDgnDbServerEvent::GetEventName(DgnDbServerEventType::UnknownEventType).c_str();
+    return DgnDbServerEvent::GenericEvent::GetEventName(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
 
 void DgnDbServerEventParserTests::SetUp()
@@ -128,11 +128,11 @@ TEST_F(DgnDbServerEventParserTests, LockEventTests)
     {
     //Check for valid values as Json
     IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
-    IDgnDbServerEventPtr validPtr = parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
+    DgnDbServerEventPtr validPtr = parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
     EXPECT_NE(nullptr, validPtr);
-    EXPECT_EQ(DgnDbServerEventType::LockEvent, parser->GetEventType(validPtr));
+    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::LockEvent, parser->GetEventType(validPtr));
     DgnDbServerLockEvent& lockEvent = dynamic_cast<DgnDbServerLockEvent&>(*validPtr);
-    EXPECT_TRUE(dynamic_cast<IDgnDbServerEvent*>(&lockEvent)); //DgnDbServerLockEvent is a subclass of DgnDbServerEvent
+    EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&lockEvent)); //DgnDbServerLockEvent is a subclass of DgnDbServerEvent
 
     //Check for valid values as String
     validPtr = parser->ParseEventasString(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
@@ -143,11 +143,11 @@ TEST_F(DgnDbServerEventParserTests, RevisionEventTests)
     {
     //Check for valid values
     IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
-    IDgnDbServerEventPtr validPtr = parser->ParseEventasJson(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());
+    DgnDbServerEventPtr validPtr = parser->ParseEventasJson(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());
     EXPECT_NE(nullptr, validPtr);
-    EXPECT_EQ(DgnDbServerEventType::RevisionEvent, parser->GetEventType(validPtr));
+    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent, parser->GetEventType(validPtr));
     DgnDbServerRevisionEvent& revisionEvent = dynamic_cast<DgnDbServerRevisionEvent&>(*validPtr);
-    EXPECT_TRUE(dynamic_cast<IDgnDbServerEvent*>(&revisionEvent)); //DgnDbServerRevisionEvent is a subclass of DgnDbServerEvent
+    EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&revisionEvent)); //DgnDbServerRevisionEvent is a subclass of DgnDbServerEvent
 
     //Check for valid values as String
     validPtr = parser->ParseEventasString(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());

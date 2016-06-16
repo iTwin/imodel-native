@@ -77,7 +77,7 @@ public:
 
     DGNDBSERVERCLIENT_EXPORT DgnDbServerEventStringTaskPtr      GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr      CancelEventRequest(ICancellationTokenPtr cancellationToken = nullptr);
-    DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventCollectionTaskPtr GetEvents(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventCollectionTaskPtr  GetEvents(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR                        GetDgnDb                () const; //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR        GetRepositoryConnection () const; //!< Connection to a repository on server.

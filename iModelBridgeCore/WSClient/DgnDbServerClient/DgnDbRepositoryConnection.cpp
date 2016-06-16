@@ -64,6 +64,14 @@ void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageCli
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+void DgnDbRepositoryConnection::SetDgnDbServerEventParser(IDgnDbServerEventParserPtr eventParser)
+    {
+    m_eventParser = eventParser;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            05/2016
 //---------------------------------------------------------------------------------------
 EventServiceClient* DgnDbRepositoryConnection::m_eventServiceClient = nullptr;
@@ -159,6 +167,9 @@ AuthenticationHandlerPtr authenticationHandler
 		// WARNING: Temporarily commenting this out, should be uncommented
         //if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
+
+        //Set DgnDbServerEventParser
+        repositoryConnection->SetDgnDbServerEventParser(DgnDbServerEventParser::Create());
 
         //Set EventServiceClient
         if (!repositoryConnection->SetEventServiceClient(cancellationToken))
@@ -509,198 +520,62 @@ bool DgnDbRepositoryConnection::GetEventServiceResponses(bvector<Utf8String>& re
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-bool EventServiceStringHelper(bmap<Utf8String, Utf8String>& entitymap, Utf8String original)
-    {
-    bmap<Utf8String, Utf8String>::iterator data = entitymap.begin();
-    while (data != entitymap.end())
-        {
-        Utf8String entity = data->first;
-        size_t entityPos = (0 == (BeStringUtilities::Stricmp("Date", entity.c_str()))) ? original.find_first_of(entity.c_str()) : original.rfind(entity.c_str());
-
-        if (Utf8String::npos == entityPos)
-            return false;
-        Utf8String sub1 = original.substr(entityPos, original.length());
-        size_t entityValueStart = sub1.find_first_of(':');
-        Utf8String sub2 = sub1.substr(entityValueStart + 2, sub1.length());
-        size_t entityValueStop = sub2.find_first_of('"');
-        Utf8String entityValue = sub2.substr(0, entityValueStop);
-        data->second = entityValue;
-        ++data;
-        }
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEventFromString(Utf8CP contentType, Utf8String jsonString)
-    {
-    size_t jsonPart1 = jsonString.find_first_of('{');
-    size_t jsonPart2 = jsonString.find_last_of('}');
-    Utf8String actualJsonPart = jsonString.substr(jsonPart1, jsonPart2);
-    if (0 == (BeStringUtilities::Stricmp("LockEvent", contentType)))
-        {
-        bmap<Utf8String, Utf8String> entitymap;
-        entitymap.Insert(DgnDbServerEvent::RepoId, "");
-        entitymap.Insert(DgnDbServerEvent::UserId, "");
-        entitymap.Insert(DgnDbServerEvent::LockEvent::ObjectId, "");
-        entitymap.Insert(DgnDbServerEvent::LockEvent::LockType, "");
-        entitymap.Insert(DgnDbServerEvent::LockEvent::LockLevel, "");
-        entitymap.Insert(DgnDbServerEvent::LockEvent::BriefcaseId, "");
-        entitymap.Insert(DgnDbServerEvent::LockEvent::ReleasedWithRevision, "");
-        entitymap.Insert(DgnDbServerEvent::LockEvent::Date, "");
-
-        if (!EventServiceStringHelper(entitymap, actualJsonPart))
-            return nullptr;
-        return DgnDbServerLockEvent::Create
-                                           (
-                                            entitymap[DgnDbServerEvent::RepoId],
-                                            entitymap[DgnDbServerEvent::UserId],
-                                            entitymap[DgnDbServerEvent::LockEvent::ObjectId],
-                                            entitymap[DgnDbServerEvent::LockEvent::LockType],
-                                            entitymap[DgnDbServerEvent::LockEvent::LockLevel],
-                                            entitymap[DgnDbServerEvent::LockEvent::BriefcaseId],
-                                            entitymap[DgnDbServerEvent::LockEvent::ReleasedWithRevision],
-                                            entitymap[DgnDbServerEvent::LockEvent::Date]
-                                           );
-        }
-    else if (0 == (BeStringUtilities::Stricmp("RevisionEvent", contentType)))
-        {
-        bmap<Utf8String, Utf8String> entitymap;
-        entitymap.Insert(DgnDbServerEvent::RepoId, "");
-        entitymap.Insert(DgnDbServerEvent::UserId, "");
-        entitymap.Insert(DgnDbServerEvent::RevisionEvent::RevisionId, "");
-        entitymap.Insert(DgnDbServerEvent::RevisionEvent::RevisionIndex, "");
-        entitymap.Insert(DgnDbServerEvent::RevisionEvent::Date, "");
-
-        if (!EventServiceStringHelper(entitymap, actualJsonPart))
-            return nullptr;
-        return DgnDbServerRevisionEvent::Create
-                                               (
-                                                entitymap[DgnDbServerEvent::RepoId],
-                                                entitymap[DgnDbServerEvent::UserId],
-                                                entitymap[DgnDbServerEvent::RevisionEvent::RevisionId],
-                                                entitymap[DgnDbServerEvent::RevisionEvent::RevisionIndex],
-                                                entitymap[DgnDbServerEvent::RevisionEvent::Date]
-                                               );
-        }
-    else
-        {
-        return nullptr;
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-IDgnDbServerEventPtr DgnDbRepositoryConnection::BuildDgnDbServerEventFromJson(Utf8CP contentType, Utf8String jsonString)
-    {
-    size_t jsonPosStart = jsonString.find_first_of('{');
-    size_t jsonPosEnd = jsonString.find_last_of('}');
-    Utf8String actualJsonPart = jsonString.substr(jsonPosStart, jsonPosEnd);
-    if (0 == (BeStringUtilities::Stricmp("LockEvent", contentType)))
-        {
-        Json::Reader reader;
-        Json::Value data(Json::objectValue);
-        if (
-            reader.parse(actualJsonPart, data) &&
-            !data.isArray() &&
-            data.isMember(DgnDbServerEvent::RepoId) &&
-            data.isMember(DgnDbServerEvent::UserId) &&
-            data.isMember(DgnDbServerEvent::LockEvent::ObjectId) &&
-            data.isMember(DgnDbServerEvent::LockEvent::LockType) &&
-            data.isMember(DgnDbServerEvent::LockEvent::LockLevel) &&
-            data.isMember(DgnDbServerEvent::LockEvent::BriefcaseId) &&
-            data.isMember(DgnDbServerEvent::LockEvent::ReleasedWithRevision) &&
-            data.isMember(DgnDbServerEvent::LockEvent::Date)
-           )
-            return DgnDbServerLockEvent::Create
-                                                (
-                                                 data[DgnDbServerEvent::RepoId].asString(),
-                                                 data[DgnDbServerEvent::UserId].asString(),
-                                                 data[DgnDbServerEvent::LockEvent::ObjectId].asString(),
-                                                 data[DgnDbServerEvent::LockEvent::LockType].asString(),
-                                                 data[DgnDbServerEvent::LockEvent::LockLevel].asString(),
-                                                 data[DgnDbServerEvent::LockEvent::BriefcaseId].asString(),
-                                                 data[DgnDbServerEvent::LockEvent::ReleasedWithRevision].asString(),
-                                                 data[DgnDbServerEvent::LockEvent::Date].asString()
-                                                );
-        return nullptr;
-        }
-    else if (0 == (BeStringUtilities::Stricmp("RevisionEvent", contentType)))
-        {
-        Json::Reader reader;
-        Json::Value data(Json::objectValue);
-        if (
-            reader.parse(actualJsonPart, data) &&
-            !data.isArray() &&
-            data.isMember(DgnDbServerEvent::RepoId) &&
-            data.isMember(DgnDbServerEvent::UserId) &&
-            data.isMember(DgnDbServerEvent::RevisionEvent::RevisionId) &&
-            data.isMember(DgnDbServerEvent::RevisionEvent::RevisionIndex) &&
-            data.isMember(DgnDbServerEvent::RevisionEvent::Date)
-            )
-            return DgnDbServerRevisionEvent::Create
-                                                   (
-                                                    data[DgnDbServerEvent::RepoId].asString(),
-                                                    data[DgnDbServerEvent::UserId].asString(),
-                                                    data[DgnDbServerEvent::RevisionEvent::RevisionId].asString(),
-                                                    data[DgnDbServerEvent::RevisionEvent::RevisionIndex].asString(),
-                                                    data[DgnDbServerEvent::RevisionEvent::Date].asString()
-                                                   );
-        return nullptr;
-        }
-    else
-        return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-IDgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken)
+DgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken)
     {
     if (m_eventServiceClient == nullptr && !SetEventServiceClient(cancellationToken))
-        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
+        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
 
     HttpResponse response;
     if (!GetEventServiceResponse(response, longPolling))
-        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
+        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
 
     if (HttpStatus::NoContent == response.GetHttpStatus())
-        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
+        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
 
-    IDgnDbServerEventPtr ptr = BuildDgnDbServerEventFromJson(response.GetHeaders().GetContentType(), response.GetBody().AsString());
+    DgnDbServerEventPtr ptr = m_eventParser->ParseEventasJson(response.GetHeaders().GetContentType(), response.GetBody().AsString());
     if (ptr == nullptr)
-        return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
-    return CreateCompletedAsyncTask<IDgnDbServerEventResult>(IDgnDbServerEventResult::Success(ptr));
+        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
+    return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Success(ptr));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-IDgnDbServerEventCollectionTaskPtr DgnDbRepositoryConnection::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken)
+DgnDbServerEventTypeTaskPtr DgnDbRepositoryConnection::GetEventType(DgnDbServerEventPtr baseEvent)
+    {
+    if (m_eventParser == nullptr)
+        return CreateCompletedAsyncTask<DgnDbServerEventTypeResult>(DgnDbServerEventTypeResult::Error(DgnDbServerError::Id::InternalServerError));
+    if (baseEvent == nullptr)
+        return CreateCompletedAsyncTask<DgnDbServerEventTypeResult>(DgnDbServerEventTypeResult::Error(DgnDbServerError::Id::NoEventsFound));
+    return CreateCompletedAsyncTask<DgnDbServerEventTypeResult>(DgnDbServerEventTypeResult::Success(m_eventParser->GetEventType(baseEvent)));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerEventCollectionTaskPtr DgnDbRepositoryConnection::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken)
     {
     if (m_eventServiceClient == nullptr && !SetEventServiceClient(cancellationToken))
-        return CreateCompletedAsyncTask<IDgnDbServerEventCollectionResult>(IDgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InternalServerError));
+        return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InternalServerError));
 
     bvector<Utf8String> responseStrings;
     bvector<Utf8CP> contentTypes;
-    bvector<IDgnDbServerEventPtr> events;
+    bvector<DgnDbServerEventPtr> events;
     if (!GetEventServiceResponses(responseStrings, contentTypes, longPolling))
-        return CreateCompletedAsyncTask<IDgnDbServerEventCollectionResult>(IDgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InternalServerError));
+        return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InternalServerError));
 
     for (int i = 0; i < responseStrings.size(); i++)
         {
-        IDgnDbServerEventPtr ptr = BuildDgnDbServerEventFromJson(contentTypes[i], responseStrings[i]);
+        DgnDbServerEventPtr ptr = m_eventParser->ParseEventasJson(contentTypes[i], responseStrings[i]);
         if (ptr == nullptr)
             continue;
         events.push_back(ptr);
         }
 
     if (events.size() < 1)
-        return CreateCompletedAsyncTask<IDgnDbServerEventCollectionResult>(IDgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::NoEventsFound));
+        return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::NoEventsFound));
 
-    return CreateCompletedAsyncTask<IDgnDbServerEventCollectionResult>(IDgnDbServerEventCollectionResult::Success(events));
+    return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Success(events));
     }
 
 //---------------------------------------------------------------------------------------

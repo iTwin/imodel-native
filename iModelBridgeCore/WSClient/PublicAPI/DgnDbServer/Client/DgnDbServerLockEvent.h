@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/Client/IDgnDbServerEvent.h>
+#include <DgnDbServer/Client/DgnDbServerEvent.h>
 #include <DgnDbServer/DgnDbServerCommon.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 //typedef std::shared_ptr<struct DgnDbServerLockEvent> DgnDbServerLockEventPtr;
 
-struct DgnDbServerLockEvent : public IDgnDbServerEvent
+struct DgnDbServerLockEvent : public DgnDbServerEvent::GenericEvent
     {
     private:
         Utf8String m_repoId;

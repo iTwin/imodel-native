@@ -16,6 +16,7 @@
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <WebServices/Azure/EventServiceClient.h>
 #include <DgnDbServer/Client/DgnDbServerEventConnection.h>
+#include <DgnDbServer/Client/DgnDbServerEventParser.h>
 #include <DgnDbServer/Client/DgnDbServerLockevent.h>
 #include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
 #include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
@@ -37,6 +38,7 @@ DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbLockSetResultInfo, DgnDbServerLockSet);
 DEFINE_TASK_TYPEDEFS(void, DgnDbServerCancelEvent);
+
 
 //=======================================================================================
 //! DgnDbLockSet results.
@@ -76,6 +78,7 @@ private:
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
     static EventServiceClient*         m_eventServiceClient;
+    IDgnDbServerEventParserPtr m_eventParser;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
@@ -89,6 +92,9 @@ private:
 
     //! Sets EventServiceClient.
     bool SetEventServiceClient(ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Sets DgnDbServerEventParser. 
+    void SetDgnDbServerEventParser(IDgnDbServerEventParserPtr eventParser);
 
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
@@ -128,12 +134,6 @@ private:
 
     //! Get Responses from the EventServiceClient
     bool GetEventServiceResponse(HttpResponseR returnResponse, bool longpolling = true);
-
-    //! Build an IdgnDbServerEventPtr instance from response.
-    IDgnDbServerEventPtr BuildDgnDbServerEventFromJson(Utf8CP contentType, Utf8String jsonString);
-
-    //! Build an IdgnDbServerEventPtr instance from response.
-    IDgnDbServerEventPtr BuildDgnDbServerEventFromString(Utf8CP contentType, Utf8String jsonString);
 
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -234,10 +234,13 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocksById (LockableIdSet const& ids, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Receive Events from EventService
-    DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventCollectionTaskPtr    GetEvents(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventCollectionTaskPtr    GetEvents(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Receive Events from EventService
-    DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventTaskPtr    GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr    GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Get Event Type 
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTypeTaskPtr    GetEventType(DgnDbServerEventPtr baseEvent);
 
     //! Cancel Events from EventService
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr    CancelEventRequest(ICancellationTokenPtr cancellationToken = nullptr);
