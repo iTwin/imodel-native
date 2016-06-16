@@ -507,7 +507,7 @@ void HUTExportToFile::Export()
             HGF2DLiteExtent PrecisionArea(0.0, 0.0, (double)m_pSourceFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth(),
                                                     (double)m_pSourceFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight());
             double          Step(min(m_pSourceFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth(), pDstResDesc->GetHeight()) / 3.0);
-            pPhysicalSrcToPhysicalDst->GetEquivalenceToOver(HGF2DIdentity(), PrecisionArea, Step, &MeanError, &MaxError);
+            pPhysicalSrcToPhysicalDst->GetEquivalenceToOver(HGF2DIdentity(), PrecisionArea, Step, true, &MeanError, &MaxError);
 
             double scaleFactorX, scaleFactorY, factor;
             HGF2DDisplacement displacement;
