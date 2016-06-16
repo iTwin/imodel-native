@@ -11,10 +11,12 @@
 #include <BeSecurity/SecureStore.h>
 #include <Bentley/Base64Utilities.h>
 
+USING_NAMESPACE_BENTLEY_SECURITY
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct StubSecureStore : public SecurityISecureStore
+struct StubSecureStore : public ISecureStore
     {
     Json::Value values;
     Json::Value legacyValues;
