@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <DgnDbServer/DgnDbServerCommon.h>
-#include <DgnDbServer/Client/IDgnDbServerEvent.h>
+#include <DgnDbServer/Client/DgnDbServerEvent.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -21,21 +21,21 @@ typedef std::shared_ptr<struct IDgnDbServerEventParser> IDgnDbServerEventParserP
 struct IDgnDbServerEventParser
     {
     public:
-        DGNDBSERVERCLIENT_EXPORT virtual IDgnDbServerEventPtr ParseEventasJson
+        DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEventPtr ParseEventasJson
             (
             Utf8CP responseContentType, 
             Utf8String responseString
             ) const = 0;
 
-        DGNDBSERVERCLIENT_EXPORT virtual IDgnDbServerEventPtr ParseEventasString
+        DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEventPtr ParseEventasString
             (
             Utf8CP responseContentType,
             Utf8String responseString
             ) const = 0;
 
-        DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEventType GetEventType
+        DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType
             (
-            IDgnDbServerEventPtr eventPtr
+            DgnDbServerEventPtr eventPtr
             ) const = 0;
     };
 
@@ -50,21 +50,21 @@ struct DgnDbServerEventParser : public IDgnDbServerEventParser
     public:
         DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<DgnDbServerEventParser> Create();
         
-        DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventPtr ParseEventasJson
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerEventPtr ParseEventasJson
             (
             Utf8CP responseContentType,
             Utf8String responseString
             ) const override;
 
-        DGNDBSERVERCLIENT_EXPORT IDgnDbServerEventPtr ParseEventasString
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerEventPtr ParseEventasString
             (
             Utf8CP responseContentType,
             Utf8String responseString
             ) const override;
 
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerEventType GetEventType
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerEvent::DgnDbServerEventType GetEventType
             (
-            IDgnDbServerEventPtr eventPtr
+            DgnDbServerEventPtr eventPtr
             ) const override;
     };
 

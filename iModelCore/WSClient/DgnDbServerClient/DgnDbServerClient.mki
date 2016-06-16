@@ -19,7 +19,7 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbLocks.h                      \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h       \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevision.h             \
-								$(DgnDbServerClientMkiPublicApiDir)Client/IDgnDbServerEvent.h               \
+								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerEvent.h                \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerEventParser.h          \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerLockEvent.h            \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevisionEvent.h        \
