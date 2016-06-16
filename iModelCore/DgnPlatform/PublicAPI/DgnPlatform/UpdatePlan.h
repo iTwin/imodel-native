@@ -207,7 +207,7 @@ struct UpdatePlan
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
-    uint32_t    m_timeout = 0; // in milliseconds
+    uint32_t    m_timeout = 0; // a percentage of frame time, from 0 to 100
     Query       m_query;
     AbortFlags  m_abortFlags;
 
