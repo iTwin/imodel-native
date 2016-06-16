@@ -310,7 +310,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
         
 #ifdef SCALABLE_MESH_ATP
-        virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override; 
+        virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override;
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override;
 #endif
 
@@ -421,7 +421,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
 
 #ifdef SCALABLE_MESH_ATP
-        virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override {return ERROR;}
+        virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override { return ERROR; }
 #endif
            

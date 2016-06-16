@@ -3472,13 +3472,18 @@ void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         return;
         }
 
+    int level = 0;
+    if (pTestNode->GetAttributeInt32Value(level, "maxLevel") != BEXML_Success)
+        {
+        printf("Using default maxLevel value, all nodes will be loaded\r\n");
+        }
+
+    double t = clock();
     StatusInt status;
     IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
     size_t nbLoadedNodes = 0;
 
-    double t = clock();
-
-    status = stmFile->LoadAllNodeHeaders(nbLoadedNodes);
+    status = stmFile->LoadAllNodeHeaders(nbLoadedNodes, level);
     assert(status == SUCCESS);
 
     t = clock() - t;
@@ -4159,10 +4164,10 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
     // TestNodes
     size_t nbLoadedNodes = 0, nbLoadedStreamedNodes = 0;
     double t = clock();
-    stmFile->LoadAllNodeHeaders(nbLoadedNodes);
+    stmFile->LoadAllNodeHeaders(nbLoadedNodes,0);
     t = clock() - t;
     double tStream = clock();
-    stmStreamFile->LoadAllNodeHeaders(nbLoadedStreamedNodes);
+    stmStreamFile->LoadAllNodeHeaders(nbLoadedStreamedNodes, 0);
     tStream = clock() - tStream;
 
     if (nbLoadedNodes == nbLoadedStreamedNodes)
