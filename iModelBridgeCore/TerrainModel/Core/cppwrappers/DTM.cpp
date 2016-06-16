@@ -201,6 +201,14 @@ DTMStatusInt IDTM::GetRange (DRange3dR range)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DTMStatusInt BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM::ExportToGeopakTinFile(WCharCP fileNameP)
+    {
+    return _ExportToGeopakTinFile(fileNameP);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 BcDTMP BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM::GetBcDTM()

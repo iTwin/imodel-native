@@ -331,7 +331,8 @@ virtual DTMStatusInt _GetBoundary(DTMPointArray& ret) = 0;
 virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) = 0;
 virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) = 0;
 virtual DTMStatusInt _GetTransformDTM (DTMPtr& transformedDTM, TransformCR transformation) = 0;
-virtual bool _GetTransformation (TransformR transformation) = 0;
+virtual bool         _GetTransformation (TransformR transformation) = 0;
+virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP) = 0;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -389,6 +390,11 @@ BENTLEYDTM_EXPORT DTMStatusInt GetTransformDTM (DTMPtr& transformedDtm, Transfor
 //! @param[out] transformation The transformation.
 //! @return true if this is an identity transformation.
 BENTLEYDTM_EXPORT bool GetTransformation (TransformR transformation);
+
+//! Save this DTM to a geopak tin file.
+//! @param[in] geopak tin file name.
+//! @return true if save operation succeed.
+BENTLEYDTM_EXPORT DTMStatusInt ExportToGeopakTinFile(WCharCP fileNameP);
 
 //! Gets the BcDTM of the Current DTM if this is a BcDTM.
 //! @return the BcDTM.
