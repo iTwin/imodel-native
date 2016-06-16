@@ -12,13 +12,10 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-EventServiceClient::EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId)
+EventServiceClient::EventServiceClient(Utf8StringCR baseAddress, Utf8StringCR repoId, Utf8StringCR userId)
     {
-    m_nameSpace = nameSpace;
-    m_repoId = repoId;
-    m_userId = userId;
-    Utf8String baseAddress = "https://" + m_nameSpace + "." + "servicebus.windows.net/";
-    m_fullAddress = baseAddress + repoId + "/Subscriptions/" + userId + "/messages/head?timeout=";
+    m_baseAddress = baseAddress;
+    m_fullAddress = m_baseAddress + "/Subscriptions/" + userId + "/messages/head?timeout=";
     m_ct = SimpleCancellationToken::Create ();
     }
 

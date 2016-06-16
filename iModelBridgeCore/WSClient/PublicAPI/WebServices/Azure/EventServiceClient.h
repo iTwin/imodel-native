@@ -20,17 +20,15 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 struct EventServiceClient
     {
     private:
-        Utf8String m_nameSpace;
-        Utf8String m_repoId;
-        Utf8String m_userId;
         Utf8String m_fullAddress;
         Utf8String m_token;
+        Utf8String m_baseAddress;
         SimpleCancellationTokenPtr m_ct;
 
     public:
         EventServiceClient(); //Need a default constructor for DgnDbClientRepository
         WSCLIENT_EXPORT HttpResponse MakeReceiveDeleteRequest(bool longPolling = true);
-        WSCLIENT_EXPORT EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId);
+        WSCLIENT_EXPORT EventServiceClient(Utf8StringCR baseAddress, Utf8StringCR repoId, Utf8StringCR userId);
         WSCLIENT_EXPORT bool Receive(Utf8StringR msgOut, bool longPolling = true);
         WSCLIENT_EXPORT void UpdateSASToken(Utf8StringCR sasToken);
         WSCLIENT_EXPORT void CancelRequest();
