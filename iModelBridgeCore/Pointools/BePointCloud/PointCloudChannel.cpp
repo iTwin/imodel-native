@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudChannel.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BePointCloudInternal.h"
@@ -92,7 +92,7 @@ void PointCloudChannel::BuildPersistentName ()
     {
     // PersistentName syntax is Version;Name;Info;TaskId;Id
     wchar_t    id[6];
-    swprintf (id, L"%d", rand());
+    swprintf (id, 6, L"%d", rand());
     m_persistentName.append (m_version);
     m_persistentName.append (L";");
     m_persistentName.append (m_name);

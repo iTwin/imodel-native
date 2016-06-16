@@ -237,10 +237,6 @@ void PointCloudVortex::EndDrawFrameMetrics()
     }
 
 // view
-//bool PointCloudVortex::ReadViewFromGL()
-//    {
-//    return ptReadViewFromGL();
-//    }
 void PointCloudVortex::SetViewProjectionOrtho( double l, double r, double b, double t, double n, double f )
     {
     ptSetViewProjectionOrtho(l, r, b, t, n, f);
