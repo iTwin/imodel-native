@@ -3537,7 +3537,12 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Sub1(Prop1,Center) VALUES(1.1,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3D(1, DPoint3d::From(1.0, 2.0, 3.0)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    ASSERT_STREQ("INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,?,140);INSERT INTO [ts_Sub1] ([sc02],[sc03],[sc04],[BaseECInstanceId],ECClassId) VALUES (?,?,?,?,140)", stmt.GetNativeSql());
+
+    uint64_t sub1ClassId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("Sub1")->GetId().GetValue();
+    Utf8String expectedNativeSql;
+    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,?,%llu);INSERT INTO [ts_Sub1] ([sc02],[sc03],[sc04],[BaseECInstanceId],ECClassId) VALUES (?,?,?,?,%llu)", sub1ClassId, sub1ClassId);
+    ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
+
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetX(Center), GetY(Center), GetZ(Center) FROM ts.Sub1 LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
