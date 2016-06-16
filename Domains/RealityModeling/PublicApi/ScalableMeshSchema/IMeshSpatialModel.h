@@ -52,10 +52,10 @@ struct ITerrainTexture : public RefCountedBase
 
     public:
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus LoadTexture(uint32_t& width, uint32_t& height, bvector<Byte>& dataRGBA) const;
-        SCALABLEMESHSCHEMA_EXPORT BentleyStatus GetDimensions(uint32_t& width, uint32_t& height) const;
-        SCALABLEMESHSCHEMA_EXPORT BentleyStatus GetMeshPartsIterator(ITerrainTileIteratorPtr& iterator) const; 
-        SCALABLEMESHSCHEMA_EXPORT BentleyStatus GetRange(DRange3dR range) const;
-        SCALABLEMESHSCHEMA_EXPORT ITextureTileId const& GetId() const;
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetDimensions(uint32_t& width, uint32_t& height) const;
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetMeshPartsIterator(ITerrainTileIteratorPtr& iterator) const;
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetRange(DRange3dR range) const;
+        SCALABLEMESH_SCHEMA_EXPORT ITextureTileId const& GetId() const;
     };
 
 struct IMeshSpatialModel : Dgn::SpatialModel
