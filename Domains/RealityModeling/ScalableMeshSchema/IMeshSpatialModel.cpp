@@ -15,10 +15,17 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
 BentleyStatus ITerrainTexture::LoadTexture(uint32_t& width, uint32_t& height, bvector<Byte>& dataRGBA) const
-{
-return _LoadTexture(width, height, dataRGBA);
-}
+    {
+    return _LoadTexture(width, height, dataRGBA);
+    }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Nicholas.Woodfield     1/2016
+//----------------------------------------------------------------------------------------
+BentleyStatus ITerrainTexture::GetDimensions(uint32_t& width, uint32_t& height) const
+    {
+    return _GetDimensions(width, height);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
@@ -32,17 +39,17 @@ ITextureTileId const& ITerrainTexture::GetId() const
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
 BentleyStatus ITerrainTexture::GetMeshPartsIterator(ITerrainTileIteratorPtr& iterator) const
-{
-return _GetMeshPartsIterator(iterator);
-}
+    {
+    return _GetMeshPartsIterator(iterator);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
 BentleyStatus ITerrainTexture::GetRange(DRange3dR range) const
-{
-return _GetRange(range);
-}
+    {
+    return _GetRange(range);
+    }
 
 void ITerrainTileIterator::GetMeshPart(bvector<DPoint3d>& vertices, bvector<int32_t>& verticeIndexes)
     {

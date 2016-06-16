@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/MRMesh/MRMeshCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
@@ -506,8 +506,14 @@ MRMeshCacheManager::RequestStatus ProcessRequests ()
             case RealityDataCacheResult::NotFound:
                 {
                 MRMeshUtil::DisplayNodeFailureWarning (fileName.c_str());
-                curr->first->m_parent->RemoveChild (curr->first);
-                curr = m_requests.erase (curr);
+                // RemoveChild will modify the position of "curr" if the request
+                // exists for it (because of destructor behavior), which might put it in
+                // an invalid location (past "end") so we do the correct
+                // curr = m_requests.erase to keep a valid iterator, and then
+                // call RemoveChild on the failed child to remove it.
+                auto failedChild = curr->first;
+                curr = m_requests.erase(curr);
+                failedChild->m_parent->RemoveChild (failedChild);
                 break;
                 }
 
