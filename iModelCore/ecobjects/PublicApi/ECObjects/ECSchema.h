@@ -1990,6 +1990,9 @@ public:
     //! Adds name of key property.
     //! @param[in] keyPropertyName Name of key property to add
     ECOBJECTS_EXPORT void AddKey(Utf8CP keyPropertyName);
+
+    //! Removes all Keys from the constraint
+    ECOBJECTS_EXPORT void DropAllKeys() { m_keys.clear(); }
     };
 
 //=======================================================================================
