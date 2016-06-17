@@ -42,8 +42,8 @@ Utf8String StubHttpResponseValidLockEvent()
               {
               "Date":"SomeDate",
               "LockType":"SomeLockType",
-              "repoId":"SomeRepoId",
-              "userId":"SomeUserId",
+              "EventTopic":"SomeEventTopic",
+              "UserId":"SomeUserId",
               "ObjectId":"SomeObjectId",
               "LockLevel":"SomeLockLevel",
               "BriefcaseId":"SomeBriefcaseId",
@@ -58,8 +58,8 @@ Utf8String StubHttpResponseValidRevisionEvent()
               @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
-              "repoId":"SomeRepoId",
-              "userId":"SomeUserId",
+              "EventTopic":"SomeEventTopic",
+              "UserId":"SomeUserId",
               "RevisionId":"RevisionId",
               "RevisionIndex":"SomeRevisionIndex"
               }
