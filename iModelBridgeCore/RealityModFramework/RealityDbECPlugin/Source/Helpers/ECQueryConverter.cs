@@ -24,7 +24,8 @@ namespace IndexECPlugin.Source.Helpers
         IECSchema m_schema;
         bool m_instanceCount;
 
-        int m_tabNumber = 0;
+        //int m_tabNumber = 0;
+        TableAliasCreator m_tac = new TableAliasCreator();
 
         /// <summary>
         /// 
@@ -53,7 +54,7 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="dataReadingHelper">The helper for reading the data from the DataReader</param>
         /// <param name="paramNameValueMap">The mapping of the parameters names and values for the parameterized query</param>
         public void CreateSqlCommandStringFromQuery (out string sqlCommandString, out string sqlCountString, out DataReadingHelper dataReadingHelper, 
-                                                     out Dictionary<string, Tuple<string, DbType>> paramNameValueMap)
+                                                     out IParamNameValueMap paramNameValueMap)
             {
             //For now, we only query on one class. To be completed one day
             SearchClass searchClass = m_query.SearchClasses.First();
@@ -100,7 +101,7 @@ namespace IndexECPlugin.Source.Helpers
             {
             string primaryTableName = queriedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue;
 
-            TableDescriptor table = new TableDescriptor(primaryTableName, GetNewTableAlias());
+            TableDescriptor table = new TableDescriptor(primaryTableName, m_tac.GetNewTableAlias());
 
             m_sqlQueryBuilder.SpecifyFromClause(table);
 
@@ -139,7 +140,6 @@ namespace IndexECPlugin.Source.Helpers
 
             foreach ( IECProperty property in propList )
                 {
-                TableDescriptor tempTable1 = table;
                 if ( !queriedClass.Contains(property.Name) )
                     {
                     throw new UserFriendlyException(String.Format("The selected property {0} does not exist in class {1}", property.Name, queriedClass.Name));
@@ -152,10 +152,10 @@ namespace IndexECPlugin.Source.Helpers
                     //This is not a column in the sql table. We skip it...
                     continue;
                     }
-
+                TableDescriptor tempTable1 = table;
                 if ( queriedClass != property.ClassDefinition )
                     {
-                    tempTable1 = JoinBaseTables(queriedClass, tempTable1, property.ClassDefinition);
+                    tempTable1 = SqlQueryHelpers.JoinBaseTables(queriedClass, tempTable1, property.ClassDefinition, m_sqlQueryBuilder, m_tac);
                     }
 
                 TableDescriptor tempTable2 = JoinInternalColumn(tempTable1, dbColumn);
@@ -164,7 +164,7 @@ namespace IndexECPlugin.Source.Helpers
 
                 ColumnCategory columnCategory = ColumnCategory.spatialInstanceData;
 
-                if ( isSpatialProperty.IsNull || isSpatialProperty.StringValue == "false" )
+                if ( isSpatialProperty.IsNull || isSpatialProperty.StringValue.ToLower() == "false" )
                     {
                     columnCategory = ColumnCategory.instanceData;
                     }
@@ -198,70 +198,6 @@ namespace IndexECPlugin.Source.Helpers
                 m_sqlQueryBuilder.AddOrderByClause(propertyTableName, columnName, m_query.OrderBy.Current.SortAscending);
 
                 }
-            }
-
-        /// <summary>
-        /// This method's purpose is to join recursively all tables in the hierarchy of a class, up to a specified base class
-        /// </summary>
-        /// <param name="queriedClass">The derived class of which we need the base class table joined</param>
-        /// <param name="tempTable1">The table descriptor of the queried class</param>
-        /// <param name="finalBaseClass">The specified final base class to have its table joined</param>
-        /// <returns>The final class' table descriptor</returns>
-        private TableDescriptor JoinBaseTables (IECClass queriedClass, TableDescriptor tempTable1, IECClass finalBaseClass)
-            {
-            if ( queriedClass != finalBaseClass )
-                {
-                if ( queriedClass.BaseClasses.Count() != 1 )
-                    {
-                    throw new ProgrammerException("IndexECPlugin only supports classes that have at most one base class.");
-                    }
-
-                IECClass baseClass = queriedClass.BaseClasses[0];
-                if ( queriedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue !=
-                    baseClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue )
-                    {
-                    string baseClassKeyPropertyName;
-                    string derivedClassKeyPropertyName;
-
-                    if ( queriedClass.GetCustomAttributes("DerivedClassLinker") != null )
-                        {
-                        baseClassKeyPropertyName = queriedClass.GetCustomAttributes("DerivedClassLinker").GetPropertyValue("BaseClassKeyProperty").StringValue;
-                        derivedClassKeyPropertyName = queriedClass.GetCustomAttributes("DerivedClassLinker").GetPropertyValue("DerivedClassKeyProperty").StringValue;
-                        }
-
-                    else
-                        {
-                        baseClassKeyPropertyName = baseClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
-                        derivedClassKeyPropertyName = queriedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
-                        }
-
-                    //We have to join the two different tables
-                    TableDescriptor newTable = new TableDescriptor(baseClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue, GetNewTableAlias());
-
-                    string baseClassKeyColumn = baseClass[baseClassKeyPropertyName].GetCustomAttributes("DBColumn")["ColumnName"].StringValue;
-                    string derivedClassKeyColumn = queriedClass[derivedClassKeyPropertyName].GetCustomAttributes("DBColumn")["ColumnName"].StringValue;
-
-                    newTable.SetTableJoined(tempTable1, derivedClassKeyColumn, baseClassKeyColumn);
-
-                    TableDescriptor similarTable;
-                    bool joinSuccessful = m_sqlQueryBuilder.AddLeftJoinClause(newTable, out similarTable);
-                    if ( !joinSuccessful )
-                        {
-                        //tempTable1 = similarTable;
-                        return JoinBaseTables(baseClass, similarTable, finalBaseClass);
-                        }
-                    else
-                        {
-                        //tempTable1 = newTable;
-                        return JoinBaseTables(baseClass, newTable, finalBaseClass);
-                        }
-                    }
-
-                return JoinBaseTables(baseClass, tempTable1, finalBaseClass);
-                }
-
-            return tempTable1;
-
             }
 
         /// <summary>
@@ -303,7 +239,7 @@ namespace IndexECPlugin.Source.Helpers
                         }
 
                     //We have to join the two different tables
-                    TableDescriptor newTable = new TableDescriptor(derivedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue, GetNewTableAlias());
+                    TableDescriptor newTable = new TableDescriptor(derivedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue, m_tac.GetNewTableAlias());
 
                     string baseClassKeyColumn = queriedClass[baseClassKeyPropertyName].GetCustomAttributes("DBColumn")["ColumnName"].StringValue;
                     string derivedClassKeyColumn = derivedClass[derivedClassKeyPropertyName].GetCustomAttributes("DBColumn")["ColumnName"].StringValue;
@@ -391,7 +327,7 @@ namespace IndexECPlugin.Source.Helpers
                     throw new ProgrammerException("The ECSchema was incorrectly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
                     }
 
-                newPropertyTableDescriptor = new TableDescriptor(propertyTableName, GetNewTableAlias());
+                newPropertyTableDescriptor = new TableDescriptor(propertyTableName, m_tac.GetNewTableAlias());
                 newPropertyTableDescriptor.SetTableJoined(firstTableDescriptor, firstTableKey, newTableKey);
 
                 TableDescriptor similarTable;
@@ -433,7 +369,7 @@ namespace IndexECPlugin.Source.Helpers
 
                     if ( queriedClass != property.ClassDefinition )
                         {
-                        tempTable1 = JoinBaseTables(queriedClass, tempTable1, property.ClassDefinition);
+                        tempTable1 = SqlQueryHelpers.JoinBaseTables(queriedClass, tempTable1, property.ClassDefinition, m_sqlQueryBuilder, m_tac);
                         }
 
                     TableDescriptor propertyTable = JoinInternalColumn(tempTable1, dbColumn);
@@ -444,7 +380,7 @@ namespace IndexECPlugin.Source.Helpers
                     //var isSpatial = dbColumn["IsSpatial"];
                     //if (isSpatial.IsNull || isSpatial.StringValue == "false")
                     //{
-                    m_sqlQueryBuilder.AddWhereClause(propertyTable.Alias, columnName, propertyExpression.Operator, propertyExpression.RightSideString, ECToSQLMap.ECTypeToSQL(property.Type));
+                    m_sqlQueryBuilder.AddWhereClause(propertyTable.Alias, columnName, propertyExpression.Operator, propertyExpression.RightSideString, ECToSQLMap.ECTypeToDbType(property.Type));
                     //}
                     //else
                     //{
@@ -514,7 +450,7 @@ namespace IndexECPlugin.Source.Helpers
                             {
                             m_sqlQueryBuilder.AddOperatorToWhereClause(LogicalOperator.OR);
                             }
-                        m_sqlQueryBuilder.AddWhereClause(table.Alias, dbColumnName, RelationalOperator.EQ, instanceIDExpression.InstanceIdSet[j], ECToSQLMap.ECTypeToSQL(ecType));
+                        m_sqlQueryBuilder.AddWhereClause(table.Alias, dbColumnName, RelationalOperator.EQ, instanceIDExpression.InstanceIdSet[j], ECToSQLMap.ECTypeToDbType(ecType));
 
                         }
                     m_sqlQueryBuilder.EndOfInnerWhereClause();
@@ -583,11 +519,11 @@ namespace IndexECPlugin.Source.Helpers
                         //We go up the hierarchy of the base queried class
                         TableDescriptor baseQueriedTableDescriptor = table;
 
-                        baseQueriedTableDescriptor = JoinBaseTables(queriedClass, baseQueriedTableDescriptor, baseQueriedClass);
+                        baseQueriedTableDescriptor = SqlQueryHelpers.JoinBaseTables(queriedClass, baseQueriedTableDescriptor, baseQueriedClass, m_sqlQueryBuilder, m_tac);
 
                         //We link both base classes
                         string relatedBaseTableName = baseRelatedClass.GetCustomAttributes("SQLEntity")["FromTableName"].StringValue;
-                        TableDescriptor relatedBaseTableDescriptor = new TableDescriptor(relatedBaseTableName, GetNewTableAlias());
+                        TableDescriptor relatedBaseTableDescriptor = new TableDescriptor(relatedBaseTableName, m_tac.GetNewTableAlias());
 
                         relatedBaseTableDescriptor.SetTableJoined(baseQueriedTableDescriptor, dbColumnOfBaseQueriedClass, dbColumnOfBaseRelatedClass);
 
@@ -667,9 +603,9 @@ namespace IndexECPlugin.Source.Helpers
                         //We go up the hierarchy of the base queried class
                         TableDescriptor baseQueriedTableDescriptor = table;
 
-                        baseQueriedTableDescriptor = JoinBaseTables(queriedClass, baseQueriedTableDescriptor, baseQueriedClass);
+                        baseQueriedTableDescriptor = SqlQueryHelpers.JoinBaseTables(queriedClass, baseQueriedTableDescriptor, baseQueriedClass, m_sqlQueryBuilder, m_tac);
 
-                        TableDescriptor intermediateTableDescriptor = new TableDescriptor(intermediateTableName, GetNewTableAlias());
+                        TableDescriptor intermediateTableDescriptor = new TableDescriptor(intermediateTableName, m_tac.GetNewTableAlias());
                         intermediateTableDescriptor.SetTableJoined(baseQueriedTableDescriptor, dbColumnOfBaseQueriedClass, dbColumnIntermediateQueried);
 
                         TableDescriptor similarTable;
@@ -680,7 +616,7 @@ namespace IndexECPlugin.Source.Helpers
                             intermediateTableDescriptor = similarTable;
                             }
 
-                        TableDescriptor relatedBaseTableDescriptor = new TableDescriptor(relatedBaseTableName, GetNewTableAlias());
+                        TableDescriptor relatedBaseTableDescriptor = new TableDescriptor(relatedBaseTableName, m_tac.GetNewTableAlias());
                         relatedBaseTableDescriptor.SetTableJoined(intermediateTableDescriptor, dbColumnIntermediateRelated, dbColumnOfBaseRelatedClass);
 
                         joinSuccessful = m_sqlQueryBuilder.AddLeftJoinClause(relatedBaseTableDescriptor, out similarTable);
@@ -743,7 +679,7 @@ namespace IndexECPlugin.Source.Helpers
 
                     if ( queriedClass != prop.ClassDefinition )
                         {
-                        propertyTable = JoinBaseTables(queriedClass, propertyTable, prop.ClassDefinition);
+                        propertyTable = SqlQueryHelpers.JoinBaseTables(queriedClass, propertyTable, prop.ClassDefinition, m_sqlQueryBuilder, m_tac);
                         }
 
                     propertyTable = JoinInternalColumn(propertyTable, dbColumn);
@@ -759,9 +695,9 @@ namespace IndexECPlugin.Source.Helpers
 
             }
 
-        private string GetNewTableAlias ()
-            {
-            return String.Format("tab{0}", m_tabNumber++);
-            }
+        //private string GetNewTableAlias ()
+        //    {
+        //    return String.Format("tab{0}", m_tabNumber++);
+        //    }
         }
     }

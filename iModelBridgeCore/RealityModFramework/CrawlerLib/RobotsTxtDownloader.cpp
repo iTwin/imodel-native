@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/RobotsTxtDownloader.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RobotsTxtDownloader.h"
@@ -10,6 +10,11 @@
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    2/2016
+//-------------------------------------------------------------------------------------
+IRobotsTxtDownloader::~IRobotsTxtDownloader() {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
@@ -31,11 +36,9 @@ RobotsTxtDownloader::~RobotsTxtDownloader()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-RobotsTxtContentPtr RobotsTxtDownloader::DownloadRobotsTxt(UrlPtr const& pi_Url)
+RobotsTxtContentPtr RobotsTxtDownloader::DownloadRobotsTxt(UrlCR url)
     {
-    BeAssert(pi_Url != NULL);
-
-    UrlPtr robotsTxtUrl = new Url(L"/robots.txt", pi_Url);
+    UrlCPtr robotsTxtUrl = Url::Create(L"/robots.txt", url);
     SetResourceUrl(robotsTxtUrl->GetUrlWString());
 
     CURLcode response;
@@ -45,11 +48,11 @@ RobotsTxtContentPtr RobotsTxtDownloader::DownloadRobotsTxt(UrlPtr const& pi_Url)
 
     if(response == CURLE_OK)
         {
-        return m_Parser.ParseRobotsTxt(buffer, robotsTxtUrl);
+        return m_Parser.ParseRobotsTxt(buffer, *robotsTxtUrl);
         }
     else
         {
-        return m_Parser.GetEmptyRobotTxt(pi_Url);
+        return m_Parser.GetEmptyRobotTxt(url);
         }
     }
 

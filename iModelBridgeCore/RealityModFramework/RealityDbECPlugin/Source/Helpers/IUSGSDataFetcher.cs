@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Bentley.ECSystem.Configuration;
+using Bentley.EC.Persistence.Operations;
+using System.Net;
 
 namespace IndexECPlugin.Source.Helpers
     {
@@ -116,9 +118,13 @@ namespace IndexECPlugin.Source.Helpers
                             return content.ReadAsStringAsync().Result;
                             }
                         }
+                    else
+                    {
+                    throw new OperationFailedException("USGS returned an error : " + response.ReasonPhrase);
+                    }
                     }
                 }
-            return null;
+            //return null;
             }
 
         /// <summary>
@@ -223,7 +229,11 @@ namespace IndexECPlugin.Source.Helpers
                         {
                         if ( !response.IsSuccessStatusCode )
                             {
-                            throw new Exception("USGS did not send a successful response.");
+                            if(response.StatusCode == HttpStatusCode.ServiceUnavailable)
+                                {
+                                throw new OperationFailedException("USGS service unavailable for the moment. Please retry later.");
+                                }
+                            throw new OperationFailedException("USGS did not send a successful response.");
                             }
                         using ( HttpContent content = response.Content )
                             {
@@ -393,28 +403,14 @@ namespace IndexECPlugin.Source.Helpers
                 }
 
             string polygonString = m_query.ExtendedData["polygon"].ToString();
-            PolygonModel model;
-            try
-                {
-                model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
-                }
-            catch ( JsonSerializationException )
-                {
-                throw new UserFriendlyException("The polygon format is not valid.");
-                }
-
-            int polygonSRID;
-            if ( !int.TryParse(model.coordinate_system, out polygonSRID) )
-                {
-                throw new UserFriendlyException("The polygon format is not valid.");
-                }
+            PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(polygonString);
 
             string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
 
             PolygonDescriptor polyDesc = new PolygonDescriptor
             {
                 WKT = polygonWKT,
-                SRID = polygonSRID
+                SRID = model.coordinate_system
             };
 
             //We should now extract a bbox from this wkt

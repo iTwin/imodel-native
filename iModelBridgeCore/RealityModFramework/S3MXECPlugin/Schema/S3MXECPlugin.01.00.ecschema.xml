@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="S3MX" nameSpacePrefix="S3MX" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECClass typeName="Document" isDomainClass="True">
+        <ECProperty propertyName="Alias" typeName="string" />
+        <ECProperty propertyName="ContainerName" typeName="string" />
+        <ECProperty propertyName="DocumentName" typeName="string" />
+        <ECProperty propertyName="DocumentId" typeName="string" />
+        <ECProperty propertyName="FolderId" typeName="string" />
+        <ECProperty propertyName="FileExists" typeName="string" />
+        <ECProperty propertyName="AccessUrl" typeName="string" />
+        <ECProperty propertyName="ProjectId" typeName="string" />
+        <ECProperty propertyName="RootDocument" typeName="string" />
+        <ECProperty propertyName="ContentType" typeName="string" />
+        <ECProperty propertyName="ModifiedTimeStamp" typeName="string" />
+        <ECProperty propertyName="CreatedTimeStamp" typeName="string" />
+        <ECProperty propertyName="ModifiedBy" typeName="string" />
+        <ECProperty propertyName="CreatedBy" typeName="string" />
+        <ECProperty propertyName="Size" typeName="string" />
+        <ECProperty propertyName="Path" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Folder" isDomainClass="True">
+        <ECProperty propertyName="FolderName" typeName="string" />
+		<ECProperty propertyName="Prefix" typeName="string" />
+        <ECProperty propertyName="ProjectId" typeName="string" />
+        <ECProperty propertyName="ContentType" typeName="string" />
+        <ECProperty propertyName="ModifiedTimeStamp" typeName="string" />
+        <ECProperty propertyName="ModifiedBy" typeName="string" />
+        <ECProperty propertyName="CreatedTimeStamp" typeName="string" />
+        <ECProperty propertyName="CreatedBy" typeName="string" />
+        <ECProperty propertyName="Url" typeName="string" />
+    </ECClass>
+</ECSchema>

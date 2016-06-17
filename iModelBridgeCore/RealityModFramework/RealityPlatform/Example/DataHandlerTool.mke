@@ -1,0 +1,45 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: RealityPlatform/Example/DataHandlerTool.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName = DataHandlerTool
+baseDir = $(_MakeFilePath)
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+
+#----------------------------------------------------------------------
+#       Compile C++/CLI source files for the DLM
+#----------------------------------------------------------------------
+%include CompileForCLRStart.mki
+
+$(o)DataHandlerTool$(oext) : $(baseDir)DataHandlerTool.cpp
+
+%include compileForCLRStop.mki
+
+
+#----------------------------------------------------------------------
+#       EXE creation
+#----------------------------------------------------------------------
+EXE_DEST = $(o)
+EXE_NAME = $(appName)
+EXE_OBJS = $(o)DataHandlerTool$(oext)
+consoleEntry=main
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)Bentley.lib \
+				   $(ContextDeliveryDir)RealityPlatform.lib
+                   
+%include $(SharedMki)linktool.mki
+    

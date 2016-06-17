@@ -1,10 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
 #     $Source: BentleyWMSPackageNet/BentleyWMSPackageNet.mke $
-#    $RCSfile: imagepp.mke,v $
-#   $Revision: 1.50 $
-#       $Date: 2007/03/07 13:34:13 $
-#     $Author: Bern.McCarty $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -52,7 +48,6 @@ $(o)BentleyWMSPackageNet$(oext):     $(baseDir)BentleyWMSPackageNet.cpp  $(baseD
 BuildContextSubPartsLibDir = $(BuildContext)SubParts/Libs/
 
 BuildContextSubPartsLibraries = $(BuildContextSubPartsLibDir)Bentley.lib \
-                                $(BuildContextSubPartsLibDir)BentleyAllocator.lib \
                                 $(BuildContextSubPartsLibDir)RealityPackage.lib \
                                 $(BuildContextSubPartsLibDir)RealityPlatform.lib \
                                 $(BuildContextSubPartsLibDir)BentleyGeom.lib

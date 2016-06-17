@@ -1,0 +1,686 @@
+<?xml version="1.0"?>
+<xs:schema targetNamespace="http://www.bentley.com/RealityDataServer/v1" 
+           elementFormDefault="qualified"
+           xmlns="http://www.bentley.com/RealityDataServer/v1"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema" >
+
+    <!-- Type Definition -->
+    <!-- =========================================================== -->
+    <xs:simpleType name="doubleList">
+        <xs:list itemType="xs:double"/>
+    </xs:simpleType>
+
+    <!-- =========================================================== -->
+    <xs:simpleType name="StringList">
+        <xs:list itemType="xs:string"/>
+    </xs:simpleType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="BoundingBoxType">
+        <xs:annotation>
+            <xs:documentation>
+            A space-separated list of 4 double values. Values are in longitude and latitude in decimal degrees.
+            The order is longitude-min, latitude-min, longitude-max, latitude-max.
+            Of course, the maximum latitude must be greater than the minimum latitude. A maximum longitude
+            smaller than minimum longitude is possible however, indicating that the extent crosses the
+            frontier between -180 and 180 degrees.
+            Example: 179.1 23.5 -179.8 24.9 indicates a region crossing the -180/180 line.
+            Also note that the use of latitude is limited to -90 to 90 degrees.
+            Longitude outside the range -180, 180 are tolerated up to -270 to 270 effective range allowing
+            values to cross the -180 180 without changing sign.
+            Example: 179.1 23.5 -179.8 24.9 will be interpreted exactly the same as 179.1 23.5 180.2 24.9
+            since 180.2 is considered equivalent to -179.8 longitude.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="doubleList"/>
+        </xs:simpleContent>
+    </xs:complexType>
+
+
+
+    <!-- =========================================================== -->
+    <xs:complexType name="CoordinateSystemType">
+        <xs:annotation>
+            <xs:documentation>
+            Type used to represent a coordinate system. A coordinate system definition is mainly constituted of a keyname as a string that must in WMS protocol context
+            refer to either an EPSG definition or one of the other few allowed and supported others (CRS:83. CRS:84, ...)
+            Note that the coordinate system keynames supported may vary depending on the WMS protocol.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string"/>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="PolygonType">
+        <xs:annotation>
+            <xs:documentation>
+            A space-separated list of double values. Values are in longitude/latitude in decimal degree format. A single
+            value longitude/latitude pair is a point. Note that the polygon must have a duplicate of the
+            first point as a closing point.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="doubleList"/>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <!-- ==================       Sources      ===================== -->
+    <!-- =========================================================== -->
+    <!-- =========================================================== -->
+    <xs:complexType name="ListOfFilesType">
+       <xs:annotation>
+            <xs:documentation>
+            This type defines the list of files.
+            It is composed of a list of files that refer wither to an external document or a file part of the compound document of the main
+            source of data.          
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>   
+            <xs:element name="File" type="xs:AnyURI" minOccurs="1" maxOccurs="unbounded" />          
+        </xs:sequence>
+    </xs:complexType>
+    
+    <!-- =========================================================== -->
+    <xs:complexType name="SourceType">
+        <xs:annotation>
+            <xs:documentation>
+            A source of data. The data must be of the type of the group it belongs to.
+            Different strategy can be used to identify and process compound documents of this type but the most important indication of the content
+            is the extension of the URI, the present type and the identification of the provider.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Id" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    Identifier of the source. This ID is sufficient to obtain additional data from the Context Services at least
+                    a relatively short time after the creation of the package. If some time elapsed it would be wise to validate the
+                    content fits with other fields prior to interpreting additional data.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Copyright" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:annotation>
+                <xs:documentation>
+                Copyright notice of the data source in the requested language or the default language it is written in. This copyright text can contain text or links to external documentation or both.
+                </xs:documentation>
+            </xs:annotation>
+            </xs:element>
+            <xs:element name="Provider" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    Identifier identifying the provider of the data.
+                    TO DO: Should we limit the values, register the possible identifiers in the XSD?
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Size" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    The size of the data source in kilobytes. This value can be approximative. If absent or zero it indicates that the size of the data cannot be determined either because unknown or because
+                    the source is streamed thus the amount of data depends on its use.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Metadata" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    Reference to the metadata of the source. If this element contains a fully qualified URI it may refer to an external
+                    document or it may refer to a file part of the compound document if it is the case.
+                    If this field is absent then a request can be sent to context services to obtain this value or additional fields pertinent to the
+                    data source.
+                    The metadata referenced may be of different type depending on the presence and value of the type attribute. If the service can the metadata will be provided in the locale
+                    specified at the moment of the package ordering.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:attribute name="type" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                        The type of the metadata referenced. This type can be ISO-19115 or FGDC or anyother string but usually 'text' indicating
+                        that the metadata is to be interpreted by a human in whatever text format. If absent then it may be assumed that the 
+                        extension of the link will indicate the nature of the metadata (HTML, text, or XML).
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute> 
+            </xs:element>
+            <xs:element name="GeoCS" type="CoordinateSystemType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    This element specifies the geographic coordinate system keyname to be used as default for the source given the 
+                    geographic coordinate system cannot be stored in the soure format, is not stored or cannot be interpreted by the application.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="SisterFiles" type="ListOfFilesType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                      Sister files are files or documents that are required for the proper interpretation of the
+                      source. The source URI indicates the main file while sister files are associated with this main source of data.
+                      Sister files are always to be located in the same directory as the main file. Example of typical sister files
+                      include ESRI world file or PRJ/WKT geocoding file or the various files associated with a SHP Shape file that contain
+                      additional attributes. Documents that are not required for the proper automatic interpretation of the main file such as
+                      human readable documentation are not usually listed here.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="uri" use="required" type="xs:anyURI">
+            <xs:annotation>
+                <xs:documentation>
+                A string representing the source location.
+                A relative path has the following form "./rel/file.ext" and is relative to the package file.
+                Otherwise it should be a fully qualified URL.  ex:ftp.bentley.com/Imagery/File.img.
+                The uri can designate a compound document such as zip file. The type of this compound is determined by the extension
+                of the file. The name of the file within the compound document is then specified after a separating # sign. The name of this file
+                can contain wildcard characters, thus indicating that many files can compose the main document by the same pattern. 
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="type" use="required" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                The type of the data source. This string indicates the type of the final data and not necessarily the type of the distribution file.
+                For example USGS may distribute elevation data in an IMG file that is located in a ZIP file. The URI will indicate the ZIP file while the type
+                will indicate IMG as type. As a general rule the type will be the usual extension of the document type.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+        
+    <!-- =========================================================== 
+    <simpleType name="longitudeType">
+        <restriction base="double">
+            <minInclusive value="-180"/>
+            <maxInclusive value="180"/>
+        </restriction>
+    </simpleType>-->
+
+    <!-- =========================================================== 
+    <simpleType name="latitudeType">
+        <restriction base="double">
+            <minInclusive value="-90"/>
+            <maxInclusive value="90"/>
+        </restriction>
+    </simpleType>-->
+
+    <xs:complexType name="CornersType">
+        <xs:annotation>
+            <xs:documentation>
+            Type used to specify the four corners of a rotated rectangular shaped object. This type is mainly used
+            to represent the four corners of a raster. The corners are specified using space separated longitude/latitude coordinates
+            expressed as decimal degrees. Note that it is possible for the four corners not to represent a rectangular shape, meaning
+            that some shearing or slant is possible (up to a perspective transformation). This allows to represent the transformation
+            of a perfectly rectangular object (a raster) to the real-world coordinate system using at most a perspective.
+            NOTE: Even if the coordinates are expressed as longitude/latitude pairs the path followed by the border of the raster
+            may not be a straight line between corners.
+            </xs:documentation>
+        </xs:annotation>    
+        <xs:sequence>
+            <xs:element name="LowerLeft" type="doubleList" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="LowerRight" type="doubleList" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="UpperLeft" type="doubleList" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="UpperRight" type="doubleList" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="WMSVersionType">
+        <xs:annotation>
+            <xs:documentation>
+            Type used to indicate the WMS protocol version supported by the server. A single entry is possible even 
+            if the server supports many WMS protocols. Possible values are 1.1.0, 1.1.1 and 1.3 Only.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string"/>
+        </xs:simpleContent>
+    </xs:complexType>
+    
+    <!-- =========================================================== 
+          THIS ELEMENT SHOULD HAVE ITS OWN XSD FOR SUPPORT OF WMS SETTINGS -->
+    <xs:complexType name="WmsMapSettingsType">
+        <xs:annotation>
+            <xs:documentation>
+            Type used to contain a list of WMS settings including layers, styles, coordinate system and so on.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Uri" type="xs:anyURI" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    The main URI of the server. This URI is the seed to which WMS parameters must be added to obtain a fully qualified WMS request.
+                    </xs:documentation>
+                </xs:annotation>        
+            </xs:element>
+            <xs:element name="BoundingBox" type="BoundingBoxType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    The main URI of the server. This URI is the seed to which WMS parameters must be added to obtain a fully qualified WMS request.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Version" type="WMSVersionType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    The WMS protocol version supported by the WMS server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Layers" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    The list of comma-separated layers. Note that layers here are the layers names not their display name.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Styles" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    The list of comma-separated styles applicable to layers. There should be an equal number of styles and layers, 
+                    each style applying to corresponding layer.
+                    If the Style element is absent or empty then Default styles will be used for every layer.
+                    TO DO: I do not want an hybrid where there could be N layers and N-x styles where the server would be stuck with using Default
+                    for every layer pass thelast applicable style. Note that providing 'Default' once could be sufficient? Remarks.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="CoordinateSystem" type="CoordinateSystemType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    This element specifies the coordinate system selected and supported by the WMS server.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Format" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    The raster format selected and forwarded to the WMS server for delivery of raster data. Typical values include jpeg and png.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="VendorSpecific" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    Vendor specific data. This is where non-standard WMS extensions are indicated.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Transparent" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    Indicates the transparency TO DO List of composition transparency between layers or delivery transparency? 
+                    Most raster delivery format do not support transparency. The Format value must support the 
+                    indicated transparency for this value be taken into account.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+
+  
+    <!-- =========================================================== -->
+    <xs:complexType name="WmsSourceType">
+        <xs:annotation>
+            <xs:documentation>
+            Type used to represent WMS source. The WMS source is fully qualified since in addition to the server URL it contains
+            the list of layers, styles, coordinate system, selected delivery format, transparency setting.
+            The WMS source can be seen as raster except requests sent to the server require variable parameter definition
+            based on content of WMS settings and additional location of request.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="SourceType">
+                <xs:sequence>
+                    <xs:element name="WmsMapSettings" type="WmsMapSettingsType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                            The WMS specific map settings.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+  
+    
+    <!-- =========================================================== -->
+    <xs:complexType name="SourcesType">
+       <xs:annotation>
+            <xs:documentation>
+            This type defines the list of sources associated with a Data Entry.
+            It is composed of a list of sources that can be of any supported types.          
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>   
+            <xs:choice>
+                <xs:element name="Source" type="SourceType" minOccurs = "0" maxOccurs="unbounded"/>
+                <xs:element name="WmsSource" type="WmsSourceType" minOccurs = "0" maxOccurs="unbounded"/>  
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <!-- =========================================================== -->
+    <!-- ==================       Data         ===================== -->
+    <!-- =========================================================== -->
+    <!-- =========================================================== -->
+    <xs:complexType name="DataEntryType">
+       <xs:annotation>
+            <xs:documentation>
+            Data entries can specify data sources of different kind. 
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Id" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The optional ID of the data. It may refer to the original data identifier in the ContextServices or any
+                        other identifier that hints to the content of the data contained in the sources.
+                        NOTE: If the package contains a ContextServiceOrigin element then the present ID shall be the Context Service identifier
+                        that will enable extraction of all data including provenance information.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Name" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The optional name of the data. This name can be used to identify the data in a human readeable form.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="Sources" type="SourcesType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The element that contains the list of sources for this data.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="ImageryDataType">
+        <xs:annotation>
+            <xs:documentation>
+            Imagery data type specify the data type for imagery data. It extends the generic data type by adding the optional footprint of the imagery.
+            </xs:documentation>
+        </xs:annotation>      
+        <xs:complexContent>
+            <xs:extension base="DataEntryType">
+                <xs:sequence>
+                    <xs:element name="Corners" type="CornersType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                            Corners indicate the footprint extent of the Imagery. All four corners are specified allowing
+                            specification of an approximate georeference of the image.
+                            </xs:documentation>
+                        </xs:annotation>                    
+                    </xs:element>   
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="ModelDataType">
+        <xs:annotation>
+            <xs:documentation>
+            Model data type specify the data type for model data. 
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="DataEntryType">
+                <xs:sequence>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="PinnedDataType">
+        <xs:annotation>
+            <xs:documentation>
+            Pinned data type specify the data type for pinned data. It extends the generic data type by adding a mandatory pin 
+            position applicable to the non-geospatially located data. Note that if a document applies to many different locations
+            then a PinnedData entry must be present for every location it refers to.
+            </xs:documentation>
+        </xs:annotation>      
+        <xs:complexContent>
+            <xs:extension base="DataEntryType">
+                <xs:sequence>
+                    <xs:element name="Position" type="doubleList" minOccurs="1" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                            The position of the pin. It is expressed  as a pair of numbers longitude/latitude . If an area is specified after the position
+                            it is recommended that this position be located inside the area.
+                            Typical use for single coordinate pin would be to attach a picture of some building upon the approximative location
+                            of this building. Most pinned data will only have a position.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Area" type="doubleList" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                            The optional area to which applies the pinned data. It is a list of decimal degrees space separated longitude latitude pairs
+                            forming a non-crossing non autocontiguous polygon. It shall define an area to which the document is attached.
+                            Typical use of a polygon defined area would be to attach a document upon a large area for example defining the 
+                            web site URL to a municipality thus attached to the whole town area.
+                            The vast majority of pinned document should make only use of single coordinate pin position while sizeable pins being only used for large
+                            areas. Note that the polygon must have a duplicate of the first point as a closing point.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="TerrainDataType">
+        <xs:annotation>
+            <xs:documentation>
+            Terrain data type specify the data type for terrain data.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="DataEntryType">
+                <xs:sequence>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <!-- ==================       Groups       ===================== -->
+    <!-- =========================================================== -->
+    <xs:complexType name="ImageryGroupType">
+        <xs:annotation>
+            <xs:documentation>
+            Type used to contain a list of Imagery data.
+            </xs:documentation>
+        </xs:annotation>      
+        <xs:sequence>
+            <xs:element name="ImageryData" type="ImageryDataType" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                    A list of imagery data.
+                    </xs:documentation>
+                </xs:annotation>            
+            </xs:element>
+        </xs:sequence>            
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="ModelGroupType">
+        <xs:annotation>
+            <xs:documentation>
+            Type used to contain a list of model data.
+            </xs:documentation>
+        </xs:annotation>    
+        <xs:sequence>
+            <xs:element name="ModelData" type="ModelDataType" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                    A list of model data.
+                    </xs:documentation>
+                </xs:annotation>            
+            </xs:element>
+        </xs:sequence>            
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="PinnedGroupType">
+        <xs:annotation>
+            <xs:documentation>
+            Type used to contain a list of pinned document data.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="PinnedData" type="PinnedDataType" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                    A list of pinned data.
+                    </xs:documentation>
+                </xs:annotation>            
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="TerrainGroupType">
+        <xs:annotation>
+            <xs:documentation>
+            Type used to contain a list of terrain data.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="TerrainData" type="TerrainDataType" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                    A list of terrain data.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>            
+        </xs:sequence>
+    </xs:complexType>
+
+
+    <!-- Package Definition -->
+    <!-- =========================================================== -->
+    <xs:element name="RealityDataPackage">
+        <xs:annotation>
+            <xs:documentation>
+            A package is a transport description mechanism that lists data sources. Sources are grouped according to four
+            distinct groups (Imagery, Terrain, Pinned Data and Model Data). Refer to the individual types nodes for more details
+            about these individual data types.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="PackageOrigin" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        String that contains the Context Service server that was used in the creation of the package if any.
+                        This is the server from which can be obtained additional information concerning the various sources of data
+                        in the package.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="Name" type="xs:string" minOccurs="0" maxOccurs="1">
+                  <xs:annotation>
+                    <xs:documentation>
+                    The name of the package can be either human readable or not. Initial packages published used a GUID alike
+                    string as name that was often used as the name of the file containing the package definition.
+                    The Name can also be human readable.
+                    </xs:documentation>
+                  </xs:annotation>
+                </xs:element>
+                <xs:element name="Description" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        A textual description of the package. The description is language unspecified meaning
+                        that it can be in any language as seen fit by the package creator but would be in the locale at the time of the
+                        package order..
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="CreationDate" type="xs:dateTime" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The package creation date in UTC</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="Copyright" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        A textual Copyright. The copyright is language unspecified meaning
+                        that it can be in any language as seen fit by the package creator usually the language requested at the time of creation.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="PackageId" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        Package ID. Technically all packages are stored in the Context Service server so it is technically recoverable from server
+                        but the ID should instead be used as the file name to store package into.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>                
+                <xs:element name="BoundingPolygon" type="PolygonType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        The bounding polygon defines the location of the package. Note that individual sources of data may not be fully
+                        contained in the package bounding polygon.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="ImageryGroup" type="ImageryGroupType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        The imagery group contains all source of data containing imagery data. 
+                        Imagery data are rasters that are georeferenced upon the ground. Most imagery should be 
+                        drapped upon terrain data if any.
+                        Note that imagery is different from raster in the fact a picture is not necessarily georeferenced.
+                        We expect imagery data to be orthorectified images of the ground.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>                
+                <xs:element name="ModelGroup" type="ModelGroupType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        The model group contains all source of data containing model data such as vectors.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>                
+                <xs:element name="PinnedGroup" type="PinnedGroupType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        The pinned group contains all source of data containing pinned data that are located non spatial documents
+                        such as a readable document attached to one ground feature.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>                
+                <xs:element name="TerrainGroup" type="TerrainGroupType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        The terrain group contains all source of data containing Terrain data.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="version" type="xs:decimal" use="required">
+                <xs:annotation>
+                    <xs:documentation>
+                    The version of the package file in the form MM.mm (where MM is the major version and mm is the minor.) 
+                    Compatible changes require an increase of the minor version while incompatible changes require an increase of the major version.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>        
+    </xs:element>
+</xs:schema>

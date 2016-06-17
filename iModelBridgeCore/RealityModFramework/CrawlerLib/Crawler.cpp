@@ -40,7 +40,7 @@ CrawlerPtr Crawler::Create(size_t maxNumberOfSimultaneousDownloads)
     IRobotsTxtDownloader* robotsTxtDownloader = new RobotsTxtDownloader;
 
     IPoliteness* politeness = new Politeness(robotsTxtDownloader);
-    UrlQueue* queue = new UrlQueue(politeness);
+    UrlQueuePtr queue = UrlQueue::Create(politeness);
 
     return new Crawler(queue, downloaders);
     }
@@ -49,7 +49,7 @@ CrawlerPtr Crawler::Create(size_t maxNumberOfSimultaneousDownloads)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-CrawlerPtr Crawler::Create(UrlQueue* queue, bvector<IPageDownloader*> const& downloaders)
+CrawlerPtr Crawler::Create(UrlQueuePtr queue, bvector<IPageDownloader*> const& downloaders)
     { 
       return new Crawler(queue, downloaders);
     }
@@ -57,7 +57,7 @@ CrawlerPtr Crawler::Create(UrlQueue* queue, bvector<IPageDownloader*> const& dow
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-Crawler::Crawler(UrlQueue* queue, bvector<IPageDownloader*> const& downloaders)
+Crawler::Crawler(UrlQueuePtr queue, bvector<IPageDownloader*> const& downloaders)
     : m_NumberOfDownloaders(downloaders.size()), m_StopFlag(false), m_PauseFlag(false)
     {
     curl_global_init(CURL_GLOBAL_ALL);
@@ -73,7 +73,13 @@ Crawler::~Crawler()
     {
     for (auto downloader : m_pDownloaders)
         delete downloader;
-    delete m_pQueue;
+
+    if (0 != m_pObserver)
+        {
+        delete m_pObserver;
+        m_pObserver = 0;
+        }
+
     curl_global_cleanup();
     }
 
@@ -93,7 +99,7 @@ struct TestPredicate : IConditionVariablePredicate
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-StatusInt Crawler::Crawl(UrlPtr const& seed)
+StatusInt Crawler::Crawl(UrlCR seed)
     {
     BeAssert(m_pDownloaders.size() == m_NumberOfDownloaders);
 
@@ -123,7 +129,7 @@ StatusInt Crawler::Crawl(UrlPtr const& seed)
             for (auto link : pageContent->GetLinks())
                 {
                 // This call might take some time if robots.txt needs to be downloaded. That will occurs once per domain.
-                m_pQueue->AddUrl(link);
+                m_pQueue->AddUrl(*link);
                 }
 
             // Start something new now, in case the observer takes a long time to process.
@@ -197,9 +203,9 @@ void Crawler::DiscardRemainingDownloads(vector<future<PageContentPtr>>& download
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void Crawler::SetObserver(ICrawlerObserver* observer)
+void Crawler::SetObserver(ICrawlerObserver* pObserver)
     {
-    m_pObserver = observer;
+    m_pObserver = pObserver;
     }
 
 //---------------------------------------------------------------------------------------

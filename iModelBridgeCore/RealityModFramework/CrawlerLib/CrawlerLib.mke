@@ -4,7 +4,7 @@
 #       $Date: 7/22/2015 11:33:09$
 #     $Author: Alexandre.Gariepy $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -48,6 +48,10 @@ $(o)Url$(oext) : $(baseDir)Url.cpp $(PublicApiDir)Url.h ${MultiCompileDepends}
 $(o)Politeness$(oext) : $(baseDir)Politeness.cpp $(baseDir)Politeness.h ${MultiCompileDepends}
 
 $(o)PageDownloader$(oext) : $(baseDir)PageDownloader.cpp $(baseDir)PageDownloader.h ${MultiCompileDepends}
+
+$(o)PageContent$(oext) : $(baseDir)PageContent.cpp $(PublicApiDir)PageContent.h ${MultiCompileDepends}
+
+$(o)DownloadJob$(oext) : $(baseDir)DownloadJob.cpp $(baseDir)DownloadJob.h ${MultiCompileDepends}
 
 $(o)RobotsTxtDownloader$(oext) : $(baseDir)RobotsTxtDownloader.cpp $(baseDir)RobotsTxtDownloader.h ${MultiCompileDepends}
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/CrawlerLib/PageContent.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -31,30 +31,31 @@ struct PageContent : public RefCountedBase
     // Creates a page content. Note that after create a page content has the Url and text
     // set yet the links are not set and must be added using the AddLink() method.
     //=======================================================================================
-    PageContent(Url const& p_Url, WString const& p_Text)
-        : RefCountedBase(), m_Url(p_Url), m_Text(p_Text) {}
-    PageContent() = delete;
+    CRAWLERLIB_EXPORT static PageContentPtr Create(UrlCR url, WString const& text);
 
     virtual ~PageContent() {}
 
-    Url const& GetUrl() const {return m_Url;}
-    void SetUrl(Url url) {m_Url = url;}
+    UrlCR GetUrl() const { return m_url; }
+    void SetUrl(UrlCR url) { m_url = url; }
 
-    WString const& GetText() const {return m_Text;}
-    void SetText(WString const& text) {m_Text = text;}
+    WString const& GetText() const { return m_text; }
+    void SetText(WString const& text) { m_text = text; }
 
     //=======================================================================================
     // Adds a link to the page content. There is no validation performed and thus an existing
     // link can be added more than once.
     //=======================================================================================
-    void AddLink(UrlPtr const& link) {m_Links.push_back(link);}
-    bvector<UrlPtr> const& GetLinks() {return m_Links;}
+    void AddLink(UrlCR link) { m_links.push_back(&link); }
+    bvector<UrlCPtr> const& GetLinks() const { return m_links; }
 
     private:
+    PageContent(UrlCR url, WString const& text);
+    PageContent() = delete;
+
     //Member attributes
-    Url m_Url;
-    bvector<UrlPtr> m_Links;
-    WString m_Text;
+    Url m_url;
+    bvector<UrlCPtr> m_links;
+    WString m_text;
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

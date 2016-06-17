@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CrawlerLib/Mocks.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,8 +44,8 @@ class PolitenessMock : public IPoliteness
     MOCK_METHOD1(SetUserAgent, void(UserAgent const& agent));
     MOCK_METHOD1(SetRespectRobotTxt, void(bool respect));
     MOCK_METHOD1(SetRespectRobotTxtIfDisallowRoot, void(bool respect));
-    MOCK_METHOD1(CanDownloadUrl, bool(UrlPtr const& url));
-    MOCK_METHOD1(GetCrawlDelay, uint32_t(UrlPtr const& url));
+    MOCK_METHOD1(CanDownloadUrl, bool(UrlCR url));
+    MOCK_METHOD1(GetCrawlDelay, uint32_t(UrlCR url));
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/UrlQueue.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UrlQueue.h"
@@ -10,6 +10,14 @@
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    2/2016
+//-------------------------------------------------------------------------------------
+UrlQueuePtr UrlQueue::Create(IPoliteness* politeness)
+    {
+    return new UrlQueue(politeness);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
@@ -51,10 +59,10 @@ DownloadJobPtr UrlQueue::NextDownloadJob()
     if(m_CurrentDomain == m_QueuesPerDomain.end())
         m_CurrentDomain = m_QueuesPerDomain.begin();
 
-    UrlPtr nextUrl = m_CurrentDomain->second.front();
+    UrlCPtr nextUrl = m_CurrentDomain->second.front();
     m_CurrentDomain->second.pop();
-    uint32_t crawlDelayInSeconds = m_pPoliteness->GetCrawlDelay(nextUrl);
-    DownloadJobPtr nextDownloadJob = new DownloadJob(crawlDelayInSeconds, nextUrl);
+    uint32_t crawlDelayInSeconds = m_pPoliteness->GetCrawlDelay(*nextUrl);
+    DownloadJobPtr nextDownloadJob = DownloadJob::Create(crawlDelayInSeconds, *nextUrl);
 
     if(m_CurrentDomain->second.size() == 0)
         {
@@ -72,19 +80,17 @@ DownloadJobPtr UrlQueue::NextDownloadJob()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void UrlQueue::AddUrl(UrlPtr const& url)
+void UrlQueue::AddUrl(UrlCR url)
     {
-    BeAssert(url != NULL);
-
     if(IsAcceptedUrl(url) && m_VisitedUrls.size() < m_MaxNumberOfVisitedUrls)
         {
-        auto currentQueueIterator = m_QueuesPerDomain.find(url->GetDomainName());
+        auto currentQueueIterator = m_QueuesPerDomain.find(url.GetDomainName());
         if(currentQueueIterator == m_QueuesPerDomain.end())
             {
-            currentQueueIterator = m_QueuesPerDomain.emplace(url->GetDomainName(), queue<UrlPtr>()).first;
+            currentQueueIterator = m_QueuesPerDomain.emplace(url.GetDomainName(), queue<UrlCPtr>()).first;
             }
-        currentQueueIterator->second.push(url);
-        m_VisitedUrls.insert(url);
+        currentQueueIterator->second.push(&url);
+        m_VisitedUrls.insert(&url);
         ++m_NumberOfUrls;
         }
     }
@@ -92,24 +98,21 @@ void UrlQueue::AddUrl(UrlPtr const& url)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-bool UrlQueue::IsAcceptedUrl(UrlPtr const& url) const
+bool UrlQueue::IsAcceptedUrl(UrlCR url) const
     {
-    BeAssert(url != NULL);
-
     return !HaveAlreadyVisited(url)
-        && (url->GetDepth() <= m_MaximumCrawlDepth)
-        && (m_AcceptExternalLinks || !url->IsExternalPage())
-        && (m_AcceptLinksInExternalLinks || !(url->GetParent().IsValid() && url->GetParent()->IsExternalPage()))
+        && (url.GetDepth() <= m_MaximumCrawlDepth)
+        && (m_AcceptExternalLinks || !url.IsExternalPage())
+        && (m_AcceptLinksInExternalLinks || !(url.GetParent().IsValid() && url.GetParent()->IsExternalPage()))
         && m_pPoliteness->CanDownloadUrl(url);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-bool UrlQueue::HaveAlreadyVisited(UrlPtr const& url) const
+bool UrlQueue::HaveAlreadyVisited(UrlCR url) const
     {
-    BeAssert(url != NULL);
-    return m_VisitedUrls.find(url) != m_VisitedUrls.end();
+    return m_VisitedUrls.find(&url) != m_VisitedUrls.end();
     }
 
 //---------------------------------------------------------------------------------------
@@ -173,7 +176,7 @@ void UrlQueue::SetRespectRobotTxtIfDisallowRoot(bool respect)
 //+---------------+---------------+---------------+---------------+---------------+------
 void UrlQueue::SetRobotsTxtUserAgent(WString const& userAgent)
     {
-    m_pPoliteness->SetUserAgent(UserAgent(userAgent));
+    m_pPoliteness->SetUserAgent(*UserAgent::Create(userAgent));
     }
 
 //---------------------------------------------------------------------------------------

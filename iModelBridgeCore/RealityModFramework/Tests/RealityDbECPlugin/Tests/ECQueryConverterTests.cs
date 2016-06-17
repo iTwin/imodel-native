@@ -50,7 +50,7 @@ namespace IndexECPlugin.Tests
             string sqlCount;
 
             DataReadingHelper helper;
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+            IParamNameValueMap paramNameValueMap;
 
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
@@ -70,7 +70,7 @@ namespace IndexECPlugin.Tests
             //Assert.IsTrue(sqlCommand.Contains(tableString));
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(tableString) + @".*");
-            Assert.IsTrue(reg.IsMatch(sqlCommand));
+            Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
 
 
             }
@@ -97,9 +97,10 @@ namespace IndexECPlugin.Tests
             string sqlCount;
 
             DataReadingHelper helper;
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+            IParamNameValueMap paramNameValueMap;
 
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
+            GenericParamNameValueMap genericParamNameValueMap = paramNameValueMap as GenericParamNameValueMap;
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -114,11 +115,12 @@ namespace IndexECPlugin.Tests
             string nameColumnString = spatialEntityBaseClass["Name"].GetCustomAttributes("DBColumn").GetString("ColumnName");
             string tableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
-            Assert.AreEqual(1, paramNameValueMap.Count);
-            Assert.AreEqual("Test", paramNameValueMap.First().Value.Item1);
+            Assert.IsNotNull(genericParamNameValueMap, "The ParamNameValueMap was not a GenericParamNameValueMap.");
+            Assert.AreEqual(1, genericParamNameValueMap.Count(), "Invalid number of parameters in the map.");
+            Assert.AreEqual("Test", genericParamNameValueMap.First().Value.Item1, "The map does not contain the value of the property requested in the criteria.");
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(tableString) + @".* WHERE .*" + Regex.Escape(nameColumnString) + @".*");
-            Assert.IsTrue(reg.IsMatch(sqlCommand));
+            Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
             }
 
         [Test]
@@ -143,10 +145,11 @@ namespace IndexECPlugin.Tests
             string sqlCount;
 
             DataReadingHelper helper;
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+            IParamNameValueMap paramNameValueMap;
+
 
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
-
+            GenericParamNameValueMap genericParamNameValueMap = paramNameValueMap as GenericParamNameValueMap;
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
             //parser.Parse(new StringReader(sqlCommand), out errors);
@@ -159,11 +162,12 @@ namespace IndexECPlugin.Tests
             string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
             string tableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
-            Assert.AreEqual(1, paramNameValueMap.Count);
-            Assert.AreEqual("1", paramNameValueMap.First().Value.Item1);
+            Assert.IsNotNull(genericParamNameValueMap, "The ParamNameValueMap was not a GenericParamNameValueMap.");
+            Assert.AreEqual(1, genericParamNameValueMap.Count(), "Invalid number of parameters in the map.");
+            Assert.AreEqual("1", genericParamNameValueMap.First().Value.Item1, "The map does not contain the value of the ID requested.");
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(tableString) + @".* WHERE .*" + Regex.Escape(idColumnString) + @".*");
-            Assert.IsTrue(reg.IsMatch(sqlCommand));
+            Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
             }
 
         [Test]
@@ -195,10 +199,10 @@ namespace IndexECPlugin.Tests
             string sqlCount;
 
             DataReadingHelper helper;
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+            IParamNameValueMap paramNameValueMap;
 
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
-
+            GenericParamNameValueMap genericParamNameValueMap = paramNameValueMap as GenericParamNameValueMap;
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
             //parser.Parse(new StringReader(sqlCommand), out errors);
@@ -211,13 +215,14 @@ namespace IndexECPlugin.Tests
             string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
             string tableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
-            Assert.IsTrue(sqlCommand.Contains(idColumnString));
-            Assert.IsTrue(sqlCommand.Contains(tableString));
-            Assert.AreEqual(3, paramNameValueMap.Count);
+            Assert.IsNotNull(genericParamNameValueMap, "The ParamNameValueMap was not a GenericParamNameValueMap.");
+            Assert.IsTrue(sqlCommand.Contains(idColumnString), "The query does not contain the name of the Id Column.");
+            Assert.IsTrue(sqlCommand.Contains(tableString), "The query does not contain the name of the table queried.");
+            Assert.AreEqual(3, genericParamNameValueMap.Count(), "Invalid number of parameters in the map.");
 
             Regex reg = new Regex(@".*SELECT.*" + Regex.Escape(idColumnString) + @".*FROM.*" + Regex.Escape(tableString) + @".*WHERE.*\(.*" + Regex.Escape(idColumnString) + @".*OR.*" + Regex.Escape(idColumnString) + @".*\).*AND.*" + Regex.Escape(idColumnString) + ".*");
 
-            Assert.IsTrue(reg.IsMatch(sqlCommand));
+            Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
 
             }
 
@@ -254,7 +259,7 @@ namespace IndexECPlugin.Tests
             string firstOrSecond = "(" + firstKey + @".*=.*" + secondKey + "|" + secondKey + @".*=.*" + firstKey + ")";
 
             DataReadingHelper helper;
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+            IParamNameValueMap paramNameValueMap;
 
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
@@ -269,7 +274,7 @@ namespace IndexECPlugin.Tests
 
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(fromTableString) + ".*LEFT JOIN.*" + Regex.Escape(joinedTableString) + ".*ON.*" + firstOrSecond + @".* WHERE .*" + Regex.Escape(metadataIdColumnString) + @".*");
-            Assert.IsTrue(reg.IsMatch(sqlCommand));
+            Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
 
             }
 
@@ -311,7 +316,7 @@ namespace IndexECPlugin.Tests
             string firstOrSecondIdColumn = "(" + Regex.Escape(idColumnString) + @".*,.*" + Regex.Escape(metadataIdColumnString) + "|" + Regex.Escape(metadataIdColumnString) + @".*,.*" + Regex.Escape(idColumnString) + ")";
 
             DataReadingHelper helper;
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+            IParamNameValueMap paramNameValueMap;
 
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
@@ -326,7 +331,7 @@ namespace IndexECPlugin.Tests
 
 
             Regex reg = new Regex(@".*SELECT .*" + firstOrSecondIdColumn + @".* FROM .*" + Regex.Escape(fromTableString) + ".*LEFT JOIN.*" + Regex.Escape(joinedTableString) + ".*ON.*" + firstOrSecond + @".* WHERE .*" + Regex.Escape(metadataIdColumnString) + @".*");
-            Assert.IsTrue(reg.IsMatch(sqlCommand));
+            Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
 
             }
 
@@ -354,7 +359,7 @@ namespace IndexECPlugin.Tests
             string sqlCount;
 
             DataReadingHelper helper;
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+            IParamNameValueMap paramNameValueMap;
 
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
@@ -371,7 +376,7 @@ namespace IndexECPlugin.Tests
             //SELECT tab0.IdStr FROM dbo.SpatialEntityBases tab0  WHERE tab0.Footprint.STIntersects(geometry::STGeomFromText('POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))',4326)) = 'true' ;
 
             Regex reg = new Regex(@".*SELECT.*" + Regex.Escape(idColumnString) + @".*FROM.*" + Regex.Escape(fromTableString) + @".*WHERE.*STIntersects.*\('POLYGON \(\(30 10, 40 40, 20 40, 10 20, 30 10\)\)',4326\).*");
-            Assert.IsTrue(reg.IsMatch(sqlCommand));
+            Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
             }
 
         [Test]
@@ -398,7 +403,7 @@ namespace IndexECPlugin.Tests
             string sqlCount;
 
             DataReadingHelper helper;
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+            IParamNameValueMap paramNameValueMap;
 
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
@@ -421,7 +426,7 @@ namespace IndexECPlugin.Tests
             string idOrBaseId = "(" + idColumnString + @".*=.*" + baseIdColumnString + "|" + baseIdColumnString + @".*=.*" + idColumnString + ")";
 
             Regex reg = new Regex(@".*SELECT.*" + idOrName + @".* FROM .*" + Regex.Escape(fromTableString) + @".*LEFT JOIN.*" + leftJoinTableString + ".*ON.*" + idOrBaseId + ".*");
-            Assert.IsTrue(reg.IsMatch(sqlCommand));
+            Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
             //SELECT tab0.IdStr, tab1.Name, tab0.Processable FROM dbo.SpatialEntityDatasets tab0 LEFT JOIN dbo.SpatialEntityBases tab1 ON tab0.IdStr = tab1.IdStr  ;        
             }
         }

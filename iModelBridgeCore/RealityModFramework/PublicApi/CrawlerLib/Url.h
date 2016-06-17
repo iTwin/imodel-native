@@ -33,7 +33,7 @@ struct DomainName
     inline bool operator==(DomainName const& other) const {return m_DomainName.Equals(other.m_DomainName);}
     inline bool operator<(DomainName const& other) const {return m_DomainName < other.m_DomainName;}
 
-    CRAWLERLIB_EXPORT WString const& GetWString() const {return m_DomainName;}
+    CRAWLERLIB_EXPORT WString const& GetWString() const;
 
     private:
     DomainName() {}
@@ -59,6 +59,8 @@ struct Url : public RefCountedBase
     {
     public:
     
+    CRAWLERLIB_EXPORT static UrlPtr Create(WString const& url);
+
     //---------------------------------------------------------------------------------------
     // This constructor creates a URL as defined in the context of a crawling library only.
     // The object is created by providing a URL and a parent URL. Normally in the context
@@ -66,8 +68,10 @@ struct Url : public RefCountedBase
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
-    CRAWLERLIB_EXPORT Url(WString const& url, UrlPtr const& parent);
-    CRAWLERLIB_EXPORT virtual ~Url() {}
+    CRAWLERLIB_EXPORT static UrlPtr Create(WString const& url, UrlCR parent);
+
+    
+    CRAWLERLIB_EXPORT virtual ~Url();
 
     DomainName const& GetDomainName() const {return m_DomainName;}
     WString const& GetUrlWString() const {return m_Url;}
@@ -76,7 +80,7 @@ struct Url : public RefCountedBase
     //---------------------------------------------------------------------------------------
     // Returns pointer to parent Url. This parent can be null for seeds.
     //---------------------------------------------------------------------------------------
-    UrlPtr const& GetParent() const {return m_Parent;}
+    UrlCPtr GetParent() const {return m_Parent;}
 
     
     //---------------------------------------------------------------------------------------
@@ -84,10 +88,10 @@ struct Url : public RefCountedBase
     //---------------------------------------------------------------------------------------
     uint32_t GetDepth() const {return m_Depth;}
     bool IsExternalPage() const {return m_IsExternalPage;}
-    CRAWLERLIB_EXPORT bool IsSubUrlOf(Url const& parent);
+    CRAWLERLIB_EXPORT bool IsSubUrlOf(UrlCR parent) const;
 
-    CRAWLERLIB_EXPORT bool operator==(Url const& other) const;
-    CRAWLERLIB_EXPORT bool operator<(Url const& other) const;
+    CRAWLERLIB_EXPORT bool operator==(UrlCR other) const;
+    CRAWLERLIB_EXPORT bool operator<(UrlCR other) const;
 
 
     protected:
@@ -98,11 +102,13 @@ struct Url : public RefCountedBase
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
-    Url() {} 
+    Url() {}
+
+    Url(WString const& url, UrlCR parent);
 
     void RemoveTrailingSlash(WString& urlString) const;
 
-    UrlPtr m_Parent; // Parent URL. Usually non-null in a plain URL but subclass can decide otherwise.
+    UrlCPtr m_Parent; // Parent URL. Usually non-null in a plain URL but subclass can decide otherwise.
     WString m_Url;
     DomainName m_DomainName;
     bool m_IsExternalPage;
@@ -123,14 +129,17 @@ struct Url : public RefCountedBase
 struct Seed : public Url
     {
     public:
-    CRAWLERLIB_EXPORT Seed(WString const& url);
+    CRAWLERLIB_EXPORT static SeedPtr Create(WString const& url);
+        
+    private:
+    Seed(WString const& url);
     };
 
 //=======================================================================================
 //! @bsiclass
 // Exception class used when an invalid exception in encountered.
 //=======================================================================================
-class InvalidUrlException : public std::exception
+struct InvalidUrlException : public std::exception
     {
     public:
     InvalidUrlException(WString url) {m_Url = url;}
@@ -152,9 +161,19 @@ class InvalidUrlException : public std::exception
 //=======================================================================================
 struct UrlPtrCompare
     {
-    bool operator() (UrlPtr const& lhs, UrlPtr const& rhs) const {return *lhs < *rhs;}
+    bool operator() (UrlPtr lhs, UrlPtr rhs) const {return *lhs < *rhs;}
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct UrlCPtrCompare
+    {
+    bool operator() (UrlCPtr lhs, UrlCPtr rhs) const { return *lhs < *rhs; }
+    };
+
+
 typedef std::set<UrlPtr, UrlPtrCompare> UrlPtrSet;
+typedef std::set<UrlCPtr, UrlCPtrCompare> UrlCPtrSet;
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

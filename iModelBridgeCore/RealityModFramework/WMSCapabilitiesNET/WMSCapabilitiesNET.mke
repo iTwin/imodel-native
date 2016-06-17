@@ -6,7 +6,7 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -53,7 +53,6 @@ $(o)WMSCapabilitiesNET$(oext):     $(baseDir)WMSCapabilitiesNET.cpp  $(baseDir)W
 BuildContextSubPartsLibDir = $(BuildContext)SubParts/Libs/
 
 BuildContextSubPartsLibraries = $(BuildContextSubPartsLibDir)Bentley.lib \
-                                $(BuildContextSubPartsLibDir)BentleyAllocator.lib \
                                 $(BuildContextSubPartsLibDir)RealityPlatform.lib
 
 #----------------------------------------------------------------------

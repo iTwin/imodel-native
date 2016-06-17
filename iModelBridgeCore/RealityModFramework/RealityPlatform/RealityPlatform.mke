@@ -2,7 +2,7 @@
 #
 #     $Source: RealityPlatform/RealityPlatform.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -73,6 +73,8 @@ $(o)SpatioTemporalSelector$(oext) : $(baseDir)SpatioTemporalSelector.cpp $(Publi
 
 $(o)SpatioTemporalData$(oext) : $(baseDir)SpatioTemporalData.cpp $(baseDir)SpatioTemporalData.h ${MultiCompileDepends}
 
+$(o)FtpTraversalEngine$(oext) : $(baseDir)FtpTraversalEngine.cpp $(PublicApiDir)FtpTraversalEngine.h ${MultiCompileDepends}
+
 $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 
 #
@@ -91,13 +93,13 @@ DLM_NO_SIGN         = 1
 
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
                        $(ContextSubpartsLibs)ImagePP$(libext) \
                        $(ContextSubpartsLibs)BentleyGeom$(libext) \
                        $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext)
 
 # windows specific for Unzipfile
 LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       

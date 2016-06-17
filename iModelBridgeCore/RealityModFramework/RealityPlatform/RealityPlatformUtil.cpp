@@ -33,31 +33,6 @@ void GetBaseDirOfExecutingModule(WStringR baseDir)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Marc.Bedard                     11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct FactoryScanOnOpenGuard
-    {
-    private:
-        bool              m_oldValue;
-
-        // Disabled
-        FactoryScanOnOpenGuard(FactoryScanOnOpenGuard const & object);
-        FactoryScanOnOpenGuard& operator=(FactoryScanOnOpenGuard const & object);
-
-    public:
-        FactoryScanOnOpenGuard(bool newValue)
-            {
-            m_oldValue = HRFRasterFileFactory::GetInstance()->GetFactoryScanOnOpen();
-            HRFRasterFileFactory::GetInstance()->SetFactoryScanOnOpen(newValue);
-            }
-        ~FactoryScanOnOpenGuard()
-            {
-            //&&MM remove this patch from the the factory. It could be a method param but not a setting guard thing.
-            HRFRasterFileFactory::GetInstance()->SetFactoryScanOnOpen(m_oldValue);
-            }
-    };
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SessionManager::InitBaseGCS()
@@ -237,28 +212,26 @@ HFCPtr<HRFRasterFile> RasterFacility::GetRasterFile(Utf8CP inFilename)
         if (Utf8String::IsNullOrEmpty(inFilename))
             return NULL;
 
-        WString filename;
-        BeStringUtilities::Utf8ToWChar(filename, inFilename);
+        Utf8String filename = inFilename;
 
         // Create URL
         HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(filename));
         if (srcFilename == 0)
             {
             // Open the raster file as a file
-            srcFilename = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
+            srcFilename = new HFCURLFile(Utf8PrintfString("%s://%s", HFCURLFile::s_SchemeName().c_str(), inFilename));
             }
 
         // Open Raster file
         {
         // HFCMonitor __keyMonitor(m_KeyByMethod);
-        FactoryScanOnOpenGuard __wantScan(false);
 
         // Create URL
         HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(filename));
         if (srcFilename == 0)
             {
             // Open the raster file as a file
-            srcFilename = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
+            srcFilename = new HFCURLFile(Utf8PrintfString("%s://%s", HFCURLFile::s_SchemeName().c_str(), inFilename));
             }
 
         // Open Raster file without checking "isKindOfFile"

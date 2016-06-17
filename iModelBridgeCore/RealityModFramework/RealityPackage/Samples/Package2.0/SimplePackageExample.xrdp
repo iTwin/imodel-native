@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RealityDataPackage xmlns="http://www.bentley.com/RealityDataServer/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../RealityPackage.2.0.xsd" version="2.0">
+  <PackageOrigin>dev-ual.contextservices.bentley.com</PackageOrigin>
+  <Name>7c71c780-8b52-47ba-adac-a29b407c5ac6</Name>
+  <Description>This is simple sample package listing typical two groups for terrain and imagery.</Description>
+  <CreationDate>2016-02-02T16:28:01.727Z</CreationDate>
+  <PackageId>7c71c780-8b52-47ba-adac-a29b407c5ac6</PackageId>  
+  <BoundingPolygon>-71.072445 42.339894 -71.056824 42.339894 -71.056824 42.332027 -71.072445 42.332027 -71.072445 42.339894</BoundingPolygon>
+  <ImageryGroup>
+    <ImageryData>
+        <!-- This ID enables to request additional information to the origin (ContextServerOrigin) about the data. The service does not garantee that 
+            the id will remain stable over a long period but immediately after reception of the package and for a few hours it will be accessible and consistent with current information. -->
+        <Id>412</Id>
+        <Name>Canadian Digital Elevation Model Mosaic (CDEM) 014E</Name>
+        <Sources>
+            <!-- The URI below indicates the name and location of the compound document to be downloaded as well as the name of the file containing the data separated by a '#' character.
+                 Since this portion is a REGEX all '.' characters must be enclosed in brackets! -->
+            <Source uri="http://ftp2.cits.rncan.gc.ca/pub/cdem/014/cdem_dem_014E_tif.zip#cdem_dem_014.tif" type="tif">
+                <!-- This ID enables to request additional information to the origin (ContextServerOrigin) about the source. The service does not garantee that 
+                the id will remain stable over a long period but immediately after reception of the package and for a few hours it will be accessible and consistent with current information. -->
+                <Id>6830609</Id>
+                <Copyright>http://open.canada.ca/en/open-government-licence-canada</Copyright>
+                <!-- The provider provides a hint to the application for the interpretation of some data such as the internal structure of a compound document
+                    It is optional and provides little information -->
+                <Provider>GeoGratis</Provider>
+                <!-- Size is always in kilo bytes. If element is absent or value is zero it can be assumed the 
+                     size of the source can only be known at dowload time or is a stream format -->
+                <Size>43827</Size>
+                <!-- The following indicates a file located within the compound. If the string had been a fully formed URI then it would have indicated
+                    an external resource. Note the presence of a type attribute. This type can be specified if known otherwise the 
+                    application will be in charge of trying to determine the type from the file content. -->
+                <Metadata type="ISO-19115">cdem_014E_pna.xml</Metadata>
+            </Source>
+        </Sources>
+    </ImageryData>
+    <ImageryData>
+        <Id>46341</Id>
+        <Name>GeoBase Landsat 7 Orthoimagery S4_05230_4828_20060814</Name>
+        <Sources>
+            <!-- The present of a hash sign # separator inside the uri indicates that the left part is the name of a compound document and the right part
+                 (if present) indicates the file within compound of the source of data. The later part can designate more than one file in compound by use of wildcards (* or ?).
+                 Note that the first part indicating the name of the file to be downloaded cannot make use of wildcards wether it be compound or not -->
+            <Source uri="http://ftp2.cits.rncan.gc.ca/pub/cdem/014/cdem_dem_014E_tif.zip#S4_05230_4828_20060814_m20_1_utm22.tif" type="tif">
+                <Id>545</Id>
+                <Copyright>http://open.canada.ca/en/open-government-licence-canada</Copyright>
+                <Provider>GeoGratis</Provider>
+                <Size>437627</Size>
+                <Metadata type="ISO-19115">IMR_S4_05230_4828_20060814_1.0_pna.xml</Metadata>
+            </Source>
+            <!-- The mirror source is identical in format and structure but makes use of a different Geographic Coordinate System (LCC instead of UTM22)-->
+            <Source uri="http://ftp2.cits.rncan.gc.ca/pub/cdem/014/cdem_dem_014E_tif.zip#S4_05230_4828_20060814_m20_1_lcc00.tif" type="tif">
+                <Id>546</Id>
+                 <!-- Copyright notice can or cannot contain links. -->
+                <Copyright>You are free to: Copy, modify, publish, translate, adapt, distribute or otherwise use the Information in any medium, mode or format for any lawful purpose.</Copyright>
+                <Provider>GeoGratis</Provider>
+                <Size>437627</Size>
+                <Metadata>IMR_S4_05230_4828_20060814_1.0_pna.xml</Metadata>
+                <!-- Notice the presence of spatial reference system (or geographic coordinate system). This value can be used as a default if the file format does not support it or if it is not set.
+                     Any code within the Bentley Geographic Coordinate System library can be used here. -->
+                <GeoCS>CANLCC</GeoCS>
+            </Source>
+        </Sources>
+        <!-- Corners is an element that only applies to imagery data. It allows specification of the four corners of the raster as space separated decimal degrees longitude/latitude 
+             expressed as WGS84 or the equivalent applicable to the project interpreting the package.
+             Note that corners are specified using four distinct fully qualified coordinates and not simply extents. It should correspond to the footprint
+             of the data as indexed in the package generating service.
+             NOTE: The corners defines the footprint for the data regardless of the sources. If corners are specified for data that contains many sources then these
+             sources must have the exact same footprint. -->
+        <Corners>
+            <LowerLeft>-71.24 41.28</LowerLeft>
+            <LowerRight>-71.239 41.2801</LowerRight>
+            <UpperLeft>-71.24009 41.281</UpperLeft>
+            <UpperRight>-71.23901 41.28101</UpperRight>
+        </Corners>
+    </ImageryData>
+      <ImageryData>
+          <Id>41342</Id>
+          <Name>Canadian Digital Elevation Data (CDED) 001K11</Name>
+          <Sources>
+              <!-- Compound file contains two dem files representing eastern and western portions of the source. Both files form the source. This is expressed using the regexp located after the # -->
+              <Source uri="http://ftp2.cits.rncan.gc.ca/pub/cdem/014/cdem_dem_014E_tif.zip#*.dem" type="dem">
+                  <Id>75643</Id>
+                  <Copyright">http://ouvert.canada.ca/fr/licence-du-gouvernement-ouvert-canada</Copyright>
+                  <Provider>GeoGratis</Provider>
+                  <Size>43827</Size>
+                  <Metadata type="FGDC">cded_001K11_1_0_fgdc_en.xml</Metadata>
+              </Source>
+          </Sources>
+      </ImageryData>
+    <ImageryData>
+        <Id>341342</Id>
+        <Name>UAO2003</Name>
+        <Sources>
+            <Source uri="http://ftp.utah.gouv.com/imagery/ua02003/12tvk035685.tif" type="tif">
+                <Id>gds:945m393090</Id>
+                <Size>4927</Size>
+                <Metadata>http://ftp.utah.gouv.com/imagery/ua02003/12tvk035685.xml</Metadata>
+                <!-- The following sister file is essential to the interpretation of the TIFF file that does not contain the georeference -->
+                <SisterFiles>
+                    <File>http://ftp.utah.gouv.com/imagery/ua02003/12tvk035685.tfw</File>
+                </SisterFiles>
+                <!-- Notice that this entry does not contain the Copyright. This copyright notice is most probably included in the metadata and it is the 
+                 responsibility of the application to extract and display this information to the end-user -->
+            </Source>
+        </Sources>
+        <Corners>
+            <LowerLeft>-95.24 30.28</LowerLeft>
+            <LowerRight>-95.239 30.2801</LowerRight>
+            <UpperLeft>-95.24009 30.281</UpperLeft>
+            <UpperRight>-95.23901 30.28101</UpperRight>
+        </Corners>
+    </ImageryData>
+    <ImageryData>
+        <Id>341343</Id>
+        <Name>Utah DOQ San Juan County</Name>
+        <!-- Here is an example of a source that we know to be imagery but not the format. In this case it is a SID but the packager provider could
+             not determine for sure prior to creation. It is then up to the application to select and interpret the data regardless no type is specified. -->
+        <Source uri="http://ftp.utah.gouv.com/imagery/UDOQ/SanJuanDOQ.zip">
+            <Id>gds:945m393090</Id>
+            <Size>681927</Size>
+            <!-- Notice the type of the metadata. This TEXT indicates that the metadata is not in either FGDC or ISO-19115 format the only two other formats
+                 supported. All other formats will be indicated as TEXT to be interpreted by a human. -->
+            <Metadata type="text">SanJuan_DOQ.fgdc</Metadata>
+        </Source>
+    </ImageryData>
+    <ImageryData>
+        <Id>USGS:55098640e4b02e76d757f634</Id>
+        <!-- USGS Imagery data do not contain specification of the Geographic Coordinate System even though some format support it.
+             For this reason it is imperative that a GCS default be provided in this specific case. As an alternative it is technically
+             possible for the application to extract the content of the ISO-19115 metadata tag  <gmd:referenceSystemInfo> if available (which is not the case here) -->
+        <Name>USGS: FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923</Name>
+        <Sources>
+            <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_nw_19_1_20140712_20140923.jp2" type="jp2">
+                <Id>USGS:55098640e4b02e76d757f634</Id>
+                <Copyright>FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey</Copyright>
+                <Provider>usgs</Provider>
+                <Size>25827</Size>
+                <Metadata>https://www.sciencebase.gov/catalog/file/get/55098640e4b02e76d757f634?f=__disk__44%2F29%2F0f%2F44290fb16573423f0c5e24542ac772670cae87f7</Metadata>
+                <!-- Notice the presence of spatial reference system (or geographic coordinate system). This value can be used as a default if the file format does not support it or if it is not set -->
+                <GeoCS>EPSG:3857</GeoCS>
+            </Source>
+            <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_nw_19_1_20140712_20140923.cit" type="cit">
+                <Id>44098640e4b02e76d747f323</Id>
+                <Copyright>FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey</Copyright>
+                <Provider>usgs</Provider>
+                <Size>34825</Size>
+                <Metadata>https://www.sciencebase.gov/catalog/file/get/44098640e4b02e76d747f323?f=__disk__44%2F29%2F0f%2F44290fb16573423f0c5e24542ac772670cae87f7</Metadata>
+                <GeoCS>EPSG:3857</GeoCS>
+            </Source>
+            <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_nw_19_1_20140712_20140923.png" type="png">
+                <Id>24098640e4b02e76d7475666</Id>
+                <Copyright>FSA 10:1 NAIP Imagery m_4207148_nw_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey</Copyright>
+                <Provider>usgs</Provider>
+                <Size>54721</Size>
+                <Metadata>https://www.sciencebase.gov/catalog/file/get/24098640e4b02e76d7475666?f=__disk__44%2F29%2F0f%2F44290fb16573423f0c5e24542ac772670cae87f7</Metadata>
+                <GeoCS>EPSG:3857</GeoCS>
+                <SisterFiles>
+                    <!-- Georeference in this case is in the world file associated -->
+                    <File>ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_nw_19_1_20140712_20140923.pgw</File>
+                </SisterFiles>
+            </Source>            
+        </Sources>
+    </ImageryData>
+    <ImageryData>
+        <Id>USGS:55098634e4b02e76d757f5c6</Id>
+        <Name>USGS: FSA 10:1 NAIP Imagery m_4207148_ne_19_1_20140712_20140923</Name>
+        <!-- JPEG 2000 file located in a compound. The full name of the raster is provided. -->
+        <Sources>
+            <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ma_2014/42071/m_4207148_ne_19_1_20140712_20140923.zip#18TVK470310_201004_0x3000m_CL_1.jp2" type="jp2">
+                <Id>USGS:55098634e4b02e76d757f5c6</Id>
+                <Copyright>FSA 10:1 NAIP Imagery m_4207148_ne_19_1_20140712_20140923 3.75 x 3.75 minute JPEG2000 from The National Map courtesy of the U.S. Geological Survey</Copyright>
+                <Provider>usgs</Provider>
+                <Size>25831</Size>
+                <Metadata>https://www.sciencebase.gov/catalog/file/get/55098634e4b02e76d757f5c6?f=__disk__94%2F3c%2F45%2F943c454b8481aa188053612d4bc4541b9f37abf0</Metadata>
+                <!-- Even though the PRJ sister file specifies the georeference of the JPEG 2000 raster, the default SRS can be specified but should be ignored in this case.-->
+                <GeoCS>EPSG:3857</GeoCS>
+                <!-- Specification of the following sister files is not technically necessary. Both files are included in the compound document and need not be downloaded.
+                 The presence of the entry is only useful in hinting to the fact these files 'should' be present and interpreted. -->
+                <SisterFiles>
+                    <File>18TVK470310_201004_0x3000m_CL_1.j2w</File>
+                    <File>18TVK470310_201004_0x3000m_CL_1.prj</File>
+                </SisterFiles>
+            </Source>
+        </Sources>
+    </ImageryData>
+  </ImageryGroup>
+  <ModelGroup>
+      <ModelData>
+            <!-- Here is another example of multiple sources for the same data. The package can make reference to local files using either 
+                 absolute path or relative path (absolute path should not be used if possible). In the event the local file cannot be located the second source
+                 provides the location of a copy located on a ProjectWise server. The application can use the alternate source to regenerate the 
+                 missing local file or use it directly. -->
+            <Sources>
+                <Source uri="./ModelData/ModelFile1.dgndb" type="dgndb"> 
+                    <Copyright>CartoLand Survey inc.</Copyright>
+                    <Size>23456</Size>
+                </Source>
+                <Source uri="pw://pw-utr5.bentley.com/geospatial/projectA/ModelFile1.dgndb" type="dgndb">
+                    <Copyright>Copyright CartoLand Survey inc. All rights reserved</Copyright>
+                    <!-- Notice the absence of a Size element. If the source is of unknown size then the element is omitted. --> 
+                </Source>
+            </Sources>
+        </ModelData>
+    </ModelGroup>
+    <!-- Pinned group contain pinned data. -->
+    <PinnedGroup>
+        <!-- A pinned data is any spatially located data that is not spatial in nature
+             For example the property evaluation role can be stored in a PDF document but is associated 
+             to a specific property that can be represented here by a single point part of the property. Likewise a
+             project site can contain multiple plain picture that illustrate some infrastructure possibly taken by a phone on site.
+             The pin location is associated to the infrastructure and the document is a jpeg file. -->
+        <PinnedData>
+            <!-- Pin data can have id and name like any other data but is not always specified -->
+            <Id>6455288846-3552</Id>
+            "<Name>Picture of my house in 2016 during winter</Name>"
+            <Sources>
+                <!-- Notice here that no xml elements are associated with the image. It may be possible that the image contains
+                     all necessary information as part of its EXIF fields -->
+                <Source uri='./pinned/myHouse.jpeg' type='jpeg'/>
+                <!-- Multiple sources are possible like any other type of data. All sources associated to data
+                     should refer to the exact same content and a single source part of listed sources will be accessed normally
+                     except if one is lost, corrupt or unavailable. If multiple images are associated to the same location then many
+                     PinnedData entries must be specified. -->
+                <Source uri='pw://alpo.bentley.com/Geospatial/Project/Images/myHouse.jpg' type='jpg' />
+           </Sources>
+           <!-- Exactly like the corners of a image data the location is specified by space separated longitude latitde in decimal degrees.
+                These coordinate are to be interpreted as WGS84 or the equivalent in the project context. -->
+           <Position>-71.2457 47.4876</Position>
+       </PinnedData>
+       <PinnedData>
+            <Sources>
+                <!-- Pinned data can be of various formats even a video clip and this clip can even be inbedded in a compound document -->
+                <Source uri='http://www.bentley.com/userdata/pinned/roadTraffic.zip#roadTraffic.avi' type='avi'>
+                    <!-- Like any source entry additional fields can be specified -->
+                    <Id>457076095-66632-ROLE</Id>
+                    <Copyright>Copyright Ville de Quebec 2014; all rights reserved.</Copyright>
+                    <Provider>CanadaGouv</Provider>
+                    <Size>155977</Size>
+                    <!-- Metadata refers to a PDF file part of the compound -->
+                    <Metadata type='text'>FilmingConditions.pdf</Metadata>
+                    <!-- The use of GeoCS element is meaningless in the context of pinned data since the data has no spatial nature
+                         Note that the use of GeoCS element is allowed but will be disregarded; the field will not be used
+                         for the interpretation of coordinates of the Position element of the data entry -->
+                    <GeoCS>EPSG:4326</GeoCS>
+                    <!-- Rarely will pinned data have sister file but it is supported -->
+                    <SisterFiles>
+                        <!-- Here the sister file example is a codec file containing the decompression algorithm plug-in.
+                             Such use is far fetched as this requires complex behavior from the application. -->"
+                        <File>SpecialCodecToReadTheAvi.cod</File>
+                    </SisterFiles>
+                </Source>
+            </Sources>
+            <Position>-71.23876 47.4754</Position>
+       </PinnedData>
+       <PinnedData>
+            <Sources>
+                <!-- Here is a text document in PDF format -->
+                <Source uri='http://www.bentley.com/evaluation_role/quebec_city/lot_746253_eval.pdf' type='pdf'/>
+            </Sources>
+            <Position>-71.23876 47.4754</Position>
+       </PinnedData>
+       <PinnedData>
+            <Sources>
+                <!-- Pinned data can refer to a web site or be pinned to a large area by specification of a polygon in addition to the position
+                     of a single coordinate. Note that a single polygon may be specified without holes. If a document applies to multiple disjoint
+                     areas then multiple PinnedData entries must be present for each area. -->
+                <Source uri='https://www.ville.quebec.qc.ca/' type='html'/>
+            </Sources>
+            <!-- We normally expect the positionto be inside the area when one is given -->
+            <Position>-71.2209 46.8273</Position>
+            <Area>-71.3972 46.7362 -71.2075 46.8126 -71.3844 46.9196 -71.2833 46.9557 -71.1209 46.8973 -71.2011 46.8067 -71.2863 46.7452 -71.3972 46.7362</Area>
+
+       </PinnedData>
+    </PinnedGroup>
+    <TerrainGroup>
+        <TerrainData>
+            <Id>USGS:53174905e4b0cd4cd83c06a6</Id>
+            <Name>USGS NED ned19_n42x50_w071x25_ma_lftne_lot7_2011</Name>
+            <Sources>
+                <!-- Notice in the URI the absence of indication of the file within compound containing the data. Sometimes
+                 this information cannot be known and it is then up to the application to attempt determination of the 
+                 file or files that contain the data. In this case the source type (img) and the provider (usgs) should be sufficient
+                 to try lodcating any *.img file contained in the compound. -->
+                <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n42x50_w071x25_ma_lftne_lot7_2011.zip#" type="img">
+                    <Id>USGS:53174905e4b0cd4cd83c06a6</Id>
+                    <Copyright>USGS NED ned19_n42x50_w071x25_ma_lftne_lot7_2011 1/9 arc-second 2012 15 x 15 minute IMG courtesy of the U.S. Geological Survey</Copyright>
+                    <Provider>usgs</Provider>
+                    <Size>9930</Size>
+                    <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83c06a6?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+                </Source>
+            </Sources>
+        </TerrainData>
+        <TerrainData>
+            <Id>USGS:53174905e4b0cd4cd83c06a6</Id>
+            <Name>USGS NED n40w086 1/3 arc-second 2013 1 x 1 degree</Name>
+            <!--  Notice here that there are many sources for the same data. Each source points to a different file stored using different format.
+               Some providers will provide many distribution format to accomodate client. Although technically the package should be fully qualified
+               source of data including the selected format, the additional sources are provided in case the originally selected source of data
+               is unavailable, corrupt, lost or simply the original selected format is not comprehensible by application.
+               Only one of these sources should be accessed since they sould contain equivalent data. Note that the data may not be identical between sources but should be
+               equivalent, containing at least the same information as originally requested for the creation of the package. -->
+            <Sources>
+                <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/13/IMG/n46w092.zip#*.img" type="img">
+                    <Id>USGS:53174905e4b0cd4cd83cf45d</Id>
+                    <Copyright>USGS NED n40w086 1/3 arc-second 2013 1 x 1 degree IMG courtesy of the U.S. Geological Survey</Copyright>
+                    <Provider>usgs</Provider>
+                    <Size>319061</Size>
+                    <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+                </Source>
+                <!-- Here the compound format should contain a grd ESRI format yet we could not determine the name of the file or the extension because
+                     the pattern is not predictible from this provider -->
+                <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/13/ArcGrid/n46w092.zip#" type="grd">
+                    <Id>USGS:53174905e4b0cd4cd83cf45d</Id>
+                    <Copyright>USGS NED n40w086 1/3 arc-second 2013 1 x 1 degree IMG courtesy of the U.S. Geological Survey</Copyright>
+                    <Provider>usgs</Provider>
+                    <Size>338121</Size>
+                    <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+                </Source>
+                <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/13/GridFloat/n46w092.zip#" type="flt">
+                    <Id>USGS:53174905e4b0cd4cd83cf45d</Id>
+                    <Copyright>USGS NED n40w086 1/3 arc-second 2013 1 x 1 degree IMG courtesy of the U.S. Geological Survey</Copyright>
+                    <Provider>usgs</Provider>
+                    <Size>346171</Size>
+                    <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+                </Source>
+                <!-- Notice here the empty type field. We know that the type is one form of XYZ but could not know if it is binary or ascii. 
+                     The empty type field gives a hint to the client application that some human intervention should be used or that
+                     attempts at reading coherent terrain data must be performed in all possible formats. -->
+                <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/13/XYZ/n46w092.zip#" type="">
+                    <Id>USGS:53174905e4b0cd4cd83cf45d</Id>
+                    <Copyright>USGS NED n40w086 1/3 arc-second 2013 1 x 1 degree IMG courtesy of the U.S. Geological Survey</Copyright>
+                    <Provider>usgs</Provider>
+                    <Size>346171</Size>
+                    <Metadata>https://www.sciencebase.gov/catalog/file/get/53174905e4b0cd4cd83cf45d?f=__disk__f0%2F61%2F87%2Ff06187cf3376a8bc80334aab019b14d74a4cda9f</Metadata>
+                </Source>
+
+            </Sources>
+        </TerrainData>
+    </TerrainGroup>
+</RealityDataPackage>

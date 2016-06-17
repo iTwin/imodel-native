@@ -18,6 +18,30 @@ namespace Bentley.RealityPlatform.RealityCrawlerDB
         {
             this.LayerNumber = 0;
             this.WMSData = new HashSet<WMSServerData>();
+
+            this.WMSId = -1;
+            this.Name = "";
+            this.Title = "";
+            this.Description = "";
+            this.Version = "";
+            this.ContactPerson = "";
+            this.ContactOrganization = "";
+            this.ContactPosition = "";
+            this.ContactAddressType = "";
+            this.ContactAddress = "";
+            this.ContactCity = "";
+            this.ContactStateOrProvince = "";
+            this.ContactPostCode = "";
+            this.ContactCountry = "";
+            this.ContactVoiceTelephone = "";
+            this.ContactFacsimileTelephone = "";
+            this.ContactElectronicMailAddress = "";
+            this.Fees = "";
+            this.AccessConstraints = "";
+            this.GetCapabilitiesData = "";
+            this.SupportedFormats = "";
+            this.GetMapURL = "";
+            this.GetMapURLQuery = "";
         }
     
         public int WMSId { get; set; }

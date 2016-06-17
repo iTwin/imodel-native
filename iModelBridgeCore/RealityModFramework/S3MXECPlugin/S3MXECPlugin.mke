@@ -1,0 +1,143 @@
+#--------------------------------------------------------------------------------------
+#      $Source: S3MXECPlugin/S3MXECPlugin.mke $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+%include  mdl.mki
+
+baseDir     = $(_MakeFilePath)
+
+%ifndef IMSOFF
+appName     = S3MXECPlugin
+%else
+appName     = S3MXECPluginC
+%endif
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+%ifdef IMSOFF
+    CSCOpt = \/define:IMSOFF
+%endif
+
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.Presentation3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.Persistence3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.ECObjects3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.PluginBuilder3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.ECSystem3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.Platform.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.General.1.0.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.AbstractUI3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.Exceptions.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.logging-2.0.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.logging.log4net-2.0.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Microsoft.IdentityModel.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Newtonsoft.Json.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.ComponentModel.DataAnnotations.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Core.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IdentityModel.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IO.Compression.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IO.Compression.FileSystem.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Net.Http.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Xml.Linq.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Data.DataSetExtensions.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\Microsoft.CSharp.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Data.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Xml.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)\Microsoft.Azure.KeyVault.Core.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)\Microsoft.Data.Edm.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)\Microsoft.Data.OData.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)\Microsoft.Data.Services.Client.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)\Microsoft.WindowsAzure.Storage.dll
+%include csrefapnd.mki
+
+
+#-----------------------------------------------------------------------
+# Define default assembly meta-data attributes
+#-----------------------------------------------------------------------
+%include $(SharedMki)stdversion.mki
+%ifndef IMSOFF
+ASSEMBLY_NAME = Bentley.S3MXECPlugin
+%else
+ASSEMBLY_NAME = Bentley.S3MXECPluginC
+%endif
+ASSEMBLY_PRODUCT_NAME   = $(PRODUCT_NAME)
+ASSEMBLY_FILE_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+ASSEMBLY_COMPANY_NAME   = $(companyName)
+ASSEMBLY_COPYRIGHT      = $(Bentley_Copyright)
+#  temporary fix for ecframework builds
+ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+%ifndef ASSEMBLY_TITLE
+  ASSEMBLY_TITLE  =% $(programName)
+%endif
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+ASSEMBLY_DLL = 1
+ASSEMBLY_MAKE_DOCS = 1
+%ifndef IMSOFF
+ASSEMBLY_TITLE = Bentley S3MXECPlugin
+ASSEMBLY_DESCRIPTION = Bentley S3MXECPlugin
+%else
+ASSEMBLY_TITLE = Bentley S3MXECPluginC
+ASSEMBLY_DESCRIPTION = Bentley S3MXECPluginC
+%endif
+
+ASSEMBLY_VERSION = 1.0.0.0
+ASSEMBLY_STRONGNAME = 1
+
+ASSEMBLY_SOURCE_LIST = \
+            $(baseDir)Source/S3MXECPlugin.cs \
+			$(baseDir)Source/S3MXPolicyHandler.cs \
+			$(baseDir)Source/S3MXAzureBlobApi.cs \
+			$(baseDir)Source/S3MXNavigationModule.cs \
+			$(baseDir)Source/Log.cs \
+
+ASSEMBLY_RES_TO_ADD_FILENAME = S3MXECPlugin.01.00.ecschema.xml
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)Schema/
+
+%include assemblyResourceAppend.mki
+%include mkcsharp.mki
+

@@ -10,20 +10,22 @@
     </Part>
     
     <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke">
-      <SubPart PartName="PublicAPI" />
-      <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
-      <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
-      <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
-      <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
-      <Bindings>
-          <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
-          <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
-      </Bindings>
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
+        <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
+            <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
+        </Bindings>
     </Part>
 
     <Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
-        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="BentleyCrawlerLibNet"/>
         <SubPart PartName="WMSCapabilitiesNET"/>
+        <SubPart PartName="CrawlerLib"/>
+        <SubPart PartName="CrawlerLibExample"/>
     </Part>
 
     <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke">
@@ -36,11 +38,18 @@
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)RealityPackage$(shlibext)</Assemblies>
         </Bindings>
     </Part>
+    
+    <Part Name="RealityServicesNet" BentleyBuildMakeFile="RealityServicesNet\RealityServicesNet.mke">
+        <SubPart PartName="RealityPlatform" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/RealityServicesNet$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
 
     <Part Name="CrawlerLib" BentleyBuildMakeFile="CrawlerLib\CrawlerLib.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
-        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <Bindings>
             <PublicAPI Domain="CrawlerLib" />
             <Libs>Delivery/$(stlibprefix)CrawlerLib$(stlibext)</Libs>
@@ -59,19 +68,29 @@
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
+		<SubPart PartName="RealityPackage"/>
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DownloadEngineExample.exe</Assemblies>
         </Bindings>
     </Part>
 
-    
-   
+    <Part Name="DataHandlerTool" BentleyBuildMakeFile="RealityPlatform\Example\DataHandlerTool.mke">
+        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DataHandlerTool.exe</Assemblies>
+        </Bindings>
+    </Part>
+	
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
+		<SubPart PartName="S3MXECPlugin"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
+        <SubPart PartName="DataHandlerTool" />
+        <SubPart PartName="RealityServicesNet"/>
         <!--<SubPart PartName="RealityCrawler"/>-->
     </Part>
 
@@ -94,6 +113,24 @@
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPluginC.dll</Assemblies>
         </Bindings>
     </Part>
+	
+	<Part Name="S3MXRequiredNuget" BentleyBuildMakeFile="S3MXECPlugin.prewire.mke">
+		<RequiredRepository>Microsoft.Azure.KeyVault.Core</RequiredRepository>
+		<RequiredRepository>Microsoft.Data.Edm</RequiredRepository>
+		<RequiredRepository>Microsoft.Data.OData</RequiredRepository>
+		<RequiredRepository>Microsoft.Data.Services.Client</RequiredRepository>
+		<RequiredRepository>System.Spatial</RequiredRepository>
+		<RequiredRepository>WindowsAzure.Storage</RequiredRepository>
+	</Part>
+	
+	<Part Name="S3MXECPlugin" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ECServices"      	PartFile="ecf"            Repository="ecf" />
+		<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
+		<SubPart PartName="S3MXRequiredNuget" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.S3MXECPlugin.dll</Assemblies>
+        </Bindings>
+    </Part>
     
     <Part Name="RealityDbECPluginCNuGet" BMakeFile="RealityDbECPlugin\NuGet\RealityDbECPluginC.NuGetPackage.mke">
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
@@ -104,7 +141,7 @@
     </Part>
     
     <Part Name="BentleyWMSPackageNet" BMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke" BMakeOptions="-dTranskitLink=1">
-        <SubPart PartName="TransKitToolsSub"    PartFile="TransKitTools" Repository="TransKitTools" />
+        <SubPart PartName="TranskitTools"    PartFile="TransKitTools" Repository="TransKitTools" />
         <SubPart PartName="RealityPackage"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="PublicAPI" />
@@ -119,6 +156,7 @@
       <RequiredRepository>bsitools-wix_3.10.2103.0</RequiredRepository>
       <RequiredRepository>Miscdev-Eula</RequiredRepository>
       <RequiredRepository>Mergemodule-Microsoft_VC_14.0</RequiredRepository>
+      <SubPart PartName="RealityDbECPlugin"/>
       <Bindings>
         <Files ProductDirectoryName="ApplicationInstallRoot" Required="true" IfNotPresent="Warn">Delivery/Setup_RealityDbECPlugin.msi</Files>
       </Bindings>
@@ -131,7 +169,13 @@
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/WMSCapabilitiesNET$(shlibext)</Assemblies>
         </Bindings>
-
+    </Part>
+    
+    <Part Name="BentleyCrawlerLibNet" BentleyBuildMakeFile="BentleyCrawlerLibNet\BentleyCrawlerLibNet.mke">
+        <SubPart PartName="CrawlerLib"/>
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/BentleyCrawlerLibNet$(shlibext)</Assemblies>
+        </Bindings>
     </Part>
 
   

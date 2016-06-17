@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/PageDownloader.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -31,11 +31,11 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 // by a download job. The page downloader contains various setting that control its operation
 // such as timeout delay, SSL validation and so on.
 //=======================================================================================
-class IPageDownloader
+struct IPageDownloader
     {
     public:
-    CRAWLERLIB_EXPORT virtual ~IPageDownloader() { }
-    virtual PageContentPtr DownloadPage(DownloadJobPtr const& p_DownloadJob) = 0;
+    CRAWLERLIB_EXPORT virtual ~IPageDownloader();
+    virtual PageContentPtr DownloadPage(DownloadJobPtr p_DownloadJob) = 0;
 
     virtual void SetUserAgent(WString const& agent) = 0;
     virtual void SetRequestTimeoutInSeconds(long timeout) = 0;
@@ -60,13 +60,13 @@ class IPageDownloader
 // on CURL download the page described in the download job provided at DownloadPage().
 // Various settings are taken into account. Refer to IPageDownloader for details.
 //=======================================================================================
-class PageDownloader : public IPageDownloader
+struct PageDownloader : public IPageDownloader
     {
     public:
     CRAWLERLIB_EXPORT PageDownloader(CrawlDelaySleeperPtr sleeper);
     CRAWLERLIB_EXPORT virtual ~PageDownloader();
 
-    CRAWLERLIB_EXPORT PageContentPtr DownloadPage(DownloadJobPtr const& p_DownloadJob) override;
+    CRAWLERLIB_EXPORT PageContentPtr DownloadPage(DownloadJobPtr p_DownloadJob) override;
 
     CRAWLERLIB_EXPORT void SetUserAgent(WString const& agent) override;
     CRAWLERLIB_EXPORT void SetRequestTimeoutInSeconds(long timeout) override;
@@ -86,7 +86,7 @@ class PageDownloader : public IPageDownloader
     void SetDataWritingSettings(WString* buffer, void* writeFunction);
     void SetResourceUrl(WString const& url);
     void DownloadContentType(WString& outputContentType);
-    void WaitToRespectCrawlDelay(DownloadJobPtr p_DownloadJob);
+    void WaitToRespectCrawlDelay(DownloadJobCR p_DownloadJob);
 
     static size_t CurlWriteCallback(void *contents, size_t size, size_t nmemb, void *userp);
     static size_t CurlDiscardDataCallback(void *contents, size_t size, size_t nmemb, void *userp);
@@ -97,7 +97,7 @@ class PageDownloader : public IPageDownloader
     bool m_ValidateContentType;
     bvector<std::wregex> m_ListOfValidContentTypes;
 
-    PageParser m_Parser;
+    PageParserPtr m_pParser;
     CrawlDelaySleeperPtr m_pSleeper;
 
     std::atomic<bool> m_AbortDownload;

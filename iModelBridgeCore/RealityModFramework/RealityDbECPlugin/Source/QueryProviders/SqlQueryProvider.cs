@@ -99,17 +99,13 @@ namespace IndexECPlugin.Source.QueryProviders
                     {
                     throw new UserFriendlyException("The polygon format is not valid.");
                     }
-                int polygonSRID;
-                if ( !int.TryParse(model.coordinate_system, out polygonSRID) )
-                    {
-                    throw new UserFriendlyException("The polygon format is not valid.");
-                    }
+
                 string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
 
                 m_polygonDescriptor = new PolygonDescriptor
                 {
                     WKT = polygonWKT,
-                    SRID = polygonSRID
+                    SRID = model.coordinate_system
                 };
 
 
@@ -118,11 +114,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
         public IEnumerable<IECInstance> CreateInstanceList ()
             {
-            //In the future, it might be a good idea to use a DbConnectionFactory instead of using this connection directly
-
             Log.Logger.info("Fetching Index results for query " + m_query.ID);
-
-            List<IECInstance> instanceList = new List<IECInstance>();
 
             string sqlCommandString;
             string sqlCountString;
@@ -131,138 +123,24 @@ namespace IndexECPlugin.Source.QueryProviders
 
             DataReadingHelper dataReadingHelper;
 
-            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+            IParamNameValueMap paramNameValueMap;
 
             IECClass ecClass = m_query.SearchClasses.First().Class;
 
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommandString, out sqlCountString, out dataReadingHelper, out paramNameValueMap);
 
-            m_dbConnection.Open();
-
-            using ( IDbCommand dbCommand = m_dbConnection.CreateCommand() )
+            IEnumerable<IECProperty> propertyList;
+            if ( m_query.SelectClause.SelectAllProperties )
                 {
-
-                dbCommand.CommandText = sqlCommandString;
-                dbCommand.CommandType = CommandType.Text;
-                dbCommand.Connection = m_dbConnection;
-
-                foreach ( KeyValuePair<string, Tuple<string, DbType>> paramNameValue in paramNameValueMap )
-                    {
-                    IDbDataParameter param = dbCommand.CreateParameter();
-                    param.DbType = paramNameValue.Value.Item2;
-                    param.ParameterName = paramNameValue.Key;
-                    param.Value = paramNameValue.Value.Item1;
-                    dbCommand.Parameters.Add(param);
-                    }
-
-                using ( IDataReader reader = dbCommand.ExecuteReader() )
-                    {
-
-
-                    IEnumerable<IECProperty> propertyList;
-                    if ( m_query.SelectClause.SelectAllProperties )
-                        {
-                        propertyList = ecClass;
-                        }
-                    else
-                        {
-                        propertyList = m_query.SelectClause.SelectedProperties;
-                        }
-
-                    while ( reader.Read() )
-                        {
-                        IECInstance instance = ecClass.CreateInstance();
-                        int? streamDataColumn = dataReadingHelper.getStreamDataColumn();
-                        if ( streamDataColumn.HasValue )
-                            {
-                            Byte[] byteArray = reader[streamDataColumn.Value] as byte[];
-
-                            MemoryStream mStream;
-
-                            if ( byteArray != null )
-                                {
-                                mStream = new MemoryStream(byteArray);
-                                }
-                            else
-                                {
-                                mStream = new MemoryStream();
-                                Assembly.GetExecutingAssembly().GetManifestResourceStream("NoImage.jpg").CopyTo(mStream);
-                                }
-                                StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, "Thumbnail", mStream.Length, DateTime.UtcNow);
-                                StreamBackedDescriptorAccessor.SetIn(instance, desc);
-                            }
-
-                        int? relatedInstanceIdColumn = dataReadingHelper.getRelatedInstanceIdColumn();
-
-                        if ( relatedInstanceIdColumn.HasValue )
-                            {
-                            string relatedInstanceId = reader[relatedInstanceIdColumn.Value] as string;
-                            instance.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("relInstID", relatedInstanceId));
-                            }
-
-                        foreach ( IECProperty prop in propertyList )
-                            {
-                            if ( ecClass.Contains(prop.Name) )
-                                {
-                                IECPropertyValue instancePropertyValue = instance[prop.Name];
-                                IECInstance dbColumn = prop.GetCustomAttributes("DBColumn");
-
-                                if ( dbColumn == null )
-                                    {
-                                    //This is not a column in the sql table. We skip it...
-                                    continue;
-                                    }
-
-                                int? columnNumber = dataReadingHelper.getInstanceDataColumn(prop);
-
-                                if ( !columnNumber.HasValue )
-                                    {
-                                    throw new ProgrammerException("There should have been a column number.");
-                                    }
-
-                                var isSpatial = dbColumn["IsSpatial"];
-                                if ( isSpatial.IsNull || isSpatial.StringValue == "false" )
-                                    {
-
-                                    if ( !reader.IsDBNull(columnNumber.Value) )
-                                        {
-                                        ECToSQLMap.SQLReaderToECProperty(instancePropertyValue, reader, columnNumber.Value);
-                                        }
-                                    }
-                                else
-                                    {
-                                    if ( !ECTypeHelper.IsString(instancePropertyValue.Type) )
-                                        {
-                                        throw new ProgrammerException(String.Format("The property {0} tagged as spatial must be declared as a string in the ECSchema.", prop.Name));
-                                        }
-                                    else
-                                        {
-                                        string WKTString = reader.GetString(columnNumber.Value);
-
-                                        //DbGeometry geom = DbGeometry.FromText(WKTString);
-
-
-                                        columnNumber++;
-
-                                        //int SRID = reader.GetInt32(i);
-
-                                        //instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractPointsLongLat(geom) + ", \"coordinate_system\" : \"" + reader.GetInt32(i) + "\" }";
-                                        instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractOuterShellPointsFromWKTPolygon(WKTString) + ", \"coordinate_system\" : \"" + reader.GetInt32(columnNumber.Value) + "\" }";
-                                        }
-                                    }
-                                }
-                            }
-
-
-                        string IDProperty = ecClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
-                        instance.InstanceId = instance.GetInstanceStringValue(IDProperty, "");
-
-                        instanceList.Add(instance);
-
-                        }
-                    }
+                propertyList = ecClass;
                 }
-            m_dbConnection.Close();
+            else
+                {
+                propertyList = m_query.SelectClause.SelectedProperties;
+                }
+
+            List<IECInstance> instanceList = SqlQueryHelpers.QueryDbForInstances( sqlCommandString, dataReadingHelper, paramNameValueMap, ecClass, propertyList, m_dbConnection);
+            
 
             //Creation of related instances
             //foreach ( var instance in instanceList )
@@ -317,7 +195,7 @@ namespace IndexECPlugin.Source.QueryProviders
                             relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
                             }
                         //relationshipInst.InstanceId = "test";
-                        instance.GetRelationshipInstances().Add(relationshipInst);
+                        //instance.GetRelationshipInstances().Add(relationshipInst);
                         }
                     }
                 }

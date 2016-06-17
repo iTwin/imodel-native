@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace IndexECPlugin.Source.Helpers
     {
@@ -14,99 +16,66 @@ namespace IndexECPlugin.Source.Helpers
         {
         public static String CreateWktPolygonString (IEnumerable<double[]> enumerationOfPoints)
             {
-            StringWriter wktPolygon = new StringWriter(new CultureInfo("en-us"));
-            wktPolygon.Write("POLYGON((");
-            int numberOfPoints = enumerationOfPoints.Count();
-
-            if ( numberOfPoints < 3 )
+            using ( StringWriter wktPolygon = new StringWriter(new CultureInfo("en-us")) )
                 {
-                throw new UserFriendlyException("The polygon format is not valid.");
-                }
+                wktPolygon.Write("POLYGON((");
+                int numberOfPoints = enumerationOfPoints.Count();
 
-            for ( int i = 0; i < numberOfPoints; i++ )
-                {
-                wktPolygon.Write("{0} {1}", enumerationOfPoints.ElementAt(i)[0], enumerationOfPoints.ElementAt(i)[1]);
-                if ( i != numberOfPoints - 1 )
+                if ( numberOfPoints < 3 )
                     {
-                    wktPolygon.Write(", ");
+                    throw new UserFriendlyException("The polygon format is not valid.");
                     }
-                else
+
+                for ( int i = 0; i < numberOfPoints; i++ )
                     {
-                    if ( (enumerationOfPoints.ElementAt(i)[0] != enumerationOfPoints.ElementAt(0)[0]) ||
-                        (enumerationOfPoints.ElementAt(i)[1] != enumerationOfPoints.ElementAt(0)[1]) )
+                    wktPolygon.Write("{0} {1}", enumerationOfPoints.ElementAt(i)[0], enumerationOfPoints.ElementAt(i)[1]);
+                    if ( i != numberOfPoints - 1 )
                         {
-                        wktPolygon.Write(", {0} {1}))", enumerationOfPoints.ElementAt(0)[0], enumerationOfPoints.ElementAt(0)[1]);
+                        wktPolygon.Write(", ");
                         }
                     else
                         {
-                        wktPolygon.Write("))");
+                        if ( (enumerationOfPoints.ElementAt(i)[0] != enumerationOfPoints.ElementAt(0)[0]) ||
+                            (enumerationOfPoints.ElementAt(i)[1] != enumerationOfPoints.ElementAt(0)[1]) )
+                            {
+                            wktPolygon.Write(", {0} {1}))", enumerationOfPoints.ElementAt(0)[0], enumerationOfPoints.ElementAt(0)[1]);
+                            }
+                        else
+                            {
+                            wktPolygon.Write("))");
+                            }
                         }
                     }
+                return wktPolygon.ToString();
                 }
-            return wktPolygon.ToString();
             }
 
-        //public static string ExtractPointsLatLong(DbGeometry geom)
-        //{
-        //    string jsonListOfPoints = "[";
+        public static string CreateSTGeomFromTextStringFromJson (string jsonPolygon)
+            {
+            using ( StringWriter wktPolygon = new StringWriter(new CultureInfo("en-us")) )
+                {
 
-        //    if (geom.ExteriorRing == null)
-        //    {
-        //        for (int j = 1; j <= geom.Envelope.PointCount.Value; j++)
-        //        {
-        //            if (j != 1)
-        //            {
-        //                jsonListOfPoints += ",";
-        //            }
-        //            jsonListOfPoints += "[" + geom.Envelope.PointAt(j).YCoordinate.Value + "," + geom.Envelope.PointAt(j).XCoordinate.Value + "]";
-        //        }
-        //    }
-        //    else
-        //    {
-        //        for (int j = 1; j <= geom.ExteriorRing.PointCount.Value; j++)
-        //        {
-        //            if (j != 1)
-        //            {
-        //                jsonListOfPoints += ",";
-        //            }
-        //            jsonListOfPoints += "[" + geom.ExteriorRing.PointAt(j).YCoordinate.Value + "," + geom.ExteriorRing.PointAt(j).XCoordinate.Value + "]";
-        //        }
-        //    }
+                wktPolygon.Write("geometry::STGeomFromText('");
 
-        //    jsonListOfPoints += "]";
-        //    return jsonListOfPoints;
-        //}
+                PolygonModel model = CreatePolygonModelFromJson(jsonPolygon);
 
-        //public static string ExtractPointsLongLat(DbGeometry geom)
-        //{
-        //    string jsonListOfPoints = "[";
+                wktPolygon.Write(CreateWktPolygonString(model.points));
+                wktPolygon.Write("'," + model.coordinate_system + ")");
+                return wktPolygon.ToString();
+                }
+            }
 
-        //    if (geom.ExteriorRing == null)
-        //    {
-        //        for (int j = 1; j <= geom.Envelope.PointCount.Value; j++)
-        //        {
-        //            if (j != 1)
-        //            {
-        //                jsonListOfPoints += ",";
-        //            }
-        //            jsonListOfPoints += "[" + geom.Envelope.PointAt(j).XCoordinate.Value + "," + geom.Envelope.PointAt(j).YCoordinate.Value + "]";
-        //        }
-        //    }
-        //    else
-        //    {
-        //        for (int j = 1; j <= geom.ExteriorRing.PointCount.Value; j++)
-        //        {
-        //            if (j != 1)
-        //            {
-        //                jsonListOfPoints += ",";
-        //            }
-        //            jsonListOfPoints += "[" + geom.ExteriorRing.PointAt(j).XCoordinate.Value + "," + geom.ExteriorRing.PointAt(j).YCoordinate.Value + "]";
-        //        }
-        //    }
-
-        //    jsonListOfPoints += "]";
-        //    return jsonListOfPoints;
-        //}
+        public static PolygonModel CreatePolygonModelFromJson(string jsonPolygon)
+            {
+            try
+                {
+                return JsonConvert.DeserializeObject<PolygonModel>(jsonPolygon);
+                }
+            catch ( JsonSerializationException )
+                {
+                throw new UserFriendlyException("The polygon format is not valid.");
+                }
+            }
 
         public static string ExtractOuterShellPointsFromWKTPolygon (string polygon)
             {
@@ -241,5 +210,7 @@ namespace IndexECPlugin.Source.Helpers
                 }
             return 30.87 * Math.Cos(lat * Math.PI / 180) * arcsec;
             }
+
+
         }
     }

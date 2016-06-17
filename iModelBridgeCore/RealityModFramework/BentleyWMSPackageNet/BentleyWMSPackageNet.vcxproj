@@ -108,7 +108,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>RealityPlatform.lib;BentleyAllocator.lib;Bentley.lib;RealityPackage.lib;BentleyGeom.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RealityPlatform.lib;Bentley.lib;RealityPackage.lib;BentleyGeom.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>D:\BSI\DgnDb06\out\Winx64\BuildContexts\RealityModFramework\SubParts\Libs\;D:\BSI\DgnDb06\out\Winx64\BuildContexts\RealityModFramework\Delivery\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -133,7 +133,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>RealityPlatform.lib;BentleyAllocator.lib;Bentley.lib;RealityPackage.lib;BentleyGeom.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RealityPlatform.lib;Bentley.lib;RealityPackage.lib;BentleyGeom.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>D:\BSI\DgnDb06\out\Winx64\BuildContexts\RealityModFramework\SubParts\Libs\;D:\BSI\DgnDb06\out\Winx64\BuildContexts\RealityModFramework\Delivery\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

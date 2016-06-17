@@ -2,15 +2,14 @@
 |
 |     $Source: RealityPlatform/PointCloudVortex.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
 
 #include "PointCloudVortex.h"
 
-#include <PointoolsVortexAPI_DLL/vortexLicense.c>
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp>
+#include <Vortex/VortexLicenseCode.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -23,10 +22,8 @@ void PointCloudVortex::Initialize()
     clock_t processStartTime = clock();  
     PointCloudPreviewHandlerLogger::GetLogger()->messagev (LOG_INFO, L"In Initialize");
 #endif
-
-    LoadPointoolsDLL ("PointoolsVortexAPI.dll");
-
-    ptInitialize(vortexLicCode);
+    if (!ptIsInitialized())
+        ptInitialize(BentleyInternal_vortexLicCode);
 
 #ifdef DEBUG_PH
     clock_t processEndTime = clock();  
@@ -775,5 +772,5 @@ PtHandle PointCloudVortex::GetMetaDataHandle(PtHandle cloudHandle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PointCloudVortex::GetMetaTag(PtHandle metadataHandle, WCharCP tagName, WCharP value)
     {
-    return ptGetMetaTag(metadataHandle, tagName, value);
+    return ptGetMetaTag(metadataHandle, tagName, value) == PTV_SUCCESS;
     }

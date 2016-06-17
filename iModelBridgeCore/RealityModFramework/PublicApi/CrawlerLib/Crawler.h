@@ -22,8 +22,8 @@
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
-class IPageDownloader;
-class UrlQueue;
+struct IPageDownloader;
+struct UrlQueue;
 
 //=======================================================================================
 //! @bsiclass
@@ -31,7 +31,7 @@ class UrlQueue;
 // The crawler observer that must inherit from the present one must implement
 // a behavior for the OnPageCrawled() method.
 //=======================================================================================
-class ICrawlerObserver
+struct ICrawlerObserver
     {
     public:
     virtual ~ICrawlerObserver() {}
@@ -56,6 +56,7 @@ class ICrawlerObserver
 struct Crawler : public RefCountedBase
     {
     public:
+    virtual ~Crawler();
 
     //---------------------------------------------------------------------------------------
     // Static Create
@@ -70,7 +71,7 @@ struct Crawler : public RefCountedBase
     // @bsimethod                                                 Alain.Robert   09/15
     //+---------------+---------------+---------------+---------------+---------------+------
     CRAWLERLIB_EXPORT static CrawlerPtr Create(size_t maxNumberOfSimultaneousDownloads = 8);
-    CRAWLERLIB_EXPORT static CrawlerPtr Create(UrlQueue* queue, bvector<IPageDownloader*> const& downloaders);
+    CRAWLERLIB_EXPORT static CrawlerPtr Create(UrlQueuePtr queue, bvector<IPageDownloader*> const& downloaders);
 
     //---------------------------------------------------------------------------------------
     // Starts the crawling process according to the crawler settings set using the various
@@ -81,7 +82,7 @@ struct Crawler : public RefCountedBase
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
-    CRAWLERLIB_EXPORT StatusInt Crawl(UrlPtr const& seed);
+    CRAWLERLIB_EXPORT StatusInt Crawl(UrlCR seed);
 
     //---------------------------------------------------------------------------------------
     // This method can be called from another thread than the one that has called the Crawl
@@ -127,7 +128,7 @@ struct Crawler : public RefCountedBase
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
-    CRAWLERLIB_EXPORT void SetObserver(ICrawlerObserver* observer);
+    CRAWLERLIB_EXPORT void SetObserver(ICrawlerObserver* pObserver);
 
     //---------------------------------------------------------------------------------------
     // Sets the maximum number of links to crawl. After this limit has been reached the crawling
@@ -292,7 +293,6 @@ struct Crawler : public RefCountedBase
     //+---------------+---------------+---------------+---------------+---------------+------
     CRAWLERLIB_EXPORT void SetCrawlLinksFromPagesWithNoFollowMetaTag(bool crawlLinks);
 
-
     private:
 
     //---------------------------------------------------------------------------------------
@@ -300,9 +300,9 @@ struct Crawler : public RefCountedBase
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
-    Crawler(UrlQueue* queue, bvector<IPageDownloader*> const& downloaders);
+    Crawler(UrlQueuePtr queue, bvector<IPageDownloader*> const& downloaders);
     Crawler() = delete;
-    virtual ~Crawler();
+    
 
 #ifndef _M_CEE
     bool CanStartDownload(std::future<PageContentPtr> const& asyncDownloadThread) const;
@@ -314,7 +314,7 @@ struct Crawler : public RefCountedBase
 
     bool IsStopped() const;
 
-    UrlQueue* m_pQueue;         // List of urls to explore.
+    UrlQueuePtr m_pQueue;         // List of urls to explore.
 
     bvector<IPageDownloader*> m_pDownloaders;
 

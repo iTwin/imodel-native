@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RealityDataPackage xmlns="http://www.bentley.com/RealityDataServer/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\RealityPackage.1.0.xsd" version="1.0">
+  <Name>c41c8277-156e-4704-a300-51201e4382d3</Name>
+  <CreationDate>2016-03-08T18:54:00.369Z</CreationDate>
+  <BoundingPolygon>-77.997007 35.853857 -77.959285 35.853857 -77.959285 35.820493 -77.997007 35.820493 -77.997007 35.853857</BoundingPolygon>
+  <ImageryGroup>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE295690_201302_0x1500m_CL_1.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Nash County, North Carolina: 18STE295690_201302_0x1500m_CL_1 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>5645b14ee4b0e2669b30d5b7</Id>
+        <Provider>usgs</Provider>
+        <Filesize>61819</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/5645b14ee4b0e2669b30d5b7?f=__disk__08%2Ffa%2Ffd%2F08fafd128408f2d1ef4489990fd644bcbe6c9200</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE310690_201302_0x1500m_CL_1.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Nash County, North Carolina: 18STE310690_201302_0x1500m_CL_1 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>5645b155e4b0e2669b30d669</Id>
+        <Provider>usgs</Provider>
+        <Filesize>60497</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/5645b155e4b0e2669b30d669?f=__disk__d0%2F5f%2Fdc%2Fd05fdc66b1d5aa28fdcdecd7b25fc011890be80b</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE295705_201302_0x1500m_CL_1.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Nash County, North Carolina: 18STE295705_201302_0x1500m_CL_1 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>5645b14ee4b0e2669b30d5bb</Id>
+        <Provider>usgs</Provider>
+        <Filesize>63768</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/5645b14ee4b0e2669b30d5bb?f=__disk__c3%2Faa%2Fe2%2Fc3aae20cdaa08f4a0f643774c0d8e37c76b1fd3f</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE310705_201302_0x1500m_CL_1.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Nash County, North Carolina: 18STE310705_201302_0x1500m_CL_1 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>5645b156e4b0e2669b30d672</Id>
+        <Provider>usgs</Provider>
+        <Filesize>56605</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/5645b156e4b0e2669b30d672?f=__disk__34%2Fbb%2F1f%2F34bb1fc0ae64b5745b30599466eb404eac25dca6</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=17SQV710690_201302_0x1500m_CL_1.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Nash County, North Carolina: 17SQV710690_201302_0x1500m_CL_1 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>5645b14ae4b0e2669b30d57a</Id>
+        <Provider>usgs</Provider>
+        <Filesize>63813</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/5645b14ae4b0e2669b30d57a?f=__disk__cc%2Ff5%2F80%2Fccf580d7b7394bf155a9418daf6c3435f491d27e</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE310675_201302_0x1500m_CL_1.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Nash County, North Carolina: 18STE310675_201302_0x1500m_CL_1 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>5645b155e4b0e2669b30d65c</Id>
+        <Provider>usgs</Provider>
+        <Filesize>63888</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/5645b155e4b0e2669b30d65c?f=__disk__22%2F91%2F79%2F22917912467b94277b0caf860abbc0e82ea63bd1</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE295675_201302_0x1500m_CL_2.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Wilson County, North Carolina: 18STE295675_201302_0x1500m_CL_2 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>56458c0de4b0e2669b2e3c04</Id>
+        <Provider>usgs</Provider>
+        <Filesize>61312</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/56458c0de4b0e2669b2e3c04?f=__disk__fa%2F01%2Fc6%2Ffa01c6f4e0d8d8ad72f429fe6381176be38c73ba</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=17SQV710675_201302_0x1500m_CL_2.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Wilson County, North Carolina: 17SQV710675_201302_0x1500m_CL_2 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>56458c05e4b0e2669b2e3b58</Id>
+        <Provider>usgs</Provider>
+        <Filesize>61661</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/56458c05e4b0e2669b2e3b58?f=__disk__ec%2Ff9%2F25%2Fecf925a13d4ebe102c7847589e973a7af407c9e7</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE280690_201302_0x1500m_CL_1.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Nash County, North Carolina: 18STE280690_201302_0x1500m_CL_1 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>5645b14ae4b0e2669b30d580</Id>
+        <Provider>usgs</Provider>
+        <Filesize>63488</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/5645b14ae4b0e2669b30d580?f=__disk__db%2F0b%2F56%2Fdb0b5666b3c61bc416dff825b5467b930e05f3bc</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE325705_201302_0x1500m_CL_1.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Nash County, North Carolina: 18STE325705_201302_0x1500m_CL_1 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>5645b16de4b0e2669b30d7fc</Id>
+        <Provider>usgs</Provider>
+        <Filesize>59372</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/5645b16de4b0e2669b30d7fc?f=__disk__61%2F34%2F66%2F6134669bd7cb98dd92a4dd7f4e7047a752127073</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE325690_201302_0x1500m_CL_2.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Wilson County, North Carolina: 18STE325690_201302_0x1500m_CL_2 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>56458c2ae4b0e2669b2e3eb7</Id>
+        <Provider>usgs</Provider>
+        <Filesize>63819</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/56458c2ae4b0e2669b2e3eb7?f=__disk__ea%2F7e%2F83%2Fea7e83faf17a17aa680ac9e5917f8388c7a767df</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE280705_201302_0x1500m_CL_1.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Nash County, North Carolina: 18STE280705_201302_0x1500m_CL_1 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>5645b14be4b0e2669b30d582</Id>
+        <Provider>usgs</Provider>
+        <Filesize>63763</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/5645b14be4b0e2669b30d582?f=__disk__83%2Fd0%2F87%2F83d087380c4274252058e98bdf00bfa18075afe9</Metadata>
+      </Source>
+    </ImageryData>
+    <ImageryData>
+      <Source uri="http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE=ortho&amp;ORIG=SBDDG&amp;FNAME=18STE325675_201302_0x1500m_CL_1.zip" type="JPEG2000">
+        <Copyright>USGS High Resolution Orthoimagery for Nash County, North Carolina: 18STE325675_201302_0x1500m_CL_1 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>5645b16de4b0e2669b30d7ea</Id>
+        <Provider>usgs</Provider>
+        <Filesize>68037</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/5645b16de4b0e2669b30d7ea?f=__disk__0d%2F88%2F1b%2F0d881b1deb7d6375f7ceb6ad37e50bdeaf34545c</Metadata>
+      </Source>
+    </ImageryData>
+  </ImageryGroup>
+  <ModelGroup>
+    <ModelData>
+      <OsmSource uri="http://www.openstreetmap.org/api/0.6/map?bbox=-77.997007,35.820493,2.22507385851e-308,35.853857" type="osm">
+        <Copyright>© OpenStreetMap contributors</Copyright>
+        <OsmResource>
+          <AlternateUrl>
+            <Url>http://www.overpass-api.de/api/xapi_meta?*[bbox=-77.997007,35.820493,2.22507385851e-308,35.853857]</Url>
+            <Url>http://overpass.osm.rambler.ru/cgi/xapi_meta?*[bbox=-77.997007,35.820493,2.22507385851e-308,35.853857]</Url>
+          </AlternateUrl>
+        </OsmResource>
+      </OsmSource>
+    </ModelData>
+  </ModelGroup>
+  <TerrainGroup>
+    <TerrainData>
+      <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n36x00_w078x00_nc_statewide_2003.zip" type="IMG">
+        <Copyright>USGS NED ned19_n36x00_w078x00_nc_statewide_2003 1/9 arc-second 2012 15 x 15 minute IMG courtesy of the U.S. Geological Survey</Copyright>
+        <Id>53174d21e4b0cd4cd83c3d09</Id>
+        <Provider>usgs</Provider>
+        <Filesize>198984</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/53174d21e4b0cd4cd83c3d09?f=__disk__27%2Fac%2F01%2F27ac01547138279ec443021fa8bf0825ff165a86</Metadata>
+      </Source>
+    </TerrainData>
+  </TerrainGroup>
+</RealityDataPackage>

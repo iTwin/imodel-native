@@ -32,6 +32,7 @@ USING_NAMESPACE_IMAGEPP
 #include <GeoCoord/BaseGeoCoord.h>
 #include <GeoCoord/basegeocoordapi.h>
 
+#include <Vortex/VortexAPI.h>
 
 
 #ifdef _MANAGED

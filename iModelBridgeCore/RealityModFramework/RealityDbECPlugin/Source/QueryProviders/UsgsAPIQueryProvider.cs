@@ -16,6 +16,9 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Data;
+using Bentley.ECSystem.Configuration;
+using Bentley.EC.PluginBuilder.Modules;
 
 
 namespace IndexECPlugin.Source.QueryProviders
@@ -29,9 +32,12 @@ namespace IndexECPlugin.Source.QueryProviders
         ECQuery m_query;
         ECQuerySettings m_querySettings;
         IUSGSDataFetcher m_usgsDataFetcher;
+        IInstanceCacheManager m_instanceCacheManager;
+        IECSchema m_schema;
 
         Tuple<string, JObject> jsonCache;
 
+        Dictionary<IECClass, List<IECInstance>> m_storageForCaching;
         Dictionary<string, IECInstance> m_storedParents;
 
         /// <summary>
@@ -40,11 +46,24 @@ namespace IndexECPlugin.Source.QueryProviders
         /// <param name="query">The ECQuery received by the plugin</param>
         /// <param name="querySettings">The ECQuerySettings received by the plugin</param>
         /// <param name="usgsDataFetcher">The usgsDataFetcher that will be used to query USGS</param>
-        public UsgsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, IUSGSDataFetcher usgsDataFetcher)
+        /// <param name="cacheManager">The cache manager that will be used to access the cache in the database</param>
+        /// <param name="schema">The schema of the ECPlugin</param>
+        public UsgsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, IUSGSDataFetcher usgsDataFetcher, IInstanceCacheManager cacheManager, IECSchema schema)
             {
             m_query = query;
             m_querySettings = querySettings;
             m_usgsDataFetcher = usgsDataFetcher;
+            m_schema = schema;
+
+            m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
+
+            int daysCacheIsValid;
+
+            if( !Int32.TryParse(ConfigurationRoot.GetAppSetting("RECPDaysCacheIsValid"), out daysCacheIsValid) )
+                {
+                daysCacheIsValid = 10;
+                }
+            m_instanceCacheManager = cacheManager;
             }
 
         /// <summary>
@@ -52,11 +71,24 @@ namespace IndexECPlugin.Source.QueryProviders
         /// </summary>
         /// <param name="query">The ECQuery received by the plugin</param>
         /// <param name="querySettings">The ECQuerySettings received by the plugin</param>
-        public UsgsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings)
+        /// <param name="dbConnection">The dbConnection that will be used to access the cache in the database</param>
+        /// <param name="schemaModule">The schema of the ECPlugin</param>
+        public UsgsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, IDbConnection dbConnection, IECSchema schemaModule)
             {
             m_query = query;
             m_querySettings = querySettings;
             m_usgsDataFetcher = new USGSDataFetcher(query);
+            m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
+            m_schema = schemaModule;
+
+            int daysCacheIsValid;
+
+            if( !Int32.TryParse(ConfigurationRoot.GetAppSetting("RECPDaysCacheIsValid"), out daysCacheIsValid) )
+                {
+                daysCacheIsValid = 10;
+                }
+            m_instanceCacheManager = new InstanceCacheManager(DataSource.USGS, daysCacheIsValid, dbConnection, querySettings);
+
             }
 
         /// <summary>
@@ -71,6 +103,7 @@ namespace IndexECPlugin.Source.QueryProviders
             Log.Logger.info("Fetching USGS results for query " + m_query.ID);
 
             List<IECInstance> instanceList = null;
+            //InstanceCacheManager instanceCacheManager = new InstanceCacheManager();
 
             IECClass ecClass = m_query.SearchClasses.First().Class;
 
@@ -80,7 +113,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 //We'll take the first ECInstanceIdExpression criterion. Normally, there is only one, non embedded criterion of this sort when queried by WSG.
                 if ( m_query.WhereClause[i] is ECInstanceIdExpression )
                     {
-                    instanceList = new List<IECInstance>();
+                    //instanceList = new List<IECInstance>();
 
                     ECInstanceIdExpression instanceIDExpression = (ECInstanceIdExpression) m_query.WhereClause[i];
 
@@ -89,17 +122,9 @@ namespace IndexECPlugin.Source.QueryProviders
                         throw new UserFriendlyException("Please specify at least one ID in this type of where clause");
                         }
 
-                    //We create the requested instances
-                    foreach ( string sourceID in instanceIDExpression.InstanceIdSet )
-                        {
-                        IECInstance instance = CreateInstanceFromID(ecClass, sourceID);
-                        CreateRelatedInstance(instance, m_query.SelectClause.SelectedRelatedInstances);
-                        if ( instance != null )
-                            {
-                            instanceList.Add(instance);
-                            }
+                    //We search in the cache for the instances of asked Ids
 
-                        }
+                    instanceList = CreateInstancesFromInstanceIdList(instanceIDExpression.InstanceIdSet, ecClass, m_query.SelectClause);
 
                     //return instanceList;
                     }
@@ -110,7 +135,6 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 // If we're here, that's because there was a polygon parameter in the extended data
                 //TODO : Implement this verification
-
                 switch ( ecClass.Name )
                     {
                     //case "USGSEntity": //To be removed
@@ -131,50 +155,331 @@ namespace IndexECPlugin.Source.QueryProviders
             //    CreateRelatedInstance(instance, m_query.SelectClause.SelectedRelatedInstances);
             //    }
 
+            LaunchCaching();
+
             return instanceList;
 
             }
 
-        private void CreateRelatedInstance (IECInstance instance, List<RelatedInstanceSelectCriteria> relatedCriteriaList)
+        private List<IECInstance> CreateInstancesFromInstanceIdList(IEnumerable<string> instanceIdSet, IECClass ecClass, SelectCriteria selectClause)
+            //    {
+            List<IECInstance> instancesRequestingParent = null;
+            List<IECInstance> instanceList = new List<IECInstance>();
+            List<IECInstance> cachedInstances = m_instanceCacheManager.QueryInstancesFromCache(instanceIdSet, ecClass, GetCacheBaseClass(ecClass), selectClause);
+            CompleteInstances(cachedInstances, ecClass);
+                CreateRelatedInstance(instance, m_query.SelectClause.SelectedRelatedInstances);
+            RelatedInstanceSelectCriteria parentCrit = null;
+                    //We create the requested instances that were not in the cache
+                    foreach ( string sourceID in instanceIdSet )
+                        {
+                        IECInstance instance = cachedInstances.FirstOrDefault(inst => inst.InstanceId == sourceID);
+                        if ( instance == null || (bool) instance.ExtendedData["Complete"] == false )
+                            {
+                            try
+                                {
+                                instance = CreateInstanceFromID(ecClass, sourceID);
+            //    }
+                            catch ( EnvironmentalException )
+                                {
+                                if ( instance == null )
+                                    {
+                                    //We had nothing in the cache and USGS returned an error. We cannot continue
+                                    throw;
+                                    }
+                                }
+                            }
+                        InstanceCritTuple parentRequestingBundle = CreateRelatedInstance(instance, selectClause.SelectedRelatedInstances);
+                        if(parentRequestingBundle != null)
+                            {
+                            if(instancesRequestingParent == null)
+                                {
+                                instancesRequestingParent = new List<IECInstance>();
+                                }
+                            instancesRequestingParent.Add(parentRequestingBundle.Instance);
+
+                            if(parentCrit == null)
+                                {
+                                parentCrit = parentRequestingBundle.ParentRelatedCriteria;
+                                }
+                            else
+                                {
+                                if(parentCrit != parentRequestingBundle.ParentRelatedCriteria)
+                                    {
+                                    throw new UserFriendlyException();
+                                    }
+                                }
+                            }
+
+                        if ( instance != null )
+                            {
+                            instanceList.Add(instance);
+                            }
+
+                        }
+                    //var parentCrit = selectClause.SelectedRelatedInstances.FirstOrDefault(crit => (crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren" ||
+                    //                                                                                       crit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase")
+                    //                 && (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward));
+                    if(parentCrit != null)
+                        {
+                        CreateParentRelationship(instancesRequestingParent, parentCrit, parentCrit.RelatedClassSpecifier.RelatedClass);
+                        }
+                    return instanceList;
+            }
+
+        /// <summary>
+        /// This method completes the cached instances fields that are not in the cache tables in the database
+        /// </summary>
+        /// <param name="cachedInstances">The cached instances</param>
+        /// <param name="ecClass">The class of the instances</param>
+        private void CompleteInstances (List<IECInstance> cachedInstances, IECClass ecClass)
+            {
+            switch ( ecClass.Name )
+                {
+                case "SpatialEntityBase":
+                case "SpatialEntityDataset":
+                case "SpatialEntity":
+                        {
+                        foreach (IECInstance inst in cachedInstances)
+                            {
+                            inst["DataProvider"].StringValue = "USGS";
+                            inst["DataProviderName"].StringValue = "United States Geological Survey";
+                            }
+                        break;
+                        }
+                case "SpatialEntityWithDetailsView":
+                        {
+                        foreach ( IECInstance inst in cachedInstances )
+                            {
+                            inst["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + inst.InstanceId;
+                            inst["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + inst.InstanceId + "?format=fgdc";
+                            inst["RawMetadataFormat"].StringValue = "FGDC";
+                            inst["SubAPI"].StringValue = "USGS";
+
+                            inst["DataProvider"].StringValue = "USGS";
+                            inst["DataProviderName"].StringValue = "United States Geological Survey";
+                            }
+                        break;
+                        }
+                default:
+                    //Do nothing
+                    break;
+                }
+            }
+
+        //We should replace isComplete by an extended data parameter in each of the instances.
+        private void LaunchCaching ()
+            {
+            foreach(KeyValuePair<IECClass, List<IECInstance>> instancesGroup in m_storageForCaching)
+                {
+                List<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null;
+                if(instancesGroup.Key.Name == "SpatialEntityBase")
+                    {
+                    additionalColumns = new List<Tuple<string, IECType, Func<IECInstance, string>>>();
+                    additionalColumns.Add(new Tuple<string, IECType, Func<IECInstance, string>>("ParentDatasetIdStr", Bentley.ECObjects.ECObjects.StringType, inst => ((string)inst.ExtendedData["ParentDatasetIdStr"])));
+                    }
+                m_instanceCacheManager.InsertInstancesInCache(instancesGroup.Value, instancesGroup.Key, additionalColumns);
+                }
+            }
+
+        private void CreateCacheRelatedInstances (List<IECInstance> cachedInstances, List<RelatedInstanceSelectCriteria> relatedCriteriaList)
             {
             foreach ( RelatedInstanceSelectCriteria crit in relatedCriteriaList )
                 {
                 IECClass relatedClass = crit.RelatedClassSpecifier.RelatedClass;
 
                 IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
+                bool useParentId = false;
 
                 //We do not use SpatialEntityDatasetToAlternateDataset for USGS data. DetailsViewToChildren is done in QuerySpatialEntitiesWithDetailsViewByPolygon
-                if ( (relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") || (relationshipClass.Name == "DetailsViewToChildren") )
+                if ( (relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") || 
+                    (relationshipClass.Name == "DetailsViewToChildren") ||
+                    (relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase") )
                     {
                     continue;
                     }
 
-                string relInstID;
-                if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase") )
-                    {
-                    relInstID = instance.InstanceId;
-                    }
-                else
-                    {
-
-                    if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                List<string> relInstIDs = new List<string>();
+                //if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase") )
+                //    {
+                    foreach ( IECInstance instance in cachedInstances )
                         {
-                        //TODO : See if it is possible and useful to go in the direction parent->children
-                        continue;
+                        if ( !relInstIDs.Contains(instance.InstanceId) )
+                            {
+                            relInstIDs.Add(instance.InstanceId);
+                            }
+                        }
+                    //}
+                //else
+                //    {
+
+                //    if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                //        {
+                //        //TODO : See if it is possible and useful to go in the direction parent->children
+                //        continue;
+                //        }
+                //    else
+                //        {
+                //        useParentId = true;
+                //        foreach ( IECInstance instance in cachedInstances )
+                //            {
+                //            string parentId = (string) instance.ExtendedData["ParentDatasetIdStr"];
+                //            if ( !relInstIDs.Contains(parentId) )
+                //                {
+                //                relInstIDs.Add(parentId);
+                //                }
+                //            }
+                //        }
+                //    }
+
+                List<IECInstance> relInstances = m_instanceCacheManager.QueryInstancesFromCache(relInstIDs, relatedClass, GetCacheBaseClass(relatedClass), crit);
+                CompleteInstances(relInstances, relatedClass);
+                CreateCacheRelatedInstances(relInstances, crit.SelectedRelatedInstances);
+                foreach(IECInstance relInstance in relInstances)
+                    {
+                    IEnumerable<IECInstance> instances;
+                    if ( useParentId )
+                        {
+                        instances = cachedInstances.Where(i => (string) i.ExtendedData["ParentDatasetIdStr"] == relInstance.InstanceId);
                         }
                     else
                         {
-                        //Here, we are sure to be in a SpatialEntityBase, which should contain a ParentDatasetIdStr attribute 
-
-                        //relInstID = instance["ParentDatasetIdStr"].StringValue;
-                        relInstID = instance.ExtendedData["ParentDatasetIdStr"] as string;
-                        instance.ExtendedData.Remove("ParentDatasetIdStr");
+                        instances = cachedInstances.Where(i => i.InstanceId == relInstance.InstanceId);
                         }
+                    foreach ( IECInstance instance in instances )
+                        {
+                        IECRelationshipInstance relationshipInst;
+                        if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                            {
+                            relationshipInst = relationshipClass.CreateRelationship(instance, relInstance);
+                            }
+                        else
+                            {
+                            relationshipInst = relationshipClass.CreateRelationship(relInstance, instance);
+                            }
+                        //relationshipInst.InstanceId = "test";
+                        //instance.GetRelationshipInstances().Add(relationshipInst);
+                        }
+                    
+                    }
+                
+                }
 
+            }
+
+        private IECClass GetCacheBaseClass (IECClass ecClass)
+            {
+            switch ( ecClass.Name )
+                {
+                case "SpatialEntityBase":
+                case "SpatialEntityWithDetailsView":
+                case "Thumbnail":
+                case "Metadata":
+                case "SpatialDataSource":
+                case "Server":
+                    return ecClass;
+                case "SpatialEntity":
+                case "SpatialEntityDataset":
+                    return ecClass.BaseClasses.First(c => c.Name == "SpatialEntityBase");
+                case "OtherSource":
+                    return ecClass.BaseClasses.First(c => c.Name == "SpatialDataSource");
+                
+                default:
+                    throw new ProgrammerException("It is impossible to cache instances of the class \"" + ecClass.Name + "\"");
+                }
+            }
+
+        /// <summary>
+        /// Creates the instances related to an instance, according to the RelatedInstanceSelectCriteria list. This method is recursive,
+        /// meaning that this method is called on the related instances created before returning. The request for parent instances is
+        /// not accomplished by this method for optimisation reasons. To help deferring this task, this method returns the instance for which
+        /// a parent has been queried. A optimal request should not request the same instance's parent twice in a recursion. If this happens, this method will return an error.
+        /// </summary>
+        /// <param name="instance">The instance for which we want the related instances ()</param>
+        /// <param name="relatedCriteriaList"></param>
+        /// <returns>If a parent instance was requested in the SelectCriteria (directly or in the recursive criteria), 
+        /// returns the instance for which we want to create the parent. Otherwise, null</returns>
+        private InstanceCritTuple CreateRelatedInstance (IECInstance instance, List<RelatedInstanceSelectCriteria> relatedCriteriaList)
+            {
+            InstanceCritTuple childWithParentRequest = null;
+            foreach ( RelatedInstanceSelectCriteria crit in relatedCriteriaList )
+                {
+                IECClass relatedClass = crit.RelatedClassSpecifier.RelatedClass;
+
+                IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
+
+                Tuple<string, JObject> oldJsonCache = jsonCache;
+
+                //We do not use SpatialEntityDatasetToAlternateDataset for USGS data.
+                if ( (relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") /*|| 
+                    (relationshipClass.Name == "DetailsViewToChildren") || 
+                    (relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" )*/)
+                    {
+                    continue;
+                    }
+                if((relationshipClass.Name == "DetailsViewToChildren" || relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase") && 
+                   (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward))
+                    {
+                    if ( childWithParentRequest == null )
+                        {
+                        childWithParentRequest = new InstanceCritTuple(instance, crit);
+                        }
+                    else
+                        {
+                        throw new UserFriendlyException("This request contains redundant related select criterias. Please simplify your request.");
+                        }
+                    continue;
                     }
 
-                IECInstance relInst = CreateInstanceFromID(relatedClass, relInstID);
-                if ( relInst != null )
+                string relInstID = instance.InstanceId;
+                //if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase") )
+                //    {
+                //    relInstID = instance.InstanceId;
+                //    }
+                //else
+                //    {
+
+                //    if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                //        {
+                //        //TODO : See if it is possible and useful to go in the direction parent->children
+                //        continue;
+                //        }
+                //    else
+                //        {
+                //        //Here, we are sure to be in a SpatialEntityBase, which should contain a ParentDatasetIdStr attribute 
+
+                //        //relInstID = instance["ParentDatasetIdStr"].StringValue;
+                //        relInstID = instance.ExtendedData["ParentDatasetIdStr"] as string;
+                //        //instance.ExtendedData.Remove("ParentDatasetIdStr");
+                //        }
+
+                //    }
+
+                IECInstance relInst = null;
+                bool mustAddRelation = false;
+
+                relInst = instance.GetRelationshipInstances().GetRelatedInstances(relationshipClass, crit.RelatedClassSpecifier.RelatedDirection, relatedClass).FirstOrDefault();
+                if(relInst == null)
+                    {
+                    mustAddRelation = true;
+                    }
+                if ( relInst == null || (bool) relInst.ExtendedData["Complete"] == false )
+                    {
+                    try
+                        {
+                        relInst = CreateInstanceFromID(relatedClass, relInstID);
+                        }
+                    catch(EnvironmentalException)
+                        {
+                        if(relInst == null)
+                            {
+                            //We had nothing in the cache and USGS returned an error. We cannot continue
+                            throw;
+                            }
+                        }
+                    //We reset the json cache to the old one, since it is more likely to be useful than the old one (which may contain the json of the parent, which we don't need)
+                    jsonCache = oldJsonCache;
+                    }
+                if ( relInst != null && mustAddRelation)
                     {
                     IECRelationshipInstance relationshipInst;
                     if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
@@ -186,40 +491,79 @@ namespace IndexECPlugin.Source.QueryProviders
                         relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
                         }
                     //relationshipInst.InstanceId = "test";
-                    instance.GetRelationshipInstances().Add(relationshipInst);
+                    //instance.GetRelationshipInstances().Add(relationshipInst);
                     }
-                CreateRelatedInstance(relInst, crit.SelectedRelatedInstances);
+                InstanceCritTuple tempTuple = CreateRelatedInstance(relInst, crit.SelectedRelatedInstances);
+                if(tempTuple != null)
+                    {
+                    if ( childWithParentRequest != null )
+                        {
+                        throw new UserFriendlyException("This request contains redundant related select criterias. Please simplify your request.");
+                        }
+                    else
+                        {
+                        childWithParentRequest = tempTuple;
+                        }
+                    }
                 }
+            return childWithParentRequest;
             }
 
-        private IECInstance CreateInstanceFromID (IECClass ecClass, string sourceID)
+        private IECInstance CreateInstanceFromID (IECClass ecClass, string sourceID/*, bool allowSEWDV = false*/)
             {
 
             if ( sourceID.Length != IndexConstants.USGSIdLenght )
                 {
                 return null;
                 }
+            IECInstance instance;
             switch ( ecClass.Name )
                 {
                 case "SpatialEntityBase":
                 case "SpatialEntity":
-                    return QuerySingleSpatialEntityBase(sourceID, ecClass);
-                //case "SpatialEntityWithDetailsView":
-                //    return QuerySingleSpatialEntityWithDetailsView();
+                    instance = QuerySingleSpatialEntityBase(sourceID, ecClass);
+                    break;
+                case "SpatialEntityWithDetailsView":
+                    //if ( allowSEWDV )
+                    //    {
+                        return QuerySingleSpatialEntityWithDetailsView(sourceID, ecClass);
+                    //    }
+                    //else
+                    //    {
+                    //    throw new UserFriendlyException("It is impossible to query instances of the class \"" + ecClass.Name + "\" in a USGS request by ID.");
+                    //    }
                 case "SpatialEntityDataset":
-                    return QuerySingleSpatialEntityDataset(sourceID, ecClass);
+                    instance = QuerySingleSpatialEntityDataset(sourceID, ecClass);
+                    break;
                 case "Thumbnail":
-                    return QuerySingleThumbnail(sourceID, ecClass);
+                    instance = QuerySingleThumbnail(sourceID, ecClass);
+                    break;
                 case "Metadata":
-                    return QuerySingleMetadata(sourceID, ecClass);
+                    instance = QuerySingleMetadata(sourceID, ecClass);
+                    break;
                 case "SpatialDataSource":
                 case "OtherSource":
-                    return QuerySingleSpatialDataSource(sourceID, ecClass);
+                    instance = QuerySingleSpatialDataSource(sourceID, ecClass);
+                    break;
                 case "Server":
-                    return QuerySingleServer(sourceID, ecClass);
+                    instance = QuerySingleServer(sourceID, ecClass);
+                    break;
                 default:
                     throw new UserFriendlyException("It is impossible to query instances of the class \"" + ecClass.Name + "\" in a USGS request by ID.");
                 }
+            PrepareInstanceForCaching(instance);
+
+            return instance;
+            }
+
+        private void PrepareInstanceForCaching (IECInstance instance)
+            {
+            IECClass baseClass = GetCacheBaseClass(instance.ClassDefinition);
+            if(!m_storageForCaching.Keys.Contains(baseClass))
+                {
+                m_storageForCaching.Add(baseClass, new List<IECInstance>());
+                }
+            m_storageForCaching[baseClass].Add(instance);
             }
 
         private IECInstance QuerySingleSpatialEntityWithDetailsView (string sourceID, IECClass ecClass)
@@ -229,10 +573,22 @@ namespace IndexECPlugin.Source.QueryProviders
                 return null;
                 }
 
-            IECInstance instance = ecClass.CreateInstance();
-            instance.InstanceId = sourceID;
-
             JObject json = GetJsonWithCache(sourceID);
+
+            IECInstance instance = ecClass.CreateInstance();
+            IECInstance instanceSEB = QuerySingleSpatialEntityBase(sourceID, m_schema.GetClass("SpatialEntityBase"));
+            PrepareInstanceForCaching(instanceSEB);
+
+            IECInstance instanceMetadata = QuerySingleMetadata(sourceID, m_schema.GetClass("Metadata"));
+            PrepareInstanceForCaching(instanceMetadata);
+            
+            IECInstance instanceSDS = QuerySingleSpatialDataSource(sourceID, m_schema.GetClass("SpatialDataSource"));
+            PrepareInstanceForCaching(instanceSDS);
+
+
+            InitializePropertiesToNull(instance, ecClass);
+
+            instance.InstanceId = sourceID;
 
             instance["Id"].StringValue = sourceID;
 
@@ -306,11 +662,11 @@ namespace IndexECPlugin.Source.QueryProviders
 
         private IECInstance QuerySingleSpatialEntityDataset (string sourceID, IECClass ecClass)
             {
-            IECInstance dataset = QuerySingleSpatialEntityBase(sourceID, ecClass);
+            IECInstance instance = QuerySingleSpatialEntityBase(sourceID, ecClass);
 
-            dataset["Processable"].SetToNull();
+            instance["Processable"].SetToNull();
 
-            return dataset;
+            return instance;
             }
 
         private IECInstance QuerySingleServer (string sourceID, IECClass ecClass)
@@ -320,11 +676,13 @@ namespace IndexECPlugin.Source.QueryProviders
                 return null;
                 }
 
+            JObject json = GetJsonWithCache(sourceID);
+
             IECInstance instance = ecClass.CreateInstance();
+
             instance.InstanceId = sourceID;
 
-            JObject json;
-            json = GetJsonWithCache(sourceID);
+            InitializePropertiesToNull(instance, ecClass);
 
             instance["Id"].StringValue = sourceID;
 
@@ -425,6 +783,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             instance["Type"].SetToNull();
 
+            instance.ExtendedDataValueSetter.Add("Complete", true);
 
             return instance;
             }
@@ -451,10 +810,13 @@ namespace IndexECPlugin.Source.QueryProviders
                 return null;
                 }
 
-            IECInstance instance = ecClass.CreateInstance();
-            instance.InstanceId = sourceID;
-
             JObject json = GetJsonWithCache(sourceID);
+
+            IECInstance instance = ecClass.CreateInstance();
+
+            InitializePropertiesToNull(instance, ecClass);
+
+            instance.InstanceId = sourceID;
 
             instance["Id"].StringValue = sourceID;
 
@@ -526,6 +888,7 @@ namespace IndexECPlugin.Source.QueryProviders
                         }
                     }
                 }
+            instance.ExtendedDataValueSetter.Add("Complete", true);
 
             return instance;
             }
@@ -537,10 +900,13 @@ namespace IndexECPlugin.Source.QueryProviders
                 return null;
                 }
 
-            IECInstance instance = ecClass.CreateInstance();
-            instance.InstanceId = sourceID;
-
             JObject json = GetJsonWithCache(sourceID);
+
+            IECInstance instance = ecClass.CreateInstance();
+
+            InitializePropertiesToNull(instance, ecClass);
+
+            instance.InstanceId = sourceID;
 
             instance["Id"].StringValue = sourceID;
 
@@ -566,18 +932,23 @@ namespace IndexECPlugin.Source.QueryProviders
 
             //Keywords
 
-            string keywords = "";
-            foreach ( JObject tag in json["tags"] )
+            string keywords = null;
+
+            if ( json["tags"] != null )
                 {
-                string name = tag.TryToGetString("name");
-
-                if ( name != null )
+                keywords = "";
+                foreach ( JObject tag in json["tags"] )
                     {
-                    keywords += name + ", ";
-                    }
-                }
+                    string name = tag.TryToGetString("name");
 
-            instance["Keywords"].StringValue = keywords.TrimEnd(' ', ',');
+                    if ( name != null )
+                        {
+                        keywords += name + ", ";
+                        }
+                    }
+                keywords = keywords.TrimEnd(' ', ',');
+                }
+            instance["Keywords"].StringValue = keywords;
 
             //Legal
 
@@ -594,8 +965,9 @@ namespace IndexECPlugin.Source.QueryProviders
 
             instance["Provenance"].SetToNull();
 
-            return instance;
+            instance.ExtendedDataValueSetter.Add("Complete", true);
 
+            return instance;
             }
 
         private IECInstance QuerySingleThumbnail (string sourceID, IECClass ecClass)
@@ -605,10 +977,13 @@ namespace IndexECPlugin.Source.QueryProviders
                 return null;
                 }
 
-            IECInstance instance = ecClass.CreateInstance();
-            instance.InstanceId = sourceID;
-
             JObject json = GetJsonWithCache(sourceID);
+
+            IECInstance instance = ecClass.CreateInstance();
+
+            InitializePropertiesToNull(instance, ecClass);
+
+            instance.InstanceId = sourceID;
 
             instance["Id"].StringValue = sourceID;
 
@@ -659,6 +1034,11 @@ namespace IndexECPlugin.Source.QueryProviders
 
                 StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, ExtractNameFromURI(thumbnailURI), thumbnailStream.Length, DateTime.UtcNow);
                 StreamBackedDescriptorAccessor.SetIn(instance, streamDescriptor);
+                instance.ExtendedDataValueSetter.Add("Complete", true);
+                }
+            else
+                {
+                instance.ExtendedDataValueSetter.Add("Complete", false);
                 }
 
 
@@ -710,12 +1090,6 @@ namespace IndexECPlugin.Source.QueryProviders
             return splitURI[splitURI.Length - 1];
             }
 
-        /// <summary>
-        /// Returns the informations of a file of specified source ID on sciencebase.gov (USGS)
-        /// </summary>
-        /// <param name="sourceID">The source ID of the item in USGS (sciencebase)</param>
-        /// <param name="ecClass">The class to instanciate</param>
-        /// <returns></returns>
         private IECInstance QuerySingleSpatialEntityBase (string sourceID, IECClass ecClass)
             {
             if ( sourceID.Length != IndexConstants.USGSIdLenght )
@@ -723,13 +1097,13 @@ namespace IndexECPlugin.Source.QueryProviders
                 return null;
                 }
 
+            JObject json = GetJsonWithCache(sourceID);
+
             IECInstance instance = ecClass.CreateInstance();
 
             InitializePropertiesToNull(instance, ecClass);
 
             instance.InstanceId = sourceID;
-
-            JObject json = GetJsonWithCache(sourceID);
 
             instance["Id"].StringValue = sourceID;
 
@@ -749,27 +1123,33 @@ namespace IndexECPlugin.Source.QueryProviders
 
             //Keywords
 
-            string keywords = "";
-            foreach ( JObject tag in json["tags"] )
-                {
-                string name = tag.TryToGetString("name");
-                if ( name != null )
-                    {
-                    keywords += name + ", ";
+            string keywords = null;
 
-                    string scheme = tag.TryToGetString("scheme");
-                    if ( (scheme != null) && (scheme == "The National Map Collection Thesaurus") )
+            if ( json["tags"] != null )
+                {
+                keywords = "";
+                foreach ( JObject tag in json["tags"] )
+                    {
+                    string name = tag.TryToGetString("name");
+                    if ( name != null )
                         {
-                        var cat = m_usgsDataFetcher.CategoryTable.FirstOrDefault(c => c.SbDatasetTag == name);
-                        if ( cat != null )
+                        keywords += name + ", ";
+
+                        string scheme = tag.TryToGetString("scheme");
+                        if ( (scheme != null) && (scheme == "The National Map Collection Thesaurus") )
                             {
-                            instance["Classification"].StringValue = cat.Classification;
+                            var cat = m_usgsDataFetcher.CategoryTable.FirstOrDefault(c => c.SbDatasetTag == name);
+                            if ( cat != null )
+                                {
+                                instance["Classification"].StringValue = cat.Classification;
+                                }
                             }
                         }
                     }
+                keywords = keywords.TrimEnd(' ', ',');
                 }
 
-            instance["Keywords"].StringValue = keywords.TrimEnd(' ', ',');
+            instance["Keywords"].StringValue = keywords;
 
             //AssociateFile
 
@@ -805,12 +1185,13 @@ namespace IndexECPlugin.Source.QueryProviders
             //instance["ParentDatasetIdStr"].StringValue = json.TryToGetString("parentId");
 
             //This happens when we request the parent of the SpatialEntityBase
-            if ( m_query.SelectClause.SelectedRelatedInstances.Any(relCrit => relCrit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" &&
-                                                                              relCrit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward) )
-                {
-                instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", json.TryToGetString("parentId"));
-                }
+            //if ( m_query.SelectClause.SelectedRelatedInstances.Any(relCrit => relCrit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" &&
+            //                                                                  relCrit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward) )
+            //    {
+            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", json.TryToGetString("parentId"));
+            //}
 
+            instance.ExtendedDataValueSetter.Add("Complete", true);
 
             return instance;
             }
@@ -901,7 +1282,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
         private List<IECInstance> QuerySpatialEntitiesWithDetailsViewByPolygon ()
             {
-            List<IECInstance> instanceList = new List<IECInstance>();
+            List<IECInstance> instanceList;
 
             //This part is an optimization only for queries of SpatialEntitiesWithDetailsView and their parents
             var relCrit = m_query.SelectClause.SelectedRelatedInstances.FirstOrDefault(crit => (crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren")
@@ -911,91 +1292,190 @@ namespace IndexECPlugin.Source.QueryProviders
                 m_storedParents = new Dictionary<string, IECInstance>();
                 }
 
+            IECClass ecClass = m_query.SearchClasses.First().Class;
+
             var criteriaList = ExtractPropertyWhereClauses();
-
-            foreach ( var bundle in m_usgsDataFetcher.GetNonFormattedUSGSResults(criteriaList) )
+            try
                 {
-
-
-
-                var FilteredList = SpecialFilteringAndExtracting(bundle.jtokenList, bundle.Dataset, criteriaList);
-
-
-
-                foreach ( var item in FilteredList )
+                instanceList = new List<IECInstance>();
+                foreach ( var bundle in m_usgsDataFetcher.GetNonFormattedUSGSResults(criteriaList) )
                     {
-                    IECClass ecClass = m_query.SearchClasses.First().Class;
-                    IECInstance instance = ecClass.CreateInstance();
+                    var FilteredList = SpecialFilteringAndExtracting(bundle.jtokenList, bundle.Dataset, criteriaList);
 
-                    InitializePropertiesToNull(instance, ecClass);
-
-                    JToken jtoken = item.jToken;
-
-                    instance.InstanceId = jtoken.TryToGetString("sourceId");
-                    instance["Id"].StringValue = instance.InstanceId;
-                    instance["SpatialDataSourceId"].StringValue = instance.InstanceId;
-
-                    //instance["Name"].StringValue = jtoken.TryToGetString("title");
-                    instance["Name"].StringValue = item.Title;
-
-                    var bbox = jtoken["boundingBox"];
-
-                    if ( bbox != null )
+                    foreach ( var item in FilteredList )
                         {
-                        instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
-                        }
-                    instance["DataSourceType"].StringValue = jtoken.TryToGetString("format");
-                    instance["ThumbnailURL"].StringValue = jtoken.TryToGetString("previewGraphicURL");
-                    instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
-                    instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + "?format=fgdc";
-                    instance["RawMetadataFormat"].StringValue = "FGDC";
-                    instance["SubAPI"].StringValue = "USGS";
 
-                    instance["DataProvider"].StringValue = "USGS";
-                    instance["DataProviderName"].StringValue = "United States Geological Survey";
+                        IECInstance instance = ecClass.CreateInstance();
 
-                    if ( item.Date.HasValue )
-                        {
-                        instance["Date"].NativeValue = item.Date.Value;
-                        }
-                    instance["AccuracyResolutionDensity"].StringValue = item.Resolution;
-                    instance["ResolutionInMeters"].StringValue = item.ResolutionInMeters;
+                        CreateIncompleteCacheInstances(item, bundle.Classification, bundle.DatasetId);
 
-                    instance["Classification"].StringValue = bundle.Classification;
+                        InitializePropertiesToNull(instance, ecClass);
 
-                    //instance["ParentDatasetIdStr"].StringValue = tuple.Item2;
+                        JToken jtoken = item.jToken;
 
-                    if ( m_storedParents != null )
-                        {
-                        string relInstId = bundle.DatasetId;
-                        if ( !m_storedParents.ContainsKey(relInstId) )
+                        instance.InstanceId = jtoken.TryToGetString("sourceId");
+                        instance["Id"].StringValue = instance.InstanceId;
+                        instance["SpatialDataSourceId"].StringValue = instance.InstanceId;
+
+                        //instance["Name"].StringValue = jtoken.TryToGetString("title");
+                        instance["Name"].StringValue = item.Title;
+
+                        var bbox = jtoken["boundingBox"];
+
+                        if ( bbox != null )
                             {
-                            m_storedParents.Add(relInstId, QuerySingleSpatialEntityWithDetailsView(relInstId, ecClass));
+                            instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
                             }
-                        if ( m_storedParents[relInstId] != null )
+                        instance["DataSourceType"].StringValue = jtoken.TryToGetString("format");
+                        instance["ThumbnailURL"].StringValue = jtoken.TryToGetString("previewGraphicURL");
+                        instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
+                        instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + "?format=fgdc";
+                        instance["RawMetadataFormat"].StringValue = "FGDC";
+                        instance["SubAPI"].StringValue = "USGS";
+
+                        instance["DataProvider"].StringValue = "USGS";
+                        instance["DataProviderName"].StringValue = "United States Geological Survey";
+
+                        if ( item.Date.HasValue )
                             {
-                            var relationshipInst = relCrit.RelatedClassSpecifier.RelationshipClass.CreateRelationship(m_storedParents[relInstId], instance);
-
-                            //relationshipInst.InstanceId = "test";
-                            instance.GetRelationshipInstances().Add(relationshipInst);
+                            instance["Date"].NativeValue = item.Date.Value;
                             }
+                        instance["AccuracyResolutionDensity"].StringValue = item.Resolution;
+                        instance["ResolutionInMeters"].StringValue = item.ResolutionInMeters;
 
-                        }
+                        instance["Classification"].StringValue = bundle.Classification;
+                        instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", bundle.DatasetId);
 
-                    if ( jtoken["sizeInBytes"] != null )
-                        {
-                        long size;
-                        if ( Int64.TryParse(jtoken.TryToGetString("sizeInBytes"), out size) )
+                        if ( jtoken["sizeInBytes"] != null )
                             {
-                            instance["FileSize"].NativeValue = (long) (size / 1024);
+                            long size;
+                            if ( Int64.TryParse(jtoken.TryToGetString("sizeInBytes"), out size) )
+                                {
+                                instance["FileSize"].NativeValue = (long) (size / 1024);
+                                }
                             }
-                        }
 
-                    instanceList.Add(instance);
+                        instanceList.Add(instance);
+                        }
+                    }
+                }
+            catch ( EnvironmentalException )
+                {
+                //USGS returned an error. We will get the results contained in the cache.
+
+                string polygonString = m_query.ExtendedData["polygon"].ToString();
+                PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(polygonString);
+                string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
+
+                PolygonDescriptor polyDesc = new PolygonDescriptor
+                {
+                    WKT = polygonWKT,
+                    SRID = model.coordinate_system
+                };
+
+                instanceList = m_instanceCacheManager.QuerySpatialInstancesFromCache(polyDesc, ecClass, ecClass, m_query.SelectClause, criteriaList);
+                CompleteInstances(instanceList, ecClass);
+                }
+
+            if ( relCrit != null )
+                CreateParentRelationship(instanceList, relCrit, ecClass);
+
+            return instanceList;
+            }
+
+        private void CreateParentRelationship (List<IECInstance> instanceList, RelatedInstanceSelectCriteria relCrit, IECClass ecClass)
+            {
+
+            List<string> parentIdList = new List<string>();
+            foreach ( IECInstance instance in instanceList )
+                {
+                string parentId = (string) instance.ExtendedData["ParentDatasetIdStr"];
+
+                if ( !parentIdList.Any(id => id == parentId) && parentId != null )
+                    {
+                    parentIdList.Add(parentId);
                     }
                 }
 
-            return instanceList;
+            List<IECInstance> parentList = CreateInstancesFromInstanceIdList(parentIdList, ecClass, relCrit);
+            foreach ( IECInstance instance in instanceList )
+                {
+                string parentId = (string) instance.ExtendedData["ParentDatasetIdStr"];
+                if (parentId == null)
+                    {
+                    continue;
+                    }
+                IECInstance parentInst = parentList.FirstOrDefault(inst => inst.InstanceId == parentId);
+                if ( parentInst == null )
+                    {
+                    throw new ProgrammerException("There should be a parent!");
+                    }
+
+                    var relationshipInst = relCrit.RelatedClassSpecifier.RelationshipClass.CreateRelationship(parentInst, instance);
+
+                }
+                
+            }
+
+        private void CreateIncompleteCacheInstances (USGSExtractedResult item, string classification, string parentId)
+            {
+            IECInstance SEBInstance = m_schema.GetClass("SpatialEntityBase").CreateInstance();
+            IECInstance metadataInstance = m_schema.GetClass("Metadata").CreateInstance();
+            IECInstance SDSInstance = m_schema.GetClass("SpatialDataSource").CreateInstance();
+
+            SEBInstance.ExtendedDataValueSetter.Add("Complete", false);
+            metadataInstance.ExtendedDataValueSetter.Add("Complete", false);
+            SDSInstance.ExtendedDataValueSetter.Add("Complete", false);
+
+            JToken jtoken = item.jToken;
+
+            string instanceId = jtoken.TryToGetString("sourceId");
+
+            SEBInstance.InstanceId = instanceId;
+            metadataInstance.InstanceId = instanceId;
+            SDSInstance.InstanceId = instanceId;
+
+            SEBInstance["Id"].StringValue = instanceId;
+            metadataInstance["Id"].StringValue = instanceId;
+            SDSInstance["Id"].StringValue = instanceId;
+
+            SEBInstance["Name"].StringValue = item.Title;
+
+            var bbox = jtoken["boundingBox"];
+
+            if ( bbox != null )
+                {
+                SEBInstance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
+                }
+
+            SDSInstance["DataSourceType"].StringValue = jtoken.TryToGetString("format");
+            SEBInstance["DataSourceTypesAvailable"].StringValue = jtoken.TryToGetString("format");
+
+            metadataInstance["RawMetadataFormat"].StringValue = "FGDC";
+
+            if ( item.Date.HasValue )
+                {
+                SEBInstance["Date"].NativeValue = item.Date.Value;
+                }
+            SEBInstance["AccuracyResolutionDensity"].StringValue = item.Resolution;
+
+            SEBInstance["Classification"].StringValue = classification;
+
+            if ( jtoken["sizeInBytes"] != null )
+                {
+                long size;
+                if ( Int64.TryParse(jtoken.TryToGetString("sizeInBytes"), out size) )
+                    {
+                    SDSInstance["FileSize"].NativeValue = (long) (size / 1024);
+                    }
+                }
+
+            SEBInstance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", parentId);
+
+            PrepareInstanceForCaching(SEBInstance);
+            PrepareInstanceForCaching(metadataInstance);
+            PrepareInstanceForCaching(SDSInstance);
+
             }
 
         private IEnumerable<USGSExtractedResult> SpecialFilteringAndExtracting (IEnumerable<JToken> tokenList, string dataset, List<SingleWhereCriteriaHolder> criteriaList)
@@ -1205,88 +1685,13 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
             }
 
-        //private IEnumerable<IECInstance> QueryUSGSThumbnail()
-        //{
-        //    List<IECInstance> instanceList = new List<IECInstance>();
-
-        //    //Byte[] bytePayload = ExtractPayload();
-
-        //    //string jsonString = Encoding.ASCII.GetString(bytePayload);
-
-        //    //USGSPayload payload = JsonConvert.DeserializeObject<USGSPayload>(jsonString);
-
-        //    IECClass ecClass = m_query.SearchClasses.First().Class;
-        //    IECInstance instance = ecClass.CreateInstance();
-        //    //instance["ThumbnailURL"].StringValue = payload.PreviewLink;
-
-        //    instance.InstanceId = "531f256fe4b0193009ddaf19";
-
-        //    USGSThumbnailRetrievalController c = new USGSThumbnailRetrievalController(instance);
-        //    c.processThumbnailRetrieval();
-
-        //    //using (HttpClient client = new HttpClient())
-        //    //{
-        //    //    using (HttpResponseMessage response = client.GetAsync(payload.PreviewLink).Result)
-        //    //    {
-        //    //        using (HttpContent content = response.Content)
-        //    //        {
-        //    //            ((ECBinaryValue)instance["ThumbnailData"]).BinaryValue = content.ReadAsByteArrayAsync().Result;
-        //    //        }
-        //    //    }
-        //    //}
-
-
-
-        //    instanceList.Add(instance);
-
-        //    return instanceList;
-        //}
-
-        //private byte[] ExtractPayload()
-        //{
-        //    if (!m_query.ExtendedData.ContainsKey("payload"))
-        //    {
-        //        throw new UserFriendlyException("This request must contain a \"payload\" parameter in the form of a WKT polygon string.");
-        //    }
-        //    //throw new Exception(m_query.ExtendedData["payload"].GetType().FullName);
-        //    string hexString = m_query.ExtendedData["payload"].ToString();
-
-        //    int hexLength = hexString.Length;
-        //    byte[] bytes = new byte[hexLength / 2];
-        //    for (int i = 0; i < hexLength; i += 2)
-        //        bytes[i / 2] = Convert.ToByte(hexString.Substring(i, 2), 16);
-        //    return bytes;
-
-        //}
-
         //This is an helper method we could put in another file. It belonged in the now unused USGSThumbnailRetrievalController
         private MemoryStream DownloadThumbnail (string thumbnailUri)
             {
             if ( thumbnailUri.StartsWith("ftp") )
                 {
-                //FtpWebRequest request = FtpWebRequest.Create(thumbnailUri) as FtpWebRequest;
-                //request.Method = WebRequestMethods.Ftp.GetFileSize;
-
-                //FtpWebResponse response = (FtpWebResponse)request.GetResponse();
-                //contentLength = response.ContentLength;
-
-                //request = FtpWebRequest.Create(thumbnailUri) as FtpWebRequest;
-                //request.Method = WebRequestMethods.Ftp.DownloadFile;
-
-                //response = (FtpWebResponse)request.GetResponse();
-
-                //return response.GetResponseStream();
                 using ( WebClient ftpClient = new WebClient() )
                     {
-
-                    //string tempPath = Path.GetTempPath();
-                    //string tempFilePath = Path.Combine(tempPath, Guid.NewGuid().ToString());
-                    //using (Stream fstream = File.Create(tempFilePath))
-                    //{
-                    //    ftpClient.OpenRead(thumbnailUri).CopyTo(fstream);
-                    //}
-                    //return File.Open(tempFilePath, FileMode.Open);
-
                     using ( Stream image = ftpClient.OpenRead(thumbnailUri) )
                         {
                         MemoryStream imageInMemory = new MemoryStream();
@@ -1296,7 +1701,6 @@ namespace IndexECPlugin.Source.QueryProviders
                         return imageInMemory;
                         }
                     }
-
                 }
             if ( thumbnailUri.StartsWith("http") )
                 {
@@ -1306,9 +1710,6 @@ namespace IndexECPlugin.Source.QueryProviders
                         {
                         using ( HttpContent content = response.Content )
                             {
-
-                            //contentLength = (content.Headers.ContentLength.HasValue ? content.Headers.ContentLength.Value : 0);
-
                             using ( Stream image = content.ReadAsStreamAsync().Result )
                                 {
                                 MemoryStream imageInMemory = new MemoryStream();
@@ -1361,5 +1762,25 @@ namespace IndexECPlugin.Source.QueryProviders
             return singleWhereCriteriaList;
             }
 
+        }
+
+    internal class InstanceCritTuple
+        {
+        public IECInstance Instance
+            {
+            get;
+            set;
+            }
+        public RelatedInstanceSelectCriteria ParentRelatedCriteria
+            {
+            get;
+            set;
+            }
+
+        public InstanceCritTuple (IECInstance instance, RelatedInstanceSelectCriteria parentRelatedCriteria)
+            {
+            Instance = instance;
+            ParentRelatedCriteria = parentRelatedCriteria;
+            }
         }
     }

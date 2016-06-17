@@ -50,7 +50,7 @@ namespace IndexECPlugin.Source
         /// </summary>
         protected DataReadingHelper m_dataReadingHelper = new DataReadingHelper();
 
-        private Dictionary<string, Tuple<string, DbType>> m_paramNameValueMap;
+        private GenericParamNameValueMap m_paramNameValueMap;
 
         private int m_paramNumber;
 
@@ -59,7 +59,7 @@ namespace IndexECPlugin.Source
         /// </summary>
         protected SQLQueryBuilder ()
             {
-            m_paramNameValueMap = new Dictionary<string, Tuple<string, DbType>>();
+            m_paramNameValueMap = new GenericParamNameValueMap();
             m_paramNumber = 0;
 
             m_sqlSelectClause = new List<string>();
@@ -77,18 +77,23 @@ namespace IndexECPlugin.Source
         /// <param name="property">The property associated to the data. Can be null if the category is not instanceData or spatialInstanceData</param>
         public void AddSelectClause (TableDescriptor table, string columnName, ColumnCategory columnCategory, IECProperty property/*, IECClass ecClass*/)
             {
-            int numberOfColumns = 1;
             if ( columnCategory == ColumnCategory.spatialInstanceData )
                 {
                 m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName) + ".STAsText()");
                 m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName) + ".STSrid");
-                numberOfColumns = 2;
+                m_dataReadingHelper.AddColumn(columnCategory, property, 2);
+                }
+            else if (columnCategory == ColumnCategory.nonPropertyData)
+                {
+                m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName));
+                m_dataReadingHelper.AddNonPropertyDataColumn(columnName);
                 }
             else
                 {
                 m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName));
+                m_dataReadingHelper.AddColumn(columnCategory, property, 1);
                 }
-            m_dataReadingHelper.AddColumn(columnCategory, property, numberOfColumns);
+            
             }
 
         /// <summary>
@@ -203,7 +208,7 @@ namespace IndexECPlugin.Source
                         string paramName = GetNewParamName();
                         //m_sqlWhereClause += paramName + ",";
                         paramNameList.Add(paramName);
-                        m_paramNameValueMap.Add(paramName, new Tuple<string, DbType>(rightSideStringPart, dbType));
+                        m_paramNameValueMap.AddParamNameValue(paramName, rightSideStringPart, dbType);
                         }
                     m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp + " (" + String.Join(",", paramNameList.ToArray()) + ") ";
                     }
@@ -211,12 +216,12 @@ namespace IndexECPlugin.Source
                     {
                     string paramName = GetNewParamName();
                     m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp + paramName + " ";
-                    m_paramNameValueMap.Add(paramName, new Tuple<string, DbType>(rightSideString, dbType));
+                    m_paramNameValueMap.AddParamNameValue(paramName, rightSideString, dbType);
                     }
                 }
             else
                 {
-                m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp;
+                m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp + " ";
                 }
 
             }
@@ -269,6 +274,8 @@ namespace IndexECPlugin.Source
         /// Builds the query according to the clauses added
         /// </summary>
         /// <returns>The SQL query string</returns>
+        /// 
+        //TODO : Include the query string, the DataReadingHelper and the paramNameValueMap in a single object returned by BuildQuery
         abstract public string BuildQuery (out DataReadingHelper dataReadingHelper);
 
         /// <summary>
@@ -296,7 +303,7 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// The mapping of the parameter names and their values and type.
         /// </summary>
-        public Dictionary<string, Tuple<string, DbType>> paramNameValueMap
+        public GenericParamNameValueMap paramNameValueMap
             {
             get
                 {
@@ -353,7 +360,11 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// Used for requesting the related instance Id.
         /// </summary>
-        relatedInstanceId = 3
+        relatedInstanceId = 3,
+        /// <summary>
+        /// Used for requesting data in a column that is not related to a property.
+        /// </summary>
+        nonPropertyData = 4
         }
     }
 

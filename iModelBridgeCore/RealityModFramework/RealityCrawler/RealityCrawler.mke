@@ -6,7 +6,7 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -29,65 +29,31 @@ always:
 #-----------------------------------------------------------------------
 packages = $(_MakeFilePath)packages/
 
-ASSEMBLY_REFERENCE           = $(packages)Abot.1.5.0.95/lib/net40/Abot.dll
+ASSEMBLY_REFERENCE           = $(ContextSubPartsAssembliesDir)BentleyCrawlerLibNet.dll
 %include csrefapnd.mki
-always:
-    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-ASSEMBLY_REFERENCE           = $(packages)NRobotsPatched.1.0.5.0/lib/net40/Robots.dll
-%include csrefapnd.mki
-always:
-    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-ASSEMBLY_REFERENCE           = $(packages)Abot.1.5.0.95/lib/net40/HtmlAgilityPack.dll
-%include csrefapnd.mki
-always:
-    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-ASSEMBLY_REFERENCE           = $(packages)AutoMapper.3.3.1/lib/net40/AutoMapper.dll
-%include csrefapnd.mki
-always:
-    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-ASSEMBLY_REFERENCE           = $(packages)AutoMapper.3.3.1/lib/net40/AutoMapper.Net4.dll
-%include csrefapnd.mki
-always:
-    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-ASSEMBLY_REFERENCE           = $(packages)CsQuery.1.3.4/lib/net40/CsQuery.dll
-%include csrefapnd.mki
-always:
-    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-ASSEMBLY_REFERENCE           = $(packages)EntityFramework.6.1.3/lib/net45/EntityFramework.dll
-%include csrefapnd.mki
-always:
-    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-ASSEMBLY_REFERENCE           = $(packages)EntityFramework.6.1.3/lib/net45/EntityFramework.SqlServer.dll
-%include csrefapnd.mki
-always:
-    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-ASSEMBLY_REFERENCE           = $(packages)log4net.2.0.3/lib/net40-full/log4net.dll
-%include csrefapnd.mki
-always:
-    $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
 ASSEMBLY_REFERENCE           = $(ContextSubPartsAssembliesDir)WMSCapabilitiesNET.dll
 %include csrefapnd.mki
+
+ASSEMBLY_REFERENCE           = $(packages)EntityFramework.6.1.3/lib/net45/EntityFramework.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE           = $(packages)EntityFramework.6.1.3/lib/net45/EntityFramework.SqlServer.dll
+%include csrefapnd.mki
+
+
 always:
     $(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BaseGeoCoordG.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeCurl.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeIcu4c.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeLibxml2.dll $(o)
-    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyAllocator.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyG.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyGeomG.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeOpenSSL.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeSQLiteG.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeXmlG.dll $(o)
+    $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/CrawlerLib.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/ImagePPG.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/NCSEcw.dll $(o)
     $(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/RealityPlatform.dll $(o)

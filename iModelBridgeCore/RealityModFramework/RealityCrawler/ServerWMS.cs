@@ -2,7 +2,7 @@
 |
 |     $Source: RealityCrawler/ServerWMS.cs $
 | 
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 using System;
@@ -200,17 +200,22 @@ namespace Bentley.RealityPlatform.RealityCrawler
                 wmsServer.OldServerId = OldServerId;
 
             // Get the first coordinate system found if default one are not found.
+            wmsServer.CoordinateSystem = null;
             if ( m_capabilities.GetCapabilityGroup ().GetLayerList ().Count > 0 )
                 {
-                wmsServer.CoordinateSystem = m_capabilities.GetCapabilityGroup ().GetLayerList ().First<WMSLayerNet>().GetCRSList ().First<String> ();
-                foreach ( String DefaultCS in DefaultCSArray )
+                if (m_capabilities.GetCapabilityGroup().GetLayerList().First<WMSLayerNet>().GetCRSList().Count > 0)
                     {
-                    if ( m_capabilities.GetCapabilityGroup ().GetLayerList ().First<WMSLayerNet> ().GetCRSList ().Contains (DefaultCS) )
+                    wmsServer.CoordinateSystem = m_capabilities.GetCapabilityGroup().GetLayerList().First<WMSLayerNet>().GetCRSList().First<String>();
+                    foreach (String DefaultCS in DefaultCSArray)
                         {
-                        wmsServer.CoordinateSystem = DefaultCS;
-                        break;
+                        if (m_capabilities.GetCapabilityGroup().GetLayerList().First<WMSLayerNet>().GetCRSList().Contains(DefaultCS))
+                            {
+                            wmsServer.CoordinateSystem = DefaultCS;
+                            break;
+                            }
                         }
                     }
+                
                 }
 
             SaveExtendedProperties (context, wmsServer);
@@ -673,11 +678,18 @@ namespace Bentley.RealityPlatform.RealityCrawler
         /// <summary>
         /// Update all the MS server status in the database.
         /// </summary>
-        public static void Update ()
+        public static void Update (string url = null)
             {
             using ( var context = new RealityCrawlerDBContainer () )
                 {
-                Dictionary<int, string> ServerURLToUpdate = GenerateCrawledServerList (context, true);
+                Dictionary<int, string> ServerURLToUpdate;
+                if(null != url)
+                    // Update specific server.
+                    ServerURLToUpdate = GenerateCrawledServerList(context, true, url);
+                else
+                    // Update all servers.
+                    ServerURLToUpdate = GenerateCrawledServerList (context, true);
+                
                 // Remove the modifyed server from the database before updating the server status.
                 var ModifyedServers = context.ServerSet.Where (Server => Server.Type == ServerType.WMS).Where (Server => Server.State == ServerState.Modify);
                 foreach (var ModifiedServer in  ModifyedServers)
@@ -737,14 +749,27 @@ namespace Bentley.RealityPlatform.RealityCrawler
         /// <param name="context">The current database context.</param>
         /// <param name="ToUpdate">If the ToUpdate flag is true exclude the rejected server from the list.</param>
         /// <returns>Return a dictionary containing the ServerId and the URL.</returns>
-        private static Dictionary<int, string> GenerateCrawledServerList (RealityCrawlerDBContainer context, Boolean ToUpdate)
+        private static Dictionary<int, string> GenerateCrawledServerList(RealityCrawlerDBContainer context, Boolean ToUpdate, string url = null)
             {
             Dictionary<int, string> ServerURL;    
-            if (ToUpdate)
-                ServerURL = context.ServerSet.Where (Server => Server.Type == ServerType.WMS).Where(Server => Server.State > ServerState.Reject).Where(Server => Server.State != ServerState.Modify).ToDictionary (Server => Server.ServerId, Server => Server.URL);
+            if (null != url)
+                {
+                // Generate list from a specific server in database.
+                if (ToUpdate)
+                    ServerURL = context.ServerSet.Where(Server => Server.Type == ServerType.WMS).Where(Server => Server.State > ServerState.Reject).Where(Server => Server.State != ServerState.Modify).Where(Server => Server.URL == url).ToDictionary(Server => Server.ServerId, Server => Server.URL);
+                else
+                    ServerURL = context.ServerSet.Where(Server => Server.Type == ServerType.WMS).Where(Server => Server.State != ServerState.Modify).Where(Server => Server.URL == url).ToDictionary(Server => Server.ServerId, Server => Server.URL.Split('?')[0]);
+                }
             else
-                ServerURL = context.ServerSet.Where (Server => Server.Type == ServerType.WMS).Where (Server => Server.State != ServerState.Modify).ToDictionary (Server => Server.ServerId, Server => Server.URL.Split('?')[0]);
-            return ServerURL;
+                {
+                // Generate list from all servers in database.
+                if (ToUpdate)
+                    ServerURL = context.ServerSet.Where(Server => Server.Type == ServerType.WMS).Where(Server => Server.State > ServerState.Reject).Where(Server => Server.State != ServerState.Modify).ToDictionary(Server => Server.ServerId, Server => Server.URL);
+                else
+                    ServerURL = context.ServerSet.Where(Server => Server.Type == ServerType.WMS).Where(Server => Server.State != ServerState.Modify).ToDictionary(Server => Server.ServerId, Server => Server.URL.Split('?')[0]);
+                }
+            
+            return ServerURL;       
             }
 
         /// <summary>

@@ -2,7 +2,7 @@
 |
 |     $Source: RealityCrawler/RealityCrawler.cs $
 | 
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 using System;
@@ -12,38 +12,90 @@ using System.Text;
 using System.Threading.Tasks;
 
 // For the web crawler
-using Abot.Crawler;
-using Abot.Poco;
-using Abot.Core;
 using System.Net;
-using log4net.Config;
-using Bentley.RealityPlatform.RealityCrawler;
 using System.Diagnostics;
 using System.Configuration;
+using BentleyCrawlerLib;
 
 namespace Bentley.RealityPlatform.RealityCrawler
     {
+    //=====================================================================================
+    //! @bsiclass                                   Martin-Yanick.Guillemette       1/2016
+    //=====================================================================================
+    class CrawlerObserver : BentleyCrawlerLib.ICrawlerObserverNet
+        {
+        public void OnPageCrawled(BentleyCrawlerLib.PageContentNet pageContent)
+            {
+            crawler_ProcessPageCrawlCompleted(pageContent);
+            }
+        
+        private void crawler_ProcessPageCrawlCompleted(BentleyCrawlerLib.PageContentNet pageContent)
+            {
+            if (null == pageContent)
+                return;
+
+            if (string.IsNullOrEmpty (pageContent.GetText()))
+                Console.WriteLine ("Page had no content {0}", pageContent.GetUrl().GetUrl().AbsoluteUri);
+            else
+                {
+                Console.WriteLine("Analyzing the links of the PAGE {0}", pageContent.GetUrl().GetUrl().AbsoluteUri);
+            
+                KeywordDictionary dictionaryWMS = new KeywordDictionary ("DictionaryWMS.xml");
+                Dictionary<int, string> crawledServerList = ServerWMS.GenerateCrawledServerList();
+                if (pageContent.GetLinks() != null)
+                    {
+                    foreach (UrlNet foundLink in pageContent.GetLinks())
+                        {
+                        if (dictionaryWMS.FindKeyword(foundLink.GetUrl()))
+                            {
+                            if (!crawledServerList.ContainsValue(foundLink.GetUrl().AbsoluteUri.Split('?')[0]))
+                                {
+                                ServerWMS WMSKeywordURL = new ServerWMS (foundLink.GetUrl());
+                                if ( WMSKeywordURL.isValid () )
+                                    {
+                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                    Console.WriteLine ("Saving the WMS server link: {0}", foundLink.GetUrl().AbsoluteUri);
+                                    Console.ResetColor ();
+                                    }
+                                WMSKeywordURL.Save ();
+                                }
+                            else
+                                {
+                                Console.ForegroundColor = ConsoleColor.DarkRed;
+                                Console.WriteLine("Link already in the database: {0}", foundLink.GetUrl().AbsoluteUri);
+                                Console.ResetColor ();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    //=====================================================================================
+    //! @bsiclass                                   Martin-Yanick.Guillemette       1/2016
+    //=====================================================================================
     class RealityCrawler
         {
         static void Main (string[] args)
             {
             Console.Title = "GIS Crawler";            
-            log4net.Config.XmlConfigurator.Configure ();
-
-            Console.WriteLine ("GIS Crawler");
-            Console.WriteLine ("Press 'u' key to update or any key to crawl.");
-            ConsoleKeyInfo cki = Console.ReadKey ();
-            Console.Clear ();
             Stopwatch timer = new Stopwatch ();
             
-            if ( cki.KeyChar == 'u' )
+            if(args.Length > 0)
                 {
-                Console.WriteLine ("----------------------");
-                Console.WriteLine ("| Updating Database. |");
-                Console.WriteLine ("----------------------");
-                Console.WriteLine ();
-                timer.Start ();
-                Bentley.RealityPlatform.RealityCrawler.ServerWMS.Update ();
+                if("-u" == args[0])
+                    {
+                    Console.WriteLine("----------------------");
+                    Console.WriteLine("| Updating Database. |");
+                    Console.WriteLine("----------------------");
+                    Console.WriteLine();
+                    timer.Start();
+                    if (args.Length > 1)
+                        Bentley.RealityPlatform.RealityCrawler.ServerWMS.Update(args[1]);
+                    else
+                        Bentley.RealityPlatform.RealityCrawler.ServerWMS.Update();
+                    }
                 }
             else
                 {
@@ -61,29 +113,25 @@ namespace Bentley.RealityPlatform.RealityCrawler
                     Console.ResetColor ();
 
                     // Load from app.config then tweek the abot crawler.
-                    CrawlConfiguration crawlConfig = AbotConfigurationSectionHandler.LoadFromXml().Convert();
-                    crawlConfig.IsExternalPageCrawlingEnabled = seed.isExternalPageCrawlingEnabled;
-                    crawlConfig.IsExternalPageLinksCrawlingEnabled = seed.isExternalPageCrawlingEnabled;
-                    crawlConfig.MaxCrawlDepth = 3;
-                    crawlConfig.MaxPagesToCrawl = 100000;
+                    //crawlConfig.IsExternalPageCrawlingEnabled = seed.isExternalPageCrawlingEnabled;
+                    //crawlConfig.IsExternalPageLinksCrawlingEnabled = seed.isExternalPageCrawlingEnabled;
 
-                    IWebCrawler crawler;
+                    // Create crawler.
+                    CrawlerObserver observer = new CrawlerObserver();
+                    BentleyCrawlerLibNet crawler = BentleyCrawlerLibNet.Create(5);
 
-                    crawler = GetDefaultWebCrawler (crawlConfig);
+                    // Set options.
+                    crawler.SetObserver(observer);
+                    crawler.SetAcceptExternalLinks(true);
+                    crawler.SetAcceptLinksInExternalLinks(true);
+                    crawler.SetCrawlLinksWithHtmlTagRelNoFollow(true);
+                    crawler.SetCrawlLinksFromPagesWithNoFollowMetaTag(true);
+                    crawler.SetMaximumCrawlDepth(3);
+                    crawler.SetMaxNumberOfLinkToCrawl(100000);
 
-                    crawler.PageCrawlStartingAsync += crawler_ProcessPageCrawlStarting;
-                    crawler.PageCrawlCompletedAsync += crawler_ProcessPageCrawlCompleted;
-                    crawler.PageCrawlDisallowedAsync += crawler_PageCrawlDisallowed;
-                    crawler.PageLinksCrawlDisallowedAsync += crawler_PageLinksCrawlDisallowed;
-
-                    // Log the crawl
-                    XmlConfigurator.Configure ();
-
-                    //Start the crawl
-                    //This is a synchronous call
-                    CrawlResult result = crawler.Crawl (seed.uri);
-                    Console.ForegroundColor = ConsoleColor.DarkGray;
-                    System.Console.WriteLine ("Seed Elapsed Time:{0} milliseconds", result.Elapsed.TotalMilliseconds);
+                    // Run.
+                    crawler.Crawl(seed.uri);
+                    
                     Console.ResetColor ();
                     Console.WriteLine ();
                     }
@@ -98,93 +146,5 @@ namespace Bentley.RealityPlatform.RealityCrawler
             Console.WriteLine ("Press any key to exit.");
             Console.ReadKey ();
             }
-
-        private static IWebCrawler GetDefaultWebCrawler (CrawlConfiguration crawlConfig)
-            {
-            //Will use the manually created crawlConfig object created above
-            return new  PoliteWebCrawler(crawlConfig, null, null, null, null, null, null, null, null);
-            }
-
-        private static void PrintDisclaimer ()
-            {
-            PrintAttentionText ("The demo is configured to only crawl a total of 2000 pages and will wait 1 second in between http requests. This is to avoid getting you blocked by your isp or the sites you are trying to crawl. You can change these values in the app.config or Abot.Console.exe.config file.");
-            }
-
-        private static void PrintAttentionText (string text)
-            {
-            ConsoleColor originalColor = System.Console.ForegroundColor;
-            System.Console.ForegroundColor = ConsoleColor.Yellow;
-            System.Console.WriteLine (text);
-            System.Console.ForegroundColor = originalColor;
-            }
-
-        static void crawler_ProcessPageCrawlStarting (object sender, PageCrawlStartingArgs e)
-            {
-            PageToCrawl pageToCrawl = e.PageToCrawl;
-            Console.WriteLine ("About to crawl link {0} which was found on page {1}", pageToCrawl.Uri.AbsoluteUri, pageToCrawl.ParentUri.AbsoluteUri);
-            }
-
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        /// <remarks>
-        /// ToDo: - Manage multi threading.
-        /// - Filter results.
-        /// </remarks>
-        static void crawler_ProcessPageCrawlCompleted (object sender, PageCrawlCompletedArgs e)
-            {
-            CrawledPage crawledPage = e.CrawledPage;
-
-            if ( string.IsNullOrEmpty (crawledPage.Content.Text) )
-                Console.WriteLine ("Page had no content {0}", crawledPage.Uri.AbsoluteUri);
-            else
-                {                
-                Console.WriteLine ("Analyzing the links of the PAGE {0}", crawledPage.Uri.AbsoluteUri);
-
-                KeywordDictionary dictionaryWMS = new KeywordDictionary ("DictionaryWMS.xml");
-                Dictionary<int, string>CrawledServerList = ServerWMS.GenerateCrawledServerList();
-                if (crawledPage.ParsedLinks != null)
-                    {                    
-                    foreach ( Uri foundLink in crawledPage.ParsedLinks )
-                        {
-                        if ( dictionaryWMS.FindKeyword (foundLink) )
-                            {
-                            if ( !CrawledServerList.ContainsValue (foundLink.AbsoluteUri.Split ('?')[0]) )
-                                {
-                                ServerWMS WMSKeywordURL = new ServerWMS (foundLink);
-                                if ( WMSKeywordURL.isValid () )
-                                    {
-                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                    Console.WriteLine ("Saving the WMS server link: {0}", foundLink.AbsoluteUri);
-                                    Console.ResetColor ();
-                                    }
-                                WMSKeywordURL.Save ();
-                                }
-                            else
-                                {
-                                Console.ForegroundColor = ConsoleColor.DarkRed;
-                                Console.WriteLine ("Link already in the database: {0}", foundLink.AbsoluteUri);
-                                Console.ResetColor ();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-        static void crawler_PageLinksCrawlDisallowed (object sender, PageLinksCrawlDisallowedArgs e)
-            {
-            CrawledPage crawledPage = e.CrawledPage;
-            Console.WriteLine ("Did not crawl the links on page {0} due to {1}", crawledPage.Uri.AbsoluteUri, e.DisallowedReason);
-            }
-
-        static void crawler_PageCrawlDisallowed (object sender, PageCrawlDisallowedArgs e)
-            {
-            PageToCrawl pageToCrawl = e.PageToCrawl;
-            Console.WriteLine ("Did not crawl page {0} due to {1}", pageToCrawl.Uri.AbsoluteUri, e.DisallowedReason);
-            }
-
         }
     }

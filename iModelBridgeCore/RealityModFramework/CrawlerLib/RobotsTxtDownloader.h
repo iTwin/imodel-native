@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/RobotsTxtDownloader.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -28,16 +28,16 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 // indicates the rules to be followed when this web site is accessed by a robot
 // process instead of by human operator.
 //=======================================================================================
-class IRobotsTxtDownloader
+struct IRobotsTxtDownloader
     {
     public:
-    CRAWLERLIB_EXPORT virtual ~IRobotsTxtDownloader() { }
+    CRAWLERLIB_EXPORT virtual ~IRobotsTxtDownloader();
 
     //=======================================================================================
     // This method extracts the robot.txt file from the web domain indicated by the URL
     // provided.
     //=======================================================================================
-    virtual RobotsTxtContentPtr DownloadRobotsTxt(UrlPtr const& pi_Url) = 0;
+    virtual RobotsTxtContentPtr DownloadRobotsTxt(UrlCR pi_Url) = 0;
     };
 
 //=======================================================================================
@@ -45,7 +45,7 @@ class IRobotsTxtDownloader
 // Concrete Robot text downloader that implements the IRobotsTxtDownloader interface.
 // This implementation makes use of CURL to download the file.
 //=======================================================================================
-class RobotsTxtDownloader : public IRobotsTxtDownloader
+struct RobotsTxtDownloader : public IRobotsTxtDownloader
     {
     public:
     CRAWLERLIB_EXPORT RobotsTxtDownloader();
@@ -56,7 +56,7 @@ class RobotsTxtDownloader : public IRobotsTxtDownloader
     // The url provided must only contain the domain part eg. http:\\www.bentley.com
     // The url provided may not be null.
     //=======================================================================================
-    CRAWLERLIB_EXPORT RobotsTxtContentPtr DownloadRobotsTxt(UrlPtr const& pi_Url) override;
+    CRAWLERLIB_EXPORT RobotsTxtContentPtr DownloadRobotsTxt(UrlCR pi_Url) override;
 
     private:
     void SetDataWritingSettings(WString* buffer, void* writeFunction);

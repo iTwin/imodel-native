@@ -75,12 +75,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.dll</TargetExt>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.dll</TargetExt>
-    <IncludePath>D:\Output\RealityModFramework_Dev\Winx64\BuildContexts\Bentley\PublicAPI;D:\Output\RealityModFramework_Dev\Winx64\BuildContexts\RealityModFramework\PublicAPI;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Output\RealityModFramework_Dev\Winx64\BuildContexts\Bentley\Delivery;D:\Output\RealityModFramework_Dev\Winx64\BuildContexts\RealityModFramework\Delivery;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\BuildContexts\Bentley\PublicAPI;D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\BuildContexts\RealityModFramework\PublicAPI;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\BuildContexts\Bentley\Delivery;D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\BuildContexts\RealityModFramework\Delivery;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -95,11 +96,13 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;BENTLEY_WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\BuildContexts\Bentley\PublicAPI;D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\BuildContexts\RealityModFramework\PublicAPI;$(IncludePath)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies />
+      <AdditionalDependencies>Bentley.lib;BentleyAllocator.lib;RealityPlatform.lib;CrawlerLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\BuildContexts\Bentley\Delivery;D:\BSI\DgnDb06Dev_RMF_3\out\Winx64\BuildContexts\RealityModFramework\Delivery;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

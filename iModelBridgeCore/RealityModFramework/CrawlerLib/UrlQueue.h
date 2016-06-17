@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/UrlQueue.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -22,7 +22,7 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-class UrlQueue
+struct UrlQueue : public RefCountedBase
     {
     public:
     //=======================================================================================
@@ -30,6 +30,7 @@ class UrlQueue
     // politeness object and is responsible of destroying it.
     //=======================================================================================
     CRAWLERLIB_EXPORT UrlQueue(IPoliteness* politeness);
+    CRAWLERLIB_EXPORT static UrlQueuePtr Create(IPoliteness* politeness);
     CRAWLERLIB_EXPORT virtual ~UrlQueue();
 
     CRAWLERLIB_EXPORT virtual size_t NumberOfUrls() const;
@@ -47,7 +48,7 @@ class UrlQueue
     //=======================================================================================
     // Add as url to the queue. The url cannot be null.
     //=======================================================================================
-    CRAWLERLIB_EXPORT virtual void AddUrl(UrlPtr const& url);
+    CRAWLERLIB_EXPORT virtual void AddUrl(UrlCR url);
 
     
     //=======================================================================================
@@ -56,8 +57,8 @@ class UrlQueue
     CRAWLERLIB_EXPORT virtual DownloadJobPtr NextDownloadJob();
 
     private:
-    bool HaveAlreadyVisited(UrlPtr const& url) const;
-    bool IsAcceptedUrl(UrlPtr const& url) const;
+    bool HaveAlreadyVisited(UrlCR url) const;
+    bool IsAcceptedUrl(UrlCR url) const;
 
     size_t m_NumberOfUrls;
     size_t m_MaxNumberOfVisitedUrls;
@@ -65,10 +66,10 @@ class UrlQueue
     bool m_AcceptLinksInExternalLinks;
     uint32_t m_MaximumCrawlDepth;
 
-    std::map<DomainName, std::queue<UrlPtr>>           m_QueuesPerDomain;
-    std::map<DomainName, std::queue<UrlPtr>>::iterator m_CurrentDomain;
+    std::map<DomainName, std::queue<UrlCPtr>>           m_QueuesPerDomain;
+    std::map<DomainName, std::queue<UrlCPtr>>::iterator m_CurrentDomain;
 
-    UrlPtrSet m_VisitedUrls;
+    UrlCPtrSet m_VisitedUrls;
     IPoliteness* m_pPoliteness;
     };
 

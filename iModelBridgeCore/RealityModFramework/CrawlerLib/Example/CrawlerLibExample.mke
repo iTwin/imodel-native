@@ -2,10 +2,10 @@
 #
 #     $Source: CrawlerLib/Example/CrawlerLibExample.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #  
 #----------------------------------------------------------------------
-consoleAppUnicode   = 1                 # use wmain  
+
 %include mdl.mki
 
 appName             = CrawlerLibExample
@@ -36,13 +36,14 @@ $(o)CrawlerLibExample$(oext) : $(baseDir)CrawlerLibExample.cpp
 #----------------------------------------------------------------------
 #   DLL/LIB creation
 #----------------------------------------------------------------------
+EXE_UNICODE  = 1
 EXE_DEST     = $(o)
 EXE_NAME     = $(appName)
 EXE_OBJS     = $(o)CrawlerLibExample$(oext)
+EXE_UNICODE  = 1
 
 LINKER_LIBRARIES = $(ContextSubpartsLibs)CrawlerLib.lib \
-                   $(ContextSubpartsLibs)Bentley.lib \
-                   $(ContextSubpartsLibs)BentleyAllocator.lib
+                   $(ContextSubpartsLibs)Bentley.lib
 
 %include $(SharedMki)linktool.mki
 

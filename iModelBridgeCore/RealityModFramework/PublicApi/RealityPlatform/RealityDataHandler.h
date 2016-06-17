@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/RealityDataHandler.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,18 +30,22 @@ struct RealityData : public RefCountedBase
 public:
     REALITYDATAPLATFORM_EXPORT StatusInt GetFootprint(DRange2dP pFootprint) const;
     REALITYDATAPLATFORM_EXPORT StatusInt GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const;
+    REALITYDATAPLATFORM_EXPORT StatusInt GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const;
 
-    REALITYDATAPLATFORM_EXPORT StatusInt SaveFootprint(const DRange2dR data, const BeFileName outFilename) const;
-    REALITYDATAPLATFORM_EXPORT StatusInt SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const;
+    REALITYDATAPLATFORM_EXPORT StatusInt SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const;
+    REALITYDATAPLATFORM_EXPORT StatusInt SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const;
+    REALITYDATAPLATFORM_EXPORT StatusInt SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const;
 
 protected:
     virtual ~RealityData() {};
 
     virtual StatusInt _GetFootprint(DRange2dP pFootprint) const = 0;
     virtual StatusInt _GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const = 0;
+    virtual StatusInt _GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const = 0;
 
-    virtual StatusInt _SaveFootprint(const DRange2dR data, const BeFileName outFilename) const = 0;
-    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const = 0;
+    virtual StatusInt _SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const = 0;
+    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const = 0;
+    virtual StatusInt _SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const = 0;
 };
 
 //=====================================================================================
@@ -58,13 +62,17 @@ protected:
 
     virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
     virtual StatusInt _GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const override;
+    virtual StatusInt _GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const override;
 
-    virtual StatusInt _SaveFootprint(const DRange2dR data, const BeFileName outFilename) const override;
-    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const override;
+    virtual StatusInt _SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const override;
+    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const override;
+    virtual StatusInt _SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const override;
 
 private:
     StatusInt ExtractFootprint(DRange2dP pFootprint) const;
     StatusInt ExtractThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const;
+    StatusInt ExtractThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const;
+
 
     bool Initialize();
     void Terminate();
@@ -86,13 +94,16 @@ protected:
 
     virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
     virtual StatusInt _GetThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const override;
+    virtual StatusInt _GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const override;
 
-    virtual StatusInt _SaveFootprint(const DRange2dR data, const BeFileName outFilename) const override;
-    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const override;
+    virtual StatusInt _SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const override;
+    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const override;
+    virtual StatusInt _SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const override;
 
 private:
     StatusInt ExtractFootprint(DRange2dP pFootprint) const;
     StatusInt ExtractThumbnail(bvector<Byte>& data, uint32_t width, uint32_t height) const;
+    StatusInt ExtractThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const;
 
     void GetFile(Utf8CP inFilename);
     void CloseFile();
@@ -118,13 +129,16 @@ protected:
 
     virtual StatusInt _GetFootprint(DRange2dP pFootprint) const override;
     virtual StatusInt _GetThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const override;
+    virtual StatusInt _GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const override;
 
-    virtual StatusInt _SaveFootprint(const DRange2dR data, const BeFileName outFilename) const override;
-    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, const BeFileName outFilename) const override;
+    virtual StatusInt _SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const override;
+    virtual StatusInt _SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const override;
+    virtual StatusInt _SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const override;
 
 private:
     StatusInt ExtractFootprint(DRange2dP pFootprint) const;
     StatusInt ExtractThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const;
+    StatusInt ExtractThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const;
 
     StatusInt GetFromServer(bvector<Byte>& buffer, Utf8StringCR url) const;
 

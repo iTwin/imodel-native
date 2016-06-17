@@ -183,11 +183,12 @@ namespace IndexECPlugin.Source
             //foreach (SearchClass searchClass in query.SearchClasses)
             try
                 {
+                string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
+                IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
                 SearchClass searchClass = query.SearchClasses.First();
                     {
                     Log.Logger.info("Executing query " + query.ID + " : " + query.ToECSqlString(0) + ", custom parameters : " + String.Join(",", query.ExtendedData.Select(x => x.ToString())));
 
-                    //PATCH FOR STREAM BACKED PACKAGE REQUEST: Ask if it is possible to map stream backed instance retrievals to 
                     if ( (querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && (searchClass.Class.Name == "PreparedPackage") )
                         {
                         IECInstance packageInstance = searchClass.Class.CreateInstance();
@@ -197,15 +198,12 @@ namespace IndexECPlugin.Source
                         return new List<IECInstance> { packageInstance };
                         }
 
-                    IECQueryProvider helper/* = new SqlQueryProvider(query)*/;
+                    IECQueryProvider helper;
 
                     if ( searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull )
                         {
-                        //Log.Logger.error(String.Format("Query {1} aborted. The class {0} cannot be queried.", searchClass.Class.Name, query.ID));
                         throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
                         }
-
-                    //string queryType = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
 
                     string source;
 
@@ -218,40 +216,53 @@ namespace IndexECPlugin.Source
                         //TODO : We should rename queryType, as it has taken the role of a default parameter
                         source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
                         }
-                    //IEnumerable<IECInstance> instanceList;
 
-                    switch ( source.ToLower() )
+                    InstanceOverrider instanceOverrider = new InstanceOverrider();
+                    InstanceComplement instanceComplement = new InstanceComplement();
+                    using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
                         {
-                        case "index":
-                            using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
-                                {
-                                string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
-                                IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
-                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
-                                return helper.CreateInstanceList();
-                                }
+                        switch ( source.ToLower() )
+                            {
+                            case "index":
+                                    {
+                                    helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
+                                    IEnumerable<IECInstance> instances = helper.CreateInstanceList();
+                                    instanceOverrider.Modify(instances, DataSource.Index, sqlConnection);
+                                    instanceComplement.Modify(instances, DataSource.Index, sqlConnection);
+                                    return instances;
+                                    }
 
-                        case "usgsapi":
-                            helper = new UsgsAPIQueryProvider(query, querySettings);
-                            return helper.CreateInstanceList();
+                            case "usgsapi":
+                                    {
+                                    helper = new UsgsAPIQueryProvider(query, querySettings, sqlConnection, schema);
+                                    IEnumerable<IECInstance> instances = helper.CreateInstanceList();
+                                    instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                                    instanceComplement.Modify(instances, DataSource.USGS, sqlConnection);
+                                    return instances;
+                                    }
+                            case "all":
+                                    {
 
-                        case "all":
-                            List<IECInstance> instanceList = new List<IECInstance>();
-                            using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
-                                {
-                                string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
-                                IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
-                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
-                                instanceList = helper.CreateInstanceList().ToList();
-                                }
+                                    List<IECInstance> instanceList = new List<IECInstance>();
+                                        {
+                                        helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
+                                        instanceList = helper.CreateInstanceList().ToList();
+                                        instanceOverrider.Modify(instanceList, DataSource.Index, sqlConnection);
+                                        instanceComplement.Modify(instanceList, DataSource.Index, sqlConnection);
 
-                            helper = new UsgsAPIQueryProvider(query, querySettings);
-                            instanceList.AddRange(helper.CreateInstanceList());
-                            return instanceList;
-                        default:
-                            //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
-                            //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
-                            throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
+                                        helper = new UsgsAPIQueryProvider(query, querySettings, sqlConnection, schema);
+                                        IEnumerable<IECInstance> instances = helper.CreateInstanceList();
+                                        instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+                                        instanceComplement.Modify(instances, DataSource.USGS, sqlConnection);
+                                        instanceList.AddRange(instances);
+                                        return instanceList;
+                                        }
+                                    }
+                            default:
+                                //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
+                                //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
+                                throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between " + SourceStringMap.GetAllSourceStrings());
+                            }
                         }
                     }
                 }
@@ -294,7 +305,6 @@ namespace IndexECPlugin.Source
 
                 if ( fileHolderAttribute == null )
                     {
-                    //Log.Logger.error("There is no file associate to instances of the class " + instanceClass.Name + ". Aborting retrieval operation.");
                     throw new UserFriendlyException(String.Format("There is no file associated to the {0} class", instanceClass.Name));
                     }
 
@@ -322,18 +332,8 @@ namespace IndexECPlugin.Source
                         break;
                     default:
 
-                        //Log.Logger.error(String.Format("Retrieval of instance {0} aborted. The file holder attribute {1} is not supported. Correct the ECSchema or the plugin.", instance.InstanceId, fileHolderAttribute["Type"].StringValue));
                         throw new ProgrammerException(String.Format("The retrieval of files of type {0} is not supported.", fileHolderAttribute["Type"].StringValue));
                     }
-
-                //if (instance.ClassDefinition.Name == "BentleyFile")
-                //{
-
-                //}
-                //else
-                //{
-                //    throw new UserFriendlyException("Only BentleyFile instances are backed by files");
-                //}
                 }
             catch ( Exception e )
                 {
@@ -409,6 +409,11 @@ namespace IndexECPlugin.Source
                 //This error should never happen except if the schema file is corrupted.
                 //Log.Logger.error(String.Format("Aborting creation of package {0}. The PackageRequest entry is incorrect. Correct the ECSchema", instance.InstanceId));
                 throw new ProgrammerException("The ECSchema is not valid. PackageRequest must have an array property.");
+                }
+
+            if ((requestedEntitiesECArray.Count == 0) && (osm == false))
+                {
+                throw new UserFriendlyException("The request is empty. Please specify items to include in the package");
                 }
 
             if ((requestedEntitiesECArray.Count == 0) && (osm == false))
@@ -844,20 +849,6 @@ namespace IndexECPlugin.Source
             IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
             RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
 
-            //ECQuery query = new ECQuery(dataSourceClass);
-            //query.SelectClause.SelectAllProperties = false;
-            //query.SelectClause.SelectedProperties = new List<IECProperty>();
-            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "Metadata"));
-            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
-            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
-            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
-
-            //query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
-
-            //query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-
-            //var queriedSpatialDataSources = ExecuteQuery(queryModule, connection, query, null);
-
             ECQuery query = new ECQuery(spatialentityClass);
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties = new List<IECProperty>();
@@ -871,17 +862,6 @@ namespace IndexECPlugin.Source
 
             var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
 
-            //query = new ECQuery(metadataClass);
-            //query.SelectClause.SelectAllProperties = false;
-            //query.SelectClause.SelectedProperties = new List<IECProperty>();
-            //query.SelectClause.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
-
-            //query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
-
-            //query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-
-            //var queriedMetadatas = ExecuteQuery(queryModule, connection, query, null);
-
             foreach ( var entity in queriedSpatialEntities )
                 {
                 IECInstance metadataInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == metadataClass.Name).Target;
@@ -890,44 +870,44 @@ namespace IndexECPlugin.Source
                 string metadata = null;
                 if ( !(datasourceInstance.GetPropertyValue("Metadata") == null || datasourceInstance.GetPropertyValue("Metadata").IsNull) )
                     {
-                    metadata = datasourceInstance.GetPropertyValue("Metadata").StringValue;
+                    metadata = entity.GetPropertyValue("Metadata").StringValue;
                     }
 
                 string url = null;
                 if ( !(datasourceInstance.GetPropertyValue("MainURL") == null || datasourceInstance.GetPropertyValue("MainURL").IsNull) )
                     {
-                    url = datasourceInstance.GetPropertyValue("MainURL").StringValue;
+                    url = entity.GetPropertyValue("MainURL").StringValue;
                     }
 
                 string type = null;
                 if ( !(datasourceInstance.GetPropertyValue("DataSourceType") == null || datasourceInstance.GetPropertyValue("DataSourceType").IsNull) )
                     {
-                    type = datasourceInstance.GetPropertyValue("DataSourceType").StringValue;
+                    type = entity.GetPropertyValue("DataSourceType").StringValue;
                     }
 
                 string copyright = null;
                 if ( !(metadataInstance.GetPropertyValue("Legal") == null || metadataInstance.GetPropertyValue("Legal").IsNull) )
                     {
-                    copyright = metadataInstance.GetPropertyValue("Legal").StringValue;
+                    copyright = queriedMetadatas.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Legal").StringValue;
                     }
 
                 string id = null;
                 if ( !(datasourceInstance.GetPropertyValue("Id") == null || datasourceInstance.GetPropertyValue("Id").IsNull) )
                     {
-                    id = datasourceInstance.GetPropertyValue("Id").StringValue;
+                    id = entity.GetPropertyValue("Id").StringValue;
                     }
 
                 long fileSize = 0;
                 if(!(datasourceInstance["FileSize"] == null || datasourceInstance["FileSize"].IsNull))
                     {
-                    fileSize = (long) datasourceInstance.GetPropertyValue("FileSize").NativeValue;
+                    fileSize = (long) entity.GetPropertyValue("FileSize").NativeValue;
                     }
                 ulong uFileSize = (fileSize > 0) ? (ulong) fileSize : 0;
 
                 string location = null;
                 if ( !(datasourceInstance.GetPropertyValue("LocationInCompound") == null || datasourceInstance.GetPropertyValue("LocationInCompound").IsNull ))
                     {
-                    location = datasourceInstance.GetPropertyValue("LocationInCompound").StringValue;
+                    location = entity.GetPropertyValue("LocationInCompound").StringValue;
                     }
                 var classificationPropValue = entity.GetPropertyValue("Classification");
                 string classification = null;

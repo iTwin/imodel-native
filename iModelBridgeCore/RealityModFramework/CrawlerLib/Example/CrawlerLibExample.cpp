@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/Example/CrawlerLibExample.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -35,7 +35,7 @@ class CrawlerLibClient : ICrawlerObserver
 
     void Run()
         {
-        UrlPtr seed = new Seed(L"http://usgs.gov");
+        UrlPtr seed = Seed::Create(L"http://usgs.gov");
 
         //Set the crawler options
         crawler->SetMaxNumberOfLinkToCrawl(2000);
@@ -84,7 +84,7 @@ class CrawlerLibClient : ICrawlerObserver
 
         asyncCrawl.get();
 #else
-        crawler->Crawl(seed);
+        crawler->Crawl(*seed);
 #endif
         }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/PageParser.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -23,19 +23,21 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 //! @bsiclass
 // A page parser parses a HTML page provided. It generates a page content.
 //=======================================================================================
-class PageParser
+struct PageParser : public RefCountedBase
     {
     public:
-    CRAWLERLIB_EXPORT PageParser();
-    CRAWLERLIB_EXPORT void SetParseLinksRelNoFollow(bool parse) {m_ParseLinksRelNoFollow = parse;}
-    CRAWLERLIB_EXPORT void SetParsePagesWithNoFollowMetaTag(bool parse) {m_ParsePagesWithNoFollowMetaTag = parse;}
+    CRAWLERLIB_EXPORT static PageParserPtr Create();
+    CRAWLERLIB_EXPORT void SetParseLinksRelNoFollow(bool parse);
+    CRAWLERLIB_EXPORT void SetParsePagesWithNoFollowMetaTag(bool parse);
 
-    CRAWLERLIB_EXPORT PageContentPtr ParsePage(WString const& text, UrlPtr const& url) const;
-    CRAWLERLIB_EXPORT PageContentPtr GetEmptyPageContent(UrlPtr const& url) const;
+    CRAWLERLIB_EXPORT PageContentPtr ParsePage(WString const& text, UrlCR url) const;
+    CRAWLERLIB_EXPORT PageContentPtr GetEmptyPageContent(UrlCR url) const;
 
     private:
+    PageParser();
+
     //Helper functions
-    void  AddLinksFromText(WString const& text, UrlPtr const& url, PageContentPtr content) const;
+    void  AddLinksFromText(WString const& text, UrlCR url, PageContentR content) const;
 
     bool m_ParseLinksRelNoFollow;
     bool m_ParsePagesWithNoFollowMetaTag;
