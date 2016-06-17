@@ -188,7 +188,7 @@ Utf8String responseString
         if (
             reader.parse(actualJsonPart, data) &&
             !data.isArray() &&
-            data.isMember(DgnDbServerEvent::RepoId) &&
+            data.isMember(DgnDbServerEvent::EventTopic) &&
             data.isMember(DgnDbServerEvent::UserId) &&
             data.isMember(DgnDbServerEvent::LockEventProperties::ObjectId) &&
             data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
@@ -199,7 +199,7 @@ Utf8String responseString
             )
             return DgnDbServerLockEvent::Create
                                                (
-                                                data[DgnDbServerEvent::RepoId].asString(),
+                                                data[DgnDbServerEvent::EventTopic].asString(),
                                                 data[DgnDbServerEvent::UserId].asString(),
                                                 data[DgnDbServerEvent::LockEventProperties::ObjectId].asString(),
                                                 data[DgnDbServerEvent::LockEventProperties::LockType].asString(),
@@ -221,7 +221,7 @@ Utf8String responseString
         if (
             reader.parse(actualJsonPart, data) &&
             !data.isArray() &&
-            data.isMember(DgnDbServerEvent::RepoId) &&
+            data.isMember(DgnDbServerEvent::EventTopic) &&
             data.isMember(DgnDbServerEvent::UserId) &&
             data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionId) &&
             data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionIndex) &&
@@ -229,7 +229,7 @@ Utf8String responseString
             )
             return DgnDbServerRevisionEvent::Create
                                                    (
-                                                    data[DgnDbServerEvent::RepoId].asString(),
+                                                    data[DgnDbServerEvent::EventTopic].asString(),
                                                     data[DgnDbServerEvent::UserId].asString(),
                                                     data[DgnDbServerEvent::RevisionEventProperties::RevisionId].asString(),
                                                     data[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString(),

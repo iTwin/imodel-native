@@ -169,6 +169,8 @@
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryConnection.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEventParser.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEventSAS.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEventSubscription.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerLockEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevisionEvent.cpp" />
@@ -255,6 +257,8 @@
     <ClInclude Include="Cache\Schemas.h" />
     <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSAS.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSubscription.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventParser.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
