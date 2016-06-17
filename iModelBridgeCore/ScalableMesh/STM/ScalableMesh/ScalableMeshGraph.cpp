@@ -2072,6 +2072,9 @@ bool HasOverlapWithNeighborsXY(MTGGraph* graphP, MTGNodeId boundaryId, const DPo
         DSegment3d::From(facePoints[1], facePoints[2]),
         DSegment3d::From(facePoints[2], facePoints[0]) };
     std::vector<DSegment3d> neighbors[3];
+    neighbors[0].reserve(20);
+    neighbors[1].reserve(20);
+    neighbors[2].reserve(20);
     for (size_t i = 0; i < 3; ++i)
         {
         if (FastCountNodesAroundFace(graphP, graphP->EdgeMate(nodes[i])) > 3) continue;

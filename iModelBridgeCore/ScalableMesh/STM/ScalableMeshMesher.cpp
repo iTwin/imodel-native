@@ -169,3 +169,17 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
     AddLoopsFromShape(newUnifiedPoly, allPolyShape->GetLightShape(), afterPolygonAdded);
     polygons = newUnifiedPoly;
     }
+
+void circumcircle(DPoint3d& center, double& radius, const DPoint3d* triangle)
+    {
+    double det = RotMatrix::FromRowValues(triangle[0].x, triangle[0].y, 1, triangle[1].x, triangle[1].y, 1, triangle[2].x, triangle[2].y, 1).Determinant();
+    double vals[3] = { (triangle[0].x * triangle[0].x + triangle[0].y * triangle[0].y),
+        (triangle[1].x * triangle[1].x + triangle[1].y * triangle[1].y),
+        (triangle[2].x * triangle[2].x + triangle[2].y * triangle[2].y) };
+    double det1 = -(RotMatrix::FromRowValues(vals[0], triangle[0].y, 1, vals[1], triangle[1].y, 1, vals[2], triangle[2].y, 1).Determinant());
+    double det2 = RotMatrix::FromRowValues(vals[0], triangle[0].x, 1, vals[1], triangle[1].x, 1, vals[2], triangle[2].x, 1).Determinant();
+    center.x = -det1 / (2 * det);
+    center.y = -det2 / (2 * det);
+    double detR = RotMatrix::FromRowValues(vals[0], triangle[0].x, triangle[0].y, vals[1], triangle[1].x, triangle[1].y, vals[2], triangle[2].x, triangle[2].y).Determinant();
+    radius = sqrt(det1*det1 + det2*det2 - 4 * det*detR) / (2 * abs(det));
+    }

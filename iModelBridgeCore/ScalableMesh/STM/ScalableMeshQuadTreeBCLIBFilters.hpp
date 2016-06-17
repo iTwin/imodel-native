@@ -323,7 +323,11 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                 parentPointsPtr->push_back(&(*subNodesPointsPtr)[0], subNodesPointsPtr->size());                                    
                 }
             }
-        parentNode->m_nodeHeader.m_contentExtent = extent;
+        if (!extent.IsNull()) parentNode->m_nodeHeader.m_contentExtent = extent;
+        if (pParentMeshNode->m_nodeHeader.m_contentExtent.low.x == 0 && pParentMeshNode->m_nodeHeader.m_contentExtent.high.x != 0)
+            {
+            std::cout << " FILTERING NODE " << pParentMeshNode->GetBlockID().m_integerID << " WRONG EXTENT " << std::endl;
+            }
         }
     else
     {    
@@ -332,12 +336,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
 
-        parentPointsPtr->reserve (parentPointsPtr->size() + (totalNumberOfPoints * 1 /8) + 20);
+        parentPointsPtr->reserve(parentPointsPtr->size() + (totalNumberOfPoints * 1 / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 20);
         for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
         {
             if (subNodes[indexNodes] != NULL)
                 {            
-                extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
+                if (subNodes[indexNodes]->m_nodeHeader.m_contentExtentDefined) extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
                 // The value of 10 here is required. The alternative path use integer division (*3/4 +1) that will take all points anyway
                 // In reality starting at 9 not all points are used but let's gives us a little margin.
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
@@ -364,18 +368,18 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                     
                     std::random_shuffle(points.begin(), points.end());
 
-                    size_t count = (points.size() / 8) + 1;
+                    size_t count = (points.size() / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 1;
 
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
                     parentPointsPtr->push_back(&points[0], count);
-                    extent.Extend(&points[0], (int)count);
                     /*
                     subNodes[indexNodes]->clearFrom (indexStart);
                     subNodes[indexNodes]->m_nodeHeader.m_totalCount -= pointArrayInitialNumber[indexNodes] - subNodes[indexNodes]->size();
                     */
                 }               
             }
-            parentNode->m_nodeHeader.m_contentExtent = extent;
+            if (!extent.IsNull())  parentNode->m_nodeHeader.m_contentExtent = extent;
+
         }
         
     if (pParentMeshNode->m_nodeHeader.m_arePoints3d)

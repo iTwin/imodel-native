@@ -582,6 +582,12 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
     typedef SMStreamingPointTaggedTileStore<
         PointType,
         PointIndexExtentType >        StreamingStoreType;
+    typedef SMStreamingPointTaggedTileStore<
+        int32_t,
+        PointIndexExtentType >        StreamingIndiceStoreType;
+    typedef SMStreamingPointTaggedTileStore<
+        DPoint2d,
+        PointIndexExtentType >        StreamingUVStoreType;
 
         
     HFCPtr<TileStoreType> pFinalTileStore;
@@ -593,9 +599,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
 
     HFCPtr<StreamingStoreType>  pStreamingTileStore;
-    HFCPtr<SMStreamingPointTaggedTileStore<int32_t, PointIndexExtentType>> pStreamingIndiceTileStore;
-    HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, PointIndexExtentType>> pStreamingUVTileStore;
-    HFCPtr<SMStreamingPointTaggedTileStore<int32_t, PointIndexExtentType>> pStreamingUVsIndicesTileStore;
+    HFCPtr<StreamingIndiceStoreType> pStreamingIndiceTileStore;
+    HFCPtr<StreamingUVStoreType> pStreamingUVTileStore;
+    HFCPtr<StreamingIndiceStoreType> pStreamingUVsIndicesTileStore;
     HFCPtr<StreamingTextureTileStore> pStreamingTextureTileStore;
 
     HFCPtr<SMSQLiteIndiceTileStore<YProtPtExtentType >> pIndiceTileStore;
@@ -629,21 +635,16 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                 {
                 assert(ERROR_PATH_NOT_FOUND != GetLastError());
                 }
-            WString point_store_path = streamingFilePath + L"points\\";
-            WString indice_store_path = streamingFilePath + L"indices\\";
-            WString uv_store_path = streamingFilePath + L"uvs\\";
-            WString uvIndice_store_path = streamingFilePath + L"uvindices\\"; 
-            WString texture_store_path = streamingFilePath + L"textures\\";
 
 			// Pip ToDo: Create account?
 			DataSourceAccount *account = nullptr;
 
-            pStreamingTileStore = new StreamingStoreType(account, point_store_path, (SCM_COMPRESSION_DEFLATE == m_compressionType), true);
+            pStreamingTileStore = new StreamingStoreType(account, streamingFilePath, StreamingStoreType::SMStreamingDataType::POINTS, (SCM_COMPRESSION_DEFLATE == m_compressionType), true);
             // SM_NEEDS_WORKS : layerID 
-            pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(account, indice_store_path, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, PointIndexExtentType>(account, uv_store_path, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(account, uvIndice_store_path, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingTextureTileStore = new StreamingTextureTileStore(account, texture_store_path.c_str());
+            pStreamingIndiceTileStore = new StreamingIndiceStoreType(account, streamingFilePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingUVTileStore = new StreamingUVStoreType(account, streamingFilePath, StreamingUVStoreType::SMStreamingDataType::UVS, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(account, streamingFilePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingTextureTileStore = new StreamingTextureTileStore(account, streamingFilePath);
             
             pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
                                        &*pStreamingTileStore,                                       

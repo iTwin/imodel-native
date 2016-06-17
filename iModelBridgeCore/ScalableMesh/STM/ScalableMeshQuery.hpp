@@ -2207,7 +2207,7 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
     {
     s_nGetDTMs++;
     auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
-    std::lock_guard<std::mutex> m(m_meshNode->m_dtmLock);
+  /*  std::lock_guard<std::mutex> m(m_meshNode->m_dtmLock);
     if (m_meshNode->m_tileBcDTM.get() != nullptr)
         return m_meshNode->m_tileBcDTM.get();
     else
@@ -2221,7 +2221,9 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
             meshP->GetAsBcDTM(m_meshNode->m_tileBcDTM);
             return m_meshNode->m_tileBcDTM.get();
             }
-        }
+        }*/
+    if (m_meshNode->GetTileDTM().get() == nullptr || m_meshNode->GetTileDTM()->GetData() == nullptr) return nullptr;
+    return *m_meshNode->GetTileDTM()->GetData();
     }
 
 template <class POINT> void ScalableMeshNode<POINT>::_GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const

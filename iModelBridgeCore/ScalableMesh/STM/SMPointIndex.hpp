@@ -6725,7 +6725,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
         }
     }
 
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
     pi_pPointStore->StoreHeader(&m_nodeHeader, this->GetBlockID());
@@ -6749,7 +6749,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePo
     if (!IsLoaded())
         Load();
 
-    this->SavePointDataToCloud(pi_pPointStore);
+    this->SavePointDataToCloud(dataSourceAccount, pi_pPointStore);
 
     // Save children nodes
     if (!m_nodeHeader.m_IsLeaf)
@@ -7761,7 +7761,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath + L"point_store\\", L"", pi_pCompress);
+    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);
 
     this->GetRootNode()->SavePointsToCloud(dataSourceAccount, pointStore);
 

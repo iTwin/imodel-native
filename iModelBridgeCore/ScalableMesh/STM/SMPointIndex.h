@@ -27,6 +27,8 @@
 
 #include <ScalableMesh\IScalableMeshQuery.h>
 
+class DataSourceAccount;
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 
@@ -1076,7 +1078,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    void SavePointDataToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    void SavePointDataToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
