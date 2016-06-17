@@ -162,12 +162,12 @@ namespace IndexECPlugin.Source.QueryProviders
             }
 
         private List<IECInstance> CreateInstancesFromInstanceIdList(IEnumerable<string> instanceIdSet, IECClass ecClass, SelectCriteria selectClause)
-            //    {
+            {
             List<IECInstance> instancesRequestingParent = null;
             List<IECInstance> instanceList = new List<IECInstance>();
             List<IECInstance> cachedInstances = m_instanceCacheManager.QueryInstancesFromCache(instanceIdSet, ecClass, GetCacheBaseClass(ecClass), selectClause);
             CompleteInstances(cachedInstances, ecClass);
-                CreateRelatedInstance(instance, m_query.SelectClause.SelectedRelatedInstances);
+            CreateCacheRelatedInstances(cachedInstances, selectClause.SelectedRelatedInstances);
             RelatedInstanceSelectCriteria parentCrit = null;
                     //We create the requested instances that were not in the cache
                     foreach ( string sourceID in instanceIdSet )
@@ -178,7 +178,7 @@ namespace IndexECPlugin.Source.QueryProviders
                             try
                                 {
                                 instance = CreateInstanceFromID(ecClass, sourceID);
-            //    }
+                                }
                             catch ( EnvironmentalException )
                                 {
                                 if ( instance == null )

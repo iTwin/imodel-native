@@ -415,12 +415,6 @@ namespace IndexECPlugin.Source
                 {
                 throw new UserFriendlyException("The request is empty. Please specify items to include in the package");
                 }
-
-            if ((requestedEntitiesECArray.Count == 0) && (osm == false))
-                {
-                throw new UserFriendlyException("The request is empty. Please specify items to include in the package");
-                }
-
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
             List<RequestedEntity> indexRequestedEntities = new List<RequestedEntity>();
             List<RequestedEntity> usgsRequestedEntities = new List<RequestedEntity>();
@@ -888,7 +882,7 @@ namespace IndexECPlugin.Source
                 string copyright = null;
                 if ( !(metadataInstance.GetPropertyValue("Legal") == null || metadataInstance.GetPropertyValue("Legal").IsNull) )
                     {
-                    copyright = queriedMetadatas.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Legal").StringValue;
+                    copyright = metadataInstance.GetPropertyValue("Legal").StringValue;
                     }
 
                 string id = null;
