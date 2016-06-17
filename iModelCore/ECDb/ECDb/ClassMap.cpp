@@ -336,7 +336,7 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
             continue;
             }
 
-        if (!isJoinedTableMapping && propMapInBaseClass->GetAsNavigationPropertyMap() == nullptr)
+        if (!isJoinedTableMapping && propMapInBaseClass->GetType() != PropertyMap::Type::Navigation)
             {
             if (GetPropertyMapsR().AddPropertyMap(propMapInBaseClass) != SUCCESS)
                 return MappingStatus::Error;
@@ -547,7 +547,7 @@ BentleyStatus ClassMap::InitializeDisableECInstanceIdAutogeneration()
 PropertyMapCP ClassMap::GetECInstanceIdPropertyMap() const
     {
     PropertyMapPtr propMap = nullptr;
-    if (TryGetECInstanceIdPropertyMap(propMap))
+    if (GetPropertyMaps().TryGetPropertyMap(propMap, ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
         return propMap.get();
 
     return nullptr;
@@ -556,9 +556,13 @@ PropertyMapCP ClassMap::GetECInstanceIdPropertyMap() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle  06/2013
 //---------------------------------------------------------------------------------------
-bool ClassMap::TryGetECInstanceIdPropertyMap(PropertyMapPtr& ecInstanceIdPropertyMap) const
+PropertyMapCP ClassMap::GetECClassIdPropertyMap() const
     {
-    return GetPropertyMaps().TryGetPropertyMap(ecInstanceIdPropertyMap, ECInstanceIdPropertyMap::PROPERTYACCESSSTRING);
+    PropertyMapPtr propMap = nullptr;
+    if (GetPropertyMaps().TryGetPropertyMap(propMap, ECDbSystemSchemaHelper::ECCLASSID_PROPNAME))
+        return propMap.get();
+
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1115,7 +1119,7 @@ void ColumnFactory::Update()
     m_classMap.GetPropertyMaps().Traverse(
         [&] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
-        if (propMap->GetAsNavigationPropertyMap() == nullptr)
+        if (propMap->GetType() != PropertyMap::Type::Navigation)
             propMap->GetColumns(columnsInUse);
 
         feedback = TraversalFeedback::Next;

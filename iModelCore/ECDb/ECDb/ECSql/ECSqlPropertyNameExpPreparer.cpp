@@ -22,10 +22,9 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     PropertyMap const& propMap = exp->GetPropertyMap();
     ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
 
-    NavigationPropertyMap const* navPropMap = propMap.GetAsNavigationPropertyMap();
-    if (navPropMap != nullptr)
+    if (propMap.GetType() == PropertyMap::Type::Navigation)
         {
-        if (!navPropMap->IsSupportedInECSql(true, &ctx.GetECDb()))
+        if (!static_cast<NavigationPropertyMap const&>(propMap).IsSupportedInECSql(true, &ctx.GetECDb()))
             return ECSqlStatus::InvalidECSql;
         }
     else
@@ -79,7 +78,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 
     if (currentScopeECSqlType == ECSqlType::Delete || currentScopeECSqlType == ECSqlType::Update)
         {
-        if (auto typeIdPM = dynamic_cast<ECClassIdRelationshipConstraintPropertyMap const*>(propertyMap))
+        if (auto typeIdPM = dynamic_cast<RelConstraintECClassIdPropertyMap const*>(propertyMap))
             {
             if (!typeIdPM->IsMappedToClassMapTables() && !typeIdPM->IsVirtual())
                 {
@@ -125,7 +124,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
     const auto currentScopeECSqlType = currentScope.GetECSqlType();
 
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
-    ECClassIdRelationshipConstraintPropertyMap const* constraintClassIdPropMap = propertyMap.GetAsECClassIdRelationshipConstraintPropertyMap();
+    RelConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::RelConstraintECClassId ? static_cast<RelConstraintECClassIdPropertyMap const*>(&propertyMap) : nullptr;
     if (propertyMap.IsVirtual() || (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select))
         {
         //In INSERT statements, virtual columns are always ignored

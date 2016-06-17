@@ -1376,7 +1376,7 @@ void AssertPersistedEnumsAreUnchanged()
     static_assert((int) DbColumn::Kind::DataColumn == 512 &&
                   (int) DbColumn::Kind::ECClassId == 2 &&
                   (int) DbColumn::Kind::ECInstanceId == 1 &&
-                  (int) DbColumn::Kind::NonRelSystemColumn == 3 &&
+                  (int) DbColumn::Kind::RelECClassId == 2048 &&
                   (int) DbColumn::Kind::SharedDataColumn == 1024 &&
                   (int) DbColumn::Kind::SourceECClassId == 64 &&
                   (int) DbColumn::Kind::SourceECInstanceId == 32 &&
