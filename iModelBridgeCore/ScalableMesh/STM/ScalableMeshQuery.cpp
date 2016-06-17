@@ -2427,6 +2427,11 @@ bvector<IScalableMeshNodePtr>  IScalableMeshNode::GetNeighborAt( char relativePo
     return _GetNeighborAt(relativePosX, relativePosY, relativePosZ);
     }
 
+bvector<IScalableMeshNodePtr>  IScalableMeshNode::GetChildrenNodes() const
+	{
+	return _GetChildrenNodes();
+	}
+
 DRange3d  IScalableMeshNode::GetNodeExtent() const
     {
     return _GetNodeExtent();

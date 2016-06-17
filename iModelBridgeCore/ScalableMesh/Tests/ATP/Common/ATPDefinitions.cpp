@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <wtypes.h>
 #include <random>
+#include <queue>
 
 #include <ScalableMesh/Foundations/Definitions.h>
 #undef static_assert
@@ -114,69 +115,73 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 				{				
 				IScalableMeshMeshQueryPtr meshQueryInterface = stmFile->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
 
+				//the root node
+				IScalableMeshNodePtr root;
+
+				//find the root node
 				for (int level = 0; level <= maxLevel; level++)
 					{
-					//Infos for 1 level
-					clock_t totalClock = clock();
-					int64_t totalPointCount = 0;
-					int64_t totalParamCount = 0;
-					
 					bvector<IScalableMeshNodePtr> returnedNodes;
 					IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
 					params->SetLevel(level);
 					meshQueryInterface->Query(returnedNodes, 0, 0, params);
 
-					//The level we're at
-					WChar levelChar[10];
-					swprintf(levelChar, L"%i", level);
-					WString levelString(levelChar);
-
-					//The tile we're at
-					int nbTile = 0;
-
-					//Folder name
-					//WString folderName = outputDir + L"\\Level" + levelString + L"\\";
-					WString folderName = outputDir + L"\\";
-
-					for (auto& node : returnedNodes)
+					if (returnedNodes.size() == 1)
 						{
-						//Infos for 1 tile
-						clock_t nodeClock = clock();
-						int64_t pointCount = 0;
-						int64_t paramCount = 0;
-						int64_t pointIndexCount = 0;
-						int64_t nodeId = node->GetNodeId();
+						root = returnedNodes[0];
+						break;
+						}
+					}
 
-						//The tile we're at
-						WChar numberChar[10];
-						swprintf(numberChar, L"%I64d", nodeId);
-						WString number(numberChar);
-						
-						//File name
-						WString materialName = number;
-						WString binFileName = folderName + materialName + L".bin";
+				queue<IScalableMeshNodePtr> nodes;
+				nodes.push(root);
+				
+				//Folder name
+				WString folderName = outputDir + L"\\";
 
+				size_t level = root->GetLevel();
+				while(level <= maxLevel)
+					{
+					IScalableMeshNodePtr currentNode = nodes.front();
+					
+					//Infos for 1 tile
+					clock_t nodeClock = clock();
+					int64_t pointCount = 0;
+					int64_t paramCount = 0;
+					int64_t pointIndexCount = 0;
+					int64_t nodeId = currentNode->GetNodeId();
+
+					//The node we're at
+					WChar numberChar[10];
+					swprintf(numberChar, L"%I64d", nodeId);
+					WString number(numberChar);
+
+					//File name
+					WString materialName = number;
+					WString binFileName = folderName + materialName + L".bin";
+
+					//Get mesh
+					bvector<bool> clips;
+					IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+					if (currentNode->IsTextured())
+						flags->SetLoadTexture(true);
+					IScalableMeshMeshPtr mesh = currentNode->GetMesh(flags, clips);
+					
+					if (mesh != NULL)
+						{
 						//Bin file
 						FILE* outBin;
 						outBin = _wfopen(binFileName.c_str(), L"wb");
 
-						//Get mesh
-						bvector<bool> clips;
-						IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-						if (node->IsTextured())
-							flags->SetLoadTexture(true);
-						IScalableMeshMeshPtr mesh = node->GetMesh(flags, clips);
 						const PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
 
 						//Get infos
 						pointCount = polyface->GetPointCount();
 						paramCount = polyface->GetParamCount();
 						pointIndexCount = polyface->GetPointIndexCount();
-						totalPointCount += pointCount;
-						totalParamCount += paramCount;
 
-						IScalableMeshTexturePtr texture = node->GetTexture();
-						bool isTextured = node->IsTextured();
+						IScalableMeshTexturePtr texture = currentNode->GetTexture();
+						bool isTextured = currentNode->IsTextured();
 
 						//write node id
 						fwrite(&nodeId, sizeof(int64_t), 1, outBin);
@@ -256,21 +261,20 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 						nodeClock = clock() - nodeClock;
 						double delay = (double)nodeClock / CLOCKS_PER_SEC;
 
-						fwprintf(pResultFile, L"%s,%I64d,%I64d,%.5f\n", materialName.c_str(), pointCount, paramCount, delay);
-
-						nbTile++;
+						fwprintf(pResultFile, L"%s,%I64d,%I64d,%zu,%.5f\n", materialName.c_str(), pointCount, paramCount, level, delay);
 
 						//Close file for this tile
 						fclose(outBin);
+						}
 
-						}//end for nodes
-
-					totalClock = clock() - totalClock;
-					double delay = (double)totalClock / CLOCKS_PER_SEC;
-					fwprintf(pResultFile, L"Total for level %i,%I64d,%I64d,%.5f\n", level, totalPointCount, totalParamCount, delay);
-
-					}//end for level
-
+					//get children nodes
+					bvector<IScalableMeshNodePtr> childrenNodes = currentNode->GetChildrenNodes();
+					for (auto child : childrenNodes)
+						nodes.push(child);
+					nodes.pop();
+					
+					level = currentNode->GetLevel();
+					}//end while
 				}
 			else
 				printf("Error loading stm file");

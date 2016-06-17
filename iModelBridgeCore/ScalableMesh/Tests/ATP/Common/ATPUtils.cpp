@@ -77,7 +77,7 @@ WString GetHeaderForTestType(TestType t)
         //    return L"\n";
         //    break;
 		case EXPORT_TO_UNITY:
-			return L"File name, Nb points, Nb params, Duration (seconds)\n";
+			return L"File name, Nb points, Nb params, Level, Duration (seconds)\n";
 			break;
         default: break;
         }
