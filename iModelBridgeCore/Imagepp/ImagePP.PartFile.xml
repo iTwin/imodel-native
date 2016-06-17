@@ -189,11 +189,20 @@
         <SubPart PartName="ImagePPSqlang"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ImagePP" SubPartDirectory="UnitTests/ImagePP">Delivery/UnitTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTests-Assets">Delivery/UnitTests/ImagePPTest.config.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Common" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Common">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ImagePP/Common" SourceName="Delivery/UnitTests/Objects/Common"/>
         </Bindings>
     </Part>
     
     <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests"/>
+        <SubPart PartName="UnitTests-Common"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ImagePP/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
@@ -201,6 +210,8 @@
 
     <Part Name="UnitTests-FileFormat" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=FileFormat">
         <SubPart PartName="PrewireForUnitTests"/>
+        <SubPart PartName="UnitTests-Common"/>
+        <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ImagePP/FileFormat" SourceName="Delivery/UnitTests/Objects/FileFormat"/>
         </Bindings>
@@ -234,7 +245,7 @@
         <Directories DirectoryListName="ImagePPGTestsDir"/>
     </Product>    
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ImagePP -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTests$(exeext) -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ImagePP -dBEGTEST_VERBOSE" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ImagePP-GTest"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>

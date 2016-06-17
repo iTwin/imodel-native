@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<ImagePPTest>
+    <FileFormatTester>
+        <!--Location of input files. If blank or invalid tests won't run.
+        You can get a copy of files here: \\TEST33393QBC\Dataset\Images_Files\_forATPs\        
+        -->
+        <Source Enable="false">D:\ATP\Dataset\Images_Files\_forATPs\</Source>
+        <!-- &&MM TODO 
+        - SourceFilters
+
+        - ExportToAll
+        -   Images\iTIFF\TA00T1A2\TS1_32bits_None_Tile.iTIFF
+            Images\iTIFF\1A02S142\TS1_2C_Alpha_CCITT4_Strip.iTIFF
+            Images\iTIFF\8A00T1N2\TS1_256c_Alpha_None_Tile.iTIFF
+            
+        -->
+        <!-- Location of base files for comparaison. Must point to one level hight than 'ExportTester' directory-->
+        <BaseLine Enable="false">D:\ATP\Baseline\</BaseLine>
+
+        <!-- &&MM embed in baseline node, can only work when we have a baseline.-->
+        <DurationValidation Enable="false">
+            <!-- Anything under the threshold is not validated -->
+            <ThresholdMs>5000</ThresholdMs>
+            <!-- Fails when there is more than 10% difference -->
+            <ToleranceRatio>10</ToleranceRatio>
+        </DurationValidation>
+        
+    </FileFormatTester>        
+</ImagePPTest>
+
+  

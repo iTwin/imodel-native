@@ -17,7 +17,7 @@ baseDir = $(_MakeFilePath)
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)ImagePP
 BEGTEST_INPUT = $(baseDir)$(TestDir)/
-#BEGTEST_IGNORE= $(baseDir)ignore_list.txt
+BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/ImagePP/UnitTests/
 o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 

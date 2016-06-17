@@ -33,6 +33,7 @@
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
 #include <Imagepp/all/h/HRFException.h>
+#include <Imagepp/all/h/HFCURLFile.h>
 
 
 
@@ -2845,6 +2846,15 @@ HFCPtr<HRFRasterFile> HRFImportExport::CreateFileFromSelectedValues()
     HFCPtr<HRFRasterFile> pOutputFile;
 
     const HRFRasterFileCreator* pRasterFileCreator(GetSelectedExportFileFormat());
+
+    // Create output directory if it doesn't exits.  Otherwise file creation will fail.
+    if (GetSelectedExportFilename()->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        {
+        BeFileName outName(static_cast<HFCURLFile const*>(GetSelectedExportFilename().GetPtr())->GetAbsoluteFileName());
+        BeFileName outDir = outName.GetDirectoryName();
+        if (!outDir.DoesPathExist())
+            BeFileName::CreateNewDirectory(outDir.c_str());
+        }
 
     // Create the basic destination file
     // Is the destination is the COM ECW(ERMapper) (1429) OR Is the destination is COM Jpeg2000File (1477)

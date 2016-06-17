@@ -375,16 +375,15 @@ class HRAImageSamplerTester : public ::testing::TestWithParam< ::std::tr1::tuple
     protected:
     HRAImageSamplerTester()
         {
-        ImagePP::ImageppLib::Initialize(m_imagePPHost);
         };
 
     virtual ~HRAImageSamplerTester()
         {
-        ImagePP::ImageppLib::GetHost().Terminate(false);
         }
 
-    virtual void SetUp() 
+    virtual void SetUp() override
         {
+        ImagePPTestConfig::GetConfig().SetUp();
         }
 
     HFCPtr<HRPPixelType> const& GetPixelType() {return ::std::tr1::get<0>(GetParam());}
@@ -531,8 +530,6 @@ class HRAImageSamplerTester : public ::testing::TestWithParam< ::std::tr1::tuple
             return CompareImage(*pImageOutStretch, *pImageOutWarp);
         }
 
-    TestImageppLibHost m_imagePPHost;
-
     }; //END CLASS HRAImageSamplerTester
 
 
@@ -662,12 +659,15 @@ class HRAImageSamplerRleTester : public ::testing::TestWithParam<std::tr1::tuple
     public:
         HRAImageSamplerRleTester()
         {
-        ImagePP::ImageppLib::Initialize(m_imagePPHost);
         };
 
     virtual ~HRAImageSamplerRleTester()
         {
-        ImagePP::ImageppLib::GetHost().Terminate(false);
+        }
+
+    virtual void SetUp() override
+        {
+        ImagePPTestConfig::GetConfig().SetUp();
         }
 
     double const& GetScaling()   {return ::std::tr1::get<0>(GetParam());}
@@ -722,7 +722,6 @@ class HRAImageSamplerRleTester : public ::testing::TestWithParam<std::tr1::tuple
 //             }
 //         else
 #endif            
-    TestImageppLibHost m_imagePPHost;
     SamplerTestBufferAllocator m_allocator;
     HRAImageSamplePtr m_pSource;
     };

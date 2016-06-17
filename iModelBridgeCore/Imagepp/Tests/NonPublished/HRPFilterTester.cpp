@@ -111,20 +111,18 @@ static std::vector<Creator*> creatorVectorBytes =
 class HRPFilterTester : public ::testing::TestWithParam< ::std::tr1::tuple<HFCPtr<HRPPixelType>, uint32_t, uint32_t> >
     {   
     protected:
-    TestImageppLibHost m_imagePPHost;
 
     HRPFilterTester()
         {
-        ImagePP::ImageppLib::Initialize(m_imagePPHost);
         };
 
     virtual ~HRPFilterTester()
         {
-        ImagePP::ImageppLib::GetHost().Terminate(false);
         }
 
-    virtual void SetUp() 
+    virtual void SetUp() override
         {
+        ImagePPTestConfig::GetConfig().SetUp();
         }
 
     HFCPtr<HRPPixelType> const& GetPixelType()  { return ::std::tr1::get<0>(GetParam()); }
