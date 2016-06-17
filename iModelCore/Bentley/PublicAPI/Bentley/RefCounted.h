@@ -53,13 +53,14 @@ private:                                                \
     mutable BeAtomic<uint32_t> m_refCount;              \
 public:                                                 \
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS                 \
-    uint32_t AddRef() const {return m_refCount.IncrementAtomicPreRelaxed();} \
+    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre(std::memory_order_relaxed);} \
     uint32_t Release() const                            \
         {                                               \
-        uint32_t countWas = m_refCount.DecrementAtomicPostRelease(); REFCOUNT_RELASE_CHECK(countWas); \
+        uint32_t countWas = m_refCount.DecrementAtomicPost(std::memory_order_release);  \
+        REFCOUNT_RELASE_CHECK(countWas);                \
         if (1 == countWas)                              \
             {                                           \
-            BE_ATOMIC_THREAD_FENCE_ACQUIRE;             \
+            std::atomic_thread_fence(std::memory_order_acquire);    \
             delete this;                                \
             }                                           \
         return countWas-1;                              \
