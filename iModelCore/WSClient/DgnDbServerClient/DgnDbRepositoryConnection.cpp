@@ -532,7 +532,7 @@ DgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent(bool longPolling, IC
     if (HttpStatus::NoContent == response.GetHttpStatus())
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
 
-    DgnDbServerEventPtr ptr = m_eventParser->ParseEventasJson(response.GetHeaders().GetContentType(), response.GetBody().AsString());
+    DgnDbServerEventPtr ptr = m_eventParser->ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString());
     if (ptr == nullptr)
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
     return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Success(ptr));
@@ -566,7 +566,7 @@ DgnDbServerEventCollectionTaskPtr DgnDbRepositoryConnection::GetEvents(bool long
 
     for (int i = 0; i < responseStrings.size(); i++)
         {
-        DgnDbServerEventPtr ptr = m_eventParser->ParseEventasJson(contentTypes[i], responseStrings[i]);
+        DgnDbServerEventPtr ptr = m_eventParser->ParseEvent(contentTypes[i], responseStrings[i]);
         if (ptr == nullptr)
             continue;
         events.push_back(ptr);
@@ -772,6 +772,73 @@ ICancellationTokenPtr cancellationToken
         });
     }
 
+
+//Test
+DgnDbServerCancelEventTaskPtr DgnDbRepositoryConnection::GetEventServiceSubscriptionId2(ICancellationTokenPtr cancellationToken) const
+    {
+    //ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventSubscription, "");
+
+    Json::Value request = Json::objectValue;
+    JsonValueR instance = request[ServerSchema::Instance] = Json::objectValue;
+    instance[ServerSchema::SchemaName] = ServerSchema::Schema::Repository;
+    instance[ServerSchema::ClassName] = ServerSchema::Class::EventSubscription;
+    instance[ServerSchema::Properties] = Json::objectValue;
+
+    JsonValueR properties = instance[ServerSchema::Properties];
+    properties[ServerSchema::Property::Id] = "12";
+    properties[ServerSchema::Property::TopicName] = "";
+    properties[ServerSchema::Property::EventTypes] = Json::arrayValue;
+    bvector<Utf8String> eventTypes;
+    eventTypes.push_back("LockEvent");
+    eventTypes.push_back("RevisionEvent");
+    int i = 0;
+    for (auto iter : eventTypes)
+        {
+        properties[ServerSchema::Property::EventTypes][i++] = iter;
+        }
+    
+    std::shared_ptr<DgnDbServerCancelEventResult> finalResult = std::make_shared<DgnDbServerCancelEventResult>();
+    return m_wsRepositoryClient->SendCreateObjectRequest(request, BeFileName(), nullptr, cancellationToken)->Then([=] (const WSCreateObjectResult& eventServiceResult)
+        {
+        if (eventServiceResult.IsSuccess())
+            {
+            JsonValueCR changedInstance = eventServiceResult.GetValue().GetObject();
+            if (changedInstance.isMember("changedInstance"))
+                {
+                if (changedInstance["changedInstance"].isMember("instanceAfterChange"))
+                    {
+                    if (changedInstance["changedInstance"]["instanceAfterChange"].isMember("properties"))
+                        {
+                        JsonValueCR properties = changedInstance["changedInstance"]["instanceAfterChange"]["properties"];
+                        if (properties.isMember("TopicName"))
+                            {
+                            Utf8String topicName = properties["TopicName"].asCString();
+                            Utf8String id = properties["Id"].asCString();
+                            if (properties["EventTypes"].isArray())
+                                {
+                                Json::Value::ArrayIndex size = properties["EventTypes"].size();
+                                for (Json::Value::ArrayIndex i = 0; i < size; i++)
+                                    {
+                                    Utf8String mystring = properties["EventTypes"][i].asCString();
+                                    printf("%s%s%s\n", topicName.c_str(), id.c_str(), mystring.c_str());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            else if (changedInstance.isMember("change"))
+                {
+                printf("Ok!!");
+                }
+            }
+        finalResult->SetSuccess();
+        })->Then<DgnDbServerCancelEventResult>([=]
+            {
+            return *finalResult;
+            });
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Arvind.Venkateswaran           05/2016
 //---------------------------------------------------------------------------------------
@@ -780,6 +847,8 @@ DgnDbServerEventConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceSubs
     //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSubscription
 
     //Todo: Find a better way to handle error
+
+    GetEventServiceSubscriptionId2();
 
 	ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventSubscription, "");
 	return m_wsRepositoryClient->SendGetObjectRequest(eventServiceObject, nullptr, cancellationToken)->Then<DgnDbServerEventConnectionResult>
@@ -844,13 +913,13 @@ DgnDbServerEventConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(
 
             if (
                 !instanceProperties.HasMember(ServerSchema::Property::EventServiceSASToken) ||
-                !instanceProperties.HasMember(ServerSchema::Property::EventServiceNameSpace)
+                !instanceProperties.HasMember(ServerSchema::Property::BaseAddress)
                 )
                 return DgnDbServerEventConnectionResult::Error(eventServiceResult.GetError());
 
             auto info = DgnDbServerEventConnection::Create(
                 instanceProperties[ServerSchema::Property::EventServiceSASToken].GetString(),
-                instanceProperties[ServerSchema::Property::EventServiceNameSpace].GetString()
+                instanceProperties[ServerSchema::Property::BaseAddress].GetString()
                 );
 
             if (Utf8String::IsNullOrEmpty(info->GetSasToken().c_str()) ||

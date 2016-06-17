@@ -13,6 +13,9 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                              Arvind.Venkateswaran   06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 namespace DgnDbServerEvent
     {
     static Utf8CP RepoId = "repoId";
@@ -40,19 +43,38 @@ namespace DgnDbServerEvent
         UnknownEventType
         };
 
+    /*--------------------------------------------------------------------------------------+
+    * @bsiclass                                              Arvind.Venkateswaran   06/2016
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    struct Helper
+        {
+        DGNDBSERVERCLIENT_EXPORT static Utf8String GetEventNameFromEventType(DgnDbServerEventType eventType)
+            {
+            switch (eventType)
+                {
+                    case DgnDbServerEventType::LockEvent:   return "LockEvent";
+                    case DgnDbServerEventType::RevisionEvent:   return "RevisionEvent";
+                    case DgnDbServerEventType::UnknownEventType:
+                    default:      return "UnknownEventType";
+                }
+            }
+        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventType GetEventTypeFromEventName(Utf8CP eventName)
+            {
+            if (0 == (BeStringUtilities::Stricmp("LockEvent", eventName)))
+                return DgnDbServerEventType::LockEvent;
+            else if (0 == (BeStringUtilities::Stricmp("RevisionEvent", eventName)))
+                return DgnDbServerEventType::RevisionEvent;
+            else
+                return DgnDbServerEventType::UnknownEventType;
+            }
+        };
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsiclass                                              Arvind.Venkateswaran   06/2016
+    +---------------+---------------+---------------+---------------+---------------+------*/
     struct GenericEvent
         {
         public:
-            DGNDBSERVERCLIENT_EXPORT static Utf8String GetEventName(DgnDbServerEventType eventType)
-                {
-                switch (eventType)
-                    {
-                        case DgnDbServerEventType::LockEvent:   return "LockEvent";
-                        case DgnDbServerEventType::RevisionEvent:   return "RevisionEvent";
-                        case DgnDbServerEventType::UnknownEventType:
-                        default:      return "UnknownEventType";
-                    }
-                }
             DGNDBSERVERCLIENT_EXPORT virtual const type_info& GetEventType() { return typeid(this); }
             DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetRepoId() { return ""; }
             DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetUserId() { return ""; }

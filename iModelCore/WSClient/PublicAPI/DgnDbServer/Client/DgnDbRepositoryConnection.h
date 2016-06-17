@@ -129,6 +129,9 @@ private:
     //! Get the ConnectionId based on query to EventService WebAPI.
     DgnDbServerEventConnectionTaskPtr GetEventServiceSubscriptionId(ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Get the ConnectionId based on query to EventService WebAPI. v2
+    DgnDbServerCancelEventTaskPtr GetEventServiceSubscriptionId2(ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Get Responses from the EventServiceClient
     bool GetEventServiceResponses(bvector<Utf8String>& responseStrings, bvector<Utf8CP>& contentTypes, bool longpolling = true);
 
