@@ -13,7 +13,8 @@
 #if !defined (_WIN32)
     #define BENTLEY_HAVE_STD_ATOMIC
 #else
-    #if (_MSC_VER > 1600) && !defined (_MANAGED)
+    // cannot include <atomic> with /clr in MSVC versions prior to 2015
+    #if (_MSC_VER > 1600) && (!defined (_MANAGED) || _MSC_VER >= 1900)
         #define BENTLEY_HAVE_STD_ATOMIC
     #endif
 #endif
@@ -31,9 +32,14 @@
     template<class T> struct BeAtomic : std::atomic<T>
     {
         explicit BeAtomic(T val=0) : std::atomic<T>(val){}
-    T IncrementAtomicPre() {return this->fetch_add(1)+1;}
-    T DecrementAtomicPost() {return this->fetch_sub(1);}
+        T IncrementAtomicPre(std::memory_order order=std::memory_order_seq_cst) {return this->fetch_add(1, order)+1;}
+        T DecrementAtomicPost(std::memory_order order=std::memory_order_seq_cst) {return this->fetch_sub(1, order);}
+
+        T IncrementAtomicPreRelaxed() {return this->IncrementAtomicPre(std::memory_order_relaxed);}
+        T DecrementAtomicPostRelease() {return this->DecrementAtomicPost(std::memory_order_release);}
     };
+
+    #define BE_ATOMIC_THREAD_FENCE_ACQUIRE std::atomic_thread_fence(std::memory_order_acquire);
 #else
 
     #define INTERLOCKED_FUNCTIONS(TYPE_SUFFIX,TYPE)\
@@ -63,6 +69,8 @@
             UTYPE operator--(int) volatile {return _InterlockedDecrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value)+1;}\
             UTYPE IncrementAtomicPre() {return ++(*this);} \
             UTYPE DecrementAtomicPost() {return (*this)--;} \
+            UTYPE IncrementAtomicPreRelaxed() {return IncrementAtomicPre();} \
+            UTYPE DecrementAtomicPostRelease() {return DecrementAtomicPost();} \
             UTYPE load() const {return _InterlockedCompareExchange ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value,0,0);}\
             void store (UTYPE v) const {_InterlockedExchange ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value,v);}
 
@@ -91,4 +99,5 @@
 
     END_BENTLEY_NAMESPACE
 
+    #define BE_ATOMIC_THREAD_FENCE_ACQUIRE ((void)0)
 #endif
