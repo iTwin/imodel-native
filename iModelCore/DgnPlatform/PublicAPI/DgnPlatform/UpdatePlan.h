@@ -161,7 +161,7 @@ struct UpdatePlan
         double m_frustumScale = 1.0;
         bool m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
-        uint32_t m_minElements = 300;
+        uint32_t m_minElements = 30;
         uint32_t m_maxElements = 50000;
         mutable uint32_t m_delayAfter = 0;
         mutable uint32_t m_targetNumElements = 0;
@@ -207,20 +207,20 @@ struct UpdatePlan
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
-    double      m_targetFPS = 20.0; // target Frames Per Second
-    uint32_t    m_timeout = 0; // in milliseconds
+    uint32_t    m_timeout = 0; // a percentage of frame time, from 0 to 100
+    bool        m_timeoutIsPct = false;
     Query       m_query;
     AbortFlags  m_abortFlags;
 
 public:
-    double GetTargetFramesPerSecond() const {return m_targetFPS;}
-    void SetTargetFramesPerSecond(double fps) {m_targetFPS = fps;}
     Query& GetQueryR() {return m_query;}
     Query const& GetQuery() const {return m_query;}
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-    void SetCreateSceneTimeout(uint32_t milliseconds) {m_timeout=milliseconds;}
-    uint32_t GetCreateSceneTimeout() const {return m_timeout;}
+    void SetCreateSceneTimeoutMillis(uint32_t milliseconds) { m_timeout = milliseconds; m_timeoutIsPct=false;}
+    void SetCreateSceneTimeoutPct(uint32_t pct) {m_timeout= pct; m_timeoutIsPct=true;}
+    uint32_t GetCreateSceneTimeout() const { return m_timeout; }
+    bool IsCreateSceneTimeoutPct() const {return m_timeoutIsPct;}
 };
 
 //=======================================================================================
@@ -228,7 +228,7 @@ public:
 //=======================================================================================
 struct DynamicUpdatePlan : UpdatePlan
     {
-    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate); SetCreateSceneTimeout(50);}
+    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate); SetCreateSceneTimeoutPct(75);} // You can use up 75% of frame time for the query
     };
 
 //=======================================================================================

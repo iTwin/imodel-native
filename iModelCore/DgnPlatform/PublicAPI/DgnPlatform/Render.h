@@ -106,6 +106,7 @@ struct Task : RefCounted<NonCopyableClass>
         Heal,
         DefineGeometryTexture,
         ReadImage,
+        DestroyTarget,
     };
 
     //! The outcome of the processing of a Task.
@@ -153,6 +154,7 @@ public:
 };
 
 //=======================================================================================
+// Base class for all Render::Tasks that define a scene. SceneTasks always replace all NonSceneTasks queued for the same target.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct SceneTask : Task
@@ -163,6 +165,9 @@ struct SceneTask : Task
 };
 
 //=======================================================================================
+// Base class for all Render::Tasks that do NOT define a scene. That means that subclasses of this class merely
+// perform some action (e.g. drawing a frame) on the previously-established scene.
+// Any queued-but-not-yet-processed NonSceneTasks are replaced by any requests to queue a new SceneTask for the same target.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct NonSceneTask : Task
@@ -1334,6 +1339,12 @@ struct System
 //=======================================================================================
 struct Target : RefCounted<NonCopyableClass>
 {
+    struct SceneParameters
+        {
+        double m_saesNpcSq;     // smallest attempted element size (NPC squared)
+        SceneParameters(double n = 0) : m_saesNpcSq(n) {}
+        };
+
 protected:
     bool               m_abort;
     System&            m_system;
@@ -1343,29 +1354,30 @@ protected:
     GraphicListPtr     m_terrain;
     GraphicListPtr     m_dynamics;
     Decorations        m_decorations;
+    double             m_frameRateGoal; // frames per second
     BeAtomic<uint32_t> m_graphicsPerSecondScene;
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
     virtual void _OnResized() {}
-
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
 
-    DGNVIEW_EXPORT Target(SystemR);
+    DGNVIEW_EXPORT Target(SystemR, double frameRateGoal);
     DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
 public:
     struct Debug
     {
-        static void SaveGPS(int);
+        static void SaveGPS(int, double);
         DGNPLATFORM_EXPORT static void SaveSceneTarget(int);
         DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
     };
-    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
+    virtual void _OnDestroy() {}
+    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, SceneParameters const& parms = SceneParameters()) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
@@ -1397,6 +1409,16 @@ public:
     TexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
+    static double DefaultFrameRateGoal() 
+        {
+#ifdef BENTLEY_CONFIG_OS_WINDOWS // *** WIP - we are trying to predict the likely graphics performance of the box.
+        return 25.0; // Plan for the best on Windows (desktop) computers.
+#else
+        return 5.0; // Plan for the worst on mobile devices
+#endif
+        }
+    double GetFrameRateGoal() const {return m_frameRateGoal;}
+    void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }
