@@ -432,12 +432,6 @@
     <ClCompile Include="DgnDbServerClient\EventServiceInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DgnDbServerClient\EventServiceConnection.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnDbServerClient\EventServiceReceive.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DgnDbServerClient\DgnDbServerLockEvent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -454,6 +448,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEventConnection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEventParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1019,19 +1022,22 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceConnection.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceReceive.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerLockEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevisionEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\IDgnDbServerEvent.h">
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventConnection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

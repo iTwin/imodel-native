@@ -168,6 +168,7 @@
     <ClCompile Include="DgnDbServerClient\DgnDbLocks.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryConnection.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEventParser.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerLockEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevisionEvent.cpp" />
@@ -202,6 +203,7 @@
     <ClCompile Include="Client\WSRepositoryClient.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CacheNavigationTask.h" />
@@ -254,6 +256,7 @@
     <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventParser.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\SessionInfo.h" />
@@ -274,9 +277,8 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevisionEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventConnection.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceInfo.h" />
-
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\IDgnDbServerEvent.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h" />    
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferGenPublic.h" />
@@ -396,6 +398,7 @@
     <ClInclude Include="PublicAPI\WebServices\WebServices.h" />
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />
