@@ -864,19 +864,19 @@ namespace IndexECPlugin.Source
                 string metadata = null;
                 if ( !(datasourceInstance.GetPropertyValue("Metadata") == null || datasourceInstance.GetPropertyValue("Metadata").IsNull) )
                     {
-                    metadata = entity.GetPropertyValue("Metadata").StringValue;
+                    metadata = datasourceInstance.GetPropertyValue("Metadata").StringValue;
                     }
 
                 string url = null;
                 if ( !(datasourceInstance.GetPropertyValue("MainURL") == null || datasourceInstance.GetPropertyValue("MainURL").IsNull) )
                     {
-                    url = entity.GetPropertyValue("MainURL").StringValue;
+                    url = datasourceInstance.GetPropertyValue("MainURL").StringValue;
                     }
 
                 string type = null;
                 if ( !(datasourceInstance.GetPropertyValue("DataSourceType") == null || datasourceInstance.GetPropertyValue("DataSourceType").IsNull) )
                     {
-                    type = entity.GetPropertyValue("DataSourceType").StringValue;
+                    type = datasourceInstance.GetPropertyValue("DataSourceType").StringValue;
                     }
 
                 string copyright = null;
@@ -888,20 +888,20 @@ namespace IndexECPlugin.Source
                 string id = null;
                 if ( !(datasourceInstance.GetPropertyValue("Id") == null || datasourceInstance.GetPropertyValue("Id").IsNull) )
                     {
-                    id = entity.GetPropertyValue("Id").StringValue;
+                    id = datasourceInstance.GetPropertyValue("Id").StringValue;
                     }
 
                 long fileSize = 0;
                 if(!(datasourceInstance["FileSize"] == null || datasourceInstance["FileSize"].IsNull))
                     {
-                    fileSize = (long) entity.GetPropertyValue("FileSize").NativeValue;
+                    fileSize = (long) datasourceInstance.GetPropertyValue("FileSize").NativeValue;
                     }
                 ulong uFileSize = (fileSize > 0) ? (ulong) fileSize : 0;
 
                 string location = null;
                 if ( !(datasourceInstance.GetPropertyValue("LocationInCompound") == null || datasourceInstance.GetPropertyValue("LocationInCompound").IsNull ))
                     {
-                    location = entity.GetPropertyValue("LocationInCompound").StringValue;
+                    location = datasourceInstance.GetPropertyValue("LocationInCompound").StringValue;
                     }
                 var classificationPropValue = entity.GetPropertyValue("Classification");
                 string classification = null;
