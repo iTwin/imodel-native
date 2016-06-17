@@ -15,8 +15,11 @@ if __name__ == '__main__':
     failedtests = ''
     comma = ''
     lookingforsummary = True
-    errpat = re.compile (r"FAILED\s*]\s*(\w+)\.(\w+)", re.I)
-    summarypat = re.compile(r"\[==========\]\s*(\d+)\s+tests\s+from\s+(\d+)\s+test\s+cases\s+ran\.\s*\((\d+)\s+ms\s+total\)")
+    # patterns to match
+    # [  FAILED  ] RleEditorTester.MaxRleRunSetPixels    
+    # [  FAILED  ] FileFormatTests/ExportTester.ToBestiTiff/21, where GetParam() = L"D:\\ATP\\Dataset\\Images_Files\\_forATPs\\Images\\jpeg\\Mosaic_Jpeg_WF\\TC06L0\\15.jpg"
+    errpat = re.compile (r"FAILED\s*]\s*(\w+\.\w+|\w+/\w+\.\w+/\d+)", re.I)
+    summarypat = re.compile(r"\[==========\]\s*(\d+)\s+tests?\s+from\s+(\d+)\s+test\s+cases?\s+ran\.\s*\((\d+)\s+ms\s+total\)")
     with open(sys.argv[1], 'r') as logfile:
         for line in logfile.readlines():
 
@@ -27,10 +30,10 @@ if __name__ == '__main__':
 
             err = errpat.search(line)
             if err != None:
-                failedtests = failedtests + comma + err.group(1) + "." + err.group(2)
+                failedtests = failedtests + comma + err.group(1)
                 comma = ","
                 failureCount = failureCount + 1
-     
+
     if len(failedtests) != 0:
         print ""
         print "*** TESTS FAILED ***"
