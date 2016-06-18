@@ -72,6 +72,8 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
 
 			//Event Errors
 			NoEventsFound,
+            NoSubscriptionFound,
+            NoSASFound,
 			
             AzureError,
             DgnDbError

@@ -309,10 +309,9 @@ void DgnDbServerEventParserTests::SetUp()
 TEST_F(DgnDbServerEventParserTests, LockEventTests)
     {
     //Check for valid values as Json
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
-    DgnDbServerEventPtr validPtr = parser->ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
+    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
     EXPECT_NE(nullptr, validPtr);
-    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::LockEvent, parser->GetEventType(validPtr));
+    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::LockEvent, DgnDbServerEventParser::GetInstance().GetEventType(validPtr));
     DgnDbServerLockEvent& lockEvent = dynamic_cast<DgnDbServerLockEvent&>(*validPtr);
     EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&lockEvent)); //DgnDbServerLockEvent is a subclass of DgnDbServerEvent
     }
@@ -320,107 +319,100 @@ TEST_F(DgnDbServerEventParserTests, LockEventTests)
 TEST_F(DgnDbServerEventParserTests, RevisionEventTests)
     {
     //Check for valid values
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
-    DgnDbServerEventPtr validPtr = parser->ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());
+    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());
     EXPECT_NE(nullptr, validPtr);
-    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent, parser->GetEventType(validPtr));
+    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent, DgnDbServerEventParser::GetInstance().GetEventType(validPtr));
     DgnDbServerRevisionEvent& revisionEvent = dynamic_cast<DgnDbServerRevisionEvent&>(*validPtr);
     EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&revisionEvent)); //DgnDbServerRevisionEvent is a subclass of DgnDbServerEvent
     }
 
 TEST_F(DgnDbServerEventParserTests, InvalidEventTests)
     {
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmpty()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmptyJson()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalid()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidLockEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidRevisionEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmpty()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmptyJson()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalid()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidLockEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidRevisionEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmpty()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmptyJson()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalid()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmpty()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmptyJson()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalid()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidLockEvent()));
     }
 
 TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
     {
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
     }
 
 TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionJsonTest)
     {
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
 
     //No event
     EXPECT_TRUE(reader.parse(StubGenerateValidEventSubscriptionJsonNoEvent(), generatedStubJson));
-    Json::Value actualGeneratedJson = parser->GenerateEventSubscriptionJson();
+    Json::Value actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson();
     EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
 
     //Single Event
     EXPECT_TRUE(reader.parse(StubGenerateValidEventSubscriptionJsonSingleEvent(), generatedStubJson));
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
     eventTypes.push_back(DgnDbServerEvent::DgnDbServerEventType::LockEvent);
-    actualGeneratedJson = parser->GenerateEventSubscriptionJson(&eventTypes);
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(&eventTypes);
     EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
     }
 
 TEST_F(DgnDbServerEventParserTests, GenerateEventSASJsonTest)
     {
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
 
     EXPECT_TRUE(reader.parse(StubGenerateValidEventSASJson(), generatedStubJson));
-    Json::Value actualGeneratedJson = parser->GenerateEventSASJson();
+    Json::Value actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSASJson();
     EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
     }
 
 //Need more error cases
 TEST_F(DgnDbServerEventParserTests, InvalidGenerateJsonTests)
     {
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
 
     //Invalid SAS generation
     EXPECT_TRUE(reader.parse(StubGenerateInvalidEventSASJson(), generatedStubJson));
-    Json::Value actualGeneratedJson = parser->GenerateEventSASJson();
+    Json::Value actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSASJson();
     EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
 
     //Invalid Subscription Generation
     EXPECT_TRUE(reader.parse(StubGenerateInvalidEventSubscriptionJson(), generatedStubJson));
-    actualGeneratedJson = parser->GenerateEventSubscriptionJson();
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson();
     EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
 
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes1, eventTypes2;
     eventTypes1.push_back(DgnDbServerEvent::DgnDbServerEventType::LockEvent);
-    actualGeneratedJson = parser->GenerateEventSubscriptionJson(&eventTypes1);
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(&eventTypes1);
     EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
 
     eventTypes2.push_back(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent);
-    actualGeneratedJson = parser->GenerateEventSubscriptionJson(&eventTypes2);
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(&eventTypes2);
     EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
     }
 
 TEST_F(DgnDbServerEventParserTests, EventSubscriptionResponseTest)
     {
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
 
     EXPECT_TRUE(reader.parse(StubHttpResponseValidEventSubscriptionResponse(), generatedStubJson));
-    DgnDbServerEventSubscriptionPtr ptr = parser->ParseEventSubscription(generatedStubJson);
+    DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(generatedStubJson);
     EXPECT_NE(nullptr, ptr);
     EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeSubscriptionId", ptr->GetSubscriptionId().c_str()));
     EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeTopicName", ptr->GetTopicName().c_str()));
@@ -447,12 +439,11 @@ TEST_F(DgnDbServerEventParserTests, EventSubscriptionResponseTest)
 
 TEST_F(DgnDbServerEventParserTests, EventSASResponseTest)
     {
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
 
     EXPECT_TRUE(reader.parse(StubHttpResponseValidEventSASResponse(), generatedStubJson));
-    DgnDbServerEventSASPtr ptr = parser->ParseEventSAS(generatedStubJson);
+    DgnDbServerEventSASPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSAS(generatedStubJson);
     EXPECT_NE(nullptr, ptr);
     EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeSASToken", ptr->GetSASToken().c_str()));
     EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeBaseAddress", ptr->GetBaseAddress().c_str()));
@@ -461,13 +452,12 @@ TEST_F(DgnDbServerEventParserTests, EventSASResponseTest)
 //Need more error cases -- Add more Invalid Stub responses
 TEST_F(DgnDbServerEventParserTests, InvalidEventResponseTests)
     {
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
 
     EXPECT_TRUE(reader.parse(StubHttpResponseInvalidEventSubscriptionResponse(), generatedStubJson));
-    EXPECT_EQ(nullptr, parser->ParseEventSubscription(generatedStubJson));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEventSubscription(generatedStubJson));
 
     EXPECT_TRUE(reader.parse(StubHttpResponseInvalidEventSASResponse(), generatedStubJson));
-    EXPECT_EQ(nullptr, parser->ParseEventSAS(generatedStubJson));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEventSAS(generatedStubJson));
     }

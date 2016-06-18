@@ -15,7 +15,7 @@
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-typedef std::shared_ptr<struct IDgnDbServerEventParser> IDgnDbServerEventParserPtr;
+//typedef std::shared_ptr<struct IDgnDbServerEventParser> IDgnDbServerEventParserPtr;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Arvind.Venkateswaran   06/2016
@@ -50,9 +50,11 @@ struct DgnDbServerEventParser : public IDgnDbServerEventParser
     {
     private:
         DgnDbServerEventParser();
+        DgnDbServerEventParser(DgnDbServerEventParser const&);              // Don't Implement
+        void operator=(DgnDbServerEventParser const&);                      // Don't implement
 
     public:
-        DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<DgnDbServerEventParser> Create();
+        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventParser& GetInstance();
         
         DGNDBSERVERCLIENT_EXPORT DgnDbServerEventPtr ParseEvent
             (
