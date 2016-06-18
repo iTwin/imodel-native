@@ -20,9 +20,10 @@ DgnDbServerEventParser::DgnDbServerEventParser() {}
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<DgnDbServerEventParser> DgnDbServerEventParser::Create()
+DgnDbServerEventParser& DgnDbServerEventParser::GetInstance()
     {
-    return std::shared_ptr<DgnDbServerEventParser>(new DgnDbServerEventParser());
+    static DgnDbServerEventParser instance; // Guaranteed to be destroyed. Instantiated on first use.
+    return instance;
     }
 
 //---------------------------------------------------------------------------------------
