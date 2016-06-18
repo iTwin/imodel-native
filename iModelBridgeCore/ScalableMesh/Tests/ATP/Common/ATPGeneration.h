@@ -23,6 +23,8 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 void ParseDTMFeatureType(WString& name, DTMFeatureType& type);
 
+bool ParseExportToUnityOptions(WString& outputDir, int& maxLevel, bool& exportTexture, BeXmlNodeP pTestNode);
+
 bool AddOptionToSource(IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode);
 
 void GetSourceDataType(DTMSourceDataType& dataType, BeXmlNodeP pSourceNode);

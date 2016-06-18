@@ -1,6 +1,7 @@
 #pragma once
 #include "ATPUtils.h"
 
+void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile);
