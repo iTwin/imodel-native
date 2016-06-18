@@ -1435,6 +1435,13 @@ bool BcDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR t
     return _GetProjectedPointOnDTM(pointOnDTM, w2vMap, testPoint);
     }
 
+bool  BcDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
+    {
+    DPoint3d endPoint;
+    endPoint.SumOf(testPoint, direction);
+    return _IntersectVector(pointOnDTM, testPoint, endPoint);
+    }
+
 bool BcDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
     long startFlag, endFlag;
@@ -4426,6 +4433,8 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
             return false;
 
         startPt = point;
+        intersectionPoint = startPt;
+        return true;
         }
 
     // TopView
@@ -4438,7 +4447,7 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
         return false;
         }
     startPt.z = elevation;
-
+    intersectionPoint = startPt;
     return true;
     }
 
