@@ -24,66 +24,6 @@ static Utf8CP PROPERTYJSON_Color = "Color";
 static Utf8CP PROPERTYJSON_Weight = "Weight";
 
 //----------------------------------------------------------------------------------------
-//                                  PointCloudModel::JsonUtils
-//----------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
-//----------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::DPoint3dToJson(JsonValueR outValue, DPoint3dCR point)
-    {
-    outValue[0] = point.x;
-    outValue[1] = point.y;
-    outValue[2] = point.z;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
-//----------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue)
-    {
-    point.x = inValue[0].asDouble();
-    point.y = inValue[1].asDouble();
-    point.z = inValue[2].asDouble();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::TransformRowFromJson(double* row, JsonValueCR inValue)
-    {
-    for (int y = 0; y < 4; ++y)
-        row[y] = inValue[y].asDouble();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::TransformRowToJson(JsonValueR outValue, double const* row)
-    {
-    for (int y = 0; y < 4; ++y)
-        outValue[y] = row[y];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::TransformFromJson(TransformR trans, JsonValueCR inValue)
-    {
-    for (int x = 0; x < 3; ++x)
-        TransformRowFromJson(trans.form3d[x], inValue[x]);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     02/14
-//---------------------------------------------------------------------------------------
-void PointCloudModel::JsonUtils::TransformToJson(JsonValueR outValue, TransformCR trans)
-    {
-    for (int x = 0; x < 3; ++x)
-        TransformRowToJson(outValue[x], trans.form3d[x]);
-    }
-
-//----------------------------------------------------------------------------------------
 //                                  PointCloudModelHandler
 //----------------------------------------------------------------------------------------
 
@@ -97,6 +37,7 @@ PointCloudModelPtr PointCloudModelHandler::CreatePointCloudModel(PointCloudModel
     BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, params.m_fileId, params.m_dgndb);
     if (status != SUCCESS)
         {
+        ERROR_PRINTF("Failed to resolve filename = %s", fileName.GetNameUtf8().c_str());
         return nullptr;
         }
     Utf8String resolvedName(fileName);
@@ -106,6 +47,7 @@ PointCloudModelPtr PointCloudModelHandler::CreatePointCloudModel(PointCloudModel
     PointCloudScenePtr pPointCloudScene = PointCloudScene::Create(fileName.c_str());
     if (pPointCloudScene.IsNull())
         {
+        ERROR_PRINTF("Failed to create PointCloudScene = %s", fileName.GetNameUtf8().c_str());
         // Can't create model; probably that file name is invalid.
         return nullptr;
         }
@@ -180,7 +122,29 @@ PointCloudModel::PointCloudModel(CreateParams const& params, PointCloudModel::Pr
 //----------------------------------------------------------------------------------------
 PointCloudModel::~PointCloudModel()
     {
-    m_cachedPtViewport.clear();
+    m_viewportCache.clear();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2016
+//----------------------------------------------------------------------------------------
+Dgn::Render::Graphic* PointCloudModel::GetLowDensityGraphicP(DgnViewportCR vp) const
+    {
+    auto viewportItr = m_viewportCache.find(&vp);
+    if (viewportItr != m_viewportCache.end())
+        return viewportItr->second.m_lowDensityGraphic.get();
+
+    return nullptr;
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2016
+//----------------------------------------------------------------------------------------
+void PointCloudModel::SaveLowDensityGraphic(DgnViewportCR vp, Dgn::Render::Graphic* pGraphic)
+    {
+    // Insert or replace in cache.
+    m_viewportCache[&vp].m_lowDensityGraphic = pGraphic;
     }
 
 //----------------------------------------------------------------------------------------
@@ -188,16 +152,17 @@ PointCloudModel::~PointCloudModel()
 //----------------------------------------------------------------------------------------
 PtViewport* PointCloudModel::GetPtViewportP(DgnViewportCR vp) const
     {
-    auto viewportItr = m_cachedPtViewport.find(&vp);
-    if (viewportItr != m_cachedPtViewport.end())
-        return viewportItr->second.get();
+    auto viewportItr = m_viewportCache.find(&vp);
+    if (viewportItr != m_viewportCache.end())
+        return viewportItr->second.m_ptViewport.get();
     
-    auto ptVp = PtViewport::Create();
-    if (ptVp.IsNull())
-        return nullptr;
+    ViewportCacheEntry entry;
+    entry.m_ptViewport = PtViewport::Create();
+    if (entry.m_ptViewport.IsNull())
+        return nullptr;    
 
-    m_cachedPtViewport.insert(std::make_pair(&vp, ptVp));
-    return ptVp.get();
+    m_viewportCache.insert(std::make_pair(&vp, entry));
+    return entry.m_ptViewport.get();
     }
 
 //----------------------------------------------------------------------------------------
@@ -205,7 +170,7 @@ PtViewport* PointCloudModel::GetPtViewportP(DgnViewportCR vp) const
 //----------------------------------------------------------------------------------------
 void PointCloudModel::_DropGraphicsForViewport(Dgn::DgnViewportCR viewport)
     {
-    m_cachedPtViewport.erase(&viewport);
+    m_viewportCache.erase(&viewport);
     }
 
 //----------------------------------------------------------------------------------------
@@ -221,12 +186,18 @@ PointCloudSceneP PointCloudModel::GetPointCloudSceneP() const
         BeFileName fileName;
         BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, m_properties.m_fileId, GetDgnDb());
         if (status != SUCCESS)
+            {
+            ERROR_PRINTF("Failed to resolve filename = %s", fileName.GetNameUtf8().c_str());
             return nullptr;
+            }
             
         m_pointCloudScenePtr = PointCloudScene::Create(fileName.c_str());
 
         if (m_pointCloudScenePtr.IsValid())
+            {
             m_loadSceneStatus = PointCloudModel::LoadStatus::Loaded;
+            DEBUG_PRINTF("PointCloudScene loaded file = %s", fileName.GetNameUtf8().c_str());
+            }
         }
 
     return m_pointCloudScenePtr.get();
@@ -285,7 +256,10 @@ void PointCloudModel::_AddSceneGraphics(Dgn::SceneContextR context) const
 
     PtViewport* ptViewport = GetPtViewportP(context.GetViewportR());
     if (nullptr == ptViewport)
+        {
+        ERROR_PRINTF("Error: no more pt viewport");
         return;     // We ran out of viewport.
+        }
 
     RefCountedPtr<PointCloudProgressiveDisplay> display = new PointCloudProgressiveDisplay(*this, *ptViewport);
     display->DrawView(context);

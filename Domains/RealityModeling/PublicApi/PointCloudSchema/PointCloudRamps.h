@@ -1,14 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PointCloudSchema/PointCloudRamps.h $
+|     $Source: PublicApi/PointCloudSchema/PointCloudRamps.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
-+--------------------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------------------+
-|   NOTE: This file was moved from $(SrcRoot)MstnPlatform\PPModules\PointCloud\Component\PointCloudHandler\PointCloudRamps.h
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
+//__BENTLEY_INTERNAL_ONLY__
 
 BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 
@@ -45,20 +44,21 @@ struct PointCloudRamps
 
         static PointCloudRamps* s_ramps;
 
-    public:
-        static PointCloudRamps& GetInstance();
-
+    private:
         PointCloudRamps();
         ~PointCloudRamps();
 
-        uint32_t                GetIntensityRampIndex(WStringCR name) const;
-        uint32_t                GetPlaneRampIndex(WStringCR name) const;
+    public:
+        POINTCLOUDSCHEMA_EXPORT static PointCloudRamps& GetInstance();
 
-        WStringCR               GetIntensityRampName(uint32_t index) const;
-        WStringCR               GetPlaneRampName(uint32_t index) const;
+        POINTCLOUDSCHEMA_EXPORT uint32_t                GetIntensityRampIndex(WStringCR name) const;
+        POINTCLOUDSCHEMA_EXPORT uint32_t                GetPlaneRampIndex(WStringCR name) const;
 
-        RampNameVector const&   GetIntensityRamps () const;
-        RampNameVector const&   GetPlaneRamps () const;
+        POINTCLOUDSCHEMA_EXPORT WStringCR               GetIntensityRampName(uint32_t index) const;
+        POINTCLOUDSCHEMA_EXPORT WStringCR               GetPlaneRampName(uint32_t index) const;
+
+        POINTCLOUDSCHEMA_EXPORT RampNameVector const&   GetIntensityRamps () const;
+        POINTCLOUDSCHEMA_EXPORT RampNameVector const&   GetPlaneRamps () const;
 
 
     };
