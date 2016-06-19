@@ -6,6 +6,9 @@
 #define QV_NO_MSTN_TYPES
 #include <QuickVision\qvision.h>
 
+#include <DgnPlatform/Render.h>
+
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -14,16 +17,16 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct SmCachedDisplayTexture
     {
     SmCachedDisplayTexture()
-        {
-        m_textureID = (QvTextureID)this;
+        {        
         }
 
-    QvTextureID m_textureID;
+    Render::TexturePtr m_texturePtr;    
     };
 
 struct SmCachedDisplayMesh
     {
-    QvElem* m_qvElem;
+    Render::GraphicBuilderPtr m_graphic;
+    
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -31,8 +34,8 @@ BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
 struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
     {
     private:
-
-        QvCache* m_qvCache;
+        
+        Dgn::Render::SystemP m_renderSys;        
 
     public:
 
@@ -59,7 +62,9 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
 
         virtual BentleyStatus _DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture) override;
 
-        ScalableMeshDisplayCacheManager(DgnDbCR dgbDb);
+        void SetRenderSys(Dgn::Render::SystemP renderSys);
+            
+        ScalableMeshDisplayCacheManager();
 
         ~ScalableMeshDisplayCacheManager();
 

@@ -33,8 +33,8 @@ private :
 
     DrawPurpose m_drawPurpose;            
     DMatrix4d   m_localToViewTransformation;    
-    DPoint3d    m_low;
-    DPoint3d    m_high;
+    DRange3d    m_range; 
+    
 public : 
 
     int m_currentQuery;
@@ -45,10 +45,10 @@ public :
         
     ScalableMeshDrawingInfo(ViewContextP viewContext)        
         {
-        m_drawPurpose = viewContext->GetDrawPurpose();   
-        const DMatrix4d localToView(viewContext->GetLocalToView());     
+        m_drawPurpose = viewContext->GetDrawPurpose();           
+        const DMatrix4d localToView(viewContext->GetViewport()->GetWorldToViewMap()->M0);     
         memcpy(&m_localToViewTransformation, &localToView, sizeof(DMatrix4d));                
-        viewContext->GetViewport()->GetViewCorners(m_low, m_high);
+        m_range = viewContext->GetViewport()->GetViewCorners();        
         }
 
     ~ScalableMeshDrawingInfo()
@@ -69,8 +69,7 @@ public :
     bool HasAppearanceChanged(const ScalableMeshDrawingInfoPtr& smDrawingInfoPtr)
         {                                                                  
         return (0 != memcmp(&smDrawingInfoPtr->m_localToViewTransformation, &m_localToViewTransformation, sizeof(DMatrix4d))) ||
-               (0 != memcmp(&smDrawingInfoPtr->m_low, &m_low, sizeof(DPoint3d))) ||
-               (0 != memcmp(&smDrawingInfoPtr->m_high, &m_high, sizeof(DPoint3d)));        
+               (0 != memcmp(&smDrawingInfoPtr->m_range, &m_range, sizeof(DRange3d)));               
         }
 
     const DMatrix4d& GetLocalToViewTransform() {return m_localToViewTransformation;}   
@@ -86,16 +85,17 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         private:
 
-        IScalableMeshPtr                        m_smPtr;
-        bool                                    m_tryOpen; 
-        BentleyApi::Dgn::AxisAlignedBox3d       m_range;
+        //NEEDS_WORK_MS : Modify remove mutable
+        mutable IScalableMeshPtr                m_smPtr;
+        mutable bool                            m_tryOpen; 
+        mutable BentleyApi::Dgn::AxisAlignedBox3d       m_range;
 
-        IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
-        IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
-        ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
-        DMatrix4d                               m_storageToUorsTransfo; 
-        bool m_forceRedraw;
-        bset<uint64_t>                          m_activeClips;
+        mutable IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
+        mutable IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
+        mutable ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
+        mutable DMatrix4d                               m_storageToUorsTransfo; 
+        mutable bool m_forceRedraw;
+        mutable bset<uint64_t>                          m_activeClips;
                        
     protected:
 
@@ -125,8 +125,9 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual TerrainModel::IDTM* _GetDTM(ScalableMesh::DTMAnalysisType type) override;
         virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
+        
+        SCALABLEMESH_SCHEMA_EXPORT void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const override;
 
-        SCALABLEMESH_SCHEMA_EXPORT virtual void _AddGraphicsToScene(BentleyApi::Dgn::ViewContextR context) override;
     public:
 
         //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.

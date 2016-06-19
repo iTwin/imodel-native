@@ -149,23 +149,20 @@ static double s_minScreenPixelsPerPoint = 1000;
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
     // Check context render mode
-    switch (viewContext.GetViewFlags()->GetRenderMode())
+    switch (viewContext.GetViewFlags().GetRenderMode())
         {
-        case DgnRenderMode::ConstantShade:
-        case DgnRenderMode::SmoothShade:
-        case DgnRenderMode::Phong:
-        case DgnRenderMode::RayTrace:
-        case DgnRenderMode::Radiosity:
-        case DgnRenderMode::ParticleTrace:
-        case DgnRenderMode::RenderLuxology:
+        case Render::RenderMode::ConstantShade:
+        case Render::RenderMode::SmoothShade:
+        case Render::RenderMode::Phong:
+        case Render::RenderMode::RayTrace:
+        case Render::RenderMode::Radiosity:                
             return false;
                        
-        case DgnRenderMode::Wireframe:
-        case DgnRenderMode::CrossSection:
-        case DgnRenderMode::Wiremesh:
-        case DgnRenderMode::HiddenLine:
-        case DgnRenderMode::SolidFill:
-        case DgnRenderMode::RenderWireframe:
+        case Render::RenderMode::Wireframe:
+        case Render::RenderMode::CrossSection:
+        case Render::RenderMode::Wiremesh:
+        case Render::RenderMode::HiddenLine:
+        case Render::RenderMode::SolidFill:        
             return true;
         }
         BeAssert(!"Unknown render mode");
@@ -173,45 +170,11 @@ bool IsWireframeRendering(ViewContextCR viewContext)
     }
 
 
-struct SmCachedGraphics : TransientCachedGraphics
-    {
-    explicit SmCachedGraphics (DgnDbR dgnDb, QvElem* qvElem) : TransientCachedGraphics (dgnDb) 
-        {
-        m_qvElem = qvElem;
-        }
-
-
-    virtual void _StrokeForCache(BentleyG06::Dgn::ViewContextR, double) override
-        {
-        }
-
-    void UnlinkQvElem()
-        {
-        m_qvElem = 0;
-        }
-
-    /*
-    virtual void _Draw (ViewContextR context, TransformCP transform)
-        {
-        if (nullptr != transform)
-            context.PushTransform (*transform);
-        
-            context.DrawCached (*this);
-        
-            if (nullptr != transform)
-                context.PopTransformClip ();
-        }
-        */
-    //bool IsCacheCreated() const {return nullptr != m_qvElem;}
-    };
-
-
-static bool s_waitCheckStop = false;
 static Byte s_transparency = 100;
 
 void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
-                              bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
-                              ViewContextR                                context, 
+                              bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,                              
+                              Dgn::RenderContextR                         context,
                               const DMatrix4d&                            storageToUors)
     {    
 
@@ -220,45 +183,21 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 #endif
 
     static size_t s_callCount = 0;
-    
-    bool isOutputQuickVision = context.GetIViewDraw ().IsOutputQuickVision();
-
-    //NEEDS_WORK_MST : Will be fixed when the lowest resolution is created and pin at creation time.
-    //assert(overviewMeshNodes.size() > 0 || meshNodes.size() > 0);
-    assert(isOutputQuickVision == true);
-
-    /*ElemMatSymbP matSymbP = context.GetElemMatSymb ();
-
-    matSymbP->Init ();
-    matSymbP->SetLineColor (ColorDef(0,0x77,0));
-    matSymbP->SetFillColor (ColorDef(0,0x77,0));    
-    
-    context.ResetContextOverrides(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
-    context.GetIDrawGeom ().ActivateMatSymb (matSymbP);*/
-
-    if (s_waitCheckStop)
-        {
-        while (!context.CheckStop())
-            {
-            }
-        }
-
-
-      
-    Transform storageToUorsTransform;
-    storageToUorsTransform.InitFrom(storageToUors);
-    context.PushTransform(storageToUorsTransform);
-
+                      
     bvector<IScalableMeshCachedDisplayNodePtr> requestedNodes;
     bvector<IScalableMeshCachedDisplayNodePtr> nodesWithoutQvElem;
+
+    Render::GraphicArray graphics; 
     
     if (overviewMeshNodes.size() > 0)
         {
         //NEEDS_WORK_SM : If kept needs clean up
         for (size_t nodeInd = 0; nodeInd < overviewMeshNodes.size(); nodeInd++)
-            {                          
+            {                       
+            /*
             if (context.CheckStop())
                 break;                           
+                */
             
             
             //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
@@ -270,6 +209,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
             */            
             
                 {
+                /*
                 ElemMatSymbP matSymbP = context.GetElemMatSymb();
 
                 matSymbP->Init();
@@ -283,25 +223,15 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                 matSymbP->SetIsFilled(false);
                 context.ResetContextOverrides(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
                 context.GetIDrawGeom().ActivateMatSymb(matSymbP);
+                */
                 }
 
             
-            SmCachedDisplayMesh* cachedMesh = 0;
-            QvElem* qvElem = 0;                
-            bool isEmptyMesh = false;
+            SmCachedDisplayMesh* cachedMesh = 0;                        
 
-            if (isOutputQuickVision && (SUCCESS == overviewMeshNodes[nodeInd]->GetCachedMesh(cachedMesh)))
-                {
-                if (cachedMesh != 0)
-                    {                        
-                    qvElem = cachedMesh->m_qvElem;                    
-                    assert(qvElem != 0);
-                    }
-                else
-                    {
-                    qvElem = 0;
-                    isEmptyMesh = true;
-                    }                                        
+            if (SUCCESS == overviewMeshNodes[nodeInd]->GetCachedMesh(cachedMesh))
+                {                
+                graphics.Add(*cachedMesh->m_graphic);
                 }
             else
                 {                    
@@ -310,42 +240,9 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 
                 qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());                            
                 */
-                }                
-        
-            if (qvElem != 0)
-                {   
-                if (cachedMesh == 0)
-                    {
-                    //NEEDS_WORK_SM : Not support yet.
-                    //ActivateMaterial(overviewMeshNodes[nodeInd], context);
-                    }
-                
-                SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
-                context.DrawCached(smCached);
-                smCached.UnlinkQvElem();
-                
-                //context.DrawQvElem (qvElem, &storageToUorsTransform, 0, false, false, true);                                       
+                assert(!"Should not get here");
                 }
-            else
-            if (!isEmptyMesh)
-                {                                           
-                //nodesWithoutQvElem.push_back(overviewMeshNodes[nodeInd]);                
-                //NEEDS_WORK_SM_PROGRESSIVE : Getclip passed to progressive display engine
-                /*
-                bvector<bool> clips;
-                dtmDataRef->GetVisibleClips(clips);
-                IScalableMeshMeshPtr mrdtmMeshPtr(overviewMeshNodes[nodeInd]->GetMeshByParts(clips));
-
-                if (mrdtmMeshPtr != 0)
-                    {           
-                    ActivateMaterial(overviewMeshNodes[nodeInd], context);
-
-                    __int64 meshId = GetMeshId(overviewMeshNodes[nodeInd]->GetNodeId());
-                    CreateQvElemForMesh(mrdtmMeshPtr, dtmDataRef, element, context, meshId, drawingInfo);                                                       
-                    }
-                    */
-                }                
-            }   
+            }
         }
 
 
@@ -354,8 +251,10 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
         //NEEDS_WORK_SM : If kept needs clean up
         for (size_t nodeInd = 0; nodeInd < meshNodes.size(); nodeInd++)
             {                      
+            /*
             if (context.CheckStop())
                 break;            
+                */
             
             //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
             //assert(meshNodes[nodeInd]->IsHeaderLoaded() && meshNodes[nodeInd]->IsMeshLoaded());
@@ -363,105 +262,34 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
             if (!meshNodes[nodeInd]->IsHeaderLoaded() || !meshNodes[nodeInd]->IsMeshLoaded())
                 requestedNodes.push_back(meshNodes[nodeInd]);
             else
-            */
-            bool wasDrawn = false;
+            */            
           
             SmCachedDisplayMesh* cachedMesh = 0;
-            QvElem* qvElem = 0;                
-            bool isEmptyNode = false;
-
-            if (isOutputQuickVision && (SUCCESS == meshNodes[nodeInd]->GetCachedMesh(cachedMesh)))
+                        
+            if (SUCCESS == meshNodes[nodeInd]->GetCachedMesh(cachedMesh))
                 {
-                if (cachedMesh != 0)
-                    {
-                    qvElem = cachedMesh->m_qvElem;                    
-                    assert(qvElem != 0);
-                    }
-                else
-                    {
-                    qvElem = 0;
-                    isEmptyNode = true;
-                    }                    
+                graphics.Add(*cachedMesh->m_graphic);
                 }
             else
                 {
+                assert(!"Should not occur");
                 /*NEEDS_WORK_SM : Not support yet.
                 __int64 meshId = GetMeshId(meshNodes[nodeInd]->GetNodeId());
                 qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());                            
                 */
-                }
-                    
-            if (qvElem != 0)
-                {
-                wasDrawn = true;
-                if (cachedMesh == 0)
-                    {
-                    //NEEDS_WORK_SM : Not support yet.
-                    //ActivateMaterial(meshNodes[nodeInd], context);
-                    }
-                                    {
-                                    ElemMatSymbP matSymbP = context.GetElemMatSymb();
-
-                                    matSymbP->Init();
-                                    ColorDef white(0xff, 0xff, 0xff);
-                                    ColorDef green(0, 0x77, 0);
-                                    matSymbP->SetLineColor(meshNodes[nodeInd]->IsTextured() != 0 ? white : green);
-                                    matSymbP->SetFillColor(meshNodes[nodeInd]->IsTextured() != 0 ? white : green);
-                                    context.OnPreDrawTransient(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
-                                    context.GetIDrawGeom().ActivateMatSymb(matSymbP);
-                                        }
-                SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
-                context.DrawCached(smCached);
-                smCached.UnlinkQvElem();
-                }
-            else
-            if (!isEmptyNode)
-                {                                           
-                nodesWithoutQvElem.push_back(meshNodes[nodeInd]);                
-                }
-            
-            if (wasDrawn)
-                {
-                ElemMatSymbP matSymbP = context.GetElemMatSymb();
-
-                matSymbP->Init();
-                ColorDef green(0, 0x77, 0);
-                matSymbP->SetLineColor(green);
-                matSymbP->SetFillColor(green);
-                context.OnPreDrawTransient(); 
-                context.GetIDrawGeom().ActivateMatSymb(matSymbP);
-                bvector<PolyfaceHeaderPtr> skirtMeshParts;
-                meshNodes[nodeInd]->GetSkirtMeshes(skirtMeshParts);
-                for (auto& part : skirtMeshParts)
-                    context.GetIDrawGeom().DrawPolyface(*part);
-                }
-            }
-    
-        for (auto& node : nodesWithoutQvElem)
-            {
-            if (context.CheckStop())
-                break;     
-
-            bvector<bool> clips;
-            //NEEDS_WORK_SM : Not supported yet
-            //dtmDataRef->GetVisibleClips(clips);
-            
-            IScalableMeshMeshPtr mrdtmMeshPtr(node->GetMeshByParts(clips));
-
-            if (mrdtmMeshPtr != 0)
-                {         
-                /*NEEDS_WORK_SM : Not supported yet
-                ActivateMaterial(node, meshInd, context);
-
-                __int64 meshId = GetMeshId(node->GetNodeId(), meshInd);
-                CreateQvElemForMesh(mrdtmMeshPtr, dtmDataRef, element, context, meshId, drawingInfo);                                                   
-                */                    
-                }
-            }
+                }                                                     
+            }    
         }
 
+    if (graphics.m_entries.empty())
+        return;
+        
+    Transform storageToUorsTransform;
+    storageToUorsTransform.InitFrom(storageToUors);
+    //context.PushTransform(storageToUorsTransform);
 
-    context.PopTransformClip();
+    auto group = context.CreateGroupNode(Render::Graphic::CreateParams(nullptr, storageToUorsTransform), graphics, nullptr);    
+    context.OutputGraphic(*group, nullptr);    
     }
 
 
@@ -470,25 +298,24 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 //========================================================================================
 static bool s_drawInProcess = true;
 
-struct ScalableMeshProgressiveDisplay : Dgn::IProgressiveDisplay, NonCopyableClass
-{
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-
+struct ScalableMeshProgressiveTask : ProgressiveTask
+    {
+    
 protected:
         
     IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
     ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
-    const DMatrix4d&                        m_storageToUorsTransfo;        
+    const DMatrix4d&                        m_storageToUorsTransfo;    
+    uint64_t                                m_nextShow;
 
-    ScalableMeshProgressiveDisplay (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
-                                    ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
-                                    DMatrix4d&                              storageToUorsTransfo) 
+    ScalableMeshProgressiveTask (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
+                                 ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
+                                 DMatrix4d&                              storageToUorsTransfo) 
     : m_storageToUorsTransfo(storageToUorsTransfo)
-        { 
-        DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
-
+        {    
         m_progressiveQueryEngine = progressiveQueryEngine;
         m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
+        m_nextShow = 0;
         }
 
 public:
@@ -498,9 +325,9 @@ public:
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Mathieu.St-Pierre     02/2016
 //----------------------------------------------------------------------------------------
-virtual Completion _Process(ViewContextR viewContext) override
-    {
-    Completion completionStatus = Completion::Aborted; 
+ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+    {    
+    uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
 
     if (m_currentDrawingInfoPtr->m_overviewNodes.size() > 0)
         {                    
@@ -517,7 +344,7 @@ virtual Completion _Process(ViewContextR viewContext) override
 
             assert(status == SUCCESS);
 
-            completionStatus = Completion::HealRequired; 
+            //completionStatus = Completion::HealRequired; 
 
 #ifdef PRINT_SMDISPLAY_MSG        
             PRINT_MSG("Heal required  meshNode : %I64u overviewMeshNode : %I64u \n", m_currentDrawingInfoPtr->m_meshNodes.size(), m_currentDrawingInfoPtr->m_overviewNodes.size());       
@@ -532,19 +359,24 @@ virtual Completion _Process(ViewContextR viewContext) override
             m_currentDrawingInfoPtr->m_overviewNodes.clear();
             status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
             assert(status == SUCCESS);                                  
-                        
-            completionStatus = Completion::Aborted;
-
+                                    
             if (s_drawInProcess)
-                ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);                                                      
+                ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                                                      
             }
         }
     else
         {
-        completionStatus = Completion::Finished;
-        }        
-            
-    return completionStatus;
+        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
+        return Completion::Finished;
+        }     
+    
+    if (now > m_nextShow)
+        {
+        m_nextShow = now + 1000; // once per second
+        wantShow = WantShow::Yes;
+        }
+                
+    return Completion::Aborted;    
     }
 
 //----------------------------------------------------------------------------------------
@@ -553,13 +385,11 @@ virtual Completion _Process(ViewContextR viewContext) override
 static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                       ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
                       DMatrix4d&                              storageToUorsTransfo, 
-                      ViewContextR                            context) 
+                      TerrainContextR                         context) 
     {
-    RefCountedPtr<ScalableMeshProgressiveDisplay> progressiveDisplay(new ScalableMeshProgressiveDisplay(progressiveQueryEngine,
-                                                                                                        currentDrawingInfoPtr,
-                                                                                                        storageToUorsTransfo));
-    
-    context.GetViewport()->ScheduleProgressiveDisplay (*progressiveDisplay);
+    context.GetViewport()->ScheduleTerrainProgressiveTask (*new ScalableMeshProgressiveTask(progressiveQueryEngine,
+                                                                                            currentDrawingInfoPtr,
+                                                                                            storageToUorsTransfo));
     }
 
 };  
@@ -569,6 +399,7 @@ static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEn
 //----------------------------------------------------------------------------------------
 bool ShouldDrawInContext (ViewContextR context) 
     {
+    /*
     switch (context.GetDrawPurpose())
         {
         case DrawPurpose::Hilite:
@@ -585,6 +416,7 @@ bool ShouldDrawInContext (ViewContextR context)
         case DrawPurpose::ModelFacet:
             return false;
         }
+        */
 
     return true;
     }
@@ -592,8 +424,8 @@ bool ShouldDrawInContext (ViewContextR context)
 static bool s_loadTexture = true;
 static bool s_waitQueryComplete = false;
 
-void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
-    {    
+void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
+    {            
     if (m_smPtr == 0 && !m_tryOpen)
         {
         //BeFileName smFileName(((this)->m_properties).m_fileId);
@@ -602,8 +434,10 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
         if (BeFileName::DoesPathExist(smFileName.c_str()))
             {
-            OpenFile(smFileName, GetDgnDb()); 
+            const_cast<ScalableMeshModel*>(this)->OpenFile(smFileName, GetDgnDb()); 
             }
+        
+        (static_cast<ScalableMeshDisplayCacheManager*>(m_displayNodesCache.get()))->SetRenderSys(&context.GetTargetR().GetSystem());
 
         m_tryOpen = true;
         }
@@ -614,7 +448,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
     nextDrawingInfoPtr->m_currentQuery = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);
     if ((m_currentDrawingInfoPtr != nullptr) &&
-        (m_currentDrawingInfoPtr->GetDrawPurpose() != DrawPurpose::UpdateDynamic))
+        (m_currentDrawingInfoPtr->GetDrawPurpose() != DrawPurpose::Dynamics))
         {
         //If the m_dtmPtr equals 0 it could mean that the last data request to the STM was cancelled, so start a new request even
         //if the view has not changed.
@@ -644,7 +478,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
         */
 
-    DMatrix4d localToView(context.GetLocalToView());
+    DMatrix4d localToView(context.GetViewport()->GetWorldToViewMap()->M0);
                                    
     bsiDMatrix4d_multiply(&localToView, &localToView, &m_storageToUorsTransfo);              
 
@@ -668,9 +502,15 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
 
     viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
-            
-    ClipVectorCP clip;
-    clip = context.GetTransformClipStack().GetClip();
+                
+    ClipVectorPtr frustumClipVector;    
+    Render::FrustumPlanes frustumPlanes(context.GetFrustumPlanes());
+
+    assert(frustumPlanes.IsValid());
+
+    ClipPlaneSet clipPlaneSet(frustumPlanes.m_planes, 6);    
+    ClipVector::AppendPlanes(frustumClipVector, clipPlaneSet);
+                
     //NEEDS_WORK_SM : Need to keep only SetViewBox or SetViewClipVector for visibility
     //viewDependentQueryParams->SetViewBox(viewBox);
     viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);    
@@ -683,16 +523,14 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
         }            
         */
-
-    ClipVectorPtr clipVectorCopy(ClipVector::CreateCopy(*clip));
-    
+        
     Transform rootToStorageTransform; 
     bool result = rootToStorageTransform.InitFrom (rootToStorage); 
     assert(result == true);
 
-    clipVectorCopy->TransformInPlace(rootToStorageTransform);
+    frustumClipVector->TransformInPlace(rootToStorageTransform);
     
-    viewDependentQueryParams->SetViewClipVector(clipVectorCopy);
+    viewDependentQueryParams->SetViewClipVector(frustumClipVector);
                           
     m_currentDrawingInfoPtr->m_overviewNodes.clear();
     int queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();                 
@@ -757,7 +595,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
     if (needProgressive)
         {
-        ScalableMeshProgressiveDisplay::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context);
+        ScalableMeshProgressiveTask::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context);
         }
 
     }                 
@@ -887,7 +725,7 @@ ScalableMeshModel::~ScalableMeshModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
+void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject) 
     {    
     assert(m_smPtr == nullptr);
 
@@ -909,7 +747,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 
     if (m_progressiveQueryEngine == nullptr)
         {
-        m_displayNodesCache = new ScalableMeshDisplayCacheManager(dgnProject);
+        m_displayNodesCache = new ScalableMeshDisplayCacheManager();
         m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
         }
 
@@ -937,7 +775,8 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     // NEEDS_WORK_SM
     BeFileName dbFileName(dgnProject.GetDbFileName());
     BeFileName basePath = dbFileName.GetDirectoryName();
-    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);
+    
+    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);    
 
     bvector<uint64_t> allClips;
     bset<uint64_t> clipsToShow;
@@ -945,6 +784,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     GetClipSetIds(allClips);
     for (auto elem : allClips)
         clipsToShow.insert(elem);
+
     SetActiveClipSets(clipsToShow, clipsShown);
     //m_properties.m_fileId = smFilename.GetNameUtf8();
     }

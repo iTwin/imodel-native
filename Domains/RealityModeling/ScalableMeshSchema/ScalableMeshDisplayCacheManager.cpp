@@ -8,28 +8,44 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
 //Inherited from IScalableMeshDisplayCacheManager
 BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplayMesh*&   cachedDisplayMesh,
-size_t                  nbVertices,
-DPoint3d const*         positionOrigin,
-float*                  positions,
-float*                  normals,
-int                     nbTriangles,
-int*                    indices,
-float*                  params,
-SmCachedDisplayTexture* cachedTexture)
+                                                                 size_t                  nbVertices,
+                                                                 DPoint3d const*         positionOrigin,
+                                                                 float*                  positions,
+                                                                 float*                  normals,
+                                                                 int                     nbTriangles,
+                                                                 int*                    indices,
+                                                                 float*                  params,
+                                                                 SmCachedDisplayTexture* cachedTexture)
     {
-    QvTextureID textureId = 0;
+    assert(m_renderSys != 0);
 
-    if (cachedTexture != 0)
-        {
-        textureId = cachedTexture->m_textureID;
-        }
-
+    Render::IGraphicBuilder::TriMeshArgs trimesh;
+    trimesh.m_numPoints  = (int32_t)nbVertices;
+    trimesh.m_points     = (FPoint3d*)positions;
+    trimesh.m_normals    = (FPoint3d*)normals;
+    trimesh.m_numIndices = 3 * nbTriangles;
+    trimesh.m_vertIndex  = indices;
+    trimesh.m_textureUV  = (FPoint2d*)params;
+    
     std::unique_ptr<SmCachedDisplayMesh> qvCachedDisplayMesh(new SmCachedDisplayMesh);
-    qvCachedDisplayMesh->m_qvElem = qv_beginElement(m_qvCache, 0, NULL);
-    if(nbTriangles > 0) qv_addQuickTriMesh(qvCachedDisplayMesh->m_qvElem, 3 * nbTriangles, indices, (int)nbVertices, positionOrigin, reinterpret_cast <FloatXYZ*> (positions),
-                       reinterpret_cast <FloatXYZ*> (normals),
-                       reinterpret_cast <FloatXY*> (params), textureId,QV_QTMESH_GENNORMALS);
-    qv_endElement(qvCachedDisplayMesh->m_qvElem);
+
+    Transform placement;
+
+    if (positionOrigin != 0)
+        {
+        placement = Transform::From(*positionOrigin);
+        }
+    else
+        {
+        placement = Transform::FromIdentity();
+        }
+    
+    Render::Graphic::CreateParams createParams(nullptr, placement);
+
+    qvCachedDisplayMesh->m_graphic = m_renderSys->_CreateGraphic(createParams);
+    qvCachedDisplayMesh->m_graphic->SetSymbology(ColorDef::Green(), ColorDef::Green(), 0);
+    qvCachedDisplayMesh->m_graphic->AddTriMesh(trimesh);
+    qvCachedDisplayMesh->m_graphic->Close();
 
     cachedDisplayMesh = qvCachedDisplayMesh.release();
 
@@ -41,13 +57,7 @@ BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedMesh(SmCachedDispla
     // shutting down
     if (nullptr == DgnPlatformLib::QueryHost())
         return SUCCESS;
-
-    if (NULL != cachedDisplayMesh->m_qvElem)
-        {
-        T_HOST.GetGraphicsAdmin()._DeleteQvElem(cachedDisplayMesh->m_qvElem);
-        cachedDisplayMesh->m_qvElem = 0;
-        }
-    
+       
     delete cachedDisplayMesh;
 
     return SUCCESS;
@@ -60,35 +70,39 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
                                                                     int                      format,      // => see QV_*_FORMAT definitions above
                                                                     unsigned char const *    texels)      // => texel image)
     {
+    assert(m_renderSys != 0);
+            
     std::unique_ptr<SmCachedDisplayTexture> qvCachedDisplayTexture(new SmCachedDisplayTexture);
 
-    qv_defineTexture(qvCachedDisplayTexture->m_textureID, NULL, (int)xSize, (int)ySize, enableAlpha, format, texels);
+    ByteStream stream(texels, xSize * ySize * 3);
+    Render::Image textureImage(xSize, ySize, std::move(stream), Render::Image::Format::Rgb);        
 
+    qvCachedDisplayTexture->m_texturePtr = m_renderSys->_CreateTexture(textureImage);
+    
     cachedDisplayTexture = qvCachedDisplayTexture.release();
 
     return SUCCESS;
     }
 
 BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture)
-    {
-    if (cachedDisplayTexture->m_textureID != 0)
-        {
-        qv_deleteTexture(cachedDisplayTexture->m_textureID);
-        cachedDisplayTexture->m_textureID = 0;
-        }
-
+    {    
     delete cachedDisplayTexture;
 
     return SUCCESS;
     }
 
-ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager(DgnDbCR dgbDb)
+ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager()
     {
-    m_qvCache = dgbDb.Models().GetQvCache();
+    m_renderSys = 0;    
     }
 
 ScalableMeshDisplayCacheManager::~ScalableMeshDisplayCacheManager()
     {
 
+    }
+
+void ScalableMeshDisplayCacheManager::SetRenderSys(Dgn::Render::SystemP renderSys)
+    {
+    m_renderSys = renderSys;
     }
 
