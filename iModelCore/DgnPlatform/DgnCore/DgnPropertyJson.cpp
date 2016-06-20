@@ -38,9 +38,7 @@ void UnitDefinition::FromJson(JsonValueCR inValue)
     double numerator   = JsonUtils::GetDouble(inValue[DGNPROPERTYJSON_Numerator], 1.0);
     double denominator = JsonUtils::GetDouble(inValue[DGNPROPERTYJSON_Denominator], 1.0);
 
-    Utf8String label(BeJsonUtilities::CStringFromStringValue(inValue[DGNPROPERTYJSON_Label], "m"), true);
-
-    Init(base,  system, numerator, denominator, label.c_str());
+    Init(base, system, numerator, denominator, BeJsonUtilities::CStringFromStringValue(inValue[DGNPROPERTYJSON_Label], "m"));
     }
 
 //---------------------------------------------------------------------------------------

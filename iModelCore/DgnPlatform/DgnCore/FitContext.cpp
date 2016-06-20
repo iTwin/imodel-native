@@ -195,21 +195,6 @@ ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
     return FitComplete::Yes;
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
-    {
-    range = GetViewedExtents();
-    Transform  transform;
-    transform.InitFrom((nullptr == params.m_rMatrix) ? vp.GetRotMatrix() : *params.m_rMatrix);
-    transform.Multiply(range, range);
-
-    return FitComplete::Yes;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/

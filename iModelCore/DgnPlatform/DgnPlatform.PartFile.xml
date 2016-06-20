@@ -50,7 +50,7 @@
         <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
         <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
-        <!-- <SubPart PartName="OpenCASCADEShim"/> -->
+        <SubPart PartName="OpenCASCADEShim"/>
         <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="GeoCoordDataMinimal" PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>
