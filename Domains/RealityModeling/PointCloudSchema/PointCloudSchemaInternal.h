@@ -14,6 +14,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnDomain.h>
+#include <DgnPlatform/JsonUtils.h>
 
 #include <BePointCloud/BePointCloudApi.h>
 #include <BePointCloud/PointCloudTypes.h>
@@ -34,8 +35,8 @@
 #include <PointCloudSchema/PointCloudDrawBuffer.h>
 #include <PointCloudSchema/PointCloudHandler.h>
 #include <PointCloudSchema/PointCloudDomain.h>
+#include <PointCloudSchema/PointCloudRamps.h>
 
-#include "PointCloudRamps.h"
 #include "VisualizationManager.h"
 #include "PointCloudGcsFacility.h"
 #include "PointCloudViewport.h"
@@ -43,6 +44,25 @@
 #include "PointCloudProgressiveDisplay.h"
 
 #include <list>
+
+#include <Logging/bentleylogging.h>
+
+#ifndef NDEBUG
+#define POINTCLOUD_TRACE 1
+#endif
+
+#if defined (POINTCLOUD_TRACE)
+#   define PCLOG (*NativeLogging::LoggingManager::GetLogger ("PointCloud"))
+#   define DEBUG_PRINTF PCLOG.debugv
+#   define INFO_PRINTF  PCLOG.infov
+#   define WARN_PRINTF  PCLOG.warningv
+#   define ERROR_PRINTF PCLOG.errorv
+#else
+#   define DEBUG_PRINTF(...)
+#   define INFO_PRINTF(...)
+#   define WARN_PRINTF(...)
+#   define ERROR_PRINTF(...)
+#endif
 
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 

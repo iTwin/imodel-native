@@ -10,6 +10,7 @@
 USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
+#ifndef CREATE_STATIC_LIBRARIES  //&&MM conflict with the definition in .\Pointools\BePointCloud\PointCloudQueryBuffer.cpp 
 // Static buffer pools used to store channels data
 #define VIEW_POOL_MAX_BUFFER_COUNT (20)
 PointCloudRgbChannelPool        PointCloudRgbChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
@@ -17,6 +18,7 @@ PointCloudXyzChannelPool        PointCloudXyzChannel::m_pool(VIEW_POOL_MAX_BUFFE
 PointCloudIntensityChannelPool  PointCloudIntensityChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
 PointCloudNormalChannelPool     PointCloudNormalChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
 PointCloudByteChannelPool       PointCloudByteChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
+#endif
 
 
 #if defined (NEEDS_WORK_POINT_CLOUD)

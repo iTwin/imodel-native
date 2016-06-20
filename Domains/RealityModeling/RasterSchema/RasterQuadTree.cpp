@@ -820,8 +820,10 @@ void RasterProgressiveDisplay::Draw (RenderContextR context)
 
     // Draw background tiles if any, that gives feedback when zooming in.
     // Background tiles need to be draw from coarser resolution to finer resolution to make sure coarser tiles are not hiding finer tiles.
-    //&&MM  - this causes z-fighting. poss sol. use qv setDepth.
+    //&&MM  - this causes z-fighting. poss sol. use qv setDepth.  
     //      - will also cause problems with transparent(or translucent?) raster.
+    //      >>>> look for context.GetViewport()->SetNeedsHeal() in webmercator.  also play with depth for temporary tiles.
+    //      >>>> What is a CreateGroupNode??    
     SortedTiles backgroundTiles;
     FindBackgroudTiles(backgroundTiles, m_visiblesTiles, DRAW_COARSER_DELTA, context.GetViewportR());
     for(RasterTilePtr& pTile : backgroundTiles)

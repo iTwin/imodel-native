@@ -33,14 +33,14 @@ pointCloudSchemaDepends         = $(_MakeFileSpec)                              
                                   $(SrcPointCloudSchema)PointCloudGcsFacility.h                    \
                                   $(SrcPointCloudSchema)PointCloudViewport.h                       \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudViewSettings.h          \
-                                  $(SrcPointCloudSchema)PointCloudRamps.h                          \
                                   $(SrcPointCloudSchema)PointCloudRenderer.h                       \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaCommon.h          \
                                   $(PointCloudSchemaPublicApiSrc)IPointCloudViewSettings.h         \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaTypes.h           \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudDrawBuffer.h            \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudHandler.h               \
-                                  $(SrcPointCloudSchema)PointCloudProgressiveDisplay.h              \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudRamps.h                 \
+                                  $(SrcPointCloudSchema)PointCloudProgressiveDisplay.h             \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudDomain.h                \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaApi.h             \
                                   
@@ -55,6 +55,12 @@ PchCompiland        = $(SrcPointCloudSchema)PointCloudSchemaInternal.cpp
 PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
 PchExplicitDepends  = $(pointCloudSchemaDepends)
+
+%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+    # Using pch generate a crash in cc1plus.exe. Apparently this is caused by a too large pch. Should be fixed in future android NDK release.
+    # http://stackoverflow.com/questions/10841306/cc1plus-exe-crash-when-using-large-precompiled-header-file
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
 
 # Keep this even if GCC_NO_PRE_COMPILED_HEADER is defined. When GCC_NO_PRE_COMPILED_HEADER
 # is defined this step alters the command line to make the line including <PointCloudSchemaInternal.h>
