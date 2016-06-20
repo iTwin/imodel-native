@@ -59,9 +59,6 @@ DLM_NAME            = $(ASSEMBLY_NAME)
 DLM_OBJECT_DEST     = $(o)
 DLM_DEST            = $(TARGET_DIRECTORY)
 DLM_NO_RCSIGN       = 1
-DLM_NOMSBUILTINS    = 1
-DLM_NO_DEF          = 1
-DLM_NO_DLS          = 1
 DLM_NO_SIGN         = 1
 ASSEMBLY_VERSION    = 2.0.0.0
 %include $(SharedMki)VersionedPartSignatureDefaults.mki

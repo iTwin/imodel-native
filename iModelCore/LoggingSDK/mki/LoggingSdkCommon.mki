@@ -70,12 +70,9 @@ dirToSearch             = $(BuildContext)PublicAPI
 #-----------------------------------------------------------------------
 DLM_NAME                    = $(programName)
 DLM_NOENTRY                 = 1
-DLM_NOMSBUILTINS            = 1
 DLM_OBJECT_DEST             = $(o)
 DLM_DEST                    = $(binDir)
 DLM_OBJECT_FILES            = $(Objects)
-DLM_NO_DLS                  = 1
-DLM_NO_DEF                  = 1
 DLM_NO_INITIALIZE_FUNCTION  = 1
 DLM_LIBDEF_SRC              =
 #DLM_NO_SIGN                = 1
