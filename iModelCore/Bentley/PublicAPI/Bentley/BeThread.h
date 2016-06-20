@@ -242,33 +242,6 @@ struct  BeThreadUtilities
     BENTLEYDLL_EXPORT static uint32_t GetHardwareConcurrency();
 };
 
-//=======================================================================================
-//  @bsiclass
-//=======================================================================================
-struct BeThread : IRefCounted
-{
-private:
-    intptr_t    m_threadId;
-    Utf8String  m_threadName;
-
-private:
-    static void RunThread(void* arg);
-#if defined (__unix__)
-    static void* RunPlatformThread(void* arg) { RunThread(arg); return nullptr; }
-#else
-    static unsigned __stdcall RunPlatformThread(void* arg) { RunThread(arg); return 0; }
-#endif
-
-protected:
-    BENTLEYDLL_EXPORT BeThread(Utf8CP threadName = nullptr);
-    virtual void _Run() = 0;
-
-public:
-    virtual ~BeThread() {}
-    intptr_t GetThreadId() const { return m_threadId; }
-    BENTLEYDLL_EXPORT Utf8CP GetThreadName() const;
-    BENTLEYDLL_EXPORT void Start();
-};
 
 //__PUBLISH_SECTION_END__
 //=======================================================================================

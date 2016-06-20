@@ -42,14 +42,14 @@
 USING_NAMESPACE_BENTLEY
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    static DWORD         toKey(void* k)        {return (DWORD)         (intptr_t)k;}
-    static void*         toPtr(DWORD k)        {return (void*)         (intptr_t)k;}
+    static DWORD toKey(void* k) {return (DWORD) (intptr_t)k;}
+    static void* toPtr(DWORD k) {return (void*) (intptr_t)k;}
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
-        static pthread_key_t toKey(void* k)        {return (pthread_key_t) (intptr_t)k;}
-        static void*         toPtr(pthread_key_t k){return (void*)         (intptr_t)k;}
+        static pthread_key_t toKey(void* k) {return (pthread_key_t) (intptr_t)k;}
+        static void* toPtr(pthread_key_t k){return (void*) (intptr_t)k;}
     #else
-        static void*         toPtr(void* k)        {return k;}
+        static void* toPtr(void* k) {return k;}
     #endif
 #else
 #error unknown runtime
@@ -60,7 +60,7 @@ BeMutex* s_systemCS;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeThreadLocalStorage::BeThreadLocalStorage()
+void* BeThreadLocalStorage::Create()
     {
 #if defined (BENTLEY_WIN32)
     DWORD key = TlsAlloc();
@@ -77,22 +77,22 @@ BeThreadLocalStorage::BeThreadLocalStorage()
 #else
 #error unknown runtime
 #endif
-    m_key = toPtr(key);
+    return toPtr(key);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeThreadLocalStorage::~BeThreadLocalStorage()
+void BeThreadLocalStorage::Delete(void* key)
     {
 #if defined (BENTLEY_WIN32)
-    TlsFree(toKey(m_key));
+    TlsFree(toKey(key));
 #elif defined (BENTLEY_WINRT)
     // note: FLS acts the same as TLS if you don't create fibers
     FlsFree(toKey(m_key));
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
-        pthread_key_delete(toKey(m_key));
+        pthread_key_delete(toKey(key));
     #endif
 #else
 #error unknown runtime
@@ -102,16 +102,16 @@ BeThreadLocalStorage::~BeThreadLocalStorage()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThreadLocalStorage::SetValueAsPointer(void* v)
+void BeThreadLocalStorage::SetValue(void* key, void* v)
     {
 #if defined (BENTLEY_WIN32)
-    TlsSetValue(toKey(m_key), v);
+    TlsSetValue(toKey(key), v);
 #elif defined (BENTLEY_WINRT)
     // note: FLS acts the same as TLS if you don't create fibers
-    FlsSetValue(toKey(m_key), v);
+    FlsSetValue(toKey(key), v);
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
-        pthread_setspecific(toKey(m_key), v);
+        pthread_setspecific(toKey(key), v);
     #else
         m_value = v;
     #endif
@@ -123,16 +123,16 @@ void BeThreadLocalStorage::SetValueAsPointer(void* v)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void* BeThreadLocalStorage::GetValueAsPointer()
+void* BeThreadLocalStorage::GetValue(void* key)
     {
 #if defined (BENTLEY_WIN32)
-    return TlsGetValue(toKey(m_key));
+    return TlsGetValue(toKey(key));
 #elif defined (BENTLEY_WINRT)
     // note: FLS acts the same as TLS if you don't create fibers
-    return FlsGetValue(toKey(m_key));
+    return FlsGetValue(toKey(key));
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
-        return pthread_getspecific(toKey(m_key));
+        return pthread_getspecific(toKey(key));
     #else
         return m_value;
     #endif
@@ -402,6 +402,7 @@ BentleyStatus BeThreadUtilities::StartNewThread(int stackSize, T_ThreadStart sta
 #endif
     }
 
+#if defined (BENTLEY_CHANGE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -446,3 +447,4 @@ void BeThread::Start()
         Release();
         }
     }
+#endif
