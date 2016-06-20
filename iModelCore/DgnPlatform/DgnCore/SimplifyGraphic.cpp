@@ -287,12 +287,14 @@ bvector<CurveVectorPtr>& ClipCurveVector(CurveVectorCR curve, ClipVectorCR clip)
 +===============+===============+===============+===============+===============+======*/
 struct SimplifyPolyfaceClipper : PolyfaceQuery::IClipToPlaneSetOutput
 {
+bool m_unclipped;
 bvector<PolyfaceHeaderPtr> m_output;
         
-SimplifyPolyfaceClipper() {}
-virtual StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {return SUCCESS;}
+SimplifyPolyfaceClipper() : m_unclipped(false) {}
+virtual StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {m_unclipped = true; return SUCCESS;}
 virtual StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override {PolyfaceHeaderPtr meshPtr = &mesh; m_output.push_back(meshPtr); return SUCCESS;}
 bvector<PolyfaceHeaderPtr>& ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCR clip, bool triangulate) {clip.ClipPolyface(mesh, *this, triangulate); return m_output;}
+bool IsUnclipped() {return m_unclipped;}
 
 }; // SimplifyPolyfaceClipper
 
@@ -705,7 +707,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
             for (PolyfaceHeaderPtr meshOut : clippedPolyface)
                 m_processor._ProcessPolyface(*meshOut, filled, *this);
             }
-        else if (!m_processor._ProcessCurveVector(geom, filled, *this))
+        else if (polyfaceClipper.IsUnclipped() && !m_processor._ProcessCurveVector(geom, filled, *this))
             {
             m_processor._ProcessPolyface(builder->GetClientMeshR(), false, *this);
             }
@@ -841,7 +843,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
             for (PolyfaceHeaderPtr meshOut : clippedPolyface)
                 m_processor._ProcessPolyface(*meshOut, false, *this);
             }
-        else if (!m_processor._ProcessSolidPrimitive(geom, *this))
+        else if (polyfaceClipper.IsUnclipped() && !m_processor._ProcessSolidPrimitive(geom, *this))
             {
             m_processor._ProcessPolyface(builder->GetClientMeshR(), false, *this);
             }
@@ -988,7 +990,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
             for (PolyfaceHeaderPtr meshOut : clippedPolyface)
                 m_processor._ProcessPolyface(*meshOut, false, *this);
             }
-        else if (!m_processor._ProcessSurface(geom, *this))
+        else if (polyfaceClipper.IsUnclipped() && !m_processor._ProcessSurface(geom, *this))
             {
             m_processor._ProcessPolyface(builder->GetClientMeshR(), false, *this);
             }
@@ -1120,7 +1122,7 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
             for (PolyfaceHeaderPtr meshOut : clippedPolyface)
                 m_processor._ProcessPolyface(*meshOut, filled, *this);
             }
-        else
+        else if (polyfaceClipper.IsUnclipped())
             {
             m_processor._ProcessPolyface(geom, filled, *this); // Give chance to process un-clipped Polyface...
             }
@@ -1403,7 +1405,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom)
                     for (PolyfaceHeaderPtr meshOut : clippedPolyface)
                         m_processor._ProcessPolyface(*meshOut, false, static_cast<SimplifyGraphic&> (*graphic));
                     }
-                else
+                else if (polyfaceClipper.IsUnclipped())
                     {
                     m_processor._ProcessPolyface(*polyfaces[i], false, static_cast<SimplifyGraphic&> (*graphic));
                     }
@@ -1429,7 +1431,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom)
         for (PolyfaceHeaderPtr meshOut : clippedPolyface)
             m_processor._ProcessPolyface(*meshOut, false, static_cast<SimplifyGraphic&> (*graphic));
         }
-    else
+    else if (polyfaceClipper.IsUnclipped())
         {
         m_processor._ProcessPolyface(*polyface, false, static_cast<SimplifyGraphic&> (*graphic));
         }
@@ -1446,6 +1448,14 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom)
 
     polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != geom.GetEntityType());
 
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
+    if (!doClipping)
+        {
+        m_processor._ProcessPolyface(*polyface, false, *this);
+        return;
+        }
+
     SimplifyPolyfaceClipper polyfaceClipper;
     bvector<PolyfaceHeaderPtr>& clipResults = polyfaceClipper.ClipPolyface(*polyface, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
 
@@ -1454,7 +1464,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom)
         for (PolyfaceHeaderPtr clipPolyface : clipResults)
             m_processor._ProcessPolyface(*clipPolyface, false, *this);
         }
-    else
+    else if (polyfaceClipper.IsUnclipped())
         {
         m_processor._ProcessPolyface(*polyface, false, *this);
         }
