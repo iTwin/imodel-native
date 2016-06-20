@@ -24,7 +24,7 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //! there is no net change. Likewise, if a row is changed more than once, only the net changes are stored and
 //! intermediate values are not.
 //! @note @li A single database may have more than one ChangeTracker active.
-//! @note @li You cannot use nested transactions (via the @ref Savepoint "Savepoint API)
+//! @note @li You cannot use nested transactions (via the @ref Savepoint "Savepoint" API)
 //! if a ChangeTracker is enabled for that file.
 // @bsiclass                                                    Keith.Bentley   05/11
 //=======================================================================================
