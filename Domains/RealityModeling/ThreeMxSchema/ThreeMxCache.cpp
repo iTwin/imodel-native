@@ -51,6 +51,7 @@ public:
 
     MxStreamBuffer& GetOutput() const {return m_nodeBytes;}
 
+    void operator()(void){};
     virtual bool _IsExpired() const override {return false;}
     virtual void _OnError() override {_OnNotFound();}
     virtual void _OnNotFound() override {BeAssert(false); if (m_node.IsValid()) m_node->SetNotFound();}
@@ -244,7 +245,9 @@ RealityData::CacheResult Scene::RequestData(NodeP node, bool synchronous, MxStre
         filePath = m_rootUrl;
         }
 
-    return m_cache->RequestData(*new ThreeMxFileData(filePath.c_str(), node, *this, output), ThreeMxFileData::RequestOptions(synchronous));
+    folly::via(m_cache->GetFollyPool(), ThreeMxFileData(filePath.c_str(), node, *this, output));
+    return RealityData::CacheResult::RequestQueued;
+//    return m_cache->RequestData(*new ThreeMxFileData(filePath.c_str(), node, *this, output), ThreeMxFileData::RequestOptions(synchronous));
     }
 
 /*---------------------------------------------------------------------------------**//**
