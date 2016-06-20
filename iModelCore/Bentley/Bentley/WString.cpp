@@ -511,6 +511,22 @@ bool Utf8String::StartsWithI (Utf8CP value) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Carole.MacDonald                05/2016
+//---------------------------------------------------------------------------------------
+bool Utf8String::StartsWithIAscii(Utf8CP value) const
+    {
+    if (Utf8String::IsNullOrEmpty(value))
+        return false;
+
+    size_t valueLen = strlen(value);
+    if (valueLen > size())
+        return false;
+
+    Utf8String temp = this->substr(0, valueLen);
+    return (0 == temp.CompareToIAscii(value));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Carole.MacDonald                07/2015
 //---------------------------------------------------------------------------------------
 bool Utf8String::EndsWith (Utf8CP value) const
@@ -540,5 +556,21 @@ bool Utf8String::EndsWithI (Utf8CP value) const
     
     Utf8String temp = this->substr (size()-valueLen);
     return (0 == temp.CompareToI (value));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Carole.MacDonald                05/2016
+//---------------------------------------------------------------------------------------
+bool Utf8String::EndsWithIAscii(Utf8CP value) const
+    {
+    if (Utf8String::IsNullOrEmpty(value))
+        return false;
+
+    size_t valueLen = strlen(value);
+    if (valueLen > size())
+        return false;
+
+    Utf8String temp = this->substr(size() - valueLen);
+    return (0 == temp.CompareToIAscii(value));
     }
 

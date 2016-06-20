@@ -15,10 +15,13 @@
 BEGIN_BENTLEY_NAMESPACE
 
 //=======================================================================================
+//
+// All of this miserable crap is here only because the stupid C++/CLI compiler doesn't support std::threads.
+// Until we can get rid of the whole Windows "managed" abomination, we're stuck with this nonsense.
+//
 // BEMUTEX_DATA_ARRAY_LENGTH = sizeof (std::recursive_mutex) / sizeof (void*)
 // BECONDITIONVARIABLE_DATA_ARRAY_LENGTH = sizeof (std::condition_variable_any) / sizeof (void*)
 // Array of void* is used to force pointer type alignment
-// Must avoid including std headers here for CLR reasons
 //=======================================================================================
 #if defined (_WIN32)
     #if (_MSC_VER >= 1900)
@@ -55,7 +58,7 @@ BEGIN_BENTLEY_NAMESPACE
 //! A synchronization primitive that can be used to protect shared data from being simultaneously accessed by multiple threads.
 //! BeMutex offers exclusive, recursive ownership semantics.
 //! @see std::recursive_mutex
-//  @bsiclass 
+//  @bsiclass
 //=======================================================================================
 struct BeMutex : NonCopyableClass
 {
@@ -63,14 +66,14 @@ struct BeMutex : NonCopyableClass
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-private-field"
 #endif
-    
+
 private:
     void* m_osMutex[BEMUTEX_DATA_ARRAY_LENGTH];
 
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-    
+
 public:
     BENTLEYDLL_EXPORT BeMutex();
     BENTLEYDLL_EXPORT ~BeMutex();
@@ -87,7 +90,7 @@ public:
 //=======================================================================================
 //! A BeMutex ownership wrapper.
 //! @see std::unique_lock
-//  @bsiclass 
+//  @bsiclass
 //=======================================================================================
 struct BeMutexHolder : NonCopyableClass
 {
@@ -98,19 +101,19 @@ private:
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-private-field"
 #endif
-    
+
     bool m_owns;
 
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-    
+
 public:
     enum class Lock : bool {No=false, Yes=true};
 
     //! Associate this BeMutexHolder with a BeMutex, optionally locking it.
     //! @param[in] mutex the BeMutex to hold for the scope of this BeMutexHolder
-    //! @param[in] lock if Yes, the lock on mutex is acquired via mutex.lock() 
+    //! @param[in] lock if Yes, the lock on mutex is acquired via mutex.lock()
     BENTLEYDLL_EXPORT BeMutexHolder(BeMutex& mutex, Lock lock=Lock::Yes);
 
     //! Unlocks BeMutex if locked.
@@ -128,7 +131,7 @@ public:
 
 //=======================================================================================
 //! Provides implementation of predicate for a BeConditionVariable
-//  @bsiclass 
+//  @bsiclass
 //=======================================================================================
 struct IConditionVariablePredicate
 {
@@ -143,7 +146,7 @@ struct IConditionVariablePredicate
 //! @see std::condition_variable_any
 //! @note BeConditionVariable differs from std::condition_variable_any in that it includes a BeMutex internally, wheras
 //! std::condition_variable_any requires an external mutex.
-//  @bsiclass 
+//  @bsiclass
 //=======================================================================================
 struct  BeConditionVariable : NonCopyableClass
 {
@@ -198,7 +201,7 @@ public:
     #define THREAD_MAIN_IMPL void*
 #elif defined (_WIN32) // Windows && WinRT
     typedef unsigned (__stdcall *T_ThreadStart)(void*);
-    #define THREAD_MAIN_IMPL unsigned __stdcall 
+    #define THREAD_MAIN_IMPL unsigned __stdcall
 #endif
 
 #define THREAD_MAIN_DECL static THREAD_MAIN_IMPL
@@ -209,16 +212,14 @@ typedef unsigned (__stdcall *T_ThreadStartHandler)(T_ThreadStart startAddr, void
 
 //=======================================================================================
 //! Utilities for dealing with threads
-//  @bsiclass 
+//  @bsiclass
 //=======================================================================================
 struct  BeThreadUtilities
 {
-//__PUBLISH_SECTION_END__
 
 #if defined (BENTLEY_WINRT)
     BENTLEYDLL_EXPORT static void SetThreadStartHandler(T_ThreadStartHandler);
 #endif
-//__PUBLISH_SECTION_START__
 
     //! Set the name for the current thread. Useful for debugging only, not guaranteed to do anything
     //! @param[in] newName Name to call thread.
@@ -242,7 +243,7 @@ struct  BeThreadUtilities
 };
 
 //=======================================================================================
-//  @bsiclass 
+//  @bsiclass
 //=======================================================================================
 struct BeThread : IRefCounted
 {
@@ -250,7 +251,6 @@ private:
     intptr_t    m_threadId;
     Utf8String  m_threadName;
 
-//__PUBLISH_SECTION_END__
 private:
     static void RunThread(void* arg);
 #if defined (__unix__)
@@ -259,7 +259,6 @@ private:
     static unsigned __stdcall RunPlatformThread(void* arg) { RunThread(arg); return 0; }
 #endif
 
-//__PUBLISH_SECTION_START__
 protected:
     BENTLEYDLL_EXPORT BeThread(Utf8CP threadName = nullptr);
     virtual void _Run() = 0;
@@ -274,7 +273,7 @@ public:
 //__PUBLISH_SECTION_END__
 //=======================================================================================
 //! Hold a lock on the system BeMutex
-//  @bsiclass 
+//  @bsiclass
 //=======================================================================================
 struct BeSystemMutexHolder : BeMutexHolder
 {

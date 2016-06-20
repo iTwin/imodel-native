@@ -15,6 +15,9 @@
 #include <Bentley/BeTextFile.h>
 USING_NAMESPACE_BENTLEY
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                        Julija.Suboc                02/13
+//---------------------------------------------------------------------------------------
 struct BeTextFileTests : public testing::Test
     {
      protected:
@@ -31,24 +34,25 @@ struct BeTextFileTests : public testing::Test
         AString m_lineToCurrentLocale;
         Utf8String m_lineToUtf8;
         Utf16Buffer m_lineToUtf16;
+
+        BeFileName GetOutFileName(WCharCP fileName)
+            {
+            BeFileName tmp;
+            BeTest::GetHost().GetOutputRoot(tmp);
+            tmp.AppendToPath(fileName);
+            return tmp;
+            }
+        
         
         //---------------------------------------------------------------------------------------
         //Initializes values
         // @bsimethod                                        Julija.Suboc                02/13
         //---------------------------------------------------------------------------------------
         void SetUp() 
-            {
-            BeFileName tmp;
-            BeTest::GetHost().GetOutputRoot (tmp);
-            
-            m_fileReadName.AppendToPath(tmp.GetName());
-            m_fileReadName.AppendToPath (L"Read.txt");
-
-            m_fileWriteName.AppendToPath(tmp.GetName());
-            m_fileWriteName.AppendToPath (L"Write.txt");
-
-            m_fileAppendName.AppendToPath(tmp.GetName());
-            m_fileAppendName.AppendToPath (L"Append.txt");
+            {            
+            m_fileReadName = GetOutFileName(L"Read.txt");
+            m_fileWriteName = GetOutFileName(L"Write.txt");
+            m_fileAppendName = GetOutFileName(L"Append.txt");
             
             m_fileReadPtr = NULL;
             m_fileWritePtr = NULL;
@@ -451,7 +455,7 @@ TEST_F(BeTextFileTests, ChangePointerAndWriteToFile)
 //
 // @bsimethod                                        Julija.Suboc                02/13
 //---------------------------------------------------------------------------------------
-TEST_F(BeTextFileTests, WriteToFileWithPutAndPrintf)
+TEST_F(BeTextFileTests, WriteToFileWithPutLine)
     {
     while(!m_encodingsToTest.empty())
         {
@@ -467,9 +471,11 @@ TEST_F(BeTextFileTests, WriteToFileWithPutAndPrintf)
         WCharCP line = L"Hi, I am appended line!";
         writeStatus = m_fileWritePtr->PutLine(line, true);
         EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<EncodeOptionToString(encoding);
-        //printf directly to file
-        writeStatus = m_fileWritePtr->PrintfTo(false, L"Characters: %lc %lc ", L'a', 65);
-        EXPECT_TRUE(TextFileWriteStatus::Success ==writeStatus)<<"Failed to write to file, used encoding: "<<EncodeOptionToString(encoding);
+        //Add line without carriage return
+        writeStatus = m_fileWritePtr->PutLine(L"Obrigado ", false);
+        EXPECT_TRUE(TextFileWriteStatus::Success == writeStatus) << "Failed to write to file, used encoding: " << EncodeOptionToString(encoding);
+        writeStatus = m_fileWritePtr->PutLine(L"amigo!", false);
+        EXPECT_TRUE(TextFileWriteStatus::Success == writeStatus) << "Failed to write to file, used encoding: " << EncodeOptionToString(encoding);
         m_fileWritePtr->Close();
         //--------------Verification-------------------------
         //Check file, it should contain two lines
@@ -485,7 +491,7 @@ TEST_F(BeTextFileTests, WriteToFileWithPutAndPrintf)
         //Verify second line
         read_status =  m_fileWritePtr->GetLine(getLine);
         ASSERT_TRUE(TextFileReadStatus::Success == read_status)<<"Failed to read line from file(issue 2191), used encoding: "<<EncodeOptionToString(encoding);
-        line2 = L"Characters: a A ";
+        line2 = L"Obrigado amigo!";
         c = getLine.CompareTo(line2);
         EXPECT_TRUE (c == 0)<<"Line comparison failed, used encoding: "<<EncodeOptionToString(encoding); //<<" "<<getLine.c_str()<<" "<<line2.c_str();
         //Verify that there is no third line
@@ -739,6 +745,73 @@ TEST_F(BeTextFileTests, Rewind)
         //Verify that there is no third line
         read_status =  m_fileWritePtr->GetLine(line);
         EXPECT_TRUE(TextFileReadStatus::Eof ==read_status)<<"File should contain only two lines.";
+        CloseFiles();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//Open file to append a line and appends 2 lines PrintfTo
+//
+// @bsimethod                                        Julija.Suboc                05/16
+//---------------------------------------------------------------------------------------
+TEST_F(BeTextFileTests, WriteToFileWithPrintf)
+    {
+    while(!m_encodingsToTest.empty())
+        {
+        TextFileEncoding encoding = m_encodingsToTest.back();
+        m_encodingsToTest.pop_back();
+        //-------Test Steps----------------------------
+        BeFileStatus status;
+        //Open file
+        m_fileWritePtr =    BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Write, TextFileOptions::None, encoding);
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file to write, used encoding: "<<EncodeOptionToString(encoding);
+        //Add line to file
+        TextFileWriteStatus writeStatus;
+        WCharCP line = L"Hi, I am appended line!";
+        writeStatus = m_fileWritePtr->PrintfTo(false, L"%ls\n", line);
+        EXPECT_TRUE(TextFileWriteStatus::Success == writeStatus) << "Failed to write to file, used encoding: " << EncodeOptionToString(encoding);
+        //printf directly to file
+        writeStatus = m_fileWritePtr->PrintfTo(false, L"Characters: %lc %lc \n", L'a', 65);
+        EXPECT_TRUE(TextFileWriteStatus::Success == writeStatus) << "Failed to write to file, used encoding: " << EncodeOptionToString(encoding);
+        
+        //printf to file and stdout
+        Utf8String stdoutFileName (GetOutFileName(L"stdoutFile.txt").c_str());
+        //FILE fp_old = *stdout;  // preserve the original stdout
+        //*stdout = *fopen(stdoutFileName.c_str(), "w");
+        //FILE* out = freopen(stdoutFileName.c_str(), "w", stdout);
+        writeStatus = m_fileWritePtr->PrintfTo(true, L"Obrigado omigo!");
+        //fclose(out);
+        //*stdout = fp_old;  // restore stdout
+        //out = freopen("CON", "w", stdout);
+
+        EXPECT_TRUE(TextFileWriteStatus::Success == writeStatus) << "Failed to write to file, used encoding: " << EncodeOptionToString(encoding);
+        m_fileWritePtr->Close();
+        //--------------Verification-------------------------
+        //Check file, it should contain two lines
+        m_fileWritePtr =    BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Read, TextFileOptions::None, encoding);
+        EXPECT_TRUE(BeFileStatus::Success == status)<<"Failed to open file to write, used encoding: "<<EncodeOptionToString(encoding);
+        WString getLine;
+        TextFileReadStatus read_status;
+        read_status =  m_fileWritePtr->GetLine(getLine);
+        ASSERT_TRUE(TextFileReadStatus::Success == read_status)<<"Failed to read line from file, used encoding: "<<EncodeOptionToString(encoding);
+        WString line2 = L"Hi, I am appended line!";
+        int c = getLine.CompareTo(line2);
+        EXPECT_TRUE (c == 0)<<"Line comparison failed (issue 2191), used encoding: "<<EncodeOptionToString(encoding)<<"  "<<getLine.c_str()<<"   "<<line2.c_str();
+        //Verify second line
+        read_status =  m_fileWritePtr->GetLine(getLine);
+        ASSERT_TRUE(TextFileReadStatus::Success == read_status)<<"Failed to read line from file(issue 2191), used encoding: "<<EncodeOptionToString(encoding);
+        line2 = L"Characters: a A ";
+        c = getLine.CompareTo(line2);
+        EXPECT_TRUE (c == 0)<<"Line comparison failed, used encoding: "<<EncodeOptionToString(encoding); //<<" "<<getLine.c_str()<<" "<<line2.c_str();
+        //Verify third line
+        read_status = m_fileWritePtr->GetLine(getLine);
+        ASSERT_TRUE(TextFileReadStatus::Success == read_status) << "Failed to read line from file(issue 2191), used encoding: " << EncodeOptionToString(encoding);
+        WString line3 = L"Obrigado omigo!";
+        c = getLine.CompareTo(line3);
+        EXPECT_TRUE(c == 0) << "Line comparison failed, used encoding: " << EncodeOptionToString(encoding); //<<" "<<getLine.c_str()<<" "<<line2.c_str();
+        //Verify that there is no forth line
+        read_status =  m_fileWritePtr->GetLine(getLine);
+        EXPECT_TRUE(TextFileReadStatus::Eof ==read_status)<<"File should contain only three lines, used encoding: "<<EncodeOptionToString(encoding);
         CloseFiles();
         }
     }
