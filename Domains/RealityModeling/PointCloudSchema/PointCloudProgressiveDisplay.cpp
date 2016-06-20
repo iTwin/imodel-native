@@ -45,7 +45,11 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
     PointCloudVortex::SetViewport(m_ptViewport->GetId());
     VisualizationManager::SetViewportInfo(context, m_model.GetSceneToWorld(), m_sceneRangeWorld);
 
-    // Changing the global density has no effect once points have been loaded. Instead, alter the display query density
+    // Use same values than Vancouver implementation - maybe some tuning would be needed here.
+    PointCloudVortex::DynamicFrameRate (15.0f);
+    PointCloudVortex::StaticOptimizer(0.5);
+
+    // Changing the global density has no effect once points have been loaded. Instead, alter the display query density 
     PointCloudVortex::GlobalDensity(1.0f);
 
     auto spatial = context.GetViewport()->GetViewController()._ToSpatialView();
@@ -59,11 +63,104 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
     PointCloudVortex::SetEnabledState(PtEnable::RGB_SHADER, settings.GetUseRgb());
     PointCloudVortex::SetEnabledState(PtEnable::FRONT_BIAS, settings.GetUseFrontBias());
     PointCloudVortex::SetEnabledState(PtEnable::ADAPTIVE_POINT_SIZE, false);
-    PointCloudVortex::SetEnabledState(PtEnable::LIGHTING, settings.GetUseLightning());
-    PointCloudVortex::SetEnabledState(PtEnable::INTENSITY_SHADER, settings.GetUseIntensity());
-    PointCloudVortex::SetEnabledState(PtEnable::PLANE_SHADER, settings.GetUsePlane());
+    PointCloudVortex::SetEnabledState(PtEnable::LIGHTING, false);
+
+    PointCloudSettings::DisplayStyle displayStyle = settings.GetDisplayStyle();
+    if (displayStyle == PointCloudSettings::DisplayStyle::Custom)
+        {
+        PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, settings.GetUseIntensity());
+        PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, settings.GetUsePlane());
+        if (settings.GetUseIntensity()) //if intensity set to true
+            {
+            PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_BRIGHTNESS, settings.GetBrightness () );
+            PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_CONTRAST, settings.GetContrast () );
+            PointCloudVortex::ShaderOptioni( PtShaderOptions::INTENSITY_SHADER_RAMP, settings.GetIntensityRampIdx ());
+            BeAssert (settings.GetIntensityRampIdx() != INVALID_RAMP_INDEX);
+            }
+
+        if (settings.GetUsePlane()) //if elevation is set to true
+            {
+            PointCloudVortex::ShaderOptioni( PtShaderOptions::PLANE_SHADER_RAMP, settings.GetPlaneRampIdx ());
+            BeAssert (settings.GetPlaneRampIdx() != INVALID_RAMP_INDEX);
+            PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_DISTANCE, settings.GetDistance ());
+            PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_OFFSET, settings.GetOffset ());
+
+            //Clamp elevation value
+            if (settings.GetClampIntensity())
+                PointCloudVortex::ShaderOptioni (PtShaderOptions::PLANE_SHADER_EDGE, 0x01);
+            else
+                PointCloudVortex::ShaderOptioni (PtShaderOptions::PLANE_SHADER_EDGE, 0x00);
+
+            float axis [] = {0,0,0};
+            if (settings.GetUseACSAsPlaneAxis () && IACSManager::GetManager().GetActive (*context.GetViewport()))
+                {
+                RotMatrix rot;
+                DVec3d direction;
+
+                IACSManager::GetManager().GetActive (*context.GetViewport())->GetRotation (rot);
+                rot.GetRow(direction, 2);
+                direction.Normalize();
+                axis[0]= (float)direction.x;
+                axis[1]= (float)direction.y;
+                axis[2]= (float)direction.z;
+                }
+            else
+                axis [__min (2, settings.GetPlaneAxis ())] = 1.0f;
+
+            PointCloudVortex::ShaderOptionfv( PtShaderOptions::PLANE_SHADER_VECTOR, axis ); 
+            }
+        }
+    else if (displayStyle == PointCloudSettings::DisplayStyle::Intensity)
+        {
+        PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, true);
+        PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, false);
+        PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_BRIGHTNESS, settings.GetBrightness () );
+        PointCloudVortex::ShaderOptionf( PtShaderOptions::INTENSITY_SHADER_CONTRAST, settings.GetContrast () );
+        PointCloudVortex::ShaderOptioni( PtShaderOptions::INTENSITY_SHADER_RAMP, settings.GetIntensityRampIdx ());
+        BeAssert (settings.GetIntensityRampIdx() != INVALID_RAMP_INDEX);
+        }
+    else if (displayStyle == PointCloudSettings::DisplayStyle::Location)
+        {
+        PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, false);
+        PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, true);
+        PointCloudVortex::ShaderOptioni( PtShaderOptions::PLANE_SHADER_RAMP, settings.GetPlaneRampIdx ());
+
+        BeAssert (settings.GetPlaneRampIdx() != INVALID_RAMP_INDEX);
+
+        //Clamp elevation value
+        if (settings.GetClampIntensity())
+            PointCloudVortex::ShaderOptioni (PtShaderOptions::PLANE_SHADER_EDGE, 0x01);
+        else
+            PointCloudVortex::ShaderOptioni (PtShaderOptions::PLANE_SHADER_EDGE, 0x00);
+
+        PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_DISTANCE, settings.GetDistance ());
+        PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_OFFSET, settings.GetOffset ());
+
+        float axis [] = {0,0,0};
+        if (settings.GetUseACSAsPlaneAxis () && IACSManager::GetManager().GetActive (*context.GetViewport()))
+            {
+            RotMatrix rot;
+            DVec3d direction;
+            IACSManager::GetManager().GetActive (*context.GetViewport())->GetRotation (rot);
+            rot.GetRow(direction,  2);
+            direction.Normalize();
+            axis[0]= (float)direction.x;
+            axis[1]= (float)direction.y;
+            axis[2]= (float)direction.z;
+            }
+        else
+            axis [__min (2, settings.GetPlaneAxis ())] = 1.0f;
+        PointCloudVortex::ShaderOptionfv( PtShaderOptions::PLANE_SHADER_VECTOR, axis ); 
+        }
+    else
+        {
+        BeAssert (displayStyle == PointCloudSettings::DisplayStyle::None || 
+                    displayStyle == PointCloudSettings::DisplayStyle::Classification);
+        PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, false);
+        PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, false);
+        }
     }
-         
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
 //----------------------------------------------------------------------------------------
