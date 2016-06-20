@@ -17,18 +17,11 @@
     TEST_DELIVERY_SUBDIR=ANJUP
 %endif
 
-%ifndef TEST_ANDROID_MIN_SDK_VERSION
-    %error Define TEST_ANDROID_MIN_SDK_VERSION to be the minimum Android SDK version that tests require
-%endif
-
-# Optional. TEST_ANDROID_TARGET_SDK_VERSION - The Android SDK version that tests were designed to run on. Normally, this is the same as TEST_ANDROID_MIN_SDK_VERSION
-%ifndef TEST_ANDROID_TARGET_SDK_VERSION
-    TEST_ANDROID_TARGET_SDK_VERSION=$(TEST_ANDROID_MIN_SDK_VERSION)
-%endif
-
 # Optional. TEST_FRAMEWORK_SQLANG - Full filepath of .db3 file to return as the "framework" sqlang file
 
 GCC_DEFAULT_VISIBILITY=default
+ANDROID_API_LEVEL=18
+
 %include mdl.mki
 %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
 
@@ -93,14 +86,6 @@ static_libraries_full_path = $[@realpath $[@wildcard $(outputDir)libs/*$(stlibex
 $(outputDir)project/build.gradle : $(baseDir)project/build.gradle
     $(msg)
     CopyWithSymlinks.py     $(baseDir)project                     $(outputDir)project
-    $(deleteCmd) $(outputDir)project/app/src/main/AndroidManifest.xml
-    $(copyCmd) $(baseDir)project/app/src/main/AndroidManifest.xml $(outputDir)project/app/src/main/AndroidManifest.xml
-    $(baseDir)SearchAndReplace.py $(outputDir)project/app/src/main/AndroidManifest.xml __BENTLEY_TEST_ANDROID_MIN_SDK_VERSION__ $(TEST_ANDROID_MIN_SDK_VERSION)
-    $(baseDir)SearchAndReplace.py $(outputDir)project/app/src/main/AndroidManifest.xml __BENTLEY_TEST_ANDROID_TARGET_SDK_VERSION__ $(TEST_ANDROID_TARGET_SDK_VERSION)
-    $(deleteCmd) $(outputDir)project/app/build.gradle
-    $(copyCmd) $(baseDir)project/app/build.gradle $(outputDir)project/app/build.gradle
-    $(baseDir)SearchAndReplace.py $(outputDir)project/app/build.gradle __BENTLEY_TEST_ANDROID_MIN_SDK_VERSION__ $(TEST_ANDROID_MIN_SDK_VERSION)
-    $(baseDir)SearchAndReplace.py $(outputDir)project/app/build.gradle __BENTLEY_TEST_ANDROID_TARGET_SDK_VERSION__ $(TEST_ANDROID_TARGET_SDK_VERSION)
 
 #/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_
 #           project/app/src/main - contains the (fake) application under test

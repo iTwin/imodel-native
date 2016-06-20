@@ -1,15 +1,16 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "21.1.2"
+
+    compileSdkVersion project.ext.compileSdkVersion
+    buildToolsVersion project.ext.buildToolsVersion
     defaultConfig {
         applicationId "com.bentley.test"
         testApplicationId "com.bentley.unittest"
         testInstrumentationRunner "com.bentley.unittest.BeInstrumentationTestRunner"
         project.archivesBaseName = "Test"
-        minSdkVersion __BENTLEY_TEST_ANDROID_MIN_SDK_VERSION__
-        targetSdkVersion __BENTLEY_TEST_ANDROID_TARGET_SDK_VERSION__
+        minSdkVersion project.ext.minSdkVersion
+        targetSdkVersion project.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
     }
@@ -35,8 +36,4 @@ android {
             jniDebuggable true
         }
     }
-}
-
-dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
 }
