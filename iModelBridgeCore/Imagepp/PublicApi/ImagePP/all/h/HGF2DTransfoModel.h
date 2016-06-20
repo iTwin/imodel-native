@@ -535,6 +535,40 @@ public:
     */
     IMAGEPP_EXPORT void Reverse();
 
+    /** -----------------------------------------------------------------------------
+        Studies the reversibility of the model over a region using the given step.
+        Since mzGCoord models are notably un-reversible when region of
+        operation is far from usual region of application, it is recommended
+        to estimate the reversibility of the model before using. The method
+        will sample coordinate transformation by converting direct then inverse
+        this result. The deviation from the original value is used in the
+        calculation of mean and maximum error which are returned.
+    
+        @param pi_rPrecisionArea An extent over which to perform the study. The
+                                 area may not be empty.
+    
+        @param pi_Step The step used in X and Y for sampling. This value must be
+                       greater than 0.0
+    
+    
+        @param po_pMeanError Pointer to double that receives the mean error.
+    
+        @param po_pMaxError  Pointer to double that receives the maximum error.
+    
+        @param po_pScaleChangeMean Pointer to double that receives the mean scale change
+    
+        @param po_pScaleChangeMax Pointer to double that receives the MAX scale change
+    
+        @param pi_ScaleThreshold Value indicating the scale that will result in a stop
+                                 of study. Even if study is stopped, at least one
+                                 sample has been completely proecessed and thus
+                                 all stats are valid. The threshold is specified as
+                                 a change of scale from 1.0 (no scale change). This parameter
+                                 is optional and defaults to 1.0 meaning a factor of 2.0
+                                 will stop the process
+    
+        -----------------------------------------------------------------------------
+    */
     void StudyReversibilityPrecisionOver (const HGF2DLiteExtent& pi_PrecisionArea,
                                           double                pi_Step,
                                           double*               po_pMeanError,
@@ -543,7 +577,39 @@ public:
                                           double*               po_pScaleChangeMax,
                                           double                pi_ScaleTreshold = 1.0) const;
 
-
+    /** -----------------------------------------------------------------------------
+        Extracts the mean and max error between two transformation model over a specific area.
+    
+        @param pi_rModel The other transformation model to check equivalence over area.
+    
+        @param pi_rPrecisionArea An extent over which to perform the study. The
+                                 area may not be empty.
+    
+        @param pi_Step The step used in X and Y for sampling. This value must be
+                       greater than 0.0
+    
+        @param pi_Direct Indicates if the transformation (and this the result) must be performed
+                         in the direct direction or inverse direction. 
+                         ATTENTION If Direct then the transformation is performed 
+                         using ConvertDirect then the values of Max and Mean errors are in the 
+                         Inverse Channel units. If false then conversion will be performed using
+                         ConvertInverse and that the mena and max errors will be in the direct
+                         channel units.
+    
+        @param po_pMeanError Pointer to double that receives the mean error. Note this error is
+                             expressed in the converted domain.
+    
+        @param po_pMaxError  Pointer to double that receives the maximum error. Note that this
+                             error is expressed in the converted domain.
+    
+        -----------------------------------------------------------------------------
+    */
+    IMAGEPP_EXPORT void GetEquivalenceToOver (const HGF2DTransfoModel& pi_rModel,
+                               const HGF2DLiteExtent& pi_PrecisionArea,
+                               double                pi_Step,
+                               bool                  pi_Direct,
+                               double*               po_pMeanError,
+                               double*               po_pMaxError) const;
 protected:
     // Primary methods
     IMAGEPP_EXPORT                   HGF2DTransfoModel();

@@ -572,7 +572,7 @@ protected:
         // Copy runs to real buffer.
         size_t RunLenInBytes = WorkRunIndex * sizeof(uint16_t);
 
-        BeAssert(Rle1Manip::ValidateLineIntegrity(pWorkingRuns, width, RunLenInBytes));
+        BeDataAssertOnce(Rle1Manip::ValidateLineIntegrity(pWorkingRuns, width, RunLenInBytes));
         return RunLenInBytes;
         }
 

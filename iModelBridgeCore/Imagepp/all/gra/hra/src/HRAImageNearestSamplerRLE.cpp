@@ -624,6 +624,9 @@ private:
     uint32_t m_written;
     };
 
+// The code below must be build with "precise", otherwise the 1bit image is different in Debug vs Release.
+//#pragma float_control(precise, on, push)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -748,7 +751,6 @@ ImagePPStatus HRAImageNearestSamplerRLE::Stretch_T(HRAImageSampleR outData, Pixe
                 {
                 reader.MoveFoward(positionInSrc);   // Skip entry that we have scale over.
 
-
                 double srcRunLen = (reader.GetEndRun() - positionInSrc);
                 double dstRunLenReel = (srcRunLen * invScaleX);
                 uint32_t dstRunLen = MAX((uint32_t)dstRunLenReel, 1);
@@ -825,7 +827,7 @@ ImagePPStatus HRAImageNearestSamplerRLE::Stretch_T(HRAImageSampleR outData, Pixe
         
     return IMAGEPP_STATUS_Success;
     }
-
+//#pragma float_control(pop)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  08/2014
