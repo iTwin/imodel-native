@@ -102,12 +102,13 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
     private:
         struct ColumnLists : NonCopyableClass
             {
-            std::vector<DbColumn const*> m_fkTablesECInstanceIdColumns;
-            std::vector<DbColumn const*> m_fkTablesECClassIdColumns;
-            std::vector<DbColumn const*> m_fkTablesFkColumns;
+            std::vector<DbColumn const*> m_relECClassIdColumnsPerFkTable; //Rel ECClassId
+            std::vector<DbColumn const*> m_ecInstanceIdColumnsPerFkTable; //ForeignEnd ECInstanceId
+            std::vector<DbColumn const*> m_classIdColumnsPerFkTable; //ForeignEnd ECClassId
+            std::vector<DbColumn const*> m_fkColumnsPerFkTable; //ReferencedEnd ECInstanceId
             //The referenced end class id cols are either from the FK table, or if the referenced table has its own class id column, that one is taken.
             //WIP_FOR_AFFAN: Is this safe enough? Does consuming code know that the prop map has columns to another table??
-            std::vector<DbColumn const*> m_referencedEndECClassIdColumns;
+            std::vector<DbColumn const*> m_referencedEndECClassIdColumns; //ReferencedEnd ECClassId in the referenced table or fk table
             };
 
         struct ForeignKeyColumnInfo : NonCopyableClass
@@ -147,9 +148,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
                 PropertyMapCP GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
             };
 
-        static Utf8CP const DEFAULT_FKCOLUMNNAME_PREFIX;
-
-        bool m_autogenerateForeignKeyColumns;
+        bool m_hasKeyPropertyFk;
 
         RelationshipClassEndTableMap(ECN::ECRelationshipClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
 
@@ -159,6 +158,8 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&) override;
 
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
+        Utf8String DetermineFkColumnName(RelationshipMappingInfo const&, ForeignKeyColumnInfo const&) const;
+        static Utf8String DetermineRelECClassIdColumnName(ECN::ECRelationshipClassCR, Utf8StringCR fkColumnName);
         BentleyStatus MapSubClass(RelationshipMappingInfo const&, ClassMap const& baseClassMap);
 
         //! Tries to retrieve the column to which the key property on the specified constraint is mapped to.
