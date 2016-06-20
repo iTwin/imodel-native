@@ -131,7 +131,7 @@ private:
 
     DgnDbServerEventSASTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    DgnDbServerEventSASTaskPtr GetEventServiceSAS2(ICancellationTokenPtr cancellationToken = nullptr) const; //temporary till POST is fixed. Json being retrieved from server is bad.
+    //DgnDbServerEventSASTaskPtr GetEventServiceSAS2(ICancellationTokenPtr cancellationToken = nullptr) const; //temporary till POST is fixed. Json being retrieved from server is bad.
 
     DgnDbServerEventSubscriptionTaskPtr GetEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
