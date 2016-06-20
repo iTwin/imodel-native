@@ -963,17 +963,13 @@ CacheStatus DataSourceCache::RemoveInstance(ObjectIdCR objectId)
 BentleyStatus DataSourceCache::RemoveFile(ObjectIdCR objectId)
     {
     LogCacheDataForMethod();
-    FileInfo fileInfo = m_state->GetFileInfoManager().ReadInfo(objectId);
+    FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
 
-    if (!fileInfo.IsInCache())
-        {
+    if (!info.IsInCache())
         return SUCCESS;
-        }
 
-    if (SUCCESS != m_state->GetFileStorage().CleanupCachedFile(fileInfo.GetFilePath()))
-        {
+    if (SUCCESS != m_state->GetFileStorage().RemoveStoredFile(info))
         return ERROR;
-        }
 
     return SUCCESS;
     }
@@ -1343,12 +1339,12 @@ BentleyStatus DataSourceCache::RemoveRootsByPrefix(Utf8StringCR rootPrefix)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation)
+BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativeDir)
     {
-    //! TODO: remove FileCache parameter and auotmaically use Root persistence instead
+    //! TODO: consider removing FileCache parameter and auotmaically use Root persistence instead
     LogCacheDataForMethod();
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
-    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation) ||
+    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation, &externalRelativeDir) ||
         SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
         {
         return ERROR;
@@ -1359,10 +1355,10 @@ BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCac
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-FileCache DataSourceCache::GetFileCacheLocation(ObjectIdCR objectId)
+FileCache DataSourceCache::GetFileCacheLocation(ObjectIdCR objectId, FileCache defaultLocation)
     {
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
-    return info.IsFilePersistent() ? FileCache::Persistent : FileCache::Temporary;
+    return info.GetLocation(defaultLocation);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1379,34 +1375,25 @@ FileCache cacheLocation
 
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
     if (!info.IsValid())
-        {
         return ERROR;
-        }
 
     if (!fileResult.IsModified())
         {
         if (!info.IsInCache())
-            {
             return ERROR;
-            }
-
-        info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
         }
     else
         {
         auto path = fileResult.GetFilePath();
         auto eTag = fileResult.GetETag();
-        auto time = DateTime::GetCurrentTimeUtc();
-        if (SUCCESS != m_state->GetFileStorage().CacheFile(info, path, eTag.c_str(), cacheLocation, time, false))
-            {
+        if (SUCCESS != m_state->GetFileStorage().CacheFile(info, path, eTag.c_str(), cacheLocation, false))
             return ERROR;
-            }
         }
 
+    info.SetFileCacheDate(DateTime::GetCurrentTimeUtc());
+
     if (SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
-        {
         return ERROR;
-        }
 
     return SUCCESS;
     }
@@ -1432,13 +1419,13 @@ BeFileName DataSourceCache::ReadFilePath(ECInstanceKeyCR instanceKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::RemoveFilesInTemporaryPersistence()
+BentleyStatus DataSourceCache::RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate)
     {
     LogCacheDataForMethod();
 
     ECInstanceKeyMultiMap fullyPersistedNodes;
     if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
-        SUCCESS != m_state->GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes))
+        SUCCESS != m_state->GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes, maxLastAccessDate))
         {
         return ERROR;
         }

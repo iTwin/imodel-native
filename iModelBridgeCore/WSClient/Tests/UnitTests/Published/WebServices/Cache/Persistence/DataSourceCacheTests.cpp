@@ -87,86 +87,72 @@ TEST_F(DataSourceCacheTests, Open_ExistingDbWithNoDefaultTransaction_Success)
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
-
-    BentleyStatus result = cache.UpdateSchemas(std::vector<BeFileName> {});
-
-    EXPECT_EQ(SUCCESS, result);
+    auto cache = GetTestCache();
+    EXPECT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<BeFileName> {}));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_PathPasssed_SuccessAndSchemaAccessable)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
+    auto cache = GetTestCache();
 
     BeFileName schemaPath = GetTestSchemaPath();
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<BeFileName> {schemaPath}));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<BeFileName> {schemaPath}));
 
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema"));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassed_SuccessAndSchemasAccessable)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema(), GetTestSchema2() }));
+    auto cache = GetTestCache();
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema(), GetTestSchema2() }));
 
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema2"));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema"));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
-// WIP06
-TEST_F(DataSourceCacheTests, UpdateSchema_RootInstanceCreated_ShouldNotDeleteRootInstance)
+TEST_F(DataSourceCacheTests, UpdateSchemas_RootInstanceCreated_ShouldNotDeleteRootInstance)
     {
-    DataSourceCache cache;
-    cache.Create(StubFilePath("test.ecdb"), CacheEnvironment());
+    auto cache = GetTestCache();
 
-    auto root1 = cache.FindOrCreateRoot("Foo");
+    auto root1 = cache->FindOrCreateRoot("Foo");
     ASSERT_TRUE(root1.IsValid());
 
-    cache.GetECDb().SaveChanges(); // wsc_Node has row
+    cache->GetECDb().SaveChanges();
 
     auto schema = ParseSchema(R"xml(
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchema schemaName="UpgradeTestSchema" nameSpacePrefix="UTS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass">
                 <ECProperty propertyName="TestProperty" typeName="string" />
             </ECClass>
         </ECSchema>)xml");
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
 
-    cache.GetECDb().SaveChanges(); // wsc_Node has no rows
+    cache->GetECDb().SaveChanges();
 
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema"));
 
-    auto root2 = cache.FindOrCreateRoot("Foo");
+    auto root2 = cache->FindOrCreateRoot("Foo");
     ASSERT_TRUE(root2.IsValid());
     EXPECT_EQ(root1, root2);
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
+    auto cache = GetTestCache();
 
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
-    ASSERT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "A"}));
+    ASSERT_TRUE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
 
-    ASSERT_EQ(SUCCESS, cache.LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "A"}));
-    ASSERT_TRUE(cache.FindInstance({"TestSchema.TestClass", "A"}).IsValid());
-
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema2()}));
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema2"));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema2()}));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
-// WIP06
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
+    auto cache = GetTestCache();
 
     auto schema1 = ParseSchema(
-        R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass" >
                 <ECProperty propertyName="A" typeName="string" />
                 <ECProperty propertyName="B" typeName="string" />
@@ -174,29 +160,28 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDat
         </ECSchema>)xml");
 
     auto schema2 = ParseSchema(
-        R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass" >
                 <ECProperty propertyName="A" typeName="string" />
             </ECClass>
         </ECSchema>)xml");
 
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
-    ASSERT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
 
-    ASSERT_EQ(SUCCESS, cache.LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "Foo"}));
-    ASSERT_TRUE(cache.FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, {"UpdateSchema.TestClass", "Foo"}));
+    ASSERT_TRUE(cache->FindInstance({"UpdateSchema.TestClass", "Foo"}).IsValid());
 
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
     {
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
+    auto cache = GetTestCache();
 
     BeTest::SetFailOnAssert(false);
-    BentleyStatus result = cache.UpdateSchemas(std::vector<ECSchemaPtr> {nullptr});
+    BentleyStatus result = cache->UpdateSchemas(std::vector<ECSchemaPtr> {nullptr});
     BeTest::SetFailOnAssert(true);
 
     EXPECT_EQ(ERROR, result);
@@ -204,14 +189,13 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate)
     {
-    MockECDbSchemaChangeListener listener;
+    auto cache = GetTestCache();
 
-    DataSourceCache cache;
-    cache.Create(BeFileName(":memory:"), CacheEnvironment());
-    cache.RegisterSchemaChangeListener(&listener);
+    MockECDbSchemaChangeListener listener;
+    cache->RegisterSchemaChangeListener(&listener);
 
     EXPECT_CALL(listener, OnSchemaChanged()).Times(2);
-    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListenerOnceTransactionIsStarted)
@@ -778,6 +762,22 @@ TEST_F(DataSourceCacheTests, RemoveRoot_InstanceLinkedToSeveralRoots_InstanceNot
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
+TEST_F(DataSourceCacheTests, RemoveRoot_RootContainsCachedQueryWithCyclicRelationshipToItsParent_QueryResultsAndParentDeleted)
+    {
+    auto cache = GetTestCache();
+
+    cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "CyclicParent"});
+    auto instanceA = cache->FindInstance({"TestSchema.TestClass", "CyclicParent"});
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "CyclicParent"});
+    cache->CacheResponse({instanceA, "TestQuery"}, instances.ToWSObjectsResponse());
+
+    cache->RemoveRoot(nullptr);
+
+    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "CyclicParent"}).IsInCache());
+    }
+
 TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_NoSuchRoots_ReturnsSuccess)
     {
     auto cache = GetTestCache();
@@ -834,32 +834,176 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_TwoDifferentClassInstance
     EXPECT_THAT(cache->ObjectIdFromJsonInstance(instances[1]), AnyOf(ObjectId("TestSchema.TestClass", "A"), ObjectId("TestSchema.TestClass2", "B")));
     }
 
+TEST_F(DataSourceCacheTests, RemoveFile_NotExistingInstance_Success)
+    {
+    auto cache = GetTestCache();
+    EXPECT_EQ(SUCCESS, cache->RemoveFile({"TestSchema.TestClass", "NotExisting"}));
+    }
+
+TEST_F(DataSourceCacheTests, RemoveFile_NotExistingFile_Success)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache);
+    EXPECT_EQ(SUCCESS, cache->RemoveFile(cache->FindInstance(instance)));
+    }
+
+TEST_F(DataSourceCacheTests, RemoveFile_FileCachedToTemporary_DeletesFileWithContainingFolder)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache, FileCache::Temporary);
+    auto path = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path.DoesPathExist());
+
+    EXPECT_EQ(SUCCESS, cache->RemoveFile(fileId));
+
+    EXPECT_EQ(L"", cache->ReadFilePath(fileId));
+    EXPECT_FALSE(path.DoesPathExist());
+    EXPECT_FALSE(path.GetDirectoryName().DoesPathExist());
+    EXPECT_TRUE(GetTestCacheEnvironment().temporaryFileCacheDir.DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, RemoveFile_FileCachedToPersistent_DeletesFileWithContainingFolder)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache, FileCache::Persistent);
+    auto path = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path.DoesPathExist());
+
+    EXPECT_EQ(SUCCESS, cache->RemoveFile(fileId));
+
+    EXPECT_EQ(L"", cache->ReadFilePath(fileId));
+    EXPECT_FALSE(path.DoesPathExist());
+    EXPECT_FALSE(path.GetDirectoryName().DoesPathExist());
+    EXPECT_TRUE(GetTestCacheEnvironment().persistentFileCacheDir.DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, RemoveFile_FileCachedToExternal_DeletesFileButLeavesExternalSubFolder)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache, FileCache::Persistent);
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName("SubFolder")));
+    auto path = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path.DoesPathExist());
+
+    EXPECT_EQ(SUCCESS, cache->RemoveFile(fileId));
+
+    EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
+    EXPECT_FALSE(path.DoesPathExist());
+    EXPECT_TRUE(path.GetDirectoryName().DoesPathExist());
+    EXPECT_TRUE(GetTestCacheEnvironment().externalFileCacheDir.DoesPathExist());
+    }
+
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToFull_LeavesFile)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
     ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Full));
     ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
-
-    EXPECT_TRUE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
+    auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
+    EXPECT_TRUE(path.DoesPathExist());
 
     EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
 
-    EXPECT_TRUE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
+    EXPECT_EQ(path, cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
+    EXPECT_TRUE(path.DoesPathExist());
     }
 
-TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToPersistent_DeletesFile)
+TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToTemporary_DeletesFileWithContainingFolder)
+    {
+    auto cache = GetTestCache();
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Temporary));
+    auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
+    EXPECT_TRUE(path.DoesPathExist());
+
+    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+
+    EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
+    EXPECT_FALSE(path.DoesPathExist());
+    EXPECT_FALSE(path.GetDirectoryName().DoesPathExist());
+    EXPECT_TRUE(GetTestCacheEnvironment().temporaryFileCacheDir.DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToPersistent_DeletesFileWithContainingFolder)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
     ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Temporary));
     ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
-
-    EXPECT_TRUE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
+    auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
+    EXPECT_TRUE(path.DoesPathExist());
 
     EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
 
-    EXPECT_FALSE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
+    EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
+    EXPECT_FALSE(path.DoesPathExist());
+    EXPECT_FALSE(path.GetDirectoryName().DoesPathExist());
+    EXPECT_TRUE(GetTestCacheEnvironment().persistentFileCacheDir.DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToExternal_DeletesFileButLeavesSubFolder)
+    {
+    auto cache = GetTestCache();
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation({"TestSchema.TestClass", "Foo"}, FileCache::External, BeFileName("SubFolder")));
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::External));
+    auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
+    EXPECT_TRUE(path.DoesPathExist());
+
+    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+
+    EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
+    EXPECT_FALSE(path.DoesPathExist());
+    EXPECT_TRUE(path.GetDirectoryName().DoesPathExist());
+    EXPECT_TRUE(GetTestCacheEnvironment().externalFileCacheDir.DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndOldFileCachedToPersistent_DeletesFile)
+    {
+    auto cache = GetTestCache();
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
+    BeFileName path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
+    EXPECT_TRUE(path.DoesPathExist());
+
+    int64_t unixMs;
+    EXPECT_EQ(SUCCESS, DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(unixMs));
+    unixMs -= 3600 * 1000;
+    time_t unixTime = static_cast<time_t>(unixMs / 1000 - 1);
+    EXPECT_EQ(BeFileNameStatus::Success, path.SetFileTime(&unixTime, nullptr));
+
+    DateTime maxAccessDateTime;
+    EXPECT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(maxAccessDateTime, unixMs));
+    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
+
+    EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
+    EXPECT_FALSE(path.DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndNewFileCachedToPersistent_LeavesFile)
+    {
+    auto cache = GetTestCache();
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
+    BeFileName path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
+    EXPECT_TRUE(path.DoesPathExist());
+
+    int64_t unixMs;
+    EXPECT_EQ(SUCCESS, DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(unixMs));
+    unixMs -= 3600 * 1000;
+    time_t unixTime = static_cast<time_t>(unixMs / 1000 + 1);
+    EXPECT_EQ(BeFileNameStatus::Success, path.SetFileTime(&unixTime, nullptr));
+
+    DateTime maxAccessDateTime;
+    EXPECT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(maxAccessDateTime, unixMs));
+    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
+
+    EXPECT_EQ(path, cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
+    EXPECT_TRUE(path.DoesPathExist());
     }
 
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_ModifiedFileExists_LeavesModifiedFile)
@@ -1385,7 +1529,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFull
     EXPECT_EQ("TestValueB", instanceJson["TestProperty"].asString());
     }
 
-// WIP06 - deletion support
 TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPreviusly_RemovesOldQueryResults)
     {
     auto cache = GetTestCache();
@@ -1495,7 +1638,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResults_RemovesIn
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "ChildFoo"}).IsFullyCached());
     }
 
-// WIP06 relationship deletions
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewResults_RemovesCachedFile)
     {
     auto cache = GetTestCache();
@@ -2281,7 +2423,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
         .AddRelated({"TestSchema.TestDerivedRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"}, {}, ECRelatedInstanceDirection::Forward);
 
     WSQuery query("TestSchema", "TestClass");
-    query.SetSelect("*,TestRelationshipClass!poly-forward-TestClass.*");
+    query.SetSelect("*,TestAbstractRelationshipClass!poly-forward-TestClass.*");
 
     bset<ObjectId> rejected;
     EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), &rejected, &query));
@@ -2449,7 +2591,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyC
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-// WIP06
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelationshipToResults)
     {
     auto cache = GetTestCache();
@@ -2469,7 +2610,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelati
     EXPECT_THAT(ECDbHelper::IsInstanceInMultiMap(instanceKey, parentInstances), true);
     }
 
-// WIP06
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHaveHoldingRelationshipToResultsButHolderDoes)
     {
     auto cache = GetTestCache();
@@ -2858,7 +2998,6 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndDefaultPag
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     }
 
-// WIP06 - deletions
 TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndOnLastPage_SetsAsCached)
     {
     // Arrange
@@ -3950,18 +4089,16 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
     EXPECT_EQ(0, fileSize);
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_ObjectWithSuchIdNotCached_ReturnsError)
+TEST_F(DataSourceCacheTests, CacheFile_NotExistingObject_ReturnsError)
     {
     auto cache = GetTestCache();
     EXPECT_EQ(ERROR, cache->CacheFile({"TestSchema.TestClass", "NotExisting"}, WSFileResponse(), FileCache::Persistent));
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_WSFileResponsePassed_MovesFileToCacheLocation)
+TEST_F(DataSourceCacheTests, CacheFile_FileResponsePassed_MovesFileToCacheLocation)
     {
     auto cache = GetTestCache();
-
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
 
     BeFileName fileToCachePath = StubFile();
     EXPECT_TRUE(fileToCachePath.DoesPathExist());
@@ -3975,80 +4112,230 @@ TEST_F(DataSourceCacheTests, CacheFile_WSFileResponsePassed_MovesFileToCacheLoca
     EXPECT_EQ("TestTag", cache->ReadFileCacheTag(fileId));
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_CachedFilePathBeginsWithEnvronmentPath)
+TEST_F(DataSourceCacheTests, CacheFile_ToPersistentLocation_CachedFilePathBeginsWithEnvironmentPath)
     {
     auto cache = GetTestCache();
-
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
 
     ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Persistent));
 
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = GetTestCacheEnvironment().persistentFileCacheDir;
-
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
-    EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
+    EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().persistentFileCacheDir.c_str()));
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_CachedFilePathBeginsWithEnvronmentPath)
+TEST_F(DataSourceCacheTests, CacheFile_ToTemporaryLocation_CachedFilePathBeginsWithEnvironmentPath)
     {
     auto cache = GetTestCache();
-
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
 
     ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Temporary));
 
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = GetTestCacheEnvironment().temporaryFileCacheDir;
-
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
-    EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
+    EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().temporaryFileCacheDir.c_str()));
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviously_CachesNewFileAndRemovesOld)
+TEST_F(DataSourceCacheTests, CacheFile_ToExternalLocation_CachesFileToExternalFolderRoot)
     {
     auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Temporary));
 
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::External));
 
-    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Foo.txt"), HttpStatus::OK, nullptr), FileCache::Persistent));
-    BeFileName cachedFileA = cache->ReadFilePath(fileId);
-    EXPECT_TRUE(cachedFileA.DoesPathExist());
-
-    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile("def", "Foo.txt"), HttpStatus::OK, nullptr), FileCache::Persistent));
-    BeFileName cachedFileB = cache->ReadFilePath(fileId);
-
-    EXPECT_TRUE(cachedFileB.DoesPathExist());
-    EXPECT_FALSE(cachedFileA.DoesPathExist());
+    BeFileName path = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path.DoesPathExist());
+    EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path.GetDirectoryName());
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviouslyAndCachingToDifferentLocation_CachesNewFileAndRemovesOld)
+TEST_F(DataSourceCacheTests, CacheFile_FileLocationSetToExternalAndCachingToExternal_CachesFileToExternalFolderRoot)
     {
     auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External));
 
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::External));
 
-    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Foo.txt"), HttpStatus::OK, nullptr), FileCache::Temporary));
-    BeFileName cachedFileA = cache->ReadFilePath(fileId);
-    EXPECT_TRUE(cachedFileA.DoesPathExist());
-
-    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile("def", "Foo.txt"), HttpStatus::OK, nullptr), FileCache::Persistent));
-    BeFileName cachedFileB = cache->ReadFilePath(fileId);
-
-    EXPECT_TRUE(cachedFileB.DoesPathExist());
-    EXPECT_FALSE(cachedFileA.DoesPathExist());
+    BeFileName path = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path.DoesPathExist());
+    EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path.GetDirectoryName());
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_WSFileResponseNotModifiedPassed_UpdatesCachedDate)
+TEST_F(DataSourceCacheTests, CacheFile_FileLocationSetToExternalSubFolderWithoutSlashAndCachingToExternal_CachesFileToExternalSubFolder)
     {
     auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+    BeFileName relativePath(L"Foo");
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, relativePath));
 
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::External));
+
+    BeFileName path = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path.DoesPathExist());
+
+    EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(relativePath).AppendSeparator(), path.GetDirectoryName());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileLocationSetToExternalSubFoldersAndCachingToExternal_CachesFileToExternalSubFolder)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+    BeFileName relativePath(L"Foo/Boo/");
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, relativePath));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::External));
+
+    BeFileName path = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path.DoesPathExist());
+    EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(relativePath), path.GetDirectoryName());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileCachedInTemporaryAndCachingToExternalLocation_RemovesOldFileAndCachesNewToExternalRoot)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentA", "Foo.txt")), FileCache::Temporary));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentB", "Foo.txt")), FileCache::External));
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_FALSE(path1.GetDirectoryName().DoesPathExist());
+    EXPECT_EQ("ContentB", SimpleReadFile(path2));
+    EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path2.GetDirectoryName());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileWithSameNameCachedPreviously_ReplacesFileInSamePath)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentA", "Foo.txt")), FileCache::Persistent));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentB", "Foo.txt")), FileCache::Persistent));
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+
+    EXPECT_EQ(path1, path2);
+    EXPECT_EQ("ContentB", SimpleReadFile(path2));
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviously_RemovesOldFileAndAddsNewToSameCacheFolder)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentA", "A.txt")), FileCache::Persistent));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentB", "B.txt")), FileCache::Persistent));
+    BeFileName path2 = cache->ReadFilePath(fileId);
+
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_EQ(path1.GetDirectoryName(), path2.GetDirectoryName());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileWithSameNameCachedPreviouslyAndExternalLocation_ReplacesFileInSamePath)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentA", "Foo.txt")), FileCache::External));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentB", "Foo.txt")), FileCache::External));
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+
+    EXPECT_EQ(path1, path2);
+    EXPECT_EQ("ContentB", SimpleReadFile(path2));
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviouslyAndExternalLocation_RemovesOldFileAndAddsNewToSameFolder)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentA", "A.txt")), FileCache::External));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentB", "B.txt")), FileCache::External));
+    BeFileName path2 = cache->ReadFilePath(fileId);
+
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_EQ(path1.GetDirectoryName(), path2.GetDirectoryName());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviouslyAndExternalSubFolderLocation_RemovesOldFileAndAddsNewToSameSubFolder)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"SubFolder")));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentA", "A.txt")), FileCache::External));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentB", "B.txt")), FileCache::External));
+    BeFileName path2 = cache->ReadFilePath(fileId);
+
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_EQ(path1.GetDirectoryName(), path2.GetDirectoryName());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviouslyAndCachingToDifferentLocation_CachesNewFileAndRemovesOldFileFolder)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Temporary));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Persistent));
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_FALSE(path1.GetDirectoryName().DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileCachedToExternalSubFolderAndCachingToDifferentLocation_CachesNewFileToFileStorageAndLeavesExternalSubFolder)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"SubFolder")));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::External));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Persistent));
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_THAT(path2.c_str(), Not(HasSubstr(L"SubFolder")));
+    EXPECT_TRUE(path1.GetDirectoryName().DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileResponseNotModifiedPassed_UpdatesCachedDate)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
     ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, ""), FileCache::Persistent));
 
     auto before = DateTime::GetCurrentTimeUtc();
@@ -4108,70 +4395,260 @@ TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceNotCached_ReturnsInv
     ASSERT_THAT(cache->ReadInstanceCachedDate({"TestSchema.TestClass", "NonExisting"}).IsValid(), false);
     }
 
-TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToTemporary_MovesFileToTemporaryEnvironmentLocation)
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingInstance_Error)
     {
     auto cache = GetTestCache();
+    ObjectId fileId {"TestSchema.TestClass", "Foo"};
+    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::Temporary));
+    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
+    }
 
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingFile_ChangesLocationAndFilePathIsEmpty)
+    {
+    auto cache = GetTestCache();
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
 
-    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Persistent));
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
+    EXPECT_EQ(FileCache::Persistent, cache->GetFileCacheLocation(fileId));
+    EXPECT_EQ(L"", cache->ReadFilePath(fileId));
+
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Temporary));
+    EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId));
+    EXPECT_EQ(L"", cache->ReadFilePath(fileId));
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingFile_SuccessAndLocationCanBeChangedWhenCaching)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId {"TestSchema.TestClass", "Foo"};
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Temporary));
+
+    BeFileName cachedFilePath = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(cachedFilePath.DoesPathExist());
+    EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().temporaryFileCacheDir.c_str()));
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToTemporary_MovesFileToTemporaryEnvironmentLocation)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = StubFileInCache(*cache, FileCache::Persistent);
+    BeFileName path1 = cache->ReadFilePath(fileId);
 
     ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Temporary));
 
-    BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = GetTestCacheEnvironment().temporaryFileCacheDir;
-
-    EXPECT_TRUE(cachedFilePath.DoesPathExist());
-    EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_FALSE(path1.GetDirectoryName().DoesPathExist());
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_THAT(path2.c_str(), StartsWith(GetTestCacheEnvironment().temporaryFileCacheDir.c_str()));
     }
 
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToPersistent_MovesFileToPersistentEnvironmentLocation)
     {
     auto cache = GetTestCache();
-
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
-
-    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Temporary));
+    ObjectId fileId = StubFileInCache(*cache, FileCache::Temporary);
+    BeFileName path1 = cache->ReadFilePath(fileId);
 
     ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
 
-    BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = GetTestCacheEnvironment().persistentFileCacheDir;
-
-    EXPECT_TRUE(cachedFilePath.DoesPathExist());
-    EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_FALSE(path1.GetDirectoryName().DoesPathExist());
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_THAT(path2.c_str(), StartsWith(GetTestCacheEnvironment().persistentFileCacheDir.c_str()));
     }
 
-TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExsitingInstance_ReturnsTemporary)
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingFileFromTemporaryToPersistentWhenEnvironmentPathsAreTheSame_FileStaysInSamePath)
+    {
+    auto environment = GetTestCacheEnvironment();
+    environment.temporaryFileCacheDir = environment.persistentFileCacheDir;
+
+    auto cache = GetTestCache(environment);
+    ObjectId fileId = StubFileInCache(*cache, FileCache::Temporary);
+    BeFileName path1 = cache->ReadFilePath(fileId);
+
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
+    BeFileName path2 = cache->ReadFilePath(fileId);
+
+    EXPECT_TRUE(path1.DoesPathExist());
+    EXPECT_EQ(path1, path2);
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToExternalWithoutRelativePath_MovesFileToExternalRootLocation)
     {
     auto cache = GetTestCache();
+    ObjectId fileId = StubFileInCache(*cache, FileCache::Temporary);
+    BeFileName path1 = cache->ReadFilePath(fileId);
 
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External));
+
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_FALSE(path1.GetDirectoryName().DoesPathExist());
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path2.GetDirectoryName());
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileFromExternal_MovesFileToNewLocationLeavingExternalSubfolder)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId = StubFileInCache(*cache, FileCache::Temporary);
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"SubFolder")));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
+
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_TRUE(path1.GetDirectoryName().DoesPathExist());
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_THAT(path2.c_str(), StartsWith(GetTestCacheEnvironment().persistentFileCacheDir.c_str()));
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_PassedRelativePathButNotExternalLocationForCachedFile_ErrorWithNoPathChange)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+
+    BeFileName path("Foo/Boo/");
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::Persistent, path));
+    EXPECT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::Temporary, path));
+    BeTest::SetFailOnAssert(true);
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_EQ(path1, path2);
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithoutRelativePath_MovesDirectlyToRootDirectory)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+    BeFileName path1 = cache->ReadFilePath(fileId);
+
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External));
+
+    EXPECT_FALSE(path1.DoesPathExist());
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path2.GetDirectoryName());
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePath_MovesToRootDirectorySubfolder)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+
+    BeFileName path1 = cache->ReadFilePath(fileId);
+
+    BeFileName relativePath(L"Foo/Boo/");
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, relativePath));
+
+    BeFileName path2 = cache->ReadFilePath(fileId);
+    EXPECT_NE(path1, path2);
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(relativePath), path2.GetDirectoryName());
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationAndSameRelativePath_SuccessAndDoesNothingToFile)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+    BeFileName relativePath(L"Foo/Boo/");
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, relativePath));
+
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, relativePath));
+    BeFileName path2 = cache->ReadFilePath(fileId);
+
+    EXPECT_EQ(path1, path2);
+    EXPECT_TRUE(path2.DoesPathExist());
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePathWithoutEndSlash_MovesToRootDirectorySubfolder)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+
+    BeFileName relativePath(L"Foo/Boo");
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, relativePath));
+
+    BeFileName path = cache->ReadFilePath(fileId);
+    EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(L"Foo/Boo/"), path.GetDirectoryName());
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePathOnlyASlash_Error)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::External, BeFileName(L"/")));
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationAndFileAlreadyExistsThere_SuccessAndOverridesFile)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache, StubFile("A", "Test.txt"));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+
+    BeFileName existingFilePath = GetTestCacheEnvironment().externalFileCacheDir;
+    existingFilePath.AppendToPath(L"Foo/Boo/Test.txt");
+    SimpleWriteToFile("B", existingFilePath);
+
+    BeFileName relativePath(L"Foo/Boo/");
+    ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::External, relativePath));
+
+    auto path2 = cache->ReadFilePath(fileId);
+    EXPECT_NE(path1, path2);
+    EXPECT_FALSE(path1.DoesPathExist());
+    EXPECT_TRUE(path2.DoesPathExist());
+    EXPECT_EQ("A", SimpleReadFile(existingFilePath));
+    }
+
+TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExistingInstance_ReturnsTemporary)
+    {
+    auto cache = GetTestCache();
     ObjectId fileId {"TestSchema.TestClass", "NonExisting"};
+    EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId));
+    }
 
-    FileCache cacheLocation = cache->GetFileCacheLocation(fileId);
-    EXPECT_EQ(FileCache::Temporary, cacheLocation);
+TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExistingInstanceButDefaultPassed_ReturnsDefault)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId {"TestSchema.TestClass", "NonExisting"};
+    EXPECT_EQ(FileCache::Persistent, cache->GetFileCacheLocation(fileId, FileCache::Persistent));
     }
 
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotCachedFile_ReturnsTemporary)
     {
     auto cache = GetTestCache();
-
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
-
     EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId));
+    }
+
+TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotCachedFileButDefaultPassed_ReturnsDefault)
+    {
+    auto cache = GetTestCache();
+    ObjectId fileId {"TestSchema.TestClass", "Foo"};
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
+    EXPECT_EQ(FileCache::Persistent, cache->GetFileCacheLocation(fileId, FileCache::Persistent));
     }
 
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_CachedToTemporary_ReturnsTemporary)
     {
     auto cache = GetTestCache();
-
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", fileId));
-
     ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Temporary));
+
     EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId));
     }
 
@@ -4263,14 +4740,19 @@ TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFileButIsDeletedFromDisk_Ret
     EXPECT_THAT(cache->ReadFileCacheTag(fileId), IsEmpty());
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_PersistentFileCached_CorrectECDbExternalFileInfoCreated)
+TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndNotCached_InvalidKey)
     {
     auto cache = GetTestCache();
 
-    auto fileId = ObjectId("TestSchema.TestClass", "Foo");
-    auto fileKey = StubInstanceInCache(*cache, fileId);
+    ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
 
-    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("", "Test.txt")), FileCache::Persistent));
+    EXPECT_FALSE(instanceKey.IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_PersistentFileCached_CorrectECDbExternalFileInfoCreated)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache, FileCache::Persistent, StubObjectId(), StubFile("Foo", "Test.txt"));
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
 
@@ -4281,18 +4763,14 @@ TEST_F(DataSourceCacheTests, CacheFile_PersistentFileCached_CorrectECDbExternalF
     auto relativePath = externalFileInfos[0]["RelativePath"].asString();
     EXPECT_FALSE(relativePath.empty());
     EXPECT_TRUE(cachedFilePath.EndsWith(BeFileName(relativePath)));
-    EXPECT_EQ(CacheEnvironment::GetPersistentRootFolderId(), externalFileInfos[0]["RootFolder"].asInt());
+    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::Persistent), externalFileInfos[0]["RootFolder"].asInt());
     EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
     }
 
 TEST_F(DataSourceCacheTests, CacheFile_TemporaryFileCached_CorrectECDbExternalFileInfoCreated)
     {
     auto cache = GetTestCache();
-
-    auto fileId = ObjectId("TestSchema.TestClass", "Foo");
-    auto fileKey = StubInstanceInCache(*cache, fileId);
-
-    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("", "Test.txt")), FileCache::Temporary));
+    auto fileId = StubFileInCache(*cache, FileCache::Temporary, StubObjectId(), StubFile("Foo", "Test.txt"));
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
 
@@ -4303,7 +4781,25 @@ TEST_F(DataSourceCacheTests, CacheFile_TemporaryFileCached_CorrectECDbExternalFi
     auto relativePath = externalFileInfos[0]["RelativePath"].asString();
     EXPECT_FALSE(relativePath.empty());
     EXPECT_TRUE(cachedFilePath.EndsWith(BeFileName(relativePath)));
-    EXPECT_EQ(CacheEnvironment::GetTemporaryRootFolderId(), externalFileInfos[0]["RootFolder"].asInt());
+    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::Temporary), externalFileInfos[0]["RootFolder"].asInt());
+    EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_ExternalFileCached_CorrectECDbExternalFileInfoCreated)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache, FileCache::External, StubObjectId(), StubFile("Foo", "Test.txt"));
+    BeFileName cachedFilePath = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(cachedFilePath.DoesPathExist());
+
+    Json::Value externalFileInfos;
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo")));
+    ASSERT_EQ(1, externalFileInfos.size());
+
+    auto relativePath = externalFileInfos[0]["RelativePath"].asString();
+    EXPECT_FALSE(relativePath.empty());
+    EXPECT_TRUE(cachedFilePath.EndsWith(BeFileName(relativePath)));
+    EXPECT_EQ(CacheEnvironment::GetRootFolderId(FileCache::External), externalFileInfos[0]["RootFolder"].asInt());
     EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
     }
 
@@ -4512,7 +5008,6 @@ TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRe
     EXPECT_EQ(ObjectId({"TestSchema.TestRelationshipClass", "AB"}), cache->FindRelationship(relationship));
     }
 
-// WIP06 - cache structure seperation from data
 TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds)
     {
     auto cache = GetTestCache();

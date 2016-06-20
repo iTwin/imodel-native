@@ -157,6 +157,8 @@
     <ClInclude Include="Published\WebServices\IMS\SolrQueryTests.h" />
     <ClInclude Include="Published\WebServices\IMS\SolrClientTests.h" />
     <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -327,6 +329,8 @@
     <ClCompile Include="Published\WebServices\IMS\SolrQueryTests.cpp" />
     <ClCompile Include="Published\WebServices\IMS\SolrClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
@@ -337,6 +341,7 @@
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />

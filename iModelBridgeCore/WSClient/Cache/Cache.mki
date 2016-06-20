@@ -43,6 +43,7 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiPublicApiDir)Util/ECDbDebugInfo.h                             \
     $(CacheMkiPublicApiDir)Util/ECDbHelper.h                                \
     $(CacheMkiPublicApiDir)Util/ECExpressionHelper.h                        \
+    $(CacheMkiPublicApiDir)Util/ECInstanceKeyFilter.h                       \
     $(CacheMkiPublicApiDir)Util/ECSqlAdapterCache.h                         \
     $(CacheMkiPublicApiDir)Util/ECSqlStatementCache.h                       \
     $(CacheMkiPublicApiDir)Util/ExtendedData.h                              \
@@ -216,6 +217,8 @@ $(o)UpgraderFromV9ToV10$(oext)                  : $(CacheMkiSourceDir)Persistenc
 
 $(o)UpgraderFromV10ToV11$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV10ToV11.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)UpgraderFromV11ToV12$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV11ToV12.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
 
 $(o)BeSQLiteDbTransactionHandler$(oext)         : $(CacheMkiSourceDir)Transactions/BeSQLiteDbTransactionHandler.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
@@ -239,6 +242,8 @@ $(o)ECDbDebugInfo$(oext)                        : $(CacheMkiSourceDir)Util/ECDbD
 $(o)ECDbHelper$(oext)                           : $(CacheMkiSourceDir)Util/ECDbHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ECExpressionHelper$(oext)                   : $(CacheMkiSourceDir)Util/ECExpressionHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ECInstanceKeyFilter$(oext)                  : $(CacheMkiSourceDir)Util/ECInstanceKeyFilter.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatementCache$(oext)                  : $(CacheMkiSourceDir)Util/ECSqlStatementCache.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

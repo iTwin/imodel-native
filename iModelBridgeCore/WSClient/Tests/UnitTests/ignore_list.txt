@@ -24,11 +24,11 @@ FileUtilTests.TruncateFilePath_PathIsFolder_Error
 # Fails on Android due to DgnClientFx::Device not being initialized. Medium priority - disables important tests
 ClientInfoTests.Create_PassedMandatoryValues_SetsValues
 
-#Fails on iOS; Need to investigate why. High priority - disables many tests
+# Fails on iOS; Need to investigate why. High priority - disables many tests
 ECDbAdapterTests.*
 
 #----------------------------------------------------------------------------------------
-# Fails due to DgnDb06xx changes. All High priority
+# Fails due to DgnDb06xx changes
 #----------------------------------------------------------------------------------------
 
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
@@ -43,5 +43,8 @@ DataSourceCacheUpgradeTests.Open_V1*
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
 
 #----------------------------------------------------------------------------------------
-# New issues
+# All new unknown/issues here
 #----------------------------------------------------------------------------------------
+
+ # Crashed 61-16q2, winx64, optimized
+CachingDataSourceTests.SyncCachedData_WSG1AndInitialInstancesReturnsNotFound_RemovesInstancesFromCache

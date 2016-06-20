@@ -86,6 +86,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)DgnPlatform$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
     %include $(sharedMki)LinkLibrary.mki    
