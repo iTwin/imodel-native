@@ -2,7 +2,7 @@
 |
 |     $Source: BePointCloudInternal.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __BEPOINTCLOUDINTERNAL_H__
@@ -13,6 +13,7 @@
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
 #include <Geom/GeomApi.h>
+#include <Vortex/VortexAPI.h>
 
 #include <BePointCloud/BePointCloudApi.h>
 #include <BePointCloud/PointCloudTypes.h>
@@ -26,6 +27,6 @@
 
 #include "PointCloudOrientedBox.h"
 #include "PointCloudChannel.h"
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_ResultCodes.h>
+
 
 #endif // __BEPOINTCLOUDINTERNAL_H__

@@ -2,12 +2,14 @@
 |
 |     $Source: PublicApi/BePointCloud/BePointCloudApi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 //__BENTLEY_INTERNAL_ONLY__
+
+#include <Vortex/VortexAPI.h>
 
 #include <BePointCloud/BePointCloudCommon.h>
 #include <BePointCloud/ExportMacros.h>

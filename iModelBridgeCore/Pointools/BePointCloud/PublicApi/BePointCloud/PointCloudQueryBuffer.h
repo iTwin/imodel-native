@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BePointCloud/PointCloudQueryBuffer.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -113,7 +113,7 @@ template <typename T> struct ChannelBufferPool
             {
             Monitor monitor(m_pointCloudBuffersExclusiveKey);
 
-            for (Buffers::iterator itr(m_buffers.begin()); itr != m_buffers.end(); ++itr)
+            for (typename Buffers::iterator itr(m_buffers.begin()); itr != m_buffers.end(); ++itr)
                 delete(*itr);
             }
 
@@ -124,7 +124,7 @@ template <typename T> struct ChannelBufferPool
             {
             Monitor monitor(m_pointCloudBuffersExclusiveKey);
 
-            for (Buffers::iterator itr(m_buffers.begin()); itr != m_buffers.end(); ++itr)
+            for (typename Buffers::iterator itr(m_buffers.begin()); itr != m_buffers.end(); ++itr)
                 {
                 if ((*itr)->GetCapacity() == capacity)
                     {

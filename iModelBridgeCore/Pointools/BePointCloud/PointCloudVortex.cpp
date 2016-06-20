@@ -64,10 +64,13 @@ PThandle PointCloudVortex::CreateKrigSurfaceQuery (uint32_t numPoints, double *p
     {
     return ptCreateKrigSurfaceQuery(numPoints, pnts);
     }
-PThandle PointCloudVortex::CreateFrustumPointsCache( uint32_t maxPoints )
-    {
-    return ptCreateFrustumPointsCache(maxPoints);
-    }
+
+// No where to be found in pointools. How it worked before?
+// PThandle PointCloudVortex::CreateFrustumPointsCache( uint32_t maxPoints )
+//     {
+//     return ptCreateFrustumPointsCache(maxPoints);
+//     }
+
 PThandle PointCloudVortex::CreateFrustumPointsQuery()
     {
     return ptCreateFrustumPointsQuery();
@@ -234,10 +237,6 @@ void PointCloudVortex::EndDrawFrameMetrics()
     }
 
 // view
-bool PointCloudVortex::ReadViewFromGL()
-    {
-    return ptReadViewFromGL();
-    }
 void PointCloudVortex::SetViewProjectionOrtho( double l, double r, double b, double t, double n, double f )
     {
     ptSetViewProjectionOrtho(l, r, b, t, n, f);

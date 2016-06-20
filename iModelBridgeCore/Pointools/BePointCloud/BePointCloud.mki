@@ -21,7 +21,6 @@ IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 nameToDefine = __BEPOINTCLOUD_BUILD__
 %include cdefapnd.mki
 
-dirToSearch=$(OutBuildContexts)BePointCloud/VendorAPI/PointoolsVortexAPI_DLL
-%include cincapnd.mki
+
 
 
