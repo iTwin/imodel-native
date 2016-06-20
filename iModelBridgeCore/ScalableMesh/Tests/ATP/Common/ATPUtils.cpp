@@ -76,6 +76,9 @@ WString GetHeaderForTestType(TestType t)
         //case IMPORT_VOLUME:
         //    return L"\n";
         //    break;
+		case EXPORT_TO_UNITY:
+			return L"File name, Nb points, Nb params, Level, Duration (seconds)\n";
+			break;
         default: break;
         }
     return L"";
@@ -149,8 +152,10 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_LOADING;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"groupNodeHeaders"))
             t = TEST_GROUP_NODE_HEADERS;
-        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
-            t = ADD_TEXTURES_TO_MESH;
+		else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
+			t = ADD_TEXTURES_TO_MESH;
+		else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportToUnity"))
+			t = EXPORT_TO_UNITY;
         else return false;
         }
     else return false;
@@ -313,6 +318,9 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case ADD_TEXTURES_TO_MESH:
                 AddTexturesToMesh(pTestNode, pResultFile);
                 break;
+			case EXPORT_TO_UNITY:
+				PerformExportToUnityTest(pTestNode, pResultFile);
+				break;
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();

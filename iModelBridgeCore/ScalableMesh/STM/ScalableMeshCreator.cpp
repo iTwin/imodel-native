@@ -513,8 +513,8 @@ ScalableMeshFilterType scm_getFilterType ()
     {
     //NEEDS_WORK_SM - No progressive for mesh
     //return SCM_FILTER_PROGRESSIVE_DUMB;    
-    //return SCM_FILTER_CGAL_SIMPLIFIER;
-    return SCM_FILTER_DUMB_MESH;
+    return SCM_FILTER_CGAL_SIMPLIFIER;
+    //return SCM_FILTER_DUMB_MESH;
     }
 
 ScalableMeshMesherType Get2_5dMesherType ()

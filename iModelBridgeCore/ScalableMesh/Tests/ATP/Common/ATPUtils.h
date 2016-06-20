@@ -49,6 +49,7 @@ typedef enum
     IMPORT_VOLUME,
     TEST_GROUP_NODE_HEADERS,
     ADD_TEXTURES_TO_MESH,
+	EXPORT_TO_UNITY,
     } TestType;
 
 

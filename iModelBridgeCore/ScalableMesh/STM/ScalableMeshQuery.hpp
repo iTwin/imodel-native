@@ -2136,6 +2136,26 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
     return neighbors;
     }
 
+template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_GetChildrenNodes() const
+	{
+	LOAD_NODE
+
+	bvector<IScalableMeshNodePtr> children;
+	
+	if (m_node->GetSubNodeNoSplit() != NULL)
+		{
+		auto var = m_node->GetSubNodeNoSplit();
+		children.push_back(new ScalableMeshNode<POINT>(var));
+		}
+	else
+		for (size_t i = 0; i < m_node->m_apSubNodes.size(); i++)
+			{
+			children.push_back(new ScalableMeshNode<POINT>(m_node->m_apSubNodes[i]));
+			}
+
+	return children;
+	}
+
 template <class POINT> size_t ScalableMeshNode<POINT>::_GetLevel() const
     {
     LOAD_NODE

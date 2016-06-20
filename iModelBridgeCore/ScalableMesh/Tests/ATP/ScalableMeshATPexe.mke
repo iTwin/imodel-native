@@ -82,6 +82,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)Imagepp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppImaging.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(BeJsonCppLib)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BePointCloud.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeLibJpegTurbo.lib
 
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib
