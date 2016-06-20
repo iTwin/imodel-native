@@ -138,7 +138,7 @@ PropertyMapCP RelationshipClassMap::GetConstraintECInstanceIdPropMap(ECRelations
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2013
 //---------------------------------------------------------------------------------------
-ECClassIdRelationshipConstraintPropertyMap const* RelationshipClassMap::GetConstraintECClassIdPropMap(ECRelationshipEnd constraintEnd) const
+RelConstraintECClassIdPropertyMap const* RelationshipClassMap::GetConstraintECClassIdPropMap(ECRelationshipEnd constraintEnd) const
     {
     if (constraintEnd == ECRelationshipEnd_Source)
         return GetSourceECClassIdPropMap();
@@ -152,7 +152,7 @@ ECClassIdRelationshipConstraintPropertyMap const* RelationshipClassMap::GetConst
 //---------------------------------------------------------------------------------------
 bool RelationshipClassMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
     {
-    ECClassIdRelationshipConstraintPropertyMap const* referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
+    RelConstraintECClassIdPropertyMap const* referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
     return !referencedEndClassIdPropertyMap->IsVirtual() && !referencedEndClassIdPropertyMap->IsMappedToClassMapTables();
     }
 
@@ -334,7 +334,7 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
 
     //ForeignEnd ECInstanceId PropMap
     Utf8CP fkTableColAlias = GetForeignEnd() == ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME : ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME;
-    PropertyMapPtr foreignEndIdPropertyMap = ECInstanceIdRelationshipConstraintPropertyMap::Create(GetForeignEnd(), Schemas(), columns.m_fkTablesECInstanceIdColumns, fkTableColAlias);
+    PropertyMapPtr foreignEndIdPropertyMap = RelationshipConstraintECInstanceIdPropertyMap::Create(GetForeignEnd(), Schemas(), columns.m_fkTablesECInstanceIdColumns, fkTableColAlias);
     if (foreignEndIdPropertyMap == nullptr)
         {
         BeAssert(false);
@@ -352,7 +352,7 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
     ECRelationshipConstraintCR referencedEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
 
     fkTableColAlias = GetForeignEnd() == ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
-    RefCountedPtr<ECClassIdRelationshipConstraintPropertyMap> foreignEndClassIdPropertyMap = ECClassIdRelationshipConstraintPropertyMap::Create(GetForeignEnd(), Schemas(), columns.m_fkTablesECClassIdColumns,
+    RefCountedPtr<RelConstraintECClassIdPropertyMap> foreignEndClassIdPropertyMap = RelConstraintECClassIdPropertyMap::Create(GetForeignEnd(), Schemas(), columns.m_fkTablesECClassIdColumns,
                                                                                                                                                 referencedEndConstraint.GetClasses()[0]->GetId(), *this, fkTableColAlias);
 
     if (foreignEndClassIdPropertyMap == nullptr)
@@ -367,7 +367,7 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
     GetConstraintMapR(GetForeignEnd()).SetECClassIdPropMap(foreignEndClassIdPropertyMap.get());
 
     //FK PropMap (aka referenced end id prop map)
-    PropertyMapPtr fkPropertyMap = ECInstanceIdRelationshipConstraintPropertyMap::Create(GetReferencedEnd(), Schemas(), columns.m_fkTablesFkColumns);
+    PropertyMapPtr fkPropertyMap = RelationshipConstraintECInstanceIdPropertyMap::Create(GetReferencedEnd(), Schemas(), columns.m_fkTablesFkColumns);
     if (fkPropertyMap == nullptr)
         {
         BeAssert(false);
@@ -383,7 +383,7 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
     //FK ClassId PropMap (aka referenced end classid prop map)
     fkTableColAlias = GetReferencedEnd() == ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
-    RefCountedPtr<ECClassIdRelationshipConstraintPropertyMap> fkClassIdPropertyMap = ECClassIdRelationshipConstraintPropertyMap::Create(GetReferencedEnd(), Schemas(), columns.m_referencedEndECClassIdColumns,
+    RefCountedPtr<RelConstraintECClassIdPropertyMap> fkClassIdPropertyMap = RelConstraintECClassIdPropertyMap::Create(GetReferencedEnd(), Schemas(), columns.m_referencedEndECClassIdColumns,
                                                                                                                                         foreignEndConstraint.GetClasses()[0]->GetId(), *this, fkTableColAlias);
     if (fkClassIdPropertyMap == nullptr)
         {
@@ -705,7 +705,7 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
     if (GetPropertyMapsR().AddPropertyMap(clonedPropMap) != SUCCESS)
         return ERROR;
 
-    foreignEndConstraintMap.SetECClassIdPropMap(static_cast<ECClassIdRelationshipConstraintPropertyMap const*> (clonedPropMap.get()));
+    foreignEndConstraintMap.SetECClassIdPropMap(static_cast<RelConstraintECClassIdPropertyMap const*> (clonedPropMap.get()));
 
     //ReferencedEnd
     RelationshipConstraintMap const& baseReferencedEndConstraintMap = baseRelClassMap.GetConstraintMap(GetReferencedEnd());
@@ -730,7 +730,7 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
     if (GetPropertyMapsR().AddPropertyMap(clonedPropMap) != SUCCESS)
         return ERROR;
 
-    referencedEndConstraintMap.SetECClassIdPropMap(static_cast<ECClassIdRelationshipConstraintPropertyMap const*> (clonedPropMap.get()));
+    referencedEndConstraintMap.SetECClassIdPropMap(static_cast<RelConstraintECClassIdPropertyMap const*> (clonedPropMap.get()));
 
     return SUCCESS;
     }
@@ -779,7 +779,7 @@ BentleyStatus RelationshipClassEndTableMap::_Load(std::set<ClassMap const*>& loa
         return ERROR;
         }
 
-    PropertyMapPtr sourceECInstanceIdPropMap = ECInstanceIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), propertyinfo->GetColumns(),
+    PropertyMapPtr sourceECInstanceIdPropMap = RelationshipConstraintECInstanceIdPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), propertyinfo->GetColumns(),
                                                                                                      ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);
     if (sourceECInstanceIdPropMap == nullptr)
         {
@@ -801,7 +801,7 @@ BentleyStatus RelationshipClassEndTableMap::_Load(std::set<ClassMap const*>& loa
         return ERROR;
         }
 
-    auto sourceClassIdPropMap = ECClassIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), propertyinfo->GetColumns(), defaultSourceECClassId, *this, ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME);
+    auto sourceClassIdPropMap = RelConstraintECClassIdPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), propertyinfo->GetColumns(), defaultSourceECClassId, *this, ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME);
     if (sourceClassIdPropMap == nullptr)
         {
         BeAssert(false);
@@ -821,7 +821,7 @@ BentleyStatus RelationshipClassEndTableMap::_Load(std::set<ClassMap const*>& loa
         return ERROR;
         }
 
-    auto targetECInstanceIdPropMap = ECInstanceIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), propertyinfo->GetColumns(),
+    auto targetECInstanceIdPropMap = RelationshipConstraintECInstanceIdPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), propertyinfo->GetColumns(),
                                                                                            ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME);
     if (targetECInstanceIdPropMap == nullptr)
         {
@@ -843,7 +843,7 @@ BentleyStatus RelationshipClassEndTableMap::_Load(std::set<ClassMap const*>& loa
         return ERROR;
         }
 
-    auto targetClassIdPropMap = ECClassIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), propertyinfo->GetColumns(), defaultTargetECClassId, *this, ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME);
+    auto targetClassIdPropMap = RelConstraintECClassIdPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), propertyinfo->GetColumns(), defaultTargetECClassId, *this, ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME);
     if (targetClassIdPropMap == nullptr)
         {
         BeAssert(false);
@@ -945,7 +945,7 @@ PropertyMapCP RelationshipClassEndTableMap::GetReferencedEndECInstanceIdPropMap(
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECClassIdRelationshipConstraintPropertyMap const* RelationshipClassEndTableMap::GetReferencedEndECClassIdPropMap() const
+RelConstraintECClassIdPropertyMap const* RelationshipClassEndTableMap::GetReferencedEndECClassIdPropMap() const
     {
     return GetConstraintMap(GetReferencedEnd()).GetECClassIdPropMap();
     }
@@ -1126,7 +1126,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
             continue;
             }
 
-        if (propMap->IsSystemPropertyMap() || propMap->GetAsNavigationPropertyMap() != nullptr)
+        if (propMap->IsSystemPropertyMap() || propMap->GetType() == PropertyMap::Type::Navigation)
             continue;
 
         if (!foundNavProp)
@@ -1353,7 +1353,7 @@ MappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps
         }
 
     auto sourceECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), DbColumn::Kind::SourceECInstanceId, PersistenceType::Persisted);
-    auto sourceECInstanceIdPropMap = ECInstanceIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), SystemPropertyMap::ToVector(sourceECInstanceIdColumn));
+    auto sourceECInstanceIdPropMap = RelationshipConstraintECInstanceIdPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), {sourceECInstanceIdColumn});
     PRECONDITION(sourceECInstanceIdPropMap.IsValid(), MappingStatus::Error);
     sourceECInstanceIdPropMap->FindOrCreateColumnsInTable(*this);
     if (GetPropertyMapsR().AddPropertyMap(sourceECInstanceIdPropMap) != SUCCESS)
@@ -1364,7 +1364,7 @@ MappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps
     //**** SourceECClassId prop map
     auto sourceECClassIdColumn = ConfigureForeignECClassIdKey(mapInfo, ECRelationshipEnd_Source);
     auto sourceECClassIdColumnAlias = sourceECClassIdColumn->GetName().EqualsI(ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME) == true ? nullptr : ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME;
-    auto sourceECClassIdPropMap = ECClassIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), SystemPropertyMap::ToVector(sourceECClassIdColumn), defaultSourceECClassId, *this, sourceECClassIdColumnAlias);
+    auto sourceECClassIdPropMap = RelConstraintECClassIdPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), {sourceECClassIdColumn}, defaultSourceECClassId, *this, sourceECClassIdColumnAlias);
     PRECONDITION(sourceECClassIdPropMap.IsValid(), MappingStatus::Error);
     sourceECClassIdPropMap->FindOrCreateColumnsInTable(*this);
     if (GetPropertyMapsR().AddPropertyMap(sourceECClassIdPropMap) != SUCCESS)
@@ -1383,7 +1383,7 @@ MappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps
 
     auto targetECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), DbColumn::Kind::TargetECInstanceId, PersistenceType::Persisted);
 
-    auto targetECInstanceIdPropMap = ECInstanceIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), SystemPropertyMap::ToVector(targetECInstanceIdColumn));
+    auto targetECInstanceIdPropMap = RelationshipConstraintECInstanceIdPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), {targetECInstanceIdColumn});
     PRECONDITION(targetECInstanceIdPropMap.IsValid(), MappingStatus::Error);
     targetECInstanceIdPropMap->FindOrCreateColumnsInTable(*this);
     if (GetPropertyMapsR().AddPropertyMap(targetECInstanceIdPropMap) != SUCCESS)
@@ -1395,7 +1395,7 @@ MappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps
     //**** TargetECClassId prop map
     auto targetECClassIdColumn = ConfigureForeignECClassIdKey(mapInfo, ECRelationshipEnd_Target);
     auto targetECClassIdColumnAlias = targetECClassIdColumn->GetName().EqualsI(ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME) == true ? nullptr : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
-    auto targetECClassIdPropMap = ECClassIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), SystemPropertyMap::ToVector(targetECClassIdColumn), defaultTargetECClassId, *this, targetECClassIdColumnAlias);
+    auto targetECClassIdPropMap = RelConstraintECClassIdPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), {targetECClassIdColumn}, defaultTargetECClassId, *this, targetECClassIdColumnAlias);
     if (targetECClassIdPropMap == nullptr)
         {
         BeAssert(targetECClassIdPropMap != nullptr);
@@ -1600,7 +1600,7 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(std::set<ClassMap const*>& lo
         }
 
 
-    auto sourceECInstanceIdPropMap = ECInstanceIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), pm->GetColumns());
+    auto sourceECInstanceIdPropMap = RelationshipConstraintECInstanceIdPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), pm->GetColumns());
     PRECONDITION(sourceECInstanceIdPropMap.IsValid(), BentleyStatus::ERROR);
     if (GetPropertyMapsR().AddPropertyMap(sourceECInstanceIdPropMap) != SUCCESS)
         return ERROR;
@@ -1617,7 +1617,7 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(std::set<ClassMap const*>& lo
         }
 
 
-    auto sourceECClassIdPropMap = ECClassIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), pm->GetColumns(), defaultSourceECClassId, *this, ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME);
+    auto sourceECClassIdPropMap = RelConstraintECClassIdPropertyMap::Create(ECRelationshipEnd_Source, Schemas(), pm->GetColumns(), defaultSourceECClassId, *this, ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME);
     PRECONDITION(sourceECClassIdPropMap.IsValid(), ERROR);
     if (GetPropertyMapsR().AddPropertyMap(sourceECClassIdPropMap) != SUCCESS)
         return ERROR;
@@ -1632,7 +1632,7 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(std::set<ClassMap const*>& lo
         return ERROR;
         }
 
-    auto targetECInstanceIdPropMap = ECInstanceIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), pm->GetColumns());
+    auto targetECInstanceIdPropMap = RelationshipConstraintECInstanceIdPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), pm->GetColumns());
     PRECONDITION(targetECInstanceIdPropMap.IsValid(), BentleyStatus::ERROR);
     if (GetPropertyMapsR().AddPropertyMap(targetECInstanceIdPropMap) != SUCCESS)
         return ERROR;
@@ -1647,7 +1647,7 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(std::set<ClassMap const*>& lo
         return ERROR;
         }
 
-    auto targetECClassIdPropMap = ECClassIdRelationshipConstraintPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), pm->GetColumns(), defaultTargetECClassId, *this, ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME);
+    auto targetECClassIdPropMap = RelConstraintECClassIdPropertyMap::Create(ECRelationshipEnd_Target, Schemas(), pm->GetColumns(), defaultTargetECClassId, *this, ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME);
     PRECONDITION(targetECClassIdPropMap.IsValid(), BentleyStatus::ERROR);
     if (GetPropertyMapsR().AddPropertyMap(targetECClassIdPropMap) != SUCCESS)
         return ERROR;

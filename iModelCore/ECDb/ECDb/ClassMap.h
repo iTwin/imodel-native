@@ -138,7 +138,7 @@ struct ClassMap : RefCountedBase
         PropertyMapCollection const& GetPropertyMaps() const { return m_propertyMaps; }
         PropertyMapCP GetPropertyMap(Utf8CP propertyName) const;
         PropertyMapCP GetECInstanceIdPropertyMap() const;
-        bool TryGetECInstanceIdPropertyMap(PropertyMapPtr& ecIstanceIdPropertyMap) const;
+        PropertyMapCP GetECClassIdPropertyMap() const;
 
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
 

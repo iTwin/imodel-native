@@ -22,11 +22,10 @@ struct SystemPropertyMap : PropertyMap
         std::vector<std::weak_ptr<DbColumn>> m_columns;
 
         virtual bool _IsVirtual() const override { return !m_columns.front().expired() && m_columns.front().lock()->GetPersistenceType() == PersistenceType::Virtual; }
-        virtual bool _IsSystemPropertyMap() const override { return true; }
         virtual void _GetColumns(std::vector<DbColumn const*>& columns) const override;
         virtual void _QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const override;
     protected:
-        SystemPropertyMap(ECN::ECPropertyCR, std::vector<DbColumn const*>, ECSqlSystemProperty);
+        SystemPropertyMap(Type, ECN::ECPropertyCR, std::vector<DbColumn const*>, ECSqlSystemProperty);
         SystemPropertyMap(SystemPropertyMap const& proto)
             :PropertyMap(proto, nullptr), m_kind(proto.m_kind), m_columns(proto.m_columns)
             {}
@@ -38,7 +37,6 @@ struct SystemPropertyMap : PropertyMap
 
     public:
         virtual ~SystemPropertyMap() {}
-        static std::vector<DbColumn const*> ToVector(DbColumn const*);
     };
 
 //=======================================================================================
@@ -46,21 +44,31 @@ struct SystemPropertyMap : PropertyMap
 //+===============+===============+===============+===============+===============+======
 struct ECInstanceIdPropertyMap : SystemPropertyMap
     {
-    public:
-        static Utf8CP const PROPERTYACCESSSTRING;
+private:
+    ECInstanceIdPropertyMap(ECN::ECPropertyCR ecInstanceIdProperty, ClassMap const&, std::vector<DbColumn const*>);
+    ECInstanceIdPropertyMap(ECInstanceIdPropertyMap const& proto) :SystemPropertyMap(proto) {}
 
-    private:
-        ECInstanceIdPropertyMap(ECN::ECPropertyCR ecInstanceIdProperty, ClassMap const&, std::vector<DbColumn const*>);
-        ECInstanceIdPropertyMap(ECInstanceIdPropertyMap const& proto) :SystemPropertyMap(proto) {}
+public:
+    ~ECInstanceIdPropertyMap() {}
+    static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&);
+    static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&, std::vector<DbColumn const*>);
+    static PropertyMapPtr Clone(ECInstanceIdPropertyMap const& proto) { return new ECInstanceIdPropertyMap(proto); }
+    };
 
-        virtual bool _IsECInstanceIdPropertyMap() const override { return true; }
-        virtual Utf8String _ToString() const override;
-
-    public:
-        ~ECInstanceIdPropertyMap() {}
-        static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&);
-        static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&, std::vector<DbColumn const*>);
-        static PropertyMapPtr Clone(ECInstanceIdPropertyMap const& proto) { return new ECInstanceIdPropertyMap(proto); }
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle    06/2013
+//+===============+===============+===============+===============+===============+======
+struct ECClassIdPropertyMap : SystemPropertyMap
+    {
+private:
+    ECN::ECClassId m_defaultConstraintClassId;
+    ECClassIdPropertyMap(ECN::ECPropertyCR ecInstanceIdProperty, ClassMap const&, std::vector<DbColumn const*>);
+    ECClassIdPropertyMap(ECClassIdPropertyMap const& proto) :SystemPropertyMap(proto), m_defaultConstraintClassId(proto.m_defaultConstraintClassId) {}
+    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, DbTable const* tableFilter) const override;
+public:
+    ~ECClassIdPropertyMap() {}
+    static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&, std::vector<DbColumn const*>);
+    static PropertyMapPtr Clone(ECClassIdPropertyMap const& proto) { return new ECClassIdPropertyMap(proto); }
     };
 
 //=======================================================================================
@@ -72,7 +80,7 @@ struct RelationshipConstraintPropertyMap : SystemPropertyMap
         Utf8String m_viewColumnAlias;
 
     protected:
-        RelationshipConstraintPropertyMap(ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
+        RelationshipConstraintPropertyMap(Type, ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
         RelationshipConstraintPropertyMap(RelationshipConstraintPropertyMap const& proto) :SystemPropertyMap(proto), m_viewColumnAlias(proto.m_viewColumnAlias) {}
 
         bool HasViewColumnAlias() const { return !m_viewColumnAlias.empty(); }
@@ -94,44 +102,42 @@ struct RelationshipConstraintPropertyMap : SystemPropertyMap
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle       01/2014
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceIdRelationshipConstraintPropertyMap : RelationshipConstraintPropertyMap
+struct RelationshipConstraintECInstanceIdPropertyMap : RelationshipConstraintPropertyMap
     {
     private:
-        ECInstanceIdRelationshipConstraintPropertyMap(ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
-        ECInstanceIdRelationshipConstraintPropertyMap(ECInstanceIdRelationshipConstraintPropertyMap const& proto) : RelationshipConstraintPropertyMap(proto) {}
+        RelationshipConstraintECInstanceIdPropertyMap(ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, Utf8CP endTableColumnAlias);
+        RelationshipConstraintECInstanceIdPropertyMap(RelationshipConstraintECInstanceIdPropertyMap const& proto) : RelationshipConstraintPropertyMap(proto) {}
 
         virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, DbTable const* tableFilter) const override;
-        virtual Utf8String _ToString() const override;
 
     public:
-        ~ECInstanceIdRelationshipConstraintPropertyMap() {}
+        ~RelationshipConstraintECInstanceIdPropertyMap() {}
 
         static PropertyMapPtr Create(ECN::ECRelationshipEnd, ECDbSchemaManagerCR, std::vector<DbColumn const*>, Utf8CP endTableColumnAlias = nullptr);
-        static PropertyMapPtr Clone(ECInstanceIdRelationshipConstraintPropertyMap const& proto) { return new ECInstanceIdRelationshipConstraintPropertyMap(proto); }
+        static PropertyMapPtr Clone(RelationshipConstraintECInstanceIdPropertyMap const& proto) { return new RelationshipConstraintECInstanceIdPropertyMap(proto); }
     };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle       01/2014
 //+===============+===============+===============+===============+===============+======
-struct ECClassIdRelationshipConstraintPropertyMap : RelationshipConstraintPropertyMap
+struct RelConstraintECClassIdPropertyMap : RelationshipConstraintPropertyMap
     {
     private:
         ECN::ECClassId m_defaultConstraintClassId;
         bool m_isMappedToClassMapTables;
 
-        ECClassIdRelationshipConstraintPropertyMap(ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, ECN::ECClassId defaultClassId, ClassMap const&, Utf8CP endTableColumnAlias, bool colIsDelayGenerated);
-        ECClassIdRelationshipConstraintPropertyMap(ECClassIdRelationshipConstraintPropertyMap const& proto) : RelationshipConstraintPropertyMap(proto) {}
+        RelConstraintECClassIdPropertyMap(ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, ECN::ECClassId defaultClassId, ClassMap const&, Utf8CP endTableColumnAlias, bool colIsDelayGenerated);
+        RelConstraintECClassIdPropertyMap(RelConstraintECClassIdPropertyMap const& proto) : RelationshipConstraintPropertyMap(proto) {}
 
-        virtual ECClassIdRelationshipConstraintPropertyMap const* _GetAsECClassIdRelationshipConstraintPropertyMapRelationship() const override { return this; }
+        virtual RelConstraintECClassIdPropertyMap const* _GetAsECClassIdRelationshipConstraintPropertyMapRelationship() const override { return this; }
         virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, DbTable const* tableFilter) const override;
-        virtual Utf8String _ToString() const override;
 
     public:
-        ~ECClassIdRelationshipConstraintPropertyMap() {}
+        ~RelConstraintECClassIdPropertyMap() {}
 
         ECN::ECClassId GetDefaultConstraintECClassId() const { return m_defaultConstraintClassId; }
-        static RefCountedPtr<ECClassIdRelationshipConstraintPropertyMap> Create(ECN::ECRelationshipEnd, ECDbSchemaManagerCR, std::vector<DbColumn const*>, ECN::ECClassId defaultSourceECClassId, ClassMap const&, Utf8CP endTableColumnAlias = nullptr, bool colIsDelayGenerated = false);
-        static PropertyMapPtr Clone(ECClassIdRelationshipConstraintPropertyMap const& proto) { return new ECClassIdRelationshipConstraintPropertyMap(proto); }
+        static RefCountedPtr<RelConstraintECClassIdPropertyMap> Create(ECN::ECRelationshipEnd, ECDbSchemaManagerCR, std::vector<DbColumn const*>, ECN::ECClassId defaultSourceECClassId, ClassMap const&, Utf8CP endTableColumnAlias = nullptr, bool colIsDelayGenerated = false);
+        static PropertyMapPtr Clone(RelConstraintECClassIdPropertyMap const& proto) { return new RelConstraintECClassIdPropertyMap(proto); }
 
         //!ConstraintClassId columns are not always created in the table to which the relationship is mapped to. 
         //!If this method returns false, the relationship table doesn't have a constraint class id column, but the class id

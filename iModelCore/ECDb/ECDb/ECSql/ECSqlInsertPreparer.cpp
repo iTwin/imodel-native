@@ -327,8 +327,8 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             {
             //if not user provided ecinstanceid snippet will be appended to column names
             ecinstanceidIndex = (int) nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.size();
-            PropertyMapCP ecInstanceIdPropMap = nullptr;
-            if (!classMap.GetPropertyMaps().TryGetPropertyMap(ecInstanceIdPropMap, ECInstanceIdPropertyMap::PROPERTYACCESSSTRING))
+            PropertyMapCP ecInstanceIdPropMap = classMap.GetECInstanceIdPropertyMap();
+            if (ecInstanceIdPropMap == nullptr)
                 {
                 BeAssert(false && "ECInstanceId property map is always expected to exist for domain classes.");
                 return;
@@ -492,7 +492,7 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, ECClassIdRelationshipConstraintPropertyMap const& constraintClassIdPropMap, ECClassId constraintClassId)
+ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, RelConstraintECClassIdPropertyMap const& constraintClassIdPropMap, ECClassId constraintClassId)
     {
     BeAssert(constraintClassId.IsValid());
     //if constraint class id maps to virtual column then ignore it as the column does not exist in the table.

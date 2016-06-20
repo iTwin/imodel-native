@@ -217,9 +217,9 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
             }
 
         std::vector<DbColumn const*> derivedColumnList, baseColumnList;
-        if (auto navProp = basePropertyMap->GetAsNavigationPropertyMap())
+        if (basePropertyMap->GetType() == PropertyMap::Type::Navigation)
             {
-            if (!navProp->IsSupportedInECSql())
+            if (!static_cast<NavigationPropertyMap const*>(basePropertyMap)->IsSupportedInECSql())
                 return;
             }
 
@@ -566,8 +566,8 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
         if(m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetPropertyAccessString()))
             continue;
 
-        NavigationPropertyMap const* navPropMap = baseClassPropertyMap->GetAsNavigationPropertyMap();
-        if (navPropMap != nullptr && !navPropMap->IsSupportedInECSql())
+        if (baseClassPropertyMap->GetType() == PropertyMap::Type::Navigation &&
+            !static_cast<NavigationPropertyMap const*>(baseClassPropertyMap)->IsSupportedInECSql())
             continue;
 
         PropertyMap const* childClassCounterpartPropMap = childClassMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString());
@@ -864,8 +864,8 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBui
     if (classMap._RequiresJoin(endPoint))
         {
         ECDbMap const& ecdbMap = classMap.GetECDbMap();
-        ECClassIdRelationshipConstraintPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
-        ECInstanceIdRelationshipConstraintPropertyMap const* ecInstanceIdPropertyMap = static_cast<ECInstanceIdRelationshipConstraintPropertyMap const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
+        RelConstraintECClassIdPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
+        RelationshipConstraintECInstanceIdPropertyMap const* ecInstanceIdPropertyMap = static_cast<RelationshipConstraintECInstanceIdPropertyMap const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
         size_t tableCount = ecdbMap.GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
         DbTable const* targetTable = &ecclassIdPropertyMap->GetSingleColumn()->GetTable();
         if (tableCount > 1
@@ -1119,7 +1119,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
     viewSql.AppendComma();
 
     //SourceECClassId--------------------------------------
-    ECClassIdRelationshipConstraintPropertyMap const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
+    RelConstraintECClassIdPropertyMap const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
     if (!classIdPropMap->IsVirtual())
         {
         if (relationMap._RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Source))
