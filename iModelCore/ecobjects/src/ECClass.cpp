@@ -1091,21 +1091,29 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
         // This is a case-insensitive search
         if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
             {
+            status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty);
+
             // If the property names do not have the same case, this is an error
             if (!prop->GetName().Equals(thisProperty->GetName()))
                 {
                 if (!resolveConflicts)
                     return ECObjectsStatus::CaseCollision;
-                LOG.debugv("Case-collision between %s:%s and %s:%s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
-                RenameConflictProperty(thisProperty, true);
+
+                // Same type, different case, simply rename the second property to match the first
+                if (ECObjectsStatus::Success == status)
+                    {
+                    thisProperty->SetName(prop->GetName());
+                    LOG.debugv("Case-collision between %s:%s and %s:%s.  Renaming to %s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), prop->GetName().c_str());
+                    }
                 }
 
-            else if (ECObjectsStatus::Success != (status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty)))
+            if (ECObjectsStatus::Success != status)
                 {
                 if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
                     {
                     LOG.debugv("Case-collision between %s:%s and %s:%s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
-                    RenameConflictProperty(thisProperty, true);
+                    ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
+                    conflictClass->RenameConflictProperty(thisProperty, true);
                     }
                 else
                     {
@@ -1594,30 +1602,39 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         }
 
     bool resolveConflicts = false;
+    bool ignoreBaseClassConflict = false;
     if (nullptr != conversionSchema)
         {
         ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
         if (nullptr != conversionClass && conversionClass->GetCustomAttribute("IgnoreBaseClass").IsValid())
-            {
+            ignoreBaseClassConflict = true;
+        if (conversionSchema->IsDefined("ResolvePropertyNameConflicts"))
             resolveConflicts = true;
-            }
+
         }
 
-    if (ECObjectsStatus::Success != AddBaseClass(*baseClass, false, resolveConflicts))
+    ECObjectsStatus stat;
+    if (ECObjectsStatus::Success != (stat = AddBaseClass(*baseClass, false, resolveConflicts)))
         {
-        if (resolveConflicts)
+        if (stat == ECObjectsStatus::BaseClassUnacceptable)
             {
-            LOG.warningv("Ignoring incompatible base class '%s:%s' (%d) for '%s:%s' (%d) due to 'IgnoreBaseClass' override.",
-                         baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType(),
-                         GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType());
+            if (ignoreBaseClassConflict)
+                {
+                LOG.warningv("Ignoring incompatible base class '%s:%s' (%d) for '%s:%s' (%d) due to 'IgnoreBaseClass' override.",
+                             baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType(),
+                             GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType());
                 return SchemaReadStatus::Success;
+                }
+            LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has a base class '%s:%s' (%d) but their types differ.",
+                       GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
+                       baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
+            return SchemaReadStatus::InvalidECSchemaXml;
             }
-        LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has a base class '%s:%s' (%d) but their types differ.",
-                     GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
-                     baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
+        LOG.errorv("Invalid ECSchemaXML: Unable to add ECClass '%s:%s' as a base class to ECClass '%s:%s'",
+                   baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(),
+                   GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
-    
     return SchemaReadStatus::Success;
     }
 
@@ -1637,7 +1654,25 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 
     bool resolveConflicts = false;
     if (nullptr != conversionSchema)
+        {
         resolveConflicts = conversionSchema->IsDefined("ResolvePropertyNameConflicts");
+        ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
+        if (nullptr != conversionClass)
+            {
+            ECPropertyP conversionProp = conversionClass->GetPropertyP(ecProperty->GetName().c_str());
+            if (nullptr != conversionProp)
+                {
+                IECInstancePtr renamePtr = conversionProp->GetCustomAttribute("OverwriteTypeName");
+                if (renamePtr.IsValid())
+                    {
+                    ECValue ecValue;
+                    renamePtr->GetValue(ecValue, "TypeName");
+                    if (!ecValue.IsNull())
+                        ecProperty->SetName(ecValue.GetUtf8CP());
+                    }
+                }
+            }
+        }
 
     if (ECObjectsStatus::Success != this->AddProperty (ecProperty, resolveConflicts))
         {
@@ -2245,6 +2280,15 @@ bool isSource
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                       06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClassCR  ECRelationshipConstraint::GetRelationshipClass() const
+    {
+    BeAssert(m_relClass != nullptr);
+    return *m_relClass;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraint::~ECRelationshipConstraint
@@ -2261,7 +2305,7 @@ ECRelationshipConstraint::~ECRelationshipConstraint
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
     {
-    return &(m_relClass->GetSchema());
+    return &(GetRelationshipClass().GetSchema());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -45,8 +45,8 @@ private:
 
     void ProcessCustomAttributeInstance(ECCustomAttributeInstanceIterable iterable, IECCustomAttributeContainerR container, Utf8String containerName);
     void ConvertSchemaLevel(ECSchemaR schema);
-    void ConvertClassLevel(ECSchemaR schema);
-    void ConvertPropertyLevel(ECSchemaR schema);
+    void ConvertClassLevel(bvector<ECClassP>& classes);
+    void ConvertPropertyLevel(bvector<ECClassP>& classes);
     IECCustomAttributeConverterP GetConverter(Utf8StringCR converterName);
 
     //---------------------------------------------------------------------------------------

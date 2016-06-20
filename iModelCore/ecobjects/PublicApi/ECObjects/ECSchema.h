@@ -39,7 +39,7 @@ struct less_str
 {
 bool operator()(Utf8CP s1, Utf8CP s2) const
     {
-    if (BeStringUtilities::Stricmp(s1, s2) < 0)
+    if (BeStringUtilities::StricmpAscii(s1, s2) < 0)
         return true;
 
     return false;
@@ -222,6 +222,22 @@ struct ECPropertyId : BeInt64Id
     BEINT64_ID_DECLARE_MEMBERS(ECPropertyId, BeInt64Id)
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECEnumerationId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECEnumerationId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct KindOfQuantityId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(KindOfQuantityId, BeInt64Id)
+    };
+
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 struct SupplementedSchemaBuilder;
@@ -366,6 +382,11 @@ public:
     //! Removes a custom attribute from the container
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
+
+    //! Removes a custom attribute from the container
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
+    //! @param[in]  className   Name of the class of the custom attribute to remove
+    ECOBJECTS_EXPORT bool               RemoveSupplementedCustomAttribute(Utf8StringCR schemaName, Utf8StringCR className);
 
     //! Removes a supplemented custom attribute from the container
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
@@ -1569,6 +1590,7 @@ friend struct SchemaXmlReaderImpl;
         EnumeratorList m_enumeratorList;
         EnumeratorIterable m_enumeratorIterable;
         bool m_isStrict;
+        mutable ECEnumerationId m_ecEnumerationId;
 
         //  Lifecycle management:  The schema implementation will
         //  serve as a factory for enumerations and will manage their lifecycle.
@@ -1648,6 +1670,12 @@ friend struct SchemaXmlReaderImpl;
         EnumeratorIterable const& GetEnumerators() const { return m_enumeratorIterable; }
         //! Get the amount of enumerators in this enumeration
         size_t GetEnumeratorCount() const { return m_enumeratorList.size(); }
+
+        //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+        ECEnumerationId GetId() const { BeAssert(HasId()); return m_ecEnumerationId; }
+        //! Intended to be called by ECDb or a similar system
+        void SetId(ECEnumerationId id) { BeAssert(!m_ecEnumerationId.IsValid()); m_ecEnumerationId = id; };
+        bool HasId() const { return m_ecEnumerationId.IsValid(); };
     };
 
 //=======================================================================================
@@ -1725,6 +1753,7 @@ struct KindOfQuantity : NonCopyableClass
         Utf8String m_defaultPresentationUnit;
         //! list of alternative presentation Units
         bvector<Utf8String> m_alternativePresentationUnitList;
+        mutable KindOfQuantityId m_kindOfQuantityId;
 
         //  Lifecycle management:  The schema implementation will
         //  serve as a factory for kind of quantities and will manage their lifecycle.
@@ -1791,6 +1820,12 @@ struct KindOfQuantity : NonCopyableClass
         bvector<Utf8String> const& GetAlternativePresentationUnitList() const { return m_alternativePresentationUnitList; };
         //! Gets an editable list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
         bvector<Utf8String>& GetAlternativePresentationUnitListR() { return m_alternativePresentationUnitList; };
+
+        //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+        KindOfQuantityId    GetId() const { BeAssert(HasId()); return m_kindOfQuantityId; }
+        //! Intended to be called by ECDb or a similar system
+        void                SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; };
+        bool                HasId() const { return m_kindOfQuantityId.IsValid(); };
     };
 
 //---------------------------------------------------------------------------------------
@@ -1826,7 +1861,7 @@ public:
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
     // @param[in]   type                The type of the navigation property.  Should match type used for InstanceIds in the current session.  Default is string.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_String, bool verify = true);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_Long, bool verify = true);
 };
 
 //---------------------------------------------------------------------------------------
@@ -2097,6 +2132,8 @@ public:
  
     ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint(); //!< Destructor
 
+    //! Return relationshipClass to which this constraint is associated
+    ECOBJECTS_EXPORT   ECRelationshipClassCR  GetRelationshipClass() const;
     //! Sets the label of the constraint role in the relationship.
     ECOBJECTS_EXPORT ECObjectsStatus            SetRoleLabel (Utf8StringCR value);
     //! Gets the label of the constraint role in the relationship.
@@ -2920,28 +2957,14 @@ private:
         SchemaKey Key;
         };
 
+    bmap<bpair<SchemaKey, SchemaMatchType>, ECSchemaPtr> m_knownSchemas;
     bvector<WString> m_searchPaths;
     SearchPathSchemaFileLocater (bvector<WString> const& searchPaths);
     virtual ~SearchPathSchemaFileLocater();
     static bool TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas);
 
-    void FindEligibleSchemaFiles
-    (
-    bvector<CandidateSchema>& foundFiles, 
-    SchemaKeyR desiredSchemaKey, 
-    SchemaMatchType matchType, 
-    ECSchemaReadContextCR schemaContext
-    );
-
-    void AddCandidateSchemas
-    (
-    bvector<CandidateSchema>& foundFiles,
-    WStringCR schemaPath,
-    WStringCR fileFilter,
-    SchemaKeyR desiredSchemaKey,
-    SchemaMatchType matchType,
-    ECSchemaReadContextCR schemaContext
-    );
+    void FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
+    void AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, WStringCR fileFilter, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
 
     static bool SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs);
 
