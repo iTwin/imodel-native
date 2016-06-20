@@ -205,6 +205,12 @@ WSInfoResult StubWSInfoResult(BeVersion webApiVersion)
     return WSInfoResult::Success(WSInfo(StubWSInfoHttpResponseWebApi(webApiVersion)));
     }
 
+WSObjectsResult StubWSObjectsResult()
+    {
+    StubInstances instances;
+    return WSObjectsResult::Success(instances.ToWSObjectsResponse());
+    }
+
 WSObjectsResult StubWSObjectsResult(ObjectIdCR objectId)
     {
     StubInstances instances;
@@ -433,9 +439,31 @@ ECInstanceKey StubCreatedObjectInCache(IDataSourceCache& cache, IChangeManager::
     return instance;
     }
 
+ECInstanceKey StubCreatedFileInCache(IDataSourceCache& cache, Utf8StringCR classKey, BeFileName filePath)
+    {
+    auto instance = StubCreatedObjectInCache(cache, classKey);
+    EXPECT_EQ(SUCCESS, cache.GetChangeManager().ModifyFile(instance, filePath, false));
+    return instance;
+    }
+
 CachedResponseKey StubCachedResponseKey(IDataSourceCache& cache, Utf8StringCR name)
     {
     auto key = CachedResponseKey(cache.FindOrCreateRoot(nullptr), name);
     EXPECT_TRUE(key.IsValid());
     return key;
+    }
+
+ObjectId StubFileInCache(IDataSourceCache& cache, FileCache location, ObjectIdCR objectId, BeFileNameCR path)
+    {
+    auto fileKey = StubInstanceInCache(cache, objectId);
+    auto fileId = cache.FindInstance(fileKey);
+    EXPECT_TRUE(fileId.IsValid());
+    EXPECT_EQ(SUCCESS, cache.CacheFile(fileId, WSFileResponse(path, HttpStatus::OK, nullptr), location));
+    EXPECT_FALSE(cache.ReadFilePath(fileId).empty());
+    return fileId;
+    }
+
+ObjectId StubFileInCache(IDataSourceCache& cache, BeFileNameCR path)
+    {
+    return StubFileInCache(cache,FileCache::Temporary, ObjectId("TestSchema.TestClass", "Foo"), path);
     }

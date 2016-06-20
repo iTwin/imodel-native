@@ -330,11 +330,3 @@ AsyncTaskPtr<Utf8String> UrlProvider::UrlDescriptor::GetAsync() const
     {
     return UrlProvider::GetUrl(m_name, m_defaultUrls);
     }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UrlProvider::UrlDescriptor::GetDefault() const
-    {
-    return m_defaultUrls[s_env];
-    }

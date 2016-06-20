@@ -98,6 +98,7 @@
     <ClCompile Include="Cache\Persistence\Responses\CachedResponseInfo.cpp" />
     <ClCompile Include="Cache\Persistence\Responses\CachedResponseManager.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\RawWSObjectsReader.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\Upgrader.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderBase.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.cpp" />
@@ -121,6 +122,7 @@
     <ClCompile Include="Cache\Util\ECDbDebugInfo.cpp" />
     <ClCompile Include="Cache\Util\ECDbHelper.cpp" />
     <ClCompile Include="Cache\Util\ECExpressionHelper.cpp" />
+    <ClCompile Include="Cache\Util\ECInstanceKeyFilter.cpp" />
     <ClCompile Include="Cache\Util\ECSqlStatementCache.cpp" />
     <ClCompile Include="Cache\Util\ExtendedData.cpp" />
     <ClCompile Include="Cache\Util\ExtendedDataAdapter.cpp" />
@@ -139,7 +141,10 @@
     <ClCompile Include="Client\WSChangeset.cpp" />
     <ClCompile Include="Configuration\BuddiClient.cpp" />
     <ClCompile Include="Configuration\BuddiError.cpp" />
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp" />
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaGen.cpp" />
     <ClCompile Include="ConnectC\CWSCC.cpp" />
+    <ClCompile Include="ConnectC\CWSCCBufferGen.cpp" />
     <ClCompile Include="ConnectC\CWSCCGen.cpp" />
     <ClCompile Include="ConnectC\CWSCCGenBuffer.cpp" />
     <ClCompile Include="ConnectC\CWSCCInternal.cpp" />
@@ -231,6 +236,7 @@
     <ClInclude Include="Cache\Persistence\RepositoryInfoStore.h" />
     <ClInclude Include="Cache\Persistence\Responses\CachedResponseInfo.h" />
     <ClInclude Include="Cache\Persistence\Responses\CachedResponseManager.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\RawWSObjectsReader.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\Upgrader.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderBase.h" />
@@ -241,7 +247,12 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h" />
     <ClInclude Include="Cache\Schemas.h" />
+    <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
+    <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
+    <ClInclude Include="Cache\SessionInfo.h" />
     <ClInclude Include="Cache\Util\StringHelper.h" />
     <ClInclude Include="Cache\SyncCachedDataTask.h" />
     <ClInclude Include="Cache\SyncCachedInstancesSeperatelyTask.h" />
@@ -255,6 +266,10 @@
     <ClInclude Include="ConnectC\CWSCCPrivate.h" />
     <ClInclude Include="ConnectC\WSLocalState.h" />
     <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenBufferPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h" />
@@ -347,6 +362,8 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\IImsClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ITokenStore.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h" />
     <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTrackingData.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\ObjectId.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Passport.h" />
@@ -395,6 +412,7 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <None Include=".hgignore" />
     <None Include="Azure\Azure.mki" />
     <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="CacheLib.mke" />

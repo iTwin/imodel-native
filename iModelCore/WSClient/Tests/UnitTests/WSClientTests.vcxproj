@@ -41,6 +41,8 @@
     <ClInclude Include="Published\WebServices\Cache\MockCachingDataSource.h" />
     <ClInclude Include="Published\WebServices\Cache\MockQueryProvider.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\BaseCacheTest.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.h" />
@@ -189,6 +191,8 @@
     <ClCompile Include="Published\WebServices\Cache\CachingTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\BaseCacheTest.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.cpp" />
@@ -286,6 +290,7 @@
     <None Include="BuildTests.mke" />
     <None Include="Prewire.mke" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\5.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
@@ -358,7 +363,7 @@
     <NMakeBuildCommandLine>bb $(BB2N0) -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WSClient-Gtest -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb $(BB2N0) -ax86 -r WSClient -f WSCLient -p WSClient-Gtest reb WebServicesClient* WebServicesCache* WSClient-PublishedAPI UnitTests-Published Gtest -c</NMakeCleanCommandLine>
-    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);USE_GTEST</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx86\build\BeGTest\bin\begtest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(OutRoot)Winx86\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx86\BuildContexts\WSClient\PublicAPI;$(IncludePath)</IncludePath>
