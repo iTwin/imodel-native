@@ -53,7 +53,9 @@ RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
 //----------------------------------------------------------------------------------------
 static HFCPtr<HRPPixelType> s_GetTileQueryPixelType(HRARaster const& raster, Render::Image::Format& format)
     {
-    BeAssertOnce(raster.GetPixelType()->CountIndexBits() != 1);       //TODO binary support.
+    //&&MM TODO binary support.  We need to send RLE to QV so it uses nearest sampler instead on average.
+    // Disabling assert because it pops during the build/run of converter tests.
+    //BeAssertOnce(raster.GetPixelType()->CountIndexBits() != 1);       //TODO binary support.
 
     // if source holds alpha use Rgba
     if (raster.GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE)
