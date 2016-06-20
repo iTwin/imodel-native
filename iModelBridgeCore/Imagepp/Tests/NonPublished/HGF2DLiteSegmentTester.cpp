@@ -177,8 +177,9 @@ HGF2DLiteSegmentTester::HGF2DLiteSegmentTester()
 // HGF2DLiteSegment(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
 // HGF2DLiteSegment(const HGF2DLiteSegment&    pi_rObject);
 //==================================================================================
-//&&ep fix - pragma unrecognized on iOS
-//#pragma optimize( "", off )                             // Disable optimization to solve a potential compiler bug?
+#ifndef __APPLE__
+    #pragma optimize( "", off )                             // Disable optimization to solve a potential compiler bug?
+#endif
 TEST_F (HGF2DLiteSegmentTester, ConstructionTest)
     {
 
@@ -209,8 +210,9 @@ TEST_F (HGF2DLiteSegmentTester, ConstructionTest)
     ASSERT_NEAR(100.3000, Segment4.GetEndPoint().GetY(), MYEPSILON);
 
     }
-//&&ep fix - pragma unrecognized on iOS
-//#pragma optimize( "", on )
+#ifndef __APPLE__
+    #pragma optimize( "", on )
+#endif
 
 //==================================================================================
 // operator= test
