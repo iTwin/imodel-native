@@ -112,12 +112,14 @@ ProgressiveTask::Completion PointCloudRenderer::DrawPointCloud(ViewContextR cont
             queryBuffers->SetClassificationChannel(NULL);
             queryBuffers->SetNormalChannel(NULL);
 
+#if defined (NEEDS_WORK_POINT_CLOUD)
             // Create buffers for drawing. These are the buffers that are eventually used by QV.
             RefCountedPtr<PointCloudDrawParams> buffer = PointCloudDrawParams::Create (queryBuffers->GetXyzChannel(), queryBuffers->GetRgbChannel());
             if (buffer.IsNull())
                 break;
 
             DrawPointBuffer(context, *buffer);
+#endif
             }
 
         int64_t ptsToLoad = PointCloudVortex::PtsToLoadInViewport(pointCloudScene.GetSceneHandle(), true/*recompute*/);
@@ -127,12 +129,12 @@ ProgressiveTask::Completion PointCloudRenderer::DrawPointCloud(ViewContextR cont
         return 0 == ptsToLoad ? ProgressiveTask::Completion::Finished : ProgressiveTask::Completion::Aborted;
     }
 
+#ifdef NEEDS_WORK_CONTINUOUS_RENDER
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     3/2015
 //----------------------------------------------------------------------------------------
 void PointCloudRenderer::DrawPointBuffer(ViewContextR context, PointCloudDrawParams& buffer) const
     {
-#ifdef NEEDS_WORK_CONTINUOUS_RENDER
     uint32_t numPoints = buffer.GetNumPoints();
 
     if (numPoints > m_outputCapacity)
@@ -176,9 +178,9 @@ void PointCloudRenderer::DrawPointBuffer(ViewContextR context, PointCloudDrawPar
 
         context.OutputGraphic(*pGraphic, nullptr);
         }
-#endif        
 
     }
+#endif        
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Simon.Normand                   05/2014

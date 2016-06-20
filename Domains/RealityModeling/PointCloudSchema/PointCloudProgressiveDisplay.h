@@ -31,13 +31,19 @@ private:
 
     uint32_t    m_tentativeId;
 
+    bool        m_doLowDensity;
+
     bool        m_lastTentativeStopped;
+
+    uint64_t    m_firstPassPts;         // low density quick draw
+    uint64_t    m_progressivePts;       // the last progressive display iteration. Usually the one that completed
+    uint64_t    m_totalProgressivePts;  // Total number of points drawn 
 
     static bool ShouldDrawInContext (Dgn::RenderContextR context);
 
     void SetupPtViewport(Dgn::RenderContextR context);
 
-    bool DrawPointCloud(int64_t& pointToLoad, Dgn::RenderContextR context, BePointCloud::PtQueryDensity densityType, float density, bool doCheckStop);
+    bool DrawPointCloud(Render::GraphicPtr* pGraphicsPtr, int64_t& pointToLoad, uint64_t& pointsDrawn, Dgn::RenderContextR context, BePointCloud::PtQueryDensity densityType, float density, bool doCheckStop);
 
 protected:
     PointCloudModel const& m_model;

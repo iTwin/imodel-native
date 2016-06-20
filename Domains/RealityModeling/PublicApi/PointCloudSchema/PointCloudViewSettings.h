@@ -367,7 +367,7 @@ struct PointCloudClassificationViewSettings : public RefCounted<IPointCloudClass
 struct ViewSettingsData
     {
     public:
-        ViewSettingsData::ViewSettingsData ();
+        ViewSettingsData ();
         ~ViewSettingsData();
         ViewSettingsData& operator=(ViewSettingsData const& rhs);
         void InitDefault();

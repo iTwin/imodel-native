@@ -97,7 +97,7 @@ BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
     else if (2 == sscanf (sceneInfo.m_reprojectionSystem.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
         {
         // ENU specification does not impose any projection method so we use the first azimuthal available using values that will
-        // mimick the intent (North is Y positive, no offset)
+        // mimic the intent (North is Y positive, no offset)
         // Note that we could have injected the origin here but keeping it in the transform as for other GCS specs
         if (latitude < 90.0 && latitude > -90.0 && longitude < 180.0 && longitude > -180.0)
             status = acute3dGCS->InitAzimuthalEqualArea(&warningMsg, L"WGS84", L"METER", longitude, latitude, 0.0, 1.0, 0.0, 0.0, 1);
@@ -115,7 +115,7 @@ BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
 
     DRange3d sourceRange;
     transform.Multiply(sourceRange, range);
-    
+
     DPoint3d extent;
     extent.DifferenceOf(sourceRange.high, sourceRange.low);
 
@@ -136,11 +136,11 @@ BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1) 
+ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1)
     {
     RegisterHandler(ModelHandler::GetHandler());
     }
- 
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/16
 //=======================================================================================
@@ -157,7 +157,7 @@ struct ThreeMxProgressive : ProgressiveTask
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow) 
+ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
     DrawArgs args(context, m_scene, now, now-m_scene.GetNodeExpirationTime());
@@ -178,7 +178,7 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 
     DEBUG_PRINTF("3MX after progressive still %d missing", m_missing.size());
-    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done. 
+    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
         {
         context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
         return Completion::Finished;
@@ -186,7 +186,7 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
 
     if (now > m_nextShow)
         {
-        m_nextShow = now + 1000;
+        m_nextShow = now + 1000; // once per second
         wantShow = WantShow::Yes;
         }
 
@@ -202,7 +202,7 @@ void DrawArgs::DrawGraphics()
         return;
 
     DEBUG_PRINTF("3MX drawing %d 3mx nodes", m_graphics.m_entries.size());
-                       
+
     auto group = m_context.CreateGroupNode(Graphic::CreateParams(nullptr, m_scene.GetLocation()), m_graphics, nullptr);
     BeAssert(m_graphics.m_entries.empty()); // the CreateGroupNode should have moved them
     m_context.OutputGraphic(*group, nullptr);
@@ -216,7 +216,7 @@ void ThreeMxModel::Load(Dgn::Render::SystemP renderSys) const
     if (m_scene.IsValid() && (nullptr==renderSys || m_scene->GetRenderSystem()==renderSys))
         return;
 
-    // if we ask for the model with a different Render::System, we just throw the old one away. 
+    // if we ask for the model with a different Render::System, we just throw the old one away.
     m_scene = new Scene(m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), renderSys);
     if (SUCCESS != m_scene->LoadScene())
         m_scene = nullptr;
@@ -231,7 +231,7 @@ DgnModelId ModelHandler::CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP sceneFi
     BeAssert(classId.IsValid());
 
     ThreeMxModelPtr model = new ThreeMxModel(DgnModel::CreateParams(db, classId, ThreeMxModel::CreateModelCode(modelName)));
-    
+
     model->SetSceneFile(sceneFile);
     if (trans)
         model->SetLocation(*trans);
@@ -263,7 +263,7 @@ AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
     aaRange.Extend(box.m_pts, 8);
 
     return aaRange;
-    }   
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Called whenever the camera moves. Must be fast.

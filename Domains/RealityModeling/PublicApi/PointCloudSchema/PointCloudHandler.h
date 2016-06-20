@@ -8,7 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <BePointCloud/BePointCloudCommon.h>
+#include <BePointCloud/BePointCloudApi.h>  //&&MM I would like to hide the dependency on BePointCloud and pointools
 #include <BePointCloud/PointCloudHandle.h>
 #include <BePointCloud/PointCloudScene.h>
 
@@ -76,21 +76,19 @@ public:
 private:
     mutable LoadStatus                          m_loadSceneStatus;
     mutable BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
-    mutable std::map<DgnViewportCP, RefCountedPtr<PtViewport>> m_cachedPtViewport;
 
+    struct ViewportCacheEntry
+        {
+        RefCountedPtr<PtViewport> m_ptViewport;         // pointools viewport.
+        Dgn::Render::GraphicPtr   m_lowDensityGraphic;  // Low density representation with the latest viewport settings.
+        };
+    mutable std::map<DgnViewportCP, ViewportCacheEntry> m_viewportCache;
+    
     //! May return nullptr when we reach the limit.
     PtViewport* GetPtViewportP(DgnViewportCR) const;
 
-    // POINTCLOUD_WIP_GR06_Json - To remove this, we could move JsonUtils.h to PublicApi and then delete this struct and associated methods.
-    struct JsonUtils
-        {
-        static void DPoint3dToJson(JsonValueR outValue, DPoint3dCR point);
-        static void DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue);
-        static void TransformRowFromJson(double* row, JsonValueCR inValue);
-        static void TransformRowToJson(JsonValueR outValue, double const* row);
-        static void TransformFromJson(TransformR trans, JsonValueCR inValue);
-        static void TransformToJson(JsonValueR outValue, TransformCR trans);
-        };
+    Dgn::Render::Graphic* GetLowDensityGraphicP(DgnViewportCR) const;
+    void SaveLowDensityGraphic(DgnViewportCR, Dgn::Render::Graphic*);
 
 protected:
     friend struct PointCloudModelHandler;

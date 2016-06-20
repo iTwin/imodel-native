@@ -51,10 +51,10 @@ struct MxStreamBuffer : ByteStream
     MxStreamBuffer(ByteStream const& other) : ByteStream(other) {}
     };
 
-/*=================================================================================**//**
-* A list mesh, plus optionally a graphic to draw it.
-* @bsiclass                                                     Ray.Bentley     03/2015
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+// A mesh and a Render::Graphic to draw it. Both are optional - we don't need the mesh except for picking, and sometimes we create Geometry objects for exporting (in which case we don't need the Graphic).
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
 struct Geometry : RefCountedBase, NonCopyableClass
 {
 private:
@@ -86,12 +86,12 @@ struct SceneInfo
 
 //=======================================================================================
 // Arguments for drawing a node. As nodes are drawn, their Render::Graphics go into the GraphicArray member of this object. After all
-// in-view nodes are drawn, the accumlated list of Render::Graphics are placed in a Render::GroupNode with the "location" 
-// transform for the scene (that is, the tile graphics are always in the local coordinate system of the 3mx scene.) 
-// If higher resolution tiles are needed but missing, the graphics for lower resolution tiles are 
+// in-view nodes are drawn, the accumulated list of Render::Graphics are placed in a Render::GroupNode with the "location"
+// transform for the scene (that is, the tile graphics are always in the local coordinate system of the 3mx scene.)
+// If higher resolution tiles are needed but missing, the graphics for lower resolution tiles are
 // drawn and the missing tiles are requested for download (if necessary.) They are then added to the MissingNodes member. If the
 // MissingNodes list is not empty, we schedule a ProgressiveDisplay that checks for the arrival of the missing nodes and draws them (using
-// this class). Each iteration of ProgressiveDisplay starts with a list of previously-missing tiles and generates a new list of 
+// this class). Each iteration of ProgressiveDisplay starts with a list of previously-missing tiles and generates a new list of
 // still-missing tiles until all have arrived (or the view changes.)
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
@@ -114,8 +114,8 @@ struct DrawArgs
 * A node in the 3mx scene. Each node has a range (from which we store a center/radius) and a "maxScreenDiameter" value.
 *
 * It can optionally have:
-*  1) a Geometry ojbect. If present, it is used to draw this node if the size of the node in pixes is less than maxScreenDiameter. The first few nodes in the scene
-*     are merely present to segregate the scene and do not have Geometry (that is, thier maxScreenDiameter is 0, so they are not displayable)
+*  1) a Geometry object. If present, it is used to draw this node if the size of the node in pixels is less than maxScreenDiameter. The first few nodes in the scene
+*     are merely present to segregate the scene and do not have Geometry (that is, their maxScreenDiameter is 0, so they are not displayable)
 *  2) a list of child nodes. The child nodes are read from the "child file" whose name, relative to the parent of this node, is stored in the member "m_childPath". When a node
 *     is first created (by its parent), the list of child nodes is empty. Only when/if we determine that the geometry of a node is not fine enough
 *     (that is, it is too large in pixels) for a view do we load its children.
@@ -123,7 +123,7 @@ struct DrawArgs
 * Multi-threaded loading of children:
 * The loading of children of a node involves reading a file (and potentially downloading from an external reality server). We always do that asynchronously via the RealityCache service on
 * the reality cache thread(s). That means that sometimes we'll attempt to draw a node and discover that it is too coarse for the current view, but its children are not loaded yet. In that
-* case we draw thw geometry of the parent and queue its children to be loaded. The inter-thread synchronization is via the BeAtomic member variable "m_childLoad". Only when the value
+* case we draw the geometry of the parent and queue its children to be loaded. The inter-thread synchronization is via the BeAtomic member variable "m_childLoad". Only when the value
 * of m_childLoad==Ready is it safe to use the m_childNodes member.
 *
 // @bsiclass                                                    Keith.Bentley   03/16
@@ -207,7 +207,7 @@ private:
     Dgn::Render::SystemP m_renderSystem = nullptr;
 
     BentleyStatus ReadGeoLocation(SceneInfo const&);
-    BentleyStatus LoadScene(); // synchronous  
+    BentleyStatus LoadScene(); // synchronous
     bool IsHttp() const {return m_isHttp;}
     Dgn::RealityData::CacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
     void CreateCache();
@@ -219,7 +219,7 @@ public:
     double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
     void Draw(DrawArgs& args) {m_rootNode->Draw(args, 0);}
     Dgn::ElementAlignedBox3d ComputeRange() {return m_rootNode->ComputeRange();}
-    void SetNodeExpirationTime(uint32_t val) {m_expirationTime = val;} //! set expiration time for unused nodes, in milliseconds 
+    void SetNodeExpirationTime(uint32_t val) {m_expirationTime = val;} //! set expiration time for unused nodes, in milliseconds
     uint32_t GetNodeExpirationTime() const {return m_expirationTime;} //! get expiration time for unused nodes, in milliseconds
     int CountNodes() const {return m_rootNode->CountNodes();}
     bool UseFixedResolution()const {return m_useFixedResolution;}
@@ -245,7 +245,7 @@ public:
 
 //=======================================================================================
 // A DgnModel to reference a 3mx scene. This holds the name of the scenefile, plus a "location" transform
-// to position the scene relative to the BIM. 
+// to position the scene relative to the BIM.
 // Note that the scenefile may also have a "Spatial Reference System" stored in it,
 // so the location can be calculated by geo-referncing it to the one in the BIM. But, since not all 3mx files are geo-referenced,
 // and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.

@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
-#include <DgnPlatform/ImageUtilities.h>
 #include "RasterQuadTree.h"
 
 static const uint32_t DRAW_CHILDREN_DELTA = 2;
@@ -211,12 +210,12 @@ void TileDataQuery::Run()
         for (uint32_t pixel = 0; pixel < 256 * 256; ++pixel)
             memcpy(data.GetDataP() + pixel * 3, red, 3);
 
-        image = Render::Image(256, 256, Render::Image::Format::Rgb, std::move(data));
+        image = Render::Image(256, 256, std::move(data), Render::Image::Format::Rgb);
         enableAlphaBlend = false;
         }
 #endif         
     if (image.IsValid() && !IsCanceled())
-        m_pTile = m_target.CreateImageTexture(image, enableAlphaBlend);
+        m_pTile = m_target.CreateTexture(image);
         
     m_isFinished = true;
     }
@@ -821,8 +820,10 @@ void RasterProgressiveDisplay::Draw (RenderContextR context)
 
     // Draw background tiles if any, that gives feedback when zooming in.
     // Background tiles need to be draw from coarser resolution to finer resolution to make sure coarser tiles are not hiding finer tiles.
-    //&&MM  - this causes z-fighting. poss sol. use qv setDepth.
+    //&&MM  - this causes z-fighting. poss sol. use qv setDepth.  
     //      - will also cause problems with transparent(or translucent?) raster.
+    //      >>>> look for context.GetViewport()->SetNeedsHeal() in webmercator.  also play with depth for temporary tiles.
+    //      >>>> What is a CreateGroupNode??    
     SortedTiles backgroundTiles;
     FindBackgroudTiles(backgroundTiles, m_visiblesTiles, DRAW_COARSER_DELTA, context.GetViewportR());
     for(RasterTilePtr& pTile : backgroundTiles)
