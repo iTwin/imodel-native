@@ -2,7 +2,7 @@
 #
 #     $Source: CacheLib.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # This only affect WinRT build.
@@ -56,11 +56,8 @@ DLM_NAME                    = WebServicesCache
 DLM_OBJECT_FILES            = $(WSCacheObjectList)
 DLM_OBJECT_DEST             = $(o)
 DLM_DEST                    = $(o)
-DLM_NOMSBUILTINS            = 1
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
-DLM_NO_DLS                  = 1
-DLM_NO_DEF                  = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
