@@ -9,7 +9,7 @@
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
-   
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //******************************** PropertyMapFactory *****************************************
 
@@ -19,8 +19,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, ECDbCR ecdb, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
     {
-    if (!ecProperty.HasId())
-        ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ecdb, ecProperty);
+    if (!ECDbSchemaPersistenceHelper::GetECPropertyId(ecdb, ecProperty).IsValid())
+        return nullptr;
 
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
     if (primitiveProperty != nullptr)
@@ -63,7 +63,7 @@ PropertyMapPtr PropertyMapFactory::CreatePropertyMap(ClassMapLoadContext& ctx, E
 // @bsimethod                                                Affan.Khan          10/2015
 //---------------------------------------------------------------------------------------
 //static
-PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMapCR ecdbMap, PropertyMapCR proto, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap)
+PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMap const& ecdbMap, PropertyMapCR proto, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap)
     {
     if (ecdbMap.GetSchemaImportContext() == nullptr)
         {
@@ -71,29 +71,43 @@ PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMapCR ecdbMap, PropertyM
         return nullptr;
         }
 
-    if (auto protoMap = dynamic_cast<PointPropertyMap const*>(&proto))
-        return PointPropertyMap::Clone(*protoMap, parentPropertyMap);
-
-    if (auto protoMap = dynamic_cast<PrimitivePropertyMap const*>(&proto))
-        return PrimitivePropertyMap::Clone(*protoMap, parentPropertyMap);
-
-    if (auto protoMap = dynamic_cast<PrimitiveArrayPropertyMap const*>(&proto))
-        return PrimitiveArrayPropertyMap::Clone(*protoMap, parentPropertyMap);
-
-    if (auto protoMap = proto.GetAsStructArrayPropertyMap())
-        return StructArrayJsonPropertyMap::Clone(*protoMap, parentPropertyMap);
-
-    if (auto protoMap = dynamic_cast<StructPropertyMap const*>(&proto))
-        return StructPropertyMap::Clone(ecdbMap, *protoMap, targetClass, parentPropertyMap);
-
-    if (auto protoMap = proto.GetAsNavigationPropertyMap())
+    switch (proto.GetType())
         {
-        BeAssert(parentPropertyMap == nullptr && "NavigationProperties can only be created on entity classes, so parent prop map is expected to be nullptr");
-        return NavigationPropertyMap::Clone(ecdbMap.GetSchemaImportContext()->GetClassMapLoadContext(), *protoMap, targetClass);
-        }
+            case PropertyMap::Type::ECClassId:
+                return ECClassIdPropertyMap::Clone(static_cast<ECClassIdPropertyMap const&>(proto));
 
-    BeAssert(false && "Case is not handled");
-    return nullptr;
+            case PropertyMap::Type::ECInstanceId:
+                return ECInstanceIdPropertyMap::Clone(static_cast<ECInstanceIdPropertyMap const&>(proto));
+
+            case PropertyMap::Type::Navigation:
+                BeAssert(parentPropertyMap == nullptr && "NavigationProperties can only be created on entity classes, so parent prop map is expected to be nullptr");
+                return NavigationPropertyMap::Clone(ecdbMap.GetSchemaImportContext()->GetClassMapLoadContext(), static_cast<NavigationPropertyMap const&>(proto), targetClass);
+
+            case PropertyMap::Type::Point:
+                return PointPropertyMap::Clone(static_cast<PointPropertyMap const&>(proto), parentPropertyMap);
+
+            case PropertyMap::Type::Primitive:
+                return PrimitivePropertyMap::Clone(static_cast<PrimitivePropertyMap const&>(proto), parentPropertyMap);
+
+            case PropertyMap::Type::PrimitiveArray:
+                return PrimitiveArrayPropertyMap::Clone(static_cast<PrimitiveArrayPropertyMap const&>(proto), parentPropertyMap);
+
+            case PropertyMap::Type::RelConstraintECClassId:
+                return RelConstraintECClassIdPropertyMap::Clone(static_cast<RelConstraintECClassIdPropertyMap const&>(proto));
+
+            case PropertyMap::Type::RelConstraintECInstanceId:
+                return RelationshipConstraintECInstanceIdPropertyMap::Clone(static_cast<RelationshipConstraintECInstanceIdPropertyMap const&>(proto));
+
+            case PropertyMap::Type::Struct:
+                return StructPropertyMap::Clone(ecdbMap, static_cast<StructPropertyMap const&>(proto), targetClass, parentPropertyMap);
+
+            case PropertyMap::Type::StructArray:
+                return StructArrayJsonPropertyMap::Clone(static_cast<StructArrayJsonPropertyMap const&>(proto), parentPropertyMap);
+
+            default:
+                BeAssert(false && "Case is not handled");
+                return nullptr;
+        }
     }
 
 //******************************** PropertyMap *****************************************
@@ -108,7 +122,7 @@ void PropertyMap::_WriteDebugInfo(DebugWriter& writer) const
                       GetProperty().GetId().GetValue(),
                       GetProperty().GetClass().GetName().c_str(),
                       GetProperty().GetTypeName().c_str()
-                      );
+    );
 
 
     if (!m_children.IsEmpty())
@@ -136,7 +150,7 @@ void PropertyMap::_WriteDebugInfo(DebugWriter& writer) const
                                   column->TypeToSql(column->GetType()),
                                   column->GetPersistenceType() == PersistenceType::Persisted ? "false" : "true",
                                   DbColumn::KindToString(column->GetKind())
-                                  );
+                );
                 }
             }
         }
@@ -148,7 +162,7 @@ DbTable const* PropertyMap::GetTable() const
     {
     if (m_mappedTables.empty())
         return nullptr;
-    
+
     if (IsSystemPropertyMap())
         return m_mappedTables.back();
 
@@ -169,14 +183,14 @@ bool PropertyMap::MapsToTable(DbTable const& candidateTable) const
     return false;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      01/2015
+//---------------------------------------------------------------------------------------
 PropertyMapCR PropertyMap::GetRoot() const
     {
     PropertyMapCP current = this;
-    while (current->m_parentPropertyMap != nullptr)
-        current = current->m_parentPropertyMap;
+    while (current->m_parent != nullptr)
+        current = current->m_parent;
 
     BeAssert(current != nullptr);
     return *current;
@@ -186,7 +200,7 @@ PropertyMapCR PropertyMap::GetRoot() const
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, 
+BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation,
                                                ECDbCR ecdb, ECPropertyCR ecProp, Utf8CP propAccessString)
     {
     columnName.clear();
@@ -200,8 +214,8 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
         if (!ecProp.GetIsPrimitive())
             {
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                        "Failed to map ECProperty '%s:%s': only primitive ECProperties can have the custom attribute PropertyMap.",
-                        ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
+                                                          "Failed to map ECProperty '%s:%s': only primitive ECProperties can have the custom attribute PropertyMap.",
+                                                          ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
             return ERROR;
             }
 
@@ -221,9 +235,9 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
         if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr.c_str()))
             {
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                       "Failed to map ECProperty '%s:%s': Custom attribute PropertyMap has an invalid value for the property 'Collation': %s",
-                       ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(),
-                       collationStr.c_str());
+                                                          "Failed to map ECProperty '%s:%s': Custom attribute PropertyMap has an invalid value for the property 'Collation': %s",
+                                                          ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(),
+                                                          collationStr.c_str());
             return ERROR;
             }
 
@@ -237,6 +251,30 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
         columnName.ReplaceAll(".", "_");
         }
 
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PropertyMap::_GetPropertyPathList(std::vector<Utf8String>& propertyPathList) const
+    {
+
+    if (GetChildren().IsEmpty())
+        {
+        if (GetSingleColumn() == nullptr)
+            return ERROR;
+
+        propertyPathList.push_back(GetPropertyAccessString());
+        }
+    else
+        {
+        for (PropertyMapCP child : GetChildren())
+            {
+            if (child->GetPropertyPathList(propertyPathList) != SUCCESS)
+                return ERROR;
+            }
+        }
     return SUCCESS;
     }
 
@@ -261,7 +299,7 @@ BentleyStatus PropertyMap::_Save(ClassDbMapping& classMapping) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, DbTable const* tableFilter) const
+NativeSqlBuilder::List PropertyMap::ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, DbTable const* tableFilter) const
     {
     return _ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses, tableFilter);
     }
@@ -273,7 +311,7 @@ NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlTy
 NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, DbTable const* tableFilter) const
     {
     std::vector<DbColumn const*> columns;
-    GetColumns (columns);
+    GetColumns(columns);
 
     NativeSqlBuilder::List nativeSqlSnippets;
     for (DbColumn const* column : columns)
@@ -281,35 +319,27 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlTy
         if (tableFilter != nullptr && &column->GetTable() != tableFilter)
             continue;
 
-        BeAssert (!column->GetName ().empty());
+        BeAssert(!column->GetName().empty());
 
         NativeSqlBuilder sqlSnippet;
         if (wrapInParentheses)
             sqlSnippet.AppendParenLeft();
 
-        sqlSnippet.Append (classIdentifier, column->GetName ().c_str());
+        sqlSnippet.Append(classIdentifier, column->GetName().c_str());
 
         if (wrapInParentheses)
             sqlSnippet.AppendParenRight();
 
-        nativeSqlSnippets.push_back (std::move (sqlSnippet));
+        nativeSqlSnippets.push_back(std::move(sqlSnippet));
         }
 
     return nativeSqlSnippets;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap const& classMap)
-    {
-    return _FindOrCreateColumnsInTable(classMap);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-void PropertyMap::_GetColumns (std::vector<DbColumn const*>& columns) const {}
+void PropertyMap::_GetColumns(std::vector<DbColumn const*>& columns) const {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      02/2015
@@ -421,18 +451,30 @@ PropertyMapCollection& PropertyMapCollection::operator= (PropertyMapCollection&&
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void PropertyMapCollection::AddPropertyMap(PropertyMapPtr const& propertyMap)
+BentleyStatus PropertyMapCollection::AddPropertyMap(PropertyMapPtr const& propertyMap)
     {
-    AddPropertyMap(propertyMap->GetPropertyAccessString(), propertyMap);
+    return AddPropertyMap(propertyMap->GetPropertyAccessString(), propertyMap);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void PropertyMapCollection::AddPropertyMap(Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap)
+BentleyStatus PropertyMapCollection::AddPropertyMap(Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap)
     {
+    if (propertyMap.IsNull())
+        {
+        BeAssert(false && "propertyMap cannot be null");
+        return ERROR;
+        }
+    if (m_dictionary.find(propertyAccessString) != m_dictionary.end())
+        {
+        BeAssert(false && "PropertyMap with same name or may be different case already exist");
+        return ERROR;
+        }
+
     m_dictionary[propertyAccessString] = propertyMap;
     m_orderedCollection.push_back(propertyMap.get());
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -551,14 +593,14 @@ void PropertyMapCollection::Traverse(std::set<PropertyMapCollection const*>& don
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-StructPropertyMap::StructPropertyMap (ECN::StructECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
-    : PropertyMap (ecProperty, propertyAccessString, parentPropertyMap)
+StructPropertyMap::StructPropertyMap(ECN::StructECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
+    : PropertyMap(Type::Struct, ecProperty, propertyAccessString, parentPropertyMap)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-StructPropertyMap::StructPropertyMap(ECDbMapCR ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap)
+StructPropertyMap::StructPropertyMap(ECDbMap const& ecdbMap, StructPropertyMap const& proto, ECN::ECClassCR targetClass, PropertyMap const* parentPropertyMap)
     : PropertyMap(proto, parentPropertyMap)
     {
     for (PropertyMap const* protoChild : proto.m_children)
@@ -566,15 +608,30 @@ StructPropertyMap::StructPropertyMap(ECDbMapCR ecdbMap, StructPropertyMap const&
         m_children.AddPropertyMap(protoChild->GetProperty().GetName().c_str(), PropertyMapFactory::ClonePropertyMap(ecdbMap, *protoChild, targetClass, this));
         }
     }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-void StructPropertyMap::_GetColumns(std::vector<DbColumn const*>& columns) const 
+void StructPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const
+    {
+    if (!recusive)
+        return;
+
+    for (PropertyMapCP childMap : GetChildren())
+        {
+        for (ColumnMappedToProperty const& columnInfo : childMap->QueryColumnInfo(loadFlags, recusive))
+            {
+            result.push_back(columnInfo);
+            }
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan     09/2013
+//---------------------------------------------------------------------------------------
+void StructPropertyMap::_GetColumns(std::vector<DbColumn const*>& columns) const
     {
     for (auto childPropMap : m_children)
         {
-        childPropMap->GetColumns (columns);
+        childPropMap->GetColumns(columns);
         }
     }
 
@@ -594,7 +651,10 @@ BentleyStatus StructPropertyMap::Initialize(ClassMapLoadContext& ctx, ECDbCR ecd
         //don't use full prop access string as key in child collection, but just the relative prop access string which is 
         //just the prop name
         if (propertyMap != nullptr)
-            m_children.AddPropertyMap(property->GetName().c_str(), propertyMap);
+            {
+            if (m_children.AddPropertyMap(property->GetName().c_str(), propertyMap) != SUCCESS)
+                return ERROR;
+            }
         }
 
     return SUCCESS;
@@ -606,7 +666,7 @@ BentleyStatus StructPropertyMap::Initialize(ClassMapLoadContext& ctx, ECDbCR ecd
 //---------------------------------------------------------------------------------------
 BentleyStatus StructPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& classMap)
     {
-    for(PropertyMap const* childPropMap : m_children)
+    for (PropertyMap const* childPropMap : m_children)
         {
         if (SUCCESS != const_cast<PropertyMap*> (childPropMap)->FindOrCreateColumnsInTable(classMap))
             return ERROR;
@@ -660,23 +720,6 @@ PropertyMapPtr StructPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ecdb, 
     return nullptr;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle     11/2013
-//---------------------------------------------------------------------------------------
-Utf8String StructPropertyMap::_ToString() const 
-    {
-    Utf8String str;
-    str.Sprintf ("StructPropertyMap: ecProperty=%s.%s\n", GetProperty().GetClass().GetFullName(), 
-        GetProperty().GetName().c_str());
-    str.append (" Child property maps:\n");
-    for (auto childPropMap : m_children)
-        {
-        str.append ("\t").append (childPropMap->ToString ().c_str ()).append ("\n");
-        }
-
-    return str;
-    }
-
 //******************************** SingleColumnPropertyMap *****************************************
 
 /*---------------------------------------------------------------------------------------
@@ -706,7 +749,7 @@ BentleyStatus SingleColumnPropertyMap::DoFindOrCreateColumnsInTable(ClassMap con
     DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Default;
     if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
-    
+
     DbColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), colType, !isNullable, isUnique, collation);
     if (col == nullptr)
         {
@@ -730,7 +773,7 @@ void SingleColumnPropertyMap::SetColumn(DbColumn const& col)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-void SingleColumnPropertyMap::_GetColumns (std::vector<DbColumn const*>& columns) const
+void SingleColumnPropertyMap::_GetColumns(std::vector<DbColumn const*>& columns) const
     {
     columns.push_back(m_column);
     }
@@ -744,7 +787,26 @@ bool SingleColumnPropertyMap::_IsVirtual() const
     }
 
 //******************************** PrimitivePropertyMap *****************************************
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitivePropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const
+    {
+    ColumnMappedToProperty info;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        info.SetAccessString(GetPropertyAccessString());
 
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        info.SetColumn(*GetSingleColumn());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        info.SetPropertyMap(*this);
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        info.SetStrongType(DbColumn::PrimitiveTypeToColumnType(GetProperty().GetAsPrimitiveProperty()->GetType()));
+
+    result.push_back(info);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
@@ -757,17 +819,8 @@ BentleyStatus PrimitivePropertyMap::_FindOrCreateColumnsInTable(ClassMap const& 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PrimitivePropertyMap::_ToString() const
-    {
-    return Utf8PrintfString("PrimitivePropertyMap: ECProperty: %s.%s, Column name:%s", GetProperty().GetClass().GetFullName(),
-                            GetProperty().GetName().c_str(), GetColumn().GetName().c_str());
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 PointPropertyMap::PointPropertyMap(PrimitiveECPropertyCR pointProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
-    : PropertyMap(pointProperty, propertyAccessString, parentPropertyMap), m_is3d(false), m_xColumn(nullptr), m_yColumn(nullptr), m_zColumn(nullptr)
+    : PropertyMap(Type::Point, pointProperty, propertyAccessString, parentPropertyMap), m_is3d(false), m_xColumn(nullptr), m_yColumn(nullptr), m_zColumn(nullptr)
     {
     switch (pointProperty.GetType())
         {
@@ -822,6 +875,49 @@ BentleyStatus PointPropertyMap::_Save(ClassDbMapping& classMapping) const
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PointPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const
+    {
+    ColumnMappedToProperty x, y, z;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        {
+        x.SetAccessString(GetPropertyAccessString() + Utf8String(".X"));
+        y.SetAccessString(GetPropertyAccessString() + Utf8String(".Y"));
+        if (m_is3d)
+            z.SetAccessString(GetPropertyAccessString() + Utf8String(".Z"));
+        }
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        {
+        x.SetColumn(*m_xColumn);
+        y.SetColumn(*m_yColumn);
+        if (m_is3d)
+            z.SetColumn(*m_zColumn);
+        }
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        {
+        x.SetPropertyMap(*this);
+        y.SetPropertyMap(*this);
+        if (m_is3d)
+            z.SetPropertyMap(*this);
+        }
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        {
+        x.SetStrongType(DbColumn::Type::Real);
+        y.SetStrongType(DbColumn::Type::Real);
+        if (m_is3d)
+            z.SetStrongType(DbColumn::Type::Real);
+        }
+
+    result.push_back(x);
+    result.push_back(y);
+    if (m_is3d)
+        result.push_back(z);
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -890,19 +986,6 @@ BentleyStatus PointPropertyMap::SetColumns(DbColumn const& xCol, DbColumn const&
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PointPropertyMap::_ToString() const
-    {
-    if (m_is3d)
-        return Utf8PrintfString("PointPropertyMap (3D): ECProperty: %s.%s, Column names: %s, %s, %s", GetProperty().GetClass().GetFullName(),
-                                GetProperty().GetName().c_str(), m_xColumn->GetName().c_str(), m_yColumn->GetName().c_str(), m_zColumn->GetName().c_str());
-
-    return Utf8PrintfString("PointPropertyMap (2D): ECProperty: %s.%s, Column names: %s, %s", GetProperty().GetClass().GetFullName(),
-                                GetProperty().GetName().c_str(), m_xColumn->GetName().c_str(), m_yColumn->GetName().c_str());
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PointPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& classMap)
     {
     Utf8String columnName;
@@ -959,20 +1042,40 @@ void PointPropertyMap::_GetColumns(std::vector<DbColumn const*>& columns) const
     if (m_is3d)
         columns.push_back(m_zColumn);
     }
-    
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-PrimitiveArrayPropertyMap::PrimitiveArrayPropertyMap (ECDbCR ecdb, ArrayECPropertyCR arrayProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
-    : SingleColumnPropertyMap (arrayProperty, propertyAccessString, parentPropertyMap)
+PrimitiveArrayPropertyMap::PrimitiveArrayPropertyMap(ECDbCR ecdb, ArrayECPropertyCR arrayProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
+    : SingleColumnPropertyMap(Type::PrimitiveArray, arrayProperty, propertyAccessString, parentPropertyMap)
     {
     BeAssert(!arrayProperty.GetIsStructArray());
-    ECClassCP primitiveArrayPersistenceClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence (ecdb, arrayProperty.GetPrimitiveElementType());
+    ECClassCP primitiveArrayPersistenceClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ecdb, arrayProperty.GetPrimitiveElementType());
     BeAssert(primitiveArrayPersistenceClass != nullptr);
     m_primitiveArrayEnabler = primitiveArrayPersistenceClass->GetDefaultStandaloneEnabler();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      6/2016
+//---------------------------------------------------------------------------------------
+void PrimitiveArrayPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const
+    {
+    ColumnMappedToProperty info;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        info.SetAccessString(GetPropertyAccessString());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        info.SetColumn(*GetSingleColumn());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        info.SetPropertyMap(*this);
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        info.SetStrongType(DbColumn::Type::Blob);
+
+    result.push_back(info);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
@@ -987,19 +1090,6 @@ BentleyStatus PrimitiveArrayPropertyMap::_FindOrCreateColumnsInTable(ClassMap co
     return DoFindOrCreateColumnsInTable(classMap, DbColumn::Type::Blob);
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PrimitiveArrayPropertyMap::_ToString() const
-    {
-    ArrayECPropertyCP arrayProperty = GetProperty().GetAsArrayProperty();
-    BeAssert (arrayProperty);
-    
-    return Utf8PrintfString("PrimitiveArrayPropertyMap: ECProperty: %s.%s, Column name=%s", GetProperty().GetClass().GetFullName(), 
-                            GetProperty().GetName().c_str(), GetColumn().GetName().c_str());
-    }
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      03/2016
 //---------------------------------------------------------------------------------------
@@ -1009,17 +1099,25 @@ BentleyStatus StructArrayJsonPropertyMap::_FindOrCreateColumnsInTable(ClassMap c
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                      03/2016
+// @bsimethod                                 Affan.Khan                      03/2016
 //---------------------------------------------------------------------------------------
-Utf8String StructArrayJsonPropertyMap::_ToString() const
+void StructArrayJsonPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const
     {
-    Utf8String str;
-    str.Sprintf("StructArrayJsonPropertyMap: ECProperty: %s.%s, Column name: %s", GetProperty().GetClass().GetFullName(),
-                GetProperty().GetName().c_str(), GetColumn().GetName().c_str());
-    return str;
+    ColumnMappedToProperty info;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        info.SetAccessString(GetPropertyAccessString());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        info.SetColumn(*GetSingleColumn());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        info.SetPropertyMap(*this);
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        info.SetStrongType(DbColumn::Type::Text);
+
+    result.push_back(info);
     }
-
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
@@ -1039,10 +1137,30 @@ PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ec
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                      12/2015
+//---------------------------------------------------------------------------------------
+void NavigationPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive)  const
+    {
+    ColumnMappedToProperty info;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        info.SetAccessString(GetPropertyAccessString());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        info.SetColumn(*GetSingleColumn());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        info.SetPropertyMap(*this);
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        info.SetStrongType(DbColumn::PrimitiveTypeToColumnType(GetProperty().GetAsNavigationProperty()->GetType()));
+
+    result.push_back(info);
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      12/2015
 //---------------------------------------------------------------------------------------
 NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecClass, ECN::NavigationECPropertyCR prop, Utf8CP propertyAccessString)
-    : PropertyMap(prop, propertyAccessString, nullptr), m_relClassMap(nullptr), m_ecClass(ecClass)
+    : PropertyMap(Type::Navigation, prop, propertyAccessString, nullptr), m_relClassMap(nullptr), m_ecClass(ecClass)
     {
     //we need to wait with finishing the nav prop map set up to the end when all relationships have been processed
     ctx.AddNavigationPropertyMap(*this);
@@ -1062,7 +1180,7 @@ NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, Navigatio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
+BentleyStatus NavigationPropertyMap::Postprocess(ECDbMap const& ecdbMap)
     {
     m_columns.clear();
     if (m_relClassMap != nullptr)
@@ -1113,7 +1231,7 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
         BeAssert(false);
         return ERROR;
         }
-    
+
     m_columns.push_back(fkCol);
     BeAssert(m_mappedTables.empty());
     m_mappedTables.push_back(&fkCol->GetTable());
@@ -1130,8 +1248,8 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
     if (GetNavigationProperty().IsMultiple())
         {
         if (logIfNotSupported)
-            ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
-              "NavigationECProperty '%s.%s' cannot be used in ECSQL because its multiplicity is %s. Only the multiplicities %s or %s are supported.",
+            ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                           "NavigationECProperty '%s.%s' cannot be used in ECSQL because its multiplicity is %s. Only the multiplicities %s or %s are supported.",
                                                            GetNavigationProperty().GetClass().GetFullName(), GetNavigationProperty().GetName().c_str(),
                                                            GetConstraint(GetNavigationProperty(), NavigationEnd::To).GetCardinality().ToString().c_str(),
                                                            RelationshipCardinality::ZeroOne().ToString().c_str(),

@@ -116,7 +116,8 @@
     @li @subpage ECDbTransactions
     @li @subpage ECDbECSchemaImportAndUpdate
     @li @subpage ECDbECSchemaRules
-    @li @subpage ECDbRelationshipMappingRules
+    @li @subpage ECDbRelationshipRules
+    @li @subpage ECDbRelationshipInheritanceRules
     @li @subpage ECDbSchemaMappingCustomization
     @li @subpage ECDbFileInfo
     @li @subpage ECDbCreatingECDbFromScratch
@@ -208,6 +209,9 @@
    
     @section ECDbECSchemaUpdateSupportedFeatures ECSchema Update Supported Features
     
+    @note Deleting ECClasses, ECEnumerations, KindOfQuantities, ECProperties is only supported in a major schema version change, i.e. 
+    the major version of the ECSchema must be increased in this case. Otherwise the ECSchema update will fail.
+
     ### ECSchema
     - @b Modify 
         - @ref BentleyApi::ECN::ECSchema::GetDescription "Description"
@@ -225,9 +229,10 @@
                 - does not have subclasses
                 - is not used as constraint class in an @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint"
             - an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" which is mapped as <b>link table</b>
-            - @b Note: The major version of the schema must be increased in this case. Otherwise the ECSchema update will fail.
     - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations"
         - @b Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration"
+    - @ref BentleyApi::ECN::ECSchema::GetKindOfQuantities "KindOfQuantities"
+        - @b Add a new @ref BentleyApi::ECN::KindOfQuantity "KindOfQuantity"
     - @b CustomAttributes on the ECSchema
         - @b Add, @b delete, @b modify
 
@@ -235,8 +240,17 @@
     - @b Modify 
         - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECClassModifier "ECClassModifier"
+            - from @b Sealed to @b None
+            - from @b Abstract or @b None to @b Sealed (for leaf classes only, of course)
+
     - @b ECProperties
         - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
+        - @b Delete an @ref BentleyApi::ECN::ECProperty "ECProperty" which is
+            - mapped to a shared column (see MapStrategy::Options @em SharedColumns, @em SharedColumnsForSubclasses in @ref CustomClassMapDescription)
+            - not used in an @ref BentleyApi::ECN::ECStructClass "ECStructClass"
+            - not used as @em Key property in an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass"
+            - not overridden
     - @b CustomAttributes on the ECClass
         - @b Add, @b delete, @b modify
 
@@ -248,59 +262,77 @@
     - @b CustomAttributes on the ECProperty
         - @b Add, @b delete, @b modify
 
+    #### Primitive ECProperty
+    - @b Modify 
+        - @ref BentleyApi::ECN::PrimitiveECProperty::GetExtendedTypeName "ExtendedTypeName"
+        - @ref BentleyApi::ECN::PrimitiveECProperty::GetEnumeration "ECEnumeration"
+            - It is possible to 
+                - assign an ECEnumeration to an ECProperty that was an ordinary primitive property before
+                - change the ECEnumeration of an ECProperty to another ECEnumeration
+                - remove the ECEnumeration from the ECProperty, so that it becomes an ordinary primitive property
+            - This is possible only if
+                - the involved ECEnumerations are @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "not strict"
+                - the @ref BentleyApi::ECN::ECEnumeration::GetType "underlying type" of the involved ECEnumerations is the same,
+                or if the @ref BentleyApi::ECN::PrimitiveECProperty::GetType "property type" and the ECEnumeration's underlying type is the same.
+        - @ref BentleyApi::ECN::PrimitiveECProperty::GetKindOfQuantity "KindOfQuantity"
+            - It is possible to 
+                - assign a KindOfQuantity to an ECProperty that didn't have one before
+                - change the KindOfQuantity of an ECProperty to another KindOfQuantity
+                - remove the KindOfQuantity from the ECProperty
+
+    #### Primitive Array ECProperty
+    - @b Modify 
+        - @ref BentleyApi::ECN::ArrayECProperty::GetExtendedTypeName "ExtendedTypeName"
+        - @ref BentleyApi::ECN::ArrayECProperty::GetKindOfQuantity "KindOfQuantity"
+            - It is possible to 
+                - assign a KindOfQuantity to an ECProperty that didn't have one before
+                - change the KindOfQuantity of an ECProperty to another KindOfQuantity
+                - remove the KindOfQuantity from the ECProperty
+
     ### ECRelationshipConstraint
     - @b Modify 
         - @ref BentleyApi::ECN::ECRelationshipConstraint::GetRoleLabel "RoleLabel"
     - @b CustomAttributes on the ECRelationshipConstraint
         - @b Add, @b delete, @b modify
     
-    @note The CustomAttributes from the @b ECDbMap ECSchema cannot be added, deleted, or modified as they
-    impact the mapping of the ECSchemas and therefore the layout of the database schema.
+    ### ECDbMap ECSchema Custom Attributes
 
+    Generally, the Custom Attributes from the @b ECDbMap ECSchema cannot be added, deleted, or modified if they affected the mapping of the ECSchemas and 
+    therefore the layout of the database schema.
+
+    #### DbIndex ECStructClass
+    - @b Modify: 
+        - @ref BentleyApi::ECN::ECDbClassMap::DbIndex::GetName "Name"
+        
     @see @ref ECDbOverview
     */
 
     /**
     @page ECDbECSchemaRules Rules for ECSchemas supported by ECDb
     
-    There are some rules creators of @ref BentleyApi::ECN::ECSchema "ECSchemas" should follow so that the 
-    %ECSchema can be used in %ECDb. These rules are semantically common sense anyways and might eventually be merged into the 
-    %ECSchema specification, so it should be straightforward to follow them.
+    This lists rules that ECDb enforces in addition to what ECObjects already enforces, as well as limitations which ECDb cannot enforce.
+    Rules already enforced by ECObjects are not listed here.
 
-    ### Naming
-    Names may not differ only by case. This applies to
-    - %ECSchemas
-    - %ECClasses within a schema
-    - %ECProperties withing a class (including inherited properties)
-    
-    It is suggested that you avoid names that only differ by case throughout the system
-
-    ### Schema
-    - A unique namespace prefix must be defined and the namespace prefix must be a valid ECName and must not be empty.
-
-    ### Relationship Class
-    - For non-abstract relationship classes, both relationship constraints must be well-defined.
-        - At least one class must be specified for each constraint
-    - For abstract relationship classes constraints must not be specified because they are not inherited.
-    - Abstract relationship classes may not be instantiated or used to relate instances in a repository.
-    
-    @see @ref ECDbRelationshipMappingRules for more rules
-
-    ### Properties
-    - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
-    - @ref BentleyApi::ECN::ArrayECProperty "Array ECProperties'" @b MinOccurs and @b MaxOccurs are enforced.
-
+    ### ECRelationshipClasses
+    - %ECDb only enforces the @ref BentleyApi::ECN::RelationshipCardinality "ECRelationshipConstraint multiplicities" 
+    common to databases: (0..1), (1..1), (0..N), (1..N).
+    Abitrary numbers for the lower and upper bound of the multiplicity are not enforced.
+    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
+     
     ### Enumerations
     - %ECDb does not enforce @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" 
     @ref BentleyApi::ECN::ECEnumeration "ECEnumerations". For %ECProperties that
     have a @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" %ECEnumeration as property type, 
     callers have to make sure to not assign values which are not defined in the %ECEnumeration.
     
+    ### Properties
+    - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
+    
     @see @ref ECDbOverview
     */
 
     /**
-    @page ECDbRelationshipMappingRules Rules for ECRelationshipClasses in ECDb
+    @page ECDbRelationshipRules Rules for ECRelationshipClasses in ECDb
     The specification of @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" allows for constructs which don't necessarily
     lead to a good database design. ECDb therefore only supports @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" that 
     can be mapped to a reasonable database layout.
@@ -396,6 +428,26 @@
     */
 
     /**
+    @page ECDbRelationshipInheritanceRules Inheriting ECRelationshipClasses in ECDb
+    
+    In addition to the rules for @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" inheritance specified by the EC specification, 
+    %ECDb has some more:
+
+    - The @b ForeignKeyRelationshipMap and @b LinkTableRelationshipMap custom attributes (see @ref ECDbSchemaMappingCustomization) can only 
+    be applied to the @b root of the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" hierarchy. The @b root is the ECRelationshipClass which
+    does not have a base class itself.
+    - The mapping type must not change within a relationship class hierarchy. In other words, the @ref BentleyApi::ECN::ECRelationshipClass "Root ECRelationshipClass"
+    determines the mapping for the entire hierarchy.
+    - This implies in particular that if the root class implies a <em>foreign key type mapping</em>, the subclasses must 
+    not add ECProperties, because ECRelationshipClasses with ECProperties are only supported when mapped as link tables.
+    - Link tables implicity use the @b SharedTable strategy if they store an ECRelationshipClass hierarchy.
+    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
+
+    @see @ref ECDbRelationshipRules
+    @see @ref ECDbSchemaMappingCustomization
+    @see @ref ECDbOverview
+
+    /**
     @page ECDbSchemaMappingCustomization Customizing the ECDb schema mapping
 
     %ECDb applies a default mapping when importing an @ref BentleyApi::ECN::ECSchema "ECSchema" into the @ref ECDbFile "ECDb file".
@@ -405,10 +457,9 @@
     @section ECDbDefaultMappingRules ECDb Default Mapping Rules
     - Type of ECClasses that <b>are not mapped</b>.
         - CustomAttribute ECClasses
-        - Non-domain ECClasses
-    - Type of ECClasses that are mapped using the @b OwnTable strategy by default.
-        - Domain ECClasses
         - Struct ECClasses
+    - Type of ECClasses that are mapped using the @b OwnTable strategy by default.
+        - Entity ECClasses
     - ECRelationshipClasses are either mapped to the table of one of the constraint ends (ForeignKey mapping)
     or to a link table.
         - ECRelationshipClasses with cardinality 1:1 or 0:N
@@ -450,7 +501,7 @@
             - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
             The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
             <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
-        - <b>Options</b> (optional): The above values can be combined with these options:
+        - Property @b Options (optional): The above values can be combined with these options:
             - @c SharedColumns : This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
             This can reduce the number of columns (and cells with NULL values) in the table significantly.
             This can only be applied to @b SharedTable.
@@ -460,8 +511,8 @@
             column sharing was enabled on a base class. The property @em Strategy must not be set.
             - @c JoinedTablePerDirectSubclasses : This options tells ECDb that the properties of the subclasses are mapped to an extra table joined
             to the table of the root class. Each direct subclass of this class is mapped to its own joined table. Can only be used with @b SharedTable and @b AppliesToSubclasses being true.
-            - @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class.
-        If false (default), the MapStrategy only applies to this class.
+        - Property @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class.
+          If false (default), the MapStrategy only applies to this class.
     - @b TableName (optional, required for MapStrategies @em ExistingTable and <i>SharedTable (non-polymorphic)</i>):
     Specify a table name for this class (instead of letting ECDb choose a name)
     - @b Indexes (optional) : List of indexes to be created for properties of this class.
@@ -542,12 +593,15 @@
 
     - <b>ColumnName</b> (optional): Specifies the column name. If not specified, the ECProperty name is used. The column name must
     follow EC naming rules.
-    - <b>IsNullable</b> (optional): If false, values must not be NULL. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
-    - <b>IsUnique</b> (optional): If true, values must be unique for this ECProperty. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
+    - <b>IsNullable</b> (optional): If false, values must not be NULL.
+    - <b>IsUnique</b> (optional): If true, values must be unique for this ECProperty.
     - <b>Collation</b> (optional): Specifies the string comparison mode for this property. Possible values:
         - <CODE>Binary</CODE>: (default): bit to bit matching.
-        - <CODE>NoCase</CODE>: The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that is folds only ASCII not full UTF.
+        - <CODE>NoCase</CODE>: The same as binary, except that the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note it only folds ASCII characters.
         - <CODE>RTrim</CODE>: The same as binary, except that trailing space characters are ignored.​
+
+    @note Property constraints like @em IsNullable, @em IsUnique, and @em Collation are ignored if the ECProperty maps to a column shared with other ECProperties
+    (see MapStrategy::Options @b SharedColumns or @b SharedColumnsForSubclasses in section @ref CustomClassMapDescription). ECDb will log a warning in these cases.
 
     ###Examples
 
@@ -573,7 +627,7 @@
 
     @section CustomRelationshipMapDescription Custom mapping for ECRelationshipClasses
 
-    Please read @ref ECDbRelationshipMappingRules before.
+    Please read @ref ECDbRelationshipRules before.
 
     Customizing the mapping for an ECRelationshipClass is done by applying either the @b ForeignKeyRelationshipMap or the @b LinkTableRelationshipMap
     custom attribute to the respective ECRelationshipClass. (ECDb will only look for it in local attributes on the ECRelationshipClass)
@@ -592,6 +646,16 @@
     is defined on the respective constraint class, because in that case the mapping of the Key property is considered. If this value is not set and
     neither a Key property nor a NavigationECProperty was specified, %ECDb generates a column with a default name.
 
+    @note ECDb by default creates a Foreign Key column with a Foreign Key constraint for the relationship and implies its NOT NULL and UNIQUE constraints 
+    from the ECRelationshipClass' cardinality. If, however, the ECRelationshipClass specifies to use an existing column (either via 
+    using the @em ForeignKeyColumn property or via defining @ref BentleyApi::ECN::ECRelationshipConstraintClass::GetKeys "Key properties"), the following
+    restrictions exist:
+        - the Foreign Key constraint will not be created and a warning will be logged.
+        - if the existing column is nullable but the relationship's cardinality implies it to be not nullable, or vice versa, the ECSchema import will fail.
+    
+    @note If the cardinality implies unique-ness of the foreign key column a @em partial unique index will be created that applies to the ECRelationshipClass' rows of the shared column
+    only.
+
     Description of the @b LinkTableRelationshipMap properties:
     - <b>SourceECInstanceIdColumn</b>: (optional) Defines the column to which the ECInstanceId of the source constraint is mapped to.
     If not set, %ECDb generates a column with a default name.
@@ -603,7 +667,7 @@
     In many cases a class id column is not needed at all. %ECDb will ignore this property in that case.
     - <b>AllowDuplicateRelationship</b>: (optional) If false (default), no duplicate entries for a given relationship instance
     can be inserted. If true, duplicate relationship instances can be inserted. Cardinality must not be violated though. E.g.
-    there cannot be duplicate relationships with a cardinality of 1:1. @b Note: The flag is not applied to subclasses of this relationship class.
+    there cannot be duplicate relationships with a cardinality of 1:1. @b Note: The flag is applied to subclasses of this relationship class, too.
 
     ####Examples
 

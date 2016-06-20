@@ -7,31 +7,61 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <rapidjson/BeRapidJson.h>
+
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaPersistenceHelper::ContainsECClass(ECDbCR db, ECClassCR ecClass)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        05/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, ECSchemaCR ecSchema)
     {
-    if (ecClass.HasId()) //This is unsafe but since we do not delete ecclass any class that hasId does exist in db
-        return true;
+    if (ecSchema.HasId())
+        {
+        BeAssert(GetECSchemaId(db, ecSchema.GetName().c_str()).IsValid());
+        return ecSchema.GetId();
+        }
 
-    const ECClassId classId = GetECClassId(db, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
-    return classId.IsValid();
+    const ECSchemaId schemaId = GetECSchemaId(db, ecSchema.GetName().c_str());
+    if (schemaId.IsValid())
+        {
+        //it is possible that the schema was already imported before, but the given C++ object comes from another source.
+        //in that case we assign it here on the fly.
+        const_cast<ECSchemaR>(ecSchema).SetId(schemaId);
+        }
+
+    return schemaId;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Casey.Mullen      01/2013
+//---------------------------------------------------------------------------------------
+ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaName)
+    {
+    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
+    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
+    CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Schema WHERE Name=? COLLATE NOCASE");
+    if (stmt == nullptr)
+        return ECSchemaId();
 
+    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ECSchemaId();
+
+    return stmt->GetValueId<ECSchemaId>(0);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    04/2016
 //---------------------------------------------------------------------------------------
 bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8CP schemaName)
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=?"))
+    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
+    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=? COLLATE NOCASE");
+    if (stmt == nullptr)
         return false;
 
     if (BE_SQLITE_OK != stmt->BindText(1, schemaName, Statement::MakeCopy::No))
@@ -44,17 +74,26 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb,
     return true;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaPersistenceHelper::ContainsECSchema(ECDbCR db, ECSchemaId ecSchemaId)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                    04/2016
+//---------------------------------------------------------------------------------------
+bool ECDbSchemaPersistenceHelper::TryGetECSchemaKeyAndId(SchemaKey& key, ECSchemaId& id, ECDbCR ecdb, Utf8CP schemaName)
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE Id=?"))
+    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
+    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3, Id FROM ec_Schema WHERE Name=? COLLATE NOCASE");
+    if (stmt == nullptr)
         return false;
 
-    stmt->BindId(1, ecSchemaId);
-    return stmt->Step() == BE_SQLITE_ROW;
+    if (BE_SQLITE_OK != stmt->BindText(1, schemaName, Statement::MakeCopy::No))
+        return false;
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return false;
+
+    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
+    id = stmt->GetValueId<ECSchemaId>(4);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -73,22 +112,25 @@ bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithNamespacePrefix(ECDbCR db,
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Casey.Mullen      01/2013
-//---------------------------------------------------------------------------------------
-ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaName)
+// @bsimethod                                                    Affan.Khan        05/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, ECClassCR ecClass)
     {
-    CachedStatementPtr stmt = nullptr;
-    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
-    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Id FROM ec_Schema WHERE Name=? COLLATE NOCASE"))
-        return ECSchemaId();
+    if (ecClass.HasId()) //This is unsafe but since we do not delete ecclass any class that hasId does exist in db
+        {
+        BeAssert(GetECClassId(db, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName).IsValid());
+        return ecClass.GetId();
+        }
 
-    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+    const ECClassId classId = GetECClassId(db, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
+    if (classId.IsValid())
+        {
+        //it is possible that the ECClass was already imported before, but the given C++ object comes from another source.
+        //in that case we assign it here on the fly.
+        const_cast<ECClassR>(ecClass).SetId(classId);
+        }
 
-    if (BE_SQLITE_ROW != stmt->Step())
-        return ECSchemaId();
-
-    return stmt->GetValueId<ECSchemaId>(0);
+    return classId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -128,15 +170,36 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaName
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Casey.Mullen      01/2013
+// @bsimethod                                                    Krischan.Eberle   01/2016
 //---------------------------------------------------------------------------------------
-//static
+ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, ECEnumerationCR ecEnum)
+    {
+    if (ecEnum.HasId()) //This is unsafe but since we do not delete ecenum any class that hasId does exist in db
+        {
+        BeAssert(GetECEnumerationId(ecdb, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str()).IsValid());
+        return ecEnum.GetId();
+        }
+
+    const ECEnumerationId id = GetECEnumerationId(ecdb, ecEnum.GetSchema().GetName().c_str(), ecEnum.GetName().c_str());
+    if (id.IsValid())
+        {
+        //it is possible that the ECEnumeration was already imported before, but the given C++ object comes from another source.
+        //in that case we assign it here on the fly.
+        const_cast<ECEnumerationR>(ecEnum).SetId(id);
+        }
+
+    return id;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   01/2016
+//---------------------------------------------------------------------------------------
 ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP enumName)
     {
-    CachedStatementPtr stmt = nullptr;
     //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
     //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
-    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Name=? COLLATE NOCASE AND e.Name=? COLLATE NOCASE"))
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Name=? COLLATE NOCASE AND e.Name=? COLLATE NOCASE");
+    if (stmt == nullptr)
         return ECEnumerationId();
 
     stmt->BindText(1, schemaName, Statement::MakeCopy::No);
@@ -149,14 +212,80 @@ ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, Utf
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   06/2016
+//---------------------------------------------------------------------------------------
+KindOfQuantityId ECDbSchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, KindOfQuantityCR koq)
+    {
+    if (koq.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
+        {
+        BeAssert(GetKindOfQuantityId(ecdb, koq.GetSchema().GetName().c_str(), koq.GetName().c_str()).IsValid());
+        return koq.GetId();
+        }
+
+    const KindOfQuantityId id = GetKindOfQuantityId(ecdb, koq.GetSchema().GetName().c_str(), koq.GetName().c_str());
+    if (id.IsValid())
+        {
+        //it is possible that the KOQ was already imported before, but the given C++ object comes from another source.
+        //in that case we assign it here on the fly.
+        const_cast<KindOfQuantityR>(koq).SetId(id);
+        }
+
+    return id;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2016
+//---------------------------------------------------------------------------------------
+//static
+KindOfQuantityId ECDbSchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP koqName)
+    {
+    //Although the ec_Schema column 'Name' used in the WHERE has COLLATE NOCASE we need to specify it in the WHERE clause again
+    //to satisfy older files which were created before column COLLATE NOCASE was added. This is not necessary
+    //for the KOQ table which was added later
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND s.Name=? COLLATE NOCASE AND koq.Name=?");
+    if (stmt == nullptr)
+        return KindOfQuantityId();
+
+    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt->BindText(2, koqName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return KindOfQuantityId();
+
+    return stmt->GetValueId<KindOfQuantityId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   06/2016
+//---------------------------------------------------------------------------------------
+ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR ecdb, ECPropertyCR prop)
+    {
+    if (prop.HasId()) //This is unsafe but since we do not delete KOQ any class that hasId does exist in db
+        {
+        BeAssert(GetECPropertyId(ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str()).IsValid());
+        return prop.GetId();
+        }
+
+    const ECPropertyId id = GetECPropertyId(ecdb, prop.GetClass().GetSchema().GetName().c_str(), prop.GetClass().GetName().c_str(), prop.GetName().c_str());
+    if (id.IsValid())
+        {
+        //it is possible that the property was already imported before, but the given C++ object comes from another source.
+        //in that case we assign it here on the fly.
+        const_cast<ECPropertyR>(prop).SetId(id);
+        }
+
+    return id;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
 ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
     {
-    CachedStatementPtr stmt = nullptr;
     //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
     //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT p.Id FROM ec_Property p INNER JOIN ec_Class c ON p.ClassId = c.Id INNER JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE AND p.Name=? COLLATE NOCASE"))
+    CachedStatementPtr stmt = db.GetCachedStatement("SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE AND p.Name=? COLLATE NOCASE");
+    if (stmt == nullptr)
         return ECPropertyId();
 
     stmt->BindText(1, schemaName, Statement::MakeCopy::No);
@@ -241,7 +370,7 @@ BentleyStatus ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(Utf8Stri
             return ERROR;
             }
 
-        if (enumValue->GetIsDisplayLabelDefined())
+        if (!enumValue->GetDisplayLabel().empty())
             enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel] = Json::Value(enumValue->GetDisplayLabel().c_str());
 
         enumValuesJson.append(enumValueJson);
@@ -300,6 +429,48 @@ BentleyStatus ECDbSchemaPersistenceHelper::DeserializeECEnumerationValues(ECEnum
             Utf8CP displayLabel = enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel].asCString();
             enumValue->SetDisplayLabel(displayLabel);
             }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  06/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaPersistenceHelper::SerializeKoqAlternativePresentationUnits(Utf8StringR jsonStr, KindOfQuantityCR koq)
+    {
+    Json::Value altPresUnitsJson(Json::arrayValue);
+    BeAssert(!koq.GetAlternativePresentationUnitList().empty());
+    for (Utf8StringCR altUnit : koq.GetAlternativePresentationUnitList())
+        {
+        altPresUnitsJson.append(Json::Value(altUnit.c_str()));
+        }
+
+    Json::FastWriter writer;
+    jsonStr = writer.write(altPresUnitsJson);
+    return SUCCESS;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  06/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaPersistenceHelper::DeserializeKoqAlternativePresentationUnits(KindOfQuantityR koq, Utf8CP jsonStr)
+    {
+    Json::Value altPresUnitsJson;
+    Json::Reader reader;
+    if (!reader.Parse(jsonStr, altPresUnitsJson, false))
+        {
+        BeAssert(false && "Could not parse KindOfQuantity AlternativePresentationUnits values JSON string.");
+        return ERROR;
+        }
+
+    BeAssert(altPresUnitsJson.isArray());
+
+    for (JsonValueCR altPresUnitJson : altPresUnitsJson)
+        {
+        BeAssert(altPresUnitJson.isString());
+        koq.GetAlternativePresentationUnitListR().push_back(altPresUnitJson.asCString());
         }
 
     return SUCCESS;

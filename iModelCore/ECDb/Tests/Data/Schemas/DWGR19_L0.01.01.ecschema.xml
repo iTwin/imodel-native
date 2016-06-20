@@ -47,7 +47,7 @@
     <ECCustomAttributeClass typeName="MappingStrategy" displayLabel="Mapping Strategy" modifier="None" appliesTo="Any">
         <ECProperty propertyName="MethodName" typeName="string" displayLabel="Method Name" readOnly="false"/>
     </ECCustomAttributeClass>
-    <ECRelationshipClass typeName="ObjectHasDefinition" modifier="None" strength="referencing" strengthDirection="backward">
+    <ECRelationshipClass typeName="ObjectHasDefinition" modifier="Sealed" strength="referencing" strengthDirection="backward">
         <Source cardinality="(1,N)" roleLabel="Defined by" polymorphic="true">
             <Class class="AcRxObject"/>
         </Source>

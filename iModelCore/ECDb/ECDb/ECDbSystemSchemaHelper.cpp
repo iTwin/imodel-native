@@ -17,6 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static member variable initialization
 Utf8CP const ECDbSystemSchemaHelper::ECDBSYSTEM_SCHEMANAME = "ECDb_System";
 Utf8CP const ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME = "ECInstanceId";
+Utf8CP const ECDbSystemSchemaHelper::ECCLASSID_PROPNAME = "ECClassId";
 Utf8CP const ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME = "SourceECInstanceId";
 Utf8CP const ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME = "SourceECClassId";
 Utf8CP const ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME = "TargetECInstanceId";
@@ -89,6 +90,8 @@ Utf8CP ECDbSystemSchemaHelper::GetPropertyName(ECSqlSystemProperty kind)
         {
             case ECSqlSystemProperty::ECInstanceId:
                 return ECINSTANCEID_PROPNAME;
+            case ECSqlSystemProperty::ECClassId:
+                return ECCLASSID_PROPNAME;
             case ECSqlSystemProperty::SourceECInstanceId:
                 return SOURCEECINSTANCEID_PROPNAME;
             case ECSqlSystemProperty::SourceECClassId:
@@ -109,17 +112,46 @@ Utf8CP ECDbSystemSchemaHelper::GetPropertyName(ECSqlSystemProperty kind)
 //static 
 bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind(ECSqlSystemProperty& kind, ECN::ECPropertyCR ecProperty)
     {
-    std::vector<ECSqlSystemProperty> kindList {ECSqlSystemProperty::ECInstanceId,
-                        ECSqlSystemProperty::SourceECInstanceId, ECSqlSystemProperty::SourceECClassId,
-                        ECSqlSystemProperty::TargetECInstanceId, ECSqlSystemProperty::TargetECClassId};
-
-    for (auto candidateKind : kindList)
+    ECSqlSystemProperty candidateKind = ECSqlSystemProperty::ECInstanceId;
+    if (IsSystemProperty(ecProperty, candidateKind))
         {
-        if (IsSystemProperty(ecProperty, candidateKind))
-            {
-            kind = candidateKind;
-            return true;
-            }
+        kind = candidateKind;
+        return true;
+        }
+
+    candidateKind = ECSqlSystemProperty::ECClassId;
+    if (IsSystemProperty(ecProperty, candidateKind))
+        {
+        kind = candidateKind;
+        return true;
+        }
+
+    candidateKind = ECSqlSystemProperty::SourceECInstanceId;
+    if (IsSystemProperty(ecProperty, candidateKind))
+        {
+        kind = candidateKind;
+        return true;
+        }
+
+    candidateKind = ECSqlSystemProperty::SourceECClassId;
+    if (IsSystemProperty(ecProperty, candidateKind))
+        {
+        kind = candidateKind;
+        return true;
+        }
+
+    candidateKind = ECSqlSystemProperty::TargetECInstanceId;
+    if (IsSystemProperty(ecProperty, candidateKind))
+        {
+        kind = candidateKind;
+        return true;
+        }
+
+    candidateKind = ECSqlSystemProperty::TargetECClassId;
+    if (IsSystemProperty(ecProperty, candidateKind))
+        {
+        kind = candidateKind;
+        return true;
         }
 
     return false;
@@ -171,5 +203,4 @@ ECN::ECClassCP ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ECDb
         }
     }
     
-
 END_BENTLEY_SQLITE_EC_NAMESPACE

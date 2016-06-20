@@ -49,7 +49,7 @@ private:
 
     static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
     static void PreparePrimaryKey (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
-    static ECSqlStatus PrepareConstraintClassId (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, ECClassIdRelationshipConstraintPropertyMap const&, ECN::ECClassId constraintClassId);
+    static ECSqlStatus PrepareConstraintClassId (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, RelConstraintECClassIdPropertyMap const&, ECN::ECClassId constraintClassId);
 
     //! Checks whether for the given constraint a class id is necessary and if yes whether the one specified in the ECSQL is valid or not.
     //! If validation was successful, the class id is returned.

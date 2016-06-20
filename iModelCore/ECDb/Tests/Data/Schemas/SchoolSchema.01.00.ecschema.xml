@@ -45,7 +45,7 @@
         <ECProperty propertyName="name" typeName="string" readOnly="false"/>
         <ECProperty propertyName="campus" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SchoolDepartmentRelation" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="SchoolDepartmentRelation" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <AlwaysExpand xmlns="EditorCustomAttributes.01.02">
                 <ArrayMembers>False</ArrayMembers>

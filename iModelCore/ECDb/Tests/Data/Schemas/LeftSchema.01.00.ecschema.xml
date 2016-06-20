@@ -77,7 +77,7 @@
         <ECProperty propertyName="primitiveProperty" typeName="string" description="Just a primitive property" displayLabel="Primitive Property" readOnly="false"/>
         <ECArrayProperty propertyName="arrayProperty" typeName="string" displayLabel="Array Property" readOnly="false" minOccurs="100" maxOccurs="100"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="TestR" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="TestR" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="Property" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Property1" typeName="string" readOnly="false"/>
         <Source cardinality="(0,N)" polymorphic="true">
@@ -88,7 +88,7 @@
             <Class class="bsb:BaseBClass2"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="TestRelationshipClass" description="Test relation ship class" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="TestRelationshipClass" description="Test relation ship class" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="PropertyA" typeName="string" readOnly="false"/>
         <ECProperty propertyName="PropertyB" typeName="string" readOnly="false"/>
         <Source cardinality="(0,N)" polymorphic="true">

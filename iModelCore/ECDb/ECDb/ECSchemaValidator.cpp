@@ -8,6 +8,8 @@
 #include "ECDbPch.h"
 #include "ECSchemaValidator.h"
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
@@ -46,30 +48,30 @@ bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvecto
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::ECSchemaCR schema)
+bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitiveClassNamesRule ()));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new CaseInsensitiveClassNamesRule()));
     validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipConstraintsRule()));
 
     bool valid = true;
-    for (ECClassCP ecClass : schema.GetClasses ())
+    for (ECClassCP ecClass : schema.GetClasses())
         {
         for (auto& task : validationTasks)
             {
-            bool succeeded = task->ValidateSchema (schema, *ecClass);
+            bool succeeded = task->ValidateSchema(schema, *ecClass);
             if (!succeeded)
                 valid = false;
             }
 
-        bool succeeded = ValidateClass (result, *ecClass);
+        bool succeeded = ValidateClass(result, *ecClass);
         if (!succeeded)
             valid = false;
         }
 
     for (auto& task : validationTasks)
         {
-        task->AddErrorToResult (result);
+        task->AddErrorToResult(result);
         }
 
     return valid;
@@ -79,18 +81,18 @@ bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::E
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateClass (ECSchemaValidationResult& result, ECN::ECClassCR ecClass)
+bool ECSchemaValidator::ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back (std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitivePropertyNamesRule (ecClass)));
-    validationTasks.push_back (std::unique_ptr<ECSchemaValidationRule> (new NoPropertiesOfSameTypeAsClassRule (ecClass)));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new CaseInsensitivePropertyNamesRule(ecClass)));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new NoPropertiesOfSameTypeAsClassRule(ecClass)));
 
     bool valid = true;
-    for (ECPropertyCP prop : ecClass.GetProperties (true))
+    for (ECPropertyCP prop : ecClass.GetProperties(true))
         {
         for (auto& task : validationTasks)
             {
-            bool succeeded = task->ValidateClass (ecClass, *prop);
+            bool succeeded = task->ValidateClass(ecClass, *prop);
             if (!succeeded)
                 valid = false;
             }
@@ -98,7 +100,7 @@ bool ECSchemaValidator::ValidateClass (ECSchemaValidationResult& result, ECN::EC
 
     for (auto& task : validationTasks)
         {
-        task->AddErrorToResult (result);
+        task->AddErrorToResult(result);
         }
 
     return valid;
@@ -112,19 +114,19 @@ bool ECSchemaValidator::ValidateClass (ECSchemaValidationResult& result, ECN::EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-void ECSchemaValidationResult::AddError (std::unique_ptr<ECSchemaValidationRule::Error> error)
+void ECSchemaValidationResult::AddError(std::unique_ptr<ECSchemaValidationRule::Error> error)
     {
-    m_errors.push_back (std::move (error));
+    m_errors.push_back(std::move(error));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-void ECSchemaValidationResult::ToString (std::vector<Utf8String>& errorMessages) const
+void ECSchemaValidationResult::ToString(std::vector<Utf8String>& errorMessages) const
     {
     for (auto& error : m_errors)
         {
-        errorMessages.push_back (error->ToString ());
+        errorMessages.push_back(error->ToString());
         }
     }
 
@@ -143,27 +145,27 @@ bool ECSchemaValidationRule::ValidateSchemas(bvector<ECN::ECSchemaP> const& sche
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-bool ECSchemaValidationRule::ValidateSchema (ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
+bool ECSchemaValidationRule::ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
     {
-    return _ValidateSchema (schema, ecClass);
+    return _ValidateSchema(schema, ecClass);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-bool ECSchemaValidationRule::ValidateClass (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
+bool ECSchemaValidationRule::ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
     {
-    return _ValidateClass (ecClass, ecProperty);
+    return _ValidateClass(ecClass, ecProperty);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-void ECSchemaValidationRule::AddErrorToResult (ECSchemaValidationResult& result) const
+void ECSchemaValidationRule::AddErrorToResult(ECSchemaValidationResult& result) const
     {
-    auto error = _GetError ();
+    auto error = _GetError();
     if (error != nullptr)
-        result.AddError (std::move (error));
+        result.AddError(std::move(error));
     }
 
 //**********************************************************************
@@ -185,47 +187,47 @@ Utf8String ECSchemaValidationRule::Error::ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-CaseInsensitiveClassNamesRule::CaseInsensitiveClassNamesRule () 
-: ECSchemaValidationRule (Type::CaseInsensitiveClassNames),m_error (nullptr)
+CaseInsensitiveClassNamesRule::CaseInsensitiveClassNamesRule()
+    : ECSchemaValidationRule(Type::CaseInsensitiveClassNames), m_error(nullptr)
     {
-    m_error = std::unique_ptr<Error> (new Error (GetType ()));
+    m_error = std::unique_ptr<Error>(new Error(GetType()));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-bool CaseInsensitiveClassNamesRule::_ValidateSchema (ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
+bool CaseInsensitiveClassNamesRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
     {
     bool valid = true;
 
-    auto& invalidClasses = m_error->GetInvalidClassesR ();
+    auto& invalidClasses = m_error->GetInvalidClassesR();
 
-    auto const& className = ecClass.GetName ();
-    auto it = m_classNameSet.find (className.c_str ());
-    if (it != m_classNameSet.end ()) //found case insensitive duplicate
+    auto const& className = ecClass.GetName();
+    auto it = m_classNameSet.find(className.c_str());
+    if (it != m_classNameSet.end()) //found case insensitive duplicate
         {
-        auto& violatingClassBucket = invalidClasses[className.c_str ()];
-        if (violatingClassBucket.empty ())
+        auto& violatingClassBucket = invalidClasses[className.c_str()];
+        if (violatingClassBucket.empty())
             {
-            auto firstViolatingClass = schema.GetClassCP (*it);
-            BeAssert (firstViolatingClass != nullptr);
-            violatingClassBucket.insert (firstViolatingClass);
+            auto firstViolatingClass = schema.GetClassCP(*it);
+            BeAssert(firstViolatingClass != nullptr);
+            violatingClassBucket.insert(firstViolatingClass);
             }
 
-        violatingClassBucket.insert (&ecClass);
+        violatingClassBucket.insert(&ecClass);
         valid = false;
         }
 
-    m_classNameSet.insert (className.c_str ());
+    m_classNameSet.insert(className.c_str());
     return valid;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitiveClassNamesRule::_GetError () const
+std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitiveClassNamesRule::_GetError() const
     {
-    if (m_error->GetInvalidClasses ().empty ())
+    if (m_error->GetInvalidClasses().empty())
         return nullptr;
 
     return std::move(m_error);
@@ -240,29 +242,29 @@ std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitiveClassNamesRule::_G
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-Utf8String CaseInsensitiveClassNamesRule::Error::_ToString () const
+Utf8String CaseInsensitiveClassNamesRule::Error::_ToString() const
     {
-    if (GetInvalidClasses ().empty ())
+    if (GetInvalidClasses().empty())
         return "";
 
     ECSchemaCP schema = nullptr;
     Utf8String violatingClassesStr;
     bool isFirstSet = true;
-    for (auto const& kvPair : GetInvalidClasses ())
+    for (auto const& kvPair : GetInvalidClasses())
         {
         if (!isFirstSet)
-            violatingClassesStr.append (" - ");
+            violatingClassesStr.append(" - ");
 
         bool isFirstClass = true;
         for (auto violatingClass : kvPair.second)
             {
             if (!isFirstClass)
-                violatingClassesStr.append (", ");
+                violatingClassesStr.append(", ");
             else
                 //capture schema (which is the same for all violating classes) for output reasons
-                schema = &violatingClass->GetSchema ();
+                schema = &violatingClass->GetSchema();
 
-            violatingClassesStr.append (violatingClass->GetName ());
+            violatingClassesStr.append(violatingClass->GetName());
             isFirstClass = false;
             }
 
@@ -271,7 +273,7 @@ Utf8String CaseInsensitiveClassNamesRule::Error::_ToString () const
 
 
     Utf8String str;
-    str.Sprintf ("ECSchema '%s' contains ECClasses for which names only differ by case. ECDb does not support case sensitive class names. Conflicting ECClasses: %s.", schema->GetName ().c_str (), violatingClassesStr.c_str ());
+    str.Sprintf("ECSchema '%s' contains ECClasses for which names only differ by case. ECDb does not support case sensitive class names. Conflicting ECClasses: %s.", schema->GetName().c_str(), violatingClassesStr.c_str());
     return str;
     }
 
@@ -282,47 +284,47 @@ Utf8String CaseInsensitiveClassNamesRule::Error::_ToString () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-CaseInsensitivePropertyNamesRule::CaseInsensitivePropertyNamesRule (ECClassCR ecClass)
-: ECSchemaValidationRule (Type::CaseInsensitivePropertyNames), m_error (nullptr)
+CaseInsensitivePropertyNamesRule::CaseInsensitivePropertyNamesRule(ECClassCR ecClass)
+    : ECSchemaValidationRule(Type::CaseInsensitivePropertyNames), m_error(nullptr)
     {
-    m_error = std::unique_ptr<Error> (new Error (GetType (), ecClass));
+    m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-bool CaseInsensitivePropertyNamesRule::_ValidateClass (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
+bool CaseInsensitivePropertyNamesRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
     {
     bool valid = true;
 
-    auto& invalidProperties = m_error->GetInvalidPropertiesR ();
+    auto& invalidProperties = m_error->GetInvalidPropertiesR();
 
-    auto const& propName = ecProperty.GetName ();
-    auto it = m_propertyNameSet.find (propName.c_str ());
-    if (it != m_propertyNameSet.end ()) //found case insensitive duplicate
+    auto const& propName = ecProperty.GetName();
+    auto it = m_propertyNameSet.find(propName.c_str());
+    if (it != m_propertyNameSet.end()) //found case insensitive duplicate
         {
-        auto& violatingPropBucket = invalidProperties[propName.c_str ()];
-        if (violatingPropBucket.empty ())
+        auto& violatingPropBucket = invalidProperties[propName.c_str()];
+        if (violatingPropBucket.empty())
             {
-            auto firstViolatingProp = ecClass.GetPropertyP (*it);
-            BeAssert (firstViolatingProp != nullptr);
-            violatingPropBucket.insert (firstViolatingProp);
+            auto firstViolatingProp = ecClass.GetPropertyP(*it);
+            BeAssert(firstViolatingProp != nullptr);
+            violatingPropBucket.insert(firstViolatingProp);
             }
 
-        violatingPropBucket.insert (&ecProperty);
+        violatingPropBucket.insert(&ecProperty);
         valid = false;
         }
 
-    m_propertyNameSet.insert (propName.c_str ());
+    m_propertyNameSet.insert(propName.c_str());
     return valid;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitivePropertyNamesRule::_GetError () const
+std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitivePropertyNamesRule::_GetError() const
     {
-    if (m_error->GetInvalidProperties ().empty ())
+    if (m_error->GetInvalidProperties().empty())
         return nullptr;
 
     return std::move(m_error);
@@ -336,26 +338,26 @@ std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitivePropertyNamesRule:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-Utf8String CaseInsensitivePropertyNamesRule::Error::_ToString () const
+Utf8String CaseInsensitivePropertyNamesRule::Error::_ToString() const
     {
-    if (GetInvalidProperties ().empty ())
+    if (GetInvalidProperties().empty())
         return "";
 
     Utf8String violatingPropsStr;
 
     bool isFirstSet = true;
-    for (auto const& kvPair : GetInvalidProperties ())
+    for (auto const& kvPair : GetInvalidProperties())
         {
         if (!isFirstSet)
-            violatingPropsStr.append (" - ");
+            violatingPropsStr.append(" - ");
 
         bool isFirstProp = true;
         for (auto violatingProp : kvPair.second)
             {
             if (!isFirstProp)
-                violatingPropsStr.append (", ");
+                violatingPropsStr.append(", ");
 
-            violatingPropsStr.append (violatingProp->GetName ());
+            violatingPropsStr.append(violatingProp->GetName());
             isFirstProp = false;
             }
 
@@ -363,10 +365,9 @@ Utf8String CaseInsensitivePropertyNamesRule::Error::_ToString () const
         }
 
     Utf8String str;
-    str.Sprintf ("ECClass '%s' contains ECProperties for which names only differ by case. ECDb does not support case sensitive property names. Conflicting ECProperties: %s.", m_ecClass.GetFullName (), violatingPropsStr.c_str ());
+    str.Sprintf("ECClass '%s' contains ECProperties for which names only differ by case. ECDb does not support case sensitive property names. Conflicting ECProperties: %s.", m_ecClass.GetFullName(), violatingPropsStr.c_str());
     return str;
     }
-
 
 //**********************************************************************
 // NoPropertiesOfSameTypeAsClassRule
@@ -375,34 +376,34 @@ Utf8String CaseInsensitivePropertyNamesRule::Error::_ToString () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-NoPropertiesOfSameTypeAsClassRule::NoPropertiesOfSameTypeAsClassRule (ECClassCR ecClass)
-: ECSchemaValidationRule (Type::NoPropertiesOfSameTypeAsClass), m_error (nullptr)
+NoPropertiesOfSameTypeAsClassRule::NoPropertiesOfSameTypeAsClassRule(ECClassCR ecClass)
+    : ECSchemaValidationRule(Type::NoPropertiesOfSameTypeAsClass), m_error(nullptr)
     {
-    m_error = std::unique_ptr<Error> (new Error (GetType (), ecClass));
+    m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
+bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
     {
     ECClassCP structType = nullptr;
-    if (ecProperty.GetIsStruct ())
-        structType = &ecProperty.GetAsStructProperty ()->GetType ();
-    else if (ecProperty.GetIsArray ())
+    if (ecProperty.GetIsStruct())
+        structType = &ecProperty.GetAsStructProperty()->GetType();
+    else if (ecProperty.GetIsArray())
         {
-        auto structArrayProp = ecProperty.GetAsStructArrayProperty ();
+        auto structArrayProp = ecProperty.GetAsStructArrayProperty();
         if (nullptr != structArrayProp)
-            structType = structArrayProp->GetStructElementType ();
+            structType = structArrayProp->GetStructElementType();
         }
 
     if (structType == nullptr)
         return true; //prop is of primitive type or prim array type -> no validation needed
 
-    bool isValid = !structType->Is (&ecClass);
+    bool isValid = !structType->Is(&ecClass);
     if (!isValid)
-        m_error->GetInvalidPropertiesR ().push_back (&ecProperty);
+        m_error->GetInvalidPropertiesR().push_back(&ecProperty);
 
     return isValid;
     }
@@ -410,9 +411,9 @@ bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass (ECN::ECClassCR ecClass, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> NoPropertiesOfSameTypeAsClassRule::_GetError () const
+std::unique_ptr<ECSchemaValidationRule::Error> NoPropertiesOfSameTypeAsClassRule::_GetError() const
     {
-    if (m_error->GetInvalidProperties ().empty ())
+    if (m_error->GetInvalidProperties().empty())
         return nullptr;
 
     return std::move(m_error);
@@ -424,27 +425,27 @@ std::unique_ptr<ECSchemaValidationRule::Error> NoPropertiesOfSameTypeAsClassRule
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString () const
+Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString() const
     {
-    if (GetInvalidProperties ().empty ())
+    if (GetInvalidProperties().empty())
         return "";
 
     Utf8String violatingPropsStr;
 
     bool isFirstProp = true;
-    for (auto violatingProp : GetInvalidProperties ())
+    for (auto violatingProp : GetInvalidProperties())
         {
         if (!isFirstProp)
-            violatingPropsStr.append (", ");
+            violatingPropsStr.append(", ");
 
-        violatingPropsStr.append (violatingProp->GetName ());
+        violatingPropsStr.append(violatingProp->GetName());
         isFirstProp = false;
         }
 
     Utf8CP strTemplate = "ECClass '%s' contains struct or array ECProperties which are of the same type or a derived type than the ECClass. Conflicting ECProperties: %s.";
 
     Utf8String str;
-    str.Sprintf (strTemplate, m_ecClass.GetFullName (), violatingPropsStr.c_str ());
+    str.Sprintf(strTemplate, m_ecClass.GetFullName(), violatingPropsStr.c_str());
 
     return str;
     }
@@ -470,34 +471,21 @@ bool ValidRelationshipConstraintsRule::_ValidateSchema(ECN::ECSchemaCR schema, E
     if (relClass == nullptr)
         return true;
 
-    const bool isAbstract = ECClassModifier::Abstract == relClass->GetClassModifier();
-    return ValidateConstraint(*relClass, isAbstract, relClass->GetSource()) && ValidateConstraint(*relClass, isAbstract, relClass->GetTarget());
+    return ValidateConstraint(*relClass, relClass->GetSource()) && ValidateConstraint(*relClass, relClass->GetTarget());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipClassCR relClass, bool isAbstractRelClass, ECN::ECRelationshipConstraintCR constraint) const
+bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipConstraintCR constraint) const
     {
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     const size_t constraintClassCount = constraintClasses.size();
-    if (isAbstractRelClass)
+    if (constraintClassCount == 0)
         {
-        if (constraintClassCount > 0)
-            {
-            //if rel is abstract, constraint must not have classes. if rel is not abstract, constraint must have classes
-            m_error->AddInconsistency(relClass, Error::Kind::IsAbstractAndConstraintsAreDefined);
-            return false;
-            }
-        }
-    else
-        {
-        if (constraintClassCount == 0)
-            {
-            //if rel is not abstract, constraint must have classes
-            m_error->AddInconsistency(relClass, Error::Kind::IncompleteConstraintDefinition);
-            return false;
-            }
+        //constraint must have classes
+        m_error->AddInconsistency(relClass, Error::Kind::IncompleteConstraintDefinition);
+        return false;
         }
 
     bool valid = true;
@@ -554,9 +542,8 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
             str.append(" - ");
 
         str.append("Relationship ").append(inconsistency.m_relationshipClass->GetFullName()).append(":");
-        
-        const Kind kind = inconsistency.m_kind;
 
+        const Kind kind = inconsistency.m_kind;
         if (Enum::Contains(kind, Kind::HasAnyClassConstraint))
             str.append(" AnyClass must not be used as constraint.");
 
@@ -569,15 +556,11 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
         if (Enum::Contains(kind, Kind::IncompleteConstraintDefinition))
             str.append(" At least one constraint definition is not complete.");
 
-        if (Enum::Contains(kind, Kind::IsAbstractAndConstraintsAreDefined))
-            str.append(" The relationship class is abstract and therefore constraints must not be defined (as they are not inherited anyways).");
-
         isFirstItem = false;
         }
 
     return str;
     }
-
 
 //**********************************************************************
 // SchemaNamespacePrefixRule
@@ -645,5 +628,4 @@ Utf8String SchemaNamespacePrefixRule::Error::_ToString() const
 
     return error;
     }
-
 END_BENTLEY_SQLITE_EC_NAMESPACE

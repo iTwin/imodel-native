@@ -9,8 +9,11 @@
 #include "ECDbInternalTypes.h"
 #include "MapStrategy.h"
 #include "DbSchema.h"
+#include "IssueReporter.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+struct ECDbMap;
 struct ClassMap;
 struct ClassMappingInfo;
 struct SchemaImportContext;
@@ -35,7 +38,7 @@ private:
     ~ClassMappingInfoFactory ();
 
 public:
-    static std::unique_ptr<ClassMappingInfo> Create(MappingStatus&, ECN::ECClassCR, ECDbMapCR);
+    static std::unique_ptr<ClassMappingInfo> Create(MappingStatus&, ECN::ECClassCR, ECDbMap const&);
     };
 
 struct IndexMappingInfo;
@@ -52,42 +55,46 @@ private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
     std::vector<IndexMappingInfoPtr> m_dbIndexes;
-    ClassMap const* m_parentClassMap;
     bool m_isMapToVirtualTable;
     ECN::ECPropertyCP m_classHasCurrentTimeStampProperty;
 
 protected:
-    ECDbMapCR m_ecdbMap;
+    ECDbMap const& m_ecdbMap;
     ECN::ECClassCR m_ecClass;
     ECDbMapStrategy m_resolvedStrategy;
+    ClassMap const* m_baseClassMap;
 
 private:
     BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);
-    BentleyStatus EvaluateSharedTableMapStrategy(ClassMap const& parentClassMap, ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& userStrategy);
 
-    bool GatherBaseClassMaps(bvector<ClassMap const*>& baseClassMaps, bvector<ClassMap const*>& tphMaps, bvector<ClassMap const*>& tpcMaps, bvector<ClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
-    bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
+    bool GatherBaseClassMaps(bvector<ClassMap const*>& baseClassMaps, bvector<ClassMap const*>& tphMaps, bvector<ClassMap const*>& tpcMaps, bvector<ClassMap const*>& nmhMaps, ECN::ECClassCR) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
-protected:
-    virtual BentleyStatus _InitializeFromSchema();
+    MappingStatus EvaluateMapStrategy();
     virtual MappingStatus _EvaluateMapStrategy();
 
-    static void LogClassNotMapped (NativeLogging::SEVERITY severity, ECN::ECClassCR ecClass, Utf8CP explanation);
+protected:
+    BentleyStatus EvaluateSharedTableMapStrategy(ClassMap const& baseClassMap, UserECDbMapStrategy const&);
+    bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
+    virtual BentleyStatus _InitializeFromSchema();
+
+    IssueReporter const& Issues() const;
+    static void LogClassNotMapped (NativeLogging::SEVERITY, ECN::ECClassCR, Utf8CP explanation);
+
 public:
-    ClassMappingInfo(ECN::ECClassCR, ECDbMapCR);
+    ClassMappingInfo(ECN::ECClassCR, ECDbMap const&);
     virtual ~ClassMappingInfo() {}
 
     MappingStatus Initialize();
 
     ECDbMapStrategy const& GetMapStrategy () const{ return m_resolvedStrategy; }
-    ECDbMapCR GetECDbMap() const {return m_ecdbMap;}
+    ECDbMap const& GetECDbMap() const {return m_ecdbMap;}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
     std::vector<IndexMappingInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
     Utf8CP GetTableName() const {return m_tableName.c_str();}
     Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
     ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
-    ClassMap const* GetParentClassMap () const { return m_parentClassMap; }
+    ClassMap const* GetBaseClassMap () const { return m_baseClassMap; }
 
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }
@@ -108,13 +115,6 @@ public:
     RelationshipEndColumns(Utf8CP ecInstanceIdColumnName, Utf8CP ecClassIdColumnName = nullptr) : m_ecInstanceIdColumnName(ecInstanceIdColumnName), m_ecClassIdColumnName(ecClassIdColumnName) {}
     Utf8CP GetECInstanceIdColumnName() const { return m_ecInstanceIdColumnName.c_str(); }
     Utf8CP GetECClassIdColumnName() const { return m_ecClassIdColumnName.c_str(); }
-    };
-
-enum class EndTablesOptimizationOptions
-    {
-    Skip, //!NOP or do nothing
-    ReferencedEnd, //Select base table over joined table
-    ForeignEnd //select subset of joinedTable if possible instead of base table.
     };
 
 //======================================================================================
@@ -157,11 +157,20 @@ private:
 
     virtual BentleyStatus _InitializeFromSchema() override;
     virtual MappingStatus _EvaluateMapStrategy();
-    void DetermineCardinality(ECN::ECRelationshipConstraintCR source, ECN::ECRelationshipConstraintCR target);
-    BentleyStatus ResolveEndTables(EndTablesOptimizationOptions source, EndTablesOptimizationOptions target);
+
+    BentleyStatus EvaluateLinkTableStrategy(UserECDbMapStrategy const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateForeignKeyStrategy(UserECDbMapStrategy const&, ClassMap const* baseClassMap);
+
+    void DetermineCardinality();
+
+    std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
+    bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
+    static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
+
+    static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
 public:
-    RelationshipMappingInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap) : ClassMappingInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
+    RelationshipMappingInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMap const& ecdbMap) : ClassMappingInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
         m_customMapType(CustomMapType::None), m_allowDuplicateRelationships(false), 
         m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_createIndexOnForeignKey(true)
         {}
@@ -193,8 +202,6 @@ struct IndexMappingInfo : RefCountedBase
         std::vector<Utf8String> m_properties;
         bool m_addPropsAreNotNullWhereExp;
 
-        static std::vector<std::pair<Utf8String, Utf8String>> s_idSpecCustomAttributeNames;
-
         IndexMappingInfo(Utf8CP name, bool isUnique, std::vector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
             : m_name(name), m_isUnique(isUnique), m_properties(properties), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
             {}
@@ -208,8 +215,6 @@ struct IndexMappingInfo : RefCountedBase
         IndexMappingInfo(Utf8CP name, IndexMappingInfo const& rhs) : m_name(name), m_isUnique(rhs.m_isUnique), m_properties(rhs.m_properties), m_addPropsAreNotNullWhereExp(rhs.m_addPropsAreNotNullWhereExp) {}
 
         static BentleyStatus CreateFromIdSpecificationCAs(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR, ECN::ECClassCR);
-
-        static std::vector<std::pair<Utf8String, Utf8String>> const& GetIdSpecCustomAttributeNames();
 
     public:
         static IndexMappingInfoPtr Clone(Utf8CP name, IndexMappingInfo const& rhs) { return new IndexMappingInfo(name, rhs); }

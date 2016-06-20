@@ -156,21 +156,6 @@ TEST_F(ECDbSchemaTests, LoadECSchemas)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Affan.Khan                       10/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaTests, VerifyEmptyECSchemaCannotBeRead)
-    {
-    ECDbR ecdb = SetupECDb("emptyschematestdb.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    ECSchemaPtr emptySchema;
-    ECSchema::CreateSchema(emptySchema, "EmptyECSchema", 1, 0);
-    ECSchemaCachePtr cache = ECSchemaCache::Create();
-    cache->AddSchema(*emptySchema);
-    ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(*cache)) << "Importing empty ECSchema succeeded unexpectedly";
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int GetColumnCount(DbR db, Utf8CP table)

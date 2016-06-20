@@ -49,7 +49,7 @@ public:
     ECInstanceKey() {}
 
     //! Construct an ECInstanceKey
-    ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
+    ECInstanceKey(ECN::ECClassId const& ecClassId, ECInstanceId const& ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
 
     //! Compare this ECInstanceKey with another key for equality
     bool operator==(ECInstanceKey const& other) const { return m_ecClassId == other.m_ecClassId && m_ecInstanceId == other.m_ecInstanceId; }
@@ -70,9 +70,9 @@ public:
         }
 
     //! Get the ECClassId of this key
-    ECN::ECClassId GetECClassId() const { return m_ecClassId; }
+    ECN::ECClassId const& GetECClassId() const { return m_ecClassId; }
     //! Get the ECInstanceId of this key
-    ECInstanceId GetECInstanceId() const { return m_ecInstanceId; }
+    ECInstanceId const& GetECInstanceId() const { return m_ecInstanceId; }
     
     //! Test if this key is valid
     bool IsValid() const { return (m_ecClassId.IsValid() && m_ecInstanceId.IsValid()); }

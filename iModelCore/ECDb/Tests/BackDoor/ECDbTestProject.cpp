@@ -174,6 +174,7 @@ BentleyStatus ECDbTestProject::ImportECSchema (ECN::ECSchemaPtr& schema, WCharCP
         return ERROR;
 
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater(GetECDbCR().GetSchemaLocater());
     ECDbTestUtility::ReadECSchemaFromDisk(schema, schemaReadContext, testSchemaXmlFileName);
     EXPECT_TRUE(schema != nullptr);
     if (schema == nullptr)

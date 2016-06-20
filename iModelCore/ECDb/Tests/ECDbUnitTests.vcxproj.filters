@@ -208,6 +208,9 @@
     <ClCompile Include="Published\MapDebugInfo_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECRelationshipClassInheritanceTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">

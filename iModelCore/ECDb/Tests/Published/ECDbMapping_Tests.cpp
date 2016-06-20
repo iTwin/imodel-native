@@ -189,7 +189,7 @@ TEST_F(ECDbMappingTestFixture, UnsupportedNavigationPropertyCases)
         "    <ECEntityClass typeName='B'>"
         "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
-        "   <ECRelationshipClass typeName='AHasB' strength='Referencing'>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Referencing' modifier='Sealed'>"
         "      <Source cardinality='(0,1)' polymorphic='False'>"
         "          <Class class ='A' />"
         "      </Source>"
@@ -209,7 +209,7 @@ TEST_F(ECDbMappingTestFixture, UnsupportedNavigationPropertyCases)
         "        <ECProperty propertyName='Cost' typeName='double' />"
         "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
         "    </ECEntityClass>"
-        "   <ECRelationshipClass typeName='AHasB' strength='Referencing'>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Referencing' modifier='Sealed'>"
         "      <Source cardinality='(0,N)' polymorphic='False'>"
         "          <Class class ='A' />"
         "      </Source>"
@@ -837,7 +837,7 @@ TEST_F(ECDbMappingTestFixture, ExistingTableCATests)
         "    <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "   <ECRelationshipClass typeName='ParentHasEmbeddedFile' strength='Referencing'>"
+        "   <ECRelationshipClass typeName='ParentHasEmbeddedFile' strength='Referencing' modifier='Sealed'>"
         "      <Source cardinality='(0,1)' polymorphic='False'>"
         "          <Class class ='Parent' />"
         "      </Source>"
@@ -1430,7 +1430,7 @@ TEST_F(ECDbMappingTestFixture, JoinedTableCATests)
                                    "        <BaseClass>ClassA</BaseClass>"
                                    "        <ECProperty propertyName='Cost' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "JoinedTable on a class without any property is expected to be not successful"));
+                                   "</ECSchema>", true, "JoinedTable on a class without any property is expected to be successful"));
 
     AssertSchemaImport(testItems, "joinedtablecatests.ecdb");
     }
@@ -1450,7 +1450,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
                                    "    <ECEntityClass typeName='B' modifier='None'>"
                                    "        <ECProperty propertyName='BB' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "    <ECRelationshipClass typeName='Rel' modifier='None' strength='referencing'>"
+                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
                                    "        <ECCustomAttributes>"
                                    "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                                    "            </ForeignKeyRelationshipMap>"
@@ -1473,7 +1473,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
                                    "    <ECEntityClass typeName='B' modifier='None'>"
                                    "        <ECProperty propertyName='BB' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "    <ECRelationshipClass typeName='Rel' modifier='None' strength='embedding'>"
+                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                                    "        <ECCustomAttributes>"
                                    "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                                    "               <OnDeleteAction>Cascade</OnDeleteAction>"
@@ -1497,7 +1497,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
                                    "    <ECEntityClass typeName='B' modifier='None'>"
                                    "        <ECProperty propertyName='BB' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "    <ECRelationshipClass typeName='Rel' modifier='None' strength='referencing'>"
+                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
                                    "        <ECCustomAttributes>"
                                    "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                                    "               <OnDeleteAction>Cascade</OnDeleteAction>"
@@ -1521,7 +1521,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
                                    "    <ECEntityClass typeName='B' modifier='None'>"
                                    "        <ECProperty propertyName='BB' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "    <ECRelationshipClass typeName='Rel' modifier='None' strength='holding'>"
+                                   "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='holding'>"
                                    "        <ECCustomAttributes>"
                                    "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                                    "               <OnDeleteAction>Cascade</OnDeleteAction>"
@@ -2644,7 +2644,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
                                 "    <BaseClass>Child</BaseClass>"
                                 "    <ECProperty propertyName='Child2Name' typeName='string' />"
                                 "  </ECEntityClass>"
-                                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+                                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
                                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                                 "      <Class class = 'Parent' />"
                                 "    </Source>"
@@ -2704,7 +2704,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
                 "    <BaseClass>Child</BaseClass>"
                 "    <ECProperty propertyName='Child2Name' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
                 "    <Source cardinality='(0,1)' polymorphic='True'>"
                 "      <Class class = 'Parent' />"
                 "    </Source>"
@@ -2753,7 +2753,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
                 "    <BaseClass>Child</BaseClass>"
                 "    <ECProperty propertyName='Child2Name' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                 "      <Class class = 'Parent' />"
                 "    </Source>"
@@ -2795,7 +2795,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
                 "    <BaseClass>Child</BaseClass>"
                 "    <ECProperty propertyName='Child2Name' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
                 "    <Source cardinality='(0,1)' polymorphic='True'>"
                 "      <Class class = 'Parent' />"
                 "    </Source>"
@@ -2837,7 +2837,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
                 "    <BaseClass>Child</BaseClass>"
                 "    <ECProperty propertyName='Child2Name' typeName='string' />"
                 "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
                 "    <Source cardinality='(0,1)' polymorphic='True'>"
                 "      <Class class = 'Parent' />"
                 "    </Source>"
@@ -2870,7 +2870,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
                         "    <ECProperty propertyName='ParentId' typeName='long' />"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='RelCreateIndexTrue' modifier='None' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='RelCreateIndexTrue' modifier='Sealed' strength='referencing'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
                         "    </ECCustomAttributes>"
@@ -2885,7 +2885,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
                         "      </Class>"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='RelCreateIndexFalse' modifier='None' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='RelCreateIndexFalse' modifier='Sealed' strength='referencing'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' >"
                         "           <CreateIndex>False</CreateIndex>"
@@ -2902,7 +2902,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
                         "      </Class>"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='RelCreateIndexDefaultValue' modifier='None' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='RelCreateIndexDefaultValue' modifier='Sealed' strength='referencing'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
                         "    </ECCustomAttributes>"
@@ -3071,7 +3071,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
         "<ECEntityClass typeName='Goo' modifier='None' >"
         "   <ECProperty propertyName='GooProp' typeName='int' />"
         "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
@@ -3128,7 +3128,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
         "<ECEntityClass typeName='Goo' modifier='None' >"
         "   <ECProperty propertyName='GooProp' typeName='int' />"
         "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
@@ -3181,7 +3181,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
         "<ECEntityClass typeName='Goo' modifier='None' >"
         "   <ECProperty propertyName='GooProp' typeName='int' />"
         "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
@@ -3233,7 +3233,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
         "        </ECCustomAttributes>"
         "   <ECProperty propertyName='GooProp' typeName='int' />"
         "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
         "        <ECCustomAttributes>"
         "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
         "                   <ForeignKeyColumn>ForeignKeyId</ForeignKeyColumn>"
@@ -3295,7 +3295,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
         "        </ECCustomAttributes>"
         "   <ECProperty propertyName='GooProp' typeName='int' />"
         "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Foo' />"
         "    </Source>"
@@ -3351,7 +3351,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
         "        </ECCustomAttributes>"
         "   <ECProperty propertyName='GooProp' typeName='int' />"
         "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Foo' />"
         "    </Source>"
@@ -3393,7 +3393,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
         "   <ECProperty propertyName='GooProp' typeName='int' />"
         "   <ECNavigationProperty propertyName = 'navProp' relationshipName = 'FooHasManyGoo' direction = 'backward' />"
         "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasManyGoo' modifier='None' strength='referencing'>"
+        "<ECRelationshipClass typeName='FooHasManyGoo' modifier='Sealed' strength='referencing'>"
         "    <Source cardinality='(0,1)' polymorphic='false'>"
         "      <Class class = 'Foo' />"
         "    </Source>"
@@ -3440,7 +3440,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
         "   <ECProperty propertyName='GooProp' typeName='int' />"
         "   <ECNavigationProperty propertyName = 'navProp' relationshipName = 'FooHasManyGoo' direction = 'backward' />"
         "</ECEntityClass>"
-        "<ECRelationshipClass typeName='FooHasManyGoo' modifier='None' strength='embedding'>"
+        "<ECRelationshipClass typeName='FooHasManyGoo' modifier='Sealed' strength='embedding'>"
         "    <Source cardinality='(1,1)' polymorphic='false'>"
         "      <Class class = 'Foo' />"
         "    </Source>"
@@ -4044,7 +4044,7 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
                         "    <ECEntityClass typeName='ClassB' modifier='None'>"
                         "        <ECProperty propertyName='BB' typeName='string' />"
                         "    </ECEntityClass>"
-                        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='embedding'>"
+                        "    <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='embedding'>"
                         "        <ECCustomAttributes>"
                         "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                         "               <OnDeleteAction>Cascade</OnDeleteAction>"
@@ -4060,7 +4060,7 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
                         "    <ECEntityClass typeName='ClassC' modifier='None'>"
                         "        <ECProperty propertyName='CC' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='BHasC' modifier='None' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='BHasC' modifier='Sealed' strength='embedding'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'ClassB' />"
                         "    </Source>"
@@ -4369,7 +4369,7 @@ TEST_F(ECDbMappingTestFixture, EnforceLinkTableMapping)
         "    <ECEntityClass typeName='B' modifier='None'>"
         "        <ECProperty propertyName='P1' typeName='int' />"
         "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='referencing'>"
+        "    <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='referencing'>"
         "        <ECCustomAttributes>"
         "            <LinkTableRelationshipMap xmlns='ECDbMap.01.00' />"
         "        </ECCustomAttributes>"
@@ -5456,7 +5456,7 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
                 "        <ECProperty propertyName='AId' typeName='long'/>"
                 "        <ECProperty propertyName='Name' typeName='string' />"
                 "    </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='None' strength='embedding'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                 "    <Source cardinality='(0,1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -5497,7 +5497,7 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
                 "        </ECProperty>"
                 "        <ECProperty propertyName='Name' typeName='string' />"
                 "    </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='None' strength='embedding'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -5537,7 +5537,7 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
                 "        </ECNavigationProperty>"
                 "        <ECProperty propertyName='Name' typeName='string' />"
                 "    </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='None' strength='embedding'>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                 "    <Source cardinality='(0,1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -5564,7 +5564,7 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
                     "        </ECNavigationProperty>"
                     "        <ECProperty propertyName='Name' typeName='string' />"
                     "    </ECEntityClass>"
-                    "  <ECRelationshipClass typeName='Rel' modifier='None' strength='embedding'>"
+                    "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
@@ -5614,7 +5614,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 "        <BaseClass>B</BaseClass>"
                 "        <ECProperty propertyName='BBId' typeName='long' />"
                 "    </ECEntityClass>"
-                "   <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                "   <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                 "      <Class class='A' />"
                 "    </Source>"
@@ -5622,7 +5622,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 "      <Class class='B' />"
                 "    </Target>"
                 "  </ECRelationshipClass>"
-                "   <ECRelationshipClass typeName='Rel11' strength='embedding'>"
+                "   <ECRelationshipClass typeName='Rel11' strength='embedding' modifier='Sealed'>"
                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                 "      <Class class='A' />"
                 "    </Source>"
@@ -5630,7 +5630,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 "      <Class class='B' />"
                 "    </Target>"
                 "  </ECRelationshipClass>"
-                "   <ECRelationshipClass typeName='Rel11Backwards' strength='embedding' strengthDirection='Backward'>"
+                "   <ECRelationshipClass typeName='Rel11Backwards' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                 "      <Class class='A' />"
                 "    </Source>"
@@ -5638,7 +5638,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 "      <Class class='B' />"
                 "    </Target>"
                 "  </ECRelationshipClass>"
-                "   <ECRelationshipClass typeName='RelWithKeyProp' strength='embedding'>"
+                "   <ECRelationshipClass typeName='RelWithKeyProp' strength='embedding' modifier='Sealed'>"
                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                 "      <Class class='A' />"
                 "    </Source>"
@@ -5648,7 +5648,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 "      </Class>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
-                "   <ECRelationshipClass typeName='RelWithKeyProp11' strength='embedding'>"
+                "   <ECRelationshipClass typeName='RelWithKeyProp11' strength='embedding' modifier='Sealed'>"
                 "    <Source cardinality='(1,1)' polymorphic='True'>"
                 "      <Class class='A' />"
                 "    </Source>"
@@ -5658,7 +5658,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 "      </Class>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
-                "   <ECRelationshipClass typeName='RelNN' strength='referencing'>"
+                "   <ECRelationshipClass typeName='RelNN' strength='referencing' modifier='Sealed'>"
                 "    <Source cardinality='(1,N)' polymorphic='True'>"
                 "      <Class class='A' />"
                 "    </Source>"
@@ -5711,7 +5711,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <BaseClass>B</BaseClass>"
                     "        <ECProperty propertyName='BBId' typeName='long' />"
                     "    </ECEntityClass>"
-                    "   <ECRelationshipClass typeName='Rel' modifier='None' strength='embedding'>"
+                    "   <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -5753,7 +5753,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <BaseClass>B</BaseClass>"
                     "        <ECProperty propertyName='BBId' typeName='long' />"
                     "    </ECEntityClass>"
-                    "   <ECRelationshipClass typeName='Rel' modifier='None' strength='embedding'>"
+                    "   <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -5798,7 +5798,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <BaseClass>B</BaseClass>"
                     "        <ECProperty propertyName='BBId' typeName='long' />"
                     "    </ECEntityClass>"
-                    "   <ECRelationshipClass typeName='Rel11' modifier='None' >"
+                    "   <ECRelationshipClass typeName='Rel11' modifier='Sealed' >"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -5847,7 +5847,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <BaseClass>B</BaseClass>"
                     "        <ECProperty propertyName='B2Id' typeName='long' />"
                     "    </ECEntityClass>"
-                    "   <ECRelationshipClass typeName='Rel11' modifier='None' strength='embedding'>"
+                    "   <ECRelationshipClass typeName='Rel11' modifier='Sealed' strength='embedding'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -5857,7 +5857,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "      </Class>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
-                    "   <ECRelationshipClass typeName='AnotherRel11' modifier='None' strength='embedding'>"
+                    "   <ECRelationshipClass typeName='AnotherRel11' modifier='Sealed' strength='embedding'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -5867,7 +5867,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "      </Class>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
-                    "   <ECRelationshipClass typeName='Rel1N' modifier='None' strength='embedding'>"
+                    "   <ECRelationshipClass typeName='Rel1N' modifier='Sealed' strength='embedding'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -5877,7 +5877,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "      </Class>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
-                    "   <ECRelationshipClass typeName='Rel1NNoKeyProp' modifier='None' strength='embedding'>"
+                    "   <ECRelationshipClass typeName='Rel1NNoKeyProp' modifier='Sealed' strength='embedding'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -5935,7 +5935,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <BaseClass>B</BaseClass>"
                     "        <ECProperty propertyName='B1Id' typeName='long' />"
                     "    </ECEntityClass>"
-                    "   <ECRelationshipClass typeName='RelBase' modifier='None' strength='referencing'>"
+                    "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
@@ -5945,15 +5945,13 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "      </Class>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
-                    "   <ECRelationshipClass typeName='RelSub1' modifier='None' strength='referencing'>"
+                    "   <ECRelationshipClass typeName='RelSub1' modifier='Sealed' strength='referencing'>"
                     "    <BaseClass>RelBase</BaseClass>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
-                    "    <Target cardinality='(0,1)' polymorphic='True'>"
-                    "      <Class class='B1'>"
-                    "        <Key><Property name='AId'/></Key>"
-                    "      </Class>"
+                    "    <Target cardinality='(1,1)' polymorphic='True'>"
+                    "      <Class class='B1'/>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>", true, "");
@@ -5971,7 +5969,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
                 ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
                 Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("([AId] IS NOT NULL) AND (ECClassId=%llu)", b1ClassId.GetValue());
+                indexWhereClause.Sprintf("([AId] IS NOT NULL) AND (ECClassId=%s)", b1ClassId.ToString().c_str());
 
                 AssertIndex(ecdb, "uix_ts_B_fk_ts_RelSub1_target", true, "ts_B", {"Aid"}, indexWhereClause.c_str());
                 }
@@ -5996,7 +5994,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <BaseClass>B</BaseClass>"
                     "        <ECProperty propertyName='B1Id' typeName='long' />"
                     "    </ECEntityClass>"
-                    "   <ECRelationshipClass typeName='RelBase' modifier='None' strength='referencing'>"
+                    "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
                     "        <ECCustomAttributes>"
                     "            <ClassMap xmlns='ECDbMap.01.00'>"
                     "                <MapStrategy>"
@@ -6013,7 +6011,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "      <Class class='B' />"
                     "    </Target>"
                     "  </ECRelationshipClass>"
-                    "   <ECRelationshipClass typeName='RelSub11' modifier='None' strength='referencing'>"
+                    "   <ECRelationshipClass typeName='RelSub11' modifier='Sealed' strength='referencing'>"
                     "    <BaseClass>RelBase</BaseClass>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='B' />"
@@ -6022,7 +6020,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "      <Class class='B1' />"
                     "    </Target>"
                     "  </ECRelationshipClass>"
-                    "   <ECRelationshipClass typeName='RelSub1N' modifier='None' strength='referencing'>"
+                    "   <ECRelationshipClass typeName='RelSub1N' modifier='Sealed' strength='referencing'>"
                     "    <BaseClass>RelBase</BaseClass>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='B1' />"
@@ -6072,7 +6070,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "        <BaseClass>B</BaseClass>"
                     "        <ECProperty propertyName='B2Id' typeName='long' />"
                     "    </ECEntityClass>"
-                    "   <ECRelationshipClass typeName='RelNonPoly' modifier='None' strength='referencing'>"
+                    "   <ECRelationshipClass typeName='RelNonPoly' modifier='Sealed' strength='referencing'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -6081,7 +6079,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "      <Class class='B2' />"
                     "    </Target>"
                     "  </ECRelationshipClass>"
-                    "   <ECRelationshipClass typeName='RelPoly' modifier='None' strength='referencing'>"
+                    "   <ECRelationshipClass typeName='RelPoly' modifier='Sealed' strength='referencing'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
@@ -6114,7 +6112,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 }
 
                 {
-                //Tests that AllowDuplicateRelationships Flag from LinkTableRelationshipMap CA is not applied to subclasses
+                //Tests that AllowDuplicateRelationships Flag from LinkTableRelationshipMap CA is applied to subclasses
                 SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                     "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                                     "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
@@ -6127,7 +6125,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                                     "  <ECEntityClass typeName='C' modifier='None'>"
                                     "    <ECProperty propertyName='CName' typeName='string' />"
                                     "  </ECEntityClass>"
-                                    "  <ECRelationshipClass typeName='ARelB' modifier='None' strength='referencing'>"
+                                    "  <ECRelationshipClass typeName='ARelB' modifier='Abstract' strength='referencing'>"
                                     "    <ECCustomAttributes>"
                                     "        <ClassMap xmlns='ECDbMap.01.00'>"
                                     "                <MapStrategy>"
@@ -6146,7 +6144,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                                     "      <Class class = 'B' />"
                                     "    </Target>"
                                     "  </ECRelationshipClass>"
-                                    "  <ECRelationshipClass typeName='ARelC' modifier='None' strength='referencing'>"
+                                    "  <ECRelationshipClass typeName='ARelC' modifier='Sealed' strength='referencing'>"
                                     "    <BaseClass>ARelB</BaseClass>"
                                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                                     "      <Class class = 'A' />"
@@ -6165,24 +6163,13 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 ASSERT_TRUE(ecdb.TableExists("ts_ARelB"));
                 ASSERT_FALSE(ecdb.TableExists("ts_ARelC")) << "ARelC is expected to be persisted in ts_ARelB as well (SharedTable strategy)";
 
-                ASSERT_EQ(5, (int) RetrieveIndicesForTable(ecdb, "ts_ARelB").size());
-
-                ECClassId aRelCClassId = ecdb.Schemas().GetECClassId("TestSchema", "ARelC");
-                ASSERT_TRUE(aRelCClassId.IsValid());
-
-
-                Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("ECClassId=%llu", aRelCClassId.GetValue());
-
-                AssertIndex(ecdb, "ix_ts_ARelB_source", false, "ts_ARelB", {"SourceECInstanceId"});
-                AssertIndex(ecdb, "ix_ts_ARelB_target", false, "ts_ARelB", {"TargetECInstanceId"});
-
-                AssertIndex(ecdb, "uix_ts_ARelC_target", true, "ts_ARelB", {"TargetECInstanceId"}, indexWhereClause.c_str());
-
                 //ARelB must not have a unique index on source and target as it as AllowDuplicateRelationship set to true.
-                //ARelC must have the unique index, as AllowDuplicateRelationship is not applied to subclasses
-                AssertIndexExists(ecdb, "uix_ts_ARelB_sourcetarget", false);
-                AssertIndex(ecdb, "uix_ts_ARelC_sourcetarget", true, "ts_ARelB", {"SourceECInstanceId", "TargetECInstanceId"}, indexWhereClause.c_str());
+                //ARelC must not have the unique index either, as AllowDuplicateRelationship is applied to subclasses
+                std::vector<IndexInfo> indexes = RetrieveIndicesForTable(ecdb, "ts_ARelB");
+                ASSERT_EQ(3, (int) indexes.size()) << "Indexes on ts_ARelB";
+                ASSERT_STREQ("ix_ts_ARelB_ecclassid", indexes[0].m_name.c_str());
+                ASSERT_STREQ("ix_ts_ARelB_source", indexes[1].m_name.c_str());
+                ASSERT_STREQ("ix_ts_ARelB_target", indexes[2].m_name.c_str());
                 }
     }
 
@@ -6211,7 +6198,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "    <ECEntityClass typeName='B'>"
                         "        <ECProperty propertyName='BName' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6219,7 +6206,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "      <Class class = 'B' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='RelN1' strength='embedding' strengthDirection='Backward'>"
+                        "  <ECRelationshipClass typeName='RelN1' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                         "    <Source cardinality='(0,N)' polymorphic='True'>"
                         "      <Class class = 'B' />"
                         "    </Source>"
@@ -6227,7 +6214,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "      <Class class = 'A' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='Rel0N' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel0N' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6235,7 +6222,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "      <Class class = 'B' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='RelN0' strength='embedding' strengthDirection='Backward'>"
+                        "  <ECRelationshipClass typeName='RelN0' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                         "    <Source cardinality='(0,N)' polymorphic='True'>"
                         "      <Class class = 'B' />"
                         "    </Source>"
@@ -6274,7 +6261,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "        <ECNavigationProperty propertyName='AId_RelN1' relationshipName='RelN1' direction='Forward' />"
                         "        <ECNavigationProperty propertyName='AId_RelN0' relationshipName='RelN0' direction='Forward' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6282,7 +6269,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "      <Class class = 'B' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='RelN1' strength='embedding' strengthDirection='Backward'>"
+                        "  <ECRelationshipClass typeName='RelN1' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                         "    <Source cardinality='(0,N)' polymorphic='True'>"
                         "      <Class class = 'B' />"
                         "    </Source>"
@@ -6290,7 +6277,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "      <Class class = 'A' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='Rel0N' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel0N' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6298,7 +6285,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "      <Class class = 'B' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='RelN0' strength='embedding' strengthDirection='Backward'>"
+                        "  <ECRelationshipClass typeName='RelN0' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                         "    <Source cardinality='(0,N)' polymorphic='True'>"
                         "      <Class class = 'B' />"
                         "    </Source>"
@@ -6334,7 +6321,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "    <ECEntityClass typeName='B'>"
                         "        <ECProperty propertyName='BName' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                         "             <ForeignKeyColumn>AId_Rel1N</ForeignKeyColumn>"
@@ -6347,7 +6334,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "      <Class class = 'B' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='RelN1' strength='embedding' strengthDirection='Backward'>"
+                        "  <ECRelationshipClass typeName='RelN1' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                         "             <ForeignKeyColumn>AId_RelN1</ForeignKeyColumn>"
@@ -6360,7 +6347,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "      <Class class = 'A' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='Rel0N' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel0N' strength='embedding' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                         "             <ForeignKeyColumn>AId_Rel0N</ForeignKeyColumn>"
@@ -6373,7 +6360,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "      <Class class = 'B' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='RelN0' strength='embedding' strengthDirection='Backward'>"
+                        "  <ECRelationshipClass typeName='RelN0' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                         "             <ForeignKeyColumn>AId_RelN0</ForeignKeyColumn>"
@@ -6412,7 +6399,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "    <ECEntityClass typeName='B'>"
                         "        <ECProperty propertyName='BName' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6438,7 +6425,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "    <ECEntityClass typeName='B'>"
                         "        <ECProperty propertyName='BName' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6478,7 +6465,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "        <ECProperty propertyName='BSubName' typeName='string' />"
                         "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6527,7 +6514,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "        <BaseClass>Sub</BaseClass>"
                         "        <ECProperty propertyName='SubSubName' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6575,7 +6562,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "        <BaseClass>Sub</BaseClass>"
                         "        <ECProperty propertyName='SubSubName' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6622,7 +6609,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "        <BaseClass>Sub</BaseClass>"
                         "        <ECProperty propertyName='SubSubName' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6687,7 +6674,7 @@ TEST_F(ECDbMappingTestFixture, DroppedFkConstraintsForSharedKeyProperties)
                         "        <ECProperty propertyName='B2SubName' typeName='string' />"
                         "        <ECProperty propertyName='AId' typeName='long' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel1' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel1' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6699,7 +6686,7 @@ TEST_F(ECDbMappingTestFixture, DroppedFkConstraintsForSharedKeyProperties)
                         "      </Class>"
                         "    </Target>"
                         "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='Rel2' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel2' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
                         "    </Source>"
@@ -6810,7 +6797,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -6864,7 +6851,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -6918,7 +6905,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -6970,7 +6957,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -7023,7 +7010,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
                         "        <BaseClass>Base</BaseClass>"
                         "        <ECProperty propertyName='CProp1' typeName='string' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -7058,7 +7045,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "    <ECEntityClass typeName='B'>"
                                      "        <ECProperty propertyName='BName' typeName='string' />"
                                      "    </ECEntityClass>"
-                                     "  <ECRelationshipClass typeName='Rel11' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='Rel11' strength='embedding' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7066,7 +7053,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel01' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='Rel01' strength='embedding' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7074,7 +7061,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel10' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='Rel10' strength='embedding' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7082,7 +7069,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel00' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='Rel00' strength='embedding' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7090,7 +7077,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel11back' strength='embedding' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel11back' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7098,7 +7085,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel01back' strength='embedding' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel01back' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7106,7 +7093,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel10back' strength='embedding' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel10back' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7114,7 +7101,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel00back' strength='embedding' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel00back' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7132,7 +7119,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "    <ECEntityClass typeName='B'>"
                                      "        <ECProperty propertyName='BName' typeName='string' />"
                                      "    </ECEntityClass>"
-                                     "  <ECRelationshipClass typeName='Rel11' strength='holding'>"
+                                     "  <ECRelationshipClass typeName='Rel11' strength='holding' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7140,7 +7127,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel01' strength='holding'>"
+                                     "  <ECRelationshipClass typeName='Rel01' strength='holding' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7148,7 +7135,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel10' strength='holding'>"
+                                     "  <ECRelationshipClass typeName='Rel10' strength='holding' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7156,7 +7143,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel00' strength='holding'>"
+                                     "  <ECRelationshipClass typeName='Rel00' strength='holding' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7164,7 +7151,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel11back' strength='holding' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel11back' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7172,7 +7159,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel01back' strength='holding' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel01back' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7180,7 +7167,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel10back' strength='holding' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel10back' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7188,7 +7175,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel00back' strength='holding' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel00back' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7206,7 +7193,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "    <ECEntityClass typeName='B'>"
                                      "        <ECProperty propertyName='BName' typeName='string' />"
                                      "    </ECEntityClass>"
-                                     "  <ECRelationshipClass typeName='Rel11' strength='referencing'>"
+                                     "  <ECRelationshipClass typeName='Rel11' strength='referencing' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7214,7 +7201,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel01' strength='referencing'>"
+                                     "  <ECRelationshipClass typeName='Rel01' strength='referencing' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7222,7 +7209,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel10' strength='referencing'>"
+                                     "  <ECRelationshipClass typeName='Rel10' strength='referencing' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7230,7 +7217,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel00' strength='referencing'>"
+                                     "  <ECRelationshipClass typeName='Rel00' strength='referencing' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7238,7 +7225,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel11back' strength='referencing' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel11back' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7246,7 +7233,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel01back' strength='referencing' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel01back' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7254,7 +7241,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel10back' strength='referencing' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel10back' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(1,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7262,7 +7249,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel00back' strength='referencing' strengthDirection='Backward'>"
+                                     "  <ECRelationshipClass typeName='Rel00back' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7331,7 +7318,7 @@ TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "        <BaseClass>B</BaseClass>"
                                      "        <ECProperty propertyName='B2Name' typeName='string' />"
                                      "    </ECEntityClass>"
-                                     "  <ECRelationshipClass typeName='Rel1' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='Rel1' strength='embedding' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7339,7 +7326,7 @@ TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel2' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='Rel2' strength='embedding' modifier='Sealed'>"
                                      "      <ECCustomAttributes>"
                                      "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                                      "          <OnDeleteAction>Cascade</OnDeleteAction>"
@@ -7352,7 +7339,7 @@ TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "      <Class class = 'B'/>"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "  <ECRelationshipClass typeName='Rel3' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='Rel3' strength='embedding' modifier='Sealed'>"
                                      "      <ECCustomAttributes>"
                                      "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                                      "          <OnDeleteAction>Restrict</OnDeleteAction>"
@@ -7394,7 +7381,7 @@ TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "        <BaseClass>B</BaseClass>"
                                      "        <ECProperty propertyName='B2Name' typeName='string' />"
                                      "    </ECEntityClass>"
-                                     "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
                                      "    </Source>"
@@ -7431,7 +7418,7 @@ TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "        <BaseClass>B</BaseClass>"
                                      "        <ECProperty propertyName='B2Name' typeName='string' />"
                                      "    </ECEntityClass>"
-                                     "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                                      "      <ECCustomAttributes>"
                                      "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                                      "          <OnDeleteAction>Cascade</OnDeleteAction>"
@@ -7469,7 +7456,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWhereLinkTableIsRequired)
                         "    <ECProperty propertyName='ParentId' typeName='long' />"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'/>"
                         "    </ECCustomAttributes>"
@@ -7506,7 +7493,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         "    <ECProperty propertyName='ParentId' typeName='long' />"
         "    <ECProperty propertyName='ChildName' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
         "    <ECCustomAttributes>"
         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
         "            <ForeignKeyColumn>ParentId</ForeignKeyColumn>"
@@ -7536,7 +7523,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         "    <ECProperty propertyName='ParentId' typeName='long' />"
         "    <ECProperty propertyName='ChildName' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
         "    <ECCustomAttributes>"
         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
         "            <ForeignKeyColumn>MyOwnParentId</ForeignKeyColumn>"
@@ -7566,7 +7553,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         "    <ECProperty propertyName='ParentId' typeName='long' />"
         "    <ECProperty propertyName='ChildName' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class = 'Parent' />"
         "    </Source>"
@@ -7596,7 +7583,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
                         "    <ECProperty propertyName='ParentId' typeName='long' />"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -7647,7 +7634,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
                         "   </ECProperty>"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -7693,7 +7680,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
                         "    <ECProperty propertyName='ParentId' typeName='long' />"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
                         "    </ECCustomAttributes>"
@@ -7743,7 +7730,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
                         "    <ECProperty propertyName='ModelId' typeName='long' />"
                         "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='AuthorityIssuesCode' modifier='None' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='AuthorityIssuesCode' modifier='Sealed' strength='referencing'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                         "             <OnDeleteAction>NoAction</OnDeleteAction>"
@@ -7798,7 +7785,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         "  <ECEntityClass typeName='Child' >"
         "    <ECProperty propertyName='ChildName' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
         "    <ECCustomAttributes>"
         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
         "            <ForeignKeyColumn>ECInstanceId</ForeignKeyColumn>"
@@ -7826,7 +7813,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         "  <ECEntityClass typeName='Child' >"
         "    <ECProperty propertyName='ChildName' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
         "    <ECCustomAttributes>"
         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
         "            <ForeignKeyColumn>blabla</ForeignKeyColumn>"
@@ -7859,7 +7846,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
                         "  <ECEntityClass typeName='Child' >"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
                         "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -7909,7 +7896,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='ChildName' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
         "    <Source cardinality='(1,1)' polymorphic='True'>"
         "      <Class class = 'Parent' />"
         "    </Source>"
@@ -7961,7 +7948,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='ChildName' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='None' strength='referencing'>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
         "    <ECCustomAttributes>"
         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
         "    </ECCustomAttributes>"
@@ -8018,7 +8005,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
                         "    <ECProperty propertyName='ParentId' typeName='long' />"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                         "            <ForeignKeyColumn>ParentId</ForeignKeyColumn>"
@@ -8046,7 +8033,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
                         "    <ECProperty propertyName='ParentId' typeName='long' />"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                         "            <ForeignKeyColumn>MyOwnParentId</ForeignKeyColumn>"
@@ -8090,7 +8077,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
                         "    <ECProperty propertyName='ParentId' typeName='long' />"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
@@ -8131,7 +8118,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
                         "    <ECProperty propertyName='ParentId' typeName='long' />"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
                         "        </ForeignKeyRelationshipMap>"
@@ -8173,7 +8160,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
                         "    <ECProperty propertyName='ParentId' typeName='long' />"
                         "    <ECProperty propertyName='ChildName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
                         "    </ECCustomAttributes>"
@@ -8226,7 +8213,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
                         "    <BaseClass>Child</BaseClass>"
                         "    <ECProperty propertyName='Child2Name' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing'>"
+                        "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
                         "    </ECCustomAttributes>"
@@ -8256,65 +8243,6 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
 
     AssertForeignKey(true, ecdb, childTableName, "ForeignECInstanceId_ts_ParentHasChildren");
     }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  04/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, RelationshipMapCAOnSubclasses)
-    {
-    SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                        "  <ECEntityClass typeName='Element' >"
-                        "    <ECCustomAttributes>"
-                        "        <ClassMap xmlns='ECDbMap.01.00'>"
-                        "            <MapStrategy>"
-                        "               <Strategy>SharedTable</Strategy>"
-                        "               <AppliesToSubclasses>True</AppliesToSubclasses>"
-                        "               <Options>SharedColumnsForSubclasses</Options>"
-                        "            </MapStrategy>"
-                        "        </ClassMap>"
-                        "    </ECCustomAttributes>"
-                        "    <ECProperty propertyName='Code' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECEntityClass typeName='MyElement' >"
-                        "    <BaseClass>Element</BaseClass>"
-                        "    <ECProperty propertyName='MyName' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECEntityClass typeName='YourElement' >"
-                        "    <BaseClass>Element</BaseClass>"
-                        "    <ECProperty propertyName='YourName' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ElementOwnsChildElements' modifier='Abstract' />"
-                        "  <ECRelationshipClass typeName='MyElementHasYourElements' strength='embedding'>"
-                        "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-                        "            <ForeignKeyColumn>ParentId</ForeignKeyColumn>"
-                        "        </ForeignKeyRelationshipMap>"
-                        "    </ECCustomAttributes>"
-                        "   <BaseClass>ElementOwnsChildElements</BaseClass>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
-                        "      <Class class = 'MyElement' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'YourElement' />"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "RelationshipMapCAOnSubclasses.ecdb");
-    ASSERT_FALSE(asserted);
-
-    bvector<Utf8String> columns;
-    ASSERT_TRUE(ecdb.GetColumns(columns, "ts_Element"));
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
-    auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << "ts_Element table should not contain an extra foreign key column as the relationship map specifies to use the ParentId column";
-
-    AssertForeignKey(true, ecdb, "ts_Element", "ParentId");
     }
 
 //---------------------------------------------------------------------------------------
@@ -8358,7 +8286,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubcl
         "    <BaseClass>Element</BaseClass>"
         "    <ECProperty propertyName='Name' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
+        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding' modifier='Sealed'>"
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class='GeometrySource' />"
         "    </Source>"
@@ -8408,7 +8336,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubcl
         "    <BaseClass>Element</BaseClass>"
         "    <ECProperty propertyName='Name' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
+        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding' modifier='Sealed'>"
         "    <Source cardinality='(0,1)' polymorphic='False'>"
         "      <Class class='GeometrySource' />"
         "    </Source>"
@@ -8479,7 +8407,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
         "    <BaseClass>GeometrySource</BaseClass>"
         "    <ECProperty propertyName='Name' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
+        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding' modifier='Sealed'>"
         "    <Source cardinality='(0,1)' polymorphic='True'>"
         "      <Class class='GeometrySource' />"
         "    </Source>"
@@ -8525,7 +8453,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
                                      "  <ECEntityClass typeName='GeometricElement'>"
                                      "    <BaseClass>ExtendedElement</BaseClass>"
                                      "  </ECEntityClass>"
-                                     "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class='GeometrySource' />"
                                      "    </Source>"
@@ -8563,7 +8491,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
                                      "  <ECEntityClass typeName='GeometricElement'>"
                                      "    <BaseClass>ExtendedElement</BaseClass>"
                                      "  </ECEntityClass>"
-                                     "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
+                                     "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding' modifier='Sealed'>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class='GeometrySource' />"
                                      "    </Source>"
@@ -8649,7 +8577,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
                         "  <ECEntityClass typeName='Face' modifier='Abstract'>"
                         "    <ECProperty propertyName='FaceName' typeName='string' />"
                         "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='SolidHasFaces' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='SolidHasFaces' strength='embedding' modifier='Sealed'>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class='Solid' />"
                         "    </Source>"
@@ -8685,6 +8613,636 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "INSERT INTO ts.SolidHasFaces(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,4444,?)"));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                  06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
+    {
+            {
+            SchemaItem testItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "  <ECEntityClass typeName='Element' modifier='None'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <ECProperty propertyName='Code' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <ECProperty propertyName='Geom' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ElementHasGeometry' strength='embedding' modifier='Sealed'>"
+                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='Element' />"
+                "    </Source>"
+                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='ElementGeometry' />"
+                "    </Target>"
+                "    <ECProperty propertyName='RelProp' typeName='string' />"
+                "  </ECRelationshipClass>"
+                "</ECSchema>", true, "1:N Relationship having NotMapped constraint class on both sides of relationship are not supported");
+                bool asserted = false;
+                ECDb ecdb;
+                AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
+                ASSERT_FALSE(asserted);
+
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                PersistedMapStrategy mapStrategy;
+                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            }
+
+            {
+            SchemaItem testItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "  <ECEntityClass typeName='Element' modifier='None'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <ECProperty propertyName='Code' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <ECProperty propertyName='Geom' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
+                "    <Source cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='Element' />"
+                "    </Source>"
+                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='ElementGeometry' />"
+                "    </Target>"
+                "    <ECProperty propertyName='RelProp' typeName='string' />"
+                "  </ECRelationshipClass>"
+                "</ECSchema>", true, "N:N Relationship having not mapped constraint class on both sides of relationship are not supported");
+
+                bool asserted = false;
+                ECDb ecdb;
+                AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
+                ASSERT_FALSE(asserted);
+
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                PersistedMapStrategy mapStrategy;
+                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            }
+
+            {
+            SchemaItem testItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "  <ECEntityClass typeName='Element' modifier='None'>"
+                "    <ECProperty propertyName='Code' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='PhysicalElement' modifier='None'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <BaseClass>Element</BaseClass>"
+                "    <ECProperty propertyName='NameSpace' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry' modifier='None'>"
+                "    <ECProperty propertyName='Geom' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry3D'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <BaseClass>ElementGeometry</BaseClass>"
+                "    <ECProperty propertyName='Category3D' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
+                "    <Source cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='Element' />"
+                "    </Source>"
+                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='ElementGeometry' />"
+                "    </Target>"
+                "    <ECProperty propertyName='RelProp' typeName='string' />"
+                "  </ECRelationshipClass>"
+                "</ECSchema>", true, "N:N Relationship having at least one NotMapped constraint class on both sides of relationship are not supported");
+
+                bool asserted = false;
+                ECDb ecdb;
+                AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
+                ASSERT_FALSE(asserted);
+
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                PersistedMapStrategy mapStrategy;
+                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            }
+
+            {
+            SchemaItem testItem(
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "  <ECEntityClass typeName='Element' modifier='None'>"
+                "    <ECProperty propertyName='Code' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='PhysicalElement' modifier='None'>"
+                "    <BaseClass>Element</BaseClass>"
+                "    <ECProperty propertyName='NameSpace' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry' modifier='None'>"
+                "    <ECProperty propertyName='Geom' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='ElementGeometry3D'>"
+                "    <ECCustomAttributes>"
+                "        <ClassMap xmlns='ECDbMap.01.00'>"
+                "            <MapStrategy>"
+                "               <Strategy>NotMapped</Strategy>"
+                "               <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </MapStrategy>"
+                "        </ClassMap>"
+                "    </ECCustomAttributes>"
+                "    <BaseClass>ElementGeometry</BaseClass>"
+                "    <ECProperty propertyName='Category3D' typeName='binary' />"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='ElementHasGeometry' strength='referencing' modifier='Sealed'>"
+                "    <Source cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='Element' />"
+                "    </Source>"
+                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                "      <Class class='ElementGeometry' />"
+                "    </Target>"
+                "    <ECProperty propertyName='RelProp' typeName='string' />"
+                "  </ECRelationshipClass>"
+                "</ECSchema>", true, "N:N Relationships having at least one NotMapped constraint class on one sides of relationship are not supported");
+
+                bool asserted = false;
+                ECDb ecdb;
+                AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
+                ASSERT_FALSE(asserted);
+
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                PersistedMapStrategy mapStrategy;
+                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void AssertAndExecuteECSql(ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
+    if (stmt.IsPrepared())
+        {
+        ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRelationship)
+    {
+    SchemaItem opSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant' nameSpacePrefix='op' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='ITEM' >"
+        "    <ECProperty propertyName='op_ITEM_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='UNIT' >"
+        "    <ECProperty propertyName='op_UNIT_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='UNIT_HAS_ITEM' strength='referencing' strengthDirection='forward'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='UNIT' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='ITEM' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, opSchema, "addderivedclassonNsideof1Nrelationship.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    ECClassCP unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+
+    Savepoint sp(ecdb, "CRUD Operations");
+    //Insert Statements
+    {
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select statements
+    {
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    sp.Cancel();
+
+    ecdb.SaveChanges();
+    SchemaItem op3dSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant_3D' nameSpacePrefix='op3d' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='OpenPlant' version='01.00' prefix='op' />"
+        "  <ECEntityClass typeName='ITEM_3D' >"
+        "    <BaseClass>op:ITEM</BaseClass>"
+        "    <ECProperty propertyName='op3d_ITEM_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, op3dSchema);
+    ASSERT_FALSE(asserted);
+
+    item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+    ECClassCP item_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "ITEM_3D");
+
+    //Insert Statements
+    {
+    Utf8String ecsql;
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    //relationship between UNIT and ITEM_3D(new derived Class)
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(202, 'unitString2')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString1', 'item3dString1')");
+
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402, 202, %llu, 301, %llu)", unit->GetId().GetValue(), item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select statements
+    {
+    Utf8String ecsql;
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE ECInstanceId = 402 AND TargetECClassId = %llu", item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRelationship)
+    {
+    SchemaItem opSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant' nameSpacePrefix='op' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='ITEM' >"
+        "    <ECProperty propertyName='op_ITEM_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='UNIT' >"
+        "    <ECProperty propertyName='op_UNIT_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='UNIT_HAS_ITEM' strength='referencing' strengthDirection='forward'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='UNIT' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='ITEM' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, opSchema, "addderivedclasson1sideof1Nrelationship.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+    ECClassCP item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+
+    Savepoint sp(ecdb, "CRUD operations");
+    //Insert Statements
+    {
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select Statements
+    {
+    Utf8String ecsql;
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    sp.Cancel();
+
+    ecdb.SaveChanges();
+    SchemaItem op3dSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant_3D' nameSpacePrefix='op3d' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='OpenPlant' version='01.00' prefix='op' />"
+        "  <ECEntityClass typeName='UNIT_3D' >"
+        "    <BaseClass>op:UNIT</BaseClass>"
+        "    <ECProperty propertyName='op3d_UNIT_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, op3dSchema);
+    ASSERT_FALSE(asserted);
+
+    item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+    ECClassCP unit_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "UNIT_3D");
+
+    //Insert Statements
+    {
+    Utf8String ecsql;
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    //relationship between UNIT_3D(new derived Class) and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(301, 'unitString2', 'unit3dString2')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(102, 'itemString2')");
+
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402, 301, %llu, 102, %llu)", unit_3D->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select Statements
+    {
+    Utf8String ecsql;
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE ECInstanceId = 402 AND SourceECClassId=%llu", unit_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
+    {
+    SchemaItem opSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant' nameSpacePrefix='op' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='ITEM' >"
+        "    <ECProperty propertyName='op_ITEM_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='UNIT' >"
+        "    <ECProperty propertyName='op_UNIT_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='UNIT_HAS_ITEM' strength='referencing' strengthDirection='forward'>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='UNIT' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='ITEM' />"
+        "    </Target>"
+        "    <ECProperty propertyName='relProp' typeName='string' />"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, opSchema, "addderivedclassofconstraintsforNNrelationship.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    ECClassCP unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+
+    Savepoint sp(ecdb, "CRUD Operations");
+    //Insert Statements
+    {
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(401, 201, %llu, 101, %llu, 'relPropString1')", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select statements
+    {
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //update Statement
+    {
+    AssertAndExecuteECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=401");
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %lld AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //verify Deltion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+    sp.Cancel();
+
+    ecdb.SaveChanges();
+    SchemaItem op3dSchema(
+        "<?xml version = '1.0' encoding = 'utf-8'?>"
+        "<ECSchema schemaName='OpenPlant_3D' nameSpacePrefix='op3d' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='OpenPlant' version='01.00' prefix='op' />"
+        "  <ECEntityClass typeName='ITEM_3D' >"
+        "    <BaseClass>op:ITEM</BaseClass>"
+        "    <ECProperty propertyName='op3d_ITEM_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='UNIT_3D' >"
+        "    <BaseClass>op:UNIT</BaseClass>"
+        "    <ECProperty propertyName='op3d_UNIT_prop' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, op3dSchema);
+    ASSERT_FALSE(asserted);
+
+    item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+    ECClassCP item_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "ITEM_3D");
+    ECClassCP unit_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "UNIT_3D");
+
+    //Insert Statements
+    {
+    //relationship between UNIT and ITEM
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(501, 201, %llu, 101, %llu, 'relPropString1')", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    //relationship between UNIT_3D and ITEM_3D newly added derived classes
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(401, 'unitString2', 'unit3dString2')");
+    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString2', 'item3dString2')");
+
+    ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(502, 401, %llu, 301, %llu, 'relPropString2')", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    }
+
+    //Select statements
+    {
+    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    }
+
+    //update Statement
+    {
+    AssertAndExecuteECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=501");
+
+    //update relationship between newly added derived classes
+    AssertAndExecuteECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString2' WHERE ECInstanceId=502");
+    }
+
+    //Delete Statements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %lld AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %lld AND TargetECClassId = %llu", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    //Verify Deletion
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    AssertAndExecuteECSql(ecdb, ecsql.c_str());
     }
     }
 
@@ -8738,7 +9296,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneForward)
                          "  <ECEntityClass typeName='GeometryPart' >"
                          "    <ECProperty propertyName='Stream' typeName='binary' />"
                          "  </ECEntityClass>"
-                         "  <ECRelationshipClass typeName='GeometryHoldsParts' strength='holding' strengthDirection='Forward'>"
+                         "  <ECRelationshipClass typeName='GeometryHoldsParts' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
                          "     <Source cardinality='(0,1)' polymorphic='True'>"
                          "         <Class class='Geometry' />"
                          "     </Source>"
@@ -8818,7 +9376,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneBackward)
                          "  <ECEntityClass typeName='GeometryPart' >"
                          "    <ECProperty propertyName='Stream' typeName='binary' />"
                          "  </ECEntityClass>"
-                         "  <ECRelationshipClass typeName='PartHeldByGeometry' strength='holding' strengthDirection='Backward'>"
+                         "  <ECRelationshipClass typeName='PartHeldByGeometry' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
                          "    <Source cardinality='(0,1)' polymorphic='True'>"
                          "        <Class class='GeometryPart' />"
                          "     </Source>"
@@ -8898,7 +9456,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyForward)
                          "  <ECEntityClass typeName='GeometryPart' >"
                          "    <ECProperty propertyName='Stream' typeName='binary' />"
                          "  </ECEntityClass>"
-                         "  <ECRelationshipClass typeName='GeometryHoldsParts' strength='holding' strengthDirection='Forward'>"
+                         "  <ECRelationshipClass typeName='GeometryHoldsParts' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
                          "     <Source cardinality='(0,N)' polymorphic='True'>"
                          "         <Class class='Geometry' />"
                          "     </Source>"
@@ -8994,7 +9552,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyBackward)
                          "  <ECEntityClass typeName='GeometryPart' >"
                          "    <ECProperty propertyName='Stream' typeName='binary' />"
                          "  </ECEntityClass>"
-                         "  <ECRelationshipClass typeName='PartIsHeldByGeometry' strength='holding' strengthDirection='Backward'>"
+                         "  <ECRelationshipClass typeName='PartIsHeldByGeometry' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
                          "    <Source cardinality='(0,1)' polymorphic='True'>"
                          "        <Class class='GeometryPart' />"
                          "     </Source>"
@@ -9090,7 +9648,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyForward)
                          "  <ECEntityClass typeName='GeometryPart' >"
                          "    <ECProperty propertyName='Stream' typeName='binary' />"
                          "  </ECEntityClass>"
-                         "  <ECRelationshipClass typeName='GeometryHasParts' strength='holding' strengthDirection='Forward'>"
+                         "  <ECRelationshipClass typeName='GeometryHasParts' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
                          "     <Source cardinality='(0,N)' polymorphic='True'>"
                          "         <Class class='Geometry' />"
                          "     </Source>"
@@ -9187,7 +9745,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyBackward)
                          "  <ECEntityClass typeName='GeometryPart' >"
                          "    <ECProperty propertyName='Stream' typeName='binary' />"
                          "  </ECEntityClass>"
-                         "  <ECRelationshipClass typeName='PartsHeldByGeometry' strength='holding' strengthDirection='Backward'>"
+                         "  <ECRelationshipClass typeName='PartsHeldByGeometry' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
                          "    <Source cardinality='(0,N)' polymorphic='True'>"
                          "        <Class class='GeometryPart' />"
                          "     </Source>"
@@ -9306,7 +9864,7 @@ Utf8CP const RelationshipsAndSharedTablesTestFixture::SCHEMA_XML =
         "<BaseClass>ClassA</BaseClass>"
             "<ECProperty propertyName='P2' typeName='string' />"
     "</ECEntityClass>"
-    "<ECRelationshipClass typeName='BaseOwnsBase' strength='referencing' strengthDirection='forward'>"
+    "<ECRelationshipClass typeName='BaseOwnsBase' strength='referencing' strengthDirection='forward' modifier='Abstract'>"
         "<ECCustomAttributes>"
         "<ClassMap xmlns='ECDbMap.01.00'>"
         "<MapStrategy>"
@@ -9322,7 +9880,7 @@ Utf8CP const RelationshipsAndSharedTablesTestFixture::SCHEMA_XML =
             "<Class class='Base' />"
         "</Target>"
     "</ECRelationshipClass>"
-    "<ECRelationshipClass typeName='BaseHasClassA' strength='referencing' strengthDirection='forward'>"
+    "<ECRelationshipClass typeName='BaseHasClassA' strength='referencing' strengthDirection='forward' modifier='Sealed'>"
         "<BaseClass>BaseOwnsBase</BaseClass>"
         "<Source cardinality='(0,1)' polymorphic='True'>"
             "<Class class='Base' />"
@@ -9331,7 +9889,7 @@ Utf8CP const RelationshipsAndSharedTablesTestFixture::SCHEMA_XML =
             "<Class class='ClassA' />"
         "</Target>"
     "</ECRelationshipClass>"
-    "<ECRelationshipClass typeName='BaseHasClassB' strength='referencing' strengthDirection='forward'>"
+    "<ECRelationshipClass typeName='BaseHasClassB' strength='referencing' strengthDirection='forward' modifier='Sealed'>"
         "<BaseClass>BaseOwnsBase</BaseClass>"
         "<Source cardinality='(0,1)' polymorphic='True'>"
             "<Class class='Base' />"
@@ -9460,31 +10018,10 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     ASSERT_TRUE(stat == SUCCESS);
 
     //Get Relationship Classes
-    ECRelationshipClassCP baseOwnsBaseClass = schema->GetClassCP("BaseOwnsBase")->GetRelationshipClassCP();
-    ASSERT_TRUE(baseOwnsBaseClass != nullptr);
     ECRelationshipClassCP baseHasClassAClass = schema->GetClassCP("BaseHasClassA")->GetRelationshipClassCP();
     ASSERT_TRUE(baseHasClassAClass != nullptr);
     ECRelationshipClassCP baseHasClassBClass = schema->GetClassCP("BaseHasClassB")->GetRelationshipClassCP();
     ASSERT_TRUE(baseHasClassBClass != nullptr);
-
-    {//Insert Instances for Relationship TPHOwnsTPH
-    ECN::StandaloneECRelationshipInstancePtr relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*baseOwnsBaseClass)->CreateRelationshipInstance();
-    ECInstanceInserter relationshipinserter(ecdb, *baseOwnsBaseClass);
-    ASSERT_TRUE(relationshipinserter.IsValid());
-
-    {//Inserting 1st Instance
-    relationshipInstance->SetSource(baseInstance1.get());
-    relationshipInstance->SetTarget(baseInstance2.get());
-    relationshipInstance->SetInstanceId("source->target");
-    ASSERT_EQ(SUCCESS, relationshipinserter.Insert(*relationshipInstance));
-    }
-    {//Inserting 2nd Instance
-    relationshipInstance->SetSource(baseInstance2.get());
-    relationshipInstance->SetTarget(baseInstance1.get());
-    relationshipInstance->SetInstanceId("source->target");
-    ASSERT_EQ(SUCCESS, relationshipinserter.Insert(*relationshipInstance));
-    }
-    }
 
     {//Insert Instances for Relationship TPHhasClassA
     ECN::StandaloneECRelationshipInstancePtr relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*baseHasClassAClass)->CreateRelationshipInstance();
@@ -9531,7 +10068,7 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT COUNT(*) FROM t.BaseOwnsBase"));
     ASSERT_TRUE(BE_SQLITE_ROW == stmt.Step());
-    EXPECT_EQ(6, stmt.GetValueInt(0));
+    EXPECT_EQ(4, stmt.GetValueInt(0));
     stmt.Finalize();
 
     //Deletes the instances of BaseOwnsBase class..

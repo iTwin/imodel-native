@@ -380,13 +380,16 @@
     <ClInclude Include="DbSchemaPersistenceManager.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="Nullable.h">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClInclude>
     <ClInclude Include="ClassMappingInfo.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
     <ClInclude Include="DebugWriter.h" />
+    <ClInclude Include="IssueReporter.h">
+      <Filter>ECDb</Filter>
+    </ClInclude>
+    <ClInclude Include="LightweightCache.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -707,6 +710,12 @@
     </ClCompile>
     <ClCompile Include="ECDbMapDebugInfo.cpp" />
     <ClCompile Include="DebugWriter.cpp" />
+    <ClCompile Include="IssueReporter.cpp">
+      <Filter>ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="LightweightCache.cpp">
+      <Filter>ECDbMap</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">

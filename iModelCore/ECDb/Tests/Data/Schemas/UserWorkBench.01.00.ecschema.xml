@@ -19,7 +19,7 @@
         <ECProperty propertyName="name" typeName="string" displayLabel="Name" readOnly="false"/>
         <ECProperty propertyName="town_id" typeName="int" displayLabel="Town Id" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="area_town" displayLabel="Area Town Relationship" modifier="None" strength="holding" strengthDirection="backward">
+    <ECRelationshipClass typeName="area_town" displayLabel="Area Town Relationship" modifier="Sealed" strength="holding" strengthDirection="backward">
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="areas"/>
         </Source>
@@ -122,7 +122,7 @@
         </ECCustomAttributes>
         <ECProperty propertyName="name" typeName="string" displayLabel="Name" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="country_continent" displayLabel="Country Continent Relationship" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="country_continent" displayLabel="Country Continent Relationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(1,N)" polymorphic="true">
             <Class class="country" />
         </Source>
@@ -134,7 +134,7 @@
         <BaseClass>country</BaseClass>
         <ECProperty propertyName="country_id" typeName="int" displayLabel="Country Id" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="country_region" displayLabel="Country Region Relationship" modifier="None" strength="holding" strengthDirection="forward">
+    <ECRelationshipClass typeName="country_region" displayLabel="Country Region Relationship" modifier="Sealed" strength="holding" strengthDirection="forward">
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="country"/>
         </Source>
@@ -146,7 +146,7 @@
             </Class>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="house_user" displayLabel="House User Relationship" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="house_user" displayLabel="House User Relationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="houses"/>
         </Source>
@@ -201,7 +201,7 @@
         <ECProperty propertyName="name" typeName="string" displayLabel="Name" readOnly="false"/>
         <ECProperty propertyName="province_id" typeName="int" displayLabel="Province Id" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="province_area" displayLabel="Province Area Relationship" modifier="None" strength="referencing" strengthDirection="backward">
+    <ECRelationshipClass typeName="province_area" displayLabel="Province Area Relationship" modifier="Sealed" strength="referencing" strengthDirection="backward">
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="province"/>
         </Source>
@@ -209,7 +209,7 @@
             <Class class="areas"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="region_province" displayLabel="Region Province Relationship" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="region_province" displayLabel="Region Province Relationship" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="region"/>
         </Source>
@@ -236,7 +236,7 @@
         <ECProperty propertyName="level" typeName="int" readOnly="false"/>
         <ECProperty propertyName="status_id" typeName="string" displayLabel="Status Id" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="town_house" displayLabel="Town House Relationship" modifier="None" strength="embedding" strengthDirection="backward">
+    <ECRelationshipClass typeName="town_house" displayLabel="Town House Relationship" modifier="Sealed" strength="embedding" strengthDirection="backward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="towns"/>
         </Source>

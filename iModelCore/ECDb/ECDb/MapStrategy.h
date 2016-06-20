@@ -141,6 +141,7 @@ public:
     bool IsForeignKeyMapping() const { return m_strategy == Strategy::ForeignKeyRelationshipInSourceTable || m_strategy == Strategy::ForeignKeyRelationshipInTargetTable; }
  
     Utf8String ToString() const;
+    static Utf8CP ToString(Strategy);
     };
 
 ENUM_IS_FLAGS(ECDbMapStrategy::Options);

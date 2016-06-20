@@ -12,7 +12,7 @@
       <ECProperty propertyName="B" typeName="boolean" />
       <ECProperty propertyName="I" typeName="int" />
     </ECClass>
-      <ECRelationshipClass typeName="PSAHasPKey_N1" isDomainClass="True" strength="referencing" strengthDirection="forward">
+      <ECRelationshipClass typeName="PSAHasPKey_N1" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <!-- End table mapping -->
         <Source cardinality="(0,N)" polymorphic="True">
           <Class class="PSA" >

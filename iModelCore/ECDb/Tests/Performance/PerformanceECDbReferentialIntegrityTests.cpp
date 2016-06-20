@@ -75,7 +75,7 @@ void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath)
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "  </ECEntityClass>"
 
-        "  <ECRelationshipClass typeName = \"TestClassRelationship\" strength = \"holding\" strengthDirection = \"forward\">"
+        "  <ECRelationshipClass typeName = \"TestClassRelationship\" strength = \"holding\" strengthDirection = \"forward\"  modifier='Sealed'>"
         "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
         "      <Class class = \"TestClass\" />"
         "    </Source>"
@@ -89,7 +89,7 @@ void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath)
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "  </ECEntityClass>"
 
-        "  <ECRelationshipClass typeName = \"CachedInfoClassRelationship\" strength = \"holding\" strengthDirection = \"backward\">"
+        "  <ECRelationshipClass typeName = \"CachedInfoClassRelationship\" strength = \"holding\" strengthDirection = \"backward\"  modifier='Sealed'>"
         "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
         "      <Class class = \"CachedInfoClass\" />"
         "    </Source>"

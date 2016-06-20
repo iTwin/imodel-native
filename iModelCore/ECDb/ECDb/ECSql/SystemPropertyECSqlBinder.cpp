@@ -10,8 +10,32 @@
 #include "ECSqlStatementBase.h"
 
 using namespace std;
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      07/2014
+//---------------------------------------------------------------------------------------
+SystemPropertyECSqlBinder::SystemPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo, PropertyNameExp const& targetExp, bool isNoop, bool enforceConstraints) : ECSqlBinder(ecsqlStatement, typeInfo, isNoop ? 0 : 1, true, true), m_sqliteIndex(-1), m_constraints(nullptr), m_bindValueIsNull(true), m_isNoop(isNoop)
+    {
+    BeAssert(targetExp.IsSystemProperty());
+    targetExp.TryGetSystemProperty(m_systemProperty);
+
+    //enforce constraints means to check whether the source/target ecclassid matches the relationship constraints
+    if (m_systemProperty != ECSqlSystemProperty::ECInstanceId && enforceConstraints)
+        {
+        auto classRefExp = targetExp.GetClassRefExp();
+        if (classRefExp->GetType() == Exp::Type::ClassName)
+            {
+            auto classNameExp = static_cast<ClassNameExp const*> (classRefExp);
+            auto const& classMap = classNameExp->GetInfo().GetMap();
+            if (classMap.IsRelationshipClassMap())
+                m_constraints = static_cast<RelationshipClassMap const*> (&classMap);
+            }
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------

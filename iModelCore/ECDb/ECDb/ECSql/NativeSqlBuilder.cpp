@@ -9,6 +9,8 @@
 #include "NativeSqlBuilder.h"
 #include "ExpHelper.h"
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
@@ -268,6 +270,102 @@ NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList(ListOfLists const& li
         }
 
     return flattenedList;
+    }
+
+
+//*******************************************************************************************
+// SqlUpdateBuilder
+//*******************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SqlUpdateBuilder::ExecuteSql(ECDb const& ecdb) const
+    {
+    if (!IsValid())
+        return ERROR;
+
+    Utf8String sql;
+    sql.append("UPDATE [").append(m_table).append("] SET ");
+    bool isFirstItem = true;
+    for (std::pair<Utf8String, ECValue> const& kvPair : m_updateExpressions)
+        {
+        if (!isFirstItem)
+            sql.append(",");
+
+        sql.append("[").append(kvPair.first).append("]=?");
+
+        isFirstItem = false;
+        }
+
+    if (!m_whereExpressions.empty())
+        {
+        sql.append(" WHERE ");
+        bool isFirstItem = true;
+        for (std::pair<Utf8String, ECValue> const& kvPair : m_whereExpressions)
+            {
+            if (!isFirstItem)
+                sql.append(" AND ");
+
+            sql.append("[").append(kvPair.first).append("]=?");
+
+            isFirstItem = false;
+            }
+        }
+
+    Statement stmt;
+    if (stmt.Prepare(ecdb, sql.c_str()) != BE_SQLITE_OK)
+        return ERROR;
+
+    int paramIndex = 1;
+    for (std::pair<Utf8String, ECValue> const& kvPair : m_updateExpressions)
+        {
+        if (SUCCESS != Bind(stmt, paramIndex, kvPair.first.c_str(), kvPair.second))
+            return ERROR;
+
+        paramIndex++;
+        }
+
+    for (std::pair<Utf8String, ECValue> const& kvPair : m_whereExpressions)
+        {
+        if (SUCCESS != Bind(stmt, paramIndex, kvPair.first.c_str(), kvPair.second))
+            return ERROR;
+
+        paramIndex++;
+        }
+
+    const BentleyStatus stat = stmt.Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    BeAssert(ecdb.GetModifiedRowCount() > 0);
+    return stat;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SqlUpdateBuilder::Bind(Statement& stmt, int paramIndex, Utf8CP columName, ECValue const& val) const
+    {
+    if (val.IsNull())
+        {
+        stmt.BindNull(paramIndex);
+        return SUCCESS;
+        }
+
+    switch (val.GetPrimitiveType())
+        {
+            case PRIMITIVETYPE_Integer:
+                return stmt.BindInt(paramIndex, val.GetInteger()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_Long:
+                return stmt.BindInt64(paramIndex, val.GetLong()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_Double:
+                return stmt.BindDouble(paramIndex, val.GetDouble()) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_String:
+                return stmt.BindText(paramIndex, val.GetUtf8CP(), Statement::MakeCopy::No) == BE_SQLITE_OK ? SUCCESS : ERROR;
+            case PRIMITIVETYPE_Boolean:
+                return stmt.BindInt(paramIndex, DbSchemaPersistenceManager::BoolToSqlInt(val.GetBoolean())) == BE_SQLITE_OK ? SUCCESS : ERROR;
+        }
+
+    BeAssert(false && "Unsupported case");
+    return ERROR;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

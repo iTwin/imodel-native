@@ -7,9 +7,81 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3712::_Upgrade(ECDbCR ecdb) const
+    {
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE ec_KindOfQuantity("
+                                        "Id INTEGER PRIMARY KEY,"
+                                        "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+                                        "Name TEXT NOT NULL COLLATE NOCASE,"
+                                        "DisplayLabel TEXT,"
+                                        "Description TEXT,"
+                                        "PersistenceUnit TEXT NOT NULL,"
+                                        "PersistencePrecision INTEGER NOT NULL,"
+                                        "DefaultPresentationUnit TEXT,"
+                                        "AlternativePresentationUnits TEXT)"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating table ec_KindOfQuantity failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_KindOfQuantity_SchemaId ON ec_KindOfQuantity(SchemaId);"
+                                        "CREATE INDEX ix_ec_KindOfQuantity_Name ON ec_KindOfQuantity(Name);"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating indexes on table ec_KindOfQuantity failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("ALTER TABLE ec_Property ADD COLUMN "
+                                        "KindOfQuantityId INTEGER REFERENCES ec_KindOfQuantity(Id) ON DELETE CASCADE"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Adding column 'KindOfQuantityId' to table 'ec_KindOfQuantity' failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Added table 'ec_KindOfQuantity' and indexes. Added column 'KindOfQuantityId' to table 'ec_Property'.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3711::_Upgrade(ECDbCR ecdb) const
+    {
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE ec_ClassHierarchy("
+                                        "Id INTEGER PRIMARY KEY,"
+                                        "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                                        "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating table ec_ClassHierarchy failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassHierarchy_ClassId_BaseClassId ON ec_ClassHierarchy(ClassId,BaseClassId);"
+                           "CREATE INDEX ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHierarchy(BaseClassId);"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating indexes on table ec_ClassHierarchy failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ECDbSchemaWriter::RepopulateClassHierarchyTable(ecdb))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Repopulating the ec_ClassHierarchy table failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Added and populated table 'ec_ClassHierarchy'.");
+    return BE_SQLITE_OK;
+    }
+
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -318,7 +390,7 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
-    schemaKey = SchemaKey("MetaSchema", 3, 0, 0);
+    schemaKey = SchemaKey("MetaSchema", 3, 0, 1);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
@@ -392,7 +464,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContex
 Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' /> "
         "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
         "        <ECCustomAttributes> "
@@ -453,6 +525,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='ECInstanceId' typeName='long' description='Represents the ECInstanceId system property used by the EC->DB Mapping.' />"
+        "        <ECProperty propertyName='ECClassId' typeName='long' readOnly='True' description='Represents the ECClassId system property used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='SourceECInstanceId' typeName='long' description='Represents the SourceECInstanceId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='SourceECClassId' typeName='long' description='Represents the SourceECClassId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='TargetECInstanceId' typeName='long' description='Represents the TargetECInstanceId system property of an ECRelationship used by the EC->DB Mapping.' />"

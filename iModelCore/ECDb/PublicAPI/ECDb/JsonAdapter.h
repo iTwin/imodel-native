@@ -386,24 +386,65 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct JsonReader : NonCopyableClass
     {
-    struct ECRelatedItemsDisplaySpecificationsCache : public BeSQLite::Db::AppData
+    struct RelationshipPathInfo
+        {
+        Utf8String m_path;
+        ECN::ECSchemaCR m_defaultSchema;
+        bset<ECN::ECClassCP> m_derivedClasses;
+        
+        RelationshipPathInfo(Utf8CP path, ECN::ECSchemaCR defaultSchema) : m_path(path), m_defaultSchema(defaultSchema) {}
+
+        RelationshipPathInfo(RelationshipPathInfo const& other) : m_defaultSchema(other.m_defaultSchema)
+            {
+            *this = other;
+            }
+
+        RelationshipPathInfo& operator= (RelationshipPathInfo const& other)
+            {
+            m_path = other.m_path;
+            m_derivedClasses = other.m_derivedClasses;
+            return *this;
+            }
+
+        void InsertDerivedClass(ECN::ECClassCR derivedClass) 
+            { 
+            m_derivedClasses.insert(&derivedClass);
+            }
+        };
+
+    typedef bmap<ECN::ECClassCP, bvector<RelationshipPathInfo>> RelationshipPathInfosByClass;
+    typedef bmap<ECN::ECClassId, bvector<ECN::ECRelationshipPath>> RelationshipPathsByClassId;
+
+    struct RelatedItemsDisplaySpecificationsCache : public BeSQLite::Db::AppData
         {
         private:
             ECDbCR m_ecDb;
-            bmap<ECN::ECClassId, bvector<ECN::ECRelationshipPath>> m_pathsByClass;
+            RelationshipPathsByClassId m_pathsByClass;
 
-            BentleyStatus ExtractFromCustomAttribute(ECN::IECInstanceCR customAttributeSpecification, ECN::IECClassLocater&, ECN::ECSchemaCR customAttributeContainerSchema);
-            void AddPathToCache(ECN::ECRelationshipPath const& path);
-
-            static BeSQLite::Db::AppData::Key const& GetKey() { static BeSQLite::Db::AppData::Key s_key; return s_key; }
+            BentleyStatus GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass) const;
+            BentleyStatus GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass, ECN::ECSchemaCR customAttributeContainerSchema, ECN::IECInstanceCR customAttributeSpecification) const;
+            RelationshipPathInfo& AddEntryToRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass, ECN::ECClassCR parentClass, Utf8CP path, ECN::ECSchemaCR defaultSchema) const;
             
+            void RemoveDuplicates(RelationshipPathInfosByClass& pathInfoByClass) const;
+            void SortRelationshipPaths();
+
+            BentleyStatus ExtractRelationshipPaths(RelationshipPathInfosByClass const& pathInfosByClass);
+
+            void AddEntryToCache(ECN::ECClassCR parentClass, ECN::ECRelationshipPath const& path);
+
+            void DumpCache(ECN::ECClassCP ecClass = nullptr) const;
+
+            ECN::ECClassCP ResolveClass(Utf8StringCR possiblyQualifiedClassName, ECN::ECSchemaCR defaultSchema) const;
+           
+            static BeSQLite::Db::AppData::Key const& GetKey() { static BeSQLite::Db::AppData::Key s_key; return s_key; }
+
         public:
-            explicit ECRelatedItemsDisplaySpecificationsCache(ECDbCR ecDb) : Db::AppData(), m_ecDb(ecDb) {}
-            ~ECRelatedItemsDisplaySpecificationsCache() {}
+            explicit RelatedItemsDisplaySpecificationsCache(ECDbCR ecDb) : Db::AppData(), m_ecDb(ecDb) {}
+            ~RelatedItemsDisplaySpecificationsCache() {}
 
-            static ECRelatedItemsDisplaySpecificationsCache* Get(ECDbCR);
+            static RelatedItemsDisplaySpecificationsCache* Get(ECDbCR);
 
-            BentleyStatus Initialize(bvector<ECN::ECSchemaCP> const&, ECN::IECClassLocater&);
+            BentleyStatus Initialize();
             bool TryGetRelatedPaths(bvector<ECN::ECRelationshipPath>&, ECN::ECClassCR) const;
         };
 

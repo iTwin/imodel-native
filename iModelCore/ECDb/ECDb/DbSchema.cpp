@@ -12,9 +12,116 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************************************************************************************
+//ExistingColumn
+//****************************************************************************************
+struct ExistingColumn
+    {
+    private:
+        DbColumn::Type m_type;
+        Utf8String m_name;
+        int m_pkordinal;
+        bool m_isnotnull;
+        Utf8String m_defaultConstraint;
+    public:
+        ExistingColumn(Utf8CP name, DbColumn::Type type, int pkordinal, bool isnotnull, Utf8CP defaultConstraint)
+            :m_type(type), m_name(name), m_pkordinal(pkordinal), m_defaultConstraint(defaultConstraint), m_isnotnull(isnotnull)
+            {}
+        ExistingColumn(ExistingColumn const&& rhs)
+            :m_type(std::move(rhs.m_type)), m_name(std::move(rhs.m_name)), m_pkordinal(std::move(rhs.m_pkordinal)), m_defaultConstraint(std::move(rhs.m_defaultConstraint)), m_isnotnull(std::move(rhs.m_isnotnull))
+            {}
+        ExistingColumn(ExistingColumn const& rhs)
+            :m_type(rhs.m_type), m_name(rhs.m_name), m_pkordinal(rhs.m_pkordinal), m_defaultConstraint(rhs.m_defaultConstraint), m_isnotnull(rhs.m_isnotnull)
+            {}
+        ExistingColumn& operator = (ExistingColumn const&& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_type = std::move(rhs.m_type);
+                m_name = std::move(rhs.m_name);
+                m_pkordinal = std::move(rhs.m_pkordinal);
+                m_defaultConstraint = std::move(rhs.m_defaultConstraint);
+                m_isnotnull = std::move(rhs.m_isnotnull);
+                }
+
+            return *this;
+            }
+        ExistingColumn& operator = (ExistingColumn const& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_type = rhs.m_type;
+                m_name = rhs.m_name;
+                m_pkordinal = rhs.m_pkordinal;
+                m_defaultConstraint = rhs.m_defaultConstraint;
+                m_isnotnull = rhs.m_isnotnull;
+                }
+
+            return *this;
+            }
+        DbColumn::Type GetType() const { return m_type; }
+        Utf8StringCR GetName() const { return m_name; }
+        int GetPrimaryKeyOrdinal() const { return m_pkordinal; }
+        bool IsNotNull() const { return m_isnotnull; }
+        Utf8StringCR GetDefault() const { return m_defaultConstraint; }
+        static BentleyStatus GetColumns(std::vector<ExistingColumn>& columns, DbCR db, Utf8CP existingTableName)
+            {
+            columns.clear();
+            Utf8String sql;
+            sql.Sprintf("PRAGMA table_info('%s')", existingTableName);
+            Statement stmt;
+            if (stmt.Prepare(db, sql.c_str()) != BE_SQLITE_OK)
+                return BentleyStatus::ERROR;
+
+            while (stmt.Step() == BE_SQLITE_ROW)
+                {
+                BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(1), "name") == 0);
+                Utf8CP colName = stmt.GetValueText(1);
+
+                BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "type") == 0);
+                Utf8String colTypeName(stmt.GetValueText(2));
+                colTypeName.ToLower();
+                colTypeName.Trim();
+
+                BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "notnull") == 0);
+                const bool colIsNotNull = stmt.GetValueInt(3) == 1;
+
+                BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "dflt_value") == 0);
+                Utf8CP colDefaultValue = stmt.GetValueText(4);
+
+                BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "pk") == 0);
+                const int pkOrdinal = stmt.GetValueInt(5) ; //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
+
+                DbColumn::Type colType = DbColumn::Type::Any;
+                if (colTypeName.rfind("long") != Utf8String::npos ||
+                    colTypeName.rfind("int") != Utf8String::npos)
+                    colType = DbColumn::Type::Integer;
+                else if (colTypeName.rfind("char") != Utf8String::npos ||
+                         colTypeName.rfind("clob") != Utf8String::npos ||
+                         colTypeName.rfind("text") != Utf8String::npos)
+                    colType = DbColumn::Type::Text;
+                else if (colTypeName.rfind("blob") != Utf8String::npos ||
+                         colTypeName.rfind("binary") != Utf8String::npos)
+                    colType = DbColumn::Type::Blob;
+                else if (colTypeName.rfind("real") != Utf8String::npos ||
+                         colTypeName.rfind("floa") != Utf8String::npos ||
+                         colTypeName.rfind("doub") != Utf8String::npos)
+                    colType = DbColumn::Type::Real;
+                else if (colTypeName.rfind("date") != Utf8String::npos ||
+                         colTypeName.rfind("timestamp") != Utf8String::npos)
+                    colType = DbColumn::Type::TimeStamp;
+                else if (colTypeName.rfind("bool") != Utf8String::npos)
+                    colType = DbColumn::Type::Boolean;
+
+                columns.push_back(ExistingColumn(colName, colType, pkOrdinal, colIsNotNull, colDefaultValue));
+                }
+
+            return SUCCESS;
+            }
+    };
+
+//****************************************************************************************
 //DbSchema
 //****************************************************************************************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -83,18 +190,89 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8CP name, DbTable::Type tab
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::SynchronizeExistingTables()
+    {
+    std::vector<DbTable*> tables;
+    for (auto& tableKey : GetTables())
+        {
+        if (tableKey.second->IsOwnedByECDb())
+            continue;
+
+        DbTable* table = tableKey.second.get();
+        std::set<Utf8CP, CompareIUtf8Ascii> oldColumnList;
+        std::map<Utf8CP, ExistingColumn*, CompareIUtf8Ascii> newColumnList;
+        std::vector<ExistingColumn> dbColumnList;
+        if (ExistingColumn::GetColumns(dbColumnList, m_ecdb, tableKey.first) == ERROR)
+            {
+            BeAssert(false && "Failed to get column informations");
+            return ERROR;
+            }
+
+        for (auto& dbColumn : dbColumnList)
+            newColumnList[dbColumn.GetName().c_str()] = &dbColumn;
+
+        for (auto dbColumn : table->GetColumns())
+            {
+            if (dbColumn->GetPersistenceType() == PersistenceType::Persisted)
+                oldColumnList.insert(dbColumn->GetName().c_str());
+            }
+
+        //Compute how table have changed
+        std::set<Utf8CP, CompareIUtf8Ascii> added;
+        std::set<Utf8CP, CompareIUtf8Ascii> deleted;
+        for (auto oldColumn : oldColumnList)
+            {
+            if (newColumnList.find(oldColumn) != newColumnList.end())
+                continue;
+
+            deleted.insert(oldColumn);
+            }
+
+        for (auto const& newColumnKey : newColumnList)
+            {
+            if (oldColumnList.find(newColumnKey.first) != oldColumnList.end())
+                continue;
+
+            added.insert(newColumnKey.first);
+            }
+
+        if (!deleted.empty())
+            {
+            BeAssert("Existing table changed without map knowing about it");
+            return ERROR;
+            }
+
+        if (!table->GetEditHandle().CanEdit())
+            table->GetEditHandleR().BeginEdit();
+
+        for (Utf8CP addColumn : added)
+            {
+            auto itor = newColumnList.find(addColumn);
+            if (table->CreateColumn(addColumn, itor->second->GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted) == nullptr)
+                {
+                BeAssert("Failed to create column");
+                return ERROR;
+                }
+            }
+        table->GetEditHandleR().EndEdit();
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
 DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP existingTableName)
     {
     DbTable* table = CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Persisted, nullptr);
     if (table == nullptr)
         return nullptr;
 
-    Utf8String sql;
-    sql.Sprintf("PRAGMA table_info('%s')", existingTableName);
-    Statement stmt;
-    if (stmt.Prepare(m_ecdb, sql.c_str()) != BE_SQLITE_OK)
+    std::vector<ExistingColumn> existingColumns;
+    if (ExistingColumn::GetColumns(existingColumns, m_ecdb, existingTableName) == ERROR)
         {
-        BeAssert(false && "Failed to prepare statement");
+        BeAssert(false && "Failed to get column informations");
         return nullptr;
         }
 
@@ -103,63 +281,25 @@ DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP exist
 
     std::vector<DbColumn*> pkColumns;
     std::vector<size_t> pkOrdinals;
-    while (stmt.Step() == BE_SQLITE_ROW)
+    for (ExistingColumn const& col : existingColumns)
         {
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(1), "name") == 0);
-        Utf8CP colName = stmt.GetValueText(1);
-
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "type") == 0);
-        Utf8String colTypeName(stmt.GetValueText(2));
-        colTypeName.ToLower();
-        colTypeName.Trim();
-
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "notnull") == 0);
-        const bool colIsNotNull = stmt.GetValueInt(3) == 1;
-
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "dflt_value") == 0);
-        Utf8CP colDefaultValue = stmt.GetValueText(4);
-
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "pk") == 0);
-        const int pkOrdinal = stmt.GetValueInt(5) - 1; //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
-
-        DbColumn::Type colType = DbColumn::Type::Any;
-        if (colTypeName.rfind("long") != Utf8String::npos ||
-            colTypeName.rfind("int") != Utf8String::npos)
-            colType = DbColumn::Type::Integer;
-        else if (colTypeName.rfind("char") != Utf8String::npos ||
-                 colTypeName.rfind("clob") != Utf8String::npos ||
-                 colTypeName.rfind("text") != Utf8String::npos)
-            colType = DbColumn::Type::Text;
-        else if (colTypeName.rfind("blob") != Utf8String::npos ||
-                 colTypeName.rfind("binary") != Utf8String::npos)
-            colType = DbColumn::Type::Blob;
-        else if (colTypeName.rfind("real") != Utf8String::npos ||
-                 colTypeName.rfind("floa") != Utf8String::npos ||
-                 colTypeName.rfind("doub") != Utf8String::npos)
-            colType = DbColumn::Type::Real;
-        else if (colTypeName.rfind("date") != Utf8String::npos ||
-                 colTypeName.rfind("timestamp") != Utf8String::npos)
-            colType = DbColumn::Type::TimeStamp;
-        else if (colTypeName.rfind("bool") != Utf8String::npos)
-            colType = DbColumn::Type::Boolean;
-
-        DbColumn* column = table->CreateColumn(colName, colType, DbColumn::Kind::DataColumn, PersistenceType::Persisted);
+        DbColumn* column = table->CreateColumn(col.GetName().c_str(), col.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted);
         if (column == nullptr)
             {
             BeAssert(false && "Failed to create column");
             return nullptr;
             }
 
-        if (!Utf8String::IsNullOrEmpty(colDefaultValue))
-            column->GetConstraintsR().SetDefaultValueExpression(colDefaultValue);
+        if (!col.GetDefault().empty())
+            column->GetConstraintsR().SetDefaultValueExpression(col.GetDefault().c_str());
 
-        if (colIsNotNull)
+        if (col.IsNotNull())
             column->GetConstraintsR().SetNotNullConstraint();
-        
-        if (pkOrdinal >= 0)
+
+        if (col.GetPrimaryKeyOrdinal() > 0)
             {
             pkColumns.push_back(column);
-            pkOrdinals.push_back((size_t) pkOrdinal);
+            pkOrdinals.push_back(static_cast<size_t>(col.GetPrimaryKeyOrdinal() - 1));
             }
         }
 
@@ -1395,13 +1535,13 @@ void DbMappings::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-void ClassDbMapping::GetPropertyMappings(std::vector<PropertyDbMapping const*>& propertyMaps, bool onlyLocal) const
+void ClassDbMapping::GetPropertyMappings(std::vector<PropertyDbMapping const*>& propertyMaps, bool includeBaseProperties) const
     {
-    if (!onlyLocal && m_baseClassMappingId.IsValid())
+    if (includeBaseProperties && m_baseClassMappingId.IsValid())
         {
         ClassDbMapping const* baseClassMapping = m_dbMappings.FindClassMapping(m_baseClassMappingId);
         BeAssert(baseClassMapping != nullptr);
-        baseClassMapping->GetPropertyMappings(propertyMaps, onlyLocal);
+        baseClassMapping->GetPropertyMappings(propertyMaps, includeBaseProperties);
         }
 
     propertyMaps.erase(
@@ -1424,7 +1564,7 @@ void ClassDbMapping::GetPropertyMappings(std::vector<PropertyDbMapping const*>& 
 PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const
     {
     std::vector<PropertyDbMapping const*> propMappings;
-    GetPropertyMappings(propMappings, false);
+    GetPropertyMappings(propMappings, true);
     for (PropertyDbMapping const* pm : propMappings)
         {
         if (pm->GetPropertyPath().GetRootPropertyId() == rootPropertyId && pm->GetPropertyPath().GetAccessString() == accessString)
@@ -1440,7 +1580,7 @@ PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(ECN::ECPropertyId r
 PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(Utf8CP accessString) const
     {
     std::vector<PropertyDbMapping const*> propMappings;
-    GetPropertyMappings(propMappings, false);
+    GetPropertyMappings(propMappings, true);
 
     for (PropertyDbMapping const* pm : propMappings)
         {

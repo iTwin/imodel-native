@@ -13,7 +13,7 @@
     <ECEntityClass typeName="Laptop" modifier="None">
         <ECProperty propertyName="OS" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="LaptopHasLaptop" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="LaptopHasLaptop" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Laptop"/>
         </Source>
@@ -24,7 +24,7 @@
     <ECEntityClass typeName="RAM" modifier="None">
         <ECProperty propertyName="Size" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="LaptopHasRam" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="LaptopHasRam" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Laptop"/>
         </Source>
@@ -32,7 +32,7 @@
             <Class class="RAM"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="LaptopHaveManyRams" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="LaptopHaveManyRams" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="price" typeName="int" readOnly="false"/>
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Laptop"/>
@@ -41,7 +41,7 @@
             <Class class="RAM"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ManyLaptopsHaveManyRams" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ManyLaptopsHaveManyRams" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="Laptop"/>
         </Source>

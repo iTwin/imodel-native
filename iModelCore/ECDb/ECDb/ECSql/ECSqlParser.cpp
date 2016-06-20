@@ -14,6 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 using namespace std;
 using namespace connectivity;
+USING_NAMESPACE_BENTLEY_EC
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    04/2016
@@ -2853,9 +2854,9 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
     if (resolvedClass == nullptr)
         {
         if (Utf8String::IsNullOrEmpty(schemaNameOrPrefix))
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECClass '%s' does not exist. Try using fully qualified class name: <schema name>.<class name>.", className);
+            Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s' does not exist. Try using fully qualified class name: <schema name>.<class name>.", className);
         else
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix, className);
+            Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix, className);
 
         return ERROR;
         }
@@ -2870,7 +2871,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
     ClassMap const* map = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*resolvedClass);
     if (map == nullptr)
         {
-        BeAssert(false && "Could not get class map for a given class");
+        Issues().Report(ECDbIssueSeverity::Error, "Inconsistent database mapping information found for ECClass '%s'. This might be an indication that the import of the containing ECSchema had failed.", className);
         return ERROR;
         }
 

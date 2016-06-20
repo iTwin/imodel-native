@@ -34,6 +34,7 @@ ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
                 $(baseDir)ECDbInternalTypes.h \
                 $(baseDir)ECDbLogger.h \
+                $(baseDir)IssueReporter.h \
                 $(baseDir)MapStrategy.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)BeBriefcaseBasedIdSequence.h \
@@ -109,6 +110,7 @@ ECDbAllHeaders = \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)ECSchemaComparer.h \
+                $(baseDir)LightweightCache.h \
                 $(baseDir)ECDbExpressionSymbolProvider.h
 
 
@@ -147,191 +149,195 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 # Build objects
 #----------------------------------------------------------------------
-$(o)ECDbLogger$(oext):										$(baseDir)ECDbLogger.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbLogger$(oext):                                        $(baseDir)ECDbLogger.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)BeBriefcaseBasedIdSequence$(oext):						$(baseDir)BeBriefcaseBasedIdSequence.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)BeBriefcaseBasedIdSequence$(oext):                        $(baseDir)BeBriefcaseBasedIdSequence.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbMap$(oext):											$(baseDir)ECDbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbMap$(oext):                                           $(baseDir)ECDbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)MapStrategy$(oext):									    $(baseDir)MapStrategy.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)MapStrategy$(oext):                                       $(baseDir)MapStrategy.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ClassMappingInfo$(oext):                                $(baseDir)ClassMappingInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ClassMappingInfo$(oext):                                  $(baseDir)ClassMappingInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ClassMap$(oext):										$(baseDir)ClassMap.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ClassMap$(oext):                                          $(baseDir)ClassMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)RelationshipClassMap$(oext):							$(baseDir)RelationshipClassMap.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)RelationshipClassMap$(oext):                              $(baseDir)RelationshipClassMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PropertyMap$(oext):										$(baseDir)PropertyMap.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PropertyMap$(oext):                                       $(baseDir)PropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)SystemPropertyMap$(oext):								$(baseDir)SystemPropertyMap.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SystemPropertyMap$(oext):                                 $(baseDir)SystemPropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
  
-$(o)ECDbImpl$(oext):										$(baseDir)ECDbImpl.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbImpl$(oext):                                          $(baseDir)ECDbImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDb$(oext):											$(baseDir)ECDb.cpp                          $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDb$(oext):                                              $(baseDir)ECDb.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECInstanceId$(oext):									$(baseDir)ECInstanceId.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)IssueReporter$(oext):                                     $(baseDir)IssueReporter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaPersistenceHelper$(oext):                     $(baseDir)ECDbSchemaPersistenceHelper.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECInstanceId$(oext):                                      $(baseDir)ECInstanceId.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaReader$(oext):								$(baseDir)ECDbSchemaReader.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSchemaPersistenceHelper$(oext):                       $(baseDir)ECDbSchemaPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaWriter$(oext):								$(baseDir)ECDbSchemaWriter.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSchemaReader$(oext):                                  $(baseDir)ECDbSchemaReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaManager$(oext):								$(baseDir)ECDbSchemaManager.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSchemaWriter$(oext):                                  $(baseDir)ECDbSchemaWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)SchemaImportContext$(oext):								$(baseDir)SchemaImportContext.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSchemaManager$(oext):                                 $(baseDir)ECDbSchemaManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSchemaValidator$(oext):								$(baseDir)ECSchemaValidator.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SchemaImportContext$(oext):                               $(baseDir)SchemaImportContext.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbPolicyManager$(oext):								$(baseDir)ECDbPolicyManager.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSchemaValidator$(oext):                                 $(baseDir)ECSchemaValidator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbProfileManager$(oext):								$(baseDir)ECDbProfileManager.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbPolicyManager$(oext):                                 $(baseDir)ECDbPolicyManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbProfileUpgrader$(oext):								$(baseDir)ECDbProfileUpgrader.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbProfileManager$(oext):                                $(baseDir)ECDbProfileManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSystemSchemaHelper$(oext):							$(baseDir)ECDbSystemSchemaHelper.cpp        $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbProfileUpgrader$(oext):                               $(baseDir)ECDbProfileUpgrader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECInstanceFinder$(oext):								$(baseDir)ECInstanceFinder.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSystemSchemaHelper$(oext):                            $(baseDir)ECDbSystemSchemaHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ViewGenerator$(oext):									$(baseDir)ViewGenerator.cpp                 $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECInstanceFinder$(oext):                                  $(baseDir)ECInstanceFinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ChangeSummary$(oext):				    				$(baseDir)ChangeSummary.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ViewGenerator$(oext):                                     $(baseDir)ViewGenerator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)InternalNode$(oext):									$(baseDir)ECSql/Parser/InternalNode.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ChangeSummary$(oext):                                     $(baseDir)ChangeSummary.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlStatus$(oext):	                					$(baseDir)ECSql/ECSqlStatus.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)InternalNode$(oext):                                      $(baseDir)ECSql/Parser/InternalNode.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DynamicSelectClauseECClass$(oext):						$(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlStatus$(oext):                                       $(baseDir)ECSql/ECSqlStatus.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlParser$(oext):										$(baseDir)ECSql/ECSqlParser.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)DynamicSelectClauseECClass$(oext):                        $(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlTypeInfo$(oext):									$(baseDir)ECSql/ECSqlTypeInfo.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlParser$(oext):                                       $(baseDir)ECSql/ECSqlParser.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)Exp$(oext):												$(baseDir)ECSql/Exp.cpp                    $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlTypeInfo$(oext):                                     $(baseDir)ECSql/ECSqlTypeInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ComputedExp$(oext):										$(baseDir)ECSql/ComputedExp.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)Exp$(oext):                                               $(baseDir)ECSql/Exp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ValueExp$(oext):										$(baseDir)ECSql/ValueExp.cpp               $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ComputedExp$(oext):                                       $(baseDir)ECSql/ComputedExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ListExp$(oext):											$(baseDir)ECSql/ListExp.cpp                $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ValueExp$(oext):                                          $(baseDir)ECSql/ValueExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ClassRefExp$(oext):										$(baseDir)ECSql/ClassRefExp.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ListExp$(oext):                                           $(baseDir)ECSql/ListExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PropertyNameExp$(oext):									$(baseDir)ECSql/PropertyNameExp.cpp        $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ClassRefExp$(oext):                                       $(baseDir)ECSql/ClassRefExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)WhereExp$(oext):										$(baseDir)ECSql/WhereExp.cpp               $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PropertyNameExp$(oext):                                   $(baseDir)ECSql/PropertyNameExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)JoinExp$(oext):											$(baseDir)ECSql/JoinExp.cpp                $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)WhereExp$(oext):                                          $(baseDir)ECSql/WhereExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)SelectStatementExp$(oext):								$(baseDir)ECSql/SelectStatementExp.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)JoinExp$(oext):                                           $(baseDir)ECSql/JoinExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)InsertStatementExp$(oext):								$(baseDir)ECSql/InsertStatementExp.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SelectStatementExp$(oext):                                $(baseDir)ECSql/SelectStatementExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)UpdateStatementExp$(oext):								$(baseDir)ECSql/UpdateStatementExp.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)InsertStatementExp$(oext):                                $(baseDir)ECSql/InsertStatementExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DeleteStatementExp$(oext):								$(baseDir)ECSql/DeleteStatementExp.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)UpdateStatementExp$(oext):                                $(baseDir)ECSql/UpdateStatementExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)OptionsExp$(oext):										$(baseDir)ECSql/OptionsExp.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)DeleteStatementExp$(oext):                                $(baseDir)ECSql/DeleteStatementExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ExpHelper$(oext):										$(baseDir)ECSql/ExpHelper.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)OptionsExp$(oext):                                        $(baseDir)ECSql/OptionsExp.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlPrepareContext$(oext):								$(baseDir)ECSql/ECSqlPrepareContext.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ExpHelper$(oext):                                         $(baseDir)ECSql/ExpHelper.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)NativeSqlBuilder$(oext):								$(baseDir)ECSql/NativeSqlBuilder.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlPrepareContext$(oext):                               $(baseDir)ECSql/ECSqlPrepareContext.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlPreparer$(oext):									$(baseDir)ECSql/ECSqlPreparer.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)NativeSqlBuilder$(oext):                                  $(baseDir)ECSql/NativeSqlBuilder.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlPropertyNameExpPreparer$(oext):					$(baseDir)ECSql/ECSqlPropertyNameExpPreparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlPreparer$(oext):                                     $(baseDir)ECSql/ECSqlPreparer.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlSelectPreparer$(oext):								$(baseDir)ECSql/ECSqlSelectPreparer.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlPropertyNameExpPreparer$(oext):                      $(baseDir)ECSql/ECSqlPropertyNameExpPreparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlInsertPreparer$(oext):								$(baseDir)ECSql/ECSqlInsertPreparer.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlSelectPreparer$(oext):                               $(baseDir)ECSql/ECSqlSelectPreparer.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlUpdatePreparer$(oext):								$(baseDir)ECSql/ECSqlUpdatePreparer.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlInsertPreparer$(oext):                               $(baseDir)ECSql/ECSqlInsertPreparer.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlDeletePreparer$(oext):								$(baseDir)ECSql/ECSqlDeletePreparer.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlUpdatePreparer$(oext):                               $(baseDir)ECSql/ECSqlUpdatePreparer.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)IECSqlValue$(oext):										$(baseDir)ECSql/IECSqlValue.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlDeletePreparer$(oext):                               $(baseDir)ECSql/ECSqlDeletePreparer.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)IECSqlBinder$(oext):									$(baseDir)ECSql/IECSqlBinder.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)IECSqlValue$(oext):                                       $(baseDir)ECSql/IECSqlValue.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlColumnInfo$(oext):									$(baseDir)ECSql/ECSqlColumnInfo.cpp         $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)IECSqlBinder$(oext):                                      $(baseDir)ECSql/IECSqlBinder.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlStatement$(oext):									$(baseDir)ECSql/ECSqlStatement.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlColumnInfo$(oext):                                   $(baseDir)ECSql/ECSqlColumnInfo.cpp         $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlPreparedStatement$(oext):							$(baseDir)ECSql/ECSqlPreparedStatement.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlStatement$(oext):                                    $(baseDir)ECSql/ECSqlStatement.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlStatementBase$(oext):								$(baseDir)ECSql/ECSqlStatementBase.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlPreparedStatement$(oext):                            $(baseDir)ECSql/ECSqlPreparedStatement.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlStatementImpl$(oext):								$(baseDir)ECSql/ECSqlStatementImpl.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlStatementBase$(oext):                                $(baseDir)ECSql/ECSqlStatementBase.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlStatementCache$(oext):						        $(baseDir)ECSql/ECSqlStatementCache.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlStatementImpl$(oext):                                $(baseDir)ECSql/ECSqlStatementImpl.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECInstanceECSqlSelectAdapter$(oext):					$(baseDir)ECSql/ECInstanceECSqlSelectAdapter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlStatementCache$(oext):                               $(baseDir)ECSql/ECSqlStatementCache.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECInstanceAdapterHelper$(oext):                         $(baseDir)ECSql/ECInstanceAdapterHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECInstanceECSqlSelectAdapter$(oext):                      $(baseDir)ECSql/ECInstanceECSqlSelectAdapter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECInstanceDeleter$(oext):                               $(baseDir)ECSql/ECInstanceDeleter.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECInstanceAdapterHelper$(oext):                           $(baseDir)ECSql/ECInstanceAdapterHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECInstanceInserter$(oext):                              $(baseDir)ECSql/ECInstanceInserter.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECInstanceDeleter$(oext):                                 $(baseDir)ECSql/ECInstanceDeleter.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECInstanceUpdater$(oext):                               $(baseDir)ECSql/ECInstanceUpdater.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECInstanceInserter$(oext):                                $(baseDir)ECSql/ECInstanceInserter.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)JsonECSqlSelectAdapter$(oext):							$(baseDir)ECSql/JsonECSqlSelectAdapter.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECInstanceUpdater$(oext):                                 $(baseDir)ECSql/ECInstanceUpdater.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)JsonReader$(oext):                                      $(baseDir)ECSql/JsonReader.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)JsonECSqlSelectAdapter$(oext):                            $(baseDir)ECSql/JsonECSqlSelectAdapter.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)JsonInserter$(oext):                                    $(baseDir)ECSql/JsonInserter.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)JsonReader$(oext):                                        $(baseDir)ECSql/JsonReader.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)JsonUpdater$(oext):                                     $(baseDir)ECSql/JsonUpdater.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)JsonInserter$(oext):                                      $(baseDir)ECSql/JsonInserter.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)JsonDeleter$(oext):                                     $(baseDir)ECSql/JsonDeleter.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)JsonUpdater$(oext):                                       $(baseDir)ECSql/JsonUpdater.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlStatementNoopImpls$(oext):                         $(baseDir)ECSql/ECSqlStatementNoopImpls.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)JsonDeleter$(oext):                                       $(baseDir)ECSql/JsonDeleter.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlBinder$(oext):                                     $(baseDir)ECSql/ECSqlBinder.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlStatementNoopImpls$(oext):                           $(baseDir)ECSql/ECSqlStatementNoopImpls.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlBinderFactory$(oext):                              $(baseDir)ECSql/ECSqlBinderFactory.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlBinder$(oext):                                       $(baseDir)ECSql/ECSqlBinder.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveToSingleColumnECSqlBinder$(oext):              $(baseDir)ECSql/PrimitiveToSingleColumnECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlBinderFactory$(oext):                                $(baseDir)ECSql/ECSqlBinderFactory.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PointECSqlBinder$(oext):                                $(baseDir)ECSql/PointECSqlBinder.cpp        $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PrimitiveToSingleColumnECSqlBinder$(oext):                $(baseDir)ECSql/PrimitiveToSingleColumnECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructToColumnsECSqlBinder$(oext):                      $(baseDir)ECSql/StructToColumnsECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PointECSqlBinder$(oext):                                  $(baseDir)ECSql/PointECSqlBinder.cpp        $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveArrayToColumnECSqlBinder$(oext):               $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)StructToColumnsECSqlBinder$(oext):                        $(baseDir)ECSql/StructToColumnsECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructArrayJsonECSqlBinder$(oext):                      $(baseDir)ECSql/StructArrayJsonECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PrimitiveArrayToColumnECSqlBinder$(oext):                 $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)SystemPropertyECSqlBinder$(oext):                       $(baseDir)ECSql/SystemPropertyECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)StructArrayJsonECSqlBinder$(oext):                        $(baseDir)ECSql/StructArrayJsonECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlParseTreeFormatter$(oext):                         $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SystemPropertyECSqlBinder$(oext):                         $(baseDir)ECSql/SystemPropertyECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlField$(oext):                                      $(baseDir)ECSql/ECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlParseTreeFormatter$(oext):                           $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlFieldFactory$(oext):                               $(baseDir)ECSql/ECSqlFieldFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlField$(oext):                                        $(baseDir)ECSql/ECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveArrayMappedToSingleColumnECSqlField$(oext):    $(baseDir)ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlFieldFactory$(oext):                                 $(baseDir)ECSql/ECSqlFieldFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveMappedToSingleColumnECSqlField$(oext):         $(baseDir)ECSql/PrimitiveMappedToSingleColumnECSqlField.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PrimitiveArrayMappedToSingleColumnECSqlField$(oext):      $(baseDir)ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PointMappedToColumnsECSqlField$(oext):                  $(baseDir)ECSql/PointMappedToColumnsECSqlField.cpp                    $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PrimitiveMappedToSingleColumnECSqlField$(oext):           $(baseDir)ECSql/PrimitiveMappedToSingleColumnECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructMappedToColumnsECSqlField$(oext):                 $(baseDir)ECSql/StructMappedToColumnsECSqlField.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PointMappedToColumnsECSqlField$(oext):                    $(baseDir)ECSql/PointMappedToColumnsECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructArrayJsonECSqlField$(oext):                       $(baseDir)ECSql/StructArrayJsonECSqlField.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)StructMappedToColumnsECSqlField$(oext):                   $(baseDir)ECSql/StructMappedToColumnsECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DbSchema$(oext):	                                    $(baseDir)DbSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)StructArrayJsonECSqlField$(oext):                         $(baseDir)ECSql/StructArrayJsonECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DbSchemaPersistenceManager$(oext):                      $(baseDir)DbSchemaPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)DbSchema$(oext):                                          $(baseDir)DbSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbExpressionSymbolProvider$(oext):                    $(baseDir)ECDbExpressionSymbolProvider.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)DbSchemaPersistenceManager$(oext):                        $(baseDir)DbSchemaPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSchemaComparer$(oext):                                $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbExpressionSymbolProvider$(oext):                      $(baseDir)ECDbExpressionSymbolProvider.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbMapDebugInfo$(oext):                                $(baseDir)ECDbMapDebugInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSchemaComparer$(oext):                                  $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DebugWriter$(oext):                                     $(baseDir)DebugWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbMapDebugInfo$(oext):                                  $(baseDir)ECDbMapDebugInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)DebugWriter$(oext):                                       $(baseDir)DebugWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)LightweightCache$(oext):                                  $(baseDir)LightweightCache.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList) 
@@ -416,6 +422,7 @@ DLM_OBJECT_FILES            = $(cppObjects)
 DLM_OBJECT_PCH              = $(o)ECDbPch$(oext) 
 LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
+                              $(ContextSubpartsLibs)$(UnitsLib) \
                               $(ContextSubpartsLibs)$(BentleyGeomLib) \
                               $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \

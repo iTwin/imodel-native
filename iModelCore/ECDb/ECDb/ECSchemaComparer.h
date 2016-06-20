@@ -8,10 +8,10 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include <Bentley/RefCounted.h>
-#include "Nullable.h"
-USING_NAMESPACE_BENTLEY_EC
+#include <Bentley/Nullable.h>
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//#define KIND_OF_QUANTITY_SUPPORT
+
 #define INDENT_SIZE 3
 
 struct ECSchemaChange;
@@ -24,9 +24,8 @@ struct ECEnumeratorChange;
 struct ECPropertyValueChange;
 struct ECObjectChange;
 struct ClassTypeChange;
-#ifdef KIND_OF_QUANTITY_SUPPORT
 struct KindOfQuantityChange;
-#endif
+
 //=======================================================================================
 // @bsienum                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
@@ -391,7 +390,6 @@ struct ECEnumerationChanges : ECChangeArray<ECEnumerationChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-#ifdef KIND_OF_QUANTITY_SUPPORT
 struct ECKindOfQuantityChanges : ECChangeArray<KindOfQuantityChange>
     {
     public:
@@ -402,7 +400,6 @@ struct ECKindOfQuantityChanges : ECChangeArray<KindOfQuantityChange>
             }
         virtual ~ECKindOfQuantityChanges() {}
     };
-#endif
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -819,13 +816,13 @@ struct ClassModifierChange :ECPrimitiveChange<ECN::ECClassModifier>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ClassTypeChange :ECPrimitiveChange<ECClassType>
+struct ClassTypeChange :ECPrimitiveChange<ECN::ECClassType>
     {
     private:
         virtual Utf8String _ToString(ValueId id) const override;
     public:
         ClassTypeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECPrimitiveChange<ECClassType>(state, systemId, parent, customId)
+            : ECPrimitiveChange<ECN::ECClassType>(state, systemId, parent, customId)
             {}
         virtual ~ClassTypeChange() {}
     };
@@ -854,9 +851,7 @@ struct ECSchemaChange : ECObjectChange
         ECClassChanges& Classes() { return Get<ECClassChanges>(SystemId::Classes); }
         ECEnumerationChanges& Enumerations() { return Get<ECEnumerationChanges>(SystemId::Enumerations); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
-#ifdef KIND_OF_QUANTITY_SUPPORT
         ECKindOfQuantityChanges& KindOfQuantities() { return Get<ECKindOfQuantityChanges>(SystemId::KindOfQuantities); }
-#endif
     };
 
 //=======================================================================================
@@ -910,50 +905,7 @@ struct ECPropertyValueChange : ECChange
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
         virtual bool _IsEmpty() const override;
         virtual void _Optimize();
-        BentleyStatus InitValue(PrimitiveType type)
-            {
-            if (m_type == type)
-                return SUCCESS;
-
-            if (type == static_cast<PrimitiveType>(0))
-                {
-                m_value = nullptr;
-                return SUCCESS;
-                }
-
-            switch (type)
-                {
-                    case PRIMITIVETYPE_Binary:
-                        m_value = std::unique_ptr<ECChange>(new BinaryChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case PRIMITIVETYPE_Boolean:
-                        m_value = std::unique_ptr<ECChange>(new BooleanChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case PRIMITIVETYPE_DateTime:
-                        m_value = std::unique_ptr<ECChange>(new DateTimeChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case PRIMITIVETYPE_Double:
-                        m_value = std::unique_ptr<ECChange>(new DoubleChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case PRIMITIVETYPE_IGeometry:
-                        {
-                        BeAssert(false && "Geometry type is not supported");
-                        return ERROR;
-                        }
-                    case PRIMITIVETYPE_Integer:
-                        m_value = std::unique_ptr<ECChange>(new Int32Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case PRIMITIVETYPE_Long:
-                        m_value = std::unique_ptr<ECChange>(new Int64Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case PRIMITIVETYPE_Point2D:
-                        m_value = std::unique_ptr<ECChange>(new Point2DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case PRIMITIVETYPE_Point3D:
-                        m_value = std::unique_ptr<ECChange>(new Point3DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    case PRIMITIVETYPE_String:
-                        m_value = std::unique_ptr<ECChange>(new StringChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
-                    default:
-                        BeAssert(false && "Unexpected value for PrimitiveType");
-                        return ERROR;
-                }
-
-            m_type = type;
-            return SUCCESS;
-            }
+        BentleyStatus InitValue(ECN::PrimitiveType type);
 
         template< typename T >
         class Converter
@@ -963,7 +915,7 @@ struct ECPropertyValueChange : ECChange
 
             public:
                 template< typename U = T >
-                static resolvedType< std::is_same<U, Binary>::value, U > Copy(ECValueCR v)
+                static resolvedType< std::is_same<U, Binary>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
                     Nullable<T> t;
@@ -974,49 +926,49 @@ struct ECPropertyValueChange : ECChange
                     }
 
                 template< typename U = T >
-                static resolvedType<std::is_same<U, int32_t>::value, U > Copy(ECValueCR v)
+                static resolvedType<std::is_same<U, int32_t>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
                     return v.GetInteger();
                     }
                 template< typename U = T >
-                static resolvedType< std::is_same<U, int64_t>::value, U > Copy(ECValueCR v)
+                static resolvedType< std::is_same<U, int64_t>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
                     return v.GetLong();
                     }
                 template< typename U = T >
-                static resolvedType< std::is_same<U, DateTime>::value, U > Copy(ECValueCR v)
+                static resolvedType< std::is_same<U, DateTime>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
                     return v.GetDateTime();
                     }
                 template< typename U = T >
-                static resolvedType< std::is_same<U, Utf8String>::value, U > Copy(ECValueCR v)
+                static resolvedType< std::is_same<U, Utf8String>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
                     return Nullable<T>(v.GetUtf8CP());
                     }
                 template< typename U = T >
-                static resolvedType< std::is_same<U, DPoint2d>::value, U > Copy(ECValueCR v)
+                static resolvedType< std::is_same<U, DPoint2d>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
                     return v.GetPoint2D();
                     }
                 template< typename U = T >
-                static resolvedType< std::is_same<U, DPoint3d>::value, U > Copy(ECValueCR v)
+                static resolvedType< std::is_same<U, DPoint3d>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
                     return v.GetPoint3D();
                     }
                 template< typename U = T >
-                static resolvedType< std::is_same<U, double>::value, U > Copy(ECValueCR v)
+                static resolvedType< std::is_same<U, double>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
                     return v.GetDouble();
                     }
                 template< typename U = T >
-                static resolvedType< std::is_same<U, bool>::value, U > Copy(ECValueCR v)
+                static resolvedType< std::is_same<U, bool>::value, U > Copy(ECN::ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
                     return v.GetBoolean();
@@ -1027,28 +979,26 @@ struct ECPropertyValueChange : ECChange
 
     public:
         ECPropertyValueChange(ChangeState state, SystemId systemId = SystemId::PropertyValue, ECChange const* parent = nullptr, Utf8CP customId = nullptr);
+        virtual ~ECPropertyValueChange() {}
         bool HasValue() const;
         bool HasChildren() const;
         Utf8StringCR GetAccessString() const { return m_accessString; }
-        PrimitiveType GetValueType() const { return m_type; }
-        StringChange* GetString() const { BeAssert(m_type == PRIMITIVETYPE_String); if (m_type != PRIMITIVETYPE_String) return nullptr; return static_cast<StringChange*>(m_value.get()); }
-        BooleanChange* GetBoolean() const { BeAssert(m_type == PRIMITIVETYPE_Boolean); if (m_type != PRIMITIVETYPE_Boolean) return nullptr; return static_cast<BooleanChange*>(m_value.get()); }
-        DateTimeChange* GetDateTime() const { BeAssert(m_type == PRIMITIVETYPE_DateTime); if (m_type != PRIMITIVETYPE_DateTime) return nullptr; return static_cast<DateTimeChange*>(m_value.get()); }
-        DoubleChange* GetDouble() const { BeAssert(m_type == PRIMITIVETYPE_Double); if (m_type != PRIMITIVETYPE_Double) return nullptr; return static_cast<DoubleChange*>(m_value.get()); }
-        Int32Change* GetInteger() const { BeAssert(m_type == PRIMITIVETYPE_Integer); if (m_type != PRIMITIVETYPE_Integer) return nullptr; return static_cast<Int32Change*>(m_value.get()); }
-        Int64Change* GetLong() const { BeAssert(m_type == PRIMITIVETYPE_Long); if (m_type != PRIMITIVETYPE_Long) return nullptr; return static_cast<Int64Change*>(m_value.get()); }
-        Point2DChange* GetPoint2D() const { BeAssert(m_type == PRIMITIVETYPE_Point2D); if (m_type != PRIMITIVETYPE_Point2D) return nullptr; return static_cast<Point2DChange*>(m_value.get()); }
-        Point3DChange* GetPoint3D() const { BeAssert(m_type == PRIMITIVETYPE_Point3D); if (m_type != PRIMITIVETYPE_Point3D) return nullptr; return static_cast<Point3DChange*>(m_value.get()); }
-        BinaryChange* GetBinary() const { BeAssert(m_type == PRIMITIVETYPE_Binary); if (m_type != PRIMITIVETYPE_Binary) return nullptr; return static_cast<BinaryChange*>(m_value.get()); }
-        BentleyStatus SetValue(ValueId id, ECValueCR value);
-        BentleyStatus SetValue(ECValueCR oldValue, ECValueCR newValue);
+        ECN::PrimitiveType GetValueType() const { return m_type; }
+        StringChange* GetString() const { BeAssert(m_type == ECN::PRIMITIVETYPE_String); if (m_type != ECN::PRIMITIVETYPE_String) return nullptr; return static_cast<StringChange*>(m_value.get()); }
+        BooleanChange* GetBoolean() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Boolean); if (m_type != ECN::PRIMITIVETYPE_Boolean) return nullptr; return static_cast<BooleanChange*>(m_value.get()); }
+        DateTimeChange* GetDateTime() const { BeAssert(m_type == ECN::PRIMITIVETYPE_DateTime); if (m_type != ECN::PRIMITIVETYPE_DateTime) return nullptr; return static_cast<DateTimeChange*>(m_value.get()); }
+        DoubleChange* GetDouble() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Double); if (m_type != ECN::PRIMITIVETYPE_Double) return nullptr; return static_cast<DoubleChange*>(m_value.get()); }
+        Int32Change* GetInteger() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Integer); if (m_type != ECN::PRIMITIVETYPE_Integer) return nullptr; return static_cast<Int32Change*>(m_value.get()); }
+        Int64Change* GetLong() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Long); if (m_type != ECN::PRIMITIVETYPE_Long) return nullptr; return static_cast<Int64Change*>(m_value.get()); }
+        Point2DChange* GetPoint2D() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point2D); if (m_type != ECN::PRIMITIVETYPE_Point2D) return nullptr; return static_cast<Point2DChange*>(m_value.get()); }
+        Point3DChange* GetPoint3D() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point3D); if (m_type != ECN::PRIMITIVETYPE_Point3D) return nullptr; return static_cast<Point3DChange*>(m_value.get()); }
+        BinaryChange* GetBinary() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Binary); if (m_type != ECN::PRIMITIVETYPE_Binary) return nullptr; return static_cast<BinaryChange*>(m_value.get()); }
+        BentleyStatus SetValue(ValueId id, ECN::ECValueCR value);
+        BentleyStatus SetValue(ECN::ECValueCR oldValue, ECN::ECValueCR newValue);
         ECChangeArray<ECPropertyValueChange>& GetChildren();
         ECPropertyValueChange& GetOrCreate(ChangeState stat, std::vector<Utf8String> const& path);
         ECPropertyValueChange* GetValue(Utf8CP accessPath);
-        bool IsDefinition() const
-            {
-            return dynamic_cast<ECPropertyValueChange const*>(GetParent()) == nullptr;
-            }
+        bool IsDefinition() const { return dynamic_cast<ECPropertyValueChange const*>(GetParent()) == nullptr; }
         std::vector<ECPropertyValueChange*> GetFlatListOfChildren()
             {
             std::vector<ECPropertyValueChange*> v;
@@ -1056,13 +1006,11 @@ struct ECPropertyValueChange : ECChange
             return v;
             }
 
-        virtual ~ECPropertyValueChange() {}
     };
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-#ifdef KIND_OF_QUANTITY_SUPPORT
 struct KindOfQuantityChange :ECObjectChange
     {
     public:
@@ -1080,7 +1028,6 @@ struct KindOfQuantityChange :ECObjectChange
         UInt32Change& GetPrecision() { return Get<UInt32Change>(SystemId::Precision); }
         StringChanges& GetAlternativePresentationUnitList() { return Get<StringChanges>(SystemId::AlternativePresentationUnitList); }
     };
-#endif
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -1219,6 +1166,8 @@ struct ECPropertyChange :ECObjectChange
         StringChange& GetExtendedTypeName() { return Get<StringChange>(SystemId::ExtendedTypeName); }
         BooleanChange& IsReadonly() { return Get<BooleanChange>(SystemId::IsReadonly); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
+        StringChange& GetKindOfQuanity() { return Get<StringChange>(SystemId::KindOfQuantity); }
+        StringChange& GetEnumeration() { return Get<StringChange>(SystemId::Enumeration); }
     };
 
 //=======================================================================================
@@ -1226,6 +1175,7 @@ struct ECPropertyChange :ECObjectChange
 //+===============+===============+===============+===============+===============+======
 struct ECSchemaComparer
     {
+public:
     enum class AppendDetailLevel
         {
         Full,
@@ -1245,52 +1195,52 @@ struct ECSchemaComparer
             AppendDetailLevel GetSchemaDeleteDetailLevel() const { return m_schemaDeleteDetailLevel; }
             AppendDetailLevel GetSchemaNewDetailLevel() const { return m_schemaNewDetailLevel; }
         };
-    private :
-        Options m_options;
-    private:
-        BentleyStatus CompareECSchema(ECSchemaChange& change, ECSchemaCR a, ECSchemaCR b);
-        BentleyStatus CompareECClass(ECClassChange& change, ECClassCR a, ECClassCR b);
-        BentleyStatus CompareECBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b);
-        BentleyStatus CompareECRelationshipClass(ECRelationshipChange& change, ECRelationshipClassCR a, ECRelationshipClassCR b);
-        BentleyStatus CompareECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR a, ECRelationshipConstraintCR b);
-        BentleyStatus CompareECRelationshipConstraintClassKeys(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR a, ECRelationshipConstraintClassCR b);
-        BentleyStatus CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b);
-        BentleyStatus CompareECProperty(ECPropertyChange& change, ECPropertyCR a, ECPropertyCR b);
-        BentleyStatus CompareECProperties(ECPropertyChanges& changes, ECPropertyIterableCR a, ECPropertyIterableCR b);
-        BentleyStatus CompareECClasses(ECClassChanges& changes, ECClassContainerCR a, ECClassContainerCR b);
-        BentleyStatus CompareECEnumerations(ECEnumerationChanges& changes, ECEnumerationContainerCR a, ECEnumerationContainerCR b);
-        BentleyStatus CompareCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR a, IECCustomAttributeContainerCR b);
-        BentleyStatus CompareCustomAttribute(ECPropertyValueChange& changes, IECInstanceCR a, IECInstanceCR b);        
-        BentleyStatus CompareECEnumeration(ECEnumerationChange& change, ECEnumerationCR a, ECEnumerationCR b);
-        BentleyStatus CompareIntegerECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b);
-        BentleyStatus CompareStringECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b);
-        BentleyStatus CompareBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b);
-        BentleyStatus CompareReferences(ReferenceChanges& changes, ECSchemaReferenceListCR a, ECSchemaReferenceListCR b);
-        BentleyStatus AppendECSchema(ECSchemaChanges& changes, ECSchemaCR v, ValueId appendType);
-        BentleyStatus AppendECClass(ECClassChanges& changes, ECClassCR v, ValueId appendType);
-        BentleyStatus AppendECRelationshipClass(ECRelationshipChange& change, ECRelationshipClassCR v, ValueId appendType);
-        BentleyStatus AppendECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR v, ValueId appendType);
-        BentleyStatus AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& changes, ECRelationshipConstraintClassList const& v, ValueId appendType);
-        BentleyStatus AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR v, ValueId appendType);
-        BentleyStatus AppendECEnumeration(ECEnumerationChanges& changes, ECEnumerationCR v, ValueId appendType);
-        BentleyStatus AppendECProperty(ECPropertyChanges& changes, ECPropertyCR v, ValueId appendType);
-        BentleyStatus AppendCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR v, ValueId appendType);
-        BentleyStatus AppendCustomAttribute(ECInstanceChanges& changes, IECInstanceCR v, ValueId appendType);        
-        BentleyStatus AppendBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& v, ValueId appendType);
-        BentleyStatus AppendReferences(ReferenceChanges& changes, ECSchemaReferenceListCR v, ValueId appendType);
-        BentleyStatus ConvertECInstanceToValueMap(std::map<Utf8String, ECValue>& map, IECInstanceCR instance);
-        BentleyStatus ConvertECValuesCollectionToValueMap(std::map<Utf8String, ECValue>& map, ECValuesCollectionCR values);
-#ifdef KIND_OF_QUANTITY_SUPPORT
-        BentleyStatus AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType);
-        BentleyStatus CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b);
-        BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b);
-#endif
-    public:
-        ECSchemaComparer(){}
-        ~ECSchemaComparer(){}
-        BentleyStatus Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
-        static std::vector<Utf8String> Split(Utf8StringCR path);
-        static Utf8String Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
+
+private :
+    Options m_options;
+
+    BentleyStatus CompareECSchema(ECSchemaChange&, ECN::ECSchemaCR, ECN::ECSchemaCR);
+    BentleyStatus CompareECClass(ECClassChange&, ECN::ECClassCR, ECN::ECClassCR);
+    BentleyStatus CompareECBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&, ECN::ECBaseClassesList const&);
+    BentleyStatus CompareECRelationshipClass(ECRelationshipChange&, ECN::ECRelationshipClassCR, ECN::ECRelationshipClassCR);
+    BentleyStatus CompareECRelationshipConstraint(ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipConstraintCR);
+    BentleyStatus CompareECRelationshipConstraintClassKeys(ECRelationshipConstraintClassChange&, ECN::ECRelationshipConstraintClassCR, ECN::ECRelationshipConstraintClassCR);
+    BentleyStatus CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const&, ECN::ECRelationshipConstraintClassList const&);
+    BentleyStatus CompareECProperty(ECPropertyChange&, ECN::ECPropertyCR, ECN::ECPropertyCR);
+    BentleyStatus CompareECProperties(ECPropertyChanges&, ECN::ECPropertyIterableCR, ECN::ECPropertyIterableCR);
+    BentleyStatus CompareECClasses(ECClassChanges&, ECN::ECClassContainerCR, ECN::ECClassContainerCR);
+    BentleyStatus CompareECEnumerations(ECEnumerationChanges&, ECN::ECEnumerationContainerCR, ECN::ECEnumerationContainerCR);
+    BentleyStatus CompareCustomAttributes(ECInstanceChanges&, ECN::IECCustomAttributeContainerCR, ECN::IECCustomAttributeContainerCR);
+    BentleyStatus CompareCustomAttribute(ECPropertyValueChange&, ECN::IECInstanceCR, ECN::IECInstanceCR);
+    BentleyStatus CompareECEnumeration(ECEnumerationChange&, ECN::ECEnumerationCR, ECN::ECEnumerationCR);
+    BentleyStatus CompareIntegerECEnumerators(ECEnumeratorChanges&, ECN::EnumeratorIterable const&, ECN::EnumeratorIterable const&);
+    BentleyStatus CompareStringECEnumerators(ECEnumeratorChanges&, ECN::EnumeratorIterable const&, ECN::EnumeratorIterable const&);
+    BentleyStatus CompareBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&, ECN::ECBaseClassesList const&);
+    BentleyStatus CompareReferences(ReferenceChanges&, ECN::ECSchemaReferenceListCR, ECN::ECSchemaReferenceListCR);
+    BentleyStatus AppendECSchema(ECSchemaChanges&, ECN::ECSchemaCR, ValueId appendType);
+    BentleyStatus AppendECClass(ECClassChanges&, ECN::ECClassCR, ValueId appendType);
+    BentleyStatus AppendECRelationshipClass(ECRelationshipChange&, ECN::ECRelationshipClassCR, ValueId appendType);
+    BentleyStatus AppendECRelationshipConstraint(ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR v, ValueId appendType);
+    BentleyStatus AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const& v, ValueId appendType);
+    BentleyStatus AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange&, ECN::ECRelationshipConstraintClassCR v, ValueId appendType);
+    BentleyStatus AppendECEnumeration(ECEnumerationChanges&, ECN::ECEnumerationCR, ValueId appendType);
+    BentleyStatus AppendECProperty(ECPropertyChanges&, ECN::ECPropertyCR, ValueId appendType);
+    BentleyStatus AppendCustomAttributes(ECInstanceChanges& changes, ECN::IECCustomAttributeContainerCR, ValueId appendType);
+    BentleyStatus AppendCustomAttribute(ECInstanceChanges& changes, ECN::IECInstanceCR, ValueId appendType);
+    BentleyStatus AppendBaseClasses(BaseClassChanges& changes, ECN::ECBaseClassesList const&, ValueId appendType);
+    BentleyStatus AppendReferences(ReferenceChanges& changes, ECN::ECSchemaReferenceListCR, ValueId appendType);
+    BentleyStatus ConvertECInstanceToValueMap(std::map<Utf8String, ECN::ECValue>&, ECN::IECInstanceCR);
+    BentleyStatus ConvertECValuesCollectionToValueMap(std::map<Utf8String, ECN::ECValue>&, ECN::ECValuesCollectionCR);
+    BentleyStatus AppendKindOfQuantity(ECKindOfQuantityChanges&, ECN::KindOfQuantityCR, ValueId appendType);
+    BentleyStatus CompareKindOfQuantity(KindOfQuantityChange&, ECN::KindOfQuantityCR, ECN::KindOfQuantityCR);
+    BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges&, ECN::KindOfQuantityContainerCR, ECN::KindOfQuantityContainerCR);
+
+public:
+    ECSchemaComparer(){}
+
+    BentleyStatus Compare(ECSchemaChanges&, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
+    static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
+    static Utf8String Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
     };
 
 //=======================================================================================

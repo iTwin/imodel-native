@@ -364,7 +364,7 @@ TEST(ECDbRelationships, AmbiguousJoin)
     {
     const auto perClassRowCount = 0;
     ECDbTestProject testProj;
-    auto& ecdb = testProj.Create("ecdb.ecdbAmbiguousJoin", L"Computers.01.00.ecschema.xml", perClassRowCount);
+    auto& ecdb = testProj.Create("ambiguousjoin.ecdb", L"Computers.01.00.ecschema.xml", perClassRowCount);
     ECSqlStatement stmt;
 
     auto stat = stmt.Prepare(ecdb, "SELECT * FROM TR.Laptop JOIN TR.Laptop USING TR.LaptopHasLaptop FORWARD");

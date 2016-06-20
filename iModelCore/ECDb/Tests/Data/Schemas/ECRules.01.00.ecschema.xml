@@ -72,7 +72,7 @@
         <ECProperty propertyName="Chaining" typeName="int" description="0 for No Chaining (Sequential), 1 for Explicit Chaining (Explicit Update Only), 2 for Full Chaining" readOnly="false"/>
         <ECArrayProperty propertyName="Context" typeName="string" description="An array containing relevant context for the rule set." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="RuleSet_to_RuleSet" description="Relates a RuleSet to other RuleSet" modifier="None" strength="referencing" strengthDirection="backward">
+    <ECRelationshipClass typeName="RuleSet_to_RuleSet" description="Relates a RuleSet to other RuleSet" modifier="Sealed" strength="referencing" strengthDirection="backward">
         <Source cardinality="(0,N)" roleLabel="contained in" polymorphic="true">
             <Class class="RuleSet"/>
         </Source>

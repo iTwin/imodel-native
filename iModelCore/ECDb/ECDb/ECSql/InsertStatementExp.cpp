@@ -52,7 +52,7 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
                     auto addDelegate = [&propNameListExp] (unique_ptr<PropertyNameExp>& propNameExp)
                         {
                         //ECInstanceId is treated separately
-                        if (!propNameExp->GetPropertyMap().IsECInstanceIdPropertyMap())
+                        if (propNameExp->GetPropertyMap().GetType() != PropertyMap::Type::ECInstanceId)
                             propNameListExp->AddPropertyNameExp(propNameExp);
                         };
 
@@ -113,7 +113,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
     ValueExpListExp const* valuesExp = GetValuesExp();
     if (valuesExp->GetChildrenCount() != expectedValueCount)
         {
-        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Mismatching number of items in VALUES clause.");
+        ctx.Issues().Report(ECDbIssueSeverity::Error, "Mismatching number of items in VALUES clause.");
         return FinalizeParseStatus::Error;
         }
 
@@ -122,7 +122,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
         ClassNameExp const* classNameExp = GetClassNameExp();
         if (classNameExp->GetInfo().GetMap().IsECInstanceIdAutogenerationDisabled())
             {
-            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL INSERT must always specify the ECInstanceId as ECInstanceId auto-generation is disabled for the ECClass (via custom attribute): %s", ToECSql().c_str());
+            ctx.Issues().Report(ECDbIssueSeverity::Error, "ECSQL INSERT must always specify the ECInstanceId as ECInstanceId auto-generation is disabled for the ECClass (via custom attribute): %s", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -133,7 +133,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
         switch (valueExp->GetType())
             {
                 case Exp::Type::PropertyName:
-                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expression '%s' is not allowed in the VALUES clause of the INSERT statement.", valueExp->ToECSql().c_str());
+                    ctx.Issues().Report(ECDbIssueSeverity::Error, "Expression '%s' is not allowed in the VALUES clause of the INSERT statement.", valueExp->ToECSql().c_str());
                     return FinalizeParseStatus::Error;
 
                 case Exp::Type::Parameter:
@@ -147,7 +147,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
         Utf8String errorMessage;
         if (!propertyNameExp->GetTypeInfo().CanCompare(valueExp->GetTypeInfo(), &errorMessage))
             {
-            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch in INSERT statement: %s", errorMessage.c_str());
+            ctx.Issues().Report(ECDbIssueSeverity::Error, "Type mismatch in INSERT statement: %s", errorMessage.c_str());
             return FinalizeParseStatus::Error;
             }
 

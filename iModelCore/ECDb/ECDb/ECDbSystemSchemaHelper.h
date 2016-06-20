@@ -17,6 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 enum class ECSqlSystemProperty
     {
     ECInstanceId,
+    ECClassId,
     SourceECInstanceId,
     SourceECClassId,
     TargetECInstanceId,
@@ -28,13 +29,14 @@ enum class ECSqlSystemProperty
 //+===============+===============+===============+===============+===============+======
 struct ECDbSystemSchemaHelper : NonCopyableClass
     {
-public:
-    static Utf8CP const ECDBSYSTEM_SCHEMANAME;
-    static Utf8CP const ECINSTANCEID_PROPNAME;
-    static Utf8CP const SOURCEECINSTANCEID_PROPNAME;
-    static Utf8CP const SOURCEECCLASSID_PROPNAME;
-    static Utf8CP const TARGETECINSTANCEID_PROPNAME;
-    static Utf8CP const TARGETECCLASSID_PROPNAME;
+    public:
+        static Utf8CP const ECDBSYSTEM_SCHEMANAME;
+        static Utf8CP const ECINSTANCEID_PROPNAME;
+        static Utf8CP const ECCLASSID_PROPNAME;
+        static Utf8CP const SOURCEECINSTANCEID_PROPNAME;
+        static Utf8CP const SOURCEECCLASSID_PROPNAME;
+        static Utf8CP const TARGETECINSTANCEID_PROPNAME;
+        static Utf8CP const TARGETECCLASSID_PROPNAME;
 
 private:
     static Utf8CP const ECSQLSYSTEMPROPERTIES_CLASSNAME;

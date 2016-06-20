@@ -48,6 +48,7 @@
     <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp" />
     <ClCompile Include="Published\ECInstanceInserterTests.cpp" />
     <ClCompile Include="Published\ECInstanceUpdaterTests.cpp" />
+    <ClCompile Include="Published\ECRelationshipClassInheritanceTests.cpp" />
     <ClCompile Include="Published\ECSqlAsserter.cpp" />
     <ClCompile Include="Published\ECSqlCustomFunction_Tests.cpp" />
     <ClCompile Include="Published\ECSqlDeleteTestDataset.cpp" />

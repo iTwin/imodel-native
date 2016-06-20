@@ -8,6 +8,8 @@
 #include "ECDbPch.h"
 #include <set>
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //************************** ViewGenerator ***************************************************
@@ -44,7 +46,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;
-    ECDbMapCR map = ecdb.GetECDbImplR().GetECDbMap();
+    ECDbMap const& map = ecdb.GetECDbImplR().GetECDbMap();
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
@@ -114,7 +116,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;
-    ECDbMapCR map = ecdb.GetECDbImplR().GetECDbMap();
+    ECDbMap const& map = ecdb.GetECDbImplR().GetECDbMap();
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
@@ -215,9 +217,9 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
             }
 
         std::vector<DbColumn const*> derivedColumnList, baseColumnList;
-        if (auto navProp = basePropertyMap->GetAsNavigationPropertyMap())
+        if (basePropertyMap->GetType() == PropertyMap::Type::Navigation)
             {
-            if (!navProp->IsSupportedInECSql())
+            if (!static_cast<NavigationPropertyMap const*>(basePropertyMap)->IsSupportedInECSql())
                 return;
             }
 
@@ -262,7 +264,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
     if (classMap.GetMapStrategy().IsNotMapped() || classMap.IsRelationshipClassMap())
         return ERROR;
 
-    ECDbMapCR ecdbMap = classMap.GetECDbMap();
+    ECDbMap const& ecdbMap = classMap.GetECDbMap();
     StorageDescription const& descr = classMap.GetStorageDescription();
     std::vector<Partition> const& partitions = descr.GetHorizontalPartitions();
     Partition const& rootPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
@@ -564,8 +566,8 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
         if(m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetPropertyAccessString()))
             continue;
 
-        NavigationPropertyMap const* navPropMap = baseClassPropertyMap->GetAsNavigationPropertyMap();
-        if (navPropMap != nullptr && !navPropMap->IsSupportedInECSql())
+        if (baseClassPropertyMap->GetType() == PropertyMap::Type::Navigation &&
+            !static_cast<NavigationPropertyMap const*>(baseClassPropertyMap)->IsSupportedInECSql())
             continue;
 
         PropertyMap const* childClassCounterpartPropMap = childClassMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString());
@@ -597,10 +599,20 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
         if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
             continue;
 
+
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
         BeAssert(actualPropMap->GetTable() != nullptr);
         auto colSqlSnippets = actualPropMap->ToNativeSql(actualPropMap->GetTable()->GetName().c_str(), ECSqlType::Select, false);
         auto colSqlSnippetsWithoutTableNames = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
+
+
+        ColumnMappedToPropertyList columnMapped;
+        bool generateDebugView = m_viewAccessStringList && m_captureViewAccessStringList;
+        if (generateDebugView)
+            {
+            columnMapped = actualPropMap->QueryColumnInfo(
+                Enum::Or(ColumnMappedToProperty::LoadFlags::StrongType, Enum::Or(ColumnMappedToProperty::LoadFlags::Column, ColumnMappedToProperty::LoadFlags::AccessString)), true);
+            }
 
         const size_t snippetCount = colSqlSnippets.size();
         if (aliasSqlSnippets.size() != snippetCount)
@@ -617,16 +629,34 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                 viewSql.Append("NULL ");
             else
                 {
-                viewSql.Append(colSqlSnippets[i]);
+                if (generateDebugView)
+                    {
+                    if (!columnMapped[i].GetColumn()->IsShared())
+                        viewSql.Append(colSqlSnippets[i]);
+                    else
+                        {
+                        viewSql.Append("CAST (");
+                        viewSql.Append(colSqlSnippets[i]);
+                        viewSql.Append(" AS ").Append(DbColumn::TypeToSql(columnMapped[i].GetStrongType()));
+                        viewSql.Append(")");
+                        }
+                    }
+                else
+                    {
+                    viewSql.Append(colSqlSnippets[i]);
+                    }
                 }
+
             if (strcmp(colSqlSnippetsWithoutTableNames[i].ToString(), aliasSqlSnippet.ToString()) != 0 || forNullView) //do not add alias if column name is same as alias.
                 viewSql.AppendSpace().Append(aliasSqlSnippet);
             }
 
-        if (m_viewAccessStringList && m_captureViewAccessStringList)
+        if (generateDebugView)
             {
-            if (actualPropMap->GetPropertyPathList(*m_viewAccessStringList) != SUCCESS)
-                return ERROR;
+            for (auto const& columnInfo : columnMapped)
+                {
+                m_viewAccessStringList->push_back(columnInfo.GetAccessString());
+                }
             }
         }
 
@@ -833,9 +863,9 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBui
     {
     if (classMap._RequiresJoin(endPoint))
         {
-        ECDbMapCR ecdbMap = classMap.GetECDbMap();
-        ECClassIdRelationshipConstraintPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
-        ECInstanceIdRelationshipConstraintPropertyMap const* ecInstanceIdPropertyMap = static_cast<ECInstanceIdRelationshipConstraintPropertyMap const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
+        ECDbMap const& ecdbMap = classMap.GetECDbMap();
+        RelConstraintECClassIdPropertyMap const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
+        RelationshipConstraintECInstanceIdPropertyMap const* ecInstanceIdPropertyMap = static_cast<RelationshipConstraintECInstanceIdPropertyMap const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
         size_t tableCount = ecdbMap.GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
         DbTable const* targetTable = &ecclassIdPropertyMap->GetSingleColumn()->GetTable();
         if (tableCount > 1
@@ -1089,7 +1119,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
     viewSql.AppendComma();
 
     //SourceECClassId--------------------------------------
-    ECClassIdRelationshipConstraintPropertyMap const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
+    RelConstraintECClassIdPropertyMap const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
     if (!classIdPropMap->IsVirtual())
         {
         if (relationMap._RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Source))

@@ -37,7 +37,7 @@ ECDbSchemaManager::~ECDbSchemaManager()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool ensureAllClassesLoaded) const
+BentleyStatus ECDbSchemaManager::GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool loadSchemaEntities) const
     {
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_Schema");
     if (stmt == nullptr)
@@ -54,7 +54,7 @@ BentleyStatus ECDbSchemaManager::GetECSchemas(bvector<ECN::ECSchemaCP>& schemas,
     schemas.clear();
     for (ECSchemaId schemaId : schemaIds)
         {
-        ECSchemaCP out = GetECSchema(schemaId, ensureAllClassesLoaded);
+        ECSchemaCP out = GetECSchema(schemaId, loadSchemaEntities);
         if (out == nullptr)
             return ERROR;
 
@@ -306,27 +306,30 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
             return ERROR;
         }
 
+    if (BE_SQLITE_OK != ECDbSchemaWriter::RepopulateClassHierarchyTable(m_ecdb))
+        return ERROR;
+
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECDbSchemaManager::GetECSchema(Utf8CP schemaName, bool ensureAllClassesLoaded) const
+ECSchemaCP ECDbSchemaManager::GetECSchema(Utf8CP schemaName, bool loadSchemaEntities) const
     {
     const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), schemaName);
     if (!schemaId.IsValid())
         return nullptr;
 
-    return GetECSchema(schemaId, ensureAllClassesLoaded);
+    return GetECSchema(schemaId, loadSchemaEntities);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECDbSchemaManager::GetECSchema(ECSchemaId schemaId, bool ensureAllClassesLoaded) const
+ECSchemaCP ECDbSchemaManager::GetECSchema(ECSchemaId const& schemaId, bool loadSchemaEntities) const
     {
-    return m_schemaReader->GetECSchema(schemaId, ensureAllClassesLoaded);
+    return m_schemaReader->GetECSchema(schemaId, loadSchemaEntities);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -358,7 +361,7 @@ ECClassCP ECDbSchemaManager::GetECClass(Utf8CP schemaNameOrPrefix, Utf8CP classN
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
+ECClassCP ECDbSchemaManager::GetECClass(ECClassId const& ecClassId) const
     {
     return m_schemaReader->GetECClass(ecClassId);
     }
@@ -374,14 +377,18 @@ bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrPrefix
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                       12/13
 //---------------------------------------------------------------------------------------
-ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR baseECClass) const
+ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR ecClass) const
     {
-    if (EnsureDerivedClassesExist(baseECClass) != SUCCESS)
+    ECClassId id = ECDbSchemaPersistenceHelper::GetECClassId(m_ecdb, ecClass);
+    if (id.IsValid())
         {
-        BeAssert(false);
+        if (SUCCESS != m_schemaReader->EnsureDerivedClassesExist(id))
+            LOG.errorv("Could not load derived classes for ECClass %s.", ecClass.GetFullName());
         }
+    else
+        LOG.errorv("Cannot call ECDbSchemaManager::GetDerivedECClasses on ECClass %s. The ECClass does not exist in the ECDb file %s.", ecClass.GetFullName(), m_ecdb.GetDbFileName());
 
-    return baseECClass.GetDerivedClasses();
+    return ecClass.GetDerivedClasses();
     }
 
 //---------------------------------------------------------------------------------------
@@ -390,6 +397,14 @@ ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR bas
 ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
     {
     return m_schemaReader->GetECEnumeration(schemaName, enumName);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+KindOfQuantityCP ECDbSchemaManager::GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const
+    {
+    return m_schemaReader->GetKindOfQuantity(schemaName, koqName);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -410,22 +425,21 @@ ECDbCR ECDbSchemaManager::GetECDb() const { return m_ecdb; }
 //---------------------------------------------------------------------------------------
 ECSchemaPtr ECDbSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), key.GetName().c_str());
-    if (!schemaId.IsValid())
+    SchemaKey foundKey;
+    ECSchemaId foundId;
+    if (!ECDbSchemaPersistenceHelper::TryGetECSchemaKeyAndId(foundKey, foundId, m_ecdb, key.GetName().c_str()))
         return nullptr;
 
-    ECSchemaCP schema = m_schemaReader->GetECSchema(schemaId, true);
+    if (!foundKey.Matches(key, matchType))
+        return nullptr;
+
+    ECSchemaCP schema = m_schemaReader->GetECSchema(foundId, true);
     if (schema == nullptr)
         return nullptr;
 
-    if (schema->GetSchemaKey().Matches(key, matchType))
-        {
-        ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
-        schemaContext.GetCache().AddSchema(*schemaP);
-        return schemaP;
-        }
-
-    return nullptr;
+    ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
+    schemaContext.GetCache().AddSchema(*schemaP);
+    return schemaP;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -434,52 +448,6 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType mat
 ECClassCP ECDbSchemaManager::_LocateClass(Utf8CP schemaName, Utf8CP className)
     {
     return GetECClass(schemaName, className);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      05/2013
-//---------------------------------------------------------------------------------------
-//static
-ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(ECDbCR db, ECClassCR ecClass)
-    {
-    ECClassId id;
-    db.Schemas().TryGetECClassId(id, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
-    const_cast<ECClassR>(ecClass).SetId(id);
-    return id;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      05/2013
-//---------------------------------------------------------------------------------------
-ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR db, ECPropertyCR ecProperty)
-    {
-    ECPropertyId ecPropertyId = ECDbSchemaPersistenceHelper::GetECPropertyId(db, ecProperty.GetClass().GetSchema().GetName().c_str(), ecProperty.GetClass().GetName().c_str(), ecProperty.GetName().c_str());
-    const_cast<ECPropertyR>(ecProperty).SetId(ecPropertyId);
-    return ecPropertyId;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      05/2013
-//---------------------------------------------------------------------------------------
-ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR db, ECSchemaCR ecSchema)
-    {
-    const ECSchemaId ecSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(db, ecSchema.GetName().c_str());
-    const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
-    return ecSchemaId;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan      03/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClass) const
-    {
-    ECClassId ecClassId;
-    if (ecClass.HasId())
-        ecClassId = ecClass.GetId();
-    else
-        ecClassId = GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass);
-
-    return m_schemaReader->EnsureDerivedClassesExist(ecClassId);
     }
 
 //---------------------------------------------------------------------------------------

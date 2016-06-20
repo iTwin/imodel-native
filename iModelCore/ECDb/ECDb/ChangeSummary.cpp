@@ -11,7 +11,7 @@
 #define CHANGED_INSTANCES_TABLE_BASE_NAME "ec_ChangedInstances"
 #define CHANGED_VALUES_TABLE_BASE_NAME "ec_ChangedValues"
 
-ECDB_TYPEDEFS(SqlChange);
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -165,7 +165,7 @@ struct ValuesTable : NonCopyableClass
 private:
     ChangeSummaryCR m_changeSummary;
     ECDbCR m_ecdb;
-    InstancesTableCR m_instancesTable;
+    InstancesTable const& m_instancesTable;
     Utf8String m_valuesTableNameNoPrefix;
     mutable Statement m_valuesTableInsert;
 
@@ -207,16 +207,16 @@ private:
     ChangeSummaryCR m_changeSummary;
     ECDbCR m_ecdb;
     mutable TableMapByName m_tableMapByName;
-    InstancesTableR m_instancesTable;
-    ValuesTableR m_valuesTable;
+    InstancesTable& m_instancesTable;
+    ValuesTable& m_valuesTable;
 
     ExtractOption m_extractOption;
-    SqlChangeCP m_sqlChange;
-    ChangeSummary::TableMapCP m_tableMap;
+    SqlChange const* m_sqlChange;
+    ChangeSummary::TableMap const* m_tableMap;
 
-    static ClassMapCP GetClassMap(ECDbCR ecdb, ECN::ECClassId classId);
+    static ClassMapCP GetClassMap(ECDbCR, ECN::ECClassId);
    
-    ChangeSummary::TableMapCP GetTableMap(Utf8StringCR tableName) const;
+    ChangeSummary::TableMap const* GetTableMap(Utf8StringCR tableName) const;
     void AddTableToMap(Utf8StringCR tableName) const;
     void FreeTableMap();
 
@@ -226,7 +226,7 @@ private:
     int GetFirstColumnIndex(PropertyMapCP propertyMap) const;
 
     BentleyStatus ExtractFromSqlChanges(Changes& sqlChanges, ExtractOption extractOption);
-    BentleyStatus ExtractFromSqlChange(SqlChangeCR sqlChange, ExtractOption extractOption);
+    BentleyStatus ExtractFromSqlChange(SqlChange const& sqlChange, ExtractOption extractOption);
 
     void ExtractInstance(ClassMapCR primaryClassMap, ECInstanceId instanceId);
 
@@ -1175,7 +1175,7 @@ BentleyStatus ChangeExtractor::ExtractFromSqlChanges(Changes& changes, ExtractOp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChangeCR sqlChange, ExtractOption extractOption)
+BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChange const& sqlChange, ExtractOption extractOption)
     {
     m_extractOption = extractOption;
     m_sqlChange = &sqlChange;
@@ -1469,14 +1469,14 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassIdFromRelClass(ECN::ECRelationship
         }
 
     ECRelationshipConstraintR endConstraint = (relEnd == ECRelationshipEnd_Source) ? relClass->GetSource() : relClass->GetTarget();
-    ECConstraintClassesList endClasses = endConstraint.GetClasses();
+    ECRelationshipConstraintClassList const& endClasses = endConstraint.GetConstraintClasses();
     if (endClasses.size() != 1)
         {
         BeAssert(false && "Multiple classes at end. Cannot pick something arbitrary");
         return ECClassId();
         }
 
-    ECClassId classId = endClasses[0]->GetId();
+    ECClassId classId = endClasses[0]->GetClass().GetId();
     BeAssert(classId.IsValid());
     return classId;
     }

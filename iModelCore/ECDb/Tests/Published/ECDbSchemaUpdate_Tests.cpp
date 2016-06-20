@@ -161,19 +161,19 @@ void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true
             }
         }
     }
+
 void ExecuteECSQL(ECDbCR ecdb, Utf8CP ecsql, DbResult stepStatus, ECSqlStatus prepareStatus)
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(prepareStatus, stmt.Prepare(ecdb, ecsql));
-    if (prepareStatus == ECSqlStatus::Success)
-        {
-        ASSERT_EQ(stepStatus, stmt.Step());
-        }
-    }
+    {}
 
 #define ASSERT_PROPERTIES_STRICT(ECDB_OBJ, EXPRESSION)              AssertECProperties(ECDB_OBJ, EXPRESSION, true);
 #define ASSERT_PROPERTIES(ECDB_OBJ, EXPRESSION)                     AssertECProperties(ECDB_OBJ, EXPRESSION, false)
-#define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL)    ExecuteECSQL(ECDB_OBJ, ECSQL, STEPSTATUS, PREPARESTATUS)
+#define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL)   {\
+                                                                    ECSqlStatement stmt;\
+                                                                    ASSERT_EQ(PREPARESTATUS, stmt.Prepare(ECDB_OBJ, ECSQL));\
+                                                                    if (PREPARESTATUS == ECSqlStatus::Success)\
+                                                                        ASSERT_EQ(STEPSTATUS, stmt.Step());\
+                                                                   }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -396,7 +396,189 @@ TEST_F(ECSchemaUpdateTests, UpdatingECDbMapCAIsNotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteProperties)
+TEST_F(ECSchemaUpdateTests, ClassModifierToAbstract)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='Sealed' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //! We only like to see if insertion works. If data is left then import will fail for second schema as we do not allow rows
+    Savepoint sp(GetECDb(), "TestData");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (1, 't1')"); //Abstract
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L2, S2) VALUES (2, 't2')");
+    sp.Cancel();
+
+    //Delete some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", false);
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                          03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ClassModifier)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='Sealed' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='Abstract' >"
+        "       <ECProperty propertyName='L3' typeName='long' />"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo' modifier='None' >"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='L4' typeName='long' />"
+        "       <ECProperty propertyName='S4' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Moo' modifier='Sealed' >"
+        "       <BaseClass>Boo</BaseClass>"
+        "       <ECProperty propertyName='L5' typeName='long' />"
+        "       <ECProperty propertyName='S5' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //! We only like to see if insertion works. If data is left then import will fail for second schema as we do not allow rows
+    Savepoint sp(GetECDb(), "TestData");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (1, 't1')"); //Abstract
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L2, S2) VALUES (2, 't2')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L3, S3) VALUES (3, 't3')"); //Abstract
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L4, S4) VALUES (4, 't4')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Moo (L5, S5) VALUES (5, 't5')");
+
+    sp.Cancel();
+
+    //Delete some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Voo' modifier='Sealed' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L6' typeName='long' />"
+        "       <ECProperty propertyName='S6' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <ECProperty propertyName='L3' typeName='long' />"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo' modifier='Sealed' >"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='L4' typeName='long' />"
+        "       <ECProperty propertyName='S4' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (6, 't6')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L2, S2) VALUES (7, 't7')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L4, S4) VALUES (10, 't10')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Moo (L5, S5) VALUES (11, 't11')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Voo (L6, S6) VALUES (12, 't12')"); //New class added
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L3, S3) VALUES (8, 't8')"); //Class deleted
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                          03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteProperties_SharedTable)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -516,6 +698,270 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L1, S1, D1, L2, D2, L3, D3) VALUES (4, 't3', 'd4', 5, 'd5',6 ,'d6')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L1, S1, D1, L2, D2, L3, D3, L4, D4) VALUES (5, 't4', 'd7', 6, 'd8',7 ,'d9', 8,'d10')");
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteProperty_OwnTable)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Delete some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", false, "Deleting ECProperty is not supported as property is mapped to OwnTable");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Make sure PropertyMap is persisted
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, S1");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, S1, L2, S2");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteVirtualColumns)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Delete and Add some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='D1' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Deletion of Virtual column is expected to be supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, -S1, +D1");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "       <ECProperty propertyName='L1' typeName='long' />"//Overridden Property
+        "       <ECProperty propertyName='S1' typeName='string' />"//Overridden Property
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem deleteOverriddenProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", false, "Deletion of Overridden properties is not supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteOverriddenProperty);
+    ASSERT_FALSE(asserted);
+
+    //Make sure ECClass definition still exists
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, S1");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, L2, S1, S2");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L3' typeName='long' />"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo' modifier='None' >"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='L4' typeName='long' />"
+        "       <ECProperty propertyName='S4' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Make sure ECClass definition is updated correctly
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Koo -> L1, S1");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, L2, S1, S2");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, L2, L3, S1, S2, S3");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Boo -> L1, L2, L3, L4, S1, S2, S3, S4");
+
+    //Insert a row for each class
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (1, 't1')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L1, S1, L2, S2) VALUES (2, 't2', 3, 't3')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L1, S1, L2, S2, L3, S3) VALUES (4, 't4', 5, 't5', 6,'t6')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L1, S1, L2, S2, L3, S3, L4, S4) VALUES (5, 't5', 6, 't6', 7,'t7', 8,'t8')");
+
+    //Delete some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "       <ECProperty propertyName='D1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='D2' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L3' typeName='long' />"
+        "       <ECProperty propertyName='D3' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo' modifier='None' >"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='L4' typeName='long' />"
+        "       <ECProperty propertyName='D4' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Make sure ECClass definition is updated correctly
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Koo -> L1, S1, +D1");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, L2, S1, -S2, +D1, +D2");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, L2, L3, S1, -S2, -S3, +D1, +D2, +D3");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Boo -> L1, L2, L3, L4, S1, -S2, -S3, -S4, +D1, +D2, +D3, +D4");
+
+    //see if ECSQL fail for a property which has been deleted
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (1, 't1')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L1, S1, L2, S2) VALUES (2, 't2',3, 't3')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L1, S1, L2, S2, L3, S3) VALUES (4, 't4', 5, 't5', 6,'t6')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L1, S1, L2, S2, L3, S3, L4, S4) VALUES (5, 't5', 6, 't6', 7,'t7', 8,'t8')");
+
+    //Ensure new property is null for existing rows
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Koo WHERE D1 IS NULL");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Foo WHERE D2 IS NULL");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Goo WHERE D2 IS NULL AND D3 IS NULL");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT ECInstanceId FROM ONLY TestSchema.Boo WHERE D2 IS NULL AND D3 IS NULL AND D4 IS NULL");
+
+    //Insert new row with new value
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1, D1) VALUES (1, 't1', 'd1')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L1, S1, D1, L2, D2) VALUES (2, 't2', 'd2',3, 'd3')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L1, S1, D1, L2, D2, L3, D3) VALUES (4, 't3', 'd4', 5, 'd5',6 ,'d6')");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Boo (L1, S1, D1, L2, D2, L3, D3, L4, D4) VALUES (5, 't4', 'd7', 6, 'd8',7 ,'d9', 8,'d10')");
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -610,9 +1056,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
     ASSERT_STREQ("this is modified property", statement.GetValueText(1));
 
     //Verify class and Property accessible using new ECSchemaPrefix
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT TestProperty FROM ts_modified.TestClass");
 
     //verify CA changes
     testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
@@ -1514,9 +1958,6 @@ TEST_F(ECSchemaUpdateTests, UpdateMultipleSchemasInDb)
     */
     }
 
-//*******************Schema Upgrade Invalid Cases*******************//
-//******************************************************************//
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1663,12 +2104,26 @@ TEST_F(ECSchemaUpdateTests, MajorVersionChange_WithoutMajorVersionIncremented)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
+    SchemaItem MajorVersionChange(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "</ECSchema>", false, "Major Version change without Major Version incremented is expected to be not supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), MajorVersionChange);
+    ASSERT_FALSE(asserted);
+
     SchemaItem decrementedMajorVersion(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
         "</ECSchema>", false, "Schema Update with ECSchema Major Version decremented is expected to be not supported");
 
-    bool asserted = false;
+    asserted = false;
     AssertSchemaImport(asserted, GetECDb(), decrementedMajorVersion);
     ASSERT_FALSE(asserted);
     }
@@ -1736,20 +2191,10 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(S,D,L) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(S,D,L) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(S,D,L) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(S,D,L) VALUES ('test4', 13.3, 2345)");
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Foo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
@@ -1778,8 +2223,8 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT S, D, L FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT S, D, L FROM ts.Goo");
 
     //Add Foo Again===============================================================================================
     SchemaItem addFoo(
@@ -1806,11 +2251,11 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT S, D, L FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT S, D, L FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)");
     }
 
 /*********************************************************************Example Scenario******************************************************************************************
@@ -1857,16 +2302,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
@@ -1878,10 +2313,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     testItems.push_back(std::make_pair("ts_Goo", 8));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
+
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     SchemaItem deleteFoo(
@@ -1919,8 +2355,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     testItems.push_back(std::make_pair("ts_Goo", 8));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     //Deleting Class with ECDbMap CA is expected to be supported
@@ -1973,8 +2409,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     testItems.push_back(std::make_pair("ts_Goo", 5));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     SchemaItem addFoo(
@@ -2018,11 +2454,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     testItems.push_back(std::make_pair("ts_Goo", 8));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::Success, BE_SQLITE_DONE);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2061,16 +2497,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //following table should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -2084,10 +2510,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -2127,8 +2553,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     //Deleting Class with SharedTable:SharedColumns is expected to be supported
@@ -2184,8 +2610,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 5));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     //Adding new derived entity class is expected to be supported
@@ -2233,11 +2659,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2277,16 +2703,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //following table should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -2300,10 +2716,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_minimumSharedColumn");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -2344,8 +2760,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_MinimumSharedColumn");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     //Deleting Class with SharedTable_SharedColumns_minimumSharedColumn is expected to be supported
@@ -2402,8 +2818,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_minimumSharedColumn");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     //Adding new derived entity class is expected to be supported
@@ -2453,11 +2869,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 10));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_minimumSharedColumn");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test1', 1.3, 334, 1, 11)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test1', 1.3, 334, 1, 11)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2503,16 +2919,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //following table should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -2537,10 +2943,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -2580,8 +2986,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_DisableSharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     //Deleting Class with SharedTable_SharedColumns_minimumSharedColumn is expected to be supported
@@ -2648,8 +3054,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     //Adding new derived entity class is expected to be supported
@@ -2708,11 +3114,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2755,16 +3161,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -2782,10 +3178,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -2830,8 +3226,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
     //Verify Number of columns
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     GetECDb().SaveChanges();
@@ -2956,8 +3352,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
     testItems.push_back(std::make_pair("ts_Goo", 5));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     GetECDb().SaveChanges();
@@ -3012,11 +3408,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3059,16 +3455,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -3086,10 +3472,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3134,8 +3520,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     //Verify Number of columns
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3260,8 +3646,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 5));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     GetECDb().SaveChanges();
@@ -3316,11 +3702,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3364,16 +3750,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -3391,10 +3767,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3440,8 +3816,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
     //Verify Number of columns
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3569,8 +3945,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     GetECDb().SaveChanges();
@@ -3627,11 +4003,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
     testItems.push_back(std::make_pair("ts_Goo", 10));
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI, FI1 FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL, FI, FI1 FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test1', 1.3, 334, 1, 11)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test1', 1.3, 334, 1, 11)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3682,16 +4058,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-        if (stmt.IsPrepared())
-            {
-            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-            }
-        };
-
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
@@ -3719,10 +4085,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3770,8 +4136,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     testItems.push_back(std::make_pair("ts_Goo", 9));
     AssertColumnCount(GetECDb(), testItems, "JoinedTable_SharedColumns_DisableSharedColumns");
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
     //Delete Goo ===================================================================================================
     GetECDb().SaveChanges();
@@ -3911,8 +4277,8 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Add Foo Again===============================================================================================
     GetECDb().SaveChanges();
@@ -3978,11 +4344,448 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         }
     ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo");
-    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL, FI FROM ts.Foo");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem schemaWithDeletedConstraintClass(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "ECClass can be deleted unless it's the last relationship constraint.");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedConstraintClass);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClass)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propC' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='D' modifier='None' >"
+        "       <BaseClass>C</BaseClass>"
+        "       <ECProperty propertyName='propD' typeName='int' />"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    ECClassCP classB = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("B");
+    ECClassCP classD = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("D");
+
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.B(ECInstanceId, propA, propB) VALUES(1, 11, 22)");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.D(ECInstanceId, propC, propD) VALUES(2, 33, 44)");
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO ts.RelClass(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(101, 1, %llu, 2, %llu)", classB->GetId().GetValue(), classD->GetId().GetValue());
+    //Insert Relationship instance
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+
+    //Verify Insertion
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT * FROM ts.RelClass");
+
+    GetECDb().SaveChanges();
+    SchemaItem schemaWithDeletedConstraintClass(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propC' typeName='int' />"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "only Direct relationship constraint classes can't be deleted.");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedConstraintClass);
+    ASSERT_FALSE(asserted);
+
+    //Verify relationship Instance should be deleted along with deletion of constaint class
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT * FROM ts.RelClass");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Roo' modifier='None'>"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='EndTableRelationship' modifier='Sealed' strength='Embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='Foo' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Roo' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='LinkTableRelationship' modifier='Sealed' strength='referencing' strengthDirection='forward' >"
+        "       <Source cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Foo' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Roo' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem relationshipWithForeignKeyMapping(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Roo' modifier='None'>"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='LinkTableRelationship' modifier='Sealed' strength='referencing' strengthDirection='forward' >"
+        "       <Source cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Foo' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Roo' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", false, "Deleting ECRelationship with ForeignKey Mapping is supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), relationshipWithForeignKeyMapping);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem linkTableECRelationship(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Roo' modifier='None'>"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='EndTableRelationship' modifier='Sealed' strength='Embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='Foo' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='Roo' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "Deletion of LinkTable mapped relationship is supported");
+
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), linkTableECRelationship);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteECStructClassUnSupported)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECStructClass typeName='ChangeInfoStruct' modifier='None'>"
+        "       <ECProperty propertyName='ChangeStatus' typeName='int' readOnly='false' />"
+        "   </ECStructClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem deleteStructECClass(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "</ECSchema>", false, "Deleting ECStructClass is expected to be not supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteStructECClass);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AllowChangeOfIndexName)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns = 'ECDbMap.01.00'>"
+        "               <Indexes>"
+        "                   <DbIndex>"
+        "                       <IsUnique>False</IsUnique>"
+        "                       <Properties>"
+        "                           <string>AId</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "               </Indexes>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem schemaWithIndexNameModified(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns = 'ECDbMap.01.00'>"
+        "               <Indexes>"
+        "                   <DbIndex>"
+        "                       <Name>IDX_Partial</Name>"
+        "                       <IsUnique>False</IsUnique>"
+        "                       <Properties>"
+        "                           <string>AId</string>"
+        "                       </Properties>"
+        "                   </DbIndex>"
+        "               </Indexes>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECProperty propertyName='PB1' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithIndexNameModified);
+    ASSERT_FALSE(asserted);
+
+    ECClassCP b = GetECDb().Schemas().GetECClass("TestSchema", "B");
+    ASSERT_NE(b, nullptr);
+    auto ca = b->GetCustomAttribute("ClassMap");
+    ASSERT_FALSE(ca.IsNull());
+
+    ECValue indexes, indexName;
+    ASSERT_EQ(ca->GetValue(indexes, "Indexes", 0), ECObjectsStatus::Success);
+    ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
+    ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeletePropertyUsedAsKeyProperty)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Embedding' modifier='Sealed'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem schemaWithDeletedKeyProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Embedding' modifier='Sealed'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>", false, "can't delete a property used as keyProperty.");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedKeyProperty);
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -4135,9 +4938,9 @@ TEST_F(ECSchemaUpdateTests, AddNewECEnumeration)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
+// @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpgradeECClassModifier)
+TEST_F(ECSchemaUpdateTests, UpdateECClassModifier)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4161,7 +4964,7 @@ TEST_F(ECSchemaUpdateTests, UpgradeECClassModifier)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
+// @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ModifyIsEntityClass)
     {
@@ -4244,7 +5047,7 @@ TEST_F(ECSchemaUpdateTests, ModifyIsRelationshipClass)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='None' />"
-        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' >"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' >"
         "       <Source cardinality='(0,1)' polymorphic='True'>"
         "           <Class class='A' />"
         "       </Source>"
@@ -4278,7 +5081,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='None' />"
-        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' strengthDirection='forward' >"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
         "       <Source cardinality='(0,1)' polymorphic='True'>"
         "           <Class class='A' />"
         "       </Source>"
@@ -4298,7 +5101,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='None' />"
-        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' strengthDirection='forward' >"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
         "       <Source cardinality='(0,N)' polymorphic='True'>"
         "           <Class class='A' />"
         "       </Source>"
@@ -4318,7 +5121,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='None' />"
-        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' strengthDirection='forward' >"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
         "       <Source cardinality='(0,1)' polymorphic='True'>"
         "           <Class class='A' />"
         "       </Source>"
@@ -4339,7 +5142,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='None' />"
         "   <ECEntityClass typeName='B' modifier='None' />"
-        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' strengthDirection='forward' >"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
         "       <Source cardinality='(0,1)' polymorphic='True'>"
         "           <Class class='B' />"
         "       </Source>"
@@ -4360,7 +5163,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='None' />"
         "   <ECEntityClass typeName='B' modifier='None' />"
-        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' strengthDirection='forward' >"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
         "       <Source cardinality='(0,1)' polymorphic='True'>"
         "           <Class class='A' />"
         "       </Source>"
@@ -4380,7 +5183,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='None' />"
-        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' strengthDirection='forward' >"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
         "       <Source cardinality='(0,1)' polymorphic='False'>"
         "           <Class class='A' />"
         "       </Source>"
@@ -4400,7 +5203,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='None' />"
-        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' strengthDirection='forward' >"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
         "       <Source cardinality='(0,1)' polymorphic='True'>"
         "           <Class class='A' />"
         "       </Source>"
@@ -4420,7 +5223,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='None' />"
-        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='referencing' strengthDirection='forward' >"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='referencing' strengthDirection='forward' >"
         "       <Source cardinality='(0,1)' polymorphic='True'>"
         "           <Class class='A' />"
         "       </Source>"
@@ -4440,7 +5243,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='None' />"
-        "    <ECRelationshipClass typeName='RelClass' modifier='None' strength='embedding' strengthDirection='backward' >"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='backward' >"
         "       <Source cardinality='(0,1)' polymorphic='True'>"
         "           <Class class='A' />"
         "       </Source>"
@@ -4453,6 +5256,150 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
     AssertSchemaImport(asserted, GetECDb(), schemaWithDifferentStrengthDirection);
     ASSERT_FALSE(asserted);
     sp.Cancel();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyRelationshipConstrainsRoleLabel)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' roleLabel='A has C' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' roleLabel='C belongs to A' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem modifySourceRoleLabel(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' roleLabel='A has C Modified' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' roleLabel='C belongs to A' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "Modifying Source constraint class RoleLabel is expected to be successfull");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), modifySourceRoleLabel);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem modifyTargetRoleLabel(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' roleLabel='A has C Modified' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' roleLabel='C belongs to A Modified' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "Modifying Target Constraint class Role Label is expected to be successfull");
+
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), modifyTargetRoleLabel);
+    ASSERT_FALSE(asserted);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem modifyBothRoleLabels(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='propA' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='propB' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='C' modifier='None' />"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' roleLabel='A has B and C' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' roleLabel='B and C belong to A' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "Modifying both source and target class RoleLabels simultaneously is expected to be successfull");
+
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), modifyBothRoleLabels);
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -4644,7 +5591,7 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='email' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying ExtendedTypeName is not supported");
+        "</ECSchema>", true);
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), modifiedExtendedType);
     ASSERT_FALSE(asserted);
@@ -4670,6 +5617,73 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
     AssertSchemaImport(asserted, GetECDb(), modifiedReadonlyFlag);
     ASSERT_FALSE(asserted);
     sp.Cancel();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyNavigationProperty)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='Embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem modifiedRelNameInNavProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='A1'>"
+        "        <ECProperty propertyName='PA1' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='A1HasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='A1HasB' modifier='Sealed' strength='embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A1' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>", false, "Changing relationship Class Name for a Navigation property is not supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), modifiedRelNameInNavProperty);
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -4897,18 +5911,274 @@ TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
     ASSERT_FALSE(asserted);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteCAClassNotSupported)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass' />"
+        "</ECSchema>");
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem deleteAllCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "</ECSchema>", false, "Deleting a Custom Attribute Class is not supported.");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECCustomAttributes>"
+        "       <TreeColorCustomAttributes xmlns = 'Bentley_Standard_CustomAttributes.01.13' >"
+        "           <NodeBackColor>Black</NodeBackColor>"
+        "       </TreeColorCustomAttributes>"
+        "   </ECCustomAttributes>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <SearchOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <SearchPolymorphically>true</SearchPolymorphically>"
+        "            </SearchOptions>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "        <ECCustomAttributes>"
+        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <Hidden>True</Hidden>"
+        "            </DisplayOptions>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deleteca.ecdb");
+    ASSERT_FALSE(asserted);
+
+    //Delete CA from Schema
+    ecdb.SaveChanges();
+    SchemaItem deleteCAFromSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <SearchOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <SearchPolymorphically>true</SearchPolymorphically>"
+        "            </SearchOptions>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "        <ECCustomAttributes>"
+        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <Hidden>True</Hidden>"
+        "            </DisplayOptions>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteCAFromSchema);
+    ASSERT_FALSE(asserted);
+    IECInstancePtr schemaCA = ecdb.Schemas().GetECSchema("TestSchema")->GetCustomAttribute("TreeColorCustomAttributes");
+    ASSERT_TRUE(schemaCA == nullptr);
+
+    //Delete CA from Class
+    ecdb.SaveChanges();
+    SchemaItem deleteCAFromClass(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "        <ECCustomAttributes>"
+        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <Hidden>True</Hidden>"
+        "            </DisplayOptions>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteCAFromClass);
+    ASSERT_FALSE(asserted);
+    IECInstancePtr classCA = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetCustomAttribute("TreeColorCustomAttributes");
+    ASSERT_TRUE(classCA == nullptr);
+
+    //Delete CA from property
+    ecdb.SaveChanges();
+    SchemaItem deleteCAFromProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteCAFromProperty);
+    ASSERT_FALSE(asserted);
+    IECInstancePtr propertyCA = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("prop")->GetCustomAttribute("TreeColorCustomAttributes");
+    ASSERT_TRUE(propertyCA == nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, WString("existingTableUpdate.ecdb", BentleyCharEncoding::Utf8).c_str()));
+    // Create existing table and insert rows
+    ecdb.ExecuteSql("CREATE TABLE test_Employee(Id INTEGER PRIMARY KEY, Name TEXT);");
+    ecdb.ExecuteSql("INSERT INTO test_Employee (Id, Name) VALUES (101, 'Affan Khan');");
+    ecdb.ExecuteSql("INSERT INTO test_Employee (Id, Name) VALUES (201, 'Muhammad Hassan');");
+    ecdb.ExecuteSql("INSERT INTO test_Employee (Id, Name) VALUES (301, 'Krischan Eberle');");
+    ecdb.ExecuteSql("INSERT INTO test_Employee (Id, Name) VALUES (401, 'Casey Mullen');");
+
+    // Map ECSchema to exisitng table
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap'/>"
+        "   <ECEntityClass typeName='Employee' modifier='None' >"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "               </MapStrategy>"
+        "               <TableName>test_Employee</TableName>"
+        "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
+        "           </ClassMap>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='Name' typeName='string' >"
+        "       </ECProperty>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, schemaItem);
+    ASSERT_FALSE(asserted);
+
+    // Modify and add new existing table and relate it to another one
+    ecdb.ExecuteSql("CREATE TABLE test_Title(Id INTEGER PRIMARY KEY, Name TEXT);");
+    ecdb.ExecuteSql("INSERT INTO test_Title (Id, Name) VALUES (1, 'Senior Software Engineer');");
+    ecdb.ExecuteSql("INSERT INTO test_Title (Id, Name) VALUES (2, 'Software Quality Analyst');");
+    ecdb.ExecuteSql("INSERT INTO test_Title (Id, Name) VALUES (3, 'Advisory Software Engineer');");
+    ecdb.ExecuteSql("INSERT INTO test_Title (Id, Name) VALUES (4, 'Distinguished Architect');");
+    ecdb.ExecuteSql("ALTER TABLE test_Employee ADD COLUMN TitleId INTEGER REFERENCES test_Title(Id);");
+    ecdb.ExecuteSql("UPDATE test_Employee SET TitleId = 1 WHERE Id = 101");
+    ecdb.ExecuteSql("UPDATE test_Employee SET TitleId = 2 WHERE Id = 201");
+    ecdb.ExecuteSql("UPDATE test_Employee SET TitleId = 3 WHERE Id = 301");
+    ecdb.ExecuteSql("UPDATE test_Employee SET TitleId = 4 WHERE Id = 401");
+
+    // Map ECSchema to exisitng table
+    SchemaItem deleteAllCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap'/>"
+        "   <ECEntityClass typeName='Employee' modifier='None' >"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "               </MapStrategy>"
+        "               <TableName>test_Employee</TableName>"
+        "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
+        "           </ClassMap>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='Name' typeName='string' >"
+        "       </ECProperty>"
+        "       <ECNavigationProperty propertyName='TitleId' relationshipName='EmployeeHasTitle' direction='forward'/>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Title' modifier='None' >"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "               </MapStrategy>"
+        "               <TableName>test_Title</TableName>"
+        "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
+        "           </ClassMap>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='Name' typeName='string' >"
+        "       </ECProperty>"
+        "   </ECEntityClass>"
+        "    <ECRelationshipClass typeName='EmployeeHasTitle' strength='referencing' strengthDirection='Backward' modifier='Sealed'>"
+        "        <Source cardinality='(0,N)' polymorphic='false'>"
+        "            <Class class='Employee'/>"
+        "        </Source>"
+        "        <Target cardinality='(0,1)' polymorphic='false'>"
+        "            <Class class='Title'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>'"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    ASSERT_FALSE(asserted);
+
+    ECSqlStatement stmt;
+    stmt.Prepare(ecdb, "SELECT E.Name EmployeeName, T.Name EmployeeTitle FROM ts.Employee E JOIN ts.Title T USING ts.EmployeeHasTitle ORDER BY E.ECInstanceId");
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("Affan Khan", stmt.GetValueText(0));
+    ASSERT_STREQ("Senior Software Engineer", stmt.GetValueText(1));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("Muhammad Hassan", stmt.GetValueText(0));
+    ASSERT_STREQ("Software Quality Analyst", stmt.GetValueText(1));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("Krischan Eberle", stmt.GetValueText(0));
+    ASSERT_STREQ("Advisory Software Engineer", stmt.GetValueText(1));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("Casey Mullen", stmt.GetValueText(0));
+    ASSERT_STREQ("Distinguished Architect", stmt.GetValueText(1));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass'>"
+        "   </ECCustomAttributeClass>"
         "   <ECCustomAttributes>"
         "       <SystemSchema xmlns = 'Bentley_Standard_CustomAttributes.01.13' >"
         "       </SystemSchema>"
         "   </ECCustomAttributes>"
-        "   <ECEntityClass typeName='NewTestClass' modifier='None' >"
-        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <TestCA xmlns='TestSchema.01.00'>"
+        "            </TestCA>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='prop' typeName='boolean' >"
+        "        <ECCustomAttributes>"
+        "            <TestCA xmlns='TestSchema.01.00'>"
+        "            </TestCA>"
+        "        </ECCustomAttributes>"
+        "       </ECProperty>"
         "   </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
@@ -4921,7 +6191,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass'>"
         "   </ECCustomAttributeClass>"
-        "   <ECEntityClass typeName='NewTestClass' modifier='None' >"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
         "       <ECProperty propertyName='prop' typeName='boolean' />"
         "   </ECEntityClass>"
         "</ECSchema>");
@@ -4929,5 +6199,298 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
     asserted = false;
     AssertSchemaImport(asserted, ecdb, deleteAllCA);
     ASSERT_FALSE(asserted);
+
+    ECSchemaCP ecSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECClassCP testClass = ecSchema->GetClassCP("TestClass");
+    ECPropertyP ecProperty = testClass->GetPropertyP("prop");
+
+    IECInstancePtr systemSchemaCA = ecSchema->GetCustomAttribute("SystemSchema");
+    ASSERT_TRUE(systemSchemaCA == nullptr);
+
+    IECInstancePtr classCA = testClass->GetCustomAttribute("TestCA");
+    ASSERT_TRUE(classCA == nullptr);
+
+    IECInstancePtr propertyCA = ecProperty->GetCustomAttribute("TestCA");
+    ASSERT_TRUE(propertyCA == nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddAndUpdatePropertiesWithEnumAndKoQ)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Length' typeName='double' />" // kindOfQuantity='s1:MyKindOfQuantity'
+        "    <ECProperty propertyName='Homepage' typeName='string' />" // extendedTypeName='URL'
+        "    <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' />" //kindOfQuantity = 's1:MyKindOfQuantity'
+        "    <ECArrayProperty propertyName='Favorites' typeName='string'  minOccurs='0' maxOccurs='unbounded' />"
+        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem deleteAllCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='My KindOfQuantity'"
+        "                    displayLabel='My KindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />"
+        "        <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
+        "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>"
+        "        <ECArrayProperty propertyName='Favorites' typeName='string' extendedTypeName='URL' minOccurs='0' maxOccurs='unbounded' />"
+        "        <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    ASSERT_FALSE(asserted);
+    auto nonStrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ASSERT_TRUE(nonStrictEnum != nullptr);
+    auto myKindOfQuantity = ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
+    ASSERT_TRUE(myKindOfQuantity != nullptr);
+    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(foo != nullptr);
+    
+    auto foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
+    auto foo_homepage = foo->GetPropertyP("Homepage")->GetAsPrimitiveProperty();
+    auto foo_alternativeLengths = foo->GetPropertyP("AlternativeLengths")->GetAsArrayProperty();
+    auto foo_favorites = foo->GetPropertyP("Favorites")->GetAsArrayProperty();
+    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+    ASSERT_TRUE(foo_length != nullptr);
+    ASSERT_TRUE(foo_homepage != nullptr);
+    ASSERT_TRUE(foo_alternativeLengths != nullptr);
+    ASSERT_TRUE(foo_favorites != nullptr);
+    ASSERT_TRUE(foo_type != nullptr);
+    ASSERT_TRUE(foo_length->GetKindOfQuantity() == myKindOfQuantity);
+    ASSERT_TRUE(foo_alternativeLengths->GetKindOfQuantity() == myKindOfQuantity);
+    ASSERT_TRUE(foo_homepage->GetExtendedTypeName() == "URL");
+    ASSERT_TRUE(foo_favorites->GetExtendedTypeName() == "URL");
+    ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToUnStrictEnum)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem deleteAllCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    ASSERT_FALSE(asserted);
+    auto nonStrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ASSERT_TRUE(nonStrictEnum != nullptr);
+    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(foo != nullptr);
+
+    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+    ASSERT_TRUE(foo_type != nullptr);
+    ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToStrictEnum)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem modified(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='StrictEnum' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false);
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, modified);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToAnotherPrimitive)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem modified(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='string' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false);
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, modified);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangingEnumToPrimitive)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='StrictEnum' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem modified(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, modified);
+    auto strictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+    ASSERT_TRUE(strictEnum != nullptr);
+    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(foo != nullptr);
+
+    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+    ASSERT_TRUE(foo_type != nullptr);
+    ASSERT_TRUE(foo_type->GetEnumeration() == nullptr);
+    ASSERT_TRUE(foo_type->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ChangingEnumToEnum)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='StrictEnum' />" // NonStrictEnum
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    ECDb ecdb;
+    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
+    ASSERT_FALSE(asserted);
+
+    SchemaItem modified(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEnumeration typeName='UnStrictEnum' backingTypeName='int' isStrict='False'>"
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='UnStrictEnum' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    asserted = false;
+    AssertSchemaImport(asserted, ecdb, modified);
+    auto strictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+    ASSERT_TRUE(strictEnum != nullptr);
+    auto unstrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "UnStrictEnum");
+    ASSERT_TRUE(unstrictEnum != nullptr);
+
+    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(foo != nullptr);
+
+    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+    ASSERT_TRUE(foo_type != nullptr);
+    ASSERT_TRUE(foo_type->GetEnumeration() == unstrictEnum);
     }
 END_ECDBUNITTESTS_NAMESPACE

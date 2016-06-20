@@ -44,7 +44,7 @@
         <ECProperty propertyName="DIGITAL_IO_PIN" typeName="int" displayLabel="Digital IO Pins" readOnly="false"/>
         <ECProperty propertyName="USE_VER" typeName="string" description="usb version supported." displayLabel="USB version" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="RASBERRYPI_HAS_ADDIN" displayLabel="RasberryPI Has Addin" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="RASBERRYPI_HAS_ADDIN" displayLabel="RasberryPI Has Addin" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="RASPBERRYPI"/>
         </Source>

@@ -11,6 +11,13 @@
             <TablePrefix>ecsqltest</TablePrefix>
         </SchemaMap>
     </ECCustomAttributes>
+    
+    <KindOfQuantity typeName="Length" description="My Length" displayLabel="My Length" persistenceUnit="CENTIMETRE" precision="10"
+        defaultPresentationUnit="FOOT" alternativePresentationUnits="INCH;YARD" />
+
+    <KindOfQuantity typeName="Volume" description="My Volumne" displayLabel="My Length" persistenceUnit="CM^3" precision="5"
+        defaultPresentationUnit="CM^3" />
+        
     <ECStructClass typeName="PStruct" description="Struct with primitive props (default mappings)">
         <ECProperty propertyName="b" typeName="boolean"/>
         <ECProperty propertyName="bi" typeName="binary"/>
@@ -42,10 +49,6 @@
         <ECProperty propertyName="I" typeName="int"/>
         <ECProperty propertyName="S" typeName="string"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AbstractR" modifier="Abstract" strength="referencing">
-        <Source cardinality="(0,1)" polymorphic="true"/>
-        <Target cardinality="(0,1)" polymorphic="true"/>
-    </ECRelationshipClass>
     <ECEntityClass typeName="AbstractTablePerHierarchy" modifier="Abstract">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00.01">
@@ -146,7 +149,7 @@
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECArrayProperty>
-        <ECArrayProperty propertyName="I_Array" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="I_Array" typeName="int" kindOfQuantity="Length" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="L_Array" typeName="long" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="S_Array" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="P2D_Array" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
@@ -154,8 +157,8 @@
     </ECEntityClass>
     <ECEntityClass typeName="PASpatial" description="Class including a CommonGeometry prop and a CommonGeometry array prop">
         <ECProperty propertyName="B" typeName="boolean"/>
-        <ECProperty propertyName="D" typeName="double"/>
-        <ECProperty propertyName="I" typeName="int"/>
+        <ECProperty propertyName="D" typeName="double" kindOfQuantity="Volume"/>
+        <ECProperty propertyName="I" typeName="int" kindOfQuantity="Length"/>
         <ECProperty propertyName="S" typeName="string"/>
         <ECProperty propertyName="Geometry" typeName="Bentley.Geometry.Common.IGeometry"/>
         <ECArrayProperty propertyName="Geometry_Array" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded"/>
@@ -180,7 +183,7 @@
         <ECStructProperty propertyName="PStructProp" typeName="PStruct"/>
         <ECArrayProperty propertyName="B_Array" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="Bi_Array" typeName="binary" minOccurs="0" maxOccurs="unbounded"/>
-        <ECArrayProperty propertyName="D_Array" typeName="double" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="D_Array" typeName="double" kindOfQuantity="Length" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="Dt_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="DtUtc_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
@@ -196,8 +199,7 @@
         <ECArrayProperty propertyName="P3D_Array" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructArrayProperty propertyName="PStruct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="PSAHasPSA_1N" strength="referencing">
-        <BaseClass>AbstractR</BaseClass>
+    <ECRelationshipClass typeName="PSAHasPSA_1N" strength="referencing" modifier="Sealed">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="PSA"/>
         </Source>
@@ -205,8 +207,7 @@
             <Class class="PSA"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasPSA_11" strength="referencing">
-        <BaseClass>AbstractR</BaseClass>
+    <ECRelationshipClass typeName="PSAHasPSA_11" strength="referencing" modifier="Sealed">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="PSA"/>
         </Source>
@@ -214,9 +215,7 @@
             <Class class="PSA"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasPSA_NN" strength="referencing">
-        <BaseClass>PSAHasPSA_1N</BaseClass>
-        <BaseClass>PSAHasPSA_11</BaseClass>
+    <ECRelationshipClass typeName="PSAHasPSA_NN" strength="referencing" modifier="Sealed">
         <ECProperty propertyName="D" typeName="double"/>
         <ECProperty propertyName="I" typeName="int"/>
         <ECProperty propertyName="L" typeName="long"/>
@@ -237,8 +236,7 @@
         <ECStructArrayProperty propertyName="PStruct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructProperty propertyName="SAStructProp" typeName="SAStruct"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="PHasSA_11P" strength="referencing">
-        <BaseClass>PSAHasPSA_NN</BaseClass>
+    <ECRelationshipClass typeName="PHasSA_11P" strength="referencing" modifier="Sealed">
         <ECProperty propertyName="B" typeName="boolean"/>
         <ECProperty propertyName="Bi" typeName="binary"/>
         <ECProperty propertyName="Dt" typeName="dateTime"/>
@@ -252,8 +250,7 @@
             <Class class="SA"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PHasP_1NPSA" strength="referencing">
-        <BaseClass>PHasSA_11P</BaseClass>
+    <ECRelationshipClass typeName="PHasP_1NPSA" strength="referencing" modifier="Sealed">
         <ECArrayProperty propertyName="B_Array" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="Bi_Array" typeName="binary" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="D_Array" typeName="double" minOccurs="0" maxOccurs="unbounded"/>
@@ -342,7 +339,7 @@
         </ECCustomAttributes>
         <ECProperty propertyName="S" typeName="string"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="PSAHasOnlyTHBase_0N" strength="referencing">
+    <ECRelationshipClass typeName="PSAHasOnlyTHBase_0N" strength="referencing" modifier="Sealed">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="PSA"/>
         </Source>
@@ -350,7 +347,7 @@
             <Class class="THBase"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasOnlyTHBase_NN" strength="referencing">
+    <ECRelationshipClass typeName="PSAHasOnlyTHBase_NN" strength="referencing" modifier="Sealed">
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="PSA"/>
         </Source>
@@ -358,7 +355,7 @@
             <Class class="THBase"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasP" strength="referencing">
+    <ECRelationshipClass typeName="PSAHasP" strength="referencing" modifier="Sealed">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="PSA"/>
         </Source>
@@ -366,7 +363,7 @@
             <Class class="P"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasPSA" strength="referencing">
+    <ECRelationshipClass typeName="PSAHasPSA" strength="referencing" modifier="Sealed">
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="PSA"/>
         </Source>
@@ -374,7 +371,7 @@
             <Class class="PSA"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasPWithPrimProps" strength="referencing">
+    <ECRelationshipClass typeName="PSAHasPWithPrimProps" strength="referencing" modifier="Sealed">
         <ECProperty propertyName="B" typeName="boolean"/>
         <ECProperty propertyName="D" typeName="double"/>
         <ECProperty propertyName="I" typeName="int"/>
@@ -386,8 +383,7 @@
             <Class class="P"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasP_N1" strength="embedding" strengthDirection="Backward">
-        <BaseClass>AbstractR</BaseClass>
+    <ECRelationshipClass typeName="PSAHasP_N1" strength="embedding" strengthDirection="Backward" modifier="Sealed">
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="PSA"/>
         </Source>
@@ -395,7 +391,7 @@
             <Class class="P"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasTHBase_0N" strength="embedding">
+    <ECRelationshipClass typeName="PSAHasTHBase_0N" strength="embedding" modifier="Sealed">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="PSA"/>
         </Source>
@@ -403,7 +399,7 @@
             <Class class="THBase"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasTHBase_NN" strength="referencing">
+    <ECRelationshipClass typeName="PSAHasTHBase_NN" strength="referencing" modifier="Sealed">
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="PSA"/>
         </Source>

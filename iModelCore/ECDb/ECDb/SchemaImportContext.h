@@ -48,7 +48,7 @@ struct SchemaImportContext
     {
 private:
     mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
-    std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMapInfoCache;
+    std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
     bset<ECN::ECRelationshipClassCP> m_relationshipClassesWithSingleNavigationProperty;
     ClassMapLoadContext m_loadContext;
     ECSchemaCompareContext m_compareContext;
@@ -66,7 +66,7 @@ public:
     UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR) const;
 
     void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMappingInfo>&);
-    std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMapInfoCache() const { return m_classMapInfoCache; }
+    std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMappingInfoCache() const { return m_classMappingInfoCache; }
 
     void AddNRelationshipRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) { m_relationshipClassesWithSingleNavigationProperty.insert(&relClass); }
     bool IsRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) const { return m_relationshipClassesWithSingleNavigationProperty.find(&relClass) != m_relationshipClassesWithSingleNavigationProperty.end(); }

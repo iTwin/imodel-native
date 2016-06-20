@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveMappedToSingleColumnECSqlField.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,8 +38,6 @@ private:
     virtual DPoint3d _GetPoint3D() const override;
     virtual IGeometryPtr _GetGeometry() const override;
     virtual void const* _GetGeometryBlob(int* blobSize) const override;
-
-    int GetSqliteColumnIndex() const { return m_sqliteColumnIndex; }
 
 public:
     PrimitiveMappedToSingleColumnECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int ecsqlColumnIndex);

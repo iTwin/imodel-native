@@ -13,6 +13,8 @@
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //#define DEBUG_JSON(header,json) {Json::FastWriter writer; printf("%s: %s\r\n", header, writer.write(json).c_str()); }

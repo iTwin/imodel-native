@@ -35,8 +35,12 @@
     <ECRelationshipClass typeName="BaseRelationshipClass" modifier="Abstract" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="MyIntegerMember" typeName="int" readOnly="false"/>
         <ECProperty propertyName="MyLongMember" typeName="long" readOnly="false"/>
-        <Source cardinality="(0,1)" polymorphic="true"/>
-        <Target cardinality="(0,1)" polymorphic="true"/>
+        <Source cardinality="(0,1)" roleLabel="source constraint2" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target cardinality="(0,1)" roleLabel="target constraint2" polymorphic="true">
+            <Class class="Test2Class"/>
+        </Target>
     </ECRelationshipClass>
     <ECStructClass typeName="Struct1" modifier="None">
         <ECProperty propertyName="Struct1BoolMember" typeName="boolean" readOnly="false"/>
@@ -186,7 +190,7 @@
     <ECEntityClass typeName="Test2Class" modifier="None">
         <ECProperty propertyName="Test2StringMember" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ClonedRelationshipClass" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ClonedRelationshipClass" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <BaseClass>BaseRelationshipClass</BaseClass>
         <Source cardinality="(0,1)" roleLabel="source constraint2" polymorphic="true">
             <Class class="TestClass"/>
@@ -212,7 +216,7 @@
     <ECEntityClass typeName="User" modifier="None">
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="DocumentHasOwner" description="FolderHasDocuments" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="DocumentHasOwner" description="FolderHasDocuments" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" roleLabel="has Owner" polymorphic="true">
             <Class class="Document"/>
         </Source>
@@ -220,7 +224,7 @@
             <Class class="User"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ExplicitRelationshipClass" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ExplicitRelationshipClass" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <BaseClass>BaseRelationshipClass</BaseClass>
         <Source cardinality="(0,1)" roleLabel="source constraint2" polymorphic="true">
             <Class class="TestClass"/>
@@ -270,7 +274,7 @@
         <ECProperty propertyName="FM_SSN" typeName="int" readOnly="false"/>
         <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FM_Furniture" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="FM_Furniture" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,N)" roleLabel="Owned by employee" polymorphic="true">
             <Class class="FM_Employee"/>
         </Source>
@@ -305,7 +309,7 @@
         <ECProperty propertyName="SomeNumber" typeName="int" readOnly="false"/>
         <ECProperty propertyName="UpdateTime" typeName="dateTime" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FolderHasDocuments" description="FolderHasDocuments" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="FolderHasDocuments" description="FolderHasDocuments" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" roleLabel="has Documents" polymorphic="true">
             <Class class="Folder"/>
         </Source>
@@ -313,7 +317,7 @@
             <Class class="Document"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="FolderHasSubFolders" description="FolderHasSubFolders" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="FolderHasSubFolders" description="FolderHasSubFolders" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" roleLabel="has sub folders" polymorphic="true">
             <Class class="Folder"/>
         </Source>
@@ -321,7 +325,7 @@
             <Class class="Folder"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ImplicitRelationshipClass" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ImplicitRelationshipClass" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <AccessCustomAttributes xmlns="KitchenSink.01.00">
                 <AccessLevel>5</AccessLevel>
@@ -430,7 +434,7 @@
     <ECEntityClass typeName="ecProject" description="Project Class" displayLabel="Project" modifier="None">
         <ECProperty propertyName="Name" typeName="string" displayLabel="Project Name" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ProjectHasPrimitive" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ProjectHasPrimitive" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="false">
             <Class class="ecProject"/>
         </Source>
@@ -448,7 +452,7 @@
         <ECProperty propertyName="ecstringattr" typeName="string" displayLabel="stringattr" readOnly="false"/>
         <ECProperty propertyName="eclongattr" typeName="int" displayLabel="longattr" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ProjectHasWidget" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ProjectHasWidget" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="false">
             <Class class="ecProject"/>
         </Source>
@@ -456,7 +460,7 @@
             <Class class="ecWidget"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="WidgetBelongsToProject" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="WidgetBelongsToProject" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="false">
             <Class class="ecWidget"/>
         </Source>

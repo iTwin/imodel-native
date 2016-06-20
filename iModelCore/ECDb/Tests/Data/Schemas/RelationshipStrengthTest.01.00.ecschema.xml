@@ -6,7 +6,7 @@
         <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
         <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ChildrenHasSingleParent" modifier="None" strength="embedding" strengthDirection="backward">
+    <ECRelationshipClass typeName="ChildrenHasSingleParent" modifier="Sealed" strength="embedding" strengthDirection="backward">
         <Source cardinality="(0,N)" roleLabel="Children" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -14,7 +14,7 @@
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ChildrenHaveManyParents" modifier="None" strength="referencing" strengthDirection="backward">
+    <ECRelationshipClass typeName="ChildrenHaveManyParents" modifier="Sealed" strength="referencing" strengthDirection="backward">
         <Source cardinality="(0,N)" roleLabel="Children" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -22,7 +22,7 @@
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ManyParentsHaveChildren" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ManyParentsHaveChildren" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(1,N)" roleLabel="Parents" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -30,7 +30,7 @@
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ParentHasSpouse" modifier="None" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ParentHasSpouse" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -38,7 +38,7 @@
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ParentHasSpouse_backward" modifier="None" strength="referencing" strengthDirection="backward">
+    <ECRelationshipClass typeName="ParentHasSpouse_backward" modifier="Sealed" strength="referencing" strengthDirection="backward">
         <Source cardinality="(0,1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -46,7 +46,7 @@
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SingleParentHasChildren" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="SingleParentHasChildren" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>

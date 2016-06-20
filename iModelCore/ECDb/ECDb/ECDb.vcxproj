@@ -106,6 +106,8 @@
     <ClCompile Include="ECSql\UpdateStatementExp.cpp" />
     <ClCompile Include="ECSql\ValueExp.cpp" />
     <ClCompile Include="ECSql\WhereExp.cpp" />
+    <ClCompile Include="IssueReporter.cpp" />
+    <ClCompile Include="LightweightCache.cpp" />
     <ClCompile Include="MapStrategy.cpp" />
     <ClCompile Include="PropertyMap.cpp" />
     <ClCompile Include="RelationshipClassMap.cpp" />
@@ -207,8 +209,9 @@
     <ClInclude Include="ECSql\UpdateStatementExp.h" />
     <ClInclude Include="ECSql\ValueExp.h" />
     <ClInclude Include="ECSql\WhereExp.h" />
+    <ClInclude Include="IssueReporter.h" />
+    <ClInclude Include="LightweightCache.h" />
     <ClInclude Include="MapStrategy.h" />
-    <ClInclude Include="Nullable.h" />
     <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="RelationshipClassMap.h" />
     <ClInclude Include="SchemaImportContext.h" />

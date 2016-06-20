@@ -440,7 +440,7 @@ BentleyStatus DbSchemaPersistenceManager::Save(ECDbCR ecdb, DbSchema const& dbSc
         {
         ClassDbMapping const& classMapping = *kvPair.second;
         std::vector<PropertyDbMapping const*> propMappings;
-        classMapping.GetPropertyMappings(propMappings, true);
+        classMapping.GetPropertyMappings(propMappings, false);
         for (PropertyDbMapping const* propertyMap : propMappings)
             {
             if (BE_SQLITE_OK != InsertPropertyMapping(ecdb, *propertyMap))
@@ -1376,7 +1376,7 @@ void AssertPersistedEnumsAreUnchanged()
     static_assert((int) DbColumn::Kind::DataColumn == 512 &&
                   (int) DbColumn::Kind::ECClassId == 2 &&
                   (int) DbColumn::Kind::ECInstanceId == 1 &&
-                  (int) DbColumn::Kind::NonRelSystemColumn == 3 &&
+                  (int) DbColumn::Kind::RelECClassId == 2048 &&
                   (int) DbColumn::Kind::SharedDataColumn == 1024 &&
                   (int) DbColumn::Kind::SourceECClassId == 64 &&
                   (int) DbColumn::Kind::SourceECInstanceId == 32 &&

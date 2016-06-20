@@ -16,6 +16,7 @@
 #include "ECSqlFieldFactory.h"
 
 using namespace std;
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -418,7 +419,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         auto policy = ECDbPolicyManager::GetClassPolicy(classMap, IsValidInECSqlPolicyAssertion::Get(currentScopeECSqlType, exp.IsPolymorphic()));
         if (!policy.IsSupported())
             {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass '%s': %s", exp.GetId().c_str(), policy.GetNotSupportedMessage());
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage());
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -825,15 +826,12 @@ ECSqlStatus ECSqlExpPreparer::PrepareGetPointCoordinateFunctionExp(NativeSqlBuil
         {
             case GetPointCoordinateFunctionExp::Coordinate::X:
                 snippetIndex = 0;
-                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith("_x]"));
                 break;
             case GetPointCoordinateFunctionExp::Coordinate::Y:
                 snippetIndex = 1;
-                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith("_y]"));
                 break;
             case GetPointCoordinateFunctionExp::Coordinate::Z:
                 snippetIndex = 2;
-                BeAssert(Utf8String(pointSqlSnippets[snippetIndex].ToString()).ToLower().EndsWith("_z]"));
                 break;
 
             default:

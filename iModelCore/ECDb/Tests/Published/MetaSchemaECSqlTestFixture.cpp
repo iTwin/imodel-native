@@ -22,9 +22,12 @@ private:
     void AssertSchemaDef(ECSchemaCR expectedSchema, ECSqlStatement const& actualSchemaDefRow);
     void AssertClassDefs(ECSchemaCR expectedSchema);
     void AssertClassDef(ECClassCR expectedClass, ECSqlStatement const& actualClassDefRow);
+    void AssertBaseClasses(ECClassCR expectedClass);
     void AssertEnumerationDefs(ECSchemaCR expectedSchema);
     void AssertEnumerationDef(ECEnumerationCR expectedEnum, ECSqlStatement const& actualEnumerationDefRow);
     void AssertEnumerationValue(ECEnumeratorCR expectedEnumValue, IECSqlStructValue const& actualEnumValue);
+    void AssertKindOfQuantityDefs(ECSchemaCR expectedSchema);
+    void AssertKindOfQuantityDef(KindOfQuantityCR expectedKoq, ECSqlStatement const& actualKoqDefRow);
     void AssertPropertyDefs(ECClassCR expectedClass);
     void AssertPropertyDef(ECPropertyCR expectedProp, ECSqlStatement const& actualPropertyDefRow);
 
@@ -49,6 +52,8 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDefs()
 
         AssertSchemaDef(*expectedSchema, schemaStatement);
         AssertClassDefs(*expectedSchema);
+        AssertEnumerationDefs(*expectedSchema);
+        AssertKindOfQuantityDefs(*expectedSchema);
         actualSchemaCount++;
         }
 
@@ -79,13 +84,20 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, ECSq
             ASSERT_STREQ(expectedSchema.GetName().c_str(), val.GetText()) << "ECSchemaDef.Name";
         else if (colName.EqualsI("DisplayLabel"))
             {
-            if (expectedSchema.GetIsDisplayLabelDefined())
+            if (!expectedSchema.GetDisplayLabel().empty())
                 ASSERT_STREQ(expectedSchema.GetDisplayLabel().c_str(), val.GetText()) << "ECSchemaDef.DisplayLabel";
             else
                 ASSERT_TRUE(val.IsNull()) << "ECSchemaDef.DisplayLabel";
             }
         else if (colName.EqualsI("Description"))
-            ASSERT_STREQ(expectedSchema.GetDescription().c_str(), val.GetText()) << "ECSchemaDef.Description";
+            {
+            if (!expectedSchema.GetDescription().empty())
+                ASSERT_STREQ(expectedSchema.GetDescription().c_str(), val.GetText()) << "ECSchemaDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECSchemaDef.Description";
+
+            continue;
+            }
         else if (colName.EqualsI("NamespacePrefix"))
             ASSERT_STREQ(expectedSchema.GetNamespacePrefix().c_str(), val.GetText()) << "ECSchemaDef.NamespacePrefix";
         else if (colName.EqualsI("VersionMajor"))
@@ -119,6 +131,7 @@ void MetaSchemaECSqlTestFixture::AssertClassDefs(ECSchemaCR expectedSchema)
         ASSERT_TRUE(expectedClass != nullptr);
 
         AssertClassDef(*expectedClass, classStatement);
+        AssertBaseClasses(*expectedClass);
         AssertPropertyDefs(*expectedClass);
         actualClassCount++;
         }
@@ -166,7 +179,7 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
 
         if (colName.EqualsI("DisplayLabel"))
             {
-            if (expectedClass.GetIsDisplayLabelDefined())
+            if (!expectedClass.GetDisplayLabel().empty())
                 ASSERT_STREQ(expectedClass.GetDisplayLabel().c_str(), val.GetText()) << "ECClassDef.DisplayLabel";
             else
                 ASSERT_TRUE(val.IsNull()) << "ECClassDef.DisplayLabel";
@@ -176,7 +189,11 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
 
         if (colName.EqualsI("Description"))
             {
-            ASSERT_STREQ(expectedClass.GetDescription().c_str(), val.GetText()) << "ECClassDef.Description";
+            if (!expectedClass.GetDescription().empty())
+                ASSERT_STREQ(expectedClass.GetDescription().c_str(), val.GetText()) << "ECClassDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECClassDef.Description";
+
             continue;
             }
 
@@ -236,6 +253,27 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
 
         FAIL() << "ECProperty ECClassDef." << colName.c_str() << " not tested. Test needs to be adjusted";
         }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void MetaSchemaECSqlTestFixture::AssertBaseClasses(ECClassCR expectedClass)
+    {
+    ECSqlStatement directBaseClassStatement;
+    ASSERT_EQ(ECSqlStatus::Success, directBaseClassStatement.Prepare(GetECDb(), "SELECT TargetECInstanceId FROM ec.ClassHasBaseClasses WHERE SourceECInstanceId=? ORDER BY Ordinal"));
+    ASSERT_EQ(ECSqlStatus::Success, directBaseClassStatement.BindId(1, expectedClass.GetId()));
+
+    int ordinal = 0;
+    const int expectedBaseClassCount = (int) expectedClass.GetBaseClasses().size();
+    while (BE_SQLITE_ROW == directBaseClassStatement.Step())
+        {
+        ASSERT_LT(ordinal, expectedBaseClassCount);
+        ASSERT_EQ(expectedClass.GetBaseClasses()[ordinal]->GetId().GetValue(), directBaseClassStatement.GetValueId<ECInstanceId>(0).GetValue());
+        ordinal++;
+        }
+
+    ASSERT_EQ(ordinal, expectedBaseClassCount);
     }
 
 //---------------------------------------------------------------------------------
@@ -301,7 +339,7 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEn
 
         if (colName.EqualsI("DisplayLabel"))
             {
-            if (expectedEnum.GetIsDisplayLabelDefined())
+            if (!expectedEnum.GetDisplayLabel().empty())
                 ASSERT_STREQ(expectedEnum.GetDisplayLabel().c_str(), val.GetText()) << "ECEnumerationDef.DisplayLabel";
             else
                 ASSERT_TRUE(val.IsNull()) << "ECEnumerationDef.DisplayLabel";
@@ -311,7 +349,11 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEn
 
         if (colName.EqualsI("Description"))
             {
-            ASSERT_STREQ(expectedEnum.GetDescription().c_str(), val.GetText()) << "ECEnumerationDef.Description";
+            if (!expectedEnum.GetDescription().empty())
+                ASSERT_STREQ(expectedEnum.GetDescription().c_str(), val.GetText()) << "ECEnumerationDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECEnumerationDef.Description";
+
             continue;
             }
 
@@ -376,7 +418,7 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationValue(ECEnumeratorCR expectedE
         if (memberName.EqualsI("StringValue"))
             {
             if (expectedEnumValue.IsString())
-                ASSERT_EQ(expectedEnumValue.GetString().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].StringValue";
+                ASSERT_STREQ(expectedEnumValue.GetString().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].StringValue";
             else
                 ASSERT_TRUE(memberVal.IsNull()) << "ECEnumerationDef.EnumValues[].StringValue for non-string values";
 
@@ -384,8 +426,8 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationValue(ECEnumeratorCR expectedE
             }
         if (memberName.EqualsI("DisplayLabel"))
             {
-            if (expectedEnumValue.GetIsDisplayLabelDefined())
-                ASSERT_EQ(expectedEnumValue.GetDisplayLabel().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].DisplayLabel";
+            if (!expectedEnumValue.GetDisplayLabel().empty())
+                ASSERT_STREQ(expectedEnumValue.GetDisplayLabel().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].DisplayLabel";
             else
                 ASSERT_TRUE(memberVal.IsNull()) << "ECEnumerationDef.EnumValues[].DisplayLabel if not defined";
 
@@ -393,6 +435,132 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationValue(ECEnumeratorCR expectedE
             }
 
         FAIL() << "Untested Struct member: " << memberName.c_str() << " Please adjust the test";
+        }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void MetaSchemaECSqlTestFixture::AssertKindOfQuantityDefs(ECSchemaCR expectedSchema)
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT koq.Name, koq.* FROM ec.ECSchemaDef s "
+                                                          "JOIN ec.KindOfQuantityDef koq USING ec.SchemaOwnsKindOfQuantities "
+                                                          "WHERE s.Name=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, expectedSchema.GetName().c_str(), IECSqlBinder::MakeCopy::No));
+
+    int actualKoqCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        Utf8CP actualKoqName = statement.GetValueText(0);
+        KindOfQuantityCP expectedKoq = expectedSchema.GetKindOfQuantityCP(actualKoqName);
+        ASSERT_TRUE(expectedKoq != nullptr);
+
+        AssertKindOfQuantityDef(*expectedKoq, statement);
+        actualKoqCount++;
+        }
+
+    ASSERT_EQ((int) expectedSchema.GetKindOfQuantityCount(), actualKoqCount);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void MetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR expectedKoq, ECSqlStatement const& actualKoqDefRow)
+    {
+    const int colCount = actualKoqDefRow.GetColumnCount();
+    for (int i = 0; i < colCount; i++)
+        {
+        IECSqlValue const& val = actualKoqDefRow.GetValue(i);
+        ECSqlColumnInfoCR colInfo = val.GetColumnInfo();
+
+        ECPropertyCP colInfoProp = colInfo.GetProperty();
+        ASSERT_TRUE(colInfoProp != nullptr);
+
+        Utf8StringCR colName = colInfoProp->GetName();
+
+        if (colName.EqualsI("ECInstanceId"))
+            {
+            //EnumerationId is not exposed in API. So we can only test that the actual id is generally a valid one
+            ASSERT_TRUE(val.GetId<BeInt64Id>().IsValid()) << "KindOfQuantityDef.ECInstanceId";
+            continue;
+            }
+
+        if (colName.EqualsI("SchemaId"))
+            {
+            ASSERT_EQ(expectedKoq.GetSchema().GetId().GetValue(), val.GetId<ECSchemaId>().GetValue()) << "KindOfQuantityDef.SchemaId";
+            continue;
+            }
+
+        if (colName.EqualsI("Name"))
+            {
+            ASSERT_STREQ(expectedKoq.GetName().c_str(), val.GetText()) << "KindOfQuantityDef.Name";
+            continue;
+            }
+
+        if (colName.EqualsI("DisplayLabel"))
+            {
+            if (!expectedKoq.GetDisplayLabel().empty())
+                ASSERT_STREQ(expectedKoq.GetDisplayLabel().c_str(), val.GetText()) << "KindOfQuantityDef.DisplayLabel";
+            else
+                ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.DisplayLabel";
+
+            continue;
+            }
+
+        if (colName.EqualsI("Description"))
+            {
+            if (!expectedKoq.GetDescription().empty())
+                ASSERT_STREQ(expectedKoq.GetDescription().c_str(), val.GetText()) << "KindOfQuantityDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.Description";
+
+            continue;
+            }
+
+        if (colName.EqualsI("PersistenceUnit"))
+            {
+            ASSERT_STREQ(expectedKoq.GetPersistenceUnit().c_str(), val.GetText()) << "KindOfQuantityDef.PersistenceUnit";
+            continue;
+            }
+
+        if (colName.EqualsI("PersistencePrecision"))
+            {
+            ASSERT_EQ((int) expectedKoq.GetPrecision(), val.GetInt()) << "KindOfQuantityDef.PersistencePrecision";
+            continue;
+            }
+
+        if (colName.EqualsI("DefaultPresentationUnit"))
+            {
+            if (!expectedKoq.GetDefaultPresentationUnit().empty())
+                ASSERT_STREQ(expectedKoq.GetDefaultPresentationUnit().c_str(), val.GetText()) << "KindOfQuantityDef.DefaultPresentationUnit";
+            else
+                ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.DefaultPresentationUnit";
+
+            continue;
+            }
+
+        if (colName.EqualsI("AlternativePresentationUnits"))
+            {
+            if (expectedKoq.GetAlternativePresentationUnitList().empty())
+                ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.AlternativePresentationUnits";
+            else
+                {
+                Json::Value actualAltPresUnitsJson;
+                Json::Reader reader;
+                ASSERT_TRUE(reader.Parse(val.GetText(), actualAltPresUnitsJson, false)) << "KindOfQuantityDef.AlternativePresentationUnits";
+
+                ASSERT_EQ(expectedKoq.GetAlternativePresentationUnitList().size(), actualAltPresUnitsJson.size()) << "KindOfQuantityDef.AlternativePresentationUnits";
+
+                for (size_t i = 0; i < expectedKoq.GetAlternativePresentationUnitList().size(); i++)
+                    {
+                    ASSERT_STREQ(expectedKoq.GetAlternativePresentationUnitList()[i].c_str(), actualAltPresUnitsJson[(Json::ArrayIndex) i].asCString()) << "KindOfQuantityDef.AlternativePresentationUnits";
+                    }
+                }
+
+            continue;
+            }
         }
     }
 
@@ -475,7 +643,7 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
 
         if (colName.EqualsI("DisplayLabel"))
             {
-            if (expectedProp.GetIsDisplayLabelDefined())
+            if (!expectedProp.GetDisplayLabel().empty())
                 ASSERT_STREQ(expectedProp.GetDisplayLabel().c_str(), val.GetText()) << "ECPropertyDef.DisplayLabel for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
                 ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.DisplayLabel";
@@ -485,7 +653,10 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
 
         if (colName.EqualsI("Description"))
             {
-            ASSERT_STREQ(expectedProp.GetDescription().c_str(), val.GetText()) << "ECPropertyDef.Description for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            if (!expectedProp.GetDescription().empty())
+                ASSERT_STREQ(expectedProp.GetDescription().c_str(), val.GetText()) << "ECPropertyDef.Description for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.Description";
             continue;
             }
 
@@ -545,11 +716,12 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
 
         if (colName.EqualsI("EnumerationId"))
             {
-            if (primProp != nullptr && primProp->GetEnumeration() != nullptr)
-                {
-                //EnumerationId is not exposed in the API, so we cannot check more than that the actual id is a generally valid id
-                ASSERT_TRUE(val.GetId<BeInt64Id>().IsValid()) << "ECPropertyDef.EnumerationId for prim prop with enumeration for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                }
+            ECEnumerationCP expectedEnum = nullptr;
+            if (primProp != nullptr)
+                expectedEnum = primProp->GetEnumeration();
+
+            if (expectedEnum != nullptr)
+                ASSERT_EQ(expectedEnum->GetId().GetValue(), val.GetId<ECEnumerationId>().GetValue()) << "ECPropertyDef.EnumerationId for prim prop with enumeration for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
                 ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.EnumerationId for prim prop without enumeration or non-prim prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
@@ -586,6 +758,22 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
                 ASSERT_EQ(structArrayProp->GetStructElementType()->GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECPropertyDef.StructClassId for struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
                 ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.StructClassId for neither struct nor struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("KindOfQuantityId"))
+            {
+            KindOfQuantityCP expectedKoq = nullptr;
+            if (primProp != nullptr)
+                expectedKoq = primProp->GetKindOfQuantity();
+            else if (primArrayProp != nullptr)
+                expectedKoq = primArrayProp->GetKindOfQuantity();
+
+            if (expectedKoq != nullptr)
+                ASSERT_EQ(expectedKoq->GetId().GetValue(), val.GetId<KindOfQuantityId>().GetValue()) << "ECPropertyDef.KindOfQuantityId for prim or prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.KindOfQuantityId for neither prim nor prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }

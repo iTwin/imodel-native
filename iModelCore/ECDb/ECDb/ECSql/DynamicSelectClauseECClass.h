@@ -34,7 +34,7 @@ private:
     ECSqlStatus AddReferenceToStructSchema(ECN::ECSchemaCR structSchema) const;
     ECN::ECClassR GetClassR() const { return *m_class; }
     ECN::ECSchemaR GetSchemaR() const { return *m_schema; }
-    ECSqlStatus SetBackReferenceToPropertyPath(ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
+    ECSqlStatus SetBackReferenceToPropertyPath(ECN::ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
 
 public:
     DynamicSelectClauseECClass ();

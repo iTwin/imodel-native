@@ -215,7 +215,7 @@ BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, bvector<ECN::E
     changes.Optimize();
     return SUCCESS;
     }
-
+//#define ECECSCHEMAUPDATE_INVARIANT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -224,11 +224,26 @@ BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchema
     if (a.GetName() != b.GetName())
         change.GetName().SetValue(a.GetName(), b.GetName());
 
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (a.GetIsDisplayLabelDefined() && !b.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, a.GetInvariantDisplayLabel());
+    else if (!a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::New, b.GetInvariantDisplayLabel());
+    else if (a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
+        {
+        if (a.GetInvariantDisplayLabel() != b.GetInvariantDisplayLabel())
+            change.GetDisplayLabel().SetValue(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
+        }
+
+    if (a.GetInvariantDescription() != b.GetInvariantDescription())
+        change.GetDescription().SetValue(a.GetInvariantDescription(), b.GetInvariantDescription());
+#else
     if (a.GetDisplayLabel() != b.GetDisplayLabel())
         change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
 
     if (a.GetDescription() != b.GetDescription())
         change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
+#endif
 
     if (a.GetNamespacePrefix() != b.GetNamespacePrefix())
         change.GetNamespacePrefix().SetValue(a.GetNamespacePrefix(), b.GetNamespacePrefix());
@@ -248,10 +263,9 @@ BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchema
     if (CompareECEnumerations(change.Enumerations(), a.GetEnumerations(), b.GetEnumerations()) != SUCCESS)
         return ERROR;
 
-#ifdef KIND_OF_QUANTITY_SUPPORT
     if (CompareKindOfQuantities(change.KindOfQuantities(), a.GetKindOfQuantities(), b.GetKindOfQuantities()) != SUCCESS)
         return ERROR;
-#endif
+
     if (CompareReferences(change.References(), a.GetReferencedSchemas(), b.GetReferencedSchemas()) != SUCCESS)
         return ERROR;
 
@@ -266,11 +280,26 @@ BentleyStatus ECSchemaComparer::CompareECClass(ECClassChange& change, ECClassCR 
     if (a.GetName() != b.GetName())
         change.GetName().SetValue(a.GetName(), b.GetName());
 
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (a.GetIsDisplayLabelDefined() && !b.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, a.GetInvariantDisplayLabel());
+    else if (!a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::New, b.GetInvariantDisplayLabel());
+    else if (a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
+        {
+        if (a.GetInvariantDisplayLabel() != b.GetInvariantDisplayLabel())
+            change.GetDisplayLabel().SetValue(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
+        }
+
+    if (a.GetInvariantDescription() != b.GetInvariantDescription())
+        change.GetDescription().SetValue(a.GetInvariantDescription(), b.GetInvariantDescription());
+#else
     if (a.GetDisplayLabel() != b.GetDisplayLabel())
         change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
 
     if (a.GetDescription() != b.GetDescription())
         change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
+#endif
 
     if (a.GetClassModifier() != b.GetClassModifier())
         change.GetClassModifier().SetValue(a.GetClassModifier(), b.GetClassModifier());
@@ -458,11 +487,27 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
     if (a.GetName() != b.GetName())
         change.GetName().SetValue(a.GetName(), b.GetName());
 
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (a.GetIsDisplayLabelDefined() && !b.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, a.GetInvariantDisplayLabel());
+    else if (!a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::New, b.GetInvariantDisplayLabel());
+    else if (a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
+        {
+        if (a.GetInvariantDisplayLabel() != b.GetInvariantDisplayLabel())
+            change.GetDisplayLabel().SetValue(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
+        }
+
+    if (a.GetInvariantDescription() != b.GetInvariantDescription())
+        change.GetDescription().SetValue(a.GetInvariantDescription(), b.GetInvariantDescription());
+#else
     if (a.GetDisplayLabel() != b.GetDisplayLabel())
         change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
 
     if (a.GetDescription() != b.GetDescription())
         change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
+#endif
+
 
     if (a.GetIsPrimitive() != b.GetIsPrimitive())
         change.IsPrimitive().SetValue(a.GetIsPrimitive(), b.GetIsPrimitive());
@@ -488,6 +533,7 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
     //if (a.GetMinimumValue() != b.GetMinimumValue())
     //    change.GetMinimumValue().SetValue(a.GetMinimumValue(), b.GetMinimumValue());
 
+
     auto aNavigation = a.GetAsNavigationProperty();
     auto bNavigation = b.GetAsNavigationProperty();
     if (aNavigation && bNavigation)
@@ -504,27 +550,92 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
         else if (!aNavigation->GetRelationshipClass() && bNavigation->GetRelationshipClass())
             change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::New, bNavigation->GetRelationshipClass()->GetFullName());
         }
+    else if (aNavigation && !bNavigation)
+        {
+        change.GetNavigation().Direction().SetValue(ValueId::Deleted, aNavigation->GetDirection());
+        change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::Deleted, aNavigation->GetRelationshipClass()->GetFullName());
+        }
+    else if(!aNavigation && bNavigation)
+        {
+        change.GetNavigation().Direction().SetValue(ValueId::New, aNavigation->GetDirection());
+        change.GetNavigation().GetRelationshipClassName().SetValue(ValueId::New, aNavigation->GetRelationshipClass()->GetFullName());
+        }
+   
+    auto aPrimitive = a.GetAsPrimitiveProperty();
+    auto bPrimitive = b.GetAsPrimitiveProperty();
+    if (aPrimitive && bPrimitive)
+        {
+        auto aEnum = aPrimitive->GetEnumeration();
+        auto bEnum = bPrimitive->GetEnumeration();
+        if (aEnum != bEnum)
+            {
+            if (aEnum && !bEnum)
+                change.GetEnumeration().SetValue(ValueId::Deleted, aEnum->GetFullName());
+            else if (!aEnum && bEnum)
+                change.GetEnumeration().SetValue(ValueId::New, bEnum->GetFullName());
+            else
+                change.GetEnumeration().SetValue(aEnum->GetFullName(), bEnum->GetFullName());
+            }
+
+        auto aKoQ = aPrimitive->GetKindOfQuantity();
+        auto bKoQ = bPrimitive->GetKindOfQuantity();
+        if (aKoQ != bKoQ)
+            {
+            if (aKoQ && !bKoQ)
+                change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoQ->GetFullName());
+            else if (!aKoQ && bKoQ)
+                change.GetKindOfQuanity().SetValue(ValueId::New, bKoQ->GetFullName());
+            else
+                change.GetKindOfQuanity().SetValue(aKoQ->GetFullName(), bKoQ->GetFullName());
+            }
+        }
+    else if (aPrimitive && !bPrimitive)
+        {
+        if (auto aKoQ = aPrimitive->GetKindOfQuantity())
+            change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoQ->GetFullName());
+        }
+    else if (!aPrimitive && bPrimitive)
+        {
+        if (auto bKoQ = bPrimitive->GetKindOfQuantity())
+            change.GetKindOfQuanity().SetValue(ValueId::Deleted, bKoQ->GetFullName());
+        }
 
     auto aArray = a.GetAsArrayProperty();
     auto bArray = b.GetAsArrayProperty();
     if (aArray && bArray)
         {
-
         if (aArray->GetStoredMaxOccurs() != bArray->GetStoredMaxOccurs())
             change.GetArray().MaxOccurs().SetValue(aArray->GetStoredMaxOccurs(), bArray->GetStoredMaxOccurs());
 
         if (aArray->GetMinOccurs() != bArray->GetMinOccurs())
             change.GetArray().MinOccurs().SetValue(aArray->GetMinOccurs(), bArray->GetMinOccurs());
+
+        auto aKoQ = aArray->GetKindOfQuantity();
+        auto bKoQ = bArray->GetKindOfQuantity();
+        if (aKoQ != bKoQ)
+            {
+            if (aKoQ && !bKoQ)
+                change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoQ->GetFullName());
+            else if (!aKoQ && bKoQ)
+                change.GetKindOfQuanity().SetValue(ValueId::New, bKoQ->GetFullName());
+            else
+                change.GetKindOfQuanity().SetValue(aKoQ->GetFullName(), bKoQ->GetFullName());
+            }
         }
     else if (aArray && !bArray)
         {
         change.GetArray().MaxOccurs().SetValue(ValueId::Deleted, aArray->GetStoredMaxOccurs());
         change.GetArray().MinOccurs().SetValue(ValueId::Deleted, aArray->GetMinOccurs());
+        if (auto aKoQ = aArray->GetKindOfQuantity())
+            change.GetKindOfQuanity().SetValue(ValueId::Deleted, aKoQ->GetFullName());
+
         }
     else if (!aArray && bArray)
         {
         change.GetArray().MaxOccurs().SetValue(ValueId::New, bArray->GetStoredMaxOccurs());
         change.GetArray().MinOccurs().SetValue(ValueId::New, bArray->GetMinOccurs());
+        if (auto bKoQ = bArray->GetKindOfQuantity())
+            change.GetKindOfQuanity().SetValue(ValueId::Deleted, bKoQ->GetFullName());
         }
 
     auto aExtendType = a.GetAsExtendedTypeProperty();
@@ -674,7 +785,6 @@ BentleyStatus ECSchemaComparer::CompareECEnumerations(ECEnumerationChanges& chan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-#ifdef KIND_OF_QUANTITY_SUPPORT
 BentleyStatus ECSchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
     {
     std::map<Utf8CP, KindOfQuantityCP, CompareIUtf8Ascii> aMap, bMap, cMap;
@@ -714,7 +824,6 @@ BentleyStatus ECSchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges&
 
     return SUCCESS;
     }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -839,11 +948,27 @@ BentleyStatus ECSchemaComparer::CompareECEnumeration(ECEnumerationChange& change
     if (a.GetName() != b.GetName())
         change.GetName().SetValue(a.GetName(), b.GetName());
 
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (a.GetIsDisplayLabelDefined() && !b.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, a.GetInvariantDisplayLabel());
+    else if (!a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::New, b.GetInvariantDisplayLabel());
+    else if (a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
+        {
+        if (a.GetInvariantDisplayLabel() != b.GetInvariantDisplayLabel())
+            change.GetDisplayLabel().SetValue(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
+        }
+
+    if (a.GetInvariantDescription() != b.GetInvariantDescription())
+        change.GetDescription().SetValue(a.GetInvariantDescription(), b.GetInvariantDescription());
+#else
     if (a.GetDisplayLabel() != b.GetDisplayLabel())
         change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
 
     if (a.GetDescription() != b.GetDescription())
         change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
+#endif
+
 
     if (a.GetIsStrict() != b.GetIsStrict())
         change.IsStrict().SetValue(a.GetIsStrict(), b.GetIsStrict());
@@ -954,12 +1079,11 @@ BentleyStatus ECSchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-#ifdef KIND_OF_QUANTITY_SUPPORT
 BentleyStatus ECSchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b)
     {
     if (a.GetName() != b.GetName())
         change.GetName().SetValue(a.GetName(), b.GetName());
-
+  
     if (a.GetDisplayLabel() != b.GetDisplayLabel())
         change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
 
@@ -1003,7 +1127,6 @@ BentleyStatus ECSchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& chan
         }
     return SUCCESS;
     }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1077,10 +1200,18 @@ BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchem
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     ECSchemaChange& change = changes.Add(state, v.GetName().c_str());
-
     change.GetName().SetValue(appendType, v.GetName());
+
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (v.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(appendType, v.GetInvariantDisplayLabel());
+
+    change.GetDescription().SetValue(appendType, v.GetInvariantDescription());
+#else
     change.GetDisplayLabel().SetValue(appendType, v.GetDisplayLabel());
     change.GetDescription().SetValue(appendType, v.GetDescription());
+#endif
+
     change.GetNamespacePrefix().SetValue(appendType, v.GetNamespacePrefix());
     change.GetVersionMajor().SetValue(appendType, v.GetVersionMajor());
     change.GetVersionMinor().SetValue(appendType, v.GetVersionMinor());
@@ -1098,11 +1229,10 @@ BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchem
         if (AppendECEnumeration(change.Enumerations(), *enumerationCP, appendType) == ERROR)
             return ERROR;
 
-#ifdef KIND_OF_QUANTITY_SUPPORT
     for (KindOfQuantityCP kindOfQuantityCP : v.GetKindOfQuantities())
         if (AppendKindOfQuantity(change.KindOfQuantities(), *kindOfQuantityCP, appendType) == ERROR)
             return ERROR;
-#endif
+
     if (AppendReferences(change.References(), v.GetReferencedSchemas(), appendType) != SUCCESS)
         return ERROR;
 
@@ -1118,8 +1248,15 @@ BentleyStatus ECSchemaComparer::AppendECClass(ECClassChanges& changes, ECClassCR
     ECClassChange& change = changes.Add(state, v.GetName().c_str());
 
     change.GetName().SetValue(appendType, v.GetName());
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (v.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(appendType, v.GetInvariantDisplayLabel());
+
+    change.GetDescription().SetValue(appendType, v.GetInvariantDescription());
+#else
     change.GetDisplayLabel().SetValue(appendType, v.GetDisplayLabel());
     change.GetDescription().SetValue(appendType, v.GetDescription());
+#endif
     change.GetClassModifier().SetValue(appendType, v.GetClassModifier());
     change.ClassType().SetValue(appendType, v.GetClassType());
 
@@ -1206,15 +1343,30 @@ BentleyStatus ECSchemaComparer::AppendECEnumeration(ECEnumerationChanges& change
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     ECEnumerationChange& enumerationChange = changes.Add(state, v.GetName().c_str());
-    enumerationChange.GetName().SetValue(appendType, v.GetName());
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (v.GetIsDisplayLabelDefined())
+        enumerationChange.GetDisplayLabel().SetValue(appendType, v.GetInvariantDisplayLabel());
+
+    enumerationChange.GetDescription().SetValue(appendType, v.GetInvariantDescription());
+#else
     enumerationChange.GetDisplayLabel().SetValue(appendType, v.GetDisplayLabel());
     enumerationChange.GetDescription().SetValue(appendType, v.GetDescription());
+#endif
     enumerationChange.IsStrict().SetValue(appendType, v.GetIsStrict());
     enumerationChange.GetTypeName().SetValue(appendType, v.GetTypeName());
     for (ECEnumeratorCP enumeratorCP : v.GetEnumerators())
         {
         ECEnumeratorChange& enumeratorChange = enumerationChange.Enumerators().Add(state);
+        if (enumeratorCP->GetIsDisplayLabelDefined())
+            enumeratorChange.GetDisplayLabel().SetValue(appendType, enumeratorCP->GetDisplayLabel());
+     
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+        if (v.GetIsDisplayLabelDefined())
+            enumeratorChange.GetDisplayLabel().SetValue(appendType, enumeratorCP->GetInvariantDisplayLabel());
+#else
         enumeratorChange.GetDisplayLabel().SetValue(appendType, enumeratorCP->GetDisplayLabel());
+#endif
+
         if (enumeratorCP->IsInteger())
             enumeratorChange.GetInteger().SetValue(appendType, enumeratorCP->GetInteger());
 
@@ -1227,7 +1379,6 @@ BentleyStatus ECSchemaComparer::AppendECEnumeration(ECEnumerationChanges& change
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-#ifdef KIND_OF_QUANTITY_SUPPORT
 BentleyStatus ECSchemaComparer::AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
@@ -1245,7 +1396,6 @@ BentleyStatus ECSchemaComparer::AppendKindOfQuantity(ECKindOfQuantityChanges& ch
 
     return SUCCESS;
     }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1254,15 +1404,18 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     ECPropertyChange& propertyChange = changes.Add(state, v.GetName().c_str());
     propertyChange.GetName().SetValue(appendType, v.GetName());
+#ifdef ECECSCHEMAUPDATE_INVARIANT
+    if (v.GetIsDisplayLabelDefined())
+        propertyChange.GetDisplayLabel().SetValue(appendType, v.GetInvariantDisplayLabel());
+
+    propertyChange.GetDescription().SetValue(appendType, v.GetInvariantDescription());
+#else
     propertyChange.GetDisplayLabel().SetValue(appendType, v.GetDisplayLabel());
     propertyChange.GetDescription().SetValue(appendType, v.GetDescription());
+#endif
     propertyChange.GetTypeName().SetValue(appendType, v.GetTypeName());
 
-    if (auto prop = v.GetAsExtendedTypeProperty())
-        {
-        propertyChange.GetExtendedTypeName().SetValue(appendType, prop->GetExtendedTypeName());
-        }
-    else if (auto prop = v.GetAsNavigationProperty())
+    if (auto prop = v.GetAsNavigationProperty())
         {
         propertyChange.IsNavigation().SetValue(appendType, true);
         NavigationChange& navigationChange = propertyChange.GetNavigation();
@@ -1273,6 +1426,14 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
     else if (v.GetIsPrimitive())
         {
         propertyChange.IsPrimitive().SetValue(appendType, true);
+        auto primitiveProp = v.GetAsPrimitiveProperty();
+  
+        propertyChange.GetExtendedTypeName().SetValue(appendType, primitiveProp->GetExtendedTypeName());
+        if (primitiveProp->GetEnumeration())
+            propertyChange.GetEnumeration().SetValue(appendType, primitiveProp->GetEnumeration()->GetFullName());
+
+        if (primitiveProp->GetKindOfQuantity())
+            propertyChange.GetKindOfQuanity().SetValue(appendType, primitiveProp->GetKindOfQuantity()->GetFullName());
         }
     else if (v.GetIsStruct())
         {
@@ -1285,12 +1446,15 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
     else if (v.GetIsPrimitiveArray())
         {
         propertyChange.IsPrimitiveArray().SetValue(appendType, true);
+        auto primitivePropArray = v.GetAsArrayProperty();
+        propertyChange.GetExtendedTypeName().SetValue(appendType, primitivePropArray->GetExtendedTypeName());
+        if (primitivePropArray->GetKindOfQuantity())
+            propertyChange.GetKindOfQuanity().SetValue(appendType, primitivePropArray->GetKindOfQuantity()->GetFullName());
         }
     else
         {
         return ERROR;
         }
-
     //if (v.IsMaximumValueDefined())
     //    propertyChange.GetMaximumValue().SetValue(appendType, v.GetMaximumValue());
 
@@ -1375,8 +1539,23 @@ BentleyStatus ECSchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
+std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path , bool stripArrayIndex)
     {
+    auto stripArrayIndexIfRequired = [&stripArrayIndex] (Utf8String str)
+        {
+        if (stripArrayIndex)
+            {
+            auto i = str.find("[");
+            if (i == Utf8String::npos)
+                {
+                return str;
+                }
+
+            str = str.substr(0, i);
+            }
+        return str;
+        };
+
     std::vector<Utf8String> axis;
     size_t b = 0;
     size_t i = 0;
@@ -1384,13 +1563,14 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
         {
         if (path[i] == '.')
             {
-            axis.push_back(path.substr(b, i - b));
+         
+            axis.push_back(stripArrayIndexIfRequired(path.substr(b, i - b)));
             b = i + 1;
             }
         }
 
     if (b < i)
-        axis.push_back(path.substr(b , i - b ));
+        axis.push_back(stripArrayIndexIfRequired(path.substr(b , i - b )));
 
     return axis;
     }
@@ -2101,6 +2281,54 @@ void ECPropertyValueChange::_Optimize()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECPropertyValueChange::InitValue(ECN::PrimitiveType type)
+    {
+    if (m_type == type)
+        return SUCCESS;
+
+    if (type == static_cast<ECN::PrimitiveType>(0))
+        {
+        m_value = nullptr;
+        return SUCCESS;
+        }
+
+    switch (type)
+        {
+            case ECN::PRIMITIVETYPE_Binary:
+                m_value = std::unique_ptr<ECChange>(new BinaryChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_Boolean:
+                m_value = std::unique_ptr<ECChange>(new BooleanChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_DateTime:
+                m_value = std::unique_ptr<ECChange>(new DateTimeChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_Double:
+                m_value = std::unique_ptr<ECChange>(new DoubleChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_IGeometry:
+            {
+            LOG.errorv("ECSchemaComparer: Changes in ECProperties of type IGeometry are not supported.");
+            return ERROR;
+            }
+            case ECN::PRIMITIVETYPE_Integer:
+                m_value = std::unique_ptr<ECChange>(new Int32Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_Long:
+                m_value = std::unique_ptr<ECChange>(new Int64Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_Point2D:
+                m_value = std::unique_ptr<ECChange>(new Point2DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_Point3D:
+                m_value = std::unique_ptr<ECChange>(new Point3DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            case ECN::PRIMITIVETYPE_String:
+                m_value = std::unique_ptr<ECChange>(new StringChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+            default:
+                BeAssert(false && "Unexpected value for PrimitiveType");
+                return ERROR;
+        }
+
+    m_type = type;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 ECPropertyValueChange::ECPropertyValueChange(ChangeState state, SystemId systemId, ECChange const* parent, Utf8CP customId)
     : ECChange(state, SystemId::PropertyValue, parent, customId),m_type(static_cast<PrimitiveType>(0))
     {
@@ -2343,7 +2571,8 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(ECPropertyVa
         if (v->HasChildren())
             continue;
 
-        std::vector<Utf8String> path = ECSchemaComparer::Split(v->GetAccessString());
+        std::vector<Utf8String> path = ECSchemaComparer::Split(v->GetAccessString(), true);
+
         for (std::unique_ptr<Rule> const& rule : rules)
             {
             if (rule->Match(path))

@@ -228,7 +228,7 @@
         <ECProperty propertyName="_CKTNUM" typeName="string" displayLabel=":CKTNUM" readOnly="false"/>
         <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="EQUISUBE" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="EQUISUBE" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="EQUI"/>
         </Source>
@@ -268,7 +268,7 @@
     <ECEntityClass typeName="LEVEL5" description="LEVEL5 Description" modifier="None">
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FRMWLEVEL5" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="FRMWLEVEL5" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="FRMW"/>
         </Source>
@@ -306,7 +306,7 @@
         <ECProperty propertyName="_SPVDIR" typeName="string" displayLabel=":SPVDIR" readOnly="false"/>
         <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FRMWSBFR" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="FRMWSBFR" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="FRMW"/>
         </Source>
@@ -398,7 +398,7 @@
         <ECProperty propertyName="_ATTAREF" typeName="string" displayLabel=":ATTAREF" readOnly="false"/>
         <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FRMWSCTN" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="FRMWSCTN" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="FRMW"/>
         </Source>
@@ -415,7 +415,7 @@
     <ECEntityClass typeName="LEVEL7" description="LEVEL7 Description" modifier="None">
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="LEVEL6LEVEL7" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="LEVEL6LEVEL7" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="LEVEL6"/>
         </Source>
@@ -426,7 +426,7 @@
     <ECEntityClass typeName="LEVEL8" description="LEVEL8 Description" modifier="None">
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="LEVEL7LEVEL8" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="LEVEL7LEVEL8" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="LEVEL7"/>
         </Source>
@@ -437,7 +437,7 @@
     <ECEntityClass typeName="LEVEL9" description="LEVEL9 Description" modifier="None">
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="LEVEL8LEVEL9" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="LEVEL8LEVEL9" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="LEVEL8"/>
         </Source>
@@ -445,7 +445,7 @@
             <Class class="LEVEL9"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="LEVEL9LEVEL10" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="LEVEL9LEVEL10" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="LEVEL9"/>
         </Source>
@@ -453,7 +453,7 @@
             <Class class="LEVEL10"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SBFRLEVEL6" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="SBFRLEVEL6" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="SBFR"/>
         </Source>
@@ -461,7 +461,7 @@
             <Class class="LEVEL6"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SBFRSCTN" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="SBFRSCTN" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="SBFR"/>
         </Source>
@@ -469,7 +469,7 @@
             <Class class="SCTN"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SCTNLEVEL6" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="SCTNLEVEL6" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="SCTN"/>
         </Source>
@@ -477,7 +477,7 @@
             <Class class="LEVEL6"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SCTNLEVEL7" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="SCTNLEVEL7" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="SCTN"/>
         </Source>
@@ -599,7 +599,7 @@
         <ECProperty propertyName="_CONST" typeName="string" displayLabel=":CONST" readOnly="false"/>
         <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SITEZONE" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="SITEZONE" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="SITE"/>
         </Source>
@@ -753,7 +753,7 @@
         <ECProperty propertyName="_CDATE" typeName="string" displayLabel=":CDATE" readOnly="false"/>
         <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="STRUFRMW" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="STRUFRMW" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="STRU"/>
         </Source>
@@ -761,7 +761,7 @@
             <Class class="FRMW"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SUBELEVEL5" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="SUBELEVEL5" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="SUBE"/>
         </Source>
@@ -769,7 +769,7 @@
             <Class class="LEVEL5"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ZONEEQUI" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="ZONEEQUI" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="ZONE"/>
         </Source>
@@ -777,7 +777,7 @@
             <Class class="EQUI"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ZONESTRU" modifier="None" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="ZONESTRU" modifier="Sealed" strength="embedding" strengthDirection="forward">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="ZONE"/>
         </Source>

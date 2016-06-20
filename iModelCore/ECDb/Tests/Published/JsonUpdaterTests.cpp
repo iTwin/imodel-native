@@ -122,7 +122,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
                         "    <ECEntityClass typeName='A' >"
                         "        <ECProperty propertyName='P1' typeName='int' />"
                         "    </ECEntityClass>"
-                        "    <ECRelationshipClass typeName='AHasA' strength='referencing'>"
+                        "    <ECRelationshipClass typeName='AHasA' strength='referencing' modifier='Sealed'>"
                         "        <ECProperty propertyName='Name' typeName='string' />"
                         "        <Source cardinality='(0,N)' polymorphic='False'><Class class='A'/></Source>"
                         "        <Target cardinality='(0,N)' polymorphic='False'><Class class='A'/></Target>"

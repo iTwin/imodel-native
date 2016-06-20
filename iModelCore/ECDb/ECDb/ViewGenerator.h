@@ -36,7 +36,7 @@ struct ViewGenerator
 
         typedef bmap<DbTable const*, ViewMember> ViewMemberByTable;
 
-        ECDbMapCR m_map;
+        ECDbMap const& m_map;
         bool m_optimizeByIncludingOnlyRealTables;
         ECSqlPrepareContext const* m_prepareContext;
         bool m_isPolymorphic;
@@ -44,7 +44,7 @@ struct ViewGenerator
         bool m_asSubQuery;
         bool m_captureViewAccessStringList;
 
-        explicit ViewGenerator(ECDbMapCR map, bool returnViewAccessStringList = false, bool asSubQuery = true) :
+        explicit ViewGenerator(ECDbMap const& map, bool returnViewAccessStringList = false, bool asSubQuery = true) :
             m_map(map), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr), m_asSubQuery(asSubQuery), m_captureViewAccessStringList(true)
             {
             if (returnViewAccessStringList)

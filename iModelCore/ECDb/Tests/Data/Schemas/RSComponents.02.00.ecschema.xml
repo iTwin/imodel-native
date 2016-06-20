@@ -56,7 +56,7 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="RASBERRYPI_HAS_ADDIN" displayLabel="RasberryPI Has Add-in" modifier="None" strength="holding" strengthDirection="backward">
+    <ECRelationshipClass typeName="RASBERRYPI_HAS_ADDIN" displayLabel="RasberryPI Has Add-in" modifier="Sealed" strength="holding" strengthDirection="backward">
         <ECProperty propertyName="COMPITABLE" typeName="boolean" displayLabel="Compitable" readOnly="false"/>
         <Source cardinality="(0,1)" roleLabel="ROLE_LABEL" polymorphic="true">
             <Class class="RASPBERRYPI"/>

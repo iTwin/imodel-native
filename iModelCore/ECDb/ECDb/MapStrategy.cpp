@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------
@@ -324,37 +325,7 @@ bool ECDbMapStrategy::IsValid() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String ECDbMapStrategy::ToString() const
     {
-    Utf8String str;
-    switch (m_strategy)
-        {
-            case Strategy::NotMapped:
-                str.append("NotMapped");
-                break;
-
-            case Strategy::OwnTable:
-                str.append("OwnTable");
-                break;
-
-            case Strategy::SharedTable:
-                str.append("SharedTable");
-                break;
-
-            case Strategy::ExistingTable:
-                str.append("ExistingTable");
-                break;
-
-            case Strategy::ForeignKeyRelationshipInSourceTable:
-                str.append("ForeignKeyRelationshipInSourceTable");
-                break;
-
-            case Strategy::ForeignKeyRelationshipInTargetTable:
-                str.append("ForeignKeyRelationshipInTargetTable");
-                break;
-
-            default:
-                BeAssert(false);
-                break;
-        }
+    Utf8String str(ToString(m_strategy));
 
     if (m_appliesToSubclasses)
         str.append(" (applies to subclasses)");
@@ -400,7 +371,31 @@ Utf8String ECDbMapStrategy::ToString() const
     return str;
     }
 
-
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle              06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8CP ECDbMapStrategy::ToString(Strategy strategy)
+    {
+    switch (strategy)
+        {
+        case Strategy::ExistingTable:
+            return "ExistingTable";
+        case Strategy::ForeignKeyRelationshipInSourceTable:
+            return "ForeignKeyRelationshipInSourceTable";
+        case Strategy::ForeignKeyRelationshipInTargetTable:
+            return "ForeignKeyRelationshipInTargetTable";
+        case Strategy::NotMapped:
+            return "NotMapped";
+        case Strategy::OwnTable:
+            return "OwnTable";
+        case Strategy::SharedTable:
+            return "SharedTable";
+        default:
+            BeAssert(false && "Unhandled value for ECDbMapStrategy::Strategy in ToString");
+            return nullptr;
+        }
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
 
