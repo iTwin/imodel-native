@@ -45,7 +45,7 @@ private:
             states.insert(DgnCodeInfo(code)).first->SetReserved(bcId);
         return RepositoryStatus::Success;
         }
-    virtual RepositoryStatus _PrepareForElementOperation(Request&, DgnElementCR, BeSQLite::DbOpcode, DgnElementCP) override { return RepositoryStatus::Success; }
+    virtual RepositoryStatus _PrepareForElementOperation(Request&, DgnElementCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _PrepareForModelOperation(Request&, DgnModelCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
 public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new MasterBriefcaseManager(db); }
@@ -87,9 +87,9 @@ private:
     virtual void _OnCommit(TxnManager& mgr) override { Save(mgr); }
     virtual void _OnReversedChanges(TxnManager& mgr) override { Save(mgr); }
     virtual void _OnUndoRedo(TxnManager& mgr, TxnAction) override { Save(mgr); }
-    virtual RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op, DgnElementCP orig) override
+    virtual RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op) override
         {
-        return el.PopulateRequest(req, op, orig);
+        return el.PopulateRequest(req, op);
         }
     virtual RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op) override
         {
@@ -1347,11 +1347,11 @@ DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Reques
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP pre)
+DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode)
     {
     Request req;
     auto action = s_acquireAutomatically ? PrepareAction::Acquire : PrepareAction::Verify;
-    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, action, pre), req);
+    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, action), req);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1404,12 +1404,12 @@ RepositoryStatus IBriefcaseManager::PerformAction(Request& req, PrepareAction ac
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus IBriefcaseManager::PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op, PrepareAction action, DgnElementCP orig)
+RepositoryStatus IBriefcaseManager::PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op, PrepareAction action)
     {
     if (!LocksRequired())
         return RepositoryStatus::Success;
 
-    auto status = _PrepareForElementOperation(req, el, op, orig);
+    auto status = _PrepareForElementOperation(req, el, op);
     if (RepositoryStatus::Success == status)
         status = PerformAction(req, action);
 
@@ -1438,14 +1438,14 @@ RepositoryStatus IBriefcaseManager::PrepareForElementUpdate(Request& req, DgnEle
     {
     auto orig = GetDgnDb().Elements().GetElement(el.GetElementId());
     BeAssert(orig.IsValid());
-    return PrepareForElementOperation(req, el, BeSQLite::DbOpcode::Update, action, orig.get());
+    return PrepareForElementOperation(req, el, BeSQLite::DbOpcode::Update, action);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnElementInsert(DgnElementCR el) { return OnElementOperation(el, BeSQLite::DbOpcode::Insert); }
-DgnDbStatus IBriefcaseManager::OnElementUpdate(DgnElementCR el, DgnElementCR pre) { return OnElementOperation(el, BeSQLite::DbOpcode::Update, &pre); }
+DgnDbStatus IBriefcaseManager::OnElementUpdate(DgnElementCR el) { return OnElementOperation(el, BeSQLite::DbOpcode::Update); }
 DgnDbStatus IBriefcaseManager::OnElementDelete(DgnElementCR el) { return OnElementOperation(el, BeSQLite::DbOpcode::Delete); }
 DgnDbStatus IBriefcaseManager::OnModelInsert(DgnModelCR model) { return OnModelOperation(model, BeSQLite::DbOpcode::Insert); }
 DgnDbStatus IBriefcaseManager::OnModelUpdate(DgnModelCR model) { return OnModelOperation(model, BeSQLite::DbOpcode::Update); }

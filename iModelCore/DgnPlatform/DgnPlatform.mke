@@ -404,6 +404,10 @@ $(CoreObjs)OCBRepMesh$(oext) :                      $(DgnBRepSrc)OCBRepMesh.cpp 
 
 $(CoreObjs)OCBRepUtil$(oext) :                      $(DgnBRepSrc)OCBRepUtil.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
 
+$(CoreObjs)PrimitivePicker$(oext) :                 $(DgnBRepSrc)PrimitivePicker.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
+
+$(CoreObjs)GeometryCache$(oext) :                   $(DgnBRepSrc)GeometryCache.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
+
 %endif
 
 #----------------------------------------------------------------------

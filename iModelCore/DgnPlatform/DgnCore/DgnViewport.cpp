@@ -22,7 +22,7 @@ void DgnViewport::DestroyViewport()
         m_viewController = nullptr;
         }
 
-    m_renderTarget = nullptr;
+    SetRenderTarget(nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -32,9 +32,7 @@ void DgnViewport::SuspendViewport()
     {
     m_elementProgressiveTasks.clear();
     m_terrainProgressiveTasks.clear();
-    RenderQueue().WaitForIdle();
-
-    m_renderTarget = nullptr;
+    SetRenderTarget(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

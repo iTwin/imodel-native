@@ -21,12 +21,20 @@
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepTools.hxx>
 #include <IFSelect_ReturnStatus.hxx>
+#include <OSD_Parallel.hxx>
 #include <Poly_Triangulation.hxx>
+#include <Precision.hxx>
+#include <Standard.hxx>
+#include <Standard_Type.hxx>
+#include <Standard_TypeDef.hxx>
+#include <Standard_Transient.hxx>
 #include <TopoDS.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
+#include <TopoDS_Edge.hxx>
 #include <TopoDS_Shape.hxx>
-#include <Standard_TypeDef.hxx>
+#include <TopoDS_Vertex.hxx>
+#include <TopoDS_Wire.hxx>
 #include <gp_Ax2.hxx>
 #include <gp_Lin.hxx>
 #include <gp_Circ.hxx>
@@ -34,40 +42,52 @@
 #include <gp_Circ2d.hxx>
 #include <gp_Elips2d.hxx>
 #include <gp_GTrsf.hxx>
-#include <Geom_Ellipse.hxx>
-#include <Geom_Line.hxx>
-#include <GeomAdaptor_HCurve.hxx>
 #include <Geom_BSplineCurve.hxx>
 #include <Geom2d_BSplineCurve.hxx>
 #include <Geom_BSplineSurface.hxx>
+#include <Geom_Circle.hxx>
+#include <Geom_Ellipse.hxx>
+#include <Geom_Line.hxx>
 #include <Geom_Plane.hxx>
-#include <TopoDS_Wire.hxx>
+#include <Geom_TrimmedCurve.hxx>
+#include <GeomAdaptor_HCurve.hxx>
+#include <GeomConvert.hxx>
+#include <GeomLProp_SLProps.hxx>
+#include <IntCurvesFace_ShapeIntersector.hxx>
+#include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
+#include <BVH_LinearBuilder.hxx>
+#include <BVH_PrimitiveSet.hxx>
+#include <BVH_RadixSorter.hxx>
+#include <BRep_Tool.hxx>
 #include <BRepAlgoAPI_BuilderAlgo.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepBuilderAPI_GTransform.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepBuilderAPI_MakeShell.hxx>
 #include <BRepBuilderAPI_MakeSolid.hxx>
 #include <BRepBuilderAPI_Sewing.hxx>
+#include <BRepExtrema_DistShapeShape.hxx>
+#include <BRepFill.hxx>
 #include <BRepOffsetAPI_ThruSections.hxx>
 #include <BRepPrimAPI_MakeCone.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeTorus.hxx>
-#include <BRepBuilderAPI_MakeShell.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimApi_MakePrism.hxx>
 #include <BRepPrimApi_MakeRevol.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
-#include <BRepAlgoAPI_Cut.hxx>
-#include <BRepAlgoAPI_Fuse.hxx>
-#include <BRepFill.hxx>
+#include <NCollection_Array1.hxx>
 #include <TColStd_Array1OfReal.hxx>
 #include <TColStd_Array1OfInteger.hxx>
-#include <IntCurvesFace_ShapeIntersector.hxx>
-#include <GeomLProp_SLProps.hxx>
+
+#include "GeometryCache.hxx"
+#include "PrimitivePicker.hxx"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -109,6 +129,8 @@ static DEllipse3d ToDEllipse3d(gp_Circ const& gpCirc, double start, double end) 
 static DEllipse3d ToDEllipse3d(gp_Circ2d const& gpCirc, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpCirc.Location()), ToDVec3d(gpCirc.XAxis().Direction()), ToDVec3d(gpCirc.YAxis().Direction()), gpCirc.Radius(), gpCirc.Radius(), start, end - start);}
 static DEllipse3d ToDEllipse3d(gp_Elips const& gpElips, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpElips.Location()), ToDVec3d(gpElips.XAxis().Direction()), ToDVec3d(gpElips.YAxis().Direction()), gpElips.MajorRadius(), gpElips.MinorRadius(), start, end - start);}
 static DEllipse3d ToDEllipse3d(gp_Elips2d const& gpElips, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpElips.Location()), ToDVec3d(gpElips.XAxis().Direction()), ToDVec3d(gpElips.YAxis().Direction()), gpElips.MajorRadius(), gpElips.MinorRadius(), start, end - start);}
+DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(Handle(Geom_Curve) const&, double first, double last);
+DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(TopoDS_Edge const&);
 
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(TopoDS_Shape const&);
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(TopoDS_Shape const&, IFacetOptionsR, bool cleanShape=true); //! BRepTools::Clean is called after meshing when cleanShape is true

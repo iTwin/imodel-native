@@ -186,6 +186,15 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus DgnElement::PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const
+    {
+    DgnElementCPtr original = BeSQLite::DbOpcode::Update == opcode ? GetDgnDb().Elements().GetElement(GetElementId()) : nullptr;
+    return _PopulateRequest(request, opcode, original.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus DgnElement::_PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const
     {
     DgnCode code;
@@ -381,7 +390,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
         }
 
     // Ensure lock acquired and code reserved
-    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementUpdate(*this, original);
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementUpdate(*this);
     if (DgnDbStatus::Success != stat)
         return stat;
 

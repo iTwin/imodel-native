@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/VecMath.h>
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+#include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
@@ -871,6 +874,34 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntity
     {
 #if defined (BENTLEYCONFIG_PARASOLIDS)
     T_HOST.GetSolidsKernelAdmin()._OutputBodyAsWireframe(graphic, entity, context, includeEdges, includeFaceIso);
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+
+    if (nullptr == shape)
+        return;    
+    
+    if (includeEdges)
+        {
+        TopTools_IndexedMapOfShape edgeMap;
+
+        TopExp::MapShapes(*shape, TopAbs_EDGE, edgeMap);
+
+        for (int iEdge=1; iEdge <= edgeMap.Extent(); iEdge++)
+            {
+            TopoDS_Edge const& edge = TopoDS::Edge(edgeMap(iEdge));
+            ICurvePrimitivePtr curve = OCBRep::ToCurvePrimitive(edge);
+
+            if (!curve.IsValid())
+                continue;
+
+            graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
+            }
+        }
+
+    if (includeFaceIso)
+        {
+        // NEEDSWORK..
+        }
 #endif
     }
 
@@ -1017,6 +1048,7 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, Dgn
     return rules.GetCurveVector();
     }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -1108,6 +1140,7 @@ void WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, DgnDbR dgnDb,
 
     GeometryProcessor::Process(rules, dgnDb);
     }
+#endif
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/15
@@ -1129,17 +1162,24 @@ PolyfaceHeaderPtr WireframeGeomUtil::CollectPolyface(ISolidKernelEntityCR entity
     polyface->Transform(entity.GetEntityTransform());
 
     return polyface;
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+
+    if (nullptr == shape)
+        return nullptr;
+
+    return OCBRep::IncrementalMesh(*shape, options);
 #else
     return nullptr;
 #endif
     }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgnDb, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<GeometryParams>& params, IFacetOptionsR options)
     {
-#if defined (BENTLEYCONFIG_PARASOLIDS)
     if (nullptr == entity.GetFaceMaterialAttachments())
         return; // No reason to call this method when there aren't attachments...
 
@@ -1182,8 +1222,8 @@ void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgn
         polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
         polyfaces[i]->Transform(entity.GetEntityTransform());
         }
-#endif
     }
+#endif
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  10/12
