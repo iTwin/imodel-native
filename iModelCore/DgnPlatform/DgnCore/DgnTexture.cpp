@@ -38,49 +38,23 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTexture::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Data const& data, Utf8StringCR descr)
-    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateTextureCode(name)), m_data(data), m_descr(descr)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnTexture::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
     {
-    BeAssert(0 < m_data.GetSize());
-    if (m_data.GetSize() <= 0)
+    BeAssert(0 < m_data.GetByteStream().GetSize());
+    if (m_data.GetByteStream().GetSize() <= 0)
         return DgnDbStatus::BadArg;
 
     if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROP_Descr), m_descr.c_str(), IECSqlBinder::MakeCopy::No)
-        || ECSqlStatus::Success != stmt.BindBinary(stmt.GetParameterIndex(PROP_Data), m_data.GetData(), static_cast<int>(m_data.GetSize()), IECSqlBinder::MakeCopy::No)
+        || ECSqlStatus::Success != stmt.BindBinary(stmt.GetParameterIndex(PROP_Data), m_data.GetByteStream().GetData(), static_cast<int>(m_data.GetByteStream().GetSize()), IECSqlBinder::MakeCopy::No)
         || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Format), static_cast<int>(m_data.GetFormat()))
-        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Width), static_cast<int>(m_data.GetWidth()))
-        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Height), static_cast<int>(m_data.GetHeight()))
-        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Flags), static_cast<int>(m_data.GetFlags())))
+        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Width), static_cast<int>(m_width))
+        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Height), static_cast<int>(m_height))
+        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROP_Flags), static_cast<int>(m_flags)))
         {
         return DgnDbStatus::BadArg;
         }
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnTexture::Format extractFormat(int value)
-    {
-    auto fmt = static_cast<DgnTexture::Format>(value);
-    switch (fmt)
-        {
-        case DgnTexture::Format::JPEG:
-        case DgnTexture::Format::RAW:
-        case DgnTexture::Format::PNG:
-        case DgnTexture::Format::TIFF:
-            return fmt;
-        }
-    
-    return DgnTexture::Format::Unknown;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -96,15 +70,15 @@ DgnDbStatus DgnTexture::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, EC
 
     auto dataIdx = params.GetSelectIndex(PROP_Data);
     int dataSize = 0;
-    m_data.Clear();
+    m_data.GetByteStreamR().Clear();
     Byte const* data = static_cast<Byte const*>(stmt.GetValueBinary(dataIdx, &dataSize));
     BeAssert(dataSize > 0);
-    m_data.SaveData(data, dataSize);
+    m_data.GetByteStreamR().SaveData(data, dataSize);
 
-    m_data.m_format = extractFormat(stmt.GetValueInt(params.GetSelectIndex(PROP_Format)));
-    m_data.m_width = static_cast<uint32_t>(stmt.GetValueInt(params.GetSelectIndex(PROP_Width)));
-    m_data.m_height = static_cast<uint32_t>(stmt.GetValueInt(params.GetSelectIndex(PROP_Height)));
-    m_data.m_flags = static_cast<DgnTexture::Flags>(stmt.GetValueInt(params.GetSelectIndex(PROP_Flags)));
+    m_data.SetFormat(static_cast<ImageSource::Format>(stmt.GetValueInt(params.GetSelectIndex(PROP_Format))));
+    m_width = static_cast<uint32_t>(stmt.GetValueInt(params.GetSelectIndex(PROP_Width)));
+    m_height = static_cast<uint32_t>(stmt.GetValueInt(params.GetSelectIndex(PROP_Height)));
+    m_flags = static_cast<DgnTexture::Flags>(stmt.GetValueInt(params.GetSelectIndex(PROP_Flags)));
     return DgnDbStatus::Success;
     }
 
@@ -137,7 +111,10 @@ void DgnTexture::_CopyFrom(DgnElementCR src)
     if (nullptr != tx)
         {
         m_descr = tx->GetDescription();
-        m_data = tx->GetTextureData();
+        m_data = tx->GetImageSource();
+        m_height = tx->GetHeight();
+        m_width = tx->GetWidth();
+        m_flags = tx->GetFlags();
         }
     }
 
@@ -147,50 +124,6 @@ void DgnTexture::_CopyFrom(DgnElementCR src)
 DgnDbStatus DgnTexture::_OnDelete() const
     {
     return DgnDbStatus::DeletionProhibited; // purge only
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::Image DgnTexture::ExtractImage() const
-    {
-    RgbImageInfo imageInfo;
-    memset(&imageInfo, 0, sizeof (imageInfo));
-
-    Render::Image image(m_data.m_width, m_data.m_height, Render::Image::Format::Rgba);
-    switch (m_data.GetFormat())
-        {
-        case DgnTexture::Format::RAW:
-            image.GetByteStreamR() = std::move(m_data); // extracts the data
-            break;
-
-        case DgnTexture::Format::PNG:  
-            imageInfo.ReadImageFromPngBuffer(image, m_data.GetData(), m_data.GetSize());
-            break;
-
-        case DgnTexture::Format::JPEG:
-            {
-            imageInfo.m_width = m_data.GetWidth();
-            imageInfo.m_height = m_data.GetHeight();
-            imageInfo.m_hasAlpha = true;
-            imageInfo.m_isBGR = false;
-            imageInfo.SetTopDown(true);
-            
-            imageInfo.ReadImageFromJpgBuffer(image, m_data.GetData(), m_data.GetSize());
-            break;
-            }
-    
-        default:
-            BeAssert(false);
-            return Render::Image();
-        }
-
-    // This is tricky. We may have just transferred ownership of the image data to the the caller. That means that this
-    // element is no longer in its "persistent" state. Drop if from the pool so if anyone else attempts to use it we will reload it.
-    if (IsPersistent())
-        GetDgnDb().Elements().DropFromPool(*this);
-
-    return image;
     }
 
 /*---------------------------------------------------------------------------------**//**

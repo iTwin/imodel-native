@@ -26,14 +26,15 @@ USING_NAMESPACE_BENTLEY_SQLITE
 struct RepositoryManager : IRepositoryManager
 {
     typedef IBriefcaseManager::ResponseOptions Options;
+    typedef IBriefcaseManager::RequestPurpose Purpose;
 private:
     Db  m_db;
 
     // impl
-    virtual Response _ProcessRequest(Request const& req, DgnDbR db) override;
+    virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
-    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) override;
+    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
     virtual RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
 
     DbResult CreateLocksTable();
@@ -42,6 +43,7 @@ private:
     // locks
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
     void GetDeniedLocks(DgnLockInfoSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
+    void GetUnavailableLocks(DgnLockSet& locks, BeBriefcaseId bcId);
     int32_t QueryLockCount(BeBriefcaseId bc);
     void Relinquish(DgnLockSet const&, DgnDbR);
     void Reduce(DgnLockSet const&, DgnDbR);
@@ -60,10 +62,11 @@ private:
     RepositoryStatus ValidateRelinquish(DgnCodeInfoSet&, DgnDbR);
     void MarkDiscarded(DgnCodeInfoSet const& discarded);
     void MarkRevision(DgnCodeSet const& codes, bool discarded, Utf8StringCR revId);
-    void _ReserveCodes(Response& response, DgnCodeSet const& req, DgnDbR db, Options opts);
+    void _ReserveCodes(Response& response, DgnCodeSet const& req, DgnDbR db, Options opts, bool queryOnly);
     RepositoryStatus _ReleaseCodes(DgnCodeSet const&, DgnDbR);
     RepositoryStatus _RelinquishCodes(DgnDbR);
     RepositoryStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&);
+    void GetUnavailableCodes(DgnCodeSet& codes, BeBriefcaseId bcId);
 public:
     RepositoryManager();
 
@@ -282,12 +285,27 @@ static void bindBcId(Statement& stmt, int index, BeBriefcaseId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryManager::Response RepositoryManager::_ProcessRequest(Request const& req, DgnDbR db)
+RepositoryManager::Response RepositoryManager::_ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
     {
-    Response response;
-    _AcquireLocks(response, req.Locks(), db, req.Options());
+    Response response(queryOnly ? Purpose::Query : Purpose::Acquire, req.Options());
+    _ReserveCodes(response, req.Codes(), db, req.Options(), queryOnly);
+    auto prevStatus = response.Result();
+    if (queryOnly)
+        {
+        if (!AreLocksAvailable(req.Locks(), db.GetBriefcaseId()))
+            {
+            response.SetResult(RepositoryStatus::LockAlreadyHeld);
+            if (Options::None != (Options::LockState & req.Options()))
+                GetDeniedLocks(response.LockStates(), req.Locks(), db.GetBriefcaseId());
+            }
+        }
+    else
+        {
+        _AcquireLocks(response, req.Locks(), db, req.Options());
+        }
+
     if (RepositoryStatus::Success == response.Result())
-        _ReserveCodes(response, req.Codes(), db, req.Options());
+        response.SetResult(prevStatus);
 
     return response;
     }
@@ -334,13 +352,52 @@ RepositoryStatus RepositoryManager::_QueryStates(DgnLockInfoSet& lockStates, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus RepositoryManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db)
+RepositoryStatus RepositoryManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
     {
     auto stat = _QueryLocks(locks, db);
     if (RepositoryStatus::Success == stat)
         stat = _QueryCodes(codes, db);
 
+    GetUnavailableLocks(unavailableLocks, db.GetBriefcaseId());
+    GetUnavailableCodes(unavailableCodes, db.GetBriefcaseId());
+
     return stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryManager::GetUnavailableLocks(DgnLockSet& locks, BeBriefcaseId bcId)
+    {
+    // ###TODO: This should also include locks which were released in a revision not yet pulled by this briefcase...
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT " LOCK_Type "," LOCK_Id "," LOCK_Exclusive " FROM " TABLE_Locks " WHERE " LOCK_BcId " != ?");
+    bindBcId(stmt, 1, bcId);
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        LockableId id(static_cast<LockableType>(stmt.GetValueInt(0)), stmt.GetValueId<BeInt64Id>(1));
+        auto level = (0 != stmt.GetValueInt(2)) ? LockLevel::Exclusive : LockLevel::Shared;
+        locks.insert(DgnLock(id, level));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryManager::GetUnavailableCodes(DgnCodeSet& codes, BeBriefcaseId bcId)
+    {
+    // ###TODO: This should also include codes which became discarded or used in a revision not yet pulled by this briefcase...
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT " CODE_Authority "," CODE_NameSpace "," CODE_Value " FROM " TABLE_Codes
+                       " WHERE " CODE_State " = 1 AND " CODE_Briefcase " != ?");
+    bindBcId(stmt, 1, bcId);
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        DgnCode code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
+        codes.insert(code);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -675,7 +732,7 @@ struct VirtualCodeSet : VirtualSet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req, DgnDbR db, Options opts)
+void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req, DgnDbR db, Options opts, bool queryOnly)
     {
     VirtualCodeSet vset(req);
     Statement stmt;
@@ -731,7 +788,7 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
         }
 
     response.SetResult(status);
-    if (RepositoryStatus::Success != status)
+    if (RepositoryStatus::Success != status || queryOnly)
         return;
 
     auto bcId = static_cast<int>(db.GetBriefcaseId().GetValue());
@@ -921,10 +978,14 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
     RepositoryManagerTest()
         {
         RegisterServer();
+        IBriefcaseManager::BackDoor_SetAutomaticAcquisition(false);
+        IBriefcaseManager::BackDoor_SetSupportFastQuery(true);
         }
 
     ~RepositoryManagerTest()
         {
+        IBriefcaseManager::BackDoor_SetSupportFastQuery(false);
+        IBriefcaseManager::BackDoor_SetAutomaticAcquisition(true);
         UnregisterServer();
         }
 
@@ -1069,14 +1130,22 @@ struct LocksManagerTest : RepositoryManagerTest
         {
         DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
         SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(db, classId, DgnModel::CreateModelCode(name)));
+        IBriefcaseManager::Request req;
+        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForModelInsert(req, *model, IBriefcaseManager::PrepareAction::Acquire));
         auto status = model->Insert();
         EXPECT_EQ(DgnDbStatus::Success, status);
         return DgnDbStatus::Success == status ? model : nullptr;
         }
 
-    DgnElementCPtr CreateElement(DgnModelR model)
+    DgnElementCPtr CreateElement(DgnModelR model, bool acquireLocks=true)
         {
         auto elem = model.Is3d() ? Create3dElement(model) : Create2dElement(model);
+        if (acquireLocks)
+            {
+            IBriefcaseManager::Request req;
+            EXPECT_EQ(RepositoryStatus::Success, model.GetDgnDb().BriefcaseManager().PrepareForElementInsert(req, *elem, IBriefcaseManager::PrepareAction::Acquire));
+            }
+
         auto persistentElem = elem->Insert();
         return persistentElem;
         }
@@ -1215,10 +1284,11 @@ TEST_F(SingleBriefcaseLocksTest, RelinquishLocks)
     {
     SetupDb(L"RelinquishLocks.bim", m_bcId);
 
-    // Create a new element, implicitly locking the dictionary model + the db
+    // Create a new element - requires locking the dictionary model + the db
     DgnDbR db = *m_db;
     auto txnPos = db.Txns().GetCurrentTxnId();
     DgnTrueColor color(DgnTrueColor::CreateParams(db, ColorDef(1,2,3), "la", "lala"));
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(color));
     EXPECT_TRUE(color.Insert().IsValid());
 
     // Cannot relinquish locks with uncommitted changes
@@ -1254,14 +1324,13 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
     DgnModelPtr model = db.Models().GetModel(m_modelId);
     DgnElementCPtr elem = db.Elements().GetElement(m_elemId);
 
-    // Create a new model
+    // Create a new model.
     DgnModelPtr newModel = CreateModel("NewModel");
 
     ExpectLevel(db, LockLevel::Shared);
     ExpectLevel(*newModel, LockLevel::Exclusive);
     ExpectLevel(*model, LockLevel::None);
     ExpectLevel(*elem, LockLevel::None);
-
 
     // Our exclusive locks are only known locally, because they refer to elements not known to the server
     // If we refresh our local locks from server, we will need to re-obtain them.
@@ -1531,7 +1600,9 @@ TEST_F(DoubleBriefcaseTest, Contention)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Operations on elements and models automatically acquire locks.
+* Operations on elements and models USED TO automatically acquire locks.
+* Now, they do NOT - they only verify that the requisite locks were acquired prior to the
+* operation. Caller must explicitly acquire those locks.
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DoubleBriefcaseTest, AutomaticLocking)
@@ -1557,8 +1628,11 @@ TEST_F(DoubleBriefcaseTest, AutomaticLocking)
     // Deleting a model requires exclusive ownership
     DgnModelPtr modelA2d = GetModel(dbA, true);
     ExpectLevel(*modelA2d, LockLevel::None);
-    EXPECT_EQ(DgnDbStatus::Success, modelA2d->Delete());
+    EXPECT_EQ(DgnDbStatus::LockNotHeld, modelA2d->Delete());
+    IBriefcaseManager::Request req;
+    EXPECT_EQ(RepositoryStatus::Success, dbA.BriefcaseManager().PrepareForModelDelete(req, *modelA2d, IBriefcaseManager::PrepareAction::Acquire));
     ExpectLevel(*modelA2d, LockLevel::Exclusive);
+    EXPECT_EQ(DgnDbStatus::Success, modelA2d->Delete());
     DgnModelPtr modelA3d = GetModel(dbA, false);
     ExpectLevel(*modelA3d, LockLevel::None);
     EXPECT_EQ(DgnDbStatus::LockNotHeld, modelA3d->Delete()); // because B has a shared lock on it
@@ -1567,7 +1641,7 @@ TEST_F(DoubleBriefcaseTest, AutomaticLocking)
     // Adding an element to a model requires shared ownership
     DgnModelPtr modelB2d = GetModel(dbB, true);
     ExpectLevel(*modelB2d, LockLevel::None);
-    DgnElementCPtr newElemB2d = CreateElement(*modelB2d);
+    DgnElementCPtr newElemB2d = CreateElement(*modelB2d, false);
     EXPECT_TRUE(newElemB2d.IsNull());   // no return status to check...
     ExpectLevel(*modelB2d, LockLevel::None);
 
@@ -1592,13 +1666,22 @@ TEST_F(DoubleBriefcaseTest, AutomaticLocking)
 
     DgnElementCPtr cpElemB3d = GetElement(dbB, Elem3dId1());
     ExpectLevel(*cpElemB3d, LockLevel::None);
-    EXPECT_EQ(DgnDbStatus::Success, cpElemB3d->Delete());
+    EXPECT_EQ(DgnDbStatus::LockNotHeld, cpElemB3d->Delete());
+    LockRequest lockReq;
+    lockReq.Insert(*cpElemB3d, LockLevel::Exclusive);
+    EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().AcquireLocks(lockReq).Result());
     ExpectLevel(*cpElemB3d, LockLevel::Exclusive);
+    EXPECT_EQ(DgnDbStatus::Success, cpElemB3d->Delete());
 
     DgnElementPtr pElemB3d2 = GetElement(dbB, Elem3dId2())->CopyForEdit();
     ExpectLevel(*pElemB3d2, LockLevel::None);
-    EXPECT_TRUE(pElemB3d2->Update(&status).IsValid());
+    EXPECT_FALSE(pElemB3d2->Update(&status).IsValid());
+    EXPECT_EQ(DgnDbStatus::LockNotHeld, status);
+    lockReq.Clear();
+    lockReq.Insert(*pElemB3d2, LockLevel::Exclusive);
+    EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().AcquireLocks(lockReq).Result());
     ExpectLevel(*pElemB3d2, LockLevel::Exclusive);
+    EXPECT_TRUE(pElemB3d2->Update(&status).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1879,6 +1962,161 @@ TEST_F (DoubleBriefcaseTest, StandaloneBriefcase)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* For queries which need to be fast and not necessarily 100% up to date with server,
+* IBriefcaseManager supplies a FastQuery option which queries a local copy of locks+codes
+* known to be unavailable to this briefcase, either because another briefcase owns them
+* or because a required revision has not been pulled.
+* The primary use case for this is tools which want to filter out elements for which the
+* lock is not available.
+* Test that:
+*   - While the cache is in sync with server, fast and slow queries both return same results
+*   - When cache becomes out of sync, fast queries continue to return previous results
+*   - When cache is out of sync, attempts to actually acquire locks/codes are validated against the server, not the local cache
+*   - After refreshing local cache, fast queries are again in sync with server state
+* @bsistruct                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct FastQueryTest : DoubleBriefcaseTest
+{
+    DEFINE_T_SUPER(DoubleBriefcaseTest);
+
+    typedef IBriefcaseManager::FastQuery FastQuery;
+    typedef IBriefcaseManager::RequestPurpose Purpose;
+
+    template<typename T> static Utf8String ToString(T const& t)
+        {
+        Json::Value v;
+        t.ToJson(v);
+        return Json::FastWriter::ToString(v);
+        }
+
+    void ExpectEqual(DgnLockInfo const& a, DgnLockInfo const& b)
+        {
+        EXPECT_EQ(a.IsTracked(), b.IsTracked());
+        EXPECT_EQ(a.IsOwned(), b.IsOwned());
+        EXPECT_EQ(a.GetOwnership().GetLockLevel(), b.GetOwnership().GetLockLevel());
+        }
+
+    void ExpectEqual(DgnCodeInfo const& a, DgnCodeInfo const& b)
+        {
+        EXPECT_EQ(a.IsAvailable(), b.IsAvailable());
+        EXPECT_EQ(a.IsReserved(), b.IsReserved());
+        EXPECT_EQ(a.IsUsed(), b.IsUsed());
+        EXPECT_EQ(a.IsDiscarded(), b.IsDiscarded());
+        }
+
+    static bool AreSameEntity(DgnLockInfo const& a, DgnLockInfo const& b) { return a.GetLockableId() == b.GetLockableId(); }
+    static bool AreSameEntity(DgnCodeInfo const& a, DgnCodeInfo const& b) { return a.GetCode() == b.GetCode(); }
+
+    template<typename T> void ExpectEqual(T const& a, T const& b)
+        {
+        EXPECT_EQ(a.size(), b.size());
+
+        for (auto const& aInfo : a)
+            {
+            auto pbInfo = std::find_if(b.begin(), b.end(), [&](decltype(aInfo) arg) { return AreSameEntity(aInfo, arg); });
+            EXPECT_FALSE(b.end() == pbInfo) << "Present in a only: " << ToString(aInfo).c_str();
+            if (b.end() != pbInfo)
+                ExpectEqual(aInfo, *pbInfo);
+            }
+
+        for (auto const& bInfo : b)
+            {
+            auto paInfo = std::find_if(a.begin(), a.end(), [&](decltype(bInfo) arg) { return AreSameEntity(bInfo, arg); });
+            EXPECT_FALSE(a.end() == paInfo) << "Present in b only: " << ToString(bInfo).c_str();
+            }
+        }
+
+    void ExpectResponsesEqual(Response const& a, Response const& b)
+        {
+        EXPECT_EQ(a.Result(), b.Result());
+        ExpectEqual(a.LockStates(), b.LockStates());
+        ExpectEqual(a.CodeStates(), b.CodeStates());
+        }
+
+    void ExpectResponsesEqual(Request& req, DgnDbR db)
+        {
+        Request fastReq = req; // function modifies input Request...
+        Response response(Purpose::Query, req.Options()), fastResponse(Purpose::FastQuery, req.Options());
+        EXPECT_EQ(db.BriefcaseManager().AreResourcesAvailable(req, &response, FastQuery::No), db.BriefcaseManager().AreResourcesAvailable(fastReq, &fastResponse, FastQuery::Yes));
+        ExpectResponsesEqual(response, fastResponse);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (FastQueryTest, CacheLocks)
+    {
+    SetupDbs();
+
+    // dbA will acquire locks. dbB will make fast queries.
+    DgnDbR dbA = *m_dbA,
+           dbB = *m_dbB;
+    DgnModelPtr modelA1 = GetModel(dbA, true),
+                modelA2 = GetModel(dbA, false),
+                modelB1 = GetModel(dbB, true),
+                modelB2 = GetModel(dbB, false);
+    DgnElementCPtr elemA1 = GetElement(dbA, Elem2dId2()),
+                   elemA2 = GetElement(dbA, Elem3dId2()),
+                   elemB1 = GetElement(dbB, Elem2dId2()),
+                   elemB2 = GetElement(dbB, Elem3dId2());
+
+    ExpectAcquire(*modelA1, LockLevel::Exclusive);
+    ExpectAcquire(*modelA2, LockLevel::Shared);
+    ExpectAcquire(*elemA1, LockLevel::Exclusive);
+
+    // Make sure local state is pulled for dbB
+    EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().RefreshFromRepository());
+
+    // Confirm fast queries return same results as queries against server
+    Request req(ResponseOptions::LockState);
+    ExpectResponsesEqual(req, dbB);
+
+    req.Reset();
+    req.SetOptions(ResponseOptions::LockState);
+    req.Locks().Insert(*modelB1, LockLevel::Shared);    // unavailable
+    req.Locks().Insert(*modelB2, LockLevel::Shared);    // available
+    req.Locks().Insert(*elemB1, LockLevel::Exclusive);  // unavailable - but not in denied set, because in exclusively locked model
+    req.Locks().Insert(*elemB2, LockLevel::Exclusive);  // available
+    ExpectResponsesEqual(req, dbB);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (FastQueryTest, CacheCodes)
+    {
+    SetupDbs();
+
+    // dbA will acquire codes. dbB will make fast queries
+    DgnDbR dbA = *m_dbA,
+           dbB = *m_dbB;
+
+    DgnCode code1 = DgnMaterial::CreateMaterialCode("Code", "One"),
+            code2 = DgnMaterial::CreateMaterialCode("Code", "Two");
+
+    // reserve codes
+    DgnCodeSet codes;
+    codes.insert(code1);
+    codes.insert(code2);
+    EXPECT_EQ(RepositoryStatus::Success, dbA.BriefcaseManager().ReserveCodes(codes).Result());
+
+    // Make sure local state is pulled for dbB
+    EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().RefreshFromRepository());
+
+    // Confirm fast queries return same results as queries against server
+    Request req(ResponseOptions::CodeState);
+    ExpectResponsesEqual(req, dbB);
+
+    DgnCode code3 = DgnMaterial::CreateMaterialCode("Code", "Three");
+    req.Reset();
+    req.SetOptions(ResponseOptions::CodeState);
+    req.Codes().insert(code1);  // unavailable
+    req.Codes().insert(code3);  // available
+    ExpectResponsesEqual(req, dbB);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ExtractLocksTest : SingleBriefcaseLocksTest
@@ -1947,6 +2185,8 @@ TEST_F(ExtractLocksTest, UsedLocks)
         auto pEl = cpEl->CopyForEdit();
         DgnCode newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
+        IBriefcaseManager::Request bcreq;
+        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(bcreq, *pEl, IBriefcaseManager::PrepareAction::Acquire));
         cpEl = pEl->Update();
         ASSERT_TRUE(cpEl.IsValid());
 
@@ -2062,10 +2302,12 @@ struct CodesManagerTest : RepositoryManagerTest
 
     Utf8String CommitRevision(DgnDbR db);
 
-    static DgnDbStatus InsertStyle(Utf8CP name, DgnDbR db)
+    static DgnDbStatus InsertStyle(Utf8CP name, DgnDbR db, bool expectSuccess = true)
         {
         AnnotationTextStyle style(db);
         style.SetName(name);
+        IBriefcaseManager::Request req;
+        EXPECT_EQ(expectSuccess, RepositoryStatus::Success == db.BriefcaseManager().PrepareForElementInsert(req, style, IBriefcaseManager::PrepareAction::Acquire));
         DgnDbStatus status;
         style.DgnElement::Insert(&status);
         return status;
@@ -2151,8 +2393,9 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
 
 /*---------------------------------------------------------------------------------**//**
 * Test that any INSERT or UPDATE will fail if the object's code has not been reserved.
-* (If we don't explicitly reserve it prior to insert/update, an attempt will be made to
-* reserve it for us).
+* NOTE: Previously, insert/update would attempt to reserve the code automatically for us.
+* That is no longer the case - if we don't explicitly reserve it prior to insert/update,
+* the operation will fail with DgnDbStatus::CodeNotReserved.
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, AutoReserveCodes)
@@ -2174,11 +2417,16 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     ExpectState(MakeReserved(MakeStyleCode("MyStyle", db), db), db);
 
     // An attempt to insert an element with the same code as an already-used code will fail
-    EXPECT_EQ(DgnDbStatus::CodeNotReserved, InsertStyle(existingStyleCode.GetValue().c_str(), db));
+    EXPECT_EQ(DgnDbStatus::CodeNotReserved, InsertStyle(existingStyleCode.GetValue().c_str(), db, false));
 
-    // Updating an element and changing its code will reserve the new code if we haven't done so already
+    // Updating an element and changing its code will NOT reserve the new code if we haven't done so already
     auto pStyle = AnnotationTextStyle::Get(db, "MyStyle")->CreateCopy();
+    DgnDbStatus status;
     pStyle->SetName("MyRenamedStyle");
+    EXPECT_FALSE(pStyle->DgnElement::Update(&status).IsValid());
+    EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
+    // Explicitly reserve the code
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCode(pStyle->GetCode()));
     EXPECT_TRUE(pStyle->Update().IsValid());
     EXPECT_EQ(2, GetReservedCodes(db).size());
     ExpectState(MakeReserved(pStyle->GetCode(), db), db);
@@ -2187,7 +2435,6 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     // Attempting to change code to an already-used code will fail on update
     pStyle = AnnotationTextStyle::Get(db, "MyRenamedStyle")->CreateCopy();
     pStyle->SetName(existingStyleCode.GetValue().c_str());
-    DgnDbStatus status;
     EXPECT_TRUE(pStyle->DgnElement::Update(&status).IsNull());
     EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
 
@@ -2256,7 +2503,13 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     // Ugh except you are not allowed to delete text styles...rename it again instead
     pStyle = AnnotationTextStyle::Get(db, "Unused")->CreateCopy();
     pStyle->SetName("Deleted");
-    EXPECT_TRUE(pStyle->Update().IsValid());
+    // Will fail because we haven't reserved code...
+    DgnDbStatus status;
+    EXPECT_FALSE(pStyle->DgnElement::Update(&status).IsValid());
+    EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCode(MakeStyleCode("Deleted", db)));
+    EXPECT_TRUE(pStyle->DgnElement::Update(&status).IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, status);
     pStyle = nullptr;
 
     // Cannot release codes if transactions are pending

@@ -546,6 +546,12 @@ DgnDbStatus DgnModel::_OnUpdate()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Update))
         return DgnDbStatus::MissingHandler;
 
+    auto existingModelIdWithCode = GetDgnDb().Models().QueryModelId(m_code);
+    if (existingModelIdWithCode.IsValid() && existingModelIdWithCode != GetModelId())
+        return DgnDbStatus::DuplicateCode;
+    else if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
+        return DgnDbStatus::DuplicateCode;
+
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnUpdate(*this);
@@ -856,6 +862,66 @@ void DgnModel::_OnDeleted()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeSQLite::DbOpcode op) const
+    {
+    BeAssert(m_code.IsValid() && !m_code.IsEmpty());
+    switch (op)
+        {
+        case BeSQLite::DbOpcode::Insert:
+            req.Codes().insert(m_code);
+            req.Locks().Insert(GetDgnDb(), LockLevel::Shared);
+            break;
+        case BeSQLite::DbOpcode::Delete:
+            {
+            req.Locks().Insert(*this, LockLevel::Exclusive);
+
+            // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue.
+            Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+            stmt.BindId(1, m_modelId);
+            auto& elements = m_dgndb.Elements();
+            while (BE_SQLITE_ROW == stmt.Step())
+                {
+                DgnElementCPtr el = elements.GetElement(stmt.GetValueId<DgnElementId>(0));
+                BeAssert(el.IsValid());
+                if (el.IsValid())
+                    {
+                    auto stat = el->PopulateRequest(req, BeSQLite::DbOpcode::Delete);
+                    if (RepositoryStatus::Success != stat)
+                        return stat;
+                    }
+                }
+
+            // and we must delete all of its views
+            for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options(GetModelId())))
+                {
+                auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
+                if (view.IsValid())
+                    {
+                    auto stat = view->PopulateRequest(req, BeSQLite::DbOpcode::Delete);
+                    if (RepositoryStatus::Success != stat)
+                        return stat;
+                    }
+                }
+
+            break;
+            }
+        case BeSQLite::DbOpcode::Update:
+            {
+            req.Locks().Insert(*this, LockLevel::Exclusive);
+            DgnCode originalCode;
+            if (SUCCESS == GetDgnDb().Models().GetModelCode(originalCode, GetModelId()) && originalCode != m_code)
+                req.Codes().insert(m_code);
+            
+            break;
+            }
+        }
+
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnInsert()
@@ -918,8 +984,8 @@ DgnDbStatus DgnModel::Insert()
     if (DgnDbStatus::Success != status)
         return status;
 
-    if (GetDgnDb().Models().QueryModelId(m_code).IsValid()) // can't allow two models with the same code
-        return DgnDbStatus::DuplicateName;
+    if (GetDgnDb().Models().QueryModelId(m_code).IsValid() || GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid()) // can't allow two models with the same code
+        return DgnDbStatus::DuplicateCode;
 
     m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
@@ -1387,7 +1453,7 @@ DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& impor
     if (importer.GetDestinationDb().Models().QueryModelId(params.m_code).IsValid()) // Is the name already used in destination?
         {
         if (nullptr != stat)
-            *stat = DgnDbStatus::DuplicateName;
+            *stat = DgnDbStatus::DuplicateCode;
         return nullptr;
         }
 

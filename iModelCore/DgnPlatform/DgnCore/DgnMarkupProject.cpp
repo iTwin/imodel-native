@@ -894,9 +894,31 @@ BentleyStatus RedlineModel::ImageDef::FromPropertiesJson(Json::Value const& val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
+Render::Image::Format RedlineModel::ImageDef::GetRenderImageFormat() const
+    {
+    switch (m_format)
+        {
+        case QV_RGBA_FORMAT: return Render::Image::Format::Rgba;
+        case QV_RGB_FORMAT: return Render::Image::Format::Rgb;
+        }
+    BeAssert(false);
+    return Render::Image::Format::Rgb;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/13
++---------------+---------------+---------------+---------------+---------------+------*/
 size_t RedlineModel::ImageDef::GetSizeofPixelInBytes() const
     {
-    return (m_format == QV_RGBA_FORMAT || m_format == QV_BGRA_FORMAT)? 4: 3;
+    return HasAlpha() ? 4 : 3;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RedlineModel::ImageDef::HasAlpha() const
+    { 
+    return (m_format == QV_RGBA_FORMAT || m_format == QV_BGRA_FORMAT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1099,6 +1121,12 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
 +---------------+---------------+---------------+---------------+---------------+------*/
 RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModelId)
     {
+    if (nullptr == markupProject.Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline model");
+        return nullptr;
+        }
+
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, "RedlineModel"));
     RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name), DPoint2d::FromZero()));
     if (!rdlModel.IsValid())
@@ -1122,6 +1150,12 @@ RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP nam
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, SpatialModelCR subjectViewTargetModel)
     {
+    if (nullptr == markupProject.Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline model");
+        return nullptr;
+        }
+
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
 
     SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name)));
@@ -1142,14 +1176,14 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageData(Render::Image const& imageData, bool fitToX, bool compressImageProperty)
+void RedlineModel::StoreImageData(Render::Image const& imageData, bool isTopDown, bool fitToX, bool compressImageProperty)
     {
     //  Grab possibly updated image definition data
     m_imageDef.m_format = (int) imageData.GetFormat();
     m_imageDef.m_sizeInPixels.x = imageData.GetWidth();
     m_imageDef.m_sizeInPixels.y = imageData.GetHeight();
 
-    m_imageDef.m_topDown = false;//imageInfo.isTopDown;
+    m_imageDef.m_topDown = isTopDown;
 
     //  Map the image into the sheet area, scaling it up or down to fit ... 
     //  but, be sure to maintain the aspect ratio of the original image.
@@ -1184,39 +1218,15 @@ void RedlineModel::StoreImageData(Render::Image const& imageData, bool fitToX, b
         }
     
     Update();
-
-    //  Define the image texture
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DefineImageTextures(m_imageDef, imageData);
-#endif
-
-#if defined (WIP_TILED_IMAGE_TEST_TEST_TEST)
-    ImageDef def1x1;
-    def1x1.m_format = QV_RGB_FORMAT;
-    def1x1.m_origin.x = 0;
-    def1x1.m_origin.y = 0;
-    def1x1.m_size.x = 10;
-    def1x1.m_size.y = 10;
-    def1x1.m_sizeInPixels.x = 1;
-    def1x1.m_sizeInPixels.y = 1;
-    char const* def = "1  ";
-BeAssert(def1x1.GetSizeofPixelInBytes() == 3);
-    bvector<Byte> bytes1x1;
-    bytes1x1.assign(def, def+strlen(def));
-    DefineImageTextures(def1x1, bytes1x1);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageDataFromJPEG(uint8_t const* jpegData, size_t jpegDataSize, RgbImageInfo& imageInfoIn, bool fitToX)
+void RedlineModel::StoreImageData(ImageSourceCR source, bool isTopDown, bool fitToX)
     {
-    Render::Image image;
-    if (imageInfoIn.ReadImageFromJpgBuffer(image, jpegData, jpegDataSize) != BSISUCCESS)
-        return;
-
-    StoreImageData(image, fitToX, /*compresssImageProperty*/false);
+    Render::Image image(source);
+    StoreImageData(image, isTopDown, fitToX, /*compresssImageProperty*/false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1249,138 +1259,35 @@ BentleyStatus RedlineModel::LoadImageData(ImageDef& imageDef, bvector<uint8_t>& 
     return BSISUCCESS;
     }
 
-// source: http://www.hackersdelight.org/hdcodetxt/flp2.c.txt
-int hibit(unsigned int n) 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void RedlineViewController::OnOpen(RedlineModel& targetModel)
     {
-    n |= (n >>  1);
-    n |= (n >>  2);
-    n |= (n >>  4);
-    n |= (n >>  8);
-    n |= (n >> 16);
-    return n - (n >> 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::DefineImageTexturesForRow(ImageDef const& imageDef, uint8_t const* rowStart, DPoint3dCR rowOrigin, Point2dCR tileDims, uint32_t nTilesAcross)
+void RedlineViewController::OnClose(RedlineModel& targetModel)
     {
-#ifdef WIP_MOSAIC
-    uint32_t pitch = (uint32_t)imageDef.GetPitch(); // # bytes per row
-
-    uint32_t fullWidth = (uint32_t) imageDef.m_sizeInPixels.x; // # pixels per row
-
-    double pixelsToModelX = imageDef.m_size.x / imageDef.m_sizeInPixels.x;
-    double tileWidthModel = tileDims.x * pixelsToModelX;  // the width of a tile in model coordinates
-    uint32_t tileWidthInBytes = tileDims.x*(uint32_t)imageDef.GetSizeofPixelInBytes();  // the size of a tile's worth of data in bytes
-    
-    //  March tiles across the row
-    Byte const* colStart = rowStart;
-    DPoint3d colOrigin = rowOrigin;
-    intptr_t tileid = GetBackDropTextureId() + m_tileIds.size();        // the next unused tileid
-    for (uint32_t col=0; col<nTilesAcross; ++col)
-        {
-        if (tileDims.y != 0)
-            {
-            T_HOST.GetGraphicsAdmin()._DefineTile(tileid, nullptr, tileDims, false, imageDef.m_format, pitch, colStart);
-            m_tileIds.push_back(tileid);
-            ++tileid;
-            }
-        m_tileOrigins.push_back(colOrigin);
-            
-        colStart += tileWidthInBytes;
-        colOrigin.x += tileWidthModel;                           // march across
-        }
-
-    // tack on the tall, narrow tile to the right of the last full tile in this row.
-    Point2d stubColTileDims;
-    stubColTileDims.x = fullWidth - (nTilesAcross*tileDims.x);
-    if (stubColTileDims.x  != 0)
-        {
-        stubColTileDims.y = tileDims.y;
-        if (tileDims.y != 0)
-            {
-            T_HOST.GetGraphicsAdmin()._DefineTile(tileid, nullptr, stubColTileDims, false, imageDef.m_format, pitch, colStart);
-            m_tileIds.push_back(tileid);
-            ++tileid;
-            }
-        m_tileOrigins.push_back(colOrigin);
-        }
-
-    //  Append the location of the outside corner of the row.
-    colOrigin.x = rowOrigin.x + imageDef.m_size.x;
-    m_tileOrigins.push_back(colOrigin);
-#endif
+    targetModel.m_tileGraphic = nullptr;
     }
+
+void RedlineViewController::SetDrawBorder(bool allow) {m_drawBorder=allow;}
+bool RedlineViewController::GetDrawBorder() const {return m_drawBorder;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t> const& imageData)
+Render::GraphicBuilderPtr RedlineModel::GetImageGraphic(ViewContextR context)
     {
-#ifdef WIP_MOSAIC
-    // All dimensions are in PIXELS unless specified as "bytes" or "model" (i.e., distance)
-    uint32_t maxTileSize = 1024;
+    if (m_tileGraphic.IsValid())
+        return m_tileGraphic;
 
-    BeAssert(m_tileIds.empty());
-    m_tileIds.clear();
-    m_tileOrigins.clear();
-
-    uint32_t pixelsX = (uint32_t) imageDef.m_sizeInPixels.x;
-    uint32_t pixelsY = (uint32_t) imageDef.m_sizeInPixels.y;
-
-    //  What is the largest SQUARE tile we can have in this image?
-    uint32_t tileSize = std::min(maxTileSize, pixelsX);
-    tileSize = std::min(tileSize, pixelsY);
-
-    //  Round this down to a power of 2
-    tileSize = hibit(tileSize);
-
-    //  Compute the number of these tiles that we can fit across and up
-    uint32_t nTilesAcross = pixelsX / tileSize;
-    uint32_t nTilesUp     = pixelsY / tileSize;
-
-    Point2d tileDims = {tileSize,tileSize};
-
-    double pixelsToModelY = imageDef.m_size.y / imageDef.m_sizeInPixels.y;
-
-    //  For each row
-    DPoint3d rowOrigin = DPoint3d::From(imageDef.m_origin);       // lower left
-    double layoutDirection = 1.0; 
-    rowOrigin.z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
-    m_tilesX = 0;
-    Byte const* rowStart = &imageData[0];
-    uint32_t pitch = (uint32_t)imageDef.GetPitch();
-        
-    for (uint32_t row=0; row<nTilesUp; ++row)
-        {
-        //  March tiles across the columns of this row
-        DefineImageTexturesForRow(imageDef, rowStart, rowOrigin, tileDims, nTilesAcross);
-        rowStart += tileDims.y*pitch;
-        rowOrigin.y += layoutDirection * (tileDims.y * pixelsToModelY);// march up the y-axis in model coordinates
-        ++m_tilesX;
-        } 
-
-    //  rowStart now points to the remaining pixels across the top.
-    Point2d topTileDims;
-    topTileDims.x = tileSize;
-    topTileDims.y = imageDef.m_sizeInPixels.y - (nTilesUp*tileSize);
-    if (topTileDims.y != 0)
-        {
-        DefineImageTexturesForRow(imageDef, rowStart, rowOrigin, topTileDims, nTilesAcross);
-        rowStart += topTileDims.y*pitch;
-        rowOrigin.y += layoutDirection * (topTileDims.y * pixelsToModelY);// march up the y-axis in model coordinates
-        ++m_tilesX;
-        }
-
-    //  Finally, append the corners of the last stub tile
-    Point2d nopTileDims;
-    nopTileDims.x = tileSize;
-    nopTileDims.y = 0;  // TRICKY: This tells DefineImageTexturesForRow not to define textures, just push DPoint3ds
-    DefineImageTexturesForRow(imageDef, nullptr, rowOrigin, nopTileDims, nTilesAcross);
-
-#else
-
+    bvector<uint8_t> imageData;
+    LoadImageData(m_imageDef, imageData);
+    ByteStream byteStream(imageData.data(), (uint32_t) imageData.size());
     //  tile corners:
     //
     //          [2]                         [3]   ^
@@ -1393,94 +1300,31 @@ void RedlineModel::DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t
     uvPts[0].y = uvPts[1].y = m_imageDef.m_origin.y;
     uvPts[1].x = uvPts[3].x = m_imageDef.m_origin.x + m_imageDef.m_size.x;
     uvPts[2].y = uvPts[3].y = m_imageDef.m_origin.y + m_imageDef.m_size.y;
-    
-    for (int i=0; i<_countof(uvPts); ++i)
+
+    for (int i = 0; i<_countof(uvPts); ++i)
         uvPts[i].z = -DgnViewport::GetDisplayPriorityFrontPlane();  // lowest possibly priority
 
-    if (imageDef.GetIsTopDown())
+    if (m_imageDef.GetIsTopDown())
         {
         std::swap(uvPts[0], uvPts[2]);
         std::swap(uvPts[1], uvPts[3]);
         }
 
-    for (auto const& corner : uvPts)
-        m_tileOrigins.push_back(corner);
+    auto& rsys = context.GetViewport()->GetRenderTarget()->GetSystem();
+        
+    m_tileGraphic = rsys._CreateGraphic(Graphic::CreateParams(nullptr));
+    auto ifmt = m_imageDef.GetRenderImageFormat();
+    ColorDef color(0xff, 0, 0, 0);      // *** WIP_MARKUP - what 'color' should be used for an image??
+    m_tileGraphic->SetSymbology(color, color, 0);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    auto pitch = (uint32_t)imageDef.GetPitch();
-    auto tileid = GetBackDropTextureId();
-    Point2d tileDims;
-    tileDims.x = imageDef.m_sizeInPixels.x;
-    tileDims.y = imageDef.m_sizeInPixels.y;
+    Render::Image image(m_imageDef.m_sizeInPixels.x, m_imageDef.m_sizeInPixels.y, std::move(byteStream), ifmt);
+    auto texture = rsys._CreateTexture(image/*, m_imageDef.HasAlpha()*/);
 
-    T_HOST.GetGraphicsAdmin()._DefineTile(tileid, nullptr, tileDims, false, imageDef.m_format, pitch, imageData.data());
-    m_tileIds.push_back(tileid);
-    m_tilesX = 1;
-#endif
+    m_tileGraphic->AddTile(*texture, uvPts);
+        
+    m_tileGraphic->Close();
 
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::LoadImageDataAndDefineTexture()
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (T_HOST.GetGraphicsAdmin()._IsTextureIdDefined(GetBackDropTextureId()))
-        return;
-#endif
-
-    bvector<uint8_t> imageData;
-    LoadImageData(m_imageDef, imageData);
-    DefineImageTextures(m_imageDef, imageData);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineViewController::OnOpen(RedlineModel& targetModel)
-    {
-    targetModel.LoadImageDataAndDefineTexture();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineViewController::OnClose(RedlineModel& targetModel)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    T_HOST.GetGraphicsAdmin()._DeleteTexture(targetModel.GetBackDropTextureId());
-#endif
-    }
-
-void RedlineViewController::SetDrawBorder(bool allow) {m_drawBorder=allow;}
-bool RedlineViewController::GetDrawBorder() const {return m_drawBorder;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RedlineModel::DrawImage(ViewContextR context, DPoint3dCR viewOrg, DVec3dCR viewDelta, bool drawBorder)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Make sure texture is defined. (I think it could get deleted when we run low on memory, so we might have to re-create it on the fly.)
-    LoadImageDataAndDefineTexture();
-
-    uintptr_t const& x = m_tileIds.front();
-    int tilesY = (int)m_tileIds.size() / m_tilesX;
-
-    context.GetCurrentGraphicR().AddMosaic((int)m_tilesX, tilesY, &x, &m_tileOrigins[0]);
-#endif
-
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t RedlineModel::GetBackDropTextureId() const 
-    {
-    return (uintptr_t) this;
+    return m_tileGraphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1490,8 +1334,15 @@ void RedlineViewController::_DrawView(ViewContextR context)
     {
     BeAssert(dynamic_cast<RedlineModel*> (context.GetViewport()->GetViewController().GetTargetModel()) != NULL && "RedlineViewController should be used only to draw RedlineModels!");
     RedlineModel* targetModel = (RedlineModel*) context.GetViewport()->GetViewController().GetTargetModel();
+    if (nullptr == targetModel)
+        {
+        BeDataAssert(false);
+        return;
+        }
 
-    targetModel->DrawImage(context, GetOrigin(), GetDelta(), m_drawBorder);
+    auto graphic = targetModel->GetImageGraphic(context);
+    if (graphic.IsValid())
+        context.OutputGraphic(*graphic, nullptr);
 
     T_Super::_DrawView(context);   // draws sheet border and redline graphics
     }
@@ -1499,15 +1350,34 @@ void RedlineViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController* RedlineViewController::Create(DgnDbR project, DgnViewId viewId)
+ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, DgnDbR project, DgnViewId viewId)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(openStatus, openStatusIn);
+
     auto markupProject = dynamic_cast<DgnMarkupProject*>(&project);
-    if (markupProject == NULL)
-        return NULL;
+
+    if (markupProject == nullptr)
+        {
+        openStatus = DgnDbStatus::NotOpen;
+        return nullptr;
+        }
+
+    if (nullptr == markupProject->Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline view");
+        return nullptr;
+        }
+
     auto rdlView = ViewDefinition::QueryView(viewId, *markupProject);
-    auto rdlModel = rdlView.IsValid() ? markupProject->OpenRedlineModel(rdlView->GetBaseModelId()) : nullptr;
-    if (rdlModel == NULL)
-        return NULL;
+    if (!rdlView.IsValid())
+        {
+        openStatus = DgnDbStatus::ViewNotFound;
+        return nullptr;
+        }
+
+    auto rdlModel = markupProject->OpenRedlineModel(&openStatus, rdlView->GetBaseModelId());
+    if (rdlModel == nullptr)
+        return nullptr;
 
     return new RedlineViewController(*rdlModel, viewId);
     }
@@ -1515,18 +1385,21 @@ ViewController* RedlineViewController::Create(DgnDbR project, DgnViewId viewId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineViewControllerPtr RedlineViewController::InsertView(RedlineModelR rdlModel, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect)
+RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertStatusIn, RedlineModelR rdlModel, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(insertStatus, insertStatusIn);
+
     DgnMarkupProject* project = rdlModel.GetDgnMarkupProject();
     if (project == NULL)
         {
+        insertStatus = DgnDbStatus::NotOpen;
         BeAssert(false);
         return NULL;
         }
 
     RedlineViewDefinition view(RedlineViewDefinition::CreateParams(*project, rdlModel.GetCode().GetValue().c_str(),
                 ViewDefinition::Data(rdlModel.GetModelId(), DgnViewSource::Generated)));
-    if (!view.Insert().IsValid())
+    if (!view.Insert(&insertStatus).IsValid())
         return nullptr;
 
     auto controller = new RedlineViewController(rdlModel, view.GetViewId());
@@ -1597,15 +1470,27 @@ RedlineViewControllerPtr RedlineViewController::InsertView(RedlineModelR rdlMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId DgnMarkupProject::CreateRedlineModelView(RedlineModelR model, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect)
+DgnViewId DgnMarkupProject::CreateRedlineModelView(DgnDbStatus* createStatusIn, RedlineModelR model, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect)
     {
-    if (CheckIsOpen() != BSISUCCESS)
-        return DgnViewId();
+    DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, createStatusIn);
 
-    auto controller = RedlineViewController::InsertView(model, templateView, projectViewRect, imageViewRect);
+    if (CheckIsOpen() != BSISUCCESS)
+        {
+        createStatus = DgnDbStatus::NotOpen;
+        return DgnViewId();
+        }
+
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Markup domain not registered");
+        createStatus = DgnDbStatus::MissingDomain;
+        return DgnViewId();
+        }
+
+    auto controller = RedlineViewController::InsertView(&createStatus, model, templateView, projectViewRect, imageViewRect);
     if (!controller.IsValid())
         {
-        BeAssert(false && "We must always generate rdl views with unique names!");
+        BeAssert(false && "RedlineViewController::InsertView failed! This could be caused by using a duplicate name or by failing to register the Markup domain.");
         return  DgnViewId();
         }
 
@@ -1732,6 +1617,11 @@ ViewControllerPtr SpatialRedlineViewController::Create(DgnViewType viewType, Utf
     auto rdlModel = rdlView.IsValid() ? markupProject->OpenRedlineModel(rdlView.GetBaseModelId()) : nullptr;
     if (rdlModel == NULL)
         return NULL;
+    if (nullptr == rdlModel->GetDgnDb().Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Must have Markup domain registered in order to create a redline view");
+        return nullptr;
+        }
     return new SpatialRedlineViewController(*rdlModel, subjectViewController);
     }
 
@@ -1745,6 +1635,13 @@ SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(Spatial
     auto rc = model.GetDgnMarkupProject()->Views().InsertView(view);
     if (BE_SQLITE_OK != rc)
         return NULL;
+
+    if (nullptr == model.GetDgnMarkupProject()->Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Markup domain not registered");
+        //createStatus = DgnDbStatus::MissingDomain;
+        return nullptr;
+        }
 
     auto controller = new SpatialRedlineViewController(model, subjectView, view.GetId());
 
@@ -1766,6 +1663,13 @@ DgnViewId DgnMarkupProject::CreateSpatialRedlineModelView(SpatialRedlineModelR m
     {
     if (CheckIsOpen() != BSISUCCESS)
         return DgnViewId();
+
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Markup domain not registered");
+        createStatus = DgnDbStatus::MissingDomain;
+        return nullptr;
+        }
 
     auto controller = SpatialRedlineViewController::InsertView(model, dgnView);
     if (!controller.IsValid())
@@ -1796,16 +1700,33 @@ DgnViewId SpatialRedlineModel::GetViewId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineModelP DgnMarkupProject::CreateRedlineModel(Utf8CP name, DgnModelId templateModel)
+RedlineModelP DgnMarkupProject::CreateRedlineModel(DgnDbStatus* createStatusIn, Utf8CP name, DgnModelId templateModel)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, createStatusIn);
+
     if (CheckIsOpen() != BSISUCCESS)
+        {
+        createStatus = DgnDbStatus::NotOpen;
         return nullptr;
+        }
+
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Markup domain not registered");
+        createStatus = DgnDbStatus::MissingDomain;
+        return nullptr;
+        }
 
     RedlineModelPtr rdlModel = RedlineModel::Create(*this, name, templateModel);
     if (!rdlModel.IsValid())
+        {
+        createStatus = DgnDbStatus::BadArg; // must be a bad name
         return nullptr;
+        }
 
-    rdlModel->Insert(); // Takes ownership of the rdlModel, adding a reference to it.
+    createStatus = rdlModel->Insert(); // Takes ownership of the rdlModel, adding a reference to it.
+    if (DgnDbStatus::Success != createStatus)
+        return nullptr; 
 
     SaveChanges();
 
@@ -1815,17 +1736,34 @@ RedlineModelP DgnMarkupProject::CreateRedlineModel(Utf8CP name, DgnModelId templ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialRedlineModelP DgnMarkupProject::CreateSpatialRedlineModel(Utf8CP name, SpatialModelCR subjectViewTargetModel)
+SpatialRedlineModelP DgnMarkupProject::CreateSpatialRedlineModel(DgnDbStatus* createStatusIn, Utf8CP name, SpatialModelCR subjectViewTargetModel)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(createStatus, createStatusIn);
+
     if (CheckIsOpen() != BSISUCCESS)
+        {
+        createStatus = DgnDbStatus::NotOpen;
         return nullptr;
+        }
+
+    if (nullptr == Domains().FindDomain(MARKUP_SCHEMA_NAME))
+        {
+        BeAssert(false && "Markup domain not registered");
+        createStatus = DgnDbStatus::MissingDomain;
+        return nullptr;
+        }
 
     SpatialRedlineModelPtr rdlModel = SpatialRedlineModel::Create(*this, name, subjectViewTargetModel);
 
     if (!rdlModel.IsValid())
+        {
+        createStatus = DgnDbStatus::BadArg; // must be a bad name
         return nullptr;
+        }
 
-    rdlModel->Insert(); // Takes ownership of the rdlModel, adding a reference to it.
+    createStatus = rdlModel->Insert(); // Takes ownership of the rdlModel, adding a reference to it.
+    if (DgnDbStatus::Success != createStatus)
+        return nullptr;
 
     SaveChanges();
 
@@ -1835,14 +1773,22 @@ SpatialRedlineModelP DgnMarkupProject::CreateSpatialRedlineModel(Utf8CP name, Sp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineModelP DgnMarkupProject::OpenRedlineModel(DgnModelId mid)
+RedlineModelP DgnMarkupProject::OpenRedlineModel(DgnDbStatus* openStatusIn, DgnModelId mid)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(openStatus, openStatusIn);
+
     if (CheckIsOpen() != BSISUCCESS)
-        return NULL;
+        {
+        openStatus = DgnDbStatus::NotOpen;
+        return nullptr;
+        }
 
     RedlineModelPtr redlineModel = Models().Get<RedlineModel>(mid);
     if (!redlineModel.IsValid())
+        {
+        openStatus = DgnDbStatus::NotFound;
         return nullptr;
+        }
 
     //! Always fill a redline model. We never work with a subset of redline graphics.
     //! Note: even if redline model was previously loaded, it might have been emptied. So, make sure it's filled.
@@ -1854,14 +1800,22 @@ RedlineModelP DgnMarkupProject::OpenRedlineModel(DgnModelId mid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialRedlineModelP DgnMarkupProject::OpenSpatialRedlineModel(DgnModelId mid)
+SpatialRedlineModelP DgnMarkupProject::OpenSpatialRedlineModel(DgnDbStatus* openStatusIn, DgnModelId mid)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(openStatus, openStatusIn);
+
     if (CheckIsOpen() != BSISUCCESS)
-        return NULL;
+        {
+        openStatus = DgnDbStatus::NotOpen;
+        return nullptr;
+        }
 
     SpatialRedlineModelPtr redlineModel = Models().Get<SpatialRedlineModel>(mid);
     if (!redlineModel.IsValid())
+        {
+        openStatus = DgnDbStatus::NotFound;
         return nullptr;
+        }
 
     //! Always fill a redline model. We never work with a subset of redline graphics.
     //! Note: even if redline model was previously loaded, it might have been emptied. So, make sure it's filled.

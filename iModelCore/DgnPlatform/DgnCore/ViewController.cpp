@@ -44,8 +44,6 @@ static Utf8CP VIEWFLAG_noSceneLight              = "noSceneLight";
 static Utf8CP VIEWFLAG_visibleEdges              = "visEdges";
 static Utf8CP VIEWFLAG_hiddenEdges               = "hidEdges";
 static Utf8CP VIEWFLAG_shadows                   = "shadows";
-static Utf8CP VIEWFLAG_frontClip                 = "frontClip";
-static Utf8CP VIEWFLAG_backClip                  = "backClip";
 static Utf8CP VIEWFLAG_noClipVolume              = "noClipVol";
 static Utf8CP VIEWFLAG_renderMode                = "renderMode";
 static Utf8CP VIEWFLAG_ignoreLighting            = "ignoreLighting";
@@ -99,8 +97,6 @@ void ViewFlags::From3dJson(JsonValueCR val)
     visibleEdges = val[VIEWFLAG_visibleEdges].asBool();
     hiddenEdges = val[VIEWFLAG_hiddenEdges].asBool();
     shadows = val[VIEWFLAG_shadows].asBool();
-    noFrontClip = !val[VIEWFLAG_frontClip].asBool();
-    noBackClip  = !val[VIEWFLAG_backClip].asBool();
     noClipVolume = val[VIEWFLAG_noClipVolume].asBool();
     ignoreLighting = val[VIEWFLAG_ignoreLighting].asBool();
 
@@ -142,8 +138,6 @@ void ViewFlags::To3dJson(JsonValueR val) const
     if (visibleEdges) val[VIEWFLAG_visibleEdges] = true;
     if (hiddenEdges) val[VIEWFLAG_hiddenEdges] = true;
     if (shadows) val[VIEWFLAG_shadows] = true;
-    if (!noFrontClip) val[VIEWFLAG_frontClip] = true;
-    if (!noBackClip) val[VIEWFLAG_backClip] = true;
     if (noClipVolume) val[VIEWFLAG_noClipVolume] = true;
     if (ignoreLighting) val[VIEWFLAG_ignoreLighting] = true;
 

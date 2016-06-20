@@ -138,7 +138,6 @@ struct DgnViewProperty
     static ViewSetting Settings()     {return ViewSetting("Settings");}
     static ViewSetting DefaultView()  {return ViewSetting("DefaultView");}
     static ViewProperty Thumbnail()   {return ViewProperty("Thumbnail", DbPropSpec::Compress::No);}
-    static ViewProperty Thumbnail2()   {return ViewProperty("Thumbnail2", DbPropSpec::Compress::No);}
 };
 
 //=======================================================================================

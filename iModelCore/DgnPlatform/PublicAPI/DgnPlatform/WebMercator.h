@@ -10,7 +10,6 @@
 
 #include <DgnPlatform/DgnViewport.h>
 #include <DgnPlatform/DgnDbTables.h>
-#include <DgnPlatform/ImageUtilities.h>
 #include <algorithm>
 
 #ifdef min
@@ -61,8 +60,10 @@ struct Tile : RefCountedBase, NonCopyableClass
 
     void Accessed() const {m_lastAccessed = Next();}
     bool IsLoaded() const {return LoadStatus::Ready == m_loadStatus.load();}
-    void SetQueued() {return m_loadStatus.store(LoadStatus::Queued);}
-    void SetLoaded() {return m_loadStatus.store(LoadStatus::Ready);}
+    bool IsAbandoned() const {return LoadStatus::Abandoned== m_loadStatus.load();}
+    void SetQueued() {m_loadStatus.store(LoadStatus::Queued);}
+    void SetLoaded() {m_loadStatus.store(LoadStatus::Ready);}
+    void SetAbandoned() {m_loadStatus.store(LoadStatus::Abandoned);}
     void SetNotFound() {BeAssert(false); return m_loadStatus.store(LoadStatus::NotFound);}
     bool IsQueued() const {return m_loadStatus.load() == LoadStatus::Queued;}
     TileId GetTileId() const {return m_id;}
@@ -74,7 +75,7 @@ DEFINE_REF_COUNTED_PTR(Tile)
 
 //=======================================================================================
 // Obtains and displays multi-resolution tiled raster that is organized
-// according to the WebMercator tiling system. 
+// according to the WebMercator tiling system.
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
@@ -97,7 +98,7 @@ public:
             Satellite,      //!< Show a satellite image (if available)
         };
 
-        MapService m_mapService=MapService::MapBox;  //! Identifies the source of the tiled map data. 
+        MapService m_mapService=MapService::MapBox;  //! Identifies the source of the tiled map data.
         MapType m_mapType=MapType::Map;              //! Identifies the type of tiles to request and display.
         bool m_finerResolution=false;   //! true => download and display more and smaller tiles, if necessary, in order to get the best resolution.
         double m_groundBias=-1.0;       //! An offset from the ground plane to draw map. By default, draw map 1 meter below sea level (negative values are below sea level)
@@ -145,7 +146,7 @@ public:
 
     void RequestTile(TileId, TileR, Render::SystemR) const;
     TilePtr CreateTile(TileId id, Tile::Corners const&, Render::SystemR) const;
-        
+
     RealityData::Cache& GetRealityDataCache() const;
     TileCache& GetTileCache() const {return m_tileCache;}
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.

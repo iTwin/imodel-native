@@ -79,6 +79,7 @@ BuildContext                    = $(OutBuildContexts)DgnPlatform/
 ToolsubsLib                     = $(libprefix)Toolsubs$(libext)
 BentleyGeomLib                  = $(libprefix)BentleyGeom$(libext)
 ECNativeObjectsLib              = $(libprefix)ECObjects$(libext)
+UnitsLib                        = $(libprefix)Units$(libext)
 
 
 #----------------------------------------------------------
@@ -314,7 +315,7 @@ $(CoreObjs)DgnShxFontData$(oext) :                  $(DgnCoreDir)DgnShxFontData.
 
 $(CoreObjs)Sprites$(oext) :                         $(DgnCoreDir)Sprites.cpp ${MultiCompileDepends}
 
-$(CoreObjs)ImageUtilities$(oext) :                  $(DgnCoreDir)ImageUtilities.cpp $(DgnPlatformAPISrc)ImageUtilities.h ${MultiCompileDepends}
+$(CoreObjs)ImageSource$(oext) :                     $(DgnCoreDir)ImageSource.cpp ${MultiCompileDepends}
 
 $(CoreObjs)GeomPart$(oext) :                        $(DgnCoreDir)GeomPart.cpp $(DgnPlatformAPISrc)GeomPart.h ${MultiCompileDepends}
 
@@ -402,6 +403,10 @@ $(CoreObjs)OCBRepCreate$(oext) :                    $(DgnBRepSrc)OCBRepCreate.cp
 $(CoreObjs)OCBRepMesh$(oext) :                      $(DgnBRepSrc)OCBRepMesh.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
 
 $(CoreObjs)OCBRepUtil$(oext) :                      $(DgnBRepSrc)OCBRepUtil.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
+
+$(CoreObjs)PrimitivePicker$(oext) :                 $(DgnBRepSrc)PrimitivePicker.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
+
+$(CoreObjs)GeometryCache$(oext) :                   $(DgnBRepSrc)GeometryCache.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
 
 %endif
 
@@ -629,6 +634,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
                             $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
+                            $(ContextSubpartsLibs)$(UnitsLib) \
                             $(ContextSubpartsLibs)$(BentleyGeomLib) \
                             $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)\

@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../TestFixture/BlankDgnDbTestFixture.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -14,8 +14,14 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnAuthoritiesTest : public BlankDgnDbTestFixture
+struct DgnAuthoritiesTest : public DgnDbTestFixture
     {
+    DgnDbR GetDb() { return *m_db; }
+
+    void SetupProject(WCharCP testProjFile)
+        {
+        DgnDbTestFixture::SetupProject(L"3dMetricGeneral.ibim", testProjFile, Db::OpenMode::ReadWrite);
+        }
 
     void Compare(DgnAuthorityId id, Utf8CP name)
         {
@@ -28,9 +34,9 @@ struct DgnAuthoritiesTest : public BlankDgnDbTestFixture
         EXPECT_EQ(authId, id);
         }
 
-    DgnAuthorityPtr Create(Utf8CP name, bool insert = true)
+    RefCountedPtr<NamespaceAuthority> Create(Utf8CP name, bool insert = true)
         {
-        DgnAuthorityPtr auth = NamespaceAuthority::CreateNamespaceAuthority(name, GetDb());
+        auto auth = NamespaceAuthority::CreateNamespaceAuthority(name, GetDb());
         if (insert)
             {
             EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
@@ -41,9 +47,11 @@ struct DgnAuthoritiesTest : public BlankDgnDbTestFixture
         return auth;
         }
 
-    bool CodeExists(DgnCodeCR toFind)
+    typedef DgnCode::Iterator::Options IteratorOptions;
+
+    bool CodeExists(DgnCodeCR toFind, IteratorOptions options=IteratorOptions())
         {
-        DgnCode::Iterator iter = DgnCode::MakeIterator(GetDb());
+        DgnCode::Iterator iter = DgnCode::MakeIterator(GetDb(), options);
         for (auto const& entry : iter)
             {
             DgnCode code = entry.GetCode();
@@ -98,5 +106,71 @@ TEST_F(DgnAuthoritiesTest, IterateCodes)
 
     EXPECT_TRUE(CodeExists(pStyle->GetCode()));
     EXPECT_FALSE(CodeExists(originalStyleCode));
+
+    // Insert element with empty code
+    EXPECT_TRUE(InsertElement().IsValid());
+
+    // Test with various options
+    DgnCode emptyCode = DgnCode::CreateEmpty();
+    DgnCode modelCode = GetDb().GetDictionaryModel().GetCode();
+    DgnCode elementCode = pStyle->GetCode();
+
+    typedef DgnCode::Iterator::Include Include;
+
+    EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(Include::Both, true)));
+    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Both, false)));
+    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Models, true)));
+    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Models, false)));
+    EXPECT_TRUE(CodeExists(emptyCode, IteratorOptions(Include::Elements, true)));
+    EXPECT_FALSE(CodeExists(emptyCode, IteratorOptions(Include::Elements, false)));
+
+    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Models, false)));
+    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Models, true)));
+    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Both, false)));
+    EXPECT_TRUE(CodeExists(modelCode, IteratorOptions(Include::Both, true)));
+    EXPECT_FALSE(CodeExists(modelCode, IteratorOptions(Include::Elements, false)));
+    EXPECT_FALSE(CodeExists(modelCode, IteratorOptions(Include::Elements, true)));
+
+    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Both, true)));
+    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Both, false)));
+    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Elements, true)));
+    EXPECT_TRUE(CodeExists(elementCode, IteratorOptions(Include::Elements, false)));
+    EXPECT_FALSE(CodeExists(elementCode, IteratorOptions(Include::Models, true)));
+    EXPECT_FALSE(CodeExists(elementCode, IteratorOptions(Include::Models, false)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* A DgnCode should be unique among all elements AND models within a DgnDb.
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DgnAuthoritiesTest, ModelAndElementUniqueness)
+    {
+    SetupProject(L"ModelAndElementUniqueness.ibim");
+    auto auth1 = Create("Auth1");
+    auto auth2 = Create("Auth2");
+
+    auto elem = InsertElement()->CopyForEdit();
+    DgnModelPtr model = elem->GetModel();
+
+    // assign model code
+    DgnCode modelCode = auth1->CreateCode("ModelCode");
+    EXPECT_EQ(DgnDbStatus::Success, model->SetCode(modelCode));
+    EXPECT_EQ(DgnDbStatus::Success, model->Update());
+
+    // try to reuse for element
+    EXPECT_EQ(DgnDbStatus::Success, elem->SetCode(modelCode));
+    DgnDbStatus status;
+    EXPECT_TRUE(elem->Update(&status).IsNull());
+    EXPECT_EQ(DgnDbStatus::DuplicateCode, status);
+
+    // assign element code
+    DgnCode elemCode = auth1->CreateCode("ElemCode");
+    EXPECT_EQ(DgnDbStatus::Success, elem->SetCode(elemCode));
+    EXPECT_TRUE(elem->Update(&status).IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, status);
+
+    // try to reuse for model
+    EXPECT_EQ(DgnDbStatus::Success, model->SetCode(elemCode));
+    EXPECT_EQ(DgnDbStatus::DuplicateCode, model->Update());
     }
 

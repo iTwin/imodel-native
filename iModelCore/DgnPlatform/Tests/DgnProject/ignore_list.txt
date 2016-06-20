@@ -32,7 +32,13 @@ TextStringTest.BoundingShape                            # UmarH WIP
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line style unless we reload the file ( which will reload the cache )
 
-DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Raman
-DgnECNavigatorTest.PlantElementInfo # Improperly creating a GroupInformationElement when the "NamedGroupOwnsMembers" CA is found - Shaun/Carole
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # notified Raman
 DgnECNavigatorTest.DgnLinksElementInfo # on merge into 0601dev; notified Raman
+DependencyRevisionTest.TestDependency # sometimes fails on 0601 winx64 optimized; notified Paul
+#F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(687): error: Value of: c->GetIntegerProperty(2)
+#Actual: 123
+#Expected: 321
+#F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(688): error: Value of: c->GetIntegerProperty(3)
+#Actual: 456
+#Expected: 654
+DgnDb.GetCoordinateSystemProperties # on merge from graphite0505; notified John

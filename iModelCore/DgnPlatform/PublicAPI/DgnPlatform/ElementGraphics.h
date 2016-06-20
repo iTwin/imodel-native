@@ -22,8 +22,10 @@ struct WireframeGeomUtil
 
     DGNPLATFORM_EXPORT static PolyfaceHeaderPtr CollectPolyface(ISolidKernelEntityCR, DgnDbR, IFacetOptionsR);
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     DGNPLATFORM_EXPORT static void CollectCurves(ISolidKernelEntityCR, DgnDbR, bvector<CurveVectorPtr>& curves, bvector<Render::GeometryParams>& params, bool includeEdges = true, bool includeFaceIso = false);
     DGNPLATFORM_EXPORT static void CollectPolyfaces(ISolidKernelEntityCR, DgnDbR, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR);
+#endif
 
     DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, ISolidPrimitiveCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
     DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);

@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDb.h"
-#include <DgnPlatform/ImageUtilities.h>
 #include <DgnPlatform/LinkElement.h>
 #include <DgnPlatform/QueryView.h>
 
@@ -192,59 +191,53 @@ public:
         size_t GetPitch() const;            //!< Get the "pitch" or number of bytes per row. This is just m_size.x * GetSizeofPixelInBytes().
         size_t GetSizeInBytes() const;      //!< Get the total size of the image in bytes. This is just m_size.x*m_size.y*GetSizeofPixelInBytes().
         size_t GetSizeofPixelInBytes() const; //!< Get the number of bytes per pixel. That will be 4 if the image has alpha data or 3 if not.
+        bool HasAlpha() const;              //!< Check if the image has alpha data
         bool GetIsTopDown() const;          //!< Is the image top-down? Else, bottom-up.
+        Render::Image::Format GetRenderImageFormat() const; //!< Get the format of the image
         };
 
 private:
     ImageDef            m_imageDef;
-    bvector<intptr_t>   m_tileIds;
-    bvector<DPoint3d>   m_tileOrigins;
-    int                 m_tilesX;
+    Render::GraphicBuilderPtr  m_tileGraphic;
     DgnViewAssociationData m_assoc;
 
     friend struct DgnMarkupProject;
     friend struct RedlineModelHandler;
+    friend struct RedlineViewController;
 
 protected:
     void _WriteJsonProperties(Json::Value&) const override;
     void _ReadJsonProperties(Json::Value const&) override;
 
-    void DefineImageTexturesForRow(ImageDef const& imageDef, uint8_t const* rowStart, DPoint3dCR rowOrigin, Point2dCR tileDims, uint32_t nTilesAcross);
-
     static RedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModel);
 
 public:
-    explicit RedlineModel(CreateParams const& params): T_Super(params) {m_tilesX = 0;}
-    BentleyStatus DrawImage(ViewContextR, DPoint3dCR, DVec3dCR, bool drawBorder);
+    explicit RedlineModel(CreateParams const& params): T_Super(params) {}
+    Render::GraphicBuilderPtr GetImageGraphic(ViewContextR);
     BentleyStatus LoadImageData(ImageDef& def, bvector<uint8_t>& imageData);
     DGNPLATFORM_EXPORT static BentleyStatus LoadImageData(ImageDef& def, bvector<uint8_t>& imageData, DgnDbCR, DgnModelId);
-    void DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t> const& imageData);
-
-    void LoadImageDataAndDefineTexture();
-
+    
     DgnViewId GetFirstView();
 
 public:
-
-    DGNPLATFORM_EXPORT uintptr_t GetBackDropTextureId() const;
 
     //! Get the DgnMarkupProject that contains this redline model
     DGNPLATFORM_EXPORT DgnMarkupProject* GetDgnMarkupProject() const;
 
     //! Save an image as the backdrop for this redline model.
     //! @param imageData       the image data
+    //! @param isTopDown        If true, the RGB image in imageData is assumed to start at the upper left. Else, it is assumed to start from the lower left and go up.
     //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
     //! @param compressImageProperty If true, the image data is compressed before being stored in the database. 
-    DGNPLATFORM_EXPORT void StoreImageData(Render::Image const& imageData, bool fitToX, bool compressImageProperty=true);
+    DGNPLATFORM_EXPORT void StoreImageData(Render::ImageCR imageData, bool isTopDown, bool fitToX, bool compressImageProperty=true);
 
     //! Save an image as the backdrop for this redline model.
-    //! @param jpegData         The image data in JPEG format.
-    //! @param jpegDataSize     The size of the image data
-    //! @param imageInfoIn      Information about the format of the image. Note that the width and format members are ignored as they are already encoded in the JPEG data.
-    //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
-    //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
-    DGNPLATFORM_EXPORT void StoreImageDataFromJPEG(uint8_t const* jpegData, size_t jpegDataSize, RgbImageInfo& imageInfoIn, bool fitToX);
+    //! @param source the image source 
+    //! @param isTopDown        If true, the RGB image in imageData is assumed to start at the upper left. Else, it is assumed to start from the lower left and go up.
+    //! @param fitToX If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
+    //!               If false, the image is stretched to fit the height of the sheet, and the image width is computed.
+    DGNPLATFORM_EXPORT void StoreImageData(Render::ImageSourceCR source, bool isTopDown, bool fitToX);
 
 /** @name Association to DgnDb */
 /** @{ */
@@ -290,14 +283,16 @@ protected:
     virtual void _SetRotation(RotMatrixCR viewRot) override;
 
 public:
-    DGNPLATFORM_EXPORT static ViewController* Create(DgnDbR project, DgnViewId id);
+    DGNPLATFORM_EXPORT static ViewController* Create(DgnDbStatus* openStatus, DgnDbR project, DgnViewId id);
     DGNPLATFORM_EXPORT RedlineViewController(RedlineModel&, DgnViewId id = DgnViewId());
     DGNPLATFORM_EXPORT ~RedlineViewController();
     
     //! Create a new redline view in the database
     //! @return The newly created view controller
     //! @param[in] rdlModel the redline model to display
-    DGNPLATFORM_EXPORT static RedlineViewControllerPtr InsertView(RedlineModelR rdlModel, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect);
+    //! @param[in] templateView Identifies redline template view.
+    //! @param[out] insertStatus  Optional. Set to non-zero status if insert fails. DgnDbStatus::NotOpen if the markup project is not open, 
+    DGNPLATFORM_EXPORT static RedlineViewControllerPtr InsertView(DgnDbStatus* insertStatus, RedlineModelR rdlModel, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect);
     DGNPLATFORM_EXPORT void OnClose(RedlineModel& targetModel);
     DGNPLATFORM_EXPORT void OnOpen(RedlineModel& targetModel);
 
@@ -547,15 +542,17 @@ public:
     //! Create a redline model of that model.
     //! @param name             A unique identifier for the redline model.
     //! @param templateModel    Optional. Identifies the model in this DgnMarkupProject to be used a template for the redline model. Must be a sheet model.
+    //! @param createStatus     Optional. Set to non-zero status if the creation fails.
     //! @see OpenRedlineModel, RedlineModel::StoreImageData
-    DGNPLATFORM_EXPORT RedlineModelP CreateRedlineModel(Utf8CP name, DgnModelId templateModel);
+    DGNPLATFORM_EXPORT RedlineModelP CreateRedlineModel(DgnDbStatus* createStatus, Utf8CP name, DgnModelId templateModel);
 
     //! Create a view of the redline model that is as similar as possible to the specified DgnDb view.
     //! @param redlineModel     The redline model returned by CreateRedlineModel
     //! @param redlineTemplateView Optional. Identifies a view in this DgnMarkupProject to be used a template for the redline model view.
     //! @param projectViewRect  The shape of the view that is being redlined. This is used only to get the aspect ratio, so that the redline view can be shaped and aligned to match the original DgnDb as closely as possible.
     //! @param imageViewRect    The area within the view where the background image should be displayed.
-    DGNPLATFORM_EXPORT DgnViewId CreateRedlineModelView(RedlineModelR redlineModel, DgnViewId redlineTemplateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect);
+    //! @param createStatus     Optional. Set to non-zero status if the creation of the redline view fails.
+    DGNPLATFORM_EXPORT DgnViewId CreateRedlineModelView(DgnDbStatus* createStatus, RedlineModelR redlineModel, DgnViewId redlineTemplateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect);
 
     //! Find the redline model that is associated with the specified DgnDb view and whose origin is closest to specified point.
     //! @param[in]  viewController            The view to match
@@ -563,10 +560,12 @@ public:
     //! redlined view from the view's origin. If there is no redline view based on the specified view, then an invalid ID is returned.
     DGNPLATFORM_EXPORT bpair<DgnModelId,double> FindClosestRedlineModel(ViewControllerCR viewController);
 
-    //! Open an existing redline model.
+    //! Open an existing redline model. The model is also filled.
     //! @param modelId  Identifies the redline model to open
+    //! @param openStatus     Optional. Set to non-zero status if the model could not be found or could not be opened.
+    //! @return a pointer to the open model or nullptr if the model could not be opened.
     //! @see CreateRedlineModel
-    DGNPLATFORM_EXPORT RedlineModelP OpenRedlineModel(DgnModelId modelId);
+    DGNPLATFORM_EXPORT RedlineModelP OpenRedlineModel(DgnDbStatus* openStatus, DgnModelId modelId);
 
     //! Empty an existing redline model. This function may be called after viewing a redline model. It releases memory held by the redline model.
     //! @param modelId  Identifies the redline model to empty
@@ -579,9 +578,10 @@ public:
     //! Create a physical redline model.
     //! @param name                     A unique identifier for the physical redline model.
     //! @param subjectViewTargetModel   The target model of the view of the subject DgnDb. The SpatialRedlineModel's units are set to match the units of subjectViewTargetModel.
+    //! @param createStatus     Optional. Set to non-zero status if the creation fails.
     //! @return a pointer to the new model
     //! @see OpenSpatialRedlineModel, @ref DgnMarkupProjectGroup_SpatialRedlines
-    DGNPLATFORM_EXPORT SpatialRedlineModelP CreateSpatialRedlineModel(Utf8CP name, SpatialModelCR subjectViewTargetModel);
+    DGNPLATFORM_EXPORT SpatialRedlineModelP CreateSpatialRedlineModel(DgnDbStatus* createStatus, Utf8CP name, SpatialModelCR subjectViewTargetModel);
 
 #if defined (NEEDS_WORK_VIEW_HANDLER_REFACTOR)
     //! Create a view of the physical redline model
@@ -593,8 +593,10 @@ public:
 
     //! Open an existing physical redline model.
     //! @param modelId  Identifies the physical redline model to open
+    //! @param openStatus     Optional. Set to non-zero status if the model could not be found or could not be opened.
+    //! @return a pointer to the open model or nullptr if the model could not be opened.
     //! @see CreateSpatialRedlineModel
-    DGNPLATFORM_EXPORT SpatialRedlineModelP OpenSpatialRedlineModel(DgnModelId modelId);
+    DGNPLATFORM_EXPORT SpatialRedlineModelP OpenSpatialRedlineModel(DgnDbStatus* openStatus, DgnModelId modelId);
 
     //! Empty an existing physical redline model. This function may be called after viewing a model. It releases memory held by the model.
     //! @param modelId  Identifies the physical redline model to empty

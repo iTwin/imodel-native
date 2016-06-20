@@ -10,7 +10,7 @@
 
 BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 #include <Bentley/BeAssert.h>
-#include "DgnAuthority.h"
+#include "RepositoryManager.h"
 #include "MemoryManager.h"
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
@@ -900,6 +900,14 @@ protected:
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
 
+    //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this element.
+    //! @param[in]      request  Request to populate
+    //! @param[in]      opcode   The operation to be performed
+    //! @param[in]      original If DbOpcode::Update, the persistent state of this element; otherwise, nullptr.
+    //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
+    //! @note If you override this function you @b must call T_Super::_PopulateRequest(), forwarding its status.
+    DGNPLATFORM_EXPORT virtual RepositoryStatus _PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const;
+
     virtual DgnCode const& _GetCode() const override final {return m_code;}
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override {return true;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(DgnCode const& code) override final;
@@ -1106,6 +1114,12 @@ public:
     //! Query the DgnDb for the children of this DgnElement.
     //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
     DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
+
+    //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this element.
+    //! @param[in]      request  Request to populate
+    //! @param[in]      opcode   The operation to be performed
+    //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
+    DGNPLATFORM_EXPORT RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const;
 
     //! @name Properties 
     //! @{
@@ -1859,7 +1873,7 @@ protected:
 //! @see DgnDb::Elements
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
-struct DgnElements : DgnDbTable, IMemoryConsumer
+struct DgnElements : DgnDbTable, MemoryConsumer
 {
     friend struct DgnDb;
     friend struct DgnElement;
@@ -1878,7 +1892,7 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
         uint32_t m_extant;         //! total number of DgnElements extant (persistent and non-persistent)
         uint32_t m_entries;        //! total number of persistent elements
         uint32_t m_unreferenced;   //! total number of unreferenced persistent elements
-        int64_t  m_allocedBytes;   //! total number of bytes of data held by persistent elements
+        uint64_t m_allocedBytes;   //! total number of bytes of data held by persistent elements
     };
 
     //! Statistics for element activity in this DgnDb. these values can be reset at any point to gauge "element flux"
@@ -1958,8 +1972,8 @@ private:
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
 
-    virtual int64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
-    virtual int64_t _Purge(int64_t memTarget) override;
+    virtual uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
+    virtual uint64_t _Purge(uint64_t memTarget) override;
 
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!

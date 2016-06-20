@@ -10,6 +10,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/Bentley.h>
+#include <BeJavaScriptTools/BeJavaScriptTools.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -94,6 +95,7 @@ enum class DgnDbStatus : int
     NoMultiTxnOperation,
     InvalidCodeAuthority,
     CodeNotReserved,
+    RepositoryManagerError,
     };
 
 //! Status Values for DgnViewport methods
@@ -118,22 +120,29 @@ enum class ViewportStatus : int
 };
 
 //! Return codes for methods which perform repository management operations
+BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
 enum class RepositoryStatus : int
 {
-    Success = SUCCESS,
-    ServerUnavailable = REPOSITORY_ERROR_BASE + 1, //!< The repository server did not respond to a request
-    LockAlreadyHeld, //!< A requested lock was already held by another briefcase
-    SyncError, //!< Failed to sync briefcase manager with server
-    InvalidResponse, //!< Response from server not understood
-    PendingTransactions, //!< An operation requires local changes to be committed or abandoned
-    LockUsed, //!< A lock cannot be relinquished because the associated object has been modified
-    CannotCreateRevision, //!< An operation required creation of a DgnRevision, which failed
-    InvalidRequest, //!< Request to server not understood
-    RevisionRequired, //!< A revision committed to the server must be integrated into the briefcase before the operation can be completed
-    CodeUnavailable, //!< A requested DgnCode is reserved by another briefcase or in use
-    CodeNotReserved, //!< A DgnCode cannot be released because it has not been reserved by the requesting briefcase
-    CodeUsed, //!< A DgnCode cannot be relinquished because it has been used locally
+    Success = 0,
+    ServerUnavailable = 0x15001, //!< The repository server did not respond to a request
+    LockAlreadyHeld = 0x15002, //!< A requested lock was already held by another briefcase
+    SyncError = 0x15003, //!< Failed to sync briefcase manager with server
+    InvalidResponse = 0x15004, //!< Response from server not understood
+    PendingTransactions = 0x15005, //!< An operation requires local changes to be committed or abandoned
+    LockUsed = 0x15006, //!< A lock cannot be relinquished because the associated object has been modified
+    CannotCreateRevision = 0x15007, //!< An operation required creation of a DgnRevision, which failed
+    InvalidRequest = 0x15008, //!< Request to server not understood
+    RevisionRequired = 0x15009, //!< A revision committed to the server must be integrated into the briefcase before the operation can be completed
+    CodeUnavailable = 0x1500A, //!< A requested DgnCode is reserved by another briefcase or in use
+    CodeNotReserved = 0x1500B, //!< A DgnCode cannot be released because it has not been reserved by the requesting briefcase
+    CodeUsed = 0x1500C, //!< A DgnCode cannot be relinquished because it has been used locally
+    LockNotHeld = 0x1500D, //!< A required lock is not held by this briefcase
 };
+
+//__PUBLISH_SECTION_END__
+// The typescript generator require literal values for all enum members...
+static_assert((int)RepositoryStatus::ServerUnavailable == REPOSITORY_ERROR_BASE + 1, "Inconsistent enum");
+//__PUBLISH_SECTION_START__
 
 //! Status codes for the Revision API
 enum class RevisionStatus : int

@@ -14,18 +14,6 @@ BEGIN_UNNAMED_NAMESPACE
     static int s_progressiveTarget;
 END_UNNAMED_NAMESPACE
 
-#define RENDER_LOGGING 1
-
-#ifdef RENDER_LOGGING
-#   define DEBUG_PRINTF THREADLOG.debugv
-#   define ERROR_PRINTF THREADLOG.errorv
-#   define WARN_PRINTF THREADLOG.warningv
-#else
-#   define DEBUG_PRINTF(fmt, ...)
-#   define ERROR_PRINTF(fmt, ...)
-#   define WARN_PRINTF(fmt, ...)
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -35,20 +23,9 @@ void Render::Target::Debug::SaveSceneTarget(int val) {s_sceneTarget=val; Show();
 void Render::Target::Debug::SaveProgressiveTarget(int val) {s_progressiveTarget=val; Show();}
 void Render::Target::Debug::Show()
     {
-#if defined (RENDER_LOGGING) 
+#if defined (DEBUG_LOGGING) 
     NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, PD=%d", s_gps, s_sceneTarget, s_progressiveTarget);
 #endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Image::SetSize(uint32_t w, uint32_t h)
-    {
-    // Called when we load the image, because we don't know the dimensions until we read the image data...
-    BeAssert(0 == m_width && 0 == m_height);
-    m_width = w;
-    m_height = h;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,8 +36,8 @@ void Render::Target::RecordFrameTime(uint32_t count, double seconds, bool isFrom
     if (0 == count)
         return;
 
-    if (seconds < .0001)
-        seconds = .0001;
+    if (seconds < .00001)
+        seconds = .00001;
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
     Render::Target::Debug::SaveGPS(gps);
@@ -190,7 +167,9 @@ void Render::Task::Perform(StopWatch& timer)
     else if (m_elapsedTime>.125)
         WARN_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
     else
-        DEBUG_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        {
+//        DEBUG_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -242,6 +221,30 @@ void DgnViewport::StartRenderThread()
     BeThreadUtilities::StartNewThread(300*1024, Render::Queue::Main, s_renderQueue); 
     }
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct DestroyTargetTask : Render::NonSceneTask
+{
+    virtual Utf8CP _GetName() const override {return "Destroy Target";}
+    virtual Outcome _Process(StopWatch& timer) override {m_target->_OnDestroy(); return Outcome::Finished;}
+    DestroyTargetTask(Render::Target& target) : NonSceneTask(&target, Operation::DestroyTarget) {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetRenderTarget(Target* newTarget)
+    {
+    DgnDb::VerifyClientThread();
+    if (m_renderTarget.IsValid())
+        RenderQueue().AddAndWait(*new DestroyTargetTask(*m_renderTarget));
+
+    m_renderTarget = newTarget; 
+    m_sync.InvalidateFirstDrawComplete();
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -254,6 +257,9 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_fraction  = vp.GetFrustumFraction();
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
+    DgnQueryViewCP qv = const_cast<DgnViewportR>(vp).GetQueryViewCP();
+    if (nullptr != qv)
+        m_activeVolume = qv->GetActiveVolume();
     }
 
 /*---------------------------------------------------------------------------------**//**

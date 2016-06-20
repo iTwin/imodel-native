@@ -403,6 +403,24 @@ JsECClassP JsDgnElement::GetElementClass()
     return new JsECClass(*m_el->GetElementClass());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus JsDgnElement::PopulateRequest(JsRepositoryRequestP req, BeSQLiteDbOpcode opcode)
+    {
+    DGNJSAPI_VALIDATE_ARGS(IsValid() && nullptr != req, RepositoryStatus::InvalidRequest);
+    return m_el->PopulateRequest(req->m_req, static_cast<BeSQLite::DbOpcode>(opcode));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus JsDgnModel::PopulateRequest(JsRepositoryRequestP req, BeSQLiteDbOpcode opcode)
+    {
+    DGNJSAPI_VALIDATE_ARGS(IsValid() && nullptr != req, RepositoryStatus::InvalidRequest);
+    return m_model->PopulateRequest(req->m_req, static_cast<BeSQLite::DbOpcode>(opcode));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
@@ -449,7 +467,9 @@ int32_t JsDgnDb::SaveChanges()
     {
     DGNJSAPI_VALIDATE_ARGS(IsValid(), -1);
     auto res = (int32_t)m_db->SaveChanges();
-    m_db->Memory().Purge(0);
+
+    m_db->Memory().Purge();
+
     if (JsDgnElement::s_count > 1000)
         {
         LOG.warningv("DgnJsApi - element count is %d. Call Dispose to free objects.", JsDgnElement::s_count);
@@ -995,3 +1015,37 @@ void DgnJsApi::_ImportScriptLibrary(BeJsContextR jsContext, Utf8CP)
     // *** NEEDS WORK: See if we can untangle this by building DgnScriptContext and DgnJsApi in different makefiles and thereby generating two different bootstrapping .cpp files.
     jsContext.RegisterProjection<DgnJsApiProjection>();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+JsRepositoryRequest::JsRepositoryRequest(JsDgnDb& db, Utf8StringCR operation) : m_req(), m_db(&db), m_operation(operation)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus JsRepositoryRequest::Acquire()
+    {
+    DGNJSAPI_VALIDATE_ARGS(m_db && m_db->m_db.IsValid(), RepositoryStatus::InvalidRequest);
+    m_req.SetOptions(T_HOST.GetRepositoryAdmin()._GetResponseOptions(false));
+    auto response = m_db->m_db->BriefcaseManager().Acquire(m_req);
+    T_HOST.GetRepositoryAdmin()._OnResponse(response, m_operation.c_str());
+    return response.Result();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus JsRepositoryRequest::Query(bool fast)
+    {
+    DGNJSAPI_VALIDATE_ARGS(m_db && m_db->m_db.IsValid(), RepositoryStatus::InvalidRequest);
+    m_req.SetOptions(T_HOST.GetRepositoryAdmin()._GetResponseOptions(true));
+    IBriefcaseManager::Response response(fast ? IBriefcaseManager::RequestPurpose::FastQuery : IBriefcaseManager::RequestPurpose::Query, m_req.Options());
+    m_db->m_db->BriefcaseManager().AreResourcesAvailable(m_req, &response, fast ? IBriefcaseManager::FastQuery::Yes : IBriefcaseManager::FastQuery::No);
+    T_HOST.GetRepositoryAdmin()._OnResponse(response, m_operation.c_str());
+    return response.Result();
+    }
+

@@ -177,7 +177,7 @@ public:
     Byte GetDynamicsTransparency() const {return m_dynamicsTransparency;}
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
-    void SetRenderTarget(Render::Target* target) {m_renderTarget=target; m_sync.InvalidateFirstDrawComplete();}
+    DGNPLATFORM_EXPORT void SetRenderTarget(Render::TargetP target);
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
@@ -202,7 +202,6 @@ public:
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
     void SetNeedsRefresh() const {m_sync.InvalidateDecorations();}
     void SetNeedsHeal() const {m_sync.InvalidateController();}
-    DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
     DGNPLATFORM_EXPORT void ChangeViewController(ViewControllerR);

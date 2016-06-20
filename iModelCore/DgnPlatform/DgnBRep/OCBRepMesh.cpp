@@ -82,8 +82,13 @@ PolyfaceHeaderPtr OCBRep::IncrementalMesh(TopoDS_Shape const& shape, IFacetOptio
 
     if (linearDeflection <= 0.0)
         {
-        BeAssert(false && "Chord tolerance required - BRepMesh_IncrementalMesh behaves poorly/slowly otherwise.");
-        return nullptr;
+        // Some chord tolerance required - BRepMesh_IncrementalMesh behaves poorly/slowly otherwise...
+        Bnd_Box box;
+        Standard_Real maxDimension = 0.0;
+
+        BRepBndLib::Add(shape, box);
+        BRepMesh_ShapeTool::BoxMaxDimension(box, maxDimension);
+        linearDeflection = (0.1 * maxDimension);
         }
 
     IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);

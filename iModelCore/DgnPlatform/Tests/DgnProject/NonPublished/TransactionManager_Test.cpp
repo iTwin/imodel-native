@@ -14,6 +14,7 @@
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
+USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -1200,7 +1201,7 @@ static uint32_t getDependentWidth(DgnElementId id, DgnDbR db)
     {
     auto tx = db.Elements().Get<DgnTexture>(id);
     BeAssert(tx.IsValid());
-    return tx.IsValid() ? static_cast<uint32_t>(tx->GetTextureData().GetWidth()) : -1;
+    return tx.IsValid() ? tx->GetWidth() : -1;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1213,8 +1214,7 @@ static void incrementDependentWidth(DgnElementId id,DgnDbR db)
     auto pTx = cpTx.IsValid() ? cpTx->MakeCopy<DgnTexture>() : nullptr;
     if (pTx.IsValid())
         {
-        Byte data[] = {1,2,3};
-        pTx->SetTextureData(DgnTexture::Data(DgnTexture::Format::TIFF, data, 3, pTx->GetTextureData().GetWidth() + 1, 0));
+        pTx->SetImageSource(pTx->GetImageSource(), pTx->GetWidth() + 1, pTx->GetHeight());
         pTx->Update();
         }
     }
@@ -1312,8 +1312,8 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
     DgnElementId rootId = cat.GetElementId();
 
     Byte textureBytes[] = { 1, 2, 3 };
-    DgnTexture::Data textureData(DgnTexture::Format::TIFF, textureBytes, 3, 0, 0);
-    DgnTexture texture(DgnTexture::CreateParams(db, "Dependent", textureData));
+    ImageSource textureData(ImageSource::Format::Jpeg, ByteStream(textureBytes, 3));
+    DgnTexture texture(DgnTexture::CreateParams(db, "Dependent", textureData, 1,1));
     EXPECT_TRUE(texture.Insert().IsValid());
     auto depId = texture.GetElementId();
     db.SaveChanges();

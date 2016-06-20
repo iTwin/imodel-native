@@ -63,12 +63,14 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic&) ov
 virtual void _OutputGraphics(ViewContext& viewContext) override
     {
     Render::GraphicBuilderPtr  graphic = viewContext.CreateGraphic();
+    Render::GraphicParams   defaultParams;
+    LineStyleContext lsContext(*graphic, defaultParams, &viewContext);
 
     LineStyleSymb   lineStyleSymb;
     lineStyleSymb.Init(nullptr);
     //  lineStyleSymb.SetScale(m_scaleFactor);
 
-    m_component._StrokeLineString(*graphic, &viewContext, &lineStyleSymb, m_points, 2, false);
+    m_component._StrokeLineString(*graphic, lsContext, &lineStyleSymb, m_points, 2, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -148,9 +150,9 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
     m_name = NULL;
     SetName (name);
 
-    m_textureInitialized = false;
-    m_texture = nullptr;
-    m_hasTextureWidth = false;
+    m_firstTextureInitialized = false;
+    m_texturesNotSupported = false;
+    m_usesSymbolWeight = false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -265,12 +267,12 @@ ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, ColorDef lineColor, 
     //  If a modified copy is required, the caller passed the copy. 
     BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
 
-    //  NEEDSWORK_LINESTYLES -- it doesn't make sense to mirror this. Figure out why QV needs it
     DVec3d normal;
     normal.Init(0, 1, 0);
     DPoint3d zero;
     zero.Zero();
-    m_transformForTexture.InitIdentity(); //  InitFromMirrorPlane(zero, normal);
+    //  NEEDSWORK_LINESTYLES -- it doesn't make sense to mirror this. Figure out why QV needs it
+    m_transformForTexture.InitFromMirrorPlane(zero, normal);
     }
 
 //---------------------------------------------------------------------------------------
@@ -302,7 +304,8 @@ Render::GraphicPtr Stroke(ViewContextR context) const
 
     //  Add symbology
     graphic->ActivateGraphicParams(elemMatSymb);
-    m_component->_StrokeLineString(*graphic, &context, &lineStyleSymb, m_points, 2, false);
+    LineStyleContext lsContext(*graphic, elemMatSymb, &context);
+    m_component->_StrokeLineString(*graphic, lsContext, &lineStyleSymb, m_points, 2, false);
     graphic->Close();
 
     return graphic;
@@ -314,14 +317,14 @@ Render::GraphicPtr Stroke(ViewContextR context) const
 //---------------------------------------------------------------------------------------
 static void initializePoints(DPoint3d points[2], LsComponentR component, double scale)
     {
-    double length = component._GetLength() * NUMBER_ITERATIONS_ComponentStroker;
+    double length = component._GetLengthForTexture() * NUMBER_ITERATIONS_ComponentStroker;
 
     if (length <  mgds_fc_epsilon)
         {
         //  Apparently nothing is length dependent.
         length = component._GetMaxWidth(nullptr);
         if (length <  mgds_fc_epsilon)
-            length = 1.0;
+            length = 2048.00;
         }
 
     length *= scale;
@@ -364,12 +367,12 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
         xRange = range2d.high.x - range2d.low.x;
         }
 
-    //  Theoretically we could make the image smaller and save memory by just guaranteeing that
-    //  the size of the Y range is a multiple of 2 of the X range or vice versa.  However, I don't
-    //  think QV is detecting that correctly so for now I am just going for the same size.  Without
-    //  this change to the range QV scales the contents of the geometry map in one direction or the other.
+   //  QV recommends the range should be either equal or proportional by powers of two (for
+   //  example, the width is 2X, 4X, or 8X the height).  The range must be centered around 0 
+   //  for the texture to be applied to the line correctly.
     double yVal = xRange/2.0;
     bool changed = false;
+    //  Keep doubling while it is both higher than the high and lower than the low.
     while (yVal < range2d.high.y || -yVal > range2d.low.y)
         {
         changed = true;
@@ -378,6 +381,7 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 
     if (!changed)
         {
+        //  We didn't have to increase the Y range. Maybe we can decrease it.
         while (yVal/2.0 >= range2d.high.y && -yVal/2.0 <= range2d.low.y)
             {
             yVal /= 2.0;
@@ -387,6 +391,7 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
     if (yVal < 2)
         yVal = 2;
 
+    //  Force the range to be centered at 0.  Othwerwise, it won't be centered on the line.
     range2d.low.y = -yVal;
     range2d.high.y = yVal;
 
@@ -396,19 +401,19 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
+StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymb, uint32_t weight)
     {
-    double unitDef = GetUnitsDefinition();
-    if (unitDef < mgds_fc_epsilon)
-        {
-        BeAssert(unitDef > mgds_fc_epsilon);
-        unitDef = 1.0;
-        }
+    textureDescr.m_hasTextureWidth = false;
+    textureDescr.m_textureWidth = 0;
 
-    textureDrawWidth = 0;
+    //  We create the texture in the component's units.  Then to convert to the line style's units we set the true width to the component width times unitDef.
+    double unitDef = GetUnitsDefinition();
+    if (unitDef == 0)
+        unitDef = 1.0;
+
     DgnViewportP vp = viewContext.GetViewport();
     if (vp == nullptr)
-        return nullptr;
+        return BSIERROR;
 
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
@@ -418,15 +423,23 @@ Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewC
     m_lsComp->_StartTextureGeneration();
 
     if (m_lsComp->_IsOkayForTextureGeneration() == Dgn::LsOkayForTextureGeneration::NotAllowed)
-        return nullptr;
+        {
+        m_firstTextureInitialized = true;
+        m_texturesNotSupported = true;
+        return BSIERROR;
+        }
 
     //  Something in the component tree may be modified for texture generation.  For example, the size of an iteration
     //  may be expanded to accomodate a symbol that overflows.
     LsComponentPtr  comp = m_lsComp->_GetForTextureGeneration();
     if (comp.IsNull())
-        return nullptr;
+        {
+        m_firstTextureInitialized = true;
+        m_texturesNotSupported = true;
+        return BSIERROR;
+        }
 
-    //  Get just the range of the components.  Don't let any scaling enter into this.
+    //  Get just the range of the components.  Don't let any scaling enter into this. We scale latter by multiplying by unitDef.
     DPoint3d  points[2];
     initializePoints(points, *m_lsComp, 1.0);
 
@@ -434,7 +447,7 @@ Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewC
     LineStyleRangeCollector::Process(lsRange, *comp, points);
 
     uint32_t  scaleFactor = 1;
-    DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLength());
+    DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLengthForTexture());
 
     SymbologyQueryResults  symbologyResults;
     comp->_QuerySymbology(symbologyResults);
@@ -442,40 +455,90 @@ Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewC
     bool isColorBySymbol = symbologyResults.IsColorBySymbol(lineColor, fillColor) && !symbologyResults.IsColorByLevel();
 
     uint32_t lineWeight;
-    bool isWeightBySymbol = symbologyResults.IsWeightBySymbol(lineWeight);
-    if (!isWeightBySymbol)
-        lineWeight = 0;
+    m_usesSymbolWeight = symbologyResults.IsWeightBySymbol(lineWeight);
+    if (!m_usesSymbolWeight)
+        lineWeight = weight;
 
     ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, lineColor, fillColor, lineWeight, *comp);
     GraphicPtr graphic = stroker.Stroke(viewContext);
 
-    Render::TexturePtr texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, isColorBySymbol, false);
+    if (!graphic.IsValid() || viewContext.CheckStop())
+        {
+        //  If aborted due to checkstop, we want to try again.  Otherwise, we assume it is an unrecoverable error.
+        if (!viewContext.CheckStop())
+            {
+            m_firstTextureInitialized = true;
+            m_texturesNotSupported = true;
+            }
+
+        return BSIERROR;
+        }
+
+    textureDescr.m_texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, isColorBySymbol, false);
 
     double yRange = range2d.high.y - range2d.low.y;
+    BeAssert(0.0 != yRange);
     if (0.0 == yRange)
         yRange = 1;
 
-    textureDrawWidth = yRange * unitDef;
-    return texture.get();
+    textureDescr.m_hasTextureWidth = true;
+    textureDescr.m_textureWidth = yRange * unitDef;
+
+    BeAssert((range2d.high.y - range2d.low.y) * unitDef < 50);
+    BeAssert((range2d.high.x - range2d.low.x) * unitDef < 50);
+    m_firstTextureInitialized = true;
+
+    return BSISUCCESS;    
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    05/2016
+//---------------------------------------------------------------------------------------
+StatusInt LsDefinition::GetGeometryTexture(TextureDescr& tDescr, ViewContextR viewContext, LineStyleSymbR lineStyleSymb, double scaleWithoutUnits, uint32_t weight)
+    {
+    if (m_firstTextureInitialized)
+        {
+        if (m_texturesNotSupported)
+            return BSIERROR;
+
+        if (m_usesSymbolWeight)
+            weight = 0;   // if this value will be ignored when generating the texture, but we still use it for looking up the texture
+
+        WeightToTexture_t::iterator tDescrIter = m_textures.find(weight);
+        if (tDescrIter != m_textures.end())
+            {
+            tDescr = tDescrIter->second;
+            return BSISUCCESS;
+            }
+        }
+
+    if (LsDefinition::GenerateTexture(tDescr,  viewContext, lineStyleSymb, weight) != BSISUCCESS)
+        return BSIERROR;
+
+    if (m_usesSymbolWeight)
+        weight = 0;
+
+    m_textures[weight] = tDescr;
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scaleWithoutUnits) 
+Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scaleWithoutUnits, uint32_t weight) 
     {
     if (!m_lsComp.IsValid())
         return nullptr;
 
-    if (!m_textureInitialized)
+    if (m_lsComp->GetComponentType() == LsComponentType::RasterImage)
         {
-        if (m_lsComp->GetComponentType() == LsComponentType::RasterImage)
+        if (!m_firstTextureInitialized)
             {
             uint8_t const* image;
             Point2d     imageSize;
             uint32_t      flags = 0;
 
-            m_textureInitialized = true;
+            m_firstTextureInitialized = true;
             if (SUCCESS == m_lsComp->_GetRasterTexture (image, imageSize, flags))
                 {
                 if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))       // Alpha Only.
@@ -499,21 +562,47 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
 #endif
                     }
                 }
-            m_hasTextureWidth = m_lsComp->_GetTextureWidth(m_textureWidth) == BSISUCCESS;
             }
-        else if (forceTexture)
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+        m_hasTextureWidth = m_lsComp->_GetTextureWidth(m_textureWidth) == BSISUCCESS;
+        if (m_texture.IsValid() && m_lsComp.IsValid() && m_hasTextureWidth)
+            lineStyleSymb.SetWidth (m_textureWidth * scaleWithoutUnits);
+    
+        return m_texture.get();
+#endif
+        return nullptr;
+        }
+
+    if (forceTexture)
+        {
+        switch(viewContext.GetDrawPurpose())
             {
-            m_textureInitialized = true;
-            //  Convert this type to texture on the fly if possible
-            m_texture = GenerateTexture(m_textureWidth, viewContext, lineStyleSymb);
-            m_hasTextureWidth = true;
+            case DrawPurpose::CreateScene:
+            case DrawPurpose::Progressive:
+            case DrawPurpose::Plot:
+            case DrawPurpose::Dynamics:
+            case DrawPurpose::Redraw:
+            case DrawPurpose::Heal:
+                {
+                BeAssert (weight >=0 && weight < 32);
+                TextureDescr    tDescr;
+                if (GetGeometryTexture(tDescr, viewContext, lineStyleSymb, scaleWithoutUnits, weight) != BSISUCCESS)
+                    return nullptr;
+
+                if (tDescr.m_texture.IsValid() && tDescr.m_hasTextureWidth)
+                    lineStyleSymb.SetWidth (tDescr.m_textureWidth * scaleWithoutUnits);
+
+                return tDescr.m_texture.get();
+                }
+                break;
+            default:
+                //  Very rare to get here. It does happen if checkstop stops us from creating the texture and then the user tries to pick the element.
+                return nullptr;
             }
         }
 
-    if (m_texture.IsValid() && m_lsComp.IsValid() && m_hasTextureWidth)
-        lineStyleSymb.SetWidth (m_textureWidth * scaleWithoutUnits);
-    
-    return m_texture.get();
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

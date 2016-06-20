@@ -98,6 +98,63 @@ module DgnScriptTests {
         }
         return pel.Placement.CalculateRange();
     }
+ 
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Paul.Connelly   06/16
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    function expectCondition(expected: boolean, actual: boolean, message: string): boolean {
+        if (expected != actual) {
+            be.Script.ReportError(message + ": expected: " + expected);
+
+        return expected == actual;
+        }
+    }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Paul.Connelly   06/16
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    function expectTrue(actual: boolean, message: string): boolean { return expectCondition(true, actual, message); }
+
+    function expectFalse(actual: boolean, message: string): boolean { return expectCondition(false, actual, message); }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Paul.Connelly   06/16
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    function testBriefcaseManagement(db: be.DgnDb, element: be.DgnElement, model: be.DgnModel) {
+        var elementLockableId = be.LockableId.FromElement(element);
+        expectTrue(elementLockableId.IsValid, "elementLockableId.IsValid");
+        expectTrue(elementLockableId.Id.Equals(element.ElementId), "elementLockableId.Id.Equals(element.ElementId)");
+
+        var operation: string = "test request";
+        var request: be.RepositoryRequest = be.RepositoryRequest.Create(db, operation);
+        expectTrue(null != request, "null != request");
+        expectTrue(operation == request.Operation, "operation == request.Operation");
+        expectTrue(db == request.Briefcase, "db == request.Briefcase");
+
+        request.AddElement(element);
+        expectTrue(be.RepositoryStatus.Success == request.FastQueryAvailability(), "FastQueryAvailability");
+        expectTrue(be.RepositoryStatus.Success == request.QueryAvailability(), "QueryAvailability");
+        expectTrue(be.RepositoryStatus.Success == request.Acquire(), "Acquire");
+
+        var modelLockableId = be.LockableId.FromModel(model);
+        expectTrue(modelLockableId.IsValid, "modelLockableId.IsValid");
+        expectTrue(modelLockableId.Id.Equals(model.ModelId), "modelLockableId.Id.Equals(model.ModelId)");
+
+        request = be.RepositoryRequest.Create(db, operation);
+        request.AddModel(element.Model, be.LockLevel.Exclusive);
+        expectTrue(be.RepositoryStatus.Success == request.FastQueryAvailability(), "FastQueryAvailability");
+        expectTrue(be.RepositoryStatus.Success == request.QueryAvailability(), "QueryAvailability");
+        expectTrue(be.RepositoryStatus.Success == request.Acquire(), "Acquire");
+
+        var dbLockableId = be.LockableId.FromDgnDb(db);
+        expectTrue(dbLockableId.IsValid, "dbLockableId.IsValid");
+
+        request = be.RepositoryRequest.Create(db, operation);
+        request.AddBriefcase(be.LockLevel.Exclusive);
+        expectTrue(be.RepositoryStatus.Success == request.FastQueryAvailability(), "FastQueryAvailability");
+        expectTrue(be.RepositoryStatus.Success == request.QueryAvailability(), "QueryAvailability");
+        expectTrue(be.RepositoryStatus.Success == request.Acquire(), "Acquire");
+    }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   
@@ -697,6 +754,9 @@ module DgnScriptTests {
         testEcSql(db, 2);
 
         //testFile("d:/tmp/xx.txt");
+
+        //  Test briefcase management API
+        testBriefcaseManagement(db, ele, model);
 
         return 0;
     }

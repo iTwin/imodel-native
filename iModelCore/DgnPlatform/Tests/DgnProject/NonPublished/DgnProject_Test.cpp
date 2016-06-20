@@ -343,7 +343,7 @@ TEST(DgnDb, GetCoordinateSystemProperties)
     openProject(dgnProj, fullFileName, BeSQLite::Db::OpenMode::Readonly);
     DgnGCS* dgnGCS = dgnProj->Units().GetDgnGCS();
     double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
-    double azimuthExpected = 178.2912;
+    double azimuthExpected = 178.29138626108181;
     double eps = 0.0001;
     EXPECT_TRUE(fabs(azimuthExpected - azimuth) < eps) << "Expected different azimuth ";
     GeoPoint gorigin;

@@ -168,8 +168,8 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     BeTest::GetHost().GetDocumentsRoot(srcFilesPath);
     srcFilesPath.AppendToPath(L"DgnDb");
     srcFilesPath.AppendToPath(L"CompatibilityRoot");
-    srcFilesPath.AppendToPath(L"DgnDb06");
-    srcFilesPath.AppendToPath(L"*.ibim");
+    srcFilesPath.AppendToPath(L"DgnDb61-16Q2");
+    srcFilesPath.AppendToPath(L"*.idgndb");
 
     BeFileName outputRoot;
     BeTest::GetHost().GetOutputRoot(outputRoot);
@@ -218,11 +218,11 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
                 }
 
             if (writeStatus)
-                fprintf(f, "%ls, DgnDb06, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
+                fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
             else
-                fprintf(f, "%ls, DgnDb06, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
+                fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
             }
         else
-            fprintf(f, "%ls, DgnDb06, DgnDb0601, %s\n", dbName.GetFileNameAndExtension().c_str(), "Error Copying File");
+            fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", dbName.GetFileNameAndExtension().c_str(), "Error Copying File");
         }
     }

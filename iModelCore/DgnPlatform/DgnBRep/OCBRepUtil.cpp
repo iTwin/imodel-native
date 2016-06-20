@@ -244,3 +244,144 @@ bool OCBRep::HasCurvedFaceOrEdge(TopoDS_Shape const& shape)
 
     return false;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void extractKnots(bvector<double>& knots, TColStd_Array1OfReal const& knotSequence, int nPoles, int order, bool periodic)
+    {
+    if (periodic)
+        {
+        knots.resize(nPoles + order);
+
+        // Per Earlin....and this sort of matches the parasolid conversion code...
+        memcpy (&knots.front(), &knotSequence.Value(1), knotSequence.Length() * sizeof (double));
+        knots[0] = knots[1];
+        knots[knots.size()-1] = knots[knots.size()-2];
+        knots.push_back (knots.front());
+        }
+    else
+        {
+        for (int i=1; i<=knotSequence.Length(); i++)
+            knots.push_back(knotSequence.Value(i));
+        }
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static ICurvePrimitivePtr toCurvePrimitiveFromNonPeriodic(Handle(Geom_BSplineCurve) const& geomBCurve)
+    {
+    if (0 != geomBCurve->IsPeriodic())
+        {
+        BeAssert(false && "Unexpected Periodic curve");
+        return nullptr;
+        }
+
+    bvector<double>   knots, weights;
+    bvector<DPoint3d> poles;
+    MSBsplineCurvePtr bCurve = MSBsplineCurve::CreatePtr();
+
+    for (int i=1, nPoles = geomBCurve->NbPoles(); i <= nPoles; i++)
+        poles.push_back(OCBRep::ToDPoint3d(geomBCurve->Pole(i)));
+
+    if (geomBCurve->IsRational())
+        for (int i=1; i <= geomBCurve->Weights()->Length(); i++)
+            weights.push_back(geomBCurve->Weights()->Value(i));
+
+    extractKnots(knots, geomBCurve->KnotSequence(), geomBCurve->NbPoles(), geomBCurve->Degree()+1, false);
+
+    if (SUCCESS != bCurve->Populate(&poles.front(), geomBCurve->IsRational() ? &weights.front() : nullptr, (int) poles.size(), &knots.front(), (int) knots.size(), geomBCurve->Degree()+1, false, false))
+        {
+        BeAssert(false && "Bspline populate failure");
+        return nullptr;
+        }
+        
+    return ICurvePrimitive::CreateBsplineCurve(*bCurve);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static ICurvePrimitivePtr toCurvePrimitive(Handle(Geom_BSplineCurve) const& geomBCurveIn, double first, double last)
+    {
+    if (0 != geomBCurveIn->IsPeriodic() || first != geomBCurveIn->FirstParameter() || last != geomBCurveIn->LastParameter())
+        {
+        static double s_parametricTolerance = 1.0e-08;
+        Handle(Geom_BSplineCurve) geomBCurve = GeomConvert::SplitBSplineCurve(geomBCurveIn, first, last, s_parametricTolerance);
+
+        return toCurvePrimitiveFromNonPeriodic(geomBCurve);
+        }
+
+    return toCurvePrimitiveFromNonPeriodic(geomBCurveIn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr OCBRep::ToCurvePrimitive(Handle(Geom_Curve) const& curve, double first, double last)
+    {
+    if (curve.IsNull())
+        return nullptr;
+
+    Handle(Standard_Type) kindOfCurve = curve->DynamicType();
+
+    if (STANDARD_TYPE(Geom_Line) == kindOfCurve)
+        {
+        DSegment3d segment = DSegment3d::From(OCBRep::ToDPoint3d(curve->Value(first)), OCBRep::ToDPoint3d(curve->Value(last)));
+
+        return ICurvePrimitive::CreateLine(segment);
+        }
+    else if (STANDARD_TYPE(Geom_Ellipse) == kindOfCurve)
+        {
+        Handle(Geom_Ellipse) ellipse = Handle(Geom_Ellipse)::DownCast(curve);
+
+        return ICurvePrimitive::CreateArc(OCBRep::ToDEllipse3d(ellipse->Elips(), first, last));
+        }
+    else if (STANDARD_TYPE(Geom_Circle) == kindOfCurve)
+        {
+        Handle(Geom_Circle) circle = Handle(Geom_Circle)::DownCast(curve);
+
+        return ICurvePrimitive::CreateArc(OCBRep::ToDEllipse3d(circle->Circ(), first, last));
+        }
+    else if (STANDARD_TYPE(Geom_TrimmedCurve) == kindOfCurve)
+        {
+        Handle(Geom_TrimmedCurve) trimmedCurve = Handle(Geom_TrimmedCurve)::DownCast(curve);
+
+        return OCBRep::ToCurvePrimitive(trimmedCurve->BasisCurve(), first, last);
+        }
+    else if (STANDARD_TYPE(Geom_BSplineCurve) == kindOfCurve)
+        {
+        Handle(Geom_BSplineCurve) geomBCurve = Handle(Geom_BSplineCurve)::DownCast(curve);
+
+        return toCurvePrimitive(geomBCurve, first, last);
+        }
+    else
+        {
+        Handle(Geom_BSplineCurve) geomBCurve = GeomConvert::CurveToBSplineCurve(curve); // Handle everything else (Beziers etc.) by conversion to bSpline.
+
+        return toCurvePrimitive(geomBCurve, first, last);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr OCBRep::ToCurvePrimitive(TopoDS_Edge const& edge)
+    {
+    Standard_Real      first, last;
+    TopLoc_Location    location;
+    Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, location, first, last);
+    ICurvePrimitivePtr curvePrimitive = OCBRep::ToCurvePrimitive(curve, first, last);
+
+    if (curvePrimitive.IsNull())
+        return nullptr;
+
+    if (TopAbs_REVERSED == edge.Orientation())
+        curvePrimitive->ReverseCurvesInPlace();
+
+    if (!location.IsIdentity())
+        curvePrimitive->TransformInPlace(OCBRep::ToTransform(location.Transformation()));
+
+    return curvePrimitive;
+    }

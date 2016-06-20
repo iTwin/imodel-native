@@ -30,10 +30,10 @@ struct     ILineStyleComponent
     virtual bool _IsContinuous() const = 0;
     virtual bool _HasWidth() const = 0;
     virtual double _GetLength() const = 0;
-    virtual StatusInt _StrokeLineString(Render::GraphicBuilderR, ViewContextP, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const = 0;
-    virtual StatusInt _StrokeLineString2d(Render::GraphicBuilderR, ViewContextP, Render::LineStyleSymbP, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt _StrokeArc(Render::GraphicBuilderR, ViewContextP, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
-    virtual StatusInt _StrokeBSplineCurve(Render::GraphicBuilderR, ViewContextP context, Render::LineStyleSymbP lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
+    virtual StatusInt _StrokeLineString(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const = 0;
+    virtual StatusInt _StrokeLineString2d(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt _StrokeArc(Render::GraphicBuilderR, LineStyleContextR, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
+    virtual StatusInt _StrokeBSplineCurve(Render::GraphicBuilderR, LineStyleContextR context, Render::LineStyleSymbP lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
 };
 
 //=======================================================================================
@@ -145,10 +145,10 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR);
+    DGNPLATFORM_EXPORT virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
-    DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
     virtual Render::GraphicPtr _CreateGroupNode(Render::Graphic::CreateParams const& params, Render::GraphicArray&, ClipPrimitiveCP) = 0;
@@ -179,7 +179,8 @@ public:
     DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
     StatusInt InitContextForView() {return _InitContextForView();}
     enum class WantBoresite : bool {Yes=true, No=false};
-    DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, double toerance=1.0e-8);
+    DGNPLATFORM_EXPORT bool IsRangeVisible(DRange3dCR range, double tolerance=1.0e-8);
+    DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, double tolerance=1.0e-8);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
     Render::FrustumPlanes const& GetFrustumPlanes() const {return m_frustumPlanes;}
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}

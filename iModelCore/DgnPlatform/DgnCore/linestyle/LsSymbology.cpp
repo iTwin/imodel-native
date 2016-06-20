@@ -30,6 +30,7 @@ void LineStyleSymb::Init (ILineStyleCP lStyle)
     m_maxCompress = 0.3;
     m_planeByRows.InitIdentity();
     m_texture = nullptr;
+    m_useLinePixels = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -396,11 +397,11 @@ void LineStyleSymb::CheckContinuationData ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context)
+void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context, GeometryParamsR params)
     {
     Clear(); // In case of error make sure m_lStyle is nullptr so we callers know this LineStyleSymb isn't valid...
 
-    if (!styleId.IsValid() || true)
+    if (!styleId.IsValid())
         return;
 
     LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb());
@@ -414,6 +415,48 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     // so there are a lot of unlabeled continuous styles out there.
     LsComponentCP topComponent = nameRec->GetComponentCP(nullptr);
 
+    // If the line style definition can be loaded correctly we set it up as the current line style.
+    if (nullptr == topComponent)
+        return;
+
+    if (topComponent->GetComponentType() == LsComponentType::Internal)
+        {
+        LsInternalComponentCP internalComponent = (LsInternalComponentCP)topComponent;
+        uint32_t lc = internalComponent->GetLineCode();
+        BeAssert(MIN_LINECODE < lc && lc <= MAX_LINECODE);
+        GraphicParams::LinePixels lp;
+        switch(lc)
+            {
+            case 1:
+                lp = GraphicParams::LinePixels::Code1;
+                break;
+            case 2:
+                lp = GraphicParams::LinePixels::Code2;
+                break;
+            case 3:
+                lp = GraphicParams::LinePixels::Code3;
+                break;
+            case 4:
+                lp = GraphicParams::LinePixels::Code4;
+                break;
+            case 5:
+                lp = GraphicParams::LinePixels::Code5;
+                break;
+            case 6:
+                lp = GraphicParams::LinePixels::Code6;
+                break;
+            case 7:
+                lp = GraphicParams::LinePixels::Code7;
+                break;
+            default:
+                return;
+            }
+
+        Init(nameRec);
+        SetUseLinePixels((uint32_t)lp);
+        return;
+        }
+
     // If the line style is continuous and has no width, leave now.
     if (nameRec->IsContinuous() && (0 == (styleParams.modifiers & (STYLEMOD_SWIDTH | STYLEMOD_EWIDTH | STYLEMOD_TRUE_WIDTH))))
         return;
@@ -421,10 +464,6 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     // If the line style is mapped to a hardware line code return the hardware line code number.
     if (nameRec->IsHardware())
         return; // (int) nameRec->GetHardwareStyle(); <- No longer supported...
-
-    // If the line style definition can be loaded correctly we set it up as the current line style.
-    if (nullptr == topComponent)
-        return;
 
     bool xElemPhaseSet = m_options.xElemPhaseSet; // Save current value before Init clears it...
 
@@ -478,7 +517,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
 
     // now adjust scale for units in linestyle definition
     double unitDef = nameRec->GetUnitsDefinition();
-    if (unitDef < mgds_fc_epsilon)
+    if (unitDef == 0)
         unitDef = 1.0;
 
     // NOTE: Removed nameRec->IsUnitsDevice() check. Problematic if not drawing in immediate mode...and a bad idea (draws outside element range, i.e. not pickable, etc.)
@@ -505,7 +544,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
 
     // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
     // Texture is required for 3d...but it should still be an option for 2d...
-    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), 1 /* scaleWithoutUnits */);
+    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), 1 /* scaleWithoutUnits */, params.GetWeight());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -533,21 +572,6 @@ void LineStyleSymb::ClearContinuationData ()
     m_options.startTangentSet    = 0;
     m_options.endTangentSet      = 0;
     m_options.continuationXElems = 0;
-    }
-
-//---------------------------------------------------------------------------------------
-// When this is called both GeometryParams and GraphicParams are fully determined.
-// It is called before the call to ActivateGraphicParams.
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-void LineStyleSymb::ConvertLineStyleToTexture(ViewContextR context, bool force)
-    {
-    LsDefinitionP lsDef = (LsDefinitionP)m_lStyle;
-    BeAssert(nullptr != lsDef && dynamic_cast<LsDefinitionCP>(m_lStyle) == lsDef);
-
-    //  We know we have something that we want to be represented as a texture, but
-    //  there is a possibility it can't be.
-    m_texture = lsDef->GetTexture(context, *this, force, m_scale);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -713,10 +737,10 @@ bool LineStyleInfo::operator==(LineStyleInfoCR rhs) const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleInfo::Cook(ViewContextR context)
+void LineStyleInfo::Cook(ViewContextR context, GeometryParamsR params)
     {
     bool useStart = (0.0 != m_startTangent.Magnitude());
     bool useEnd = (0.0 != m_endTangent.Magnitude());
 
-    m_lStyleSymb.Init(m_styleId, m_styleParams, useStart ? &m_startTangent : nullptr, useEnd ? &m_endTangent : nullptr, context);
+    m_lStyleSymb.Init(m_styleId, m_styleParams, useStart ? &m_startTangent : nullptr, useEnd ? &m_endTangent : nullptr, context, params);
     }

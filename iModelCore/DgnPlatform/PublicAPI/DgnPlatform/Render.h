@@ -10,7 +10,6 @@
 
 #include "DgnModel.h"
 #include "DgnCategory.h"
-#include "ImageUtilities.h"
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
 
@@ -69,8 +68,6 @@ public:
     uint32_t    visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode. This is typically controlled through a display style.
     uint32_t    hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode. This is typically controlled through a display style.
     uint32_t    shadows:1;          //!< Shows or hides shadows. This is typically controlled through a display style.
-    uint32_t    noFrontClip:1;      //!< Controls whether the front clipping plane is used. Note the inversion. Elements beyond will not be displayed.
-    uint32_t    noBackClip:1;       //!< Controls whether the back clipping plane is used. Note the inversion. Elements beyond will not be displayed.
     uint32_t    noClipVolume:1;     //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
     uint32_t    ignoreLighting:1;   //!< Controls whether lights are used.
 
@@ -108,6 +105,7 @@ struct Task : RefCounted<NonCopyableClass>
         DefineGeometryTexture,
         FindNearestZ,
         ReadImage,
+        DestroyTarget,
     };
 
     //! The outcome of the processing of a Task.
@@ -221,58 +219,114 @@ public:
     DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op) const;
 };
 
+
 //=======================================================================================
-// @bsiclass                                                    BentleySystems
+//! An uncompressed image in Rgb (3 bytes per pixel) or Rgba (4 bytes per pixel) format suitable for rendering.
+// @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct Image
 {
-    enum class Format
-    {
-        Rgba = 0,
-        Bgra = 1,
-        Rgb  = 2,
-        Bgr  = 3,
-        Gray = 4,
-        Jpeg = 5,
-        PNG  = 6,
-    };
-    static size_t BytesPerPixel(Format format)
-        {
-        switch (format)
-            {
-            case Format::Rgba:
-            case Format::Bgra:
-            case Format::Jpeg:
-            case Format::PNG:
-                return 4;
-            case Format::Rgb:
-            case Format::Bgr:
-                return 3;
-            }
-        return 1;
-        }
-
+    enum class Format {Rgba=0, Rgb=2}; // must match qvision.h values
+    enum class BottomUp : bool {No=0, Yes=1}; //!< whether the rows in the image should be flipped top-to-bottom
 protected:
     uint32_t   m_width = 0;
     uint32_t   m_height = 0;
-    Format     m_format = Format::Rgba;
+    Format     m_format = Format::Rgb;
     ByteStream m_image;
 
-public:
-    Image() {}
-    Image(uint32_t width, uint32_t height, Format format, uint8_t const* data=0, uint32_t size=0) : m_width(width), m_height(height), m_format(format), m_image(data, size) {}
-    Image(uint32_t width, uint32_t height, Format format, ByteStream&& data) : m_width(width), m_height(height), m_format(format), m_image(std::move(data)) {}
-    void Invalidate() {m_width=m_height=0; ClearData();}
     void ClearData() {m_image.Clear();}
-    void Initialize(uint32_t width, uint32_t height, Format format) {m_height=height; m_width=width; m_format=format; ClearData();}
-    uint32_t GetWidth() const {return m_width;}
-    uint32_t GetHeight() const {return m_height;}
-    Format GetFormat() const {return m_format;}
-    void SetFormat(Format f) {m_format=f;}
-    bool IsValid() {return 0!=m_width && 0!=m_height;}
-    ByteStream const& GetByteStream() const {return m_image;}
-    ByteStream& GetByteStreamR() {return m_image;}
-    void SetSize(uint32_t width, uint32_t height);
+    void Initialize(uint32_t width, uint32_t height, Format format=Format::Rgb) {m_height=height; m_width=width; m_format=format; ClearData();}
+
+    void ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat, BottomUp bottomUp);
+    void ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat);
+public:
+    //! Construct a blank invalid Image
+    Image() {}
+
+    //! Construct an image from a ByteStream containing either Rgb or Rgba data.
+    //! @param[in] width the width of the image in pixels
+    //! @param[in] height the height of the image in pixels
+    //! @param[in] image an rvalue reference to the ByteStream holding the data. The ByteStream is moved into the newly constructed Image.
+    //! @param[in] format the format of the data held in image
+    //! @note the ByteStream is moved by this constructor, so it will be empty after this call. To use this method, you must
+    //! either pass a temporary variable or use std::move on a non-temporary variable.
+    Image(uint32_t width, uint32_t height, ByteStream&& image, Format format) : m_width(width), m_height(height), m_format(format), m_image(std::move(image)) {}
+
+    //! Construct an image from an ImageSource.
+    //! @param[in] source the ImageSource from which the image is to be created.
+    //! @param[in] targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded. If
+    //! the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
+    //! @param[in] bottomUp If Yes, the source image is flipped vertically (top-to-bottom) to create the image.
+    //! @note If the source is invalid, or if the decompression fails, IsValid() will return false on the new Image.
+    DGNPLATFORM_EXPORT explicit Image(ImageSourceCR source, Format targetFormat=Format::Rgba, BottomUp bottomUp=BottomUp::No);
+
+    //! Create an image from a Jpeg.
+    //! @param[in]      srcData      the Jpeg data
+    //! @param[in]      srcLen       the number of bytes of Jpeg data
+    //! @param[in]      targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded.
+    //! If the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
+    //! @param[in]      bottomUp     If Yes, the source image is flipped vertically (top-to-bottom) to create the image.
+    //! @return The decompressed Image, or an invalid Image if decompression failed.
+    DGNPLATFORM_EXPORT static Image FromJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat=Format::Rgba, BottomUp bottomUp=BottomUp::No);
+
+    //! Create an image from a Png.
+    //! @param[in]      srcData      the Png data
+    //! @param[in]      srcLen       the number of bytes of Png data
+    //! @param[in]      targetFormat The format (Rgb or Rgba) for the new Image. If the source has an alpha channel and Rgb is requested, to alpha data is discarded.
+    //! If the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
+    //! @return The decompressed Image, or an invalid Image if decompression failed.
+    DGNPLATFORM_EXPORT static Image FromPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat=Format::Rgba);
+
+    int GetBytesPerPixel()const {return m_format == Format::Rgba ? 4 : 3;} //!< get the number of bytes per pixel
+    void Invalidate() {m_width=m_height=0; ClearData();} //!< Clear the contents and invalidate this image.
+    uint32_t GetWidth() const {return m_width;} //!< Get the width of this image in pixels
+    uint32_t GetHeight() const {return m_height;} //!< Get the height of this image in pixels
+    Format GetFormat() const {return m_format;} //!< Get the format (Rgb or Rgba) of this image
+    void SetFormat(Format format) {m_format=format;} //!< Change the format of this image in pixels
+    bool IsValid() {return 0!=m_width && 0!=m_height && 0!=m_image.GetSize();} //!< @return true if this image holds valid data
+    ByteStream const& GetByteStream() const {return m_image;} //!< get a readonly reference to the ByteStream of this image
+    ByteStream& GetByteStreamR() {return m_image;}//!< Get a writable reference to the ByteStream of this image
+    void SetSize(uint32_t width, uint32_t height) {BeAssert(0 == m_width && 0 == m_height); m_width = width; m_height = height;} //!< change the size in pixels of this image
+};
+
+//=======================================================================================
+//! A compressed image in either JPEG or PNG format. This is called a "source" because it is usually
+//! stored externally and can be used to create an Image.
+// @bsiclass                                                    Keith.Bentley   02/16
+//=======================================================================================
+struct ImageSource
+{
+    enum class Format : uint32_t {Jpeg=0, Png=2}; // don't change values, saved in DgnTexture elements
+
+private:
+    Format m_format = Format::Jpeg;
+    ByteStream m_stream;
+
+public:
+    Format GetFormat() const {return m_format;} //!< Get the format of this ImageSource
+    void SetFormat(Format format) {m_format=format;} //!< Change the format of this ImageSource
+    ByteStream const& GetByteStream() const {return m_stream;} //!< Get a readonly reference to the ByteStream of this ImageSource.
+    ByteStream& GetByteStreamR() {return m_stream;} //!< Get a writable reference to the ByteStream of this ImageSource.
+    bool IsValid() const {return 0 < m_stream.GetSize();} //!< @return true if this ImageSource holds valid data
+    DGNPLATFORM_EXPORT Point2d GetSize() const; //!< Reads and returns the width and height of this ImageSource
+
+    //! Construct a blank invalid ImageSource
+    ImageSource() {}
+
+    //! Construct an ImageSource from a ByteStream containing either Jpeg or Png data.
+    //! @param[in] format the format of the data held in stream
+    //! @param[in] stream an rvalue reference to a ByteStream holding the data. The ByteStream is moved into the newly constructed ImageSource.
+    //! @note the ByteStream is moved by this constructor, so it will be empty after this call. To use this method, you must
+    //! either pass a temporary variable or use std::move on a non-temporary variable.
+    explicit ImageSource(Format format, ByteStream&& stream) : m_format(format), m_stream(stream) {}
+
+    //! Construct an ImageSource by compressing the pixels of an Image. The compression is done using either Jpeg or Png format.
+    //! @param[in] image the Rgb or Rgba image data to compress to create the ImageSource
+    //! @param[in] format the format (either Jpeg or Png) to compress the image
+    //! @param[in] quality a value between 1 and 100 to control the level of compression. Used only if format==Jpeg.
+    //! @param[in] bottomUp If Yes, the image is flipped vertically (top-to-bottom) in the new ImageSource.
+    //! @note If the image is invalid, or if the compression fails, IsValid() will return false on the new ImageSource.
+    DGNPLATFORM_EXPORT explicit ImageSource(ImageCR image, Format format, int quality=100, Image::BottomUp bottomUp=Image::BottomUp::No);
 };
 
 //=======================================================================================
@@ -376,10 +430,13 @@ private:
     DVec3d      m_endTangent;
     RotMatrix   m_planeByRows;
     TexturePtr  m_texture;
+    bool        m_useLinePixels;
+    uint32_t    m_linePixels;
+
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
-    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context);
+    DGNPLATFORM_EXPORT void Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context, GeometryParamsR);
 
     void Clear() {m_lStyle = nullptr; m_texture = nullptr;}
     void Init(ILineStyleCP);
@@ -443,8 +500,10 @@ public:
     void SetXElemPhase(double last) {m_xElemPhase = last; m_options.xElemPhaseSet=true;}
     void SetElementClosed(bool closed) {m_options.elementIsClosed = closed;}
     void SetIsCurve(bool isCurve) {m_options.isCurve = isCurve;}
+    bool UseLinePixels() const {return m_useLinePixels;}
+    uint32_t GetLinePixels() const {return m_linePixels;}
+    void SetUseLinePixels(uint32_t linePixels){m_linePixels = linePixels; m_useLinePixels = true;}
 
-    DGNPLATFORM_EXPORT void ConvertLineStyleToTexture(ViewContextR context, bool force);
     bool ContinuationXElems() const {return m_options.continuationXElems;}
     DGNPLATFORM_EXPORT void ClearContinuationData();
     DGNPLATFORM_EXPORT void CheckContinuationData();
@@ -482,7 +541,7 @@ public:
     void SetStartTangent(DVec3dCR startTangent) {m_startTangent = startTangent;}
     void SetEndTangent(DVec3dCR endTangent) {m_endTangent = endTangent;}
 
-    DGNPLATFORM_EXPORT void Cook(ViewContextR);
+    DGNPLATFORM_EXPORT void Cook(ViewContextR, GeometryParamsR);
  };
 
 struct ISprite;
@@ -878,25 +937,6 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct PointCloudDraw : RefCounted<NonCopyableClass>
-{
-    // If IsThreadBound returns false, implement AddRef and Release using InterlockedIncrement
-    virtual bool _IsThreadBound() = 0; // If true, always executed in calling thread instead of QV thread
-    virtual bool _GetRange(DPoint3dP range) = 0; // returns false if it does not have range
-
-    //  Added to points returned by GetPoints or GetFPoints
-    virtual bool _GetOrigin(DPoint3dP origin) = 0; // returns false if no origin
-
-    virtual ColorDef const* _GetRgbColors() = 0; // Returns nullptr if not using colors
-
-    virtual uint32_t _GetNumPoints() = 0;
-    virtual DPoint3dCP _GetDPoints() = 0; // Returns nullptr if using floats
-    virtual FPoint3dCP _GetFPoints() = 0; // Returns nullptr if using doubles
-};
-
-//=======================================================================================
 //! A renderer-specific object which can be placed into a display list.
 // @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
@@ -961,6 +1001,10 @@ public:
 //=======================================================================================
 struct IGraphicBuilder
 {
+    //=======================================================================================
+    //! Information needed to draw a triangle mesh
+    // @bsiclass                                                    Keith.Bentley   06/16
+    //=======================================================================================
     struct TriMeshArgs
     {
         int32_t m_numIndices = 0;
@@ -973,6 +1017,7 @@ struct IGraphicBuilder
         int32_t m_flags = 0; // don't generate normals
         DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
     };
+
 protected:
     friend struct GraphicBuilder;
 
@@ -1002,7 +1047,7 @@ protected:
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
     virtual void _AddTile(TextureCR tile, DPoint3dCP corners) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
-    virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
+    virtual void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR) const = 0;
 };
@@ -1124,6 +1169,9 @@ public:
 
     void AddTriMesh(TriMeshArgs const& args) {m_builder->_AddTriMesh(args);}
 
+    //! Draw a 3D point cloud.
+    void AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) {m_builder->_AddPointCloud(numPoints, origin, points, colors);}
+
     //! Draw a BRep surface/solid entity from the solids kernel.
     void AddBody(ISolidKernelEntityCR entity) {m_builder->_AddBody(entity);}
 
@@ -1156,7 +1204,7 @@ public:
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void AddBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped)));}
 
-    //! Add DRange3d edges 
+    //! Add DRange3d edges
     void AddRangeBox(DRange3dCR range)
         {
         DPoint3d p[8], tmpPts[9];
@@ -1179,7 +1227,7 @@ public:
         AddLineString(2, DSegment3d::From(p[2], p[6]).point);
         }
 
-    //! Add DRange2d edges 
+    //! Add DRange2d edges
     void AddRangeBox2d(DRange2dCR range, double zDepth)
         {
         DPoint2d tmpPts[5];
@@ -1192,10 +1240,6 @@ public:
 
         AddLineString2d(5, tmpPts, zDepth);
         }
-
-    //! Draw a 3D point cloud.
-    //! @param[in] drawParams PointCloud parameters
-    void AddPointCloud(PointCloudDraw* drawParams) {m_builder->_AddPointCloud(drawParams);}
 
     //! Draw OLE object.
     void AddDgnOle(DgnOleDraw* ole) {m_builder->_AddDgnOle(ole);}
@@ -1332,7 +1376,7 @@ struct Plan
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
-
+    ClipPrimitiveCPtr m_activeVolume;
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 
@@ -1382,6 +1426,8 @@ public:
 };
 
 //=======================================================================================
+//! An array of GraphicPtrs. 
+//! @note All entries are closed (and therefore may never change) when they're added to this array.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct GraphicArray
@@ -1392,6 +1438,7 @@ struct GraphicArray
 
 //=======================================================================================
 //! A Render::System is the renderer-specific factory for creating Render::Graphics, Render::Textures, and Render::Materials.
+//! @note The methods of this class may be called from any thread.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct System
@@ -1402,13 +1449,18 @@ struct System
     virtual GraphicPtr _CreateGroupNode(Graphic::CreateParams const& params, GraphicArray& entries, ClipPrimitiveCP clip) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
-    virtual TexturePtr _GetImageTexture(DgnTextureId, DgnDbR) const = 0;
+    //! @param[in] textureId the DgnElementId of the texture element
+    //! @param[in] db the DgnDb for textureId
+    virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const = 0;
 
-    //! Create a new Texture from an Image. Note: this is called from multiple-threads implementer must ensure this is supported.
-    virtual TexturePtr _CreateImageTexture(ImageCR, bool enableAlpha) const = 0;
+    //! Create a new Texture from an Image.
+    virtual TexturePtr _CreateTexture(ImageCR image) const = 0;
+
+    //! Create a new Texture from an ImageSource.
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp) const = 0;
 
     //! Create a Texture from a graphic.
-    virtual TexturePtr _CreateGeometryTexture(GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
+    virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
 };
 
 //=======================================================================================
@@ -1429,17 +1481,17 @@ protected:
     GraphicListPtr     m_terrain;
     GraphicListPtr     m_dynamics;
     Decorations        m_decorations;
+    double             m_frameRateGoal; // frames per second
     BeAtomic<uint32_t> m_graphicsPerSecondScene;
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
     virtual void _OnResized() {}
-
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
 
-    DGNVIEW_EXPORT Target(SystemR);
+    DGNVIEW_EXPORT Target(SystemR, double frameRateGoal);
     DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
@@ -1451,6 +1503,7 @@ public:
         DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
     };
+    virtual void _OnDestroy() {}
     virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
@@ -1479,11 +1532,15 @@ public:
     GraphicBuilderPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
-    TexturePtr GetImageTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetImageTexture(id, dgndb);}
-    TexturePtr CreateImageTexture(ImageR image, bool enableAlpha) const {return m_system._CreateImageTexture(image, enableAlpha);}
-    TexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
+    TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
+    TexturePtr CreateTexture(ImageCR image) const {return m_system._CreateTexture(image);}
+    TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}
+    TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
+    static double DefaultFrameRateGoal() {return 15.0;}
+    double GetFrameRateGoal() const {return m_frameRateGoal;}
+    void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }
