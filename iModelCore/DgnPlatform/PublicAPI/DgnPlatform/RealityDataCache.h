@@ -8,6 +8,8 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <DgnPlatform/DgnPlatform.h>
+#include <deque>
+#include <folly/futures/Future.h>
 
 #define BEGIN_BENTLEY_REALITYDATA_NAMESPACE  BEGIN_BENTLEY_DGN_NAMESPACE namespace RealityData {
 #define END_BENTLEY_REALITYDATA_NAMESPACE    } END_BENTLEY_DGN_NAMESPACE
@@ -484,6 +486,43 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct FollyPool : folly::Executor
+{
+private:
+    struct Worker
+    {
+        FollyPool* m_pool;
+
+        Worker(Worker&& other) noexcept : m_pool(other.m_pool){other.m_pool=nullptr;}
+        Worker(FollyPool& pool) noexcept;
+        Worker& operator=(Worker&& other) {Worker(std::move(other)).swap(*this); return *this;}
+        Worker(Worker const&) = delete;
+        void swap(Worker& rhs){FollyPool* tmp = m_pool; m_pool = rhs.m_pool; rhs.m_pool = tmp;}
+        void Work();
+        THREAD_MAIN_DECL Main(void* arg);
+    };
+
+    friend struct Worker;
+    bvector<Worker> m_workers;
+    std::queue<folly::Func> m_tasks;
+    BeConditionVariable m_cv;
+    bool m_stop = false;
+
+    bool HasWork() const {return m_tasks.empty();}
+    bool Stopped() const {return m_stop;}
+    virtual void add(folly::Func func) override;
+
+public:
+    DGNPLATFORM_EXPORT FollyPool(int);
+    DGNPLATFORM_EXPORT ~FollyPool();
+    void WaitForIdle();
+};
+ 
+
+
+//=======================================================================================
 //! The reality data cache class which manages two objects - a source and optionally a storage.
 //! Storages are responsible for caching the reality data and returning it quickly on demand.
 //! Sources are responsible for retrieving the reality data from its primary source, e.g.
@@ -496,6 +535,7 @@ private:
     StoragePtr m_storage;
     SourcePtr  m_source;
     CacheResult m_result; // for synchronous requests
+    FollyPool* m_follyPool = nullptr;
 
     CacheResult HandleStorageResponse(StorageResponse const& response, Options);
     CacheResult ResolveResult(StorageResult storageResult, SourceResult sourceResult = SourceResult::Error_NotFound) const;
@@ -505,7 +545,7 @@ private:
 
 public:
     //! Create a new reality data cache.
-    Cache() {}
+    Cache() {m_follyPool = new FollyPool(8);}
 
     // note: these might be called from any thread!
     DGNPLATFORM_EXPORT virtual void _OnResponseReceived(SourceResponse const& response, Options);
@@ -531,6 +571,7 @@ public:
         PayloadPtr temp(&payload); // in case it was passed with 0 refcount
         return CacheResult::NotFound;
         }
+    FollyPool* GetFollyPool() {return m_follyPool;}
 };
 
 //=======================================================================================
@@ -558,7 +599,7 @@ protected:
     mutable RefCountedPtr<SourceResponse> m_response; // set only for sync requests
 
     AsyncSourceRequest(IAsyncRequestCancellationToken* cancellationToken, Options options, Payload& payload) : m_cancellationToken(cancellationToken), m_options(options), m_payload(&payload) {}
-
+              
     //! Returns true if the request was cancelled.
     DGNPLATFORM_EXPORT bool ShouldCancelRequest() const;
 
@@ -621,7 +662,8 @@ protected:
         }
     AsyncSource(int numThreads, SchedulingMethod schedulingMethod)
         : m_threadPool(ThreadPool::Create(numThreads, numThreads, schedulingMethod)), m_ignoreRequestsUntil(0), m_terminateRequested(false)
-        {}
+        {
+        }
 
 protected:
     //! Queues a request for handling on the work thread. Derived classes should use this
@@ -655,5 +697,7 @@ struct EXPORT_VTABLE_ATTRIBUTE HttpSource : AsyncSource
     //! Request the data to be initialized from the content at the specified url
     DGNPLATFORM_EXPORT virtual SourceResult _Request(Payload& data, Options options, Cache& responseReceiver) override;
 };
+
+
 
 END_BENTLEY_REALITYDATA_NAMESPACE

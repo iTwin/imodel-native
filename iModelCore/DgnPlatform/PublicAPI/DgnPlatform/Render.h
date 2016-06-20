@@ -238,6 +238,7 @@ protected:
 
     void ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat, BottomUp bottomUp);
     void ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat);
+
 public:
     //! Construct a blank invalid Image
     Image() {}
@@ -1484,7 +1485,6 @@ protected:
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
     virtual void _OnResized() {}
-
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;

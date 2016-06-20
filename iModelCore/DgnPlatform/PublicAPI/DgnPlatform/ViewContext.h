@@ -162,10 +162,10 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
     DGNPLATFORM_EXPORT virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad);
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
-    DGNPLATFORM_EXPORT StatusInt VisitElement(DgnElementId elementId, bool allowLoad);
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
@@ -349,6 +349,8 @@ public:
 
     //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current GeometryParams for TextString symbology.
     void AddTextString(TextStringCR textString) {_AddTextString(textString);}
+
+    StatusInt VisitElement(DgnElementId elementId, bool allowLoad) {return _VisitElement(elementId, allowLoad);}
 
     bool CheckStop() {return _CheckStop();}
 }; // ViewContext

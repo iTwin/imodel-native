@@ -222,7 +222,7 @@ protected:
 
     //! Invokes the _VisitGeometry on \a context for <em>each element</em> that is in the view.
     //! For normal views, this does the same thing as _DrawView.
-    virtual void _VisitAllElements(ViewContextR& context) {_DrawView(context);}
+    virtual void _VisitAllElements(ViewContextR context) {_DrawView(context);}
 
     //! Stroke a single GeometrySource through a ViewContext.
     //! An application can override _StrokeGeometry to change the symbology of a GeometrySource.

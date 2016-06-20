@@ -8,6 +8,8 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/HttpHandler.h>
 
+#include <folly/futures/Future.h>
+
 #ifndef BENTLEY_WINRT
     #include <curl/curl.h>
     #ifdef GetCurrentTime
@@ -1452,4 +1454,96 @@ bool WorkerThread::TerminateRequested() const
     {
     BeMutexHolder lock(m_cv.GetMutex());
     return m_terminate;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void FollyPool::Worker::Work()
+    {
+    for(;;)
+        {
+        std::function<void()> task;
+            {
+            BeMutexHolder lock(m_pool->m_cv.GetMutex());
+            while (!m_pool->HasWork() && !m_pool->Stopped())
+                m_pool->m_cv.InfiniteWait(lock);
+
+            if (m_pool->Stopped())
+                return;
+
+            task = std::move(m_pool->m_tasks.front());
+            m_pool->m_tasks.pop();
+            }
+
+        task();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+THREAD_MAIN_IMPL FollyPool::Worker::Main(void* arg)
+    {
+    BeThreadUtilities::SetCurrentThreadName("RealityWork");
+
+    ((Worker*)arg)->Work();
+
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+FollyPool::Worker::Worker(FollyPool& pool) noexcept : m_pool(&pool)
+    {
+    BeThreadUtilities::StartNewThread(50*1024, Main, this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+FollyPool::FollyPool(int threads)
+    {
+    for (int i=0; i<threads; ++i)
+        m_workers.emplace_back(Worker(*this));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void FollyPool::add(folly::Func func)
+    {
+        {
+        BeMutexHolder lock(m_cv.GetMutex());
+        if (Stopped())
+            {
+            BeAssert(false);
+            return;
+            }
+        m_tasks.emplace(func);
+        }
+
+    m_cv.notify_one();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void FollyPool::WaitForIdle()
+    {
+    BeMutexHolder holder(m_cv.GetMutex());
+    while (!m_tasks.empty())
+        m_cv.InfiniteWait(holder);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+FollyPool::~FollyPool()
+    {
+    m_stop = true;
+    m_cv.notify_all();
+
+    WaitForIdle();
     }
