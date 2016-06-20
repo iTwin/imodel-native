@@ -1281,7 +1281,9 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
         }    
     
 #ifdef PRINT_SMDISPLAY_MSG
-    PRINT_MSG("StartNewQuery m_requiredMeshNodes : %I64u toLoadNodes : %I64u \n", newQuery.m_requiredMeshNodes.size(), toLoadNodes.size());
+    static uint64_t totalToLoadNodes = 0;
+    totalToLoadNodes += toLoadNodes.size();
+    PRINT_MSG("StartNewQuery m_requiredMeshNodes : %I64u toLoadNodes : %I64u totalToLoadNodes : %I64u \n", newQuery.m_requiredMeshNodes.size(), toLoadNodes.size(), totalToLoadNodes);
 #endif    
     }
     
