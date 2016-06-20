@@ -2,7 +2,7 @@
 #
 #     $Source: BaseGeoCoord/BaseManagedGeoCoord.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -128,10 +128,7 @@ DLM_DEST                = $(o)
 DLM_OBJECT_FILES        = $(objList)
 LINKER_LIBRARIES        = $(BuildContextSubPartsLib)$(BaseGeocoordLib)
 
-DLM_NO_DEF              = 1
 DLM_NO_IMPLIB           = 1
-DLM_NO_DLS              = 1
-DLM_NOMSBUILTINS        = 1
 
 %include $(SharedMki)stdversion.mki
 ASSEMBLY_FILE_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
