@@ -180,10 +180,7 @@ DLM_NAME           = AndroidTestJni
 DLM_DEST           = $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)/
 DLM_OBJECT_DEST    = $(outputDir)
 DLM_NOINITFUNC     = 1
-DLM_NOMSBUILTINS   = 1
 DLM_NOENTRY        = 1
-DLM_NO_DLS         = 1
-DLM_NO_DEF         = 1
 DLM_NO_BENTLEY_LIB = 1
 DLM_OBJECT_FILES   = $(outputDir)betest_static_initialize$(oext)
 DLM_OBJECT_FILES   + $[@wildcard $(outputDir)*JniTest$(oext)]
