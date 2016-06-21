@@ -50,11 +50,8 @@ namespace IndexECPlugin.Source
     {
     /*====================================================================================**/
     /// <summary>
-    /// Demonstrates how to create a file info ECPlugin using the ECPluginBuilder.
+    /// Creates the IndexECPlugin using the ECPluginBuilder.
     /// </summary>
-    /// <remarks>
-    /// This is a very simple example using delegates to query files in a specific directory
-    /// </remarks>
     /*==============+===============+===============+===============+===============+======*/
     [ComVisible(false)]
     [ECExtension]

@@ -1,4 +1,12 @@
-﻿using Bentley.EC.Persistence;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/IndexPolicyHandler.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using Bentley.EC.Persistence;
 using Bentley.EC.PluginBuilder;
 using System;
 using System.Collections.Generic;

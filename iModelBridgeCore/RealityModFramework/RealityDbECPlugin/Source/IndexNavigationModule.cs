@@ -1,4 +1,12 @@
-﻿using Bentley.Collections;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/IndexNavigationModule.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using Bentley.Collections;
 using Bentley.EC.PluginBuilder.Modules;
 using Bentley.EC.Presentation.Navigation;
 using Bentley.ECSystem;

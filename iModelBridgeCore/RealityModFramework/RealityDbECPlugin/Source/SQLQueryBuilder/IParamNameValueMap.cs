@@ -1,4 +1,12 @@
-﻿using System;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/SQLQueryBuilder/IParamNameValueMap.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;

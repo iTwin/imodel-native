@@ -1,4 +1,12 @@
-﻿using Bentley.EC.Persistence.Query;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/Helpers/IUSGSDataFetcher.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using Bentley.EC.Persistence.Query;
 using Bentley.Exceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
