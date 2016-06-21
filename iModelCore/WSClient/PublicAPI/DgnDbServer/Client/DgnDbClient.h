@@ -65,6 +65,7 @@ private:
     DgnDbRepositoryManagerPtr   m_repositoryManager;
     Utf8String                  m_serverUrl;
     Credentials                 m_credentials;
+    Utf8String                  m_projectId;
     ClientInfoPtr               m_clientInfo;
     AuthenticationHandlerPtr    m_authenticationHandler;
 
@@ -73,7 +74,6 @@ private:
     DgnDbServerRepositoryTaskPtr        InitializeRepository    (IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
                                                                  ObjectId repositoryObjectId, HttpRequest::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
-    AsyncTaskPtr<WSRepositoriesResult>  GetRepositoriesByPlugin (Utf8StringCR pluginId, ICancellationTokenPtr cancellationToken) const;
     DgnDbServerStatusTaskPtr            DownloadBriefcase       (DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
                                                                  Utf8StringCR url, bool doSync = true, HttpRequest::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -96,6 +96,9 @@ public:
 
     //! Credentials used to authenticate to the on-premise server.
     DGNDBSERVERCLIENT_EXPORT void                           SetCredentials          (CredentialsCR credentials);
+
+    //! ProjectId to bind repositories to. Required for IMS authentication and should be empty for Basic.
+    DGNDBSERVERCLIENT_EXPORT void                           SetProject              (Utf8StringCR projectId);
 
     //! Creates a connection to a repository. Use this method if you need to access repository information without acquirying a briefcase.
     //! If you already have a briefcase, please use DgnDbBriefcase.GetRepositoryConnection()
