@@ -1372,9 +1372,6 @@ DLM_SYMB_DEST               = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_OBJECT_DEST             = $(o)
 DLM_NO_INITIALIZE_FUNCTION  = 1
-DLM_NO_DEF                  = 1
-DLM_NOMSBUILTINS            = 1
-DLM_NO_DLS                  = 1
 DLM_NOENTRY                 = 1
 
 # Note: Even though we know that some external lib are always linked statically, we still put them into the LINKER_LIBRARIES list below.
