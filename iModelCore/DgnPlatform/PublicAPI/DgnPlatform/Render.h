@@ -1472,6 +1472,12 @@ struct System
 //=======================================================================================
 struct Target : RefCounted<NonCopyableClass>
 {
+    struct SceneParameters
+        {
+        double m_saesNpcSq;     // smallest attempted element size (NPC squared)
+        SceneParameters(double n = 0) : m_saesNpcSq(n) {}
+        };
+
 protected:
     bool               m_abort;
     System&            m_system;
@@ -1498,13 +1504,13 @@ protected:
 public:
     struct Debug
     {
-        static void SaveGPS(int);
+        static void SaveGPS(int, double);
         DGNPLATFORM_EXPORT static void SaveSceneTarget(int);
         DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
     };
     virtual void _OnDestroy() {}
-    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
+    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, SceneParameters const& parms = SceneParameters()) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
@@ -1538,7 +1544,14 @@ public:
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
-    static double DefaultFrameRateGoal() {return 15.0;}
+    static double DefaultFrameRateGoal() 
+        {
+#ifdef BENTLEY_CONFIG_OS_WINDOWS // *** WIP - we are trying to predict the likely graphics performance of the box.
+        return 25.0; // Plan for the best on Windows (desktop) computers.
+#else
+        return 5.0; // Plan for the worst on mobile devices
+#endif
+        }
     double GetFrameRateGoal() const {return m_frameRateGoal;}
     void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
