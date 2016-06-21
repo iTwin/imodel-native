@@ -113,6 +113,11 @@ bool IDTMDraping::ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3
     return _ProjectPoint(pointOnDTM, w2vMap, testPoint);
     }
 
+bool IDTMDraping::IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
+    {
+    return _IntersectRay(pointOnDTM, direction, testPoint);
+    }
+
 bool IDTMDraping::DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
     return _DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector);

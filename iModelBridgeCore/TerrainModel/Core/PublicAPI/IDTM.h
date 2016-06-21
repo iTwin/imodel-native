@@ -122,6 +122,8 @@ virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int num
 
 virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) = 0;
 
+virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) = 0;
+
 virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) = 0;
 
 
@@ -149,6 +151,12 @@ BENTLEYDTM_EXPORT DTMStatusInt DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts
 //! @param[in]  w2vMap           The world to view map
 //! @param[in]  testPoint           The point to project.
 BENTLEYDTM_EXPORT bool ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint);
+
+//! Projects point on the DTM along a given direction
+//! @param[out]  pointOnDTM           Projected point.
+//! @param[in]  direction           The vector giving the direction of projection
+//! @param[in]  testPoint           The point to project.
+BENTLEYDTM_EXPORT bool IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint);
 
 //! Drapes a point onto the DTM along a vector.
 //! @param[out] endPt           Projected point.   
