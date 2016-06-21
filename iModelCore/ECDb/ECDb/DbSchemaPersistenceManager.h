@@ -25,6 +25,7 @@ public:
         Skipped = 4,
         Error = 5
         };
+
 private:
     DbSchemaPersistenceManager();
     ~DbSchemaPersistenceManager();
