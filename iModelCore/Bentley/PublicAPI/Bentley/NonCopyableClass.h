@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/NonCopyableClass.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,14 +14,14 @@ BEGIN_BENTLEY_NAMESPACE
 * @bsiclass                                                     11/09
 +===============+===============+===============+===============+===============+======*/
 class NonCopyableClass
-    {
-    private:
-        NonCopyableClass (NonCopyableClass const&);
-        NonCopyableClass& operator= (NonCopyableClass const&);
+{
+private:
+    NonCopyableClass(NonCopyableClass const&) = delete;
+    NonCopyableClass& operator=(NonCopyableClass const&) = delete;
 
-    protected:
-        NonCopyableClass() {}
-        ~NonCopyableClass() {}
-    };
+protected:
+    NonCopyableClass() = default;
+    ~NonCopyableClass() = default;
+};
 
 END_BENTLEY_NAMESPACE
