@@ -43,6 +43,11 @@ void RepositorySchemaUpgradeTests::SetUpTestCase()
     ASSERT_TRUE(s_signInManager->SignInWithCredentials(s_credentials)->GetResult().IsSuccess());
     }
 
+void RepositorySchemaUpgradeTests::SetUp()
+    {
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, NativeLogging::LOG_INFO);
+    }
+
 void CreateDateStampFile(Utf8StringCR testName, BeFileName path)
     {
     Utf8String name = testName + "-" + DateTime::GetCurrentTimeUtc().ToUtf8String() + ".stamp";
@@ -120,7 +125,7 @@ BeFileName GetPreviousOutputPath(Utf8StringCR testName, Utf8StringCR repositoryI
     return path;
     }
 
-TEST_P(RepositorySchemaUpgradeTests, DISABLED_Create)
+TEST_P(RepositorySchemaUpgradeTests, Create)
     {
     Utf8String serverUrl = GetParam().url->Get();
     Utf8String repositoryId = GetParam().id;
@@ -142,7 +147,7 @@ TEST_P(RepositorySchemaUpgradeTests, DISABLED_Create)
     ASSERT_TRUE(createResult.IsSuccess());
     }
 
-TEST_P(RepositorySchemaUpgradeTests, DISABLED_Upgrade)
+TEST_P(RepositorySchemaUpgradeTests, Upgrade)
     {
     Utf8String serverUrl = GetParam().url->Get();
     Utf8String repositoryId = GetParam().id;
