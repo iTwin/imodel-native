@@ -28,20 +28,20 @@ namespace ServerSchema
     static Utf8CP ClassName = "className";
     namespace Schema
         {
-        static Utf8CP Repository = "DgnDbServer";
-        static Utf8CP Admin = "DgnDbServerAdmin";
+        static Utf8CP Repository = "BIMCSRepository";
+        static Utf8CP Project = "BIMCSProject";
         }
     namespace Plugin
         {
-        static Utf8CP Repository = "DgnDbServer";
-        static Utf8CP Admin = "DgnDbServerAdmin";
+        static Utf8CP Repository = "BIMCSRepository";
+        static Utf8CP Project = "BIMCSProject";
         }
     namespace Class
         {
         static Utf8CP Briefcase = "DgnDbBriefcase";
         static Utf8CP Revision = "Revision";
         static Utf8CP File = "DgnDbFile";
-        static Utf8CP Repository = "DgnDbRepository";
+        static Utf8CP Repository = "BIMRepository";
         static Utf8CP Lock = "Lock";
         static Utf8CP MultiLock = "MultiLock";
         }
