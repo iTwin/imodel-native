@@ -175,13 +175,13 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     BeTest::GetHost().GetOutputRoot(outputRoot);
 
     BeFileName resultsFilePath = outputRoot;
-    resultsFilePath.AppendToPath(L"CompatibilityResults_0601.csv");
+    resultsFilePath.AppendToPath(L"CompatibilityResults_DgnDb0601.csv");
 
     FILE *f;
     f = fopen(resultsFilePath.GetNameUtf8().c_str(), "a");
     if (f != NULL)
         {
-        fprintf(f, "FileName, PublishedThrough, TestedIn, FileOpeningStatus\n");
+        fprintf(f, "FileName, ConvertedThrough, TestedIn, FileOpeningStatus\n");
         }
     else
         ASSERT_TRUE(false)<<"Error opening csv file";
