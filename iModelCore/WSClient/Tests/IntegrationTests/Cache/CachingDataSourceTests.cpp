@@ -17,6 +17,7 @@
 #include <WebServices/Connect/ImsClient.h>
 #include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 #include <WebServices/Cache/Util/JsonUtil.h>
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
@@ -31,6 +32,8 @@ void CachingDataSourceTests::SetUp()
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);
 
     CacheTransactionManager::SetAllowUnsafeAccess(true);
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, NativeLogging::LOG_INFO);
     }
 
 BeFileName GetTestCachePath()
