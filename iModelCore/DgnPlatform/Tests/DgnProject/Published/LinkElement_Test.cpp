@@ -72,16 +72,28 @@ TEST_F(LinkElementTest, RoundTripUrlLink)
 
     static const Utf8CP LINK1_DISPLAY_LABEL = "Url Link 1";
     static const Utf8CP LINK1_URL = "http://www.google.com";
-    
+    static const Utf8CP LINK2_DISPLAY_LABEL = "Url Link 2";
+    static const Utf8CP LINK2_URL = "http://www.facebook.com";
+    static const Utf8CP LINK1_DESCRIPTION = "This is Url Link Element";
     UrlLinkPtr link1 = UrlLink::Create(UrlLink::CreateParams(*linkModel));
     link1->SetLabel(LINK1_DISPLAY_LABEL);
     link1->SetUrl(LINK1_URL);
+    link1->SetDescription(LINK1_DESCRIPTION);
+    UrlLinkPtr link2 = UrlLink::Create(UrlLink::CreateParams(*linkModel));
+    link2->SetLabel(LINK2_DISPLAY_LABEL);
+    link2->SetUrl(LINK2_URL);
 
     UrlLinkCPtr link1A = link1->Insert();
     ASSERT_TRUE(link1A.IsValid());
 
+    UrlLinkCPtr link2A = link2->Insert();
+    ASSERT_TRUE(link2A.IsValid());
+
     BentleyStatus status = link1A->AddToSource(annotation->GetElementId());
     ASSERT_TRUE(status == SUCCESS);
+
+    BentleyStatus status2 = link2A->AddToSource(annotation->GetElementId());
+    ASSERT_TRUE(status2 == SUCCESS);
 
     // TODO: Flush caches here. 
 
@@ -91,7 +103,14 @@ TEST_F(LinkElementTest, RoundTripUrlLink)
     EXPECT_TRUE(0 == strcmp(link1B->GetLabel(), LINK1_DISPLAY_LABEL));
 
     EXPECT_TRUE(0 == strcmp(link1B->GetUrl(), LINK1_URL));
-    }
+    EXPECT_TRUE(0 == strcmp(link1B->GetDescription(), LINK1_DESCRIPTION));
+
+    UrlLinkCPtr link2B = UrlLink::Get(db, link2A->GetElementId());
+    ASSERT_TRUE(link2B.IsValid());
+    EXPECT_TRUE(link2B->GetElementId() == link2A->GetElementId());
+    EXPECT_TRUE(0 == strcmp(link2B->GetLabel(), LINK2_DISPLAY_LABEL));
+    EXPECT_TRUE(0 == strcmp(link2B->GetUrl(), LINK2_URL));
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2015
@@ -114,6 +133,8 @@ TEST_F(LinkElementTest, UrlLinkQuery)
     int sourceLinkCount = (int) UrlLink::QueryBySource(db, result->GetElementId()).size();
     ASSERT_EQ(0, sourceLinkCount);
 
+    int LinkCount = (int)UrlLink::Query(db).size();
+    ASSERT_EQ(0, LinkCount);
     //.............................................................................................
     static const size_t NUM_LINKS = 5;
 
@@ -132,6 +153,9 @@ TEST_F(LinkElementTest, UrlLinkQuery)
 
     sourceLinkCount = (int) UrlLink::QueryBySource(db, result->GetElementId()).size();
     ASSERT_EQ(0, sourceLinkCount);
+
+    LinkCount = (int)UrlLink::Query(db).size();
+    ASSERT_EQ(NUM_LINKS, LinkCount);
 
     ////.............................................................................................
     UrlLinkCPtr link;
@@ -154,8 +178,13 @@ TEST_F(LinkElementTest, UrlLinkQuery)
     ASSERT_EQ(1, whereLinkCount);
 
     //.............................................................................................
+    ASSERT_TRUE(link->IsFromSource(result->GetElementId()));
+
+    //.............................................................................................
     BentleyStatus status = link->RemoveFromSource(result->GetElementId());
     ASSERT_TRUE(status == SUCCESS);
+
+    ASSERT_FALSE(link->IsFromSource(result->GetElementId()));
 
     modelLinkCount = (int) UrlLink::QueryByModel(db, linkModel->GetModelId()).size();
     ASSERT_EQ(NUM_LINKS, modelLinkCount); // Removing the link doesn't delete it
@@ -220,6 +249,7 @@ TEST_F(LinkElementTest, OtherIterators)
     ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%2'").size());
     ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%3'").size());
     ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%4'").size());
+    ASSERT_EQ(4, (int)EmbeddedFileLink::Query(db).size());
     }
 
 //---------------------------------------------------------------------------------------
@@ -264,5 +294,16 @@ TEST_F(LinkElementTest, Update)
     link1b = UrlLink::Get(db, link1->GetElementId());
     EXPECT_STREQ("Url Link 2", link1b->GetLabel());
     EXPECT_STREQ("http://www.outlook.com", link1b->GetUrl());
-    }
+
+    EmbeddedFileLinkPtr link1E = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, "EmbeddedDocumentName1")); 
+    link1E->SetLabel("link1"); 
+    link1E->Insert();
+    ASSERT_EQ(1, (int)EmbeddedFileLink::Query(db).size());
+    EXPECT_STREQ(link1E->GetName(), "EmbeddedDocumentName1");
+
+    //Update EmbeddedFileLink
+    link1E->SetName("UpdatedEmbeddedDocumentName1");
+    link1E->Update();
+    EXPECT_STREQ(link1E->GetName(), "UpdatedEmbeddedDocumentName1");
+}
 
