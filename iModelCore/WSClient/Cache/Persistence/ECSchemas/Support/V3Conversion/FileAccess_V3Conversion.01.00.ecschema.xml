@@ -7,4 +7,10 @@
             <DropClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="UploadConfirmationInstance" >
+        <ECCustomAttributes>
+            <!-- ECv3 does not support AnyClass relationships -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
 </ECSchema>
