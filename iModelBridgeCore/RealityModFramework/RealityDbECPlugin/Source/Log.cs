@@ -1,4 +1,12 @@
-﻿using Bentley.ECSystem.Logging;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/Log.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using Bentley.ECSystem.Logging;
 using Bentley.Logging;
 
 namespace IndexECPlugin.Source

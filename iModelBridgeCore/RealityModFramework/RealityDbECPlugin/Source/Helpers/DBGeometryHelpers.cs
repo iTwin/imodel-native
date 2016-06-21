@@ -1,4 +1,12 @@
-﻿using Bentley.Exceptions;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/Helpers/DBGeometryHelpers.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using Bentley.Exceptions;
 using System;
 using System.Collections.Generic;
 //using System.Data.Entity.Spatial;

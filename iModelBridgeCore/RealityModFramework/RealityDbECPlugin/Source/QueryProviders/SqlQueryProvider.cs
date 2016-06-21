@@ -1,4 +1,12 @@
-﻿using Bentley.EC.Persistence;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/QueryProviders/SqlQueryProvider.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using Bentley.EC.Persistence;
 using Bentley.EC.Persistence.Query;
 using Bentley.EC.PluginBuilder.Modules;
 using Bentley.ECObjects.Instance;

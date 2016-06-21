@@ -1,4 +1,12 @@
-﻿using Bentley.EC.Persistence;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/FileRetrievalControllers/PackageRetrievalController.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using Bentley.EC.Persistence;
 using Bentley.EC.Persistence.FileSystemResource;
 using Bentley.EC.Persistence.Operations;
 using Bentley.ECObjects.Instance;

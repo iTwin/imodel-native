@@ -312,7 +312,15 @@ namespace IndexECPlugin.Tests
         public void SpatialEntityWithDetailsViewTest ()
             {
 
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){};
+            //This instance's purpose is to verify that instances that are cached but not returned by the fetcher are returned in the results.
+            var instanceToAdd = CreateSEWDV(false);
+            instanceToAdd.InstanceId = "553690bfe4b0b22a15807aaa";
+            instanceToAdd["Id"].StringValue = "553690bfe4b0b22a15807aaa";
+
+            //This instance's purpose is to verify that instances that are cached and also returned by the fetcher are not duplicated in the results.
+            var duplicateOfFetcherInstance = CreateSEWDV(false);
+
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { instanceToAdd, duplicateOfFetcherInstance };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(new List<USGSRequestBundle> { m_testBundle });
@@ -320,7 +328,7 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
 
                 Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Never();
-                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
                 Expect.Call(delegate
                 {
                     m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
@@ -334,30 +342,34 @@ namespace IndexECPlugin.Tests
                 query.SelectClause.SelectAllProperties = true;
 
                 query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                query.ExtendedDataValueSetter.Add("polygon", "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }");
                 UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
 
                 var instanceList = usgsAPIQueryProvider.CreateInstanceList();
 
+                var instanceFromFetcher = instanceList.First(inst => inst.InstanceId != "553690bfe4b0b22a15807aaa");
+
                 //m_usgsDataFetcherMock.AssertWasCalled(x => x.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything));
-                Assert.AreEqual(1, instanceList.Count(), "There should be only one instance.");
-                Assert.AreEqual("553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("Id").StringValue);
+                Assert.AreEqual(2, instanceList.Count(), "There should be only two instance.");
+                Assert.AreEqual("553690bfe4b0b22a15807df2", instanceFromFetcher.GetPropertyValue("Id").StringValue);
                 Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015", instanceList.First().GetPropertyValue("Name").StringValue);
-                Assert.AreEqual(true, (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
-                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
-                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356]], \"coordinate_system\" : \"4326\" }")) ||
-                                      (instanceList.First().GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356]], \"coordinate_system\" : \"4326\" }")), "The content of the instance was not set properly.");
+                Assert.AreEqual(true, (instanceFromFetcher.GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceFromFetcher.GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceFromFetcher.GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356]], \"coordinate_system\" : \"4326\" }")) ||
+                                      (instanceFromFetcher.GetPropertyValue("Footprint").StringValue.Contains("{ \"points\" : [[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356]], \"coordinate_system\" : \"4326\" }")), "The content of the instance was not set properly.");
                 Assert.AreEqual("ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_thumb.jpg", instanceList.First().GetPropertyValue("ThumbnailURL").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("https://www.sciencebase.gov/catalog/item/553690bfe4b0b22a15807df2", instanceList.First().GetPropertyValue("MetadataURL").StringValue, "The content of the instance was not set properly.");
                 Assert.AreEqual("https://www.sciencebase.gov/catalog/item/download/553690bfe4b0b22a15807df2?format=fgdc", instanceList.First().GetPropertyValue("RawMetadataURL").StringValue, "The content of the instance was not set properly.");
-                Assert.AreEqual("FGDC", instanceList.First().GetPropertyValue("RawMetadataFormat").StringValue, "The content of the instance was not set properly.");
-                Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("SubAPI").StringValue, "The content of the instance was not set properly.");
-                Assert.AreEqual("USGS", instanceList.First().GetPropertyValue("DataProvider").StringValue, "The content of the instance was not set properly.");
-                Assert.AreEqual("United States Geological Survey", instanceList.First().GetPropertyValue("DataProviderName").StringValue, "The content of the instance was not set properly.");
-                Assert.AreEqual("2015-03-19T00:00:00", instanceList.First().GetPropertyValue("Date").StringValue, "The content of the instance was not set properly.");
-                Assert.AreEqual("1.0m", instanceList.First().GetPropertyValue("AccuracyResolutionDensity").StringValue, "The content of the instance was not set properly.");
-                Assert.AreEqual("1.0x1.0", instanceList.First().GetPropertyValue("ResolutionInMeters").StringValue, "The content of the instance was not set properly.");
-                Assert.AreEqual("Terrain", instanceList.First().GetPropertyValue("Classification").StringValue, "The content of the instance was not set properly.");
-                Assert.IsFalse(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                Assert.AreEqual("FGDC", instanceFromFetcher.GetPropertyValue("RawMetadataFormat").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("USGS", instanceFromFetcher.GetPropertyValue("SubAPI").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("USGS", instanceFromFetcher.GetPropertyValue("DataProvider").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("United States Geological Survey", instanceFromFetcher.GetPropertyValue("DataProviderName").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("2015-03-19T00:00:00", instanceFromFetcher.GetPropertyValue("Date").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("1.0m", instanceFromFetcher.GetPropertyValue("AccuracyResolutionDensity").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("1.0x1.0", instanceFromFetcher.GetPropertyValue("ResolutionInMeters").StringValue, "The content of the instance was not set properly.");
+                Assert.AreEqual("Terrain", instanceFromFetcher.GetPropertyValue("Classification").StringValue, "The content of the instance was not set properly.");
+                Assert.IsFalse(instanceFromFetcher.ExtendedData.ContainsKey("IsFromCacheTest"), "The instance should not come from the cache.");
+                Assert.IsTrue(instanceList.Any(inst => inst.InstanceId == "553690bfe4b0b22a15807aaa"));
                 }
             }
 

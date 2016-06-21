@@ -1,4 +1,12 @@
-﻿using Bentley.EC.Persistence;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/QueryProviders/UsgsAPIQueryProvider.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using Bentley.EC.Persistence;
 using Bentley.EC.Persistence.Operations;
 using Bentley.EC.Persistence.Query;
 using Bentley.ECObjects.Instance;
@@ -81,9 +89,9 @@ namespace IndexECPlugin.Source.QueryProviders
             m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
             m_schema = schemaModule;
 
-            int daysCacheIsValid;
+            uint daysCacheIsValid;
 
-            if( !Int32.TryParse(ConfigurationRoot.GetAppSetting("RECPDaysCacheIsValid"), out daysCacheIsValid) )
+            if( !UInt32.TryParse(ConfigurationRoot.GetAppSetting("RECPDaysCacheIsValid"), out daysCacheIsValid) )
                 {
                 daysCacheIsValid = 10;
                 }
@@ -1295,6 +1303,21 @@ namespace IndexECPlugin.Source.QueryProviders
             IECClass ecClass = m_query.SearchClasses.First().Class;
 
             var criteriaList = ExtractPropertyWhereClauses();
+
+            //We fetch beforehand the instances in the cache.
+            string polygonString = m_query.ExtendedData["polygon"].ToString();
+            PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(polygonString);
+            string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
+
+            PolygonDescriptor polyDesc = new PolygonDescriptor
+            {
+                WKT = polygonWKT,
+                SRID = model.coordinate_system
+            };
+
+            List<IECInstance> cachedinstanceList = m_instanceCacheManager.QuerySpatialInstancesFromCache(polyDesc, ecClass, ecClass, m_query.SelectClause, criteriaList);
+            CompleteInstances(cachedinstanceList, ecClass);
+
             try
                 {
                 instanceList = new List<IECInstance>();
@@ -1358,23 +1381,19 @@ namespace IndexECPlugin.Source.QueryProviders
                         instanceList.Add(instance);
                         }
                     }
+                foreach (IECInstance cachedInstance in cachedinstanceList)
+                    {
+                    if(! instanceList.Any(inst => inst.InstanceId == cachedInstance.InstanceId))
+                        {
+                        instanceList.Add(cachedInstance);
+                        }
+                    }
+
                 }
             catch ( EnvironmentalException )
                 {
-                //USGS returned an error. We will get the results contained in the cache.
-
-                string polygonString = m_query.ExtendedData["polygon"].ToString();
-                PolygonModel model = DbGeometryHelpers.CreatePolygonModelFromJson(polygonString);
-                string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
-
-                PolygonDescriptor polyDesc = new PolygonDescriptor
-                {
-                    WKT = polygonWKT,
-                    SRID = model.coordinate_system
-                };
-
-                instanceList = m_instanceCacheManager.QuerySpatialInstancesFromCache(polyDesc, ecClass, ecClass, m_query.SelectClause, criteriaList);
-                CompleteInstances(instanceList, ecClass);
+                //USGS returned an error. We will return the results contained in the cache.
+                instanceList = cachedinstanceList;
                 }
 
             if ( relCrit != null )

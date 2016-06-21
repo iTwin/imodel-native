@@ -1,4 +1,12 @@
-﻿using Bentley.EC.Persistence;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/Helpers/ECQueryConverter.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using Bentley.EC.Persistence;
 using Bentley.EC.Persistence.Query;
 using Bentley.ECObjects.Instance;
 using Bentley.ECObjects.Schema;

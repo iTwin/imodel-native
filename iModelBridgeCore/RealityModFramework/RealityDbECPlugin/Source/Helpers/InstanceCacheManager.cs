@@ -1,4 +1,12 @@
-﻿using System;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/Helpers/InstanceCacheManager.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -54,7 +62,8 @@ namespace IndexECPlugin.Source.Helpers
     public class InstanceCacheManager : /*MimicTableWriter,*/ IInstanceCacheManager
         {
         DataSource m_source;
-        int m_daysCacheIsValid;
+        uint m_daysCacheIsValid;
+        uint m_daysBeforeCacheReplaced;
         IDbConnection m_dbConnection;
         ECQuerySettings m_querySettings;
 
@@ -66,11 +75,12 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="daysCacheIsValid">The maximum age allowed for the cached information (in days)</param>
         /// <param name="dbConnection">The dbConnection used to communicate to the appropriate database</param>
         /// <param name="querySettings">The ecquery settings of the present query</param>
-        public InstanceCacheManager(DataSource source, int daysCacheIsValid, IDbConnection dbConnection, ECQuerySettings querySettings)
+        public InstanceCacheManager(DataSource source, uint daysCacheIsValid, IDbConnection dbConnection, ECQuerySettings querySettings)
             //: base(true, "CacheTableName", "CacheColumnName", "CacheJoinTableName", null)
             {
             m_source = source;
             m_daysCacheIsValid = daysCacheIsValid;
+            m_daysBeforeCacheReplaced = ((m_daysCacheIsValid + 1) / 2);
             m_dbConnection = dbConnection;
             m_querySettings = querySettings;
 
@@ -335,7 +345,7 @@ namespace IndexECPlugin.Source.Helpers
                 deleteStatementManager.AddParameter("@instId@", Bentley.ECObjects.ECObjects.StringType, inst.InstanceId);
                 deleteStatementManager.AddParameter("@subAPI@", Bentley.ECObjects.ECObjects.StringType, SourceStringMap.SourceToString(m_source));
                 deleteStatementManager.AddParameter("@isComplete@", Bentley.ECObjects.ECObjects.BooleanType, false);
-                deleteStatementManager.AddParameter("@dateCacheCreated@", Bentley.ECObjects.ECObjects.DateTimeType, DateTime.UtcNow.AddDays(m_daysCacheIsValid * -1));
+                deleteStatementManager.AddParameter("@dateCacheCreated@", Bentley.ECObjects.ECObjects.DateTimeType, DateTime.UtcNow.AddDays(m_daysBeforeCacheReplaced * -1));
                 }
             return deleteStatementManager;
             };

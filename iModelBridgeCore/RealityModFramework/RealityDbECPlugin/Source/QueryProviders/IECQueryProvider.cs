@@ -1,4 +1,12 @@
-﻿using Bentley.ECObjects.Instance;
+﻿/*-------------------------------------------------------------------------------------
+|
+|     $Source: RealityDbECPlugin/Source/QueryProviders/IECQueryProvider.cs $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++-------------------------------------------------------------------------------------*/
+
+using Bentley.ECObjects.Instance;
 using System;
 using System.Collections.Generic;
 using System.Linq;
