@@ -31,6 +31,8 @@ void CachingDataSourceTests::SetUp()
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);
 
     CacheTransactionManager::SetAllowUnsafeAccess(true);
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, NativeLogging::LOG_INFO);
     }
 
 BeFileName GetTestCachePath()
