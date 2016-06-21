@@ -626,9 +626,6 @@ DLM_OBJECT_PCH          = $(DgnPlatformObj)DgnPlatformInternal$(oext)
 DLM_EXPORT_OBJS         = $(cppObjects)
 DLM_EXPORT_DEST         = $(o)
 DLM_NOINITFUNC          = 1
-DLM_NOMSBUILTINS        = 1
-DLM_NO_DEF              = 1
-DLM_NO_DLS              = 1
 DLM_NOENTRY             = 1
 LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \

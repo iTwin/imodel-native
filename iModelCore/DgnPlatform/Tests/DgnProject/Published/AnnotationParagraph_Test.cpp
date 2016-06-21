@@ -126,6 +126,15 @@ TEST_F(AnnotationParagraphTest, FractionRun)
     EXPECT_TRUE(0 == fracRun3->GetStyleOverrides().ComputePropertyCount());
     EXPECT_STREQ("MyNumerContent", fracRun3->GetNumeratorContent().c_str());
     EXPECT_STREQ("MyDenomContent", fracRun3->GetDenominatorContent().c_str());
+
+    AnnotationFractionRunPtr fracRun4 = fracRun3->CloneAsFractionRun();
+    ASSERT_TRUE(fracRun4.IsValid());
+    EXPECT_TRUE(&project == &fracRun4->GetDbR());
+    EXPECT_TRUE(fracRun4->GetStyleId().IsValid());
+    EXPECT_TRUE(0 == fracRun4->GetStyleOverrides().ComputePropertyCount());
+    EXPECT_STREQ("MyNumerContent", fracRun4->GetNumeratorContent().c_str());
+    EXPECT_STREQ("MyDenomContent", fracRun4->GetDenominatorContent().c_str());
+    
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
