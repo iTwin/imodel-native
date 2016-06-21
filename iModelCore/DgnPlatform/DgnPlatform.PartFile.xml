@@ -39,7 +39,7 @@
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
-<!--        <SubPart PartName="folly"              PartFile="Facebook"     Repository="Libsrc-facebook"/> -->
+<!--        <SubPart PartName="folly"               PartFile="Facebook"     Repository="Libsrc-facebook"/> -->
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
