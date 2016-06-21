@@ -276,12 +276,7 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancel
         return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(DgnDbServerError::Id::InternalServerError)); 
 
     DgnDbServerEventPtr currentEvent = getEventResult.GetValue();
-    DgnDbServerEventTypeTaskPtr eventTypeTaskPtr = m_repositoryConnection->GetEventType(currentEvent);
-    auto eventTypeResult = eventTypeTaskPtr->GetResult();
-    if (!eventTypeResult.IsSuccess())
-        return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(DgnDbServerError::Id::InternalServerError));
-
-    DgnDbServerEvent::DgnDbServerEventType eventType = eventTypeResult.GetValue();
+    DgnDbServerEvent::DgnDbServerEventType eventType = DgnDbServerEventParser::GetInstance().GetEventType(currentEvent);
     switch (eventType)
         {
             case DgnDbServerEvent::DgnDbServerEventType::LockEvent:
