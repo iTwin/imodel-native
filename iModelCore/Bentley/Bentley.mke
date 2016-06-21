@@ -130,11 +130,8 @@ DLM_OBJECT_FILES            = $(objs)
 DLM_EXPORT_OBJS             = $(objs)
 DLM_OBJECT_DEST             = $(o)
 DLM_DEST                    = $(o)
-DLM_NOMSBUILTINS            = 1
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
-DLM_NO_DLS                  = 1
-DLM_NO_DEF                  = 1
 DLM_NO_BENTLEY_LIB          = 1
 
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/

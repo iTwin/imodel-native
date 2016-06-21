@@ -162,6 +162,13 @@
   #define END_BENTLEY_NAMESPACE   }
   #define USING_NAMESPACE_BENTLEY using namespace BENTLEY_NAMESPACE_NAME;
 
+  // Since C# does not have a preprocessor, there is no convenient way to put a version into the namespace names.
+  // Therefore, when we create namespaces in managed C++, we want to use BEGIN_UNVERSIONED_BENTLEY_NAMESPACE rather than BEGIN_BENTLEY_NAMESPACE
+  #define BEGIN_UNVERSIONED_BENTLEY_NAMESPACE namespace Bentley {
+  #define END_UNVERSIONED_BENTLEY_NAMESPACE   }
+  #define USING_NAMESPACE_UNVERSIONED_BENTLEY using namespace Bentley
+
+
   // create the Bentley namespace
   BEGIN_BENTLEY_NAMESPACE
   END_BENTLEY_NAMESPACE
