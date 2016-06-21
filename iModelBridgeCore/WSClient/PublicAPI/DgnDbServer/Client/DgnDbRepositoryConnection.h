@@ -15,7 +15,8 @@
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <WebServices/Azure/EventServiceClient.h>
-#include <DgnDbServer/Client/DgnDbServerEventConnection.h>
+#include <DgnDbServer/Client/DgnDbServerEventSubscription.h>
+#include <DgnDbServer/Client/DgnDbServerEventSAS.h>
 #include <DgnDbServer/Client/DgnDbServerEventParser.h>
 #include <DgnDbServer/Client/DgnDbServerLockevent.h>
 #include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
@@ -78,7 +79,6 @@ private:
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
     static EventServiceClient*         m_eventServiceClient;
-    IDgnDbServerEventParserPtr m_eventParser;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
@@ -92,9 +92,6 @@ private:
 
     //! Sets EventServiceClient.
     bool SetEventServiceClient(ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Sets DgnDbServerEventParser. 
-    void SetDgnDbServerEventParser(IDgnDbServerEventParserPtr eventParser);
 
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
@@ -123,11 +120,20 @@ private:
     //! Get all revision information based on a query.
     DgnDbServerRevisionsTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Get the SasToken and NameSpace based on query to EventService WebAPI.
-    DgnDbServerEventConnectionTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
+    ////! Get the SasToken and NameSpace based on query to EventService WebAPI.
+    //DgnDbServerEventConnectionTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Get the ConnectionId based on query to EventService WebAPI.
-    DgnDbServerEventConnectionTaskPtr GetEventServiceSubscriptionId(ICancellationTokenPtr cancellationToken = nullptr) const;
+    ////! Get the ConnectionId based on query to EventService WebAPI.
+    //DgnDbServerEventConnectionTaskPtr GetEventServiceSubscriptionId(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    ////! Get the ConnectionId based on query to EventService WebAPI. v2
+    //DgnDbServerCancelEventTaskPtr GetEventServiceSubscriptionId2(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    DgnDbServerEventSASTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //DgnDbServerEventSASTaskPtr GetEventServiceSAS2(ICancellationTokenPtr cancellationToken = nullptr) const; //temporary till POST is fixed. Json being retrieved from server is bad.
+
+    DgnDbServerEventSubscriptionTaskPtr GetEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get Responses from the EventServiceClient
     bool GetEventServiceResponses(bvector<Utf8String>& responseStrings, bvector<Utf8CP>& contentTypes, bool longpolling = true);
@@ -238,9 +244,6 @@ public:
 
     //! Receive Events from EventService
     DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr    GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Get Event Type 
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTypeTaskPtr    GetEventType(DgnDbServerEventPtr baseEvent);
 
     //! Cancel Events from EventService
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr    CancelEventRequest(ICancellationTokenPtr cancellationToken = nullptr);

@@ -42,8 +42,8 @@ Utf8String StubHttpResponseValidLockEvent()
               {
               "Date":"SomeDate",
               "LockType":"SomeLockType",
-              "repoId":"SomeRepoId",
-              "userId":"SomeUserId",
+              "EventTopic":"SomeEventTopic",
+              "UserId":"SomeUserId",
               "ObjectId":"SomeObjectId",
               "LockLevel":"SomeLockLevel",
               "BriefcaseId":"SomeBriefcaseId",
@@ -58,8 +58,8 @@ Utf8String StubHttpResponseValidRevisionEvent()
               @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
-              "repoId":"SomeRepoId",
-              "userId":"SomeUserId",
+              "EventTopic":"SomeEventTopic",
+              "UserId":"SomeUserId",
               "RevisionId":"RevisionId",
               "RevisionIndex":"SomeRevisionIndex"
               }
@@ -89,6 +89,188 @@ Utf8String StubHttpResponseInvalidRevisionEvent()
              )";
     }
 
+Utf8String StubHttpResponseValidEventSubscriptionResponse()
+    {
+    return R"(
+             {
+            "changedInstance":
+                              {
+                              "change":"Created",
+                              "instanceAfterChange" :
+                                                    {
+                                                    "instanceId":"SomeInstanceId",
+                                                    "schemaName" : "DgnDbServer",
+                                                    "className" : "EventSubscription",
+                                                    "properties" :
+                                                                 {
+                                                                 "Id":"SomeSubscriptionId",
+                                                                 "TopicName" : "SomeTopicName",
+                                                                 "EventTypes" : ["LockEvent", "RevisionEvent"]
+                                                                 }
+                                                    }
+                              }
+             }
+             )";
+
+    }
+Utf8String StubHttpResponseValidEventSASResponse()
+    {
+    return R"(
+             {
+            "changedInstance":
+                              {
+                              "change":"Created",
+                              "instanceAfterChange" :
+                                                    {
+                                                    "instanceId":"SomeInstanceId",
+                                                    "schemaName" : "DgnDbServer",
+                                                    "className" : "EventSAS",
+                                                    "properties" :
+                                                                 {
+                                                                 "EventServiceSASToken":"SomeSASToken",
+                                                                 "BaseAddress" : "SomeBaseAddress"
+                                                                 }
+                                                    }
+                              }
+             }
+             )";
+    }
+
+Utf8String StubHttpResponseInvalidEventSubscriptionResponse()
+    {
+    return R"(
+             {
+            "changedInstance":
+                              {
+                              "change":"Created",
+                              "instanceAfterChange" :
+                                                    {
+                                                    "instanceId":"SomeInstanceId",
+                                                    "schemaName" : "DgnDbServer",
+                                                    "className" : "EventSubscription",
+                                                    "properties" :
+                                                                 {
+                                                                 }
+                                                    }
+                              }
+             }
+             )";
+    }
+
+Utf8String StubHttpResponseInvalidEventSASResponse()
+    {
+    return R"(
+             {
+            "changedInstance":
+                              {
+                              "change":"Created",
+                              "instanceAfterChange" :
+                                                    {
+                                                    "instanceId":"SomeInstanceId",
+                                                    "schemaName" : "DgnDbServer",
+                                                    "className" : "EventSAS",
+                                                    "properties" :
+                                                                 {
+                                                                 }
+                                                    }
+                              }
+             }
+             )";
+    }
+
+Utf8String StubGenerateValidEventSASJson()
+    {
+    return R"(
+             {
+             "instance":
+                       {
+			           "instanceId":"",
+			           "schemaName":"DgnDbServer",
+			           "className":"EventSAS",
+			            "properties":
+						            {
+						            "BaseAddress":"",
+						            "EventServiceSASToken":""
+						            }
+			            }
+             } 
+             )";
+    }
+
+Utf8String StubGenerateInvalidEventSASJson()
+    {
+    return R"(
+             {
+             "instance":
+                       {
+			           "instanceId":"",
+			           "schemaName":"DgnDbServer",
+			           "className":"EventSAS",
+			            "properties":
+						            {
+						            }
+			            }
+             } 
+             )";
+    }
+
+Utf8String StubGenerateValidEventSubscriptionJsonSingleEvent()
+    {
+    return R"(
+             {
+             "instance":
+                       {
+			           "instanceId":"",
+			           "schemaName":"DgnDbServer",
+			           "className":"EventSubscription",
+			            "properties":
+						            {
+						            "Id":"",
+						            "TopicName":"", 
+						            "EventTypes": ["LockEvent"] 
+						            }
+			            }
+             } 
+             )";
+    }
+
+Utf8String StubGenerateValidEventSubscriptionJsonNoEvent()
+    {
+    return R"(
+             {
+             "instance":
+                       {
+			           "instanceId":"",
+			           "schemaName":"DgnDbServer",
+			           "className":"EventSubscription",
+			            "properties":
+						            {
+						            "Id":"",
+						            "TopicName":"", 
+						            "EventTypes": [] 
+						            }
+			            }
+             } 
+             )";
+    }
+
+Utf8String StubGenerateInvalidEventSubscriptionJson()
+    {
+    return R"(
+             {
+             "instance":
+                       {
+			           "instanceId":"",
+			           "schemaName":"DgnDbServer",
+			           "className":"EventSubscription",
+			            "properties":
+						            {
+						            }
+			            }
+             } 
+             )";
+    }
+
 Utf8CP StubHttpResponseEmptyContentType()
     {
     return "";
@@ -101,22 +283,22 @@ Utf8CP StubHttpResponseInvalidContentType()
 
 Utf8CP StubHttpResponseValidLockEventContentType()
     {
-    return DgnDbServerEvent::GenericEvent::GetEventName(DgnDbServerEvent::DgnDbServerEventType::LockEvent).c_str();
+    return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::LockEvent).c_str();
     }
 
 Utf8CP StubHttpResponseInvalidLockEventContentType()
     {
-    return DgnDbServerEvent::GenericEvent::GetEventName(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
+    return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
 
 Utf8CP StubHttpResponseValidRevisionEventContentType()
     {
-    return DgnDbServerEvent::GenericEvent::GetEventName(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent).c_str();
+    return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent).c_str();
     }
 
 Utf8CP StubHttpResponseInvalidRevisionEventContentType()
     {
-    return DgnDbServerEvent::GenericEvent::GetEventName(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
+    return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
 
 void DgnDbServerEventParserTests::SetUp()
@@ -127,57 +309,155 @@ void DgnDbServerEventParserTests::SetUp()
 TEST_F(DgnDbServerEventParserTests, LockEventTests)
     {
     //Check for valid values as Json
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
-    DgnDbServerEventPtr validPtr = parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
+    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
     EXPECT_NE(nullptr, validPtr);
-    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::LockEvent, parser->GetEventType(validPtr));
+    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::LockEvent, DgnDbServerEventParser::GetInstance().GetEventType(validPtr));
     DgnDbServerLockEvent& lockEvent = dynamic_cast<DgnDbServerLockEvent&>(*validPtr);
     EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&lockEvent)); //DgnDbServerLockEvent is a subclass of DgnDbServerEvent
-
-    //Check for valid values as String
-    validPtr = parser->ParseEventasString(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
-    EXPECT_NE(nullptr, validPtr);
     }
 
 TEST_F(DgnDbServerEventParserTests, RevisionEventTests)
     {
     //Check for valid values
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
-    DgnDbServerEventPtr validPtr = parser->ParseEventasJson(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());
+    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());
     EXPECT_NE(nullptr, validPtr);
-    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent, parser->GetEventType(validPtr));
+    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent, DgnDbServerEventParser::GetInstance().GetEventType(validPtr));
     DgnDbServerRevisionEvent& revisionEvent = dynamic_cast<DgnDbServerRevisionEvent&>(*validPtr);
     EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&revisionEvent)); //DgnDbServerRevisionEvent is a subclass of DgnDbServerEvent
-
-    //Check for valid values as String
-    validPtr = parser->ParseEventasString(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());
-    EXPECT_NE(nullptr, validPtr);
     }
 
 TEST_F(DgnDbServerEventParserTests, InvalidEventTests)
     {
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmpty()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmptyJson()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalid()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidLockEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidRevisionEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmpty()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmptyJson()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalid()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidLockEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidRevisionEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmpty()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmptyJson()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalid()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmpty()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmptyJson()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalid()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidLockEvent()));
     }
 
 TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
     {
-    IDgnDbServerEventParserPtr parser = DgnDbServerEventParser::Create();
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseEmptyContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseInvalidContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidLockEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseEmptyContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseInvalidContentType(), StubHttpResponseValidRevisionEvent()));
-    EXPECT_EQ(nullptr, parser->ParseEventasJson(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
+    }
+
+TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionJsonTest)
+    {
+    Json::Reader reader;
+    Json::Value generatedStubJson(Json::objectValue);
+
+    //No event
+    EXPECT_TRUE(reader.parse(StubGenerateValidEventSubscriptionJsonNoEvent(), generatedStubJson));
+    Json::Value actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson();
+    EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
+
+    //Single Event
+    EXPECT_TRUE(reader.parse(StubGenerateValidEventSubscriptionJsonSingleEvent(), generatedStubJson));
+    bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
+    eventTypes.push_back(DgnDbServerEvent::DgnDbServerEventType::LockEvent);
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(&eventTypes);
+    EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
+    }
+
+TEST_F(DgnDbServerEventParserTests, GenerateEventSASJsonTest)
+    {
+    Json::Reader reader;
+    Json::Value generatedStubJson(Json::objectValue);
+
+    EXPECT_TRUE(reader.parse(StubGenerateValidEventSASJson(), generatedStubJson));
+    Json::Value actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSASJson();
+    EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
+    }
+
+//Need more error cases
+TEST_F(DgnDbServerEventParserTests, InvalidGenerateJsonTests)
+    {
+    Json::Reader reader;
+    Json::Value generatedStubJson(Json::objectValue);
+
+    //Invalid SAS generation
+    EXPECT_TRUE(reader.parse(StubGenerateInvalidEventSASJson(), generatedStubJson));
+    Json::Value actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSASJson();
+    EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
+
+    //Invalid Subscription Generation
+    EXPECT_TRUE(reader.parse(StubGenerateInvalidEventSubscriptionJson(), generatedStubJson));
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson();
+    EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
+
+    bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes1, eventTypes2;
+    eventTypes1.push_back(DgnDbServerEvent::DgnDbServerEventType::LockEvent);
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(&eventTypes1);
+    EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
+
+    eventTypes2.push_back(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent);
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(&eventTypes2);
+    EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
+    }
+
+TEST_F(DgnDbServerEventParserTests, EventSubscriptionResponseTest)
+    {
+    Json::Reader reader;
+    Json::Value generatedStubJson(Json::objectValue);
+
+    EXPECT_TRUE(reader.parse(StubHttpResponseValidEventSubscriptionResponse(), generatedStubJson));
+    DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(generatedStubJson);
+    EXPECT_NE(nullptr, ptr);
+    EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeSubscriptionId", ptr->GetSubscriptionId().c_str()));
+    EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeTopicName", ptr->GetTopicName().c_str()));
+    bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes = ptr->GetEventTypes();
+    bool isSuccess = false;
+    for (auto eventType : eventTypes)
+        {
+        if (DgnDbServerEvent::DgnDbServerEventType::LockEvent == eventType)
+            {
+            isSuccess = true;
+            }
+        else if (DgnDbServerEvent::DgnDbServerEventType::RevisionEvent == eventType)
+            {
+            isSuccess = true;
+            }
+        else
+            {
+            isSuccess = false;
+            break;
+            }
+        }
+    EXPECT_TRUE(isSuccess);
+    }
+
+TEST_F(DgnDbServerEventParserTests, EventSASResponseTest)
+    {
+    Json::Reader reader;
+    Json::Value generatedStubJson(Json::objectValue);
+
+    EXPECT_TRUE(reader.parse(StubHttpResponseValidEventSASResponse(), generatedStubJson));
+    DgnDbServerEventSASPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSAS(generatedStubJson);
+    EXPECT_NE(nullptr, ptr);
+    EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeSASToken", ptr->GetSASToken().c_str()));
+    EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeBaseAddress", ptr->GetBaseAddress().c_str()));
+    }
+
+//Need more error cases -- Add more Invalid Stub responses
+TEST_F(DgnDbServerEventParserTests, InvalidEventResponseTests)
+    {
+    Json::Reader reader;
+    Json::Value generatedStubJson(Json::objectValue);
+
+    EXPECT_TRUE(reader.parse(StubHttpResponseInvalidEventSubscriptionResponse(), generatedStubJson));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEventSubscription(generatedStubJson));
+
+    EXPECT_TRUE(reader.parse(StubHttpResponseInvalidEventSASResponse(), generatedStubJson));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEventSAS(generatedStubJson));
     }
