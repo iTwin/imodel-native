@@ -17,8 +17,8 @@
 #include <WebServices/Connect/ImsClient.h>
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
-
 #include <WebServices/Cache/Util/JsonUtil.h>
+
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
 #include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 
@@ -31,6 +31,8 @@ void CachingDataSourceTests::SetUp()
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);
 
     CacheTransactionManager::SetAllowUnsafeAccess(true);
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, NativeLogging::LOG_INFO);
     }
 
 BeFileName GetTestCachePath()
@@ -586,10 +588,10 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             };
 
         a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-        ECSchemaList eschemas;
+        bvector<ECN::ECSchemaCP> eschemas;
         txn.GetCache().GetECDb().GetEC().GetSchemaManager().GetECSchemas(eschemas);
         b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-        BeDebugLog(Utf8PrintfString("GetECSchemas  took:%lld ms rels:%d", b - a));
+        BeDebugLog(Utf8PrintfString("GetECSchemas  took:%lld ms rels:%d", b - a).c_str());
 
         txn.GetCache().GetECDb().GetEC().ClearCache();
 
@@ -608,7 +610,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             rels = txn.GetCache().GetAdapter().FindRelationshipClassesInSchema(aClass->GetId(), bClass->GetId(), "eB_Dynamic");
             b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesInSchema  took:%lld ms rels:%d", b - a, rels.size()));
+            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesInSchema  took:%lld ms rels:%d", b - a, rels.size()).c_str());
             });
 
         txn.GetCache().GetECDb().GetEC().ClearCache();
@@ -618,14 +620,14 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             rels = txn.GetCache().GetAdapter().FindRelationshipClassesWithSource(aClass->GetId(), "eB_Dynamic");
             b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesWithSource  took:%lld ms rels:%d", b - a, rels.size()));
+            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesWithSource  took:%lld ms rels:%d", b - a, rels.size()).c_str());
             });
 
         for (auto rel : rels)
             {
             BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesWithSource %s:%s",
                 Utf8String(rel->GetSchema().GetName()).c_str(),
-                Utf8String(rel->GetName()).c_str()));
+                Utf8String(rel->GetName()).c_str()).c_str());
             }
 
         txn.GetCache().GetECDb().GetEC().ClearCache();
@@ -635,7 +637,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             txn.GetCache().GetAdapter().FindRelationshipClassWithSource(aClass->GetId(), bClass->GetId());
             b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithSource  took:%lld ms", b - a));
+            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithSource  took:%lld ms", b - a).c_str());
             });
 
         txn.GetCache().GetECDb().GetEC().ClearCache();
@@ -645,7 +647,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             txn.GetCache().GetAdapter().FindRelationshipClassWithTarget(aClass->GetId(), bClass->GetId());
             b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithTarget  took:%lld ms", b - a));
+            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithTarget  took:%lld ms", b - a).c_str());
             });
         })->Wait();
     }
