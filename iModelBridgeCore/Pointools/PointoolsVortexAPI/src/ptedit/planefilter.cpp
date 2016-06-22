@@ -52,10 +52,15 @@ void  PlaneSelect::computePlane()
         DVec3d centroid, moments;
         RotMatrix axes;
         DPoint3dOps::PrincipalAxes(geomlibs_points, centroid, axes, moments);
-        // &&RB TODO: set plane object members to proper values from geomlibs centroid, axes and moment structures:
-        //! @param [out] axes principal axes.
-        //! @param [out] moments second moments wrt x,y,z -- sums of (yy+zz,xx+zz,xx+yy)
-        //! @remarks axes are orderd so x is largest moment, y next, z smallest.
+
+        // Set plane object members to proper values from geomlibs centroid, axes and moment structures:
+        //! @remarks axes are ordered so x is largest moment, y next, z smallest.
+        DVec3d n;
+        axes.GetColumn(n, 2); // &&RB TODO: should we take the row instead??
+        // Vector3<T> ptN(n);
+        // ptN.unitize();        
+        plane.normal(&n.x);      // &&RB TODO: are the axes returned by geomlibs normalized??
+        plane.base(&centroid.x);
 #endif
 		plane.base();
 	}

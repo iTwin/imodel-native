@@ -782,6 +782,7 @@
         <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="Libs" Path="Libs" Deliver="false"/>
         <ProductDirectory Name="Assemblies" Path="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="GeomNativeAssemblies" Path="Assemblies" Deliver="false"/>
         <ProductDirectory Name="VendorNotices" Path="" Deliver="false"/>
         <ProductDirectory Name="VendorNotices" Path="" Deliver="false" LibType="static"/>
         <ProductDirectory Name="BentleyNativeAssemblies" Path="" Deliver="false" LibType="static"/>

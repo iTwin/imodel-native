@@ -67,7 +67,7 @@ public:
 	/* use instead of constant for simplified positioning		*/ 
 	void base(const VectorType &v)	
 	{
-		m_base = v; 
+		m_base.set(v.x, v.y, v.z); 
 		m_constant = m_normal.dot(m_base); 
 	}
 	const VectorType &base() const	
