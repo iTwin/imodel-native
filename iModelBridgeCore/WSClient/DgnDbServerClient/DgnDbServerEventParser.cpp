@@ -31,13 +31,7 @@ DgnDbServerEventParser& DgnDbServerEventParser::GetInstance()
 //---------------------------------------------------------------------------------------
 Json::Value DgnDbServerEventParser::GenerateEventSubscriptionJson(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, Utf8String eventSubscriptionId) const
     {
-    Json::Value request = Json::objectValue;
-    JsonValueR instance = request[ServerSchema::Instance] = Json::objectValue;
-    instance[ServerSchema::InstanceId] = "";
-    instance[ServerSchema::SchemaName] = ServerSchema::Schema::Repository;
-    instance[ServerSchema::ClassName] = ServerSchema::Class::EventSubscription;
-    instance[ServerSchema::Properties] = Json::objectValue;
-    JsonValueR properties = instance[ServerSchema::Properties];
+    Json::Value properties;
     properties[ServerSchema::Property::Id] = eventSubscriptionId;
     properties[ServerSchema::Property::TopicName] = "";
     properties[ServerSchema::Property::EventTypes] = Json::arrayValue;
@@ -53,7 +47,7 @@ Json::Value DgnDbServerEventParser::GenerateEventSubscriptionJson(bvector<DgnDbS
             properties[ServerSchema::Property::EventTypes][i] = DgnDbServerEvent::Helper::GetEventNameFromEventType(eventTypes->at(i));
             }
         }
-    return request;
+    return properties;
     }
 
 //---------------------------------------------------------------------------------------
