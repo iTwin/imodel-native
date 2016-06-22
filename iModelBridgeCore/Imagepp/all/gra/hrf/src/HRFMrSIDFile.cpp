@@ -590,30 +590,29 @@ void HRFMrSIDFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
     GeoCoordinates::BaseGCSCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
     // In addition to the georeference, for some weird reason the fact the original georeference possesed an indication that of
-    // the model type is used int32_t he creation of the transformation matrix below
+    // the model type is used int he creation of the transformation matrix below
+    double effectiveRatioToMeter = pi_RatioToMeter;
+    bool hasGTModel(false);
     if (pBaseGCS != nullptr && pBaseGCS->IsValid())
         {
-        HFCPtr<HGF2DTransfoModel> pTransfoModel;
-
-        bool hasGTModel(false);
         HCPGeoTiffKeys geoKeysContainer;
         pBaseGCS->GetGeoTiffKeys(&geoKeysContainer, true);
 
         hasGTModel = geoKeysContainer.HasKey(GTModelType);
 
-        // TranfoModel
-        BuildTransfoModelMatrix(hasGTModel, pTransfoModel);
-
         //Ensure that a new GeoCoord is created based on the pi_CheckSpecificUnitSpec
         //configuration.
-        double effectiveRatioToMeter = pi_RatioToMeter;
         if (pBaseGCS != nullptr && pBaseGCS->IsValid())
             effectiveRatioToMeter = 1.0 / pBaseGCS->UnitsFromMeters();
+        }
 
+    // TranfoModel
+    HFCPtr<HGF2DTransfoModel> pTransfoModel;
+    BuildTransfoModelMatrix(hasGTModel, pTransfoModel);
 
-        pTransfoModel = HCPGCoordUtility::TranslateToMeter(pTransfoModel,
-                                                           1.0 / pBaseGCS->UnitsFromMeters());
-
+    if (effectiveRatioToMeter != 1.0)
+        {
+        pTransfoModel = HCPGCoordUtility::TranslateToMeter(pTransfoModel, effectiveRatioToMeter);
 
         pPageDescriptor->SetTransfoModel(*pTransfoModel, true);
         pPageDescriptor->SetTransfoModelUnchanged();
