@@ -271,16 +271,6 @@ DgnDbStatus DefinitionElement::_OnInsert()
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus FunctionalElement::_OnInsert()
-    {
-    // FunctionalElements can reside *only* in a FunctionalModel
-    DgnDbStatus status = GetModel()->IsFunctionalModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
-    return status;
-    }
-
 struct OnInsertedCaller
     {
     DgnElementCR m_newEl;

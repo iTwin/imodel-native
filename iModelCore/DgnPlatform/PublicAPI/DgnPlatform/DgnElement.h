@@ -920,7 +920,6 @@ protected:
     virtual InformationElementCP _ToInformationElement() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual GroupInformationElementCP _ToGroupInformationElement() const {return nullptr;}
-    virtual FunctionalElementCP _ToFunctionalElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
     virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
 
@@ -960,7 +959,6 @@ public:
     DrawingGraphicCP ToDrawingGraphic() const {return _ToDrawingGraphic();}             //!< more efficient substitute for dynamic_cast<DrawingGraphicCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
     GroupInformationElementCP ToGroupInformationElement() const {return _ToGroupInformationElement();} //!< more efficient substitute for dynamic_cast<GroupInformationElementCP>(el)
-    FunctionalElementCP ToFunctionalElement() const {return _ToFunctionalElement();}    //!< more efficient substitute for dynamic_cast<FunctionalElementCP>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
@@ -970,7 +968,6 @@ public:
     InformationElementP ToInformationElementP() {return const_cast<InformationElementP>(_ToInformationElement());} //!< more efficient substitute for dynamic_cast<InformationElementP>(el)
     DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
     GroupInformationElementP ToGroupInformationElementP() {return const_cast<GroupInformationElementP>(_ToGroupInformationElement());} //!< more efficient substitute for dynamic_cast<GroupInformationElementP>(el)
-    FunctionalElementP ToFunctionalElementP() {return const_cast<FunctionalElementP>(_ToFunctionalElement());}  //!< more efficient substitute for dynamic_cast<FunctionalElementP>(el)
     AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
     DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());} //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
     //! @}
@@ -981,7 +978,6 @@ public:
     bool IsInformationElement() const {return nullptr != ToInformationElement();}   //!< Determine whether this element is an InformationElement or not
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a DefinitionElement or not
     bool IsGroupInformationElement() const {return nullptr != ToGroupInformationElement();} //!< Determine whether this element is a GroupInformationElement or not
-    bool IsFunctionalElement() const {return nullptr != ToFunctionalElement();}     //!< Determine whether this element is a FunctionalElement or not
     bool IsAnnotationElement2d() const {return nullptr != ToAnnotationElement2d();} //!< Determine whether this element is an AnnotationElement2d
     bool IsDrawingGraphic() const {return nullptr != ToDrawingGraphic();}           //!< Determine whether this element is an DrawingGraphic
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
@@ -1784,6 +1780,8 @@ public:
 };
 
 //=======================================================================================
+//! An InformationElement identifies and names information content.
+//! @see InformationCarrierElement
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE InformationElement : DgnElement
@@ -1796,7 +1794,22 @@ protected:
 };
 
 //=======================================================================================
-//! A DefinitionElement which resides in (and only in) a DefinitionModel.
+//! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
+//! For example, a paper document or an electronic file is an information carrier.
+//! The content is tracked separately from the carrier.
+//! @see InformationElement
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationCarrierElement : DgnElement
+{
+    DEFINE_T_SUPER(DgnElement);
+
+protected:
+    explicit InformationCarrierElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! A DefinitionElement resides in (and only in) a DefinitionModel.
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationElement
@@ -1835,34 +1848,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RoleElement : DgnElement
     DEFINE_T_SUPER(DgnElement);
 protected:
     explicit RoleElement(CreateParams const& params) : T_Super(params) {}
-};
-
-//=======================================================================================
-//! Abstract base class for functions performed by by other (typically physical) elements.
-//! For example, the <i>function of pumping</i> is performed by a Pump (PhysicalElement).
-//! @ingroup GROUP_DgnElement
-// @bsiclass                                                    Shaun.Sewall    05/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE FunctionalElement : RoleElement
-{
-    DEFINE_T_SUPER(RoleElement);
-protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    virtual FunctionalElementCP _ToFunctionalElement() const override final {return this;}
-    explicit FunctionalElement(CreateParams const& params) : T_Super(params) {}
-};
-
-//=======================================================================================
-//! Abstract base class for objects that break down the functional structure of something.
-//! For example, a faciliy, like a building or plant, may be broken down into functional <i>systems</i>.
-//! @ingroup GROUP_DgnElement
-// @bsiclass                                                    Shaun.Sewall    05/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE FunctionalBreakdownElement : FunctionalElement
-{
-    DEFINE_T_SUPER(FunctionalElement);
-protected:
-    explicit FunctionalBreakdownElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================

@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="Functional" nameSpacePrefix="func" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+
+    <ECSchemaReference name="dgn" version="02.00" prefix="dgn"/>
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+
+    <ECEntityClass typeName="FunctionalModel">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>dgn:Model</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="FunctionalElement" modifier="Abstract">
+        <BaseClass>dgn:RoleElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="FunctionalBreakdownElement" modifier="Abstract">
+        <BaseClass>FunctionalElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="FunctionalComponentElement" modifier="Abstract">
+        <BaseClass>FunctionalElement</BaseClass>
+    </ECEntityClass>
+
+</ECSchema>

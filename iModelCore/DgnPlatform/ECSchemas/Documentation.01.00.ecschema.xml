@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="Documentation" nameSpacePrefix="doc" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+
+    <ECSchemaReference name="dgn" version="02.00" prefix="dgn"/>
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+
+    <ECEntityClass typeName="Document">
+        <BaseClass>dgn:InformationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="DocumentCopy" modifier="Abstract">
+        <BaseClass>dgn:InformationCarrierElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="PrintedDocumentCopy">
+        <BaseClass>DocumentCopy</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElectronicDocumentCopy">
+        <BaseClass>DocumentCopy</BaseClass>
+    </ECEntityClass>
+
+</ECSchema>
