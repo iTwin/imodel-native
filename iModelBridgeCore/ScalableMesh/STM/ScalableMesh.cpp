@@ -26,7 +26,7 @@ extern bool   GET_HIGHEST_RES;
 
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <STMInternal/GeoCoords/WKTUtils.h>
-
+   
 #include "ScalableMeshQuery.h"
 #include "ScalableMeshSourcesPersistance.h"
 

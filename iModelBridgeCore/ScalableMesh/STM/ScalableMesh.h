@@ -130,6 +130,8 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     virtual DTMStatusInt _GetTransformDTM(DTMPtr& transformedDTM, TransformCR transformation) override;
     virtual bool _GetTransformation(TransformR transformation) override;
     virtual IDTMVolumeP _GetDTMVolume() override;
+    virtual DTMStatusInt _ExportToGeopakTinFile(BentleyG0601::WCharCP) override {assert(!"Not Implemented"); return DTM_ERROR;}
+    
 
     public:
         ScalableMeshDTM(IScalableMeshPtr scMesh)
