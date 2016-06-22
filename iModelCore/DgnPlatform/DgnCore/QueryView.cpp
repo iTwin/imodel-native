@@ -439,6 +439,9 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     if (!results.IsValid())
         return;
 
+    if (!results->m_scores.empty())
+        context.SetSAESNpcSq(results->m_scores.begin()->first);
+
     if (m_activeVolume.IsValid())
         context.SetActiveVolume(*m_activeVolume);
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Tools/KeyTree.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -304,7 +304,7 @@ template <class ETYPE, class KTYPE> class  LeafNode : public KeyRangeNode <ETYPE
     using  T_KeyRangeNode::m_isSloppy;
     using  T_KeyRangeNode::m_parent;
 
-    Byte m_entData[NUM_LEAFENTRIES * sizeof(ETYPE)];  // don't want constructors we get if we use ETYPE[]
+    ::Byte  m_entData[NUM_LEAFENTRIES * sizeof(ETYPE)];  // don't want constructors we get if we use ETYPE[]
 
 public:
 
