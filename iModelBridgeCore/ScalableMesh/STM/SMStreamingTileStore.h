@@ -56,7 +56,7 @@ public:
             else
                 {
                 wstringstream ss;
-                ss << m_pDataSource << L"p_" << m_pID << L".bin";
+                ss << m_pDataSource + L"p_" << m_pID << L".bin";
                 auto filename = ss.str().c_str();
 
                 if (s_stream_from_disk)
@@ -451,7 +451,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
             {
             wstringstream ss;
-            ss << m_pathToHeaders << L"n_" << ConvertBlockID(blockID) << L".bin";
+            ss << m_pathToHeaders + L"n_" << ConvertBlockID(blockID) << L".bin";
             auto filename = ss.str();
 
             if (s_stream_from_disk)
@@ -805,7 +805,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 if (m_use_node_header_grouping || s_stream_from_grouped_store)
                     {
                     wstringstream ss;
-                    ss << m_rootDirectory << L"MasterHeaderWithGroups.bin";
+                    ss << m_rootDirectory + L"MasterHeaderWithGroups.bin";
                     auto filename = ss.str();
                     if (m_nodeHeaderGroups.empty())
                         {
@@ -978,7 +978,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (NULL != DataTypeArray && countData > 0)
                 {
                 wstringstream ss;
-                ss << m_pathToPoints << L"p_" << blockIDConvert << L".bin";
+                ss << m_pathToPoints + L"p_" << blockIDConvert << L".bin";
                 auto filename = ss.str();
                 BeFile file;
                 auto fileOpened = OPEN_FILE(file, filename.c_str(), BeFileAccess::Write);
@@ -1286,7 +1286,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             //SerializeHeaderToJSON(header, blockID, block);
 
             wstringstream ss;
-            ss << m_pathToHeaders << L"n_" << ConvertBlockID(blockID) << L".bin";
+            ss << m_pathToHeaders + L"n_" << ConvertBlockID(blockID) << L".bin";
 
             auto filename = ss.str();
             BeFile file;

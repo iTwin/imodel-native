@@ -160,7 +160,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
     public:
         distributor(unsigned int concurrency = std::thread::hardware_concurrency()
                     //, unsigned int concurrency = 2
-                    , typename Queue::size_type max_items_per_thread = 100)
+                    , typename Queue::size_type max_items_per_thread = 500)
             : capacity{ concurrency * max_items_per_thread },
               m_concurrency{ concurrency }
             {
@@ -173,7 +173,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
         distributor(Function function
                     , unsigned int concurrency = std::thread::hardware_concurrency()
                     //, unsigned int concurrency = 2
-                    , typename Queue::size_type max_items_per_thread = 100
+                    , typename Queue::size_type max_items_per_thread = 500
                     )
             : capacity{ concurrency * max_items_per_thread }
             {
@@ -448,7 +448,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             //++nbDownloadedNodeHeaders;
             //std::cout << "total node headers fetched: " << nbDownloadedNodeHeaders << std::endl;
             wstringstream ss;
-            ss << m_pDataSourceName << L"n_" << pi_pNodeID << L".bin";
+            ss << m_pDataSourceName + L"n_" << pi_pNodeID << L".bin";
             auto filename = ss.str();
             if (s_stream_from_disk)
                 {
