@@ -1076,13 +1076,12 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
             if (nodeP->tPtr == nullPnt)
                 {
                 if (face < minTptrPnt) minTptrPnt = face;
-                else if (face > maxTptrPnt) maxTptrPnt = face;
+                if (face > maxTptrPnt) maxTptrPnt = face;
                 nodeP->tPtr = ++numMeshPts;
                 }
             }
         if (dbg) bcdtmWrite_message(0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
 
-        if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
         /*
         **                       Allocate Memory For Mesh Points
         */
