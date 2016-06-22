@@ -627,17 +627,17 @@ EventServiceClient* DgnDbRepositoryConnection::m_eventServiceClient = nullptr;
 //Returns true if same, else false
 bool CompareEventTypes
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes1, 
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes1, 
 bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes2
 )
     {
-    if (eventTypes1.size() != eventTypes2.size())
+    if (eventTypes1->size() != eventTypes2.size())
         return false;
 
     bmap<DgnDbServerEvent::DgnDbServerEventType, Utf8CP> tempMap;
-    for (int i = 0; i < (int) eventTypes1.size(); i++)
+    for (int i = 0; i < (int) eventTypes1->size(); i++)
         {
-        tempMap.Insert(eventTypes1.at(i), "");
+        tempMap.Insert(eventTypes1->at(i), "");
         }
 
     bool isSuccess = true;
@@ -686,7 +686,7 @@ ICancellationTokenPtr cancellationToken
         }
 
     // Check if eventTypes are the same as in m_eventSubscription
-    else if (!CompareEventTypes(*eventTypes, m_eventSubscription->GetEventTypes()))
+    /*else if (!CompareEventTypes(eventTypes, m_eventSubscription->GetEventTypes()))
         {
         auto eventSubscription = UpdateEventServiceSubscriptionId (eventTypes, cancellationToken)->GetResult();
         if (!eventSubscription.IsSuccess())
@@ -698,7 +698,7 @@ ICancellationTokenPtr cancellationToken
         	return false;
 
         m_eventServiceClient->UpdateSASToken(sasToken.GetValue()->GetSASToken());
-        }
+        }*/
     return true;
     }
 
