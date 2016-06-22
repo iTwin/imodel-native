@@ -121,6 +121,19 @@ MemoryManager::MemoryManager()
     #endif
 
 #else
-    m_targetMemorySize = (BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * MEG)) ? 50*MEG : 30*MEG;
+    //  NEEDS_WORK_CONTINUOUS_RENDER using absurd values for memory limitation because we are using
+    //  a lot more memory per element that is actually tracked.
+    uint64_t amountOfMem = BeSystemInfo::GetAmountOfPhysicalMemory();
+    if (amountOfMem > 1100*MEG)
+        m_targetMemorySize = 30*MEG;
+    else if (amountOfMem > 600 * MEG)
+        m_targetMemorySize = 10*MEG;
+    else
+        m_targetMemorySize = 8*MEG;
+
+    //
+    //  This is what we used for Graphite.  It is not working well in DgnDb because GetAmountOfPhysicalMemory
+    //  is returning a value that is way too small.
+    //  m_targetMemorySize = (BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * MEG)) ? 50*MEG : 30*MEG;
 #endif
     }
