@@ -258,7 +258,7 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate (ICancellationTokenPt
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken)
+DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, bool longPolling, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
@@ -269,8 +269,8 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancel
         {
         return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
-
-    DgnDbServerEventTaskPtr currentEventTask = m_repositoryConnection->GetEvent(longPolling, cancellationToken);
+	
+    DgnDbServerEventTaskPtr currentEventTask = m_repositoryConnection->GetEvent(eventTypes, longPolling, cancellationToken);
     auto getEventResult = currentEventTask->GetResult();
     if (!getEventResult.IsSuccess())
         return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(DgnDbServerError::Id::InternalServerError)); 
@@ -302,6 +302,24 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancel
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
+DgnDbServerEventCollectionTaskPtr DgnDbBriefcase::GetEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, bool longPolling, ICancellationTokenPtr cancellationToken)
+    {
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (!m_db.IsValid() || !m_db->IsDbOpen())
+        {
+        return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::FileNotFound));
+        }
+    if (!m_repositoryConnection)
+        {
+        return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+        }
+
+    return m_repositoryConnection->GetEvents(eventTypes, longPolling, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Arvind.Venkateswaran	              06/2016
+//---------------------------------------------------------------------------------------
 DgnDbServerCancelEventTaskPtr  DgnDbBriefcase::CancelEventRequest(ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized());
@@ -315,24 +333,6 @@ DgnDbServerCancelEventTaskPtr  DgnDbBriefcase::CancelEventRequest(ICancellationT
         }
 
     return m_repositoryConnection->CancelEventRequest(cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                 Arvind.Venkateswaran	              06/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEventCollectionTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken)
-    {
-    BeAssert(DgnDbServerHost::IsInitialized());
-    if (!m_db.IsValid() || !m_db->IsDbOpen())
-        {
-        return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::FileNotFound));
-        }
-    if (!m_repositoryConnection)
-        {
-        return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
-        }
-
-    return m_repositoryConnection->GetEvents(longPolling, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------

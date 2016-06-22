@@ -25,7 +25,8 @@ struct IDgnDbServerEventParser
     public:
         DGNDBSERVERCLIENT_EXPORT virtual Json::Value GenerateEventSubscriptionJson
             (
-            bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr
+            bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr,
+            Utf8String eventSubscriptionId = ""
             ) const = 0;
 
         DGNDBSERVERCLIENT_EXPORT virtual Json::Value GenerateEventSASJson() const = 0;
@@ -64,7 +65,8 @@ struct DgnDbServerEventParser : public IDgnDbServerEventParser
 
         DGNDBSERVERCLIENT_EXPORT Json::Value GenerateEventSubscriptionJson
             (
-            bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr
+            bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr,
+            Utf8String eventSubscriptionId = ""
             ) const override;
 
         DGNDBSERVERCLIENT_EXPORT Json::Value GenerateEventSASJson() const override;

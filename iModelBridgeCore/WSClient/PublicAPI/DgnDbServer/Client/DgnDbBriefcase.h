@@ -33,8 +33,8 @@ struct DgnDbBriefcase
 private:
     static const int              s_maxDelayTime = 5000;
 
-    DgnDbRepositoryConnectionPtr  m_repositoryConnection;
-    Dgn::DgnDbPtr                 m_db;
+    DgnDbRepositoryConnectionPtr						m_repositoryConnection;
+    Dgn::DgnDbPtr										m_db;
 
     DgnDbBriefcase (Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
@@ -75,9 +75,9 @@ public:
     //! @return Asynchronous task that returns success or an error.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerBoolTaskPtr             IsBriefcaseUpToDate     (ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventStringTaskPtr      GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventStringTaskPtr      GetEvent(bvector<DgnDbServerEvent::DgnDbServerEventType>* = nullptr, bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventCollectionTaskPtr  GetEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* = nullptr, bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr      CancelEventRequest(ICancellationTokenPtr cancellationToken = nullptr);
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventCollectionTaskPtr  GetEvents(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR                        GetDgnDb                () const; //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR        GetRepositoryConnection () const; //!< Connection to a repository on server.
