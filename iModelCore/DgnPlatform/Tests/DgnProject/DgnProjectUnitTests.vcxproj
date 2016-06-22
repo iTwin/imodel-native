@@ -91,7 +91,6 @@
     <ClCompile Include="Published\DgnECNavigator_Test.cpp" />
     <ClCompile Include="Published\DgnElement_Test.cpp" />
     <ClCompile Include="Published\DgnImportContext_Test.cpp" />
-    <ClCompile Include="Published\DgnLink_Test.cpp" />
     <ClCompile Include="Published\DgnModel_Test.cpp" />
     <ClCompile Include="Published\DgnScriptContext_Test.cpp" />
     <ClCompile Include="Published\ElementGeometry_Tests.cpp" />
@@ -99,6 +98,8 @@
     <ClCompile Include="Published\ExampleTestGroup.cpp" />
     <ClCompile Include="Published\FullTextSearch_Test.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
+    <ClCompile Include="Published\LinearDimension_Test.cpp" />
+    <ClCompile Include="Published\LinkElement_Test.cpp" />
     <ClCompile Include="Published\LocksManager_Test.cpp" />
     <ClCompile Include="Published\MarkupProject_Test.cpp" />
     <ClCompile Include="Published\MemoryManager_Test.cpp" />

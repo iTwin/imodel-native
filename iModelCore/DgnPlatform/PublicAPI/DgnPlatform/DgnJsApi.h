@@ -107,6 +107,15 @@ typedef JsGeometryCollection* JsGeometryCollectionP;
 struct JsGeometryBuilder;
 typedef JsGeometryBuilder* JsGeometryBuilderP;
 
+struct JsLockableId;
+typedef JsLockableId* JsLockableIdP;
+
+struct JsDgnLock;
+typedef JsDgnLock* JsDgnLockP;
+
+struct JsRepositoryRequest;
+typedef JsRepositoryRequest* JsRepositoryRequestP;
+
 #define JS_ITERATOR_IMPL(JSITCLASS,CPPCOLL) typedef CPPCOLL T_CppColl;\
     T_CppColl::const_iterator m_iter;\
     JSITCLASS(CPPCOLL::const_iterator it) : m_iter(it) {;}
@@ -137,6 +146,17 @@ enum class BeSQLiteDbResult : uint32_t
     BE_SQLITE_ROW = 100,
     BE_SQLITE_DONE = 101
     };
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   06/16
+//=======================================================================================
+BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
+enum class BeSQLiteDbOpcode : uint32_t
+{
+    Delete = 9,
+    Insert = 18,
+    Update = 23,
+};
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      10/15
@@ -435,6 +455,8 @@ public:
     virtual JsGeometrySource3dP ToGeometrySource3d();
     virtual JsGeometrySource2dP ToGeometrySource2d();
 
+    RepositoryStatus PopulateRequest(JsRepositoryRequestP req, BeSQLiteDbOpcode opcode);
+
     static JsDgnElement* Create(JsDgnModelP model, Utf8StringCR elementClassName);
 
     STUB_OUT_SET_METHOD(Model, JsDgnModelP)
@@ -604,6 +626,8 @@ struct JsDgnModel : RefCountedBaseWithCreate
         }
 
     JsComponentModelP ToComponentModel();
+
+    RepositoryStatus PopulateRequest(JsRepositoryRequestP req, BeSQLiteDbOpcode opcode);
 
     STUB_OUT_SET_METHOD(ModelId,JsDgnObjectIdP)
     STUB_OUT_SET_METHOD(Code,JsAuthorityIssuedCodeP)
@@ -1414,6 +1438,133 @@ struct DgnJsApi : DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter
     ~DgnJsApi();
 
     void _ImportScriptLibrary(BeJsContextR, Utf8CP) override;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   06/16
+//=======================================================================================
+struct JsLockableId : RefCountedBaseWithCreate
+{
+    LockableId  m_id;
+
+    explicit JsLockableId(LockableId const& id) : m_id(id) { }
+    JsLockableId(LockableType type, JsDgnObjectIdP id) : m_id(id ? LockableId(type, BeInt64Id(id->m_id)) : LockableId()) { }
+
+    JsDgnObjectIdP GetId() { return new JsDgnObjectId(m_id.GetId().GetValueUnchecked()); }
+    LockableType GetType() { return m_id.GetType(); }
+    bool GetIsValid() { return m_id.IsValid(); }
+    void Invalidate() { m_id.Invalidate(); }
+    bool Equals(JsLockableIdP id)
+        {
+        DGNJSAPI_VALIDATE_ARGS(nullptr != id, false);
+        return m_id == id->m_id;
+        }
+
+    static JsLockableIdP FromElement(JsDgnElementP el)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(el && el->m_el.IsValid());
+        return new JsLockableId(LockableId(*el->m_el));
+        }
+    static JsLockableIdP FromModel(JsDgnModelP model)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(model && model->m_model.IsValid());
+        return new JsLockableId(LockableId(*model->m_model));
+        }
+    static JsLockableIdP FromDgnDb(JsDgnDbP db)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(db && db->m_db.IsValid());
+        return new JsLockableId(LockableId(*db->m_db));
+        }
+
+    STUB_OUT_SET_METHOD(IsValid, bool);
+    STUB_OUT_SET_METHOD(Type, LockableType);
+    STUB_OUT_SET_METHOD(Id, JsDgnObjectIdP);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   06/16
+//=======================================================================================
+struct JsDgnLock : RefCountedBaseWithCreate
+{
+    DgnLock m_lock;
+
+    explicit JsDgnLock(DgnLock const& lock) : m_lock(lock) { }
+    JsDgnLock(JsLockableIdP id, LockLevel level) : m_lock(id ? DgnLock(id->m_id, level) : DgnLock()) { }
+
+    JsLockableIdP GetId() { return new JsLockableId(m_lock.GetLockableId()); }
+    LockLevel GetLevel() { return m_lock.GetLevel(); }
+    void SetLevel(LockLevel level) { m_lock.SetLevel(level); }
+    void EnsureLevel(LockLevel level) { m_lock.EnsureLevel(level); }
+    void Invalidate() { m_lock.Invalidate(); }
+
+    static JsDgnLockP FromElement(JsDgnElementP el, LockLevel level)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(el && el->m_el.IsValid());
+        return new JsDgnLock(DgnLock(el->m_el->GetElementId(), level));
+        }
+    static JsDgnLockP FromModel(JsDgnModelP model, LockLevel level)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(model && model->m_model.IsValid());
+        return new JsDgnLock(DgnLock(model->m_model->GetModelId(), level));
+        }
+    static JsDgnLockP FromDgnDb(JsDgnDbP db, LockLevel level)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(db && db->m_db.IsValid());
+        return new JsDgnLock(DgnLock(*db->m_db, level));
+        }
+
+    STUB_OUT_SET_METHOD(Id, JsLockableIdP);
+    STUB_OUT_SET_METHOD(Level, bool);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   06/16
+//=======================================================================================
+struct JsRepositoryRequest : RefCountedBaseWithCreate
+{
+    IBriefcaseManager::Request  m_req;
+    JsDgnDbP                    m_db;
+    Utf8String                  m_operation;
+
+    JsRepositoryRequest(JsDgnDb& db, Utf8StringCR operation);
+
+    JsDgnDbP GetBriefcase() { return m_db; }
+    Utf8String GetOperation() { return m_operation; }
+    void SetOperation(Utf8StringCR operation) { m_operation = operation; }
+
+    RepositoryStatus Acquire();
+    RepositoryStatus Query(bool fast);
+    RepositoryStatus QueryAvailability() { return Query(false); }
+    RepositoryStatus FastQueryAvailability() { return Query(true); }
+
+    void AddElement(JsDgnElementP el)
+        {
+        DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(el));
+        m_req.Locks().Insert(*el->m_el, LockLevel::Exclusive);
+        }
+    void AddModel(JsDgnModelP model, LockLevel level)
+        {
+        DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(model));
+        m_req.Locks().Insert(*model->m_model, level);
+        }
+    void AddBriefcase(LockLevel level)
+        {
+        DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(m_db));
+        m_req.Locks().Insert(*m_db->m_db, level);
+        }
+    void AddCode(JsAuthorityIssuedCodeP code)
+        {
+        DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(code));
+        m_req.Codes().insert(code->m_code);
+        }
+
+    static JsRepositoryRequestP Create(JsDgnDbP db, Utf8StringCR operation)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(db && db->m_db.IsValid());
+        return new JsRepositoryRequest(*db, operation);
+        }
+
+    STUB_OUT_SET_METHOD(Briefcase, JsDgnDbP);
 };
 
 END_BENTLEY_DGN_NAMESPACE

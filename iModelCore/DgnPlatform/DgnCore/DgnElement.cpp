@@ -186,6 +186,15 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus DgnElement::PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const
+    {
+    DgnElementCPtr original = BeSQLite::DbOpcode::Update == opcode ? GetDgnDb().Elements().GetElement(GetElementId()) : nullptr;
+    return _PopulateRequest(request, opcode, original.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus DgnElement::_PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const
     {
     DgnCode code;
@@ -243,7 +252,7 @@ DgnDbStatus DgnElement::_OnInsert()
             return DgnDbStatus::InvalidName;
         }
 
-    if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
+    if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid() || GetDgnDb().Models().QueryModelId(m_code).IsValid())
         return DgnDbStatus::DuplicateCode;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
@@ -360,7 +369,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
         return DgnDbStatus::InvalidParent;
 
     auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-    if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
+    if ((existingElemWithCode.IsValid() && existingElemWithCode != GetElementId()) || GetDgnDb().Models().QueryModelId(m_code).IsValid())
         return DgnDbStatus::DuplicateCode;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
@@ -371,7 +380,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
         }
 
     // Ensure lock acquired and code reserved
-    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementUpdate(*this, original);
+    DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnElementUpdate(*this);
     if (DgnDbStatus::Success != stat)
         return stat;
 

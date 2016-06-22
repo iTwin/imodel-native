@@ -107,14 +107,18 @@ bool GeometricPrimitive::GetLocalCoordinateFrame(TransformR localToWorld) const
             RotMatrix   axes;
             DVec3d      momentXYZ;
 
-            if (!surface->ComputePrincipalAreaMoments(area, (DVec3dR) centroid, axes, momentXYZ))
+            if (surface->ComputePrincipalAreaMoments(area, (DVec3dR) centroid, axes, momentXYZ))
                 {
-                localToWorld.InitIdentity();
-                return false;
+                localToWorld.InitFrom(axes, centroid);
+                break;
+                }
+            else if (surface->EvaluateNormalizedFrame(localToWorld, 0,0))
+                {
+                break;
                 }
 
-            localToWorld.InitFrom(axes, centroid);
-            break;
+            localToWorld.InitIdentity();
+            return false;
             }
 
         case GeometryType::SolidKernelEntity:
@@ -223,10 +227,15 @@ static bool getRange(ISolidPrimitiveCR geom, DRange3dR range, TransformCP transf
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool getRange(PolyfaceQueryCR geom, DRange3dR range, TransformCP transform)
     {
-    range = geom.PointRange();
-
-    if (nullptr != transform)
-        transform->Multiply(range, range);
+    if (nullptr == transform)
+        {
+        range = geom.PointRange();
+        }
+    else
+        {
+        range.Init();
+        range.Extend(*transform, geom.GetPointCP(), (int)geom.GetPointCount());
+        }
 
     return true;
     }
@@ -237,8 +246,12 @@ static bool getRange(PolyfaceQueryCR geom, DRange3dR range, TransformCP transfor
 static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP transform)
     {
     // NOTE: MSBsplineSurface::GetPoleRange doesn't give a nice fitted box...
-    IFacetOptionsPtr          facetOpt = IFacetOptions::Create();
-    IPolyfaceConstructionPtr  builder = IPolyfaceConstruction::Create(*facetOpt);
+    IFacetOptionsPtr facetOpt = IFacetOptions::Create();
+
+    facetOpt->SetMinPerBezier(3);
+    facetOpt->SetAngleTolerance(0.30); 
+
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*facetOpt);
 
     builder->Add(geom);
 

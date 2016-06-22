@@ -68,6 +68,14 @@ public:
         Acquire,
     };
 
+    //! Associated with a Response to identify the purpose for which a request was made
+    enum class RequestPurpose
+    {
+        Acquire,    //!< Attempted to acquire locks/codes
+        Query,      //!< Queried server for availability of locks/codes
+        FastQuery,  //!< Queried local cache for availability of locks/codes. Response may not include full ownership details for denied request.
+    };
+
     //! A request made to the IBriefcaseManager and possibly forwarded to the IRepositoryManager.
     //! Specifies a set of locks the briefcase wishes to acquire and/or a set of codes to be reserved.
     struct Request
@@ -102,11 +110,21 @@ public:
         DgnCodeInfoSet      m_codeStates;
         DgnLockInfoSet      m_lockStates;
         RepositoryStatus    m_status;
+        RequestPurpose      m_purpose;
+        ResponseOptions     m_options;
     public:
         //! Construct with the specified result
-        explicit Response(RepositoryStatus status=RepositoryStatus::InvalidResponse) : m_status(status) { }
+        Response(RequestPurpose purpose, ResponseOptions options, RepositoryStatus status=RepositoryStatus::InvalidResponse) : m_status(status) { }
 
         RepositoryStatus Result() const { return m_status; } //!< The result of the operation
+        RequestPurpose Purpose() const { return m_purpose; } //!< The purpose of the query which generated this response
+        ResponseOptions Options() const { return m_options; } //!< The options which were specified with the request, signifying the details included in this response
+        void SetOptions(ResponseOptions options) { m_options = options; } //!< Change the response options
+        void SetPurpose(RequestPurpose purpose) { m_purpose = purpose; } //!< Change the request purpose
+
+        //! Returns whether this response was obtained from the server. If not, full ownership details may not be included in LockStates() or CodeStates() and should be obtained from the server instead.
+        bool WasServerQuery() const { return RequestPurpose::FastQuery != m_purpose; }
+
         DgnLockInfoSet const& LockStates() const { return m_lockStates; } //!< The states of any locks which could not be acquired, if ResponseOptions::LockState was specified
         DgnCodeInfoSet const& CodeStates() const { return m_codeStates; } //!< The states of any codes which could not be reserved, if ResponseOptions::CodeState was specified
 
@@ -114,7 +132,7 @@ public:
         DgnLockInfoSet& LockStates() { return m_lockStates; } //!< A writable reference to the lock states
         DgnCodeInfoSet& CodeStates() { return m_codeStates; } //!< A writable reference to the code states
 
-        //! Reset to default state ("invalid response")
+        //! Reset to default state ("invalid response") while preserving the ResponseOptions and RequestPurpose
         void Invalidate() { m_status = RepositoryStatus::InvalidResponse; m_lockStates.clear(); m_codeStates.clear(); }
 
         DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
@@ -136,19 +154,12 @@ private:
 protected:
     explicit IBriefcaseManager(DgnDbR db) : m_db(db) { }
 
-    enum class RequestPurpose
-    {
-        Acquire,
-        Query,
-        FastQuery
-    };
-
     // Codes and Locks
     virtual Response _ProcessRequest(Request& request, RequestPurpose purpose) = 0;
     virtual RepositoryStatus _Demote(DgnLockSet& locks, DgnCodeSet const& codes) = 0;
     virtual RepositoryStatus _Relinquish(Resources which) = 0;
     virtual bool _AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& codes, RepositoryStatus* status) = 0;
-    virtual RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP original) = 0;
+    virtual RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode opcode) = 0;
     virtual RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode opcode) = 0;
 
     // Codes
@@ -168,10 +179,10 @@ protected:
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
     DGNPLATFORM_EXPORT bool LocksRequired() const;
-    DGNPLATFORM_EXPORT RepositoryStatus PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode opcode, PrepareAction action, DgnElementCP original=nullptr);
+    DGNPLATFORM_EXPORT RepositoryStatus PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode opcode, PrepareAction action);
     DGNPLATFORM_EXPORT RepositoryStatus PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode opcode, PrepareAction action);
     RepositoryStatus PerformAction(Request& req, PrepareAction action);
-    DgnDbStatus OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP pre=nullptr);
+    DgnDbStatus OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode);
     DgnDbStatus OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode);
     static DgnDbStatus ToDgnDbStatus(RepositoryStatus repoStatus, Request const& request);
 public:
@@ -352,7 +363,7 @@ public:
     //@}
 
     DgnDbStatus OnElementInsert(DgnElementCR el); //!< @private
-    DgnDbStatus OnElementUpdate(DgnElementCR el, DgnElementCR pre); //!< @private
+    DgnDbStatus OnElementUpdate(DgnElementCR el); //!< @private
     DgnDbStatus OnElementDelete(DgnElementCR el); //!< @private
     DgnDbStatus OnModelInsert(DgnModelCR model); //!< @private
     DgnDbStatus OnModelUpdate(DgnModelCR model); //!< @private
@@ -360,6 +371,7 @@ public:
     void OnDgnDbDestroyed() { _OnDgnDbDestroyed(); } //!< @private
 
     DGNPLATFORM_EXPORT static void BackDoor_SetAutomaticAcquisition(bool acquireAutomatically); //!< @private TEMPORARY
+    DGNPLATFORM_EXPORT static void BackDoor_SetSupportFastQuery(bool supportFastQuery); //!< @private TEMPORARY
 };
 
 /*=====================================================================================*/
@@ -382,7 +394,7 @@ protected:
     virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) = 0;
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) = 0;
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) = 0;
-    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) = 0;
+    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) = 0;
     virtual RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) = 0;
 public:
     //! Process a briefcase's request to acquire locks and/or reserve codes
@@ -420,12 +432,14 @@ public:
     RepositoryStatus QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) { return _QueryStates(lockStates, codeStates, locks, codes); }
 
     //! Retrieves the set of resources held by a briefcase as recorded in the repository
-    //! @param[in]      locks The set of locks tracked by the repository and held by the briefcase
-    //! @param[in]      codes The set of codes tracked by the repository and held by the briefcase
+    //! @param[out]     locks The set of locks tracked by the repository and held by the briefcase
+    //! @param[out]     codes The set of codes tracked by the repository and held by the briefcase
+    //! @param[out]     unavailableLocks The set of locks tracked by the repository and unavailable for acquisition by this briefcase
+    //! @param[out]     unavailableCodes The set of codes tracked by the repository and unavailable for acquisition by this briefcase
     //! @param[in]      db    The requesting briefcase
     //! @return Success, or an error status
     //! @remarks This method only returns resources tracked by the repository - e.g., excluding locks implicitly held for elements/models created locally by this briefcase and not yet committed to the repository
-    RepositoryStatus QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) { return _QueryHeldResources(locks, codes, db); }
+    RepositoryStatus QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) { return _QueryHeldResources(locks, codes, unavailableLocks, unavailableCodes, db); }
 
     //! Query the repository states of a set of codes
     //! @param[in]      states Upon successful return, holds the state of each specified code
@@ -457,6 +471,7 @@ namespace RepositoryJson
     DGNPLATFORM_EXPORT bool LockableTypeFromJson(LockableType& type, JsonValueCR value);
     DGNPLATFORM_EXPORT bool RepositoryStatusFromJson(RepositoryStatus& status, JsonValueCR value);
     DGNPLATFORM_EXPORT bool ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions& options, JsonValueCR value);
+    DGNPLATFORM_EXPORT bool RequestPurposeFromJson(IBriefcaseManager::RequestPurpose& purpose, JsonValueCR value);
 
     DGNPLATFORM_EXPORT void BriefcaseIdToJson(JsonValueR value, BeSQLite::BeBriefcaseId id);
     DGNPLATFORM_EXPORT void BeInt64IdToJson(JsonValueR value, BeInt64Id id);
@@ -464,6 +479,7 @@ namespace RepositoryJson
     DGNPLATFORM_EXPORT void LockableTypeToJson(JsonValueR value, LockableType type);
     DGNPLATFORM_EXPORT void RepositoryStatusToJson(JsonValueR value, RepositoryStatus status);
     DGNPLATFORM_EXPORT void ResponseOptionsToJson(JsonValueR value, IBriefcaseManager::ResponseOptions options);
+    DGNPLATFORM_EXPORT void RequestPurposeToJson(JsonValueR value, IBriefcaseManager::RequestPurpose purpose);
 } // namespace RepositoryJson
 //__PUBLISH_SECTION_START__
 

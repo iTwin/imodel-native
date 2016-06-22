@@ -842,8 +842,22 @@ public:
         //! Supplies functionality for coordinating multi-user DgnDb repositories
         struct RepositoryAdmin : IHostObject
             {
+            //! Create an IBriefcaseManager for the specified DgnDb
+            //! In general it is not necessary to override this. The default implementation creates:
+            //!  - For a master or standalone DgnDb, a briefcase manager which unconditionally grants all requests
+            //!  - For any other DgnDb, a briefcase manager which forwards all requests to the repository manager (i.e., a server)
             DGNPLATFORM_EXPORT virtual IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const;
+
+            //! Returns the repository manager for the specified DgnDb. Should be overridden by hosts which support server-hosted repositories
             virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const {return nullptr;}
+
+            //! Specifies options to be associated with requests made to briefcase manager originating from tools.
+            //! If queryOnly is true, we are only querying availability of locks/codes; otherwise we are attempting to acquire locks/codes.
+            virtual IBriefcaseManager::ResponseOptions _GetResponseOptions(bool queryOnly) const { return IBriefcaseManager::ResponseOptions::None; }
+
+            //! Invoked for each response to a request originating from a tool, e.g. to enable user notification of denied requests.
+            //! The response will include whatever details were specified by _GetResponseOptions()
+            virtual void _OnResponse(IBriefcaseManager::Response const& response, Utf8CP operation) { }
             };
 
         typedef bvector<DgnDomain*> T_RegisteredDomains;

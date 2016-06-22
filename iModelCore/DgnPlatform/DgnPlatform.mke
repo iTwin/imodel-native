@@ -408,6 +408,10 @@ $(CoreObjs)OCBRepMesh$(oext) :                      $(DgnBRepSrc)OCBRepMesh.cpp 
 
 $(CoreObjs)OCBRepUtil$(oext) :                      $(DgnBRepSrc)OCBRepUtil.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
 
+$(CoreObjs)PrimitivePicker$(oext) :                 $(DgnBRepSrc)PrimitivePicker.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
+
+$(CoreObjs)GeometryCache$(oext) :                   $(DgnBRepSrc)GeometryCache.cxx $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
+
 %endif
 
 #----------------------------------------------------------------------
@@ -626,9 +630,6 @@ DLM_OBJECT_PCH          = $(DgnPlatformObj)DgnPlatformInternal$(oext)
 DLM_EXPORT_OBJS         = $(cppObjects)
 DLM_EXPORT_DEST         = $(o)
 DLM_NOINITFUNC          = 1
-DLM_NOMSBUILTINS        = 1
-DLM_NO_DEF              = 1
-DLM_NO_DLS              = 1
 DLM_NOENTRY             = 1
 LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \

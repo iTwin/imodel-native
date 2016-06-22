@@ -8,15 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/RealityDataCache.h>
 
-#define DEBUG_MERCATOR
-#ifdef DEBUG_MERCATOR
-#   define DEBUG_PRINTF THREADLOG.debugv
-#   define DEBUG_ERRORLOG THREADLOG.errorv
-#else
-#   define DEBUG_PRINTF(fmt, ...)
-#   define DEBUG_ERRORLOG(fmt, ...)
-#endif
-
 #define COMPARE_VALUES(val0, val1)  if (val0 < val1) return true; if (val0 > val1) return false;
 
 using namespace WebMercator;

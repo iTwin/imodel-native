@@ -986,7 +986,9 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
 
         if (nullptr != lsSymb.GetILineStyle())
             {
-            if (lsSymb.IsContinuous()) // NOTE: QVis can handle this case for 2d and 3d...
+            if (lsSymb.UseLinePixels())
+                SetLinePixels((LinePixels)lsSymb.GetLinePixels());
+            else if (lsSymb.IsContinuous()) // NOTE: QVis can handle this case for 2d and 3d...
                 {
                 m_trueWidthStart = (lsSymb.HasOrgWidth() ? lsSymb.GetOriginWidth() : lsSymb.GetEndWidth());
                 m_trueWidthEnd = (lsSymb.HasEndWidth() ? lsSymb.GetEndWidth() : lsSymb.GetOriginWidth());

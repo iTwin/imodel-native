@@ -12,31 +12,20 @@ BEGIN_UNNAMED_NAMESPACE
     static int s_gps;
     static int s_sceneTarget;
     static int s_progressiveTarget;
+    static double s_frameRateGoal;
 END_UNNAMED_NAMESPACE
-
-#define RENDER_LOGGING 1
-
-#ifdef RENDER_LOGGING
-#   define DEBUG_PRINTF THREADLOG.debugv
-#   define ERROR_PRINTF THREADLOG.errorv
-#   define WARN_PRINTF THREADLOG.warningv
-#else
-#   define DEBUG_PRINTF(fmt, ...)
-#   define ERROR_PRINTF(fmt, ...)
-#   define WARN_PRINTF(fmt, ...)
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Target::VerifyRenderThread() {DgnDb::VerifyRenderThread();}
-void Render::Target::Debug::SaveGPS(int gps) {s_gps=gps; Show();}
+void Render::Target::Debug::SaveGPS(int gps, double fr) {s_gps=gps; s_frameRateGoal=fr; Show();}
 void Render::Target::Debug::SaveSceneTarget(int val) {s_sceneTarget=val; Show();}
 void Render::Target::Debug::SaveProgressiveTarget(int val) {s_progressiveTarget=val; Show();}
 void Render::Target::Debug::Show()
     {
-#if defined (RENDER_LOGGING) 
-    NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, PD=%d", s_gps, s_sceneTarget, s_progressiveTarget);
+#if defined (DEBUG_LOGGING) 
+    NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, PD=%d, FR=%lf", s_gps, s_sceneTarget, s_progressiveTarget, s_frameRateGoal);
 #endif
     }
 
@@ -48,11 +37,11 @@ void Render::Target::RecordFrameTime(uint32_t count, double seconds, bool isFrom
     if (0 == count)
         return;
 
-    if (seconds < .0001)
-        seconds = .0001;
+    if (seconds < .00001)
+        seconds = .00001;
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
-    Render::Target::Debug::SaveGPS(gps);
+    Render::Target::Debug::SaveGPS(gps, m_frameRateGoal);
 
     // Typically GPS increases as progressive display continues. We cannot let CreateScene graphics
     // be affected by the progressive display rate.  
@@ -179,7 +168,9 @@ void Render::Task::Perform(StopWatch& timer)
     else if (m_elapsedTime>.125)
         WARN_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
     else
-        DEBUG_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        {
+//        DEBUG_PRINTF("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -229,6 +220,29 @@ void DgnViewport::StartRenderThread()
 
     // create the rendering thread
     BeThreadUtilities::StartNewThread(300*1024, Render::Queue::Main, s_renderQueue); 
+    }
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct DestroyTargetTask : Render::SceneTask
+{
+    virtual Utf8CP _GetName() const override {return "Destroy Target";}
+    virtual Outcome _Process(StopWatch& timer) override {m_target->_OnDestroy(); return Outcome::Finished;}
+    DestroyTargetTask(Render::Target& target) : SceneTask(&target, Operation::DestroyTarget) {}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetRenderTarget(Target* newTarget)
+    {
+    DgnDb::VerifyClientThread();
+    if (m_renderTarget.IsValid())
+        RenderQueue().AddAndWait(*new DestroyTargetTask(*m_renderTarget));
+
+    m_renderTarget = newTarget; 
+    m_sync.InvalidateFirstDrawComplete();
     }
 
 /*---------------------------------------------------------------------------------**//**

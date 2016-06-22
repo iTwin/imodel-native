@@ -1114,9 +1114,8 @@ public:
     //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this element.
     //! @param[in]      request  Request to populate
     //! @param[in]      opcode   The operation to be performed
-    //! @param[in]      original If DbOpcode::Update, the persistent state of this element; otherwise, nullptr.
     //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
-    RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode, DgnElementCP original) const { return _PopulateRequest(request, opcode, original); }
+    DGNPLATFORM_EXPORT RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const;
 
     //! @name Properties 
     //! @{

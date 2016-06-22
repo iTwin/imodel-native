@@ -583,3 +583,21 @@ TEST_F (DgnModelTests, ReplaceInvalidCharacter)
     EXPECT_TRUE (check);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Majd.Uddin                      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, UnitDefinitionLabel)
+{
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbR db = *m_db;
+
+    DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
+    seedModel->FillModel();
+    EXPECT_TRUE(seedModel != nullptr);
+
+    // For TFS 473760: The returned label was truncated before the fix i.e. 'm' instead of 'mm'
+    // Adding the test so that this doesn't happen again
+    GeometricModel::DisplayInfo const& displayInfo = seedModel->ToGeometricModel()->GetDisplayInfo();
+    EXPECT_STREQ("mm", displayInfo.GetMasterUnits().GetLabel().c_str());
+    EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
+}

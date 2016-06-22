@@ -337,6 +337,15 @@ TEST_F(AnnotationTextBlockTest, CreateAnnotationTextBlock)
     EXPECT_TRUE(&project == &doc4.GetDbR());
     EXPECT_TRUE(0 == doc4.GetParagraphs().size());
 
+    // AppendParagraph
+    AnnotationTextBlockPtr doc7 = AnnotationTextBlock::Create(project);
+    ASSERT_TRUE(doc7.IsValid());
+    EXPECT_TRUE(&project == &doc7->GetDbR());
+    EXPECT_TRUE(0 == doc7->GetParagraphs().size());
+
+    doc7->AppendParagraph();
+    EXPECT_TRUE(1 == doc7->GetParagraphs().size());
+
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Umar.Hayat     07/2015

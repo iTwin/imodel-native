@@ -26,6 +26,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 struct RepositoryManager : IRepositoryManager
 {
     typedef IBriefcaseManager::ResponseOptions Options;
+    typedef IBriefcaseManager::RequestPurpose Purpose;
 private:
     Db  m_db;
 
@@ -33,7 +34,7 @@ private:
     virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override;
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override;
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) override;
-    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) override;
+    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
     virtual RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override;
 
     DbResult CreateLocksTable();
@@ -42,6 +43,7 @@ private:
     // locks
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
     void GetDeniedLocks(DgnLockInfoSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
+    void GetUnavailableLocks(DgnLockSet& locks, BeBriefcaseId bcId);
     int32_t QueryLockCount(BeBriefcaseId bc);
     void Relinquish(DgnLockSet const&, DgnDbR);
     void Reduce(DgnLockSet const&, DgnDbR);
@@ -64,6 +66,7 @@ private:
     RepositoryStatus _ReleaseCodes(DgnCodeSet const&, DgnDbR);
     RepositoryStatus _RelinquishCodes(DgnDbR);
     RepositoryStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&);
+    void GetUnavailableCodes(DgnCodeSet& codes, BeBriefcaseId bcId);
 public:
     RepositoryManager();
 
@@ -284,7 +287,7 @@ static void bindBcId(Statement& stmt, int index, BeBriefcaseId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryManager::Response RepositoryManager::_ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
     {
-    Response response;
+    Response response(queryOnly ? Purpose::Query : Purpose::Acquire, req.Options());
     _ReserveCodes(response, req.Codes(), db, req.Options(), queryOnly);
     auto prevStatus = response.Result();
     if (queryOnly)
@@ -349,13 +352,52 @@ RepositoryStatus RepositoryManager::_QueryStates(DgnLockInfoSet& lockStates, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus RepositoryManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db)
+RepositoryStatus RepositoryManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
     {
     auto stat = _QueryLocks(locks, db);
     if (RepositoryStatus::Success == stat)
         stat = _QueryCodes(codes, db);
 
+    GetUnavailableLocks(unavailableLocks, db.GetBriefcaseId());
+    GetUnavailableCodes(unavailableCodes, db.GetBriefcaseId());
+
     return stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryManager::GetUnavailableLocks(DgnLockSet& locks, BeBriefcaseId bcId)
+    {
+    // ###TODO: This should also include locks which were released in a revision not yet pulled by this briefcase...
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT " LOCK_Type "," LOCK_Id "," LOCK_Exclusive " FROM " TABLE_Locks " WHERE " LOCK_BcId " != ?");
+    bindBcId(stmt, 1, bcId);
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        LockableId id(static_cast<LockableType>(stmt.GetValueInt(0)), stmt.GetValueId<BeInt64Id>(1));
+        auto level = (0 != stmt.GetValueInt(2)) ? LockLevel::Exclusive : LockLevel::Shared;
+        locks.insert(DgnLock(id, level));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryManager::GetUnavailableCodes(DgnCodeSet& codes, BeBriefcaseId bcId)
+    {
+    // ###TODO: This should also include codes which became discarded or used in a revision not yet pulled by this briefcase...
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT " CODE_Authority "," CODE_NameSpace "," CODE_Value " FROM " TABLE_Codes
+                       " WHERE " CODE_State " = 1 AND " CODE_Briefcase " != ?");
+    bindBcId(stmt, 1, bcId);
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        DgnCode code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
+        codes.insert(code);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -937,10 +979,12 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
         {
         RegisterServer();
         IBriefcaseManager::BackDoor_SetAutomaticAcquisition(false);
+        IBriefcaseManager::BackDoor_SetSupportFastQuery(true);
         }
 
     ~RepositoryManagerTest()
         {
+        IBriefcaseManager::BackDoor_SetSupportFastQuery(false);
         IBriefcaseManager::BackDoor_SetAutomaticAcquisition(true);
         UnregisterServer();
         }
@@ -1915,6 +1959,161 @@ TEST_F (DoubleBriefcaseTest, StandaloneBriefcase)
     EXPECT_TRUE(briefStyle.Insert().IsValid());
     EXPECT_EQ(BE_SQLITE_OK, brief.SaveChanges());
     EXPECT_TRUE(brief.Txns().IsUndoPossible());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* For queries which need to be fast and not necessarily 100% up to date with server,
+* IBriefcaseManager supplies a FastQuery option which queries a local copy of locks+codes
+* known to be unavailable to this briefcase, either because another briefcase owns them
+* or because a required revision has not been pulled.
+* The primary use case for this is tools which want to filter out elements for which the
+* lock is not available.
+* Test that:
+*   - While the cache is in sync with server, fast and slow queries both return same results
+*   - When cache becomes out of sync, fast queries continue to return previous results
+*   - When cache is out of sync, attempts to actually acquire locks/codes are validated against the server, not the local cache
+*   - After refreshing local cache, fast queries are again in sync with server state
+* @bsistruct                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct FastQueryTest : DoubleBriefcaseTest
+{
+    DEFINE_T_SUPER(DoubleBriefcaseTest);
+
+    typedef IBriefcaseManager::FastQuery FastQuery;
+    typedef IBriefcaseManager::RequestPurpose Purpose;
+
+    template<typename T> static Utf8String ToString(T const& t)
+        {
+        Json::Value v;
+        t.ToJson(v);
+        return Json::FastWriter::ToString(v);
+        }
+
+    void ExpectEqual(DgnLockInfo const& a, DgnLockInfo const& b)
+        {
+        EXPECT_EQ(a.IsTracked(), b.IsTracked());
+        EXPECT_EQ(a.IsOwned(), b.IsOwned());
+        EXPECT_EQ(a.GetOwnership().GetLockLevel(), b.GetOwnership().GetLockLevel());
+        }
+
+    void ExpectEqual(DgnCodeInfo const& a, DgnCodeInfo const& b)
+        {
+        EXPECT_EQ(a.IsAvailable(), b.IsAvailable());
+        EXPECT_EQ(a.IsReserved(), b.IsReserved());
+        EXPECT_EQ(a.IsUsed(), b.IsUsed());
+        EXPECT_EQ(a.IsDiscarded(), b.IsDiscarded());
+        }
+
+    static bool AreSameEntity(DgnLockInfo const& a, DgnLockInfo const& b) { return a.GetLockableId() == b.GetLockableId(); }
+    static bool AreSameEntity(DgnCodeInfo const& a, DgnCodeInfo const& b) { return a.GetCode() == b.GetCode(); }
+
+    template<typename T> void ExpectEqual(T const& a, T const& b)
+        {
+        EXPECT_EQ(a.size(), b.size());
+
+        for (auto const& aInfo : a)
+            {
+            auto pbInfo = std::find_if(b.begin(), b.end(), [&](decltype(aInfo) arg) { return AreSameEntity(aInfo, arg); });
+            EXPECT_FALSE(b.end() == pbInfo) << "Present in a only: " << ToString(aInfo).c_str();
+            if (b.end() != pbInfo)
+                ExpectEqual(aInfo, *pbInfo);
+            }
+
+        for (auto const& bInfo : b)
+            {
+            auto paInfo = std::find_if(a.begin(), a.end(), [&](decltype(bInfo) arg) { return AreSameEntity(bInfo, arg); });
+            EXPECT_FALSE(a.end() == paInfo) << "Present in b only: " << ToString(bInfo).c_str();
+            }
+        }
+
+    void ExpectResponsesEqual(Response const& a, Response const& b)
+        {
+        EXPECT_EQ(a.Result(), b.Result());
+        ExpectEqual(a.LockStates(), b.LockStates());
+        ExpectEqual(a.CodeStates(), b.CodeStates());
+        }
+
+    void ExpectResponsesEqual(Request& req, DgnDbR db)
+        {
+        Request fastReq = req; // function modifies input Request...
+        Response response(Purpose::Query, req.Options()), fastResponse(Purpose::FastQuery, req.Options());
+        EXPECT_EQ(db.BriefcaseManager().AreResourcesAvailable(req, &response, FastQuery::No), db.BriefcaseManager().AreResourcesAvailable(fastReq, &fastResponse, FastQuery::Yes));
+        ExpectResponsesEqual(response, fastResponse);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (FastQueryTest, CacheLocks)
+    {
+    SetupDbs();
+
+    // dbA will acquire locks. dbB will make fast queries.
+    DgnDbR dbA = *m_dbA,
+           dbB = *m_dbB;
+    DgnModelPtr modelA1 = GetModel(dbA, true),
+                modelA2 = GetModel(dbA, false),
+                modelB1 = GetModel(dbB, true),
+                modelB2 = GetModel(dbB, false);
+    DgnElementCPtr elemA1 = GetElement(dbA, Elem2dId2()),
+                   elemA2 = GetElement(dbA, Elem3dId2()),
+                   elemB1 = GetElement(dbB, Elem2dId2()),
+                   elemB2 = GetElement(dbB, Elem3dId2());
+
+    ExpectAcquire(*modelA1, LockLevel::Exclusive);
+    ExpectAcquire(*modelA2, LockLevel::Shared);
+    ExpectAcquire(*elemA1, LockLevel::Exclusive);
+
+    // Make sure local state is pulled for dbB
+    EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().RefreshFromRepository());
+
+    // Confirm fast queries return same results as queries against server
+    Request req(ResponseOptions::LockState);
+    ExpectResponsesEqual(req, dbB);
+
+    req.Reset();
+    req.SetOptions(ResponseOptions::LockState);
+    req.Locks().Insert(*modelB1, LockLevel::Shared);    // unavailable
+    req.Locks().Insert(*modelB2, LockLevel::Shared);    // available
+    req.Locks().Insert(*elemB1, LockLevel::Exclusive);  // unavailable - but not in denied set, because in exclusively locked model
+    req.Locks().Insert(*elemB2, LockLevel::Exclusive);  // available
+    ExpectResponsesEqual(req, dbB);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (FastQueryTest, CacheCodes)
+    {
+    SetupDbs();
+
+    // dbA will acquire codes. dbB will make fast queries
+    DgnDbR dbA = *m_dbA,
+           dbB = *m_dbB;
+
+    DgnCode code1 = DgnMaterial::CreateMaterialCode("Code", "One"),
+            code2 = DgnMaterial::CreateMaterialCode("Code", "Two");
+
+    // reserve codes
+    DgnCodeSet codes;
+    codes.insert(code1);
+    codes.insert(code2);
+    EXPECT_EQ(RepositoryStatus::Success, dbA.BriefcaseManager().ReserveCodes(codes).Result());
+
+    // Make sure local state is pulled for dbB
+    EXPECT_EQ(RepositoryStatus::Success, dbB.BriefcaseManager().RefreshFromRepository());
+
+    // Confirm fast queries return same results as queries against server
+    Request req(ResponseOptions::CodeState);
+    ExpectResponsesEqual(req, dbB);
+
+    DgnCode code3 = DgnMaterial::CreateMaterialCode("Code", "Three");
+    req.Reset();
+    req.SetOptions(ResponseOptions::CodeState);
+    req.Codes().insert(code1);  // unavailable
+    req.Codes().insert(code3);  // available
+    ExpectResponsesEqual(req, dbB);
     }
 
 /*---------------------------------------------------------------------------------**//**

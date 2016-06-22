@@ -30,6 +30,7 @@ void LineStyleSymb::Init (ILineStyleCP lStyle)
     m_maxCompress = 0.3;
     m_planeByRows.InitIdentity();
     m_texture = nullptr;
+    m_useLinePixels = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -414,6 +415,48 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     // so there are a lot of unlabeled continuous styles out there.
     LsComponentCP topComponent = nameRec->GetComponentCP(nullptr);
 
+    // If the line style definition can be loaded correctly we set it up as the current line style.
+    if (nullptr == topComponent)
+        return;
+
+    if (topComponent->GetComponentType() == LsComponentType::Internal)
+        {
+        LsInternalComponentCP internalComponent = (LsInternalComponentCP)topComponent;
+        uint32_t lc = internalComponent->GetLineCode();
+        BeAssert(MIN_LINECODE < lc && lc <= MAX_LINECODE);
+        GraphicParams::LinePixels lp;
+        switch(lc)
+            {
+            case 1:
+                lp = GraphicParams::LinePixels::Code1;
+                break;
+            case 2:
+                lp = GraphicParams::LinePixels::Code2;
+                break;
+            case 3:
+                lp = GraphicParams::LinePixels::Code3;
+                break;
+            case 4:
+                lp = GraphicParams::LinePixels::Code4;
+                break;
+            case 5:
+                lp = GraphicParams::LinePixels::Code5;
+                break;
+            case 6:
+                lp = GraphicParams::LinePixels::Code6;
+                break;
+            case 7:
+                lp = GraphicParams::LinePixels::Code7;
+                break;
+            default:
+                return;
+            }
+
+        Init(nameRec);
+        SetUseLinePixels((uint32_t)lp);
+        return;
+        }
+
     // If the line style is continuous and has no width, leave now.
     if (nameRec->IsContinuous() && (0 == (styleParams.modifiers & (STYLEMOD_SWIDTH | STYLEMOD_EWIDTH | STYLEMOD_TRUE_WIDTH))))
         return;
@@ -421,10 +464,6 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     // If the line style is mapped to a hardware line code return the hardware line code number.
     if (nameRec->IsHardware())
         return; // (int) nameRec->GetHardwareStyle(); <- No longer supported...
-
-    // If the line style definition can be loaded correctly we set it up as the current line style.
-    if (nullptr == topComponent)
-        return;
 
     bool xElemPhaseSet = m_options.xElemPhaseSet; // Save current value before Init clears it...
 

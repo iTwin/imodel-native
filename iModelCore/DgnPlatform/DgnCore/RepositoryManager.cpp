@@ -16,7 +16,7 @@ struct MasterBriefcaseManager : IBriefcaseManager
 private:
     MasterBriefcaseManager(DgnDbR db) : IBriefcaseManager(db) { }
 
-    virtual Response _ProcessRequest(Request&, RequestPurpose purpose) override { return Response(RepositoryStatus::Success); }
+    virtual Response _ProcessRequest(Request& req, RequestPurpose purpose) override { return Response(purpose, req.Options(), RepositoryStatus::Success); }
     virtual RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _Relinquish(Resources) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
@@ -45,7 +45,7 @@ private:
             states.insert(DgnCodeInfo(code)).first->SetReserved(bcId);
         return RepositoryStatus::Success;
         }
-    virtual RepositoryStatus _PrepareForElementOperation(Request&, DgnElementCR, BeSQLite::DbOpcode, DgnElementCP) override { return RepositoryStatus::Success; }
+    virtual RepositoryStatus _PrepareForElementOperation(Request&, DgnElementCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
     virtual RepositoryStatus _PrepareForModelOperation(Request&, DgnModelCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
 public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new MasterBriefcaseManager(db); }
@@ -65,6 +65,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 {
 private:
     enum class DbState { New, Ready, Invalid };
+    enum class TableType { Owned, Unavailable };
 
     Db      m_localDb;
     DbState m_localDbState;
@@ -86,9 +87,9 @@ private:
     virtual void _OnCommit(TxnManager& mgr) override { Save(mgr); }
     virtual void _OnReversedChanges(TxnManager& mgr) override { Save(mgr); }
     virtual void _OnUndoRedo(TxnManager& mgr, TxnAction) override { Save(mgr); }
-    virtual RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op, DgnElementCP orig) override
+    virtual RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op) override
         {
-        return el.PopulateRequest(req, op, orig);
+        return el.PopulateRequest(req, op);
         }
     virtual RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op) override
         {
@@ -111,6 +112,7 @@ private:
     bool UseExistingLocalDb(BeFileNameCR filename);
     bool InitializeLocalDb();
     bool CreateLocksTable(Utf8CP tableName);
+    bool CreateCodesTable(Utf8CP tableName);
     RepositoryStatus Refresh();
     RepositoryStatus Pull();
     DbResult Save()
@@ -126,17 +128,20 @@ private:
     void Cull(Request& req) { Cull(req.Codes()); Cull(req.Locks().GetLockSet()); }
 
     // Codes...
-    void Insert(DgnCodeSet const& codes);
+    void InsertCodes(DgnCodeSet const& codes, TableType tableType);
     void Cull(DgnCodeSet& codes);
     RepositoryStatus Remove(DgnCodeSet const& codes);
 
     // Locks...
-    void Insert(LockableId id, LockLevel level, bool overwrite=false);
-    template<typename T> void Insert(T const& locks, bool checkExisting);
+    void InsertLock(LockableId id, LockLevel level, TableType tableType, bool overwrite=false);
+    template<typename T> void InsertLocks(T const& locks, TableType tableType, bool checkExisting);
     void AddDependentElements(DgnLockSet& locks, bvector<DgnModelId> const& models);
     RepositoryStatus PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models);
     void Cull(DgnLockSet& locks);
     RepositoryStatus AcquireLocks(LockRequestR locks, bool cull);
+    Response DoFastQuery(Request const&);
+    RepositoryStatus FastQueryLocks(Response& response, LockRequest const& locks, ResponseOptions options);
+    RepositoryStatus FastQueryCodes(Response& response, DgnCodeSet const& codes, ResponseOptions options);
 
     BeFileName GetLocalDbFileName() const
         {
@@ -151,6 +156,15 @@ private:
 public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new BriefcaseManager(db); }
 };
+
+// ##TODO: temporary, until tool framework enhanced to handle explicitly acquiring requisite locks/codes
+// Can be disabled for tests for now.
+static bool s_acquireAutomatically = true;
+void IBriefcaseManager::BackDoor_SetAutomaticAcquisition(bool acquireAutomatically) { s_acquireAutomatically = acquireAutomatically; }
+
+// ###TODO: temporary, until DgnDbServer enhanced to supply set of unavailable locks + codes such that we can cache and consult for fast query
+static bool s_supportFastQuery = false;
+void IBriefcaseManager::BackDoor_SetSupportFastQuery(bool support) { s_supportFastQuery = support; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/16
@@ -190,13 +204,16 @@ IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseMana
     }
 
 #define TABLE_Codes "Codes"
+#define TABLE_UnavailableCodes "UnavailableCodes"
 #define CODE_AuthorityId "AuthorityId"
 #define CODE_NameSpace "NameSpace"
 #define CODE_Value "CodeValue"
 #define CODE_Columns CODE_AuthorityId "," CODE_NameSpace "," CODE_Value
 #define CODE_Values "(" CODE_Columns ")"
 #define STMT_InsertCode "INSERT INTO " TABLE_Codes " " CODE_Values " Values (?,?,?)"
+#define STMT_InsertUnavailableCode "INSERT INTO " TABLE_UnavailableCodes " " CODE_Values " Values (?,?,?)"
 #define STMT_SelectCodesInSet "SELECT " CODE_Columns " FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
+#define STMT_SelectUnavailableCodesInSet "SELECT " CODE_Columns " FROM " TABLE_UnavailableCodes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_DeleteCodesInSet "DELETE FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 
 enum CodeColumn { AuthorityId=0, NameSpace, Value };
@@ -209,11 +226,16 @@ enum CodeColumn { AuthorityId=0, NameSpace, Value };
 #define LOCK_Columns LOCK_Type "," LOCK_Id "," LOCK_Level
 #define LOCK_Values "(" LOCK_Columns ")"
 #define STMT_SelectExistingLock "SELECT " LOCK_Level ",rowid FROM " TABLE_Locks " WHERE " LOCK_Type "=? AND " LOCK_Id "=?"
+#define STMT_SelectExistingUnavailableLock "SELECT " LOCK_Level ",rowid FROM " TABLE_UnavailableLocks " WHERE " LOCK_Type "=? AND " LOCK_Id "=?"
 #define STMT_InsertNewLock "INSERT INTO " TABLE_Locks " " LOCK_Values " VALUES (?,?,?)"
+#define STMT_InsertUnavailableLock "INSERT INTO " TABLE_UnavailableLocks " " LOCK_Values " VALUES (?,?,?)"
 #define STMT_UpdateLockLevel "UPDATE " TABLE_Locks " SET " LOCK_Level "=? WHERE rowid=?"
+#define STMT_UpdateUnavailableLockLevel "UPDATE " TABLE_UnavailableLocks " SET " LOCK_Level "=? WHERE rowid=?"
 #define STMT_SelectLocksInSet "SELECT " LOCK_Type "," LOCK_Id " FROM " TABLE_Locks " WHERE InVirtualSet(@vset," LOCK_Columns ")"
+#define STMT_SelectUnavailableLocksInSet "SELECT " LOCK_Type "," LOCK_Id "," LOCK_Level " FROM " TABLE_UnavailableLocks " WHERE InVirtualSet(@vset," LOCK_Columns ")"
 #define STMT_SelectElementInModel " SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?"
 #define STMT_InsertOrReplaceLock "INSERT OR REPLACE INTO " TABLE_Locks " " LOCK_Values " VALUES(?,?,?)"
+#define STMT_InsertOrReplaceUnavailableLock "INSERT OR REPLACE INTO " TABLE_UnavailableLocks " " LOCK_Values " VALUES(?,?,?)"
 #define STMT_SelectElemsInModels "SELECT " LOCK_Id " FROM " TABLE_Locks " WHERE " LOCK_Type "=2 AND InVirtualSet(@vset," LOCK_Id ")"
 #define STMT_SelectLevelInSet "SELECT " LOCK_Columns " FROM " TABLE_Locks " WHERE InVirtualSet(@vset, " LOCK_Type "," LOCK_Id ")"
 
@@ -291,12 +313,19 @@ bool BriefcaseManager::InitializeLocalDb()
         m_localDb.SavePropertyString(GetCreationDatePropSpec(), dgnDbCreationDate.ToUtf8String());
 
     // Set up the required tables
-    auto result = m_localDb.CreateTable(TABLE_Codes,    CODE_AuthorityId " INTEGER,"
-                                                        CODE_NameSpace " TEXT,"
-                                                        CODE_Value " TEXT,"
-                                                        "PRIMARY KEY" CODE_Values);
+    return CreateCodesTable(TABLE_Codes) && CreateLocksTable(TABLE_Locks)
+        && CreateCodesTable(TABLE_UnavailableCodes) && CreateLocksTable(TABLE_UnavailableLocks);
+    }
 
-    return BE_SQLITE_OK == result && CreateLocksTable(TABLE_Locks) && CreateLocksTable(TABLE_UnavailableLocks);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BriefcaseManager::CreateCodesTable(Utf8CP tableName)
+    {
+    return BE_SQLITE_OK == m_localDb.CreateTable(tableName, CODE_AuthorityId " INTEGER,"
+                                                            CODE_NameSpace " TEXT,"
+                                                            CODE_Value " TEXT,"
+                                                            "PRIMARY KEY" CODE_Values);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -344,18 +373,24 @@ RepositoryStatus BriefcaseManager::Initialize()
 RepositoryStatus BriefcaseManager::Pull()
     {
     // Populate local Db with reserved codes and locks from the server
-    DgnLockSet locks;
-    DgnCodeSet codes;
+    DgnLockSet locks, unavailableLocks;
+    DgnCodeSet codes, unavailableCodes;
     auto server = GetRepositoryManager();
-    auto status = nullptr != server ? server->QueryHeldResources(locks, codes, GetDgnDb()) : RepositoryStatus::ServerUnavailable;
+    auto status = nullptr != server ? server->QueryHeldResources(locks, codes, unavailableLocks, unavailableCodes, GetDgnDb()) : RepositoryStatus::ServerUnavailable;
     if (RepositoryStatus::Success != status)
         return status;
 
     if (!locks.empty())
-        Insert(locks, false);
+        InsertLocks(locks, TableType::Owned, false);
 
     if (!codes.empty())
-        Insert(codes);
+        InsertCodes(codes, TableType::Owned);
+
+    if (!unavailableLocks.empty())
+        InsertLocks(unavailableLocks, TableType::Unavailable, false);
+
+    if (!unavailableCodes.empty())
+        InsertCodes(unavailableCodes, TableType::Unavailable);
 
     Save();
 
@@ -378,8 +413,11 @@ RepositoryStatus BriefcaseManager::Refresh()
 
     // Empty out our local DB tables and re-populate from server
     m_localDbState = DbState::Invalid; // assume something will go wrong...
-    if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Locks) || BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Codes))
+    if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Locks) || BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_UnavailableLocks)
+        || BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Codes) || BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_UnavailableCodes))
+        {
         return RepositoryStatus::SyncError;
+        }
 
     return Pull();
     }
@@ -387,9 +425,9 @@ RepositoryStatus BriefcaseManager::Refresh()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManager::Insert(DgnCodeSet const& codes)
+void BriefcaseManager::InsertCodes(DgnCodeSet const& codes, TableType tableType)
     {
-    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_InsertCode);
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(TableType::Owned == tableType ? STMT_InsertCode : STMT_InsertUnavailableCode);
     for (auto const& code : codes)
         {
         if (code.IsEmpty() || !code.IsValid())
@@ -403,8 +441,6 @@ void BriefcaseManager::Insert(DgnCodeSet const& codes)
         stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
         stmt->Step();
         }
-
-    //Save();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -465,7 +501,6 @@ RepositoryStatus BriefcaseManager::Remove(DgnCodeSet const& codes)
     if (BE_SQLITE_OK != stmt->Step())
         return RepositoryStatus::SyncError;
 
-    //Save();
     return RepositoryStatus::Success;
     }
 
@@ -480,9 +515,13 @@ template<typename T> static void bindEnum(Statement& stmt, int32_t index, T val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManager::Insert(LockableId id, LockLevel level, bool overwrite)
+void BriefcaseManager::InsertLock(LockableId id, LockLevel level, TableType tableType, bool overwrite)
     {
-    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(overwrite ? STMT_InsertOrReplaceLock : STMT_InsertNewLock);
+    auto sql = TableType::Owned == tableType
+             ? (overwrite ? STMT_InsertOrReplaceLock : STMT_InsertNewLock)
+             : (overwrite ? STMT_InsertOrReplaceUnavailableLock : STMT_InsertUnavailableLock);
+
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(sql);
     bindEnum(*stmt, 1, id.GetType());
     stmt->BindId(2, id.GetId());
     bindEnum(*stmt, 3, level);
@@ -538,11 +577,28 @@ ModelElementLocks::const_iterator ModelElementLocks::begin() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> void BriefcaseManager::Insert(T const& locks, bool checkExisting)
+template<typename T> void BriefcaseManager::InsertLocks(T const& locks, TableType tableType, bool checkExisting)
     {
-    CachedStatementPtr select = checkExisting ? GetLocalDb().GetCachedStatement(STMT_SelectExistingLock) : nullptr,
-                       insert = GetLocalDb().GetCachedStatement(STMT_InsertNewLock),
-                       update = checkExisting ? GetLocalDb().GetCachedStatement(STMT_UpdateLockLevel) : nullptr;
+    CachedStatementPtr select, insert, update;
+    bool insertingOwnedLocks = (TableType::Owned == tableType);
+    if (insertingOwnedLocks)
+        {
+        insert = GetLocalDb().GetCachedStatement(STMT_InsertNewLock);
+        if (checkExisting)
+            {
+            select = GetLocalDb().GetCachedStatement(STMT_SelectExistingLock);
+            update = GetLocalDb().GetCachedStatement(STMT_UpdateLockLevel);
+            }
+        }
+    else
+        {
+        insert = GetLocalDb().GetCachedStatement(STMT_InsertUnavailableLock);
+        if (checkExisting)
+            {
+            select = GetLocalDb().GetCachedStatement(STMT_SelectExistingUnavailableLock);
+            update = GetLocalDb().GetCachedStatement(STMT_UpdateUnavailableLockLevel);
+            }
+        }
 
     // If we obtain exclusive lock on a model, we want to record an exclusive lock on all its elements
     // Likewise, an exclusive lock on the db should record an exclusive lock on everything in it
@@ -590,7 +646,7 @@ template<typename T> void BriefcaseManager::Insert(T const& locks, bool checkExi
         if (select.IsValid())
             select->Reset();
 
-        if (lock.IsExclusive())
+        if (insertingOwnedLocks && lock.IsExclusive())
             {
             switch (lock.GetType())
                 {
@@ -615,10 +671,14 @@ template<typename T> void BriefcaseManager::Insert(T const& locks, bool checkExi
     insert = nullptr;
     update = nullptr;
 
+    // The 'unavailable locks' table is mimicking the server, which doesn't track these implicitly owned locks...
+    if (!insertingOwnedLocks)
+        return;
+
     if (dbExclusivelyLocked)
         {
         for (auto const& model : exclusivelyLockedModels)
-            Insert(LockableId(LockableType::Model, model), LockLevel::Exclusive, true);
+            InsertLock(LockableId(LockableType::Model, model), LockLevel::Exclusive, tableType, true);
         }
 
     if (!exclusivelyLockedModels.empty())
@@ -626,7 +686,7 @@ template<typename T> void BriefcaseManager::Insert(T const& locks, bool checkExi
         for (auto const& model : exclusivelyLockedModels)
             {
             ModelElementLocks elemLocks(model, GetDgnDb());
-            Insert(elemLocks, true);
+            InsertLocks(elemLocks, tableType, true);
             }
         }
     }
@@ -708,10 +768,7 @@ RepositoryStatus BriefcaseManager::AcquireLocks(LockRequestR locks, bool cull)
     std::swap(locks, req.Locks());
 
     if (RepositoryStatus::Success == result)
-        {
-        Insert(locks, true);
-        //Save();
-        }
+        InsertLocks(locks, TableType::Owned, true);
 
     return result;
     }
@@ -732,21 +789,31 @@ static bool lockSetContains(DgnLockSet const& locks, DgnLockCR lock, bool matchE
         return true;
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   06/16
+//=======================================================================================
+struct VirtualLockSet : VirtualSet
+{
+    DgnLockSet const& m_locks;
+    VirtualLockSet(DgnLockSet const& locks) : m_locks(locks) { }
+    virtual bool _IsInSet(int nVals, DbValue const* vals) const override
+        {
+        BeAssert(3 == nVals);
+        LockableId id(static_cast<LockableType>(vals[0].GetValueInt()), BeInt64Id(vals[1].GetValueUInt64()));
+        return _IsLockInSet(DgnLock(id, static_cast<LockLevel>(vals[2].GetValueInt())));
+        }
+    virtual bool _IsLockInSet(DgnLockCR lock) const = 0;
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseManager::Cull(DgnLockSet& locks)
     {
-    struct VSet : VirtualSet
+    struct VSet : VirtualLockSet
     {
-        DgnLockSet const& m_locks;
-        VSet(DgnLockSet const& locks) : m_locks(locks) { }
-        virtual bool _IsInSet(int nVals, DbValue const* vals) const override
-            {
-            BeAssert(3 == nVals);
-            LockableId id(static_cast<LockableType>(vals[0].GetValueInt()), BeInt64Id(vals[1].GetValueUInt64()));
-            return lockSetContains(m_locks, DgnLock(id, static_cast<LockLevel>(vals[2].GetValueInt())));
-            }
+        VSet(DgnLockSet const& locks) : VirtualLockSet(locks) { }
+        virtual bool _IsLockInSet(DgnLockCR lock) const override { return lockSetContains(m_locks, lock); }
     };
 
     VSet vset(locks);
@@ -766,31 +833,129 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req, Requ
     {
     RepositoryStatus stat;
     if (!Validate(&stat))
-        return Response(stat);
+        return Response(purpose, req.Options(), stat);
 
     Cull(req);
     if (req.IsEmpty())
-        return Response(RepositoryStatus::Success);
+        return Response(purpose, req.Options(), RepositoryStatus::Success);
 
     if (RequestPurpose::FastQuery == purpose)
         {
-        // ###TODO: Respect FastQuery...
+        if (s_supportFastQuery)
+            return DoFastQuery(req);
+
         purpose = RequestPurpose::Query;
         }
 
     auto mgr = GetRepositoryManager();
     if (nullptr == mgr)
-        return Response(RepositoryStatus::ServerUnavailable);
+        return Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable);
 
     auto response = RequestPurpose::Acquire == purpose ? mgr->Acquire(req, GetDgnDb()) : mgr->QueryAvailability(req, GetDgnDb());
     if (RequestPurpose::Acquire == purpose && RepositoryStatus::Success == response.Result())
         {
-        Insert(req.Codes());
-        Insert(req.Locks(), true);
-        //Save();
+        InsertCodes(req.Codes(), TableType::Owned);
+        InsertLocks(req.Locks(), TableType::Owned, true);
         }
 
     return response;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IBriefcaseManager::Response BriefcaseManager::DoFastQuery(Request const& req)
+    {
+    Response response(RequestPurpose::FastQuery, req.Options());
+    response.SetResult(FastQueryLocks(response, req.Locks(), req.Options()));
+    auto codeResult = FastQueryCodes(response, req.Codes(), req.Options());
+    if (RepositoryStatus::Success == response.Result())
+        response.SetResult(codeResult);
+
+    return response;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus BriefcaseManager::FastQueryLocks(Response& response, LockRequest const& locks, ResponseOptions options)
+    {
+    struct VSet : VirtualLockSet
+    {
+        VSet(DgnLockSet const& locks) : VirtualLockSet(locks) { }
+        virtual bool _IsLockInSet(DgnLockCR lock) const override
+            {
+            BeAssert(LockLevel::None != lock.GetLevel());
+
+            auto iter = m_locks.find(DgnLock(lock.GetLockableId(), LockLevel::Exclusive));
+            if (m_locks.end() == iter)
+                return false;
+
+            switch (iter->GetLevel())
+                {
+                case LockLevel::Exclusive:  return true;
+                case LockLevel::Shared:     return LockLevel::Exclusive == lock.GetLevel();
+                }
+
+            BeAssert(false && "LockRequest requests LockLevel::None");
+            return false;
+            }
+    };
+
+    VSet vset(locks.GetLockSet());
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectUnavailableLocksInSet);
+    stmt->BindVirtualSet(1, vset);
+
+    RepositoryStatus status = RepositoryStatus::Success;
+    bool wantDetails = ResponseOptions::None != (ResponseOptions::LockState & options);
+    BeBriefcaseId bcId(BeBriefcaseId::Standalone()); // a lie...
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        status = RepositoryStatus::LockAlreadyHeld;
+        if (!wantDetails)
+            break;
+
+        // NB: FastQuery cannot supply all ownership/revision details...callers who care can check the RequestPurpose of the Response and query server for details.
+        LockableId id(static_cast<LockableType>(stmt->GetValueInt(0)), BeInt64Id(stmt->GetValueUInt64(1)));
+        auto level = static_cast<LockLevel>(stmt->GetValueInt(2));
+
+        DgnLockInfo details(id, true);
+        if (LockLevel::Exclusive == level)
+            details.GetOwnership().SetExclusiveOwner(bcId);
+        else
+            details.GetOwnership().AddSharedOwner(bcId);
+
+        response.LockStates().insert(details);
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus BriefcaseManager::FastQueryCodes(Response& response, DgnCodeSet const& codes, ResponseOptions options)
+    {
+    VirtualCodeSet vset(codes);
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectUnavailableCodesInSet);
+    stmt->BindVirtualSet(1, vset);
+
+    RepositoryStatus status = RepositoryStatus::Success;
+    bool wantDetails = ResponseOptions::None != (ResponseOptions::CodeState & options);
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        status = RepositoryStatus::CodeUnavailable;
+        if (!wantDetails)
+            break;
+
+        // NB: FastQuery cannot supply all ownership/revision details...callers who care can check the RequestPurpose of the Response and query server for details.
+        DgnCode code(stmt->GetValueId<DgnAuthorityId>(CodeColumn::AuthorityId), stmt->GetValueText(CodeColumn::Value), stmt->GetValueText(CodeColumn::NameSpace));
+        DgnCodeInfo details(code);
+        details.SetReserved(BeSQLite::BeBriefcaseId());
+        response.CodeStates().insert(details);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1130,10 +1295,7 @@ RepositoryStatus BriefcaseManager::_OnFinishRevision(DgnRevision const& rev)
 void BriefcaseManager::_OnElementInserted(DgnElementId id)
     {
     if (LocksRequired() && Validate())
-        {
-        Insert(LockableId(id), LockLevel::Exclusive);
-        //Save();
-        }
+        InsertLock(LockableId(id), LockLevel::Exclusive, TableType::Owned);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1143,7 +1305,7 @@ void BriefcaseManager::_OnModelInserted(DgnModelId id)
     {
     if (LocksRequired() && Validate())
         {
-        Insert(LockableId(id), LockLevel::Exclusive);
+        InsertLock(LockableId(id), LockLevel::Exclusive, TableType::Owned);
         Save();
         }
     }
@@ -1182,26 +1344,14 @@ DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Reques
         }
     }
 
-// ##TODO: temporary, until tool framework enhanced to handle explicitly acquiring requisite locks/codes
-// Can be disabled for tests for now.
-static bool s_acquireAutomatically = true;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IBriefcaseManager::BackDoor_SetAutomaticAcquisition(bool acquireAutomatically)
-    {
-    s_acquireAutomatically = acquireAutomatically;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode, DgnElementCP pre)
+DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode)
     {
     Request req;
     auto action = s_acquireAutomatically ? PrepareAction::Acquire : PrepareAction::Verify;
-    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, action, pre), req);
+    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, action), req);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1254,12 +1404,12 @@ RepositoryStatus IBriefcaseManager::PerformAction(Request& req, PrepareAction ac
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus IBriefcaseManager::PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op, PrepareAction action, DgnElementCP orig)
+RepositoryStatus IBriefcaseManager::PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op, PrepareAction action)
     {
     if (!LocksRequired())
         return RepositoryStatus::Success;
 
-    auto status = _PrepareForElementOperation(req, el, op, orig);
+    auto status = _PrepareForElementOperation(req, el, op);
     if (RepositoryStatus::Success == status)
         status = PerformAction(req, action);
 
@@ -1288,14 +1438,14 @@ RepositoryStatus IBriefcaseManager::PrepareForElementUpdate(Request& req, DgnEle
     {
     auto orig = GetDgnDb().Elements().GetElement(el.GetElementId());
     BeAssert(orig.IsValid());
-    return PrepareForElementOperation(req, el, BeSQLite::DbOpcode::Update, action, orig.get());
+    return PrepareForElementOperation(req, el, BeSQLite::DbOpcode::Update, action);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnElementInsert(DgnElementCR el) { return OnElementOperation(el, BeSQLite::DbOpcode::Insert); }
-DgnDbStatus IBriefcaseManager::OnElementUpdate(DgnElementCR el, DgnElementCR pre) { return OnElementOperation(el, BeSQLite::DbOpcode::Update, &pre); }
+DgnDbStatus IBriefcaseManager::OnElementUpdate(DgnElementCR el) { return OnElementOperation(el, BeSQLite::DbOpcode::Update); }
 DgnDbStatus IBriefcaseManager::OnElementDelete(DgnElementCR el) { return OnElementOperation(el, BeSQLite::DbOpcode::Delete); }
 DgnDbStatus IBriefcaseManager::OnModelInsert(DgnModelCR model) { return OnModelOperation(model, BeSQLite::DbOpcode::Insert); }
 DgnDbStatus IBriefcaseManager::OnModelUpdate(DgnModelCR model) { return OnModelOperation(model, BeSQLite::DbOpcode::Update); }
@@ -1448,9 +1598,10 @@ void IBriefcaseManager::ReformulateRequest(Request& req, Response const& respons
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IBriefcaseManager::AreResourcesAvailable(Request& req, Response* pResponse, FastQuery fast)
     {
-    Response localResponse;
+    auto purpose = FastQuery::Yes == fast ? RequestPurpose::FastQuery : RequestPurpose::Query;
+    Response localResponse(purpose, req.Options());
     auto& response = nullptr != pResponse ? *pResponse : localResponse;
-    response = _ProcessRequest(req, FastQuery::Yes == fast ? RequestPurpose::FastQuery : RequestPurpose::Query);
+    response = _ProcessRequest(req, purpose);
     return RepositoryStatus::Success == response.Result();
     }
 
@@ -1474,6 +1625,7 @@ bool IBriefcaseManager::AreResourcesAvailable(Request& req, Response* pResponse,
 #define JSON_CodeStateType "Type"       // DgnCodeState::Type
 #define JSON_Codes "Codes"              // DgnCodeSet
 #define JSON_Options "Options"          // ResponseOptions
+#define JSON_Purpose "Purpose"          // RequestPurpose
 #define JSON_CodeStates "CodeStates"    // list of DgnCodeInfo
 
 /*---------------------------------------------------------------------------------**//**
@@ -1904,6 +2056,23 @@ bool RepositoryJson::ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions&
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryJson::RequestPurposeFromJson(IBriefcaseManager::RequestPurpose& purpose, JsonValueCR value)
+    {
+    purpose = static_cast<IBriefcaseManager::RequestPurpose>(value.asUInt());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryJson::RequestPurposeToJson(JsonValueR value, IBriefcaseManager::RequestPurpose purpose)
+    {
+    value = static_cast<uint32_t>(purpose);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IBriefcaseManager::Request::ToJson(JsonValueR value) const
@@ -1932,6 +2101,8 @@ bool IBriefcaseManager::Request::FromJson(JsonValueCR value)
 void IBriefcaseManager::Response::ToJson(JsonValueR value) const
     {
     RepositoryJson::RepositoryStatusToJson(value[JSON_Status], m_status);
+    RepositoryJson::RequestPurposeToJson(value[JSON_Purpose], m_purpose);
+    RepositoryJson::ResponseOptionsToJson(value[JSON_Options], m_options);
     collectionToJson(value[JSON_LockStates], m_lockStates);
     collectionToJson(value[JSON_CodeStates], m_codeStates);
     }
@@ -1942,7 +2113,11 @@ void IBriefcaseManager::Response::ToJson(JsonValueR value) const
 bool IBriefcaseManager::Response::FromJson(JsonValueCR value)
     {
     Invalidate();
-    if (RepositoryJson::RepositoryStatusFromJson(m_status, value[JSON_Status]) && setFromJson(m_lockStates, value[JSON_LockStates]) && setFromJson(m_codeStates, value[JSON_CodeStates]))
+    if (RepositoryJson::RepositoryStatusFromJson(m_status, value[JSON_Status])
+        && RepositoryJson::RequestPurposeFromJson(m_purpose, value[JSON_Purpose])
+        && RepositoryJson::ResponseOptionsFromJson(m_options, value[JSON_Options])
+        && setFromJson(m_lockStates, value[JSON_LockStates])
+        && setFromJson(m_codeStates, value[JSON_CodeStates]))
         return true;
 
     Invalidate();

@@ -68,8 +68,6 @@ public:
     uint32_t    visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode. This is typically controlled through a display style.
     uint32_t    hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode. This is typically controlled through a display style.
     uint32_t    shadows:1;          //!< Shows or hides shadows. This is typically controlled through a display style.
-    uint32_t    noFrontClip:1;      //!< Controls whether the front clipping plane is used. Note the inversion. Elements beyond will not be displayed.
-    uint32_t    noBackClip:1;       //!< Controls whether the back clipping plane is used. Note the inversion. Elements beyond will not be displayed.
     uint32_t    noClipVolume:1;     //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
     uint32_t    ignoreLighting:1;   //!< Controls whether lights are used.
 
@@ -107,6 +105,7 @@ struct Task : RefCounted<NonCopyableClass>
         DefineGeometryTexture,
         FindNearestZ,
         ReadImage,
+        DestroyTarget,
     };
 
     //! The outcome of the processing of a Task.
@@ -431,6 +430,9 @@ private:
     DVec3d      m_endTangent;
     RotMatrix   m_planeByRows;
     TexturePtr  m_texture;
+    bool        m_useLinePixels;
+    uint32_t    m_linePixels;
+
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
@@ -498,6 +500,9 @@ public:
     void SetXElemPhase(double last) {m_xElemPhase = last; m_options.xElemPhaseSet=true;}
     void SetElementClosed(bool closed) {m_options.elementIsClosed = closed;}
     void SetIsCurve(bool isCurve) {m_options.isCurve = isCurve;}
+    bool UseLinePixels() const {return m_useLinePixels;}
+    uint32_t GetLinePixels() const {return m_linePixels;}
+    void SetUseLinePixels(uint32_t linePixels){m_linePixels = linePixels; m_useLinePixels = true;}
 
     bool ContinuationXElems() const {return m_options.continuationXElems;}
     DGNPLATFORM_EXPORT void ClearContinuationData();
@@ -1467,6 +1472,12 @@ struct System
 //=======================================================================================
 struct Target : RefCounted<NonCopyableClass>
 {
+    struct SceneParameters
+        {
+        double m_saesNpcSq;     // smallest attempted element size (NPC squared)
+        SceneParameters(double n = 0) : m_saesNpcSq(n) {}
+        };
+
 protected:
     bool               m_abort;
     System&            m_system;
@@ -1476,29 +1487,30 @@ protected:
     GraphicListPtr     m_terrain;
     GraphicListPtr     m_dynamics;
     Decorations        m_decorations;
+    double             m_frameRateGoal; // frames per second
     BeAtomic<uint32_t> m_graphicsPerSecondScene;
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
     virtual void _OnResized() {}
-
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
 
-    DGNVIEW_EXPORT Target(SystemR);
+    DGNVIEW_EXPORT Target(SystemR, double frameRateGoal);
     DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
 public:
     struct Debug
     {
-        static void SaveGPS(int);
+        static void SaveGPS(int, double);
         DGNPLATFORM_EXPORT static void SaveSceneTarget(int);
         DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
     };
-    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
+    virtual void _OnDestroy() {}
+    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, SceneParameters const& parms = SceneParameters()) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
@@ -1532,6 +1544,16 @@ public:
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
+    static double DefaultFrameRateGoal() 
+        {
+#ifdef BENTLEY_CONFIG_OS_WINDOWS // *** WIP - we are trying to predict the likely graphics performance of the box.
+        return 25.0; // Plan for the best on Windows (desktop) computers.
+#else
+        return 5.0; // Plan for the worst on mobile devices
+#endif
+        }
+    double GetFrameRateGoal() const {return m_frameRateGoal;}
+    void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }

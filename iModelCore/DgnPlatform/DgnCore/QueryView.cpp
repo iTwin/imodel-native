@@ -8,17 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <Bentley/BeSystemInfo.h>
 
-#define DEBUG_LOGGING
-#if defined (DEBUG_LOGGING)
-#   define DEBUG_PRINTF THREADLOG.debugv
-#   define WARN_PRINTF THREADLOG.debugv
-#   define ERROR_PRINTF THREADLOG.errorv
-#else
-#   define DEBUG_PRINTF(...) 
-#   define WARN_PRINTF(...)
-#   define ERROR_PRINTF(...)
-#endif
-
 #ifdef DEBUG_HEAL
 #   define HEAL_PRINTF DEBUG_PRINTF
 #else
@@ -31,7 +20,6 @@
 #else
 #   define PROGRESSIVE_PRINTF(fmt, ...)
 #endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -376,16 +364,17 @@ DgnQueryView::ProgressiveTask::ProgressiveTask(DgnQueryViewR view, DgnViewportCR
 * are in the scene if we abort
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::AddtoSceneQuick(SceneContextR context, QueryResults& results)
+void DgnQueryView::AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>& missing)
     {
     context.SetNoStroking(true); // tell the context to not create any graphics - just return existing ones
     DgnElements& pool = m_dgndb.Elements();
 
     // first, run through the query results seeing if all of the elements are loaded and have their graphics ready
     // NOTE: This is not CheckStop'ed! It must be fast.
-    for (auto& thisScore : results.m_scores)
+    auto end = results.m_scores.rend();
+    for (auto thisScore=results.m_scores.rbegin(); thisScore!=end; ++thisScore)
         {
-        DgnElementCPtr el = pool.FindElement(thisScore.second);
+        DgnElementCPtr el = pool.FindElement(thisScore->second);
         if (!el.IsValid())
             continue;
 
@@ -394,7 +383,9 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, QueryResults& results)
             continue;
 
         if (SUCCESS == context.VisitGeometry(*geomElem))
-            m_scene->Insert(thisScore.second, el);
+            m_scene->Insert(thisScore->second, el);
+        else
+            missing.push_back(thisScore->second);
         }
 
     context.SetNoStroking(false); // reset the context
@@ -435,7 +426,10 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     {
     DgnDb::VerifyClientThread();
 
+#if defined (DEBUG_LOGGING)
     StopWatch watch(true);
+#endif
+
     DEBUG_PRINTF("Begin create scene");
 
     QueryResultsPtr results;
@@ -445,13 +439,18 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     if (!results.IsValid())
         return;
 
+    if (!results->m_scores.empty())
+        context.SetSAESNpcSq(results->m_scores.begin()->first);
+
     if (m_activeVolume.IsValid())
         context.SetActiveVolume(*m_activeVolume);
 
     SceneMembersPtr oldMembers = m_scene; // save the previous scene so that the ref count of elements-in-common won't go to zero
     m_scene = new SceneMembers();   
 
-    AddtoSceneQuick(context, *results);
+    bvector<DgnElementId> missing;
+    AddtoSceneQuick(context, *results, missing);
+    DEBUG_PRINTF("Done create quick time=%lf", watch.GetCurrentSeconds());
 
     // Next, allow external data models to draw or schedule external data. Note: Do this even if we're already aborted
     auto& models = m_dgndb.Models();
@@ -463,17 +462,18 @@ void DgnQueryView::_CreateScene(SceneContextR context)
             geomModel->_AddSceneGraphics(context);
         }
 
-    DgnElements& pool = m_dgndb.Elements();
-    if (m_scene->GetCount() < results->GetCount()) // did we get them all?
+    uint32_t missingCount = (uint32_t) missing.size();
+    if (!missing.empty())
         {
-        DEBUG_PRINTF("Begin create scene with load");
-        for (auto rit = results->m_scores.rbegin(), ritEnd = results->m_scores.rend(); rit != ritEnd; ++rit)
-            {
-            auto& thisScore = *rit;
-            if (m_scene->Contains(thisScore.second))
-                continue; // was already added during "quick" pass
+        DgnElements& pool = m_dgndb.Elements();
 
-            DgnElementCPtr el = pool.GetElement(thisScore.second);
+        DEBUG_PRINTF("Begin create scene with load, missing=%d", missingCount);
+        BeAssert(false==m_loading);
+        AutoRestore<bool> loadFlag(&m_loading,true); // this tells the query thread to pause temporarily so we don't fight over the SQLite mutex
+
+        for (auto& it : missing)
+            {
+            DgnElementCPtr el = pool.GetElement(it);
             if (!el.IsValid())
                 {
                 BeAssert(false);
@@ -482,24 +482,30 @@ void DgnQueryView::_CreateScene(SceneContextR context)
 
             GeometrySourceCP geomElem = el->ToGeometrySource();
             if (nullptr == geomElem)
+                {
+                BeAssert(false);
                 continue;
+                }
 
             if (SUCCESS == context.VisitGeometry(*geomElem))
-                m_scene->Insert(thisScore.second, el);
-            
+                {
+                --missingCount;
+                m_scene->Insert(it, el);
+                }
+
             if (context.WasAborted())
                 {
-                ERROR_PRINTF("Create Scene aborted on element %ld", thisScore.second.GetValue());
+                WARN_PRINTF("Create Scene aborted on element %ld", it.GetValue());
                 break;
                 }
             }
         }
 
     BeAssert(m_scene->GetCount() <= results->GetCount());
-    m_scene->m_complete = !results->m_incomplete && (m_scene->size() == results->GetCount());
+    m_scene->m_complete = (0 == missingCount) && !results->m_incomplete;
     if (!m_scene->m_complete)
         {
-        DEBUG_PRINTF("schedule progressive");
+        DEBUG_PRINTF("schedule progressive, incomplete=%d, still missing=%d", results->m_incomplete, missingCount);
         vp.ScheduleElementProgressiveTask(*new ProgressiveTask(*this, vp));
         }
 
@@ -775,18 +781,34 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
     StopWatch watch(true);
     m_view.SetAbortQuery(false); // gets turned on by client thread
 
-    DEBUG_PRINTF("Query started");
+    DEBUG_PRINTF("Query started, target=%d", m_plan.GetTargetNumElements());
     Start(m_view);
 
     uint64_t endTime = m_plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + m_plan.GetTimeout()) : 0;
 
     m_minScore = 0.0;
     m_hitLimit = m_plan.GetTargetNumElements();
-    BeAssert(m_hitLimit>=0);
 
-    DgnElementId thisId;
-    while ((thisId=StepRtree()).IsValid())
+    if (endTime && m_hitLimit > (m_view.m_queryElementPerSecond * m_plan.GetTimeout()))
         {
+        m_hitLimit = (uint32_t) (m_view.m_queryElementPerSecond * m_plan.GetTimeout());
+        DEBUG_PRINTF("limiting to %d", m_hitLimit);
+        }
+
+    BeAssert(m_hitLimit>0);
+
+    while (true)
+        {
+        while (m_view.m_loading)
+            {
+            DEBUG_PRINTF("pause, loading");
+            BeThreadUtilities::BeSleep(20);
+            }
+
+        DgnElementId thisId = StepRtree();
+        if (!thisId.IsValid())
+            break;
+
         BeAssert(m_lastId==thisId.GetValueUnchecked());
         if (m_view.m_abortQuery)
             {
@@ -816,7 +838,15 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
             }
         };
 
-    DEBUG_PRINTF("Query completed, total=%d, progressive=%d, time=%f", m_results->GetCount(), m_results->m_incomplete, watch.GetCurrentSeconds());
+    // make sure all of the elements are loaded.
+    DgnElements& pool = m_view.m_dgndb.Elements();
+    for (auto it : m_results->m_scores)
+        pool.GetElement(it.second);
+
+    if (m_count >= m_hitLimit)
+        m_view.m_queryElementPerSecond = m_results->GetCount() / watch.GetCurrentSeconds();
+
+    DEBUG_PRINTF("Query completed, total=%d, progressive=%d, time=%f, eps=%f", m_results->GetCount(), m_results->m_incomplete, watch.GetCurrentSeconds(), m_view.m_queryElementPerSecond);
     return m_results;
     }
 

@@ -22,7 +22,7 @@ void DgnViewport::DestroyViewport()
         m_viewController = nullptr;
         }
 
-    m_renderTarget = nullptr;
+    SetRenderTarget(nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -32,9 +32,7 @@ void DgnViewport::SuspendViewport()
     {
     m_elementProgressiveTasks.clear();
     m_terrainProgressiveTasks.clear();
-    RenderQueue().WaitForIdle();
-
-    m_renderTarget = nullptr;
+    SetRenderTarget(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -410,18 +408,14 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
     // if the distance is negative, the unadjusted backplane is further away from the eye than the back of the model.
     // In that case, we want to bring the backplane in as close as possible to the model to give the best resolution for the z buffer.
     // If the distance is positive, some of the model is clipped by the current frustum. Does he want that - check "noBackClip" flag.
-    if (viewController.GetViewFlags().noBackClip)
-        {
-        origin.z -= dist;
-        delta.z  += dist;
-        }
+    // noBackClip
+    origin.z -= dist;
+    delta.z  += dist;
 
     // get distance from (potentially moved) origin to front plane.
     double newDeltaZ = std::max(extents.high.z - origin.z, 100. * DgnUnits::OneMillimeter());
-    if (viewController.GetViewFlags().noFrontClip)
-        {
-        delta.z = newDeltaZ;
-        }
+    // noFrontClip
+    delta.z = newDeltaZ;
 
     DVec3d  zVec;
     m_rotMatrix.GetRow(zVec, 2);
@@ -435,16 +429,13 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
     if (minDepth > delta.z)     // expand depth to extents
         {
         double diff = (minDepth - delta.z) / 2.0;
-        if (viewController.GetViewFlags().noBackClip)
-            {
-            origin.z -= diff;
-            delta.z  += diff;
-            }
 
-        if (viewController.GetViewFlags().noFrontClip)
-            {
-            delta.z += diff;
-            }
+        // noBackClip
+        origin.z -= diff;
+        delta.z  += diff;
+
+        // noFrontClip
+        delta.z += diff;
         }
 
     // we can't allow the z dimension to be too large relative to x/y. Otherwise the transform math fails due to precision errors.
