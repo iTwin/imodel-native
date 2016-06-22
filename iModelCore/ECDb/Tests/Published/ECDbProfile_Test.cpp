@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-static const SchemaVersion EXPECTED_PROFILEVERSION (3, 7, 1, 4);
+static const SchemaVersion EXPECTED_PROFILEVERSION (3, 7, 1, 5);
 
 static const PropertySpec PROFILEVERSION_PROPSPEC ("SchemaVersion", "ec_Db");
 

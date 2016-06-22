@@ -351,6 +351,162 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
+    {
+            {
+            ECDb ecdb;
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted,
+                               SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                          "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                          "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                                          "  <ECEntityClass typeName='Model' >"
+                                          "    <ECProperty propertyName='Name' typeName='string' />"
+                                          "  </ECEntityClass>"
+                                          "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                          "    <ECCustomAttributes>"
+                                          "        <ClassMap xmlns='ECDbMap.01.01'>"
+                                          "                <MapStrategy>"
+                                          "                   <Strategy>SharedTable</Strategy>"
+                                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                          "                </MapStrategy>"
+                                          "        </ClassMap>"
+                                          "    </ECCustomAttributes>"
+                                          "    <ECProperty propertyName='Code' typeName='string' />"
+                                          "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+                                          "  </ECEntityClass>"
+                                          "  <ECEntityClass typeName='PhysicalElement'>"
+                                          "    <BaseClass>Element</BaseClass>"
+                                          "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                                          "  </ECEntityClass>"
+                                          "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "      <Class class='Model' />"
+                                          "    </Source>"
+                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "      <Class class='Element' />"
+                                          "    </Target>"
+                                          "  </ECRelationshipClass>"
+                                          "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
+                                          "    <ECCustomAttributes>"
+                                          "        <ClassMap xmlns='ECDbMap.01.01'>"
+                                          "                <MapStrategy>"
+                                          "                   <Strategy>NotMapped</Strategy>"
+                                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                          "                </MapStrategy>"
+                                          "        </ClassMap>"
+                                          "    </ECCustomAttributes>"
+                                          "   <BaseClass>ModelHasElements</BaseClass>"
+                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "      <Class class='Model' />"
+                                          "    </Source>"
+                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "      <Class class='PhysicalElement' />"
+                                          "    </Target>"
+                                          "  </ECRelationshipClass>"
+                                          "  <ECRelationshipClass typeName='ModelHasPhysicalElements2' strength='embedding' modifier='Sealed'>"
+                                          "    <ECCustomAttributes>"
+                                          "        <ClassMap xmlns='ECDbMap.01.01'>"
+                                          "                <MapStrategy>"
+                                          "                   <Strategy>NotMapped</Strategy>"
+                                          "                   <AppliesToSubclasses>False</AppliesToSubclasses>"
+                                          "                </MapStrategy>"
+                                          "        </ClassMap>"
+                                          "    </ECCustomAttributes>"
+                                          "   <BaseClass>ModelHasElements</BaseClass>"
+                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "      <Class class='Model' />"
+                                          "    </Source>"
+                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "      <Class class='PhysicalElement' />"
+                                          "    </Target>"
+                                          "  </ECRelationshipClass>"
+                                          "</ECSchema>", true, "Subclass can have ClassMap CA for FK mapping if MapStrategy is set to NotMapped"),
+                               "validrelinheritance.ecdb");
+
+            PersistedMapStrategy mapStrategy;
+            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasElements")->GetId()));
+            ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+            ASSERT_TRUE(mapStrategy.m_appliesToSubclasses);
+
+            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements")->GetId()));
+            ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            ASSERT_TRUE(mapStrategy.m_appliesToSubclasses);
+
+            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements2")->GetId()));
+            ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            ASSERT_FALSE(mapStrategy.m_appliesToSubclasses);
+            }
+
+            {
+            ECDb ecdb;
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted,
+                               SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                          "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                          "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                                          "  <ECEntityClass typeName='Model' >"
+                                          "    <ECProperty propertyName='Name' typeName='string' />"
+                                          "  </ECEntityClass>"
+                                          "  <ECEntityClass typeName='Element' >"
+                                          "    <ECProperty propertyName='Code' typeName='string' />"
+                                          "  </ECEntityClass>"
+                                          "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+                                          "    <ECCustomAttributes>"
+                                          "        <ClassMap xmlns='ECDbMap.01.01'>"
+                                          "                <MapStrategy>"
+                                          "                   <Strategy>NotMapped</Strategy>"
+                                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                          "                </MapStrategy>"
+                                          "        </ClassMap>"
+                                          "    </ECCustomAttributes>"
+                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "      <Class class='Model' />"
+                                          "    </Source>"
+                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "      <Class class='Element' />"
+                                          "    </Target>"
+                                          "  </ECRelationshipClass>"
+                                          "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
+                                          "   <BaseClass>ModelHasElements</BaseClass>"
+                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "      <Class class='Model' />"
+                                          "    </Source>"
+                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "      <Class class='Element' />"
+                                          "    </Target>"
+                                          "  </ECRelationshipClass>"
+                                          "  <ECRelationshipClass typeName='ModelHasPhysicalElements2' strength='embedding' modifier='Sealed'>"
+                                          "   <BaseClass>ModelHasElements</BaseClass>"
+                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "      <Class class='Model' />"
+                                          "    </Source>"
+                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "      <Class class='Element' />"
+                                          "    </Target>"
+                                          "  </ECRelationshipClass>"
+                                          "</ECSchema>"),
+                               "validrelinheritance.ecdb");
+
+            PersistedMapStrategy mapStrategy;
+            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasElements")->GetId()));
+            ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            ASSERT_TRUE(mapStrategy.m_appliesToSubclasses);
+
+            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements")->GetId()));
+            ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            ASSERT_TRUE(mapStrategy.m_appliesToSubclasses);
+
+            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements2")->GetId()));
+            ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            ASSERT_TRUE(mapStrategy.m_appliesToSubclasses);
+            }
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  05/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
@@ -582,55 +738,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "  <ECEntityClass typeName='Element' modifier='Abstract' >"
     "    <ECCustomAttributes>"
     "        <ClassMap xmlns='ECDbMap.01.01'>"
-    "                <MapStrategy>"
-    "                   <Strategy>SharedTable</Strategy>"
-    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-    "                </MapStrategy>"
-    "        </ClassMap>"
-    "    </ECCustomAttributes>"
-    "    <ECProperty propertyName='Code' typeName='string' />"
-    "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
-    "  </ECEntityClass>"
-    "  <ECEntityClass typeName='PhysicalElement'>"
-    "    <BaseClass>Element</BaseClass>"
-    "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
-    "  </ECEntityClass>"
-    "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-    "    <Source cardinality='(0,1)' polymorphic='True'>"
-    "      <Class class='Model' />"
-    "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
-    "      <Class class='Element' />"
-    "    </Target>"
-    "  </ECRelationshipClass>"
-    "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
-    "    <ECCustomAttributes>"
-    "        <ClassMap xmlns='ECDbMap.01.01'>"
-    "                <MapStrategy>"
-    "                   <Strategy>SharedTable</Strategy>"
-    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-    "                </MapStrategy>"
-    "        </ClassMap>"
-    "    </ECCustomAttributes>"
-    "   <BaseClass>ModelHasElements</BaseClass>"
-    "    <Source cardinality='(0,1)' polymorphic='True'>"
-    "      <Class class='Model' />"
-    "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
-    "      <Class class='PhysicalElement' />"
-    "    </Target>"
-    "  </ECRelationshipClass>"
-    "</ECSchema>", false, "Subclass must not have ClassMap CA if base class has FK mapping"));
-
-    testSchemas.push_back(
-    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-    "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
-    "  <ECEntityClass typeName='Model' >"
-    "    <ECProperty propertyName='Name' typeName='string' />"
-    "  </ECEntityClass>"
-    "  <ECEntityClass typeName='Element' modifier='Abstract' >"
-    "    <ECCustomAttributes>"
-    "        <ClassMap xmlns='ECDbMap.01.01'>"
     "            <MapStrategy>"
     "                <Strategy>SharedTable</Strategy>"
     "                <AppliesToSubclasses>True</AppliesToSubclasses>"
@@ -672,6 +779,107 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "  </ECRelationshipClass>"
     "</ECSchema>", false, "Subclass must not add ECProperties if base class has FK mapping"));
     
+    testSchemas.push_back(
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                   "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                   "  <ECEntityClass typeName='Model' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                   "    <ECCustomAttributes>"
+                   "        <ClassMap xmlns='ECDbMap.01.01'>"
+                   "                <MapStrategy>"
+                   "                   <Strategy>SharedTable</Strategy>"
+                   "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                   "                </MapStrategy>"
+                   "        </ClassMap>"
+                   "    </ECCustomAttributes>"
+                   "    <ECProperty propertyName='Code' typeName='string' />"
+                   "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='PhysicalElement'>"
+                   "    <BaseClass>Element</BaseClass>"
+                   "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "      <Class class='Model' />"
+                   "    </Source>"
+                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "      <Class class='Element' />"
+                   "    </Target>"
+                   "  </ECRelationshipClass>"
+                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
+                   "    <ECCustomAttributes>"
+                   "        <ClassMap xmlns='ECDbMap.01.01'>"
+                   "               <MapStrategy><Strategy>OwnTable</Strategy></MapStrategy>"
+                   "        </ClassMap>"
+                   "    </ECCustomAttributes>"
+                   "   <BaseClass>ModelHasElements</BaseClass>"
+                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "      <Class class='Model' />"
+                   "    </Source>"
+                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "      <Class class='PhysicalElement' />"
+                   "    </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>", false, "Subclass must not have ClassMap CA if base class has FK mapping"));
+
+
+    testSchemas.push_back(
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                   "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                   "  <ECEntityClass typeName='Model' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Element' >"
+                   "    <ECProperty propertyName='Code' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+                   "    <ECCustomAttributes>"
+                   "        <ClassMap xmlns='ECDbMap.01.01'>"
+                   "            <MapStrategy>" 
+                   "               <Strategy>NotMapped</Strategy>"
+                   "               <AppliesToSubclasses>True</AppliesToSubclasses>"
+                   "           </MapStrategy>"
+                   "        </ClassMap>"
+                   "    </ECCustomAttributes>"
+                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "      <Class class='Model' />"
+                   "    </Source>"
+                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "      <Class class='Element' />"
+                   "    </Target>"
+                   "  </ECRelationshipClass>"
+                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
+                   "    <ECCustomAttributes>"
+                   "        <ClassMap xmlns='ECDbMap.01.01'>"
+                   "            <MapStrategy>"
+                   "               <Strategy>NotMapped</Strategy>"
+                   "               <AppliesToSubclasses>True</AppliesToSubclasses>"
+                   "           </MapStrategy>"
+                   "        </ClassMap>"
+                   "    </ECCustomAttributes>"
+                   "   <BaseClass>ModelHasElements</BaseClass>"
+                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "      <Class class='Model' />"
+                   "    </Source>"
+                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "      <Class class='PhysicalElement' />"
+                   "    </Target>"
+                   "  </ECRelationshipClass>"
+                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements2' strength='embedding' modifier='Sealed'>"
+                   "   <BaseClass>ModelHasElements</BaseClass>"
+                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "      <Class class='Model' />"
+                   "    </Source>"
+                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "      <Class class='PhysicalElement' />"
+                   "    </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>", false, "Subclass must not have define NotMapped if base class did already"));
+
+
 /*    testSchemas.push_back(
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                    "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"

@@ -15,6 +15,70 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3715::_Upgrade(ECDbCR ecdb) const
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT c.Id FROM ec_Class c, ec_Schema s WHERE c.SchemaId=s.Id AND s.Name='ECDb_System' AND c.Name='ECSqlSystemProperties'") ||
+        BE_SQLITE_ROW != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed: Retrieving ECClassId of ECClass 'ECDb_System:ECSqlSystemProperties' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    ECClassId ecsqlSystemPropertiesClassId = stmt.GetValueId<ECClassId>(0);
+
+    if (BE_SQLITE_ROW == stmt.Step())
+        {
+        LOG.error("ECDb profile upgrade failed: More than one ECClass with name 'ECDb_System:ECSqlSystemProperties' found unexpectedly.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stmt.Finalize();
+
+    Utf8String updateClassMapSql;
+    updateClassMapSql.Sprintf("UPDATE ec_ClassMap SET MapStrategyAppliesToSubclasses=1 WHERE ClassId=%s", ecsqlSystemPropertiesClassId.ToString().c_str());
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(updateClassMapSql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating MapStrategyAppliesToSubclasses to 1 in table ec_ClassMap for ECClass 'ECSqlSystemProperties' failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (ecdb.GetModifiedRowCount() != 1)
+        {
+        LOG.error("ECDb profile upgrade failed: Updating MapStrategyAppliesToSubclasses to 1 in table ec_ClassMap for ECClass 'ECSqlSystemProperties' should have affected a row. It didn't affect a row though.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    Utf8String updateCASql;
+    updateCASql.Sprintf("UPDATE ec_CustomAttribute SET Instance=? WHERE ContainerId=%s", ecsqlSystemPropertiesClassId.ToString().c_str());
+
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, updateCASql.c_str()) ||
+        BE_SQLITE_OK != stmt.BindText(1, "<ClassMap xmlns=\"ECDbMap.01.01\">"
+                                         "  <MapStrategy>"
+                                         "    <Strategy>NotMapped</Strategy>"
+                                         "    <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                         "  </MapStrategy>"
+                                         "</ClassMap>", Statement::MakeCopy::No) ||
+        BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating the respective ClassMap custom attribute entry for ECSqlSystemProperties in the table 'ec_CustomAttribute' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (ecdb.GetModifiedRowCount() != 1)
+        {
+        LOG.error("ECDb profile upgrade failed: Updating the respective ClassMap custom attribute entry for ECSqlSystemProperties in the table 'ec_CustomAttribute' should have affected a row. It didn't affect a row though.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Updated the ClassMap custom attribute on the ECClass 'ECDb_System:ECSqlSystemProperties': ECProperty 'AppliesToSubclasses' was set to True.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3712::_Upgrade(ECDbCR ecdb) const
     {
     if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE ec_KindOfQuantity("
@@ -521,6 +585,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
         "            <ClassMap xmlns='ECDbMap.01.00.01'>"
         "                <MapStrategy>"
         "                   <Strategy>NotMapped</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses> "
         "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"

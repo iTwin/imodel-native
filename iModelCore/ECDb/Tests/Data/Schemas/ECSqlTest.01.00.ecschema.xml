@@ -407,7 +407,7 @@
             <Class class="THBase"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="PUnmapped" description="Class not mapped to a DB table">
+    <ECEntityClass typeName="PUnmapped" modifier="Sealed" description="Class not mapped to a DB table">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00.01">
                 <MapStrategy>
