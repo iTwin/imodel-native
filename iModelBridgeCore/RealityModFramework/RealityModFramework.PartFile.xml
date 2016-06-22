@@ -220,6 +220,7 @@
         <ProductDirectory Name="GeoCoordData"                   Path="GeoCoordinateData" />
         <ProductDirectory Name="GeoCoordNativeAssemblies"       Path="" />
         <ProductDirectory Name="MrSidAssemblies"                Path="" />
+        <ProductDirectory Name="TbbAssemblies"                  Path="" />
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="" />
         <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="" />
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
@@ -280,6 +281,7 @@
         <ProductDirectory Name="GeoCoordData"                   Path="GeoCoordinateData" />
         <ProductDirectory Name="GeoCoordNativeAssemblies"       Path="" />
         <ProductDirectory Name="MrSidAssemblies"                Path="" />
+        <ProductDirectory Name="TbbAssemblies"                  Path="" />		
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="" />
         <ProductDirectory Name="BeOpenSSLAssemblies"            Path="" />
         <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
@@ -380,6 +382,7 @@
         <ProductDirectory Name="PPNativeAssemblies"             Path="Assemblies" />
         <ProductDirectory Name="PdfLibInitNativeAssemblies"     Path="Assemblies" />
         <ProductDirectory Name="MrSidAssemblies"                Path="Assemblies" />
+        <ProductDirectory Name="TbbAssemblies"                  Path="Assemblies" />		
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="Assemblies" />
         <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="Assemblies" />
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="Assemblies" />
