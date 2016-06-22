@@ -463,14 +463,14 @@ private:
 
     bool IsValid() const { return m_ecClass != nullptr; }
 
-    static BentleyStatus AddInstancesFromPreparedStatement(JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECSqlStatement&, JsonECSqlSelectAdapter::FormatOptions const&, Utf8StringCR pathToClassStr);
+    static BentleyStatus AddInstancesFromPreparedStatement(JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECSqlStatement&, JsonECSqlSelectAdapter::FormatOptions const&, ECN::ECRelationshipPath const& pathFromRelatedClass);
     static void AddClasses(JsonValueR allClasses, JsonValueR addClasses);
     static void AddCategories(JsonValueR allCategories, JsonValueR addCategories, int currentInstanceIndex);
     static void AddInstances(JsonValueR allInstances, JsonValueR addInstances, int currentInstanceIndex);
 
     static void SetInstanceIndex(JsonValueR addCategories, int currentInstanceIndex);
     static void SetRelationshipPath(JsonValueR addClasses, Utf8StringCR pathToClassStr);
-
+    static void OverrideCategories(JsonValueR addCategories, Utf8StringCR categoryName, Utf8StringCR categoryLabel);
 public:
 
     //! Construct a reader for the specified class. 
