@@ -181,6 +181,7 @@
         <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false" LibType="static"/>
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Deliver="false"/>
         <ProductDirectory Name="MrSidAssemblies" Deliver="false"/>
+        <ProductDirectory Name="TbbAssemblies" Deliver="false"/>
         <ProductDirectory Name="GdalData" Deliver="false"/>
         <ProductDirectory Name="ImagePPAssemblies" Deliver="false"/>
         <ProductDirectory Name="ImagePPAssemblies" Deliver="false" LibType="static"/>
