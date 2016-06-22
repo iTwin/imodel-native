@@ -22,21 +22,21 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-void DgnDbLockSetResultInfo::AddLock (const DgnLock dgnLock, BeBriefcaseId briefcaseId, Utf8StringCR repositoryId)
+void DgnDbLockSetResultInfo::AddLock(const DgnLock dgnLock, BeBriefcaseId briefcaseId, Utf8StringCR repositoryId)
     {
-    m_locks.insert (dgnLock);
-    AddLockInfoToList (m_lockStates, dgnLock, briefcaseId, repositoryId);
+    m_locks.insert(dgnLock);
+    AddLockInfoToList(m_lockStates, dgnLock, briefcaseId, repositoryId);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-const DgnLockSet& DgnDbLockSetResultInfo::GetLocks () const { return m_locks; }
+const DgnLockSet& DgnDbLockSetResultInfo::GetLocks() const { return m_locks; }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-const DgnLockInfoSet& DgnDbLockSetResultInfo::GetLockStates () const { return m_lockStates; }
+const DgnLockInfoSet& DgnDbLockSetResultInfo::GetLockStates() const { return m_lockStates; }
 
 
 //---------------------------------------------------------------------------------------
@@ -66,11 +66,11 @@ void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageCli
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-void RepositoryInfoParser (RepositoryInfoR repositoryInfo, Utf8StringCR repositoryUrl, Utf8StringCR repositoryId, JsonValueCR value)
+void RepositoryInfoParser(RepositoryInfoR repositoryInfo, Utf8StringCR repositoryUrl, Utf8StringCR repositoryId, JsonValueCR value)
     {
     DateTime createdDate = DateTime();
     DateTime::FromString(createdDate, static_cast<Utf8CP>(value[ServerSchema::Property::CreatedDate].asCString()));
-    repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(), value[ServerSchema::Property::FileId].asString(), 
+    repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(), value[ServerSchema::Property::FileId].asString(),
                                     value[ServerSchema::Property::URL].asString(), value[ServerSchema::Property::FileName].asString(), value[ServerSchema::Property::Description].asString(),
                                     value[ServerSchema::Property::MergedRevisionId].asString(), value[ServerSchema::Property::UserCreated].asString(), createdDate);
     }
@@ -78,7 +78,7 @@ void RepositoryInfoParser (RepositoryInfoR repositoryInfo, Utf8StringCR reposito
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken)
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateRepositoryInfo(ICancellationTokenPtr cancellationToken)
     {
     ObjectId repositoryObject(ServerSchema::Schema::Repository, ServerSchema::Class::File, "");
     return m_wsRepositoryClient->SendGetObjectRequest(repositoryObject, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>([=] (const WSObjectsResult& response)
@@ -128,7 +128,7 @@ AuthenticationHandlerPtr authenticationHandler
             return DgnDbRepositoryConnectionResult::Error(result.GetError());
 
         //if (!repositoryConnection->GetRepositoryInfo().GetFileURL().empty())
-		// WARNING: Temporarily commenting this out, should be uncommented
+        // WARNING: Temporarily commenting this out, should be uncommented
         //if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
@@ -148,14 +148,14 @@ BeBriefcaseId                  briefcaseId
     BeSQLite::DbResult status;
 
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
-    DgnDbServerHost::Adopt (host);
+    DgnDbServerHost::Adopt(host);
 
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
     DgnDbServerStatusResult result;
     if (BeSQLite::DbResult::BE_SQLITE_OK == status && db.IsValid())
         {
-        result = RepositoryInfo::WriteRepositoryInfo (*db, m_repositoryInfo, briefcaseId);
-        db->CloseDb ();
+        result = RepositoryInfo::WriteRepositoryInfo(*db, m_repositoryInfo, briefcaseId);
+        db->CloseDb();
         }
     else
         {
@@ -219,7 +219,7 @@ ICancellationTokenPtr           cancellationToken
 ) const
     {
     ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revision->GetRevision()->GetId());
-    
+
     if (revision->GetURL().empty())
         {
         return m_wsRepositoryClient->SendGetFileRequest(fileObject, revision->GetRevision()->GetChangeStreamFile(), nullptr, callback, cancellationToken)
@@ -260,8 +260,8 @@ LockLevel                level
     {
     Json::Value properties;
 
-    properties[ServerSchema::Property::Description]          = description;
-    properties[ServerSchema::Property::BriefcaseId]          = briefcaseId.GetValue();
+    properties[ServerSchema::Property::Description] = description;
+    properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();
     properties[ServerSchema::Property::ReleasedWithRevision] = releasedWithRevisionId;
     RepositoryJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
     RepositoryJson::LockLevelToJson(properties[ServerSchema::Property::LockLevel], level);
@@ -293,10 +293,10 @@ LockableType                     type,
 LockLevel                        level
 )
     {
-    if (ids.empty ())
+    if (ids.empty())
         return;
-    ObjectId lockObject (ServerSchema::Schema::Repository, ServerSchema::Class::MultiLock, "MultiLock");
-    changeset.AddInstance (lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson (ids, briefcaseId, description, releasedWithRevisionId, type, level)));
+    ObjectId lockObject(ServerSchema::Schema::Repository, ServerSchema::Class::MultiLock, "MultiLock");
+    changeset.AddInstance(lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson(ids, briefcaseId, description, releasedWithRevisionId, type, level)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -315,12 +315,12 @@ bool                            includeOnlyExclusive = false
     bvector<uint64_t> objects[9];
     for (auto& lock : locks)
         {
-        if (includeOnlyExclusive && LockLevel::Exclusive != lock.GetLevel ())
+        if (includeOnlyExclusive && LockLevel::Exclusive != lock.GetLevel())
             continue;
 
-        int index = static_cast<int32_t>(lock.GetType ()) * 3 + static_cast<int32_t>(lock.GetLevel ());
+        int index = static_cast<int32_t>(lock.GetType()) * 3 + static_cast<int32_t>(lock.GetLevel());
         if (index >= 0 && index <= 8)
-            objects[index].push_back (lock.GetId ().GetValue ());
+            objects[index].push_back(lock.GetId().GetValue());
         }
 
     Utf8String description = ""; //needswork: Currently DgnDb doesn't pass us a description for locks. Do we really need it?
@@ -332,16 +332,16 @@ bool                            includeOnlyExclusive = false
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& briefcaseId)
+std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest(const BeBriefcaseId& briefcaseId)
     {
     Utf8String id;
-    id.Sprintf ("%s-%d", ServerSchema::DeleteAllLocks, briefcaseId.GetValue ());
+    id.Sprintf("%s-%d", ServerSchema::DeleteAllLocks, briefcaseId.GetValue());
 
-    ObjectId lockObject (ServerSchema::Schema::Repository, ServerSchema::Class::Lock, id);
+    ObjectId lockObject(ServerSchema::Schema::Repository, ServerSchema::Class::Lock, id);
 
     Json::Value properties;
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
-    changeset->AddInstance (lockObject, WSChangeset::ChangeState::Deleted, std::make_shared<Json::Value> (properties));
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    changeset->AddInstance(lockObject, WSChangeset::ChangeState::Deleted, std::make_shared<Json::Value>(properties));
 
     return changeset;
     }
@@ -374,8 +374,8 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     //How to set description here?
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
-    SetLocksJsonRequestToChangeSet (locks.GetLockSet (), briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified);
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified);
     return SendChangesetRequest(changeset, cancellationToken);
     }
 
@@ -390,8 +390,8 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     //How to set description here?
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
-    SetLocksJsonRequestToChangeSet (locks, briefcaseId, "", *changeset, WSChangeset::ChangeState::Modified);
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    SetLocksJsonRequestToChangeSet(locks, briefcaseId, "", *changeset, WSChangeset::ChangeState::Modified);
     return SendChangesetRequest(changeset, cancellationToken);
     }
 
@@ -404,7 +404,7 @@ BeBriefcaseId         briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    auto changeset = LockDeleteAllJsonRequest (briefcaseId);
+    auto changeset = LockDeleteAllJsonRequest(briefcaseId);
     return SendChangesetRequest(changeset, cancellationToken);
     }
 
@@ -417,7 +417,7 @@ BeBriefcaseId         briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return QueryLocksInternal (nullptr, &briefcaseId, cancellationToken);
+    return QueryLocksInternal(nullptr, &briefcaseId, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -430,7 +430,7 @@ BeBriefcaseId         briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return QueryLocksInternal (&ids, &briefcaseId, cancellationToken);
+    return QueryLocksInternal(&ids, &briefcaseId, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -442,7 +442,7 @@ LockableIdSet const&  ids,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return QueryLocksInternal (&ids, nullptr, cancellationToken);
+    return QueryLocksInternal(&ids, nullptr, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -455,14 +455,14 @@ const BeBriefcaseId*  briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    WSQuery query (ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
     Utf8String filter;
 
     //Format the filter
     if (nullptr == ids && nullptr != briefcaseId)
         {
-        filter.Sprintf ("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue ());
-        query.SetFilter (filter);
+        filter.Sprintf("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
+        query.SetFilter(filter);
         }
     else if (nullptr != ids)
         {
@@ -472,19 +472,19 @@ ICancellationTokenPtr cancellationToken
             {
             Utf8String idString;
             if (nullptr == briefcaseId)
-                idString.Sprintf ("'%d-%llu'", (int)id.GetType (), id.GetId().GetValue());
+                idString.Sprintf("'%d-%llu'", (int) id.GetType(), id.GetId().GetValue());
             else
-                idString.Sprintf ("'%d-%llu-%u'", (int)id.GetType (), id.GetId().GetValue(), briefcaseId->GetValue ());
+                idString.Sprintf("'%d-%llu-%u'", (int) id.GetType(), id.GetId().GetValue(), briefcaseId->GetValue());
 
             if (!first)
-                idsString.append (",");
-            idsString.append (idString);
+                idsString.append(",");
+            idsString.append(idString);
 
             first = false;
             }
 
-        filter.Sprintf ("$id+in+[%s]", idsString.c_str());
-        query.SetFilter (filter);
+        filter.Sprintf("$id+in+[%s]", idsString.c_str());
+        query.SetFilter(filter);
         }
 
     //Execute query
@@ -499,11 +499,11 @@ ICancellationTokenPtr cancellationToken
                 DgnLock        lock;
                 BeBriefcaseId  briefcaseId;
                 Utf8String     repositoryId;
-                if (!GetLockFromServerJson (value[ServerSchema::Properties], lock, briefcaseId, repositoryId))
+                if (!GetLockFromServerJson(value[ServerSchema::Properties], lock, briefcaseId, repositoryId))
                     continue;//NEEDSWORK: log an error
 
                 if (lock.GetLevel() != LockLevel::None)
-                    locks.AddLock (lock, briefcaseId, repositoryId);
+                    locks.AddLock(lock, briefcaseId, repositoryId);
                 }
             return DgnDbServerLockSetResult::Success(locks);
             }
@@ -515,7 +515,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::AcquireBriefcaseId (ICancellationTokenPtr cancellationToken) const
+AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::AcquireBriefcaseId(ICancellationTokenPtr cancellationToken) const
     {
     Json::Value briefcaseIdJson = Json::objectValue;
     briefcaseIdJson[ServerSchema::Instance] = Json::objectValue;
@@ -527,13 +527,13 @@ AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::AcquireBriefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionPtr ParseRevision (JsonValueCR jsonValue)
+DgnDbServerRevisionPtr ParseRevision(JsonValueCR jsonValue)
     {
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     DgnDbServerHost::Adopt(host);
     RevisionStatus status;
     DgnDbServerRevisionPtr indexedRevision = DgnDbServerRevision::Create(DgnRevision::Create(&status, jsonValue[ServerSchema::Property::Id].asString(),
-    jsonValue[ServerSchema::Property::ParentId].asString(), jsonValue[ServerSchema::Property::MasterFileId].asString()));
+        jsonValue[ServerSchema::Property::ParentId].asString(), jsonValue[ServerSchema::Property::MasterFileId].asString()));
     DgnDbServerHost::Forget(host);
     if (RevisionStatus::Success == status)
         {
@@ -551,11 +551,11 @@ DgnDbServerRevisionPtr ParseRevision (JsonValueCR jsonValue)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              03/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetAllRevisions (ICancellationTokenPtr cancellationToken) const
+DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetAllRevisions(ICancellationTokenPtr cancellationToken) const
     {
-    BeAssert (DgnDbServerHost::IsInitialized ());
-    WSQuery query (ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
-    return RevisionsFromQuery (query, cancellationToken);
+    BeAssert(DgnDbServerHost::IsInitialized());
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
+    return RevisionsFromQuery(query, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -627,7 +627,7 @@ EventServiceClient* DgnDbRepositoryConnection::m_eventServiceClient = nullptr;
 //Returns true if same, else false
 bool CompareEventTypes
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes1, 
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes1,
 bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes2
 )
     {
@@ -661,7 +661,7 @@ bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes2
 //---------------------------------------------------------------------------------------
 bool DgnDbRepositoryConnection::SetEventServiceClient
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, 
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
 ICancellationTokenPtr cancellationToken
 )
     {
@@ -685,20 +685,20 @@ ICancellationTokenPtr cancellationToken
         eventServiceClient->UpdateSASToken(sasToken.GetValue()->GetSASToken());
         m_eventServiceClient = eventServiceClient;
         }
-    else if (!CompareEventTypes(eventTypes, m_eventSubscription->GetEventTypes()))
+    /*else if (!CompareEventTypes(eventTypes, m_eventSubscription->GetEventTypes()))
         {
-        auto eventSubscription = UpdateEventServiceSubscriptionId (eventTypes, cancellationToken)->GetResult();
+        auto eventSubscription = UpdateEventServiceSubscriptionId(eventTypes, cancellationToken)->GetResult();
         if (!eventSubscription.IsSuccess())
-        	return false;
+            return false;
 
         m_eventSubscription = eventSubscription.GetValue();
 
         auto sasToken = GetEventServiceSAS(cancellationToken)->GetResult();
         if (!sasToken.IsSuccess())
-        	return false;
+            return false;
 
         m_eventServiceClient->UpdateSASToken(sasToken.GetValue()->GetSASToken());
-        }
+        }*/
     return true;
     }
 
@@ -735,25 +735,25 @@ DgnDbServerEventSASTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICancel
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionTaskPtr DgnDbRepositoryConnection::SendEventChangesetRequest
 (
-std::shared_ptr<WSChangeset> changeset, 
+std::shared_ptr<WSChangeset> changeset,
 ICancellationTokenPtr cancellationToken
 ) const
     {
     //PUT to https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSubscription
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
     std::shared_ptr<DgnDbServerEventSubscriptionResult> finalResult = std::make_shared<DgnDbServerEventSubscriptionResult>();
-    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then ([=] (const WSChangesetResult& result)
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then([=] (const WSChangesetResult& result)
+        {
+        if (!result.IsSuccess())
+            finalResult->SetError(result.GetError());
+        DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(result.GetValue()->AsJson());
+        if (ptr == nullptr)
+            finalResult->SetError(DgnDbServerError::Id::NoSubscriptionFound);
+        finalResult->SetSuccess(ptr);
+        })->Then<DgnDbServerEventSubscriptionResult>([=]
             {
-            if (!result.IsSuccess())
-                finalResult->SetError(result.GetError());
-            DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(result.GetValue()->AsJson());
-            if (ptr == nullptr)
-                finalResult->SetError(DgnDbServerError::Id::NoSubscriptionFound);
-            finalResult->SetSuccess(ptr);
-            })->Then<DgnDbServerEventSubscriptionResult>([=]
-                {
-                return *finalResult;
-                });
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
@@ -767,7 +767,7 @@ WSChangeset&									 changeset,
 const WSChangeset::ChangeState&					 changeState
 )
     {
-    ObjectId eventSubscriptionObject (ServerSchema::Schema::Repository, ServerSchema::Class::EventSubscription, "EventSubscription");
+    ObjectId eventSubscriptionObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventSubscription, "EventSubscription");
     changeset.AddInstance(eventSubscriptionObject, changeState, std::make_shared<Json::Value>(DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(eventTypes, eventSubscriptionId)));
     }
 
@@ -780,15 +780,20 @@ bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
-    SetEventSubscriptionJsonRequestToChangeSet(eventTypes, m_eventSubscription->GetSubscriptionId(), *changeset, WSChangeset::Created);
-    return SendEventChangesetRequest(changeset, cancellationToken);
+    /*std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    SetEventSubscriptionJsonRequestToChangeSet(eventTypes, "", *changeset, WSChangeset::Created);
+    return SendEventChangesetRequest(changeset, cancellationToken);*/
     //POST to https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSubscription
-    //std::shared_ptr<DgnDbServerEventSubscriptionResult> finalResult = std::make_shared<DgnDbServerEventSubscriptionResult>();
-    
-    /*return m_wsRepositoryClient->SendCreateObjectRequest
+    std::shared_ptr<DgnDbServerEventSubscriptionResult> finalResult = std::make_shared<DgnDbServerEventSubscriptionResult>();
+    Json::Value request = Json::objectValue;
+    JsonValueR instance = request[ServerSchema::Instance] = Json::objectValue;
+    instance[ServerSchema::InstanceId] = "";
+    instance[ServerSchema::SchemaName] = ServerSchema::Schema::Repository;
+    instance[ServerSchema::ClassName] = ServerSchema::Class::EventSubscription;
+    instance[ServerSchema::Properties] = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(eventTypes);
+    return m_wsRepositoryClient->SendCreateObjectRequest
         (
-        DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(eventTypes),
+        request,
         BeFileName(),
         nullptr,
         cancellationToken
@@ -796,15 +801,15 @@ ICancellationTokenPtr cancellationToken
         ->Then([=] (const WSCreateObjectResult& result)
         {
         if (!result.IsSuccess())
-            finalResult->SetError(result.GetError());
+        finalResult->SetError(result.GetError());
         DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(result.GetValue().GetObject());
         if (ptr == nullptr)
-            finalResult->SetError(DgnDbServerError::Id::NoSubscriptionFound);
+        finalResult->SetError(DgnDbServerError::Id::NoSubscriptionFound);
         finalResult->SetSuccess(ptr);
         })->Then<DgnDbServerEventSubscriptionResult>([=]
-            {
-            return *finalResult;
-            });*/
+        {
+        return *finalResult;
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -816,7 +821,7 @@ bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
     SetEventSubscriptionJsonRequestToChangeSet(eventTypes, m_eventSubscription->GetSubscriptionId(), *changeset, WSChangeset::Modified);
     return SendEventChangesetRequest(changeset, cancellationToken);
     }
@@ -826,7 +831,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 bool DgnDbRepositoryConnection::GetEventServiceResponse
 (
-HttpResponseR returnResponse, 
+HttpResponseR returnResponse,
 bool longpolling
 )
     {
@@ -848,8 +853,8 @@ bool longpolling
 //---------------------------------------------------------------------------------------
 bool DgnDbRepositoryConnection::GetEventServiceResponses
 (
-bvector<Utf8String>& responseStrings, 
-bvector<Utf8CP>& contentTypes, 
+bvector<Utf8String>& responseStrings,
+bvector<Utf8CP>& contentTypes,
 bool longpolling
 )
     {
@@ -876,15 +881,15 @@ bool longpolling
 //---------------------------------------------------------------------------------------
 DgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, 
-bool longPolling, 
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+bool longPolling,
 ICancellationTokenPtr cancellationToken
 )
     {
-        if (eventTypes == nullptr)
+    if (eventTypes == nullptr)
         {
-            bvector<DgnDbServerEvent::DgnDbServerEventType> temp;
-            eventTypes = &temp;
+        bvector<DgnDbServerEvent::DgnDbServerEventType> temp;
+        eventTypes = &temp;
         }
 
     if (!SetEventServiceClient(eventTypes, cancellationToken))
@@ -908,8 +913,8 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbServerEventCollectionTaskPtr DgnDbRepositoryConnection::GetEvents
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, 
-bool longPolling, 
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+bool longPolling,
 ICancellationTokenPtr cancellationToken
 )
     {
@@ -1009,9 +1014,9 @@ ICancellationTokenPtr cancellationToken
         else
             finalResult->SetError(indexResult.GetError());
         })->Then<DgnDbServerRevisionsResult>([=] ()
-        {
-        return *finalResult;
-        });
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
@@ -1054,7 +1059,7 @@ ICancellationTokenPtr           cancellationToken
         {
         if (revisionsResult.IsSuccess())
             {
-            DownloadRevisions(revisionsResult.GetValue(), callback, cancellationToken)->Then([=](DgnDbServerStatusResultCR downloadResult)
+            DownloadRevisions(revisionsResult.GetValue(), callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
                 {
                 if (downloadResult.IsSuccess())
                     finalResult->SetSuccess(revisionsResult.GetValue());
@@ -1094,7 +1099,7 @@ BeBriefcaseId                  briefcaseId
     properties[ServerSchema::Property::FileSize] = size;
     properties[ServerSchema::Property::ParentId] = revision->GetParentId();
     properties[ServerSchema::Property::MasterFileId] = revision->GetDbGuid();
-    properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue ();
+    properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();
     properties[ServerSchema::Property::IsUploaded] = false;
     return pushRevisionJson;
     }
@@ -1112,18 +1117,18 @@ HttpRequest::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
 
     //Set Revision initialization request to ECChangeSet
     JsonValueR revisionProperties = pushJson[ServerSchema::Instance][ServerSchema::Properties];
     revisionProperties[ServerSchema::Property::IsUploaded] = true;
-    changeset->AddInstance (revisionObjectId, WSChangeset::ChangeState::Modified, std::make_shared<Json::Value> (revisionProperties));
+    changeset->AddInstance(revisionObjectId, WSChangeset::ChangeState::Modified, std::make_shared<Json::Value>(revisionProperties));
 
     //Set used locks to the ECChangeSet
     LockRequest usedLocks;
-    usedLocks.FromRevision (*revision);
-    if (!usedLocks.IsEmpty ())
-        SetLocksJsonRequestToChangeSet (usedLocks.GetLockSet (), briefcaseId, revision->GetId (), *changeset, WSChangeset::ChangeState::Modified, true);
+    usedLocks.FromRevision(*revision);
+    if (!usedLocks.IsEmpty())
+        SetLocksJsonRequestToChangeSet(usedLocks.GetLockSet(), briefcaseId, revision->GetId(), *changeset, WSChangeset::ChangeState::Modified, true);
 
     //Push Revision initialization request and Locks update in a single batch
     return SendChangesetRequest(changeset, cancellationToken);
@@ -1153,9 +1158,9 @@ ICancellationTokenPtr           cancellationToken
             }
 
         // Stage 2. Upload revision file. 
-        JsonValueCR revisionInstance   = initializePushResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+        JsonValueCR revisionInstance = initializePushResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
         Utf8String  revisionInstanceId = revisionInstance[ServerSchema::InstanceId].asString();
-        ObjectId    revisionObjectId   = ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionInstanceId);
+        ObjectId    revisionObjectId = ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionInstanceId);
         Utf8StringCR url = revisionInstance[ServerSchema::Properties][ServerSchema::Property::URL].asString();
 
         if (url.empty())
