@@ -29,7 +29,7 @@ DgnDbServerEventParser& DgnDbServerEventParser::GetInstance()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Json::Value DgnDbServerEventParser::GenerateEventSubscriptionJson(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes) const
+Json::Value DgnDbServerEventParser::GenerateEventSubscriptionJson(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, Utf8String eventSubscriptionId) const
     {
     Json::Value request = Json::objectValue;
     JsonValueR instance = request[ServerSchema::Instance] = Json::objectValue;
@@ -38,7 +38,7 @@ Json::Value DgnDbServerEventParser::GenerateEventSubscriptionJson(bvector<DgnDbS
     instance[ServerSchema::ClassName] = ServerSchema::Class::EventSubscription;
     instance[ServerSchema::Properties] = Json::objectValue;
     JsonValueR properties = instance[ServerSchema::Properties];
-    properties[ServerSchema::Property::Id] = "";
+    properties[ServerSchema::Property::Id] = eventSubscriptionId;
     properties[ServerSchema::Property::TopicName] = "";
     properties[ServerSchema::Property::EventTypes] = Json::arrayValue;
     if (eventTypes != nullptr)

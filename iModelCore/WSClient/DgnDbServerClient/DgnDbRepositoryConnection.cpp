@@ -71,27 +71,44 @@ EventServiceClient* DgnDbRepositoryConnection::m_eventServiceClient = nullptr;
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            05/2016
 //---------------------------------------------------------------------------------------
-bool DgnDbRepositoryConnection::SetEventServiceClient(ICancellationTokenPtr cancellationToken)
+bool DgnDbRepositoryConnection::SetEventServiceClient(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, ICancellationTokenPtr cancellationToken)
     {
     //Get Event Service SASToken and Set EventService Client
     if (m_eventServiceClient == nullptr)
         {
-        //auto sasToken = GetEventServiceSAS(cancellationToken)->GetResult();
         auto sasToken = GetEventServiceSAS(cancellationToken)->GetResult();
         if (!sasToken.IsSuccess())
             return false;
-        auto subscriptionId = GetEventServiceSubscriptionId(nullptr, cancellationToken)->GetResult();
-        if (!subscriptionId.IsSuccess())
+        auto eventSubscription = GetEventServiceSubscriptionId(eventTypes, cancellationToken)->GetResult();
+        if (!eventSubscription.IsSuccess())
             return false;
+
+        m_eventSubscription = eventSubscription.GetValue();
 
         EventServiceClient *eventServiceClient = new EventServiceClient
                                                             (
                                                             sasToken.GetValue()->GetBaseAddress(), 
                                                             m_repositoryInfo.GetId(), 
-                                                            subscriptionId.GetValue()->GetSubscriptionId()
+                                                            m_eventSubscription->GetSubscriptionId()
                                                             );
         eventServiceClient->UpdateSASToken(sasToken.GetValue()->GetSASToken());
         m_eventServiceClient = eventServiceClient;
+        }
+    else
+        {
+        // Check if eventTypes are the same as in m_eventSubscription
+
+        //auto eventSubscription = UpdateEventServiceSubscriptionId (eventTypes, cancellationToken)->GetResult();
+        //if (!eventSubscription.IsSuccess())
+        //	return false;
+
+        //m_eventSubscription = eventSubscription.GetValue();
+
+        //auto sasToken = GetEventServiceSAS(cancellationToken)->GetResult();
+        //if (!sasToken.IsSuccess())
+        //	return false;
+
+        //m_eventServiceClient->UpdateSASToken(sasToken.GetValue()->GetSASToken());
         }
     return true; 
     }
@@ -164,10 +181,6 @@ AuthenticationHandlerPtr authenticationHandler
 		// WARNING: Temporarily commenting this out, should be uncommented
         //if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
-
-        //Set EventServiceClient
-        if (!repositoryConnection->SetEventServiceClient(cancellationToken))
-            return DgnDbRepositoryConnectionResult::Error(result.GetError());
 
         return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
         });
@@ -514,9 +527,9 @@ bool DgnDbRepositoryConnection::GetEventServiceResponses(bvector<Utf8String>& re
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken)
+DgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, bool longPolling, ICancellationTokenPtr cancellationToken)
     {
-    if (m_eventServiceClient == nullptr && !SetEventServiceClient(cancellationToken))
+    if (!SetEventServiceClient(eventTypes, cancellationToken))
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
 
     HttpResponse response;
@@ -525,7 +538,7 @@ DgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent(bool longPolling, IC
 
     if (HttpStatus::NoContent == response.GetHttpStatus())
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
-
+    
     DgnDbServerEventPtr ptr = DgnDbServerEventParser::GetInstance().ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString());
     if (ptr == nullptr)
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
@@ -535,9 +548,9 @@ DgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent(bool longPolling, IC
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventCollectionTaskPtr DgnDbRepositoryConnection::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken)
+DgnDbServerEventCollectionTaskPtr DgnDbRepositoryConnection::GetEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, bool longPolling, ICancellationTokenPtr cancellationToken)
     {
-    if (m_eventServiceClient == nullptr && !SetEventServiceClient(cancellationToken))
+    if (!SetEventServiceClient(eventTypes, cancellationToken))
         return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InternalServerError));
 
     bvector<Utf8String> responseStrings;
@@ -565,8 +578,8 @@ DgnDbServerEventCollectionTaskPtr DgnDbRepositoryConnection::GetEvents(bool long
 //---------------------------------------------------------------------------------------
 DgnDbServerCancelEventTaskPtr  DgnDbRepositoryConnection::CancelEventRequest(ICancellationTokenPtr cancellationToken)
     {
-    if (m_eventServiceClient == nullptr && !SetEventServiceClient(cancellationToken))
-        return CreateCompletedAsyncTask<DgnDbServerCancelEventResult>(DgnDbServerCancelEventResult::Error(DgnDbServerError::Id::InternalServerError));
+    //if (m_eventServiceClient == nullptr && !SetEventServiceClient(cancellationToken))
+    //    return CreateCompletedAsyncTask<DgnDbServerCancelEventResult>(DgnDbServerCancelEventResult::Error(DgnDbServerError::Id::InternalServerError));
     m_eventServiceClient->CancelRequest();
     return CreateCompletedAsyncTask<DgnDbServerCancelEventResult>(DgnDbServerCancelEventResult::Success());
     }
@@ -783,6 +796,42 @@ DgnDbServerEventSASTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICancel
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Caleb.Shafer		             06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerEventSubscriptionTaskPtr DgnDbRepositoryConnection::SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken) const
+    {
+    HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
+    std::shared_ptr<DgnDbServerEventSubscriptionResult> finalResult = std::make_shared<DgnDbServerEventSubscriptionResult>();
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then ([=] (const WSChangesetResult& result)
+            {
+            if (!result.IsSuccess())
+                finalResult->SetError(result.GetError());
+            DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(result.GetValue()->AsJson());
+            if (ptr == nullptr)
+                finalResult->SetError(DgnDbServerError::Id::NoSubscriptionFound);
+            finalResult->SetSuccess(ptr);
+            })->Then<DgnDbServerEventSubscriptionResult>([=]
+                {
+                return *finalResult;
+                });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Caleb.Shafer					06/2016
+//---------------------------------------------------------------------------------------
+void SetEventSubscriptionJsonRequestToChangeSet
+(
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+Utf8String										 eventSubscriptionId,
+WSChangeset&									 changeset,
+const WSChangeset::ChangeState&					 changeState
+)
+    {
+    ObjectId eventSubscriptionObject (ServerSchema::Schema::Repository, ServerSchema::Class::EventSubscription, "EventSubscription");
+    changeset.AddInstance(eventSubscriptionObject, changeState, std::make_shared<Json::Value>(DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(eventTypes, eventSubscriptionId)));
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionTaskPtr DgnDbRepositoryConnection::GetEventServiceSubscriptionId
@@ -812,6 +861,20 @@ ICancellationTokenPtr cancellationToken
             {
             return *finalResult;
             });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer					06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerEventSubscriptionTaskPtr DgnDbRepositoryConnection::UpdateEventServiceSubscriptionId
+(
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
+    SetEventSubscriptionJsonRequestToChangeSet(eventTypes, m_eventSubscription->GetSubscriptionId(), *changeset, WSChangeset::Modified);
+    return SendEventChangesetRequest(changeset, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
