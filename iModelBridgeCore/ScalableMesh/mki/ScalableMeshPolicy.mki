@@ -39,7 +39,7 @@ pluginsDir                  = $(stmDir)Plugins/
 # ------------------------------------
 # Output directories
 # ------------------------------------
-OutBuildSTM         = $(OutBuildDir)ScalableMesh/
+OutBuildSTM         = $(OutputRootDir)build/ScalableMesh/
 
 #o = !Must be defined by individual mke files!
 o = $(OutBuildSTM)$(appName)/
@@ -52,7 +52,7 @@ ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
 #----------------------------------------------------------
 # Compile and link settings
 #----------------------------------------------------------
-
+%include $(SharedMki)CommonCompileLinkPolicy.mki
 
 PublicApiIncludes + -I$(STMPrivateApiSrc) -I${BuildContext}/PublicAPI/ -I${BuildContext}/VendorAPI/ -I${BuildContext}/VendorAPI/cpprestsdk/ -I${BuildContext}/VendorAPI/wastorage/ -I${BuildContext}/VendorAPI/BeCurl/ -I${BuildContext}/VendorAPI/BeSQLite/
 

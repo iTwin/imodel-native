@@ -12,6 +12,7 @@
 # PreCompiledHeader.mki uses CCompPDBName
 appName     = ScalableMesh
 DLM_NAME    = $(appName)
+LIB_NAME    = $(appName)
 CCompPDBName = $(appName)
 
 #----------------------------------------------------------

@@ -34,8 +34,8 @@
         <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>  
         <SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>
         <Bindings>
-            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
-            <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
+            <Libs ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
+            <Files ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Files> 
             <Assemblies ProductDirectoryName="MdlsysAsneeded">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
