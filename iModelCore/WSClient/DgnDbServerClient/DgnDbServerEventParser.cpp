@@ -75,14 +75,21 @@ std::shared_ptr<Json::Value> GetProperties(Json::Value jsonResponse, bool isEven
     if (jsonResponse.empty() || jsonResponse.isNull())
         return nullptr;
     
+    Json::Value changedInstance;
+    if (jsonResponse.isMember(ServerSchema::ChangedInstances) && jsonResponse[ServerSchema::ChangedInstances].isArray() && !jsonResponse[ServerSchema::ChangedInstances].empty())
+        changedInstance = jsonResponse[ServerSchema::ChangedInstances][0];
+    else if (jsonResponse.isMember(ServerSchema::ChangedInstance))
+        changedInstance = jsonResponse[ServerSchema::ChangedInstance];
+    else
+        return nullptr;
+
     if (
-        !jsonResponse.isMember(ServerSchema::ChangedInstance) ||
-        !jsonResponse[ServerSchema::ChangedInstance].isMember(ServerSchema::InstanceAfterChange) ||
-        !jsonResponse[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange].isMember(ServerSchema::Properties)
+        !changedInstance.isMember(ServerSchema::InstanceAfterChange) ||
+        !changedInstance[ServerSchema::InstanceAfterChange].isMember(ServerSchema::Properties)
         )
         return nullptr;
 
-    std::shared_ptr<Json::Value> properties = std::make_shared<Json::Value>(jsonResponse[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::Properties]);
+    std::shared_ptr<Json::Value> properties = std::make_shared<Json::Value>(changedInstance[ServerSchema::InstanceAfterChange][ServerSchema::Properties]);
 
     if (isEventSubscription)
         {
