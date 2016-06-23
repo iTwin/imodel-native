@@ -1424,7 +1424,7 @@ public:
     void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     static int const FRAME_RATE_MIN_DEFAULT = 5;
     uint32_t GetMinimumFrameRate() const {return m_minimumFrameRate;}
-    void SetMinimumFrameRate(uint32_t minimumFrameRate) {_SetMinimumFrameRate(minimumFrameRate);}
+    uint32_t SetMinimumFrameRate(uint32_t minimumFrameRate) {return _SetMinimumFrameRate(minimumFrameRate);}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }
