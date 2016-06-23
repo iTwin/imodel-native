@@ -125,6 +125,7 @@ protected:
     Byte            m_dynamicsTransparency = 64;
     Byte            m_flashingTransparency = 100;
     int             m_maxUndoSteps = 20;
+    uint32_t        m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
     DVec3d          m_viewDelta;                // view delta, potentially expanded if f/b clipping are off
     DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded for "no clip")
@@ -169,7 +170,7 @@ protected:
     ProgressiveTask::Completion ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, ProgressiveContext& context, bvector<ProgressiveTaskPtr>& tasks);
 
 public:
-    DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
+    DgnViewport(Render::TargetP target) {SetRenderTarget(target);}
     virtual ~DgnViewport() {DestroyViewport();}
 
     Byte GetFlashingTransparency() const {return m_flashingTransparency;}
@@ -186,6 +187,8 @@ public:
     ProgressiveTask::Completion DoProgressiveTasks();
     void ClearAllProgressiveTasks() {m_elementProgressiveTasks.clear(); m_terrainProgressiveTasks.clear();}
     void ClearElementProgressiveTasks() { m_elementProgressiveTasks.clear();}
+    uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
+    DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNPLATFORM_EXPORT void ScheduleElementProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT void ScheduleTerrainProgressiveTask(ProgressiveTask& pd);
