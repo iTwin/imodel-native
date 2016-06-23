@@ -253,7 +253,21 @@ void DgnViewport::SetRenderTarget(Target* newTarget)
         RenderQueue().AddAndWait(*new DestroyTargetTask(*m_renderTarget));
 
     m_renderTarget = newTarget; 
+    if (newTarget)
+        newTarget->SetMinimumFrameRate(m_minimumFrameRate);
+
     m_sync.InvalidateFirstDrawComplete();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2016
+//---------------------------------------------------------------------------------------
+uint32_t DgnViewport::SetMinimumTargetFrameRate(uint32_t frameRate)
+    {
+    m_minimumFrameRate = frameRate;
+    if (m_renderTarget.IsValid())
+        m_minimumFrameRate = m_renderTarget->SetMinimumFrameRate(m_minimumFrameRate);
+    return m_minimumFrameRate;
     }
 
 /*---------------------------------------------------------------------------------**//**
