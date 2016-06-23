@@ -10,7 +10,7 @@
 #----------------------------------------------------------------------
 #       Create output directories
 #----------------------------------------------------------------------    
-PublicApiDir    = $(OutBuildContexts)PointoolsVortexAPI/PublicAPI/
+PublicApiDir    = $(OutBuildContexts)pointoolsvortexapi/PublicAPI/
 srcDir          = $(_MakeFilePath)
 
 # Wire in my own public header files.
