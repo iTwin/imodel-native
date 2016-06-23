@@ -21,6 +21,7 @@ namespace ServerSchema
     static Utf8CP Instance = "instance";
     static Utf8CP InstanceId = "instanceId";
     static Utf8CP ChangedInstance = "changedInstance";
+    static Utf8CP ChangedInstances = "changedInstances";
     static Utf8CP InstanceAfterChange = "instanceAfterChange";
     static Utf8CP Instances = "instances";
     static Utf8CP Properties = "properties";
