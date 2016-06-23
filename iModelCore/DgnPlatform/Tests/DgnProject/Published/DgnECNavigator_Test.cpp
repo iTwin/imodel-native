@@ -202,7 +202,8 @@ protected:
             "$ECInstanceLabel",
             "ModelId",
             "Name",
-            "LastMod"
+            "LastMod",
+            "Code"
             };
 
         // Ignore some properties in comparison - they too volatile. 

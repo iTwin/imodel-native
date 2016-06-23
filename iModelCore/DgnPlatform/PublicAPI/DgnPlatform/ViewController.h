@@ -127,7 +127,8 @@ protected:
     DgnCategoryIdSet  m_viewedCategories;
     ColorDef       m_backgroundColor;      // used only if bit set in flags
     RotMatrix      m_defaultDeviceOrientation;
-    bool           m_defaultDeviceOrientationValid;
+    bool m_defaultDeviceOrientationValid;
+    bool m_sceneReady = false;
     Render::PointCloudViewSettings m_pointCloudViewSettings;
 
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
@@ -213,11 +214,11 @@ protected:
     //! Draw the contents of the view.
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
 
-    virtual void _CreateScene(SceneContextR context) {_DrawView(context);}
+    virtual void _CreateScene(SceneContextR context) {_DrawView(context); m_sceneReady=false;}
+    virtual bool _IsSceneReady() const {return m_sceneReady;}
+    virtual void _InvalidateScene() {m_sceneReady=false;}
     virtual void _DoHeal(HealContext&) {}
     virtual void _CreateTerrain(TerrainContextR context) {}
-    virtual bool _IsSceneReady() const {return true;}
-    virtual void _InvalidateScene() {}
 
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
 
@@ -241,7 +242,7 @@ protected:
     virtual bool _GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {return false;}
 
     //! Used to notify derived classes when an update begins.
-    virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const&) {}
+    virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const&) {m_sceneReady=true;}
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified
     //! WGS84 location. Override to change how these points are interpreted.
@@ -892,6 +893,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SetRotation(RotMatrixCR rot) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
+
 
 public:
     ViewController2d(DgnDbR project, DgnViewId viewId) : ViewController(project, viewId) {}
