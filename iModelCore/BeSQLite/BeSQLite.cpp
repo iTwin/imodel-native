@@ -4614,10 +4614,9 @@ int BeSQLiteLib::CloseSqlDb(void* p) {return sqlite3_close((sqlite3*) p);}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeIdSet::FromString(Utf8StringCR str)
+void BeIdSet::FromReadableString(Utf8StringCR str)
     {
-    if (str.empty())
-        return;
+    BeAssert(!str.empty()); // checked in FromString()...
 
     Utf8CP curr = str.c_str();
     while (true)
@@ -4644,6 +4643,115 @@ void BeIdSet::FromString(Utf8StringCR str)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isHexDigit(Utf8Char ch)
+    {
+    return (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'F');
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint64_t convertChar(Utf8Char ch)
+    {
+    return ch >= 'A' ? (ch - 'A' + 10) : (ch - '0');
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint64_t parseUInt64(Utf8String::const_iterator& iter, Utf8String::const_iterator end)
+    {
+    // NB: 0 is not a valid return value - we will never encounter it
+    uint64_t value = 0;
+    while (iter < end)
+        {
+        Utf8Char ch = *iter;
+        if (!isHexDigit(ch))
+            break;
+
+        value <<= 4;
+        value |= convertChar(ch);
+        ++iter;
+        }
+
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint64_t insertRange(BeIdSet& ids, uint64_t value, uint64_t increment, uint64_t mult)
+    {
+    for (uint64_t i = 0; i < mult; i++)
+        {
+        value += increment;
+        ids.insert(BeInt64Id(static_cast<int64_t>(value)));
+        }
+
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeIdSet::FromCompactString(Utf8StringCR str)
+    {
+    auto iter = str.begin();
+    auto strEnd = str.end();
+    BeAssert(iter != strEnd && '+' == *iter);    // verified in FromString()...
+
+    uint64_t prevValue = 0;
+
+    ++iter;
+    while (iter < strEnd)
+        {
+        uint64_t mult = 1;
+        uint64_t increment = parseUInt64(iter, strEnd);
+        BeAssert(0 != increment);
+        if (0 == increment)
+            return;
+
+        if (iter != strEnd)
+            {
+            switch (*iter++)
+                {
+                case '*':
+                    mult = parseUInt64(iter, strEnd);
+                    BeAssert(0 != mult);
+                    if (0 == mult)
+                        return;
+                    else if (iter != strEnd && *(iter++) != '+')
+                        return;
+
+                    break;
+                case '+':
+                    break;
+                default:
+                    BeAssert(false);
+                    return;
+                }
+            }
+
+        prevValue = insertRange(*this, prevValue, increment, mult);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeIdSet::FromString(Utf8StringCR str)
+    {
+    if (str.empty())
+        return;
+    else if ('+' == *str.begin())
+        return FromCompactString(str);
+    else
+        return FromReadableString(str);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void saveRange(bool& valid, Utf8StringR str, int64_t start, int64_t end)
@@ -4665,10 +4773,81 @@ static void saveRange(bool& valid, Utf8StringR str, int64_t start, int64_t end)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void saveCompactRange(Utf8StringR str, int64_t increment, int64_t len)
+    {
+    BeAssert(0 != len);
+    Utf8Char buf[0x12] = { '+' };
+    BeStringUtilities::FormatUInt64(buf+1, _countof(buf)-1, static_cast<uint64_t>(increment), HexFormatOptions::Uppercase);
+    str.append(buf);
+
+    if (1 < len)
+        {
+        *buf = '*';
+        BeStringUtilities::FormatUInt64(buf+1, _countof(buf)-1, static_cast<uint64_t>(len), HexFormatOptions::Uppercase);
+        str.append(buf);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Convert an IdSet to a compact string representation. IDs are often quite large values
+* due to inclusion of briefcase ID and sequences of IDs often follow a particular
+* pattern (e.g. [x,x+2,x+4,x+6,x+8] is common with sets of DgnCategoryIds). IdSets are
+* ordered and the deltas between two consecutive values tend to be small with occasional
+* larger jumps between IDs with different briefcase IDs.
+* Given that, we can reduce the length of the string and the complexity of parsing it by:
+*   - Using base-16 representation
+*   - Writing the actual value of only the first element
+*   - Writing each subsequent value in terms of the positive delta from the preceding value
+*   - Collapsing ranges of identical deltas
+* Ex:
+*   - [1,2,4,7,11] => "1+1+2+3+4"
+*   - [1,2,3,4,8] => "1+1*3+4" (first value is 1; each of next 3 values is preceding value + 1; last value is preceding value + 4)
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String BeIdSet::ToCompactString() const
+    {
+    Utf8String str;
+
+    int64_t prevId = 0;
+    int64_t rangeIncrement = 0;
+    int64_t rangeLen = 0;
+
+    for (auto const& elem : *this)
+        {
+        int64_t curId = elem.GetValue();
+        int64_t curIncrement = curId - prevId;
+        prevId = curId;
+
+        if (0 == rangeLen)
+            {
+            rangeIncrement = curIncrement;
+            rangeLen = 1;
+            }
+        else if (curIncrement == rangeIncrement)
+            {
+            ++rangeLen;
+            }
+        else
+            {
+            saveCompactRange(str, rangeIncrement, rangeLen);
+            rangeIncrement = curIncrement;
+            rangeLen = 1;
+            }
+        }
+
+    if (0 < rangeLen)
+        saveCompactRange(str, rangeIncrement, rangeLen);
+
+    return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * convert an IdSet to a Json string. This looks for ranges of contiguous values and uses "n-m" syntax.
 * @bsimethod                                    Keith.Bentley                   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeIdSet::ToString() const
+Utf8String BeIdSet::ToReadableString() const
     {
     Utf8String str;
     int64_t start=0, end=0;
@@ -4692,6 +4871,14 @@ Utf8String BeIdSet::ToString() const
 
     saveRange(valid, str, start, end);
     return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String BeIdSet::ToString(StringFormat format) const
+    {
+    return StringFormat::Compact == format ? ToCompactString() : ToReadableString();
     }
 
 // Functions needed for 7z.  These are for a C API that simulates C++.
