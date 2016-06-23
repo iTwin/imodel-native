@@ -197,7 +197,8 @@
         <ProductDirectory Name="PointCloudAssemblies" Deliver="false" LibType="static"/>
         <ProductDirectory Name="PointoolsAssemblies"  Deliver="false"/>
         <ProductDirectory Name="PointoolsAssemblies"  Deliver="false" LibType="static"/>
-
+        <ProductDirectory Name="MavenDependencies" Deliver="false" LibType="static" />
+        
     </ProductDirectoryList>
 
     <!-- Every unit-test related part that calls DetectAndCompileUnitTests.mki should depend on this -->

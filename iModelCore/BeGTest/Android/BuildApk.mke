@@ -45,15 +45,6 @@ GRADLE_TASKS = build assembleAndroidTest
 %warn BuildContext = $(BuildContext)
 %include $(BuildContext)SubParts\AndroidTools\gradleBuild.mki
 
-# --------------------------------------------------------
-# Build the .class files and the .APK files
-# --------------------------------------------------------
-$(testApk) : $(_makefilespec) $[@wildcard $(mainDir)java/com/bentley/test/*.java] $[@wildcard $(androidTestDir)java/com/bentley/unittest/*.java] $[@wildcard $(libsDir)*]
-    $(msg)
-    !-$(deleteCmd) $@
-    $(_gradleCmd) $(_gradleOptions)
-    ~time
-
 
 $(outputDir)Scripts/installApk$(scriptExt) : $(testApk) $(_makefilespec)
     $(msg)
