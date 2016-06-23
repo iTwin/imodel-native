@@ -760,6 +760,8 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
             }
         }
 
+    IdSet<DbColumnId> modifiedColumnIds;
+
     for (ECClassId relClassId : endTableRelClassIds)
         {
         ClassMap const* classMap = GetClassMap(relClassId);
@@ -819,6 +821,8 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
                 {
                 DbColumn* fkColumnP = const_cast<DbColumn*> (fkColumn);
                 fkColumnP->GetConstraintsR().SetNotNullConstraint();
+                BeAssert(fkColumn->GetId().IsValid());
+                modifiedColumnIds.insert(fkColumn->GetId());
                 continue;
                 }
 
@@ -828,6 +832,18 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
                                                             "Therefore the column is created without NOT NULL constraint.",
                                                             relClassMap.GetClass().GetFullName(), fkColumn->GetName().c_str(), fkTable->GetName().c_str());
             }
+        }
+
+    //This is a temporary hack so that the DB format is correct again. Will provide a proper solution later
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "UPDATE ec_Column SET NotNullConstraint=? WHERE InVirtualSet(?,Id)") ||
+        BE_SQLITE_OK != stmt.BindInt(1, DbSchemaPersistenceManager::BoolToSqlInt(true)) ||
+        BE_SQLITE_OK != stmt.BindVirtualSet(2, modifiedColumnIds) ||
+        BE_SQLITE_DONE != stmt.Step() ||
+        m_ecdb.GetModifiedRowCount() != (int) modifiedColumnIds.size())
+        {
+        Issues().Report(ECDbIssueSeverity::Error, "Evaluation of NOT NULL constraints for FK columns failed: Updating the NOT NULL flag in the table 'ec_Column' failed");
+        return ERROR;
         }
 
     return SUCCESS;
