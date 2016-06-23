@@ -780,36 +780,9 @@ bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    /*std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
     SetEventSubscriptionJsonRequestToChangeSet(eventTypes, "", *changeset, WSChangeset::Created);
-    return SendEventChangesetRequest(changeset, cancellationToken);*/
-    //POST to https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSubscription
-    std::shared_ptr<DgnDbServerEventSubscriptionResult> finalResult = std::make_shared<DgnDbServerEventSubscriptionResult>();
-    Json::Value request = Json::objectValue;
-    JsonValueR instance = request[ServerSchema::Instance] = Json::objectValue;
-    instance[ServerSchema::InstanceId] = "";
-    instance[ServerSchema::SchemaName] = ServerSchema::Schema::Repository;
-    instance[ServerSchema::ClassName] = ServerSchema::Class::EventSubscription;
-    instance[ServerSchema::Properties] = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(eventTypes);
-    return m_wsRepositoryClient->SendCreateObjectRequest
-        (
-        request,
-        BeFileName(),
-        nullptr,
-        cancellationToken
-        )
-        ->Then([=] (const WSCreateObjectResult& result)
-        {
-        if (!result.IsSuccess())
-        finalResult->SetError(result.GetError());
-        DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(result.GetValue().GetObject());
-        if (ptr == nullptr)
-        finalResult->SetError(DgnDbServerError::Id::NoSubscriptionFound);
-        finalResult->SetSuccess(ptr);
-        })->Then<DgnDbServerEventSubscriptionResult>([=]
-        {
-        return *finalResult;
-        });
+    return SendEventChangesetRequest(changeset, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
