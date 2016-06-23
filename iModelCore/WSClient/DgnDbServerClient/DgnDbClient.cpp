@@ -137,7 +137,7 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
         }
 
     Utf8String project;
-    project.Sprintf ("%s--%s", ServerSchema::Schema::Project, m_projectId);
+    project.Sprintf ("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
     ObjectId repositoriesObject(ServerSchema::Schema::Project, ServerSchema::Class::Repository, "");
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
@@ -283,7 +283,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
 
     // Stage 1. Create repository.
     Utf8String project;
-    project.Sprintf ("%s--%s", ServerSchema::Schema::Project, m_projectId);
+    project.Sprintf ("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
     Json::Value repositoryCreationJson = RepositoryCreationJson(m_projectId, repositoryName, dbFileId, description, dbFileName, published);
     client->SetCredentials(m_credentials);
