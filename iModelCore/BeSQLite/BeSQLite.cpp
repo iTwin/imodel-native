@@ -4801,9 +4801,6 @@ static void saveCompactRange(Utf8StringR str, int64_t increment, int64_t len)
 *   - Writing the actual value of only the first element
 *   - Writing each subsequent value in terms of the positive delta from the preceding value
 *   - Collapsing ranges of identical deltas
-* Ex:
-*   - [1,2,4,7,11] => "1+1+2+3+4"
-*   - [1,2,3,4,8] => "1+1*3+4" (first value is 1; each of next 3 values is preceding value + 1; last value is preceding value + 4)
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeIdSet::ToCompactString() const
