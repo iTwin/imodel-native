@@ -132,8 +132,8 @@ MemoryManager::MemoryManager()
         m_targetMemorySize = 8*MEG;
 
     //
-    //  This is what we used for Graphite.  It is not working well in DgnDb because GetAmountOfPhysicalMemory
-    //  is returning a value that is way too small.
+    //  This is what we used for Graphite.  It is not working well in DgnDb because PurgeUntil
+    //  computes a value that is way too small.
     //  m_targetMemorySize = (BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * MEG)) ? 50*MEG : 30*MEG;
 #endif
     }
