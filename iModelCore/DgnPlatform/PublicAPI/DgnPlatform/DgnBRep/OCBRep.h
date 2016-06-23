@@ -42,8 +42,14 @@
 #include <gp_Circ2d.hxx>
 #include <gp_Elips2d.hxx>
 #include <gp_GTrsf.hxx>
-#include <Geom_BSplineCurve.hxx>
+#include <Adaptor3d_CurveOnSurface.hxx>
+#include <Geom2dAdaptor_HCurve.hxx>
+#include <GeomAdaptor_HSurface.hxx>
+#include <Geom2dHatch_Hatcher.hxx>
 #include <Geom2d_BSplineCurve.hxx>
+#include <Geom2d_Line.hxx>
+#include <Geom2d_TrimmedCurve.hxx>
+#include <Geom_BSplineCurve.hxx>
 #include <Geom_BSplineSurface.hxx>
 #include <Geom_Circle.hxx>
 #include <Geom_Ellipse.hxx>
@@ -129,6 +135,7 @@ static DEllipse3d ToDEllipse3d(gp_Circ const& gpCirc, double start, double end) 
 static DEllipse3d ToDEllipse3d(gp_Circ2d const& gpCirc, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpCirc.Location()), ToDVec3d(gpCirc.XAxis().Direction()), ToDVec3d(gpCirc.YAxis().Direction()), gpCirc.Radius(), gpCirc.Radius(), start, end - start);}
 static DEllipse3d ToDEllipse3d(gp_Elips const& gpElips, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpElips.Location()), ToDVec3d(gpElips.XAxis().Direction()), ToDVec3d(gpElips.YAxis().Direction()), gpElips.MajorRadius(), gpElips.MinorRadius(), start, end - start);}
 static DEllipse3d ToDEllipse3d(gp_Elips2d const& gpElips, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpElips.Location()), ToDVec3d(gpElips.XAxis().Direction()), ToDVec3d(gpElips.YAxis().Direction()), gpElips.MajorRadius(), gpElips.MinorRadius(), start, end - start);}
+DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(Handle(Geom_BSplineCurve) const&, double first, double last);
 DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(Handle(Geom_Curve) const&, double first, double last);
 DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(TopoDS_Edge const&);
 

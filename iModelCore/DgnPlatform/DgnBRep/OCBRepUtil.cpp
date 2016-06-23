@@ -303,7 +303,7 @@ static ICurvePrimitivePtr toCurvePrimitiveFromNonPeriodic(Handle(Geom_BSplineCur
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ICurvePrimitivePtr toCurvePrimitive(Handle(Geom_BSplineCurve) const& geomBCurveIn, double first, double last)
+ICurvePrimitivePtr OCBRep::ToCurvePrimitive(Handle(Geom_BSplineCurve) const& geomBCurveIn, double first, double last)
     {
     if (0 != geomBCurveIn->IsPeriodic() || first != geomBCurveIn->FirstParameter() || last != geomBCurveIn->LastParameter())
         {
@@ -354,13 +354,13 @@ ICurvePrimitivePtr OCBRep::ToCurvePrimitive(Handle(Geom_Curve) const& curve, dou
         {
         Handle(Geom_BSplineCurve) geomBCurve = Handle(Geom_BSplineCurve)::DownCast(curve);
 
-        return toCurvePrimitive(geomBCurve, first, last);
+        return OCBRep::ToCurvePrimitive(geomBCurve, first, last);
         }
     else
         {
         Handle(Geom_BSplineCurve) geomBCurve = GeomConvert::CurveToBSplineCurve(curve); // Handle everything else (Beziers etc.) by conversion to bSpline.
 
-        return toCurvePrimitive(geomBCurve, first, last);
+        return OCBRep::ToCurvePrimitive(geomBCurve, first, last);
         }
     }
 
