@@ -647,6 +647,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
                     status = CustomAttributeReadStatus::SkippedCustomAttributes;
                 }
             if (customAttributeInstance.IsValid())
+                {
                 if (ECObjectsStatus::CustomAttributeContainerTypesNotCompatible == SetPrimaryCustomAttribute(*customAttributeInstance))
                     {
                     status = CustomAttributeReadStatus::InvalidCustomAttributes;
