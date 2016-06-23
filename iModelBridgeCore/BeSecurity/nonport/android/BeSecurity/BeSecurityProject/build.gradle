@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'maven'
 
 android {
     compileSdkVersion 19
@@ -21,9 +22,13 @@ dependencies {
     compile 'com.android.support:support-v4:19.1.0'
 }
 
-task makeJar(type: Copy) {
-    from "$buildDir/intermediates/bundles/release/"
-    into buildDir
-    include('classes.jar')
-    rename ('classes.jar', 'besecurity.jar')
+uploadArchives {
+    repositories.mavenDeployer {
+        repository(url: "file://$project.buildDir.absolutePath/MavenArchive/")
+        pom.project {
+            groupId 'com.bentley.android'
+            artifactId 'BeSecurity'
+            version "1.0.0"
+        }
+    }
 }

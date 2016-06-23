@@ -6,7 +6,7 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="PublishedAPI" />
         <SubPart PartName="BeSecurityLibrary" />
-        <SubPart PartName="BeSecurityJar" />
+        <SubPart PartName="BeSecurityMavenArchive" />
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="G06">
@@ -24,7 +24,7 @@
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/BeSecurity" />
         </Bindings>
     </Part>
-	
+    
     <Part Name="BeSecurityLibrary" BentleyBuildMakeFile="BeSecurity.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"                 PartFile="Bentley"          Repository="Bentley" />
@@ -36,9 +36,11 @@
         </Bindings>
     </Part>
     
-    <Part Name="BeSecurityJar" BentleyBuildMakeFile="nonport/android/BeSecurity/BeSecurityJar.mke" OnlyPlatforms="Android*">
+    <Part Name="BeSecurityMavenArchive" BentleyBuildMakeFile="nonport/android/BeSecurity/BeSecurityMavenArchive.mke" OnlyPlatforms="Android*">
         <Bindings>
-            <Libs ProductDirectoryName="BeSecurityJar">Delivery/besecurity.jar</Libs>
+            <Directory SourceName="Delivery/MavenArchive/com/bentley/android/BeSecurity" 
+                       ProductDirectoryName="MavenDependencies" ProductSubDirectory="com/bentley/android/BeSecurity"
+                       SubPartDirectory="MavenDependencies/com/bentley/android/BeSecurity" />
         </Bindings>
     </Part>
     
