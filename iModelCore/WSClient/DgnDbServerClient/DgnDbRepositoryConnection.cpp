@@ -621,39 +621,95 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 EventServiceClient* DgnDbRepositoryConnection::m_eventServiceClient = nullptr;
 
+BeMutex DgnDbRepositoryConnection::s_eventSubscriptionLock;
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 //Returns true if same, else false
 bool CompareEventTypes
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes1,
-bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes2
+bvector<DgnDbServerEvent::DgnDbServerEventType>* newEventTypes,
+bvector<DgnDbServerEvent::DgnDbServerEventType> oldEventTypes
 )
     {
-    if ((eventTypes1 == nullptr || eventTypes1->size() == 0) && eventTypes2.size() == 0)
+    //Case: newEventTypes are null or size 0 AND oldEventTypes are null or size 0
+    //Case: newEventTypes have different size AND oldEventTypes are null or size 0
+    //Case: newEventTypes are null or size 0 AND oldEventTypes are a different size 
+    //Case: newEventTypes are a different size AND oldEventTypes are a different size
+    //Case: newEventTypes and oldEventTypes are same size
+    if (
+        (newEventTypes == nullptr || newEventTypes->size() == 0) &&
+        (oldEventTypes.size() == 0)
+        )
         return true;
-    if (eventTypes1 == nullptr || (eventTypes1->size() != eventTypes2.size()))
+    else if (
+        (newEventTypes != nullptr && newEventTypes->size() > 0) &&
+        (oldEventTypes.size() == 0)
+        )
         return false;
-    
-    bmap<DgnDbServerEvent::DgnDbServerEventType, Utf8CP> tempMap;
-    for (int i = 0; i < (int) eventTypes1->size(); i++)
+    else if (
+        (newEventTypes == nullptr || newEventTypes->size() == 0) &&
+        (oldEventTypes.size() > 0)
+        )
+        return false;
+    else if (
+        (newEventTypes != nullptr && newEventTypes->size() > 0) &&
+        (oldEventTypes.size() > 0) &&
+        (newEventTypes->size() != oldEventTypes.size())
+        )
+        return false;
+    else if (
+        (newEventTypes != nullptr && newEventTypes->size() > 0) &&
+        (oldEventTypes.size() > 0) &&
+        (newEventTypes->size() == oldEventTypes.size())
+        )
         {
-        tempMap.Insert(eventTypes1->at(i), "");
-        }
-
-    bool isSuccess = true;
-    for (int j = 0; j < (int) eventTypes2.size(); j++)
-        {
-        //Could not find a common element in both
-        if (tempMap.end() == tempMap.find(eventTypes2.at(j)))
+        bmap<DgnDbServerEvent::DgnDbServerEventType, Utf8CP> oldEventTypesMap;
+        for (int i = 0; i < (int) oldEventTypes.size(); i++)
             {
-            isSuccess = false;
-            break;
+            oldEventTypesMap.Insert(oldEventTypes.at(i), "");
             }
+        bool isSame = true;
+        for (int j = 0; j < (int) newEventTypes->size(); j++)
+            {
+            //Item in newEventTypes not found in map
+            if (oldEventTypesMap.end() == oldEventTypesMap.find(newEventTypes->at(j)))
+                {
+                isSame = false;
+                break;
+                }
+            }
+        return isSame;
         }
+    else 
+        return false;
 
-    return isSuccess;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbRepositoryConnection::SetEventServiceSubscriptionAndSAS
+(
+bool isCreate,
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, 
+ICancellationTokenPtr cancellationToken
+)
+    {
+    auto eventSubscription = (isCreate) ? GetEventServiceSubscriptionId(eventTypes, cancellationToken)->GetResult() : UpdateEventServiceSubscriptionId(eventTypes, cancellationToken)->GetResult();
+    if (!eventSubscription.IsSuccess())
+        return false;
+
+    m_eventSubscription = eventSubscription.GetValue();
+
+    auto sasToken = GetEventServiceSAS(cancellationToken)->GetResult();
+    if (!sasToken.IsSuccess())
+        return false;
+
+    m_eventSAS = sasToken.GetValue();
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -667,38 +723,28 @@ ICancellationTokenPtr cancellationToken
     {
     if (m_eventServiceClient == nullptr)
         {
-        auto sasToken = GetEventServiceSAS(cancellationToken)->GetResult();
-        if (!sasToken.IsSuccess())
+        if (!SetEventServiceSubscriptionAndSAS(true, eventTypes, cancellationToken))
             return false;
-        auto eventSubscription = GetEventServiceSubscriptionId(eventTypes, cancellationToken)->GetResult();
-        if (!eventSubscription.IsSuccess())
-            return false;
-
-        m_eventSubscription = eventSubscription.GetValue();
 
         EventServiceClient *eventServiceClient = new EventServiceClient
             (
-            sasToken.GetValue()->GetBaseAddress(),
+            m_eventSAS->GetBaseAddress(),
             m_repositoryInfo.GetId(),
             m_eventSubscription->GetSubscriptionId()
             );
-        eventServiceClient->UpdateSASToken(sasToken.GetValue()->GetSASToken());
+        eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
         m_eventServiceClient = eventServiceClient;
+        return true;
         }
-    else if (!CompareEventTypes(eventTypes, m_eventSubscription->GetEventTypes()))
-        {
-        auto eventSubscription = UpdateEventServiceSubscriptionId(eventTypes, cancellationToken)->GetResult();
-        if (!eventSubscription.IsSuccess())
-            return false;
+  
+    bool isSame = CompareEventTypes(eventTypes, m_eventSubscription->GetEventTypes());
+    bool isSuccess = (!isSame) ? SetEventServiceSubscriptionAndSAS(false, eventTypes, cancellationToken) : true;
 
-        m_eventSubscription = eventSubscription.GetValue();
-
-        auto sasToken = GetEventServiceSAS(cancellationToken)->GetResult();
-        if (!sasToken.IsSuccess())
-            return false;
-
-        m_eventServiceClient->UpdateSASToken(sasToken.GetValue()->GetSASToken());
-        }
+    if (!isSuccess)
+        return false;
+    if (!isSame && isSuccess)
+        m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
+        
     return true;
     }
 
@@ -859,14 +905,14 @@ bool longPolling,
 ICancellationTokenPtr cancellationToken
 )
     {
-    if (eventTypes == nullptr)
-        {
-        bvector<DgnDbServerEvent::DgnDbServerEventType> temp;
-        eventTypes = &temp;
-        }
+    s_eventSubscriptionLock.lock();
+    bool isSuccess = SetEventServiceClient(eventTypes, cancellationToken);
+    s_eventSubscriptionLock.unlock();
+    if (!isSuccess)
+        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError)); 
 
-    if (!SetEventServiceClient(eventTypes, cancellationToken))
-        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
+    /*if (!SetEventServiceClient(eventTypes, cancellationToken))
+        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));*/
 
     HttpResponse response;
     if (!GetEventServiceResponse(response, longPolling))

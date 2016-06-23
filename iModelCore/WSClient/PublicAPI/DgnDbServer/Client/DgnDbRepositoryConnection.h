@@ -80,6 +80,8 @@ private:
     IAzureBlobStorageClientPtr m_azureClient;
     static EventServiceClient*         m_eventServiceClient;
     DgnDbServerEventSubscriptionPtr m_eventSubscription;
+    DgnDbServerEventSASPtr m_eventSAS;
+    static BeMutex s_eventSubscriptionLock;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
@@ -93,6 +95,9 @@ private:
 
     //! Sets EventServiceClient.
     bool SetEventServiceClient(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Sets EventServiceSubscription and EventServiceSAS.
+    bool SetEventServiceSubscriptionAndSAS(bool isCreate, bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
