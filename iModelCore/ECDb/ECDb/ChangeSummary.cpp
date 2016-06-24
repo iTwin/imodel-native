@@ -321,7 +321,10 @@ DbValue SqlChange::GetValue(int columnIndex) const
 //---------------------------------------------------------------------------------------
 void TableMapDetail::Initialize(Utf8StringCR tableName)
     {
-    DbTable const* dbTable = m_ecdb.GetECDbImplR().GetECDbMap().GetDbSchema().FindTable(tableName.c_str());
+    DbSchema const& dbSchema = m_ecdb.GetECDbImplR().GetECDbMap().GetDbSchema();
+    BeAssert(dbSchema.GetLoadState() != DbSchema::LoadState::NotLoaded);
+
+    DbTable const* dbTable = dbSchema.FindTable(tableName.c_str());
     if (!dbTable || !dbTable->IsValid() || dbTable->IsNullTable())
         {
         m_isMapped = false;
@@ -1670,6 +1673,17 @@ ChangeSummary::~ChangeSummary()
 BentleyStatus ChangeSummary::FromChangeSet(IChangeSet& changeSet, ChangeSummary::Options const& options)
     {
     Initialize();
+
+    // Ensure the ECDb mapping constructs are initialized
+    DbSchema& dbSchema = m_ecdb.GetECDbImplR().GetECDbMap().GetDbSchemaR();
+    if (!Enum::Contains(dbSchema.GetLoadState(), DbSchema::LoadState::Core))
+        {
+        if (DbSchemaPersistenceManager::Load(dbSchema, m_ecdb, DbSchema::LoadState::Core) != SUCCESS)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+        }
 
     Changes changes = changeSet.GetChanges();
     return m_changeExtractor->ExtractFromSqlChanges(changes, options.GetIncludeRelationshipInstances());
