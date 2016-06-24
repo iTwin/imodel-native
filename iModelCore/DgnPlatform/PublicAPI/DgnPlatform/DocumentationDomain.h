@@ -14,7 +14,7 @@ DGNPLATFORM_TYPEDEFS(Document)
 
 DGNPLATFORM_REF_COUNTED_PTR(Document)
 
-#define DOCUMENTATION_DOMAIN_ECSCHEMA_PATH  L"ECSchemas/Dgn/Documentation.01.00.ecschema.xml"
+#define DOCUMENTATION_DOMAIN_ECSCHEMA_PATH  L"ECSchemas/Domain/Documentation.01.00.ecschema.xml"
 #define DOCUMENTATION_DOMAIN_NAME           "Documentation"
 #define DOCUMENTATION_SCHEMA(className)     DOCUMENTATION_DOMAIN_NAME "." className
 
