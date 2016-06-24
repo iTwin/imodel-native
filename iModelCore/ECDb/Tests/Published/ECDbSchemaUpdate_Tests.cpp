@@ -18,15 +18,54 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECSchemaUpdateTests : public SchemaImportTestFixture
     {
-    void CloseReOpenECDb()
-        {
-        Utf8CP dbFileName = m_ecdb.GetDbFileName();
-        BeFileName dbPath(dbFileName);
-        m_ecdb.CloseDb();
-        ASSERT_FALSE(m_ecdb.IsDbOpen());
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(dbPath, Db::OpenParams(Db::OpenMode::Readonly)));
-        ASSERT_TRUE(m_ecdb.IsDbOpen());
-        }
+    std::vector<Utf8String> m_updatedDbs;
+    protected:
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                   Muhammad.Hassan                     06/16
+        //+---------------+---------------+---------------+---------------+---------------+------
+        void CloseReOpenECDb()
+            {
+            Utf8CP dbFileName = m_ecdb.GetDbFileName();
+            BeFileName dbPath(dbFileName);
+            m_ecdb.CloseDb();
+            ASSERT_FALSE(m_ecdb.IsDbOpen());
+            ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(dbPath, Db::OpenParams(Db::OpenMode::Readonly)));
+            ASSERT_TRUE(m_ecdb.IsDbOpen());
+            }
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                   Muhammad.Hassan                     06/16
+        //+---------------+---------------+---------------+---------------+---------------+------
+        DbResult OpenBesqliteDb(Utf8CP dbPath)
+            {
+            return m_ecdb.OpenBeSQLiteDb(dbPath, Db::OpenParams(Db::OpenMode::ReadWrite));
+            }
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                   Muhammad.Hassan                     06/16
+        //+---------------+---------------+---------------+---------------+---------------+------
+        void AssertSchemaUpdate(bool &asserted, Utf8CP SchemaXml, BeFileName seedFilePath, BeBriefcaseId briefcaseId, bool expectedToSucceed, Utf8CP assertMessage)
+            {
+            Utf8String dbFileName;//% PRIu64 
+            dbFileName.Sprintf("schemaupdate_briefcaseId_%" PRIu64 ".ecdb", briefcaseId.GetValue());
+
+            ECDb ecdb;
+            CloneECDb(ecdb, dbFileName.c_str(), seedFilePath);
+            ASSERT_TRUE(ecdb.IsDbOpen());
+
+            if (!briefcaseId.IsMasterId())
+                {
+                ecdb.ChangeBriefcaseId(briefcaseId);
+                }
+
+            AssertSchemaImport(asserted, ecdb, SchemaItem(SchemaXml, expectedToSucceed, assertMessage));
+
+            if (briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
+                m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
+
+            ecdb.CloseDb();
+            }
     };
 
 #ifdef NotUsedYet
@@ -1294,42 +1333,59 @@ TEST_F(ECSchemaUpdateTests, AddNewProperty)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' modifier='None' >"
         "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' />"
         "   </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    AssertSchemaUpdate(asserted, schemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new property should be successful");
     ASSERT_FALSE(asserted);
 
-    //Verify newly added property exists
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
-    ASSERT_TRUE(testSchema != nullptr);
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new property should be successful");
+    ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = testSchema->GetClassCP("TestClass");
-    ASSERT_TRUE(testClass != nullptr);
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: add new property should fail");
+    ASSERT_FALSE(asserted);
 
-    ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
-    ASSERT_TRUE(testProperty != nullptr);
-    ASSERT_TRUE(testProperty->GetDisplayLabel() == "Test Property");
-    ASSERT_TRUE(testProperty->GetDescription() == "this is property");
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-    CloseReOpenECDb();
+        //Verify newly added property exists
+        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ASSERT_TRUE(testSchema != nullptr);
 
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Test Property", statement.GetValueText(0));
-    ASSERT_STREQ("this is property", statement.GetValueText(1));
+        ECClassCP testClass = testSchema->GetClassCP("TestClass");
+        ASSERT_TRUE(testClass != nullptr);
 
-    //Query newly added Property
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+        ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
+        ASSERT_TRUE(testProperty != nullptr);
+        ASSERT_TRUE(testProperty->GetDisplayLabel() == "Test Property");
+        ASSERT_TRUE(testProperty->GetDescription() == "this is property");
+
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Test Property", statement.GetValueText(0));
+        ASSERT_STREQ("this is property", statement.GetValueText(1));
+
+        //Query newly added Property
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts.TestClass"));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -4727,7 +4783,7 @@ TEST_F(ECSchemaUpdateTests, AllowChangeOfIndexName)
 
     ECClassCP b = GetECDb().Schemas().GetECClass("TestSchema", "B");
     ASSERT_NE(b, nullptr);
-    auto ca = b->GetCustomAttribute("ClassMap");
+    IECInstancePtr ca = b->GetCustomAttribute("ClassMap");
     ASSERT_FALSE(ca.IsNull());
 
     ECValue indexes, indexName;
@@ -6258,18 +6314,18 @@ TEST_F(ECSchemaUpdateTests, AddAndUpdatePropertiesWithEnumAndKoQ)
     asserted = false;
     AssertSchemaImport(asserted, ecdb, deleteAllCA);
     ASSERT_FALSE(asserted);
-    auto nonStrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ECEnumerationCP nonStrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
     ASSERT_TRUE(nonStrictEnum != nullptr);
-    auto myKindOfQuantity = ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
+    KindOfQuantityCP myKindOfQuantity = ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
     ASSERT_TRUE(myKindOfQuantity != nullptr);
-    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ECClassCP foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
     ASSERT_TRUE(foo != nullptr);
-    
-    auto foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
-    auto foo_homepage = foo->GetPropertyP("Homepage")->GetAsPrimitiveProperty();
-    auto foo_alternativeLengths = foo->GetPropertyP("AlternativeLengths")->GetAsArrayProperty();
-    auto foo_favorites = foo->GetPropertyP("Favorites")->GetAsArrayProperty();
-    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+    PrimitiveECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
+    PrimitiveECPropertyCP foo_homepage = foo->GetPropertyP("Homepage")->GetAsPrimitiveProperty();
+    ArrayECPropertyCP foo_alternativeLengths = foo->GetPropertyP("AlternativeLengths")->GetAsArrayProperty();
+    ArrayECPropertyCP foo_favorites = foo->GetPropertyP("Favorites")->GetAsArrayProperty();
+    PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
 
     ASSERT_TRUE(foo_length != nullptr);
     ASSERT_TRUE(foo_homepage != nullptr);
@@ -6282,6 +6338,7 @@ TEST_F(ECSchemaUpdateTests, AddAndUpdatePropertiesWithEnumAndKoQ)
     ASSERT_TRUE(foo_favorites->GetExtendedTypeName() == "URL");
     ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -6315,12 +6372,12 @@ TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToUnStrictEnum)
     asserted = false;
     AssertSchemaImport(asserted, ecdb, deleteAllCA);
     ASSERT_FALSE(asserted);
-    auto nonStrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ECEnumerationCP nonStrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
     ASSERT_TRUE(nonStrictEnum != nullptr);
-    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ECClassCP foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
     ASSERT_TRUE(foo != nullptr);
 
-    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+    PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
 
     ASSERT_TRUE(foo_type != nullptr);
     ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
@@ -6393,6 +6450,7 @@ TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToAnotherPrimitive)
     asserted = false;
     AssertSchemaImport(asserted, ecdb, modified);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -6429,17 +6487,18 @@ TEST_F(ECSchemaUpdateTests, ChangingEnumToPrimitive)
 
     asserted = false;
     AssertSchemaImport(asserted, ecdb, modified);
-    auto strictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+    ECEnumerationCP strictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "StrictEnum");
     ASSERT_TRUE(strictEnum != nullptr);
-    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ECClassCP foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
     ASSERT_TRUE(foo != nullptr);
 
-    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+    PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
 
     ASSERT_TRUE(foo_type != nullptr);
     ASSERT_TRUE(foo_type->GetEnumeration() == nullptr);
     ASSERT_TRUE(foo_type->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -6480,17 +6539,593 @@ TEST_F(ECSchemaUpdateTests, ChangingEnumToEnum)
 
     asserted = false;
     AssertSchemaImport(asserted, ecdb, modified);
-    auto strictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+    ECEnumerationCP strictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "StrictEnum");
     ASSERT_TRUE(strictEnum != nullptr);
-    auto unstrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "UnStrictEnum");
+    ECEnumerationCP unstrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "UnStrictEnum");
     ASSERT_TRUE(unstrictEnum != nullptr);
 
-    auto foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ECClassCP foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
     ASSERT_TRUE(foo != nullptr);
 
-    auto foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+    PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
 
     ASSERT_TRUE(foo_type != nullptr);
     ASSERT_TRUE(foo_type->GetEnumeration() == unstrictEnum);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddNewRelationship)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "    <ECProperty propertyName='AProp' typeName='int' />"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "    <ECProperty propertyName='BProp' typeName='int' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "    <ECProperty propertyName='AProp' typeName='int' />"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "    <ECProperty propertyName='BProp' typeName='int' />"
+        "  </ECEntityClass>"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
+        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "           <Class class='B' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>";
+
+    //verify Adding new EndTable relationship for different briefcaseIds.
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new endtable relationship should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new endtable relationship should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: add new endtable relationship should fail");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        std::vector<std::pair<Utf8String, int>> testItems;
+        testItems.push_back(std::make_pair("ts_A", 3));
+        testItems.push_back(std::make_pair("ts_B", 2));
+        AssertColumnCount(GetECDb(), testItems, "");
+
+        GetECDb().CloseDb();
+        }
+
+    editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='A' modifier='None' >"
+        "    <ECProperty propertyName='AProp' typeName='int' />"
+        "  </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='None' >"
+        "    <ECProperty propertyName='BProp' typeName='int' />"
+        "  </ECEntityClass>"
+        "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='referencing' strengthDirection='forward' >"
+        "       <Source cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='B' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>";
+
+    //verify Adding new linkTable relationship for different briefcaseIds.
+    m_updatedDbs.clear();
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new LinkTable relationship should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new LinkTable relationship should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: add new LinkTable relationship should fail");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        ASSERT_EQ(true, GetECDb().TableExists("ts_RelClass"));
+
+        GetECDb().CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
+    {
+    SchemaItem schemaItem(
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='Model' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+        "    <ECCustomAttributes>"
+        "        <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "        </ClassMap>"
+        "    </ECCustomAttributes>"
+        "    <ECProperty propertyName='Code' typeName='string' />"
+        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='GeometricElement' modifier='None'>"
+        "    <BaseClass>Element</BaseClass>"
+        "    <ECProperty propertyName='GeometricElement' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Geometric3dElement' modifier='None'>"
+        "    <BaseClass>GeometricElement</BaseClass>"
+        "    <ECProperty propertyName='Geometry3d' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='Model' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+        "    <ECCustomAttributes>"
+        "        <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "        </ClassMap>"
+        "    </ECCustomAttributes>"
+        "    <ECProperty propertyName='Code' typeName='string' />"
+        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='GeometricElement' modifier='None'>"
+        "    <BaseClass>Element</BaseClass>"
+        "    <ECProperty propertyName='GeometricElement' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Geometric3dElement' modifier='None'>"
+        "    <BaseClass>GeometricElement</BaseClass>"
+        "    <ECProperty propertyName='Geometry3d' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "  <ECRelationshipClass typeName='ModelHasGeometricElements' strength='embedding' modifier='Sealed'>"
+        "   <BaseClass>ModelHasElements</BaseClass>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='GeometricElement' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    //verify Adding new derived endtable relationship for different briefcaseIds.
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new Derived EndTable relationship should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new Derived EndTable relationship should be successful");
+    ASSERT_FALSE(asserted);
+
+#ifdef TFS481303
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: add new Derived EndTable relationship should succeed as it doens't change db schema");
+    ASSERT_FALSE(asserted);
+#endif // TFS481303
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        //Insert Test Data
+        //Model
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Model(ECInstanceId, Name) VALUES(101, 'Model1')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Model(ECInstanceId, Name) VALUES(102, 'Model2')");
+
+        //GeometricElement
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.GeometricElement(ECInstanceId, Code, ModelId, GeometricElement) VALUES(201, 'Code1', 101, 'GeometricElement1')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.GeometricElement(ECInstanceId, Code, ModelId, GeometricElement) VALUES(202, 'Code2', 101, 'GeometricElement2')");
+
+        //Geometric3dElement
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Geometric3dElement(ECInstanceId, Code, ModelId, GeometricElement, Geometry3d) VALUES(301, 'Code3', 102, 'GeometricElement3', 'Geometry3d3')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Geometric3dElement(ECInstanceId, Code, ModelId, GeometricElement, Geometry3d) VALUES(302, 'Code4', 102, 'GeometricElement4', 'Geometry3d4')");
+
+        //Select statements
+        //Verify insertions
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.ModelHasElements"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_EQ(8, stmt.GetValueInt(0)) << stmt.GetECSql();
+
+        stmt.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ONLY ts.ModelHasElements"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_EQ(4, stmt.GetValueInt(0)) << stmt.GetECSql();
+
+        stmt.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.ModelHasGeometricElements"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_EQ(4, stmt.GetValueInt(0)) << stmt.GetECSql();
+
+        GetECDb().CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
+    {
+    SchemaItem schemaItem(
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='Model' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+        "    <ECCustomAttributes>"
+        "        <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "        </ClassMap>"
+        "    </ECCustomAttributes>"
+        "    <ECProperty propertyName='Code' typeName='string' />"
+        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='InformationElement' modifier='Abstract'>"
+        "     <BaseClass>Element</BaseClass>"
+        "     <ECCustomAttributes>"
+        "      <ClassMap xmlns='ECDbMap.01.00'>"
+        "        <MapStrategy>"
+        "            <Options>JoinedTablePerDirectSubclass</Options>"
+        "        </MapStrategy>"
+        "       </ClassMap>"
+        "     </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='LinkElement' modifier='Abstract'>"
+        "     <BaseClass>InformationElement</BaseClass>"
+        "     <ECCustomAttributes>"
+        "      <ClassMap xmlns='ECDbMap.01.00'>"
+        "        <MapStrategy>"
+        "            <Options>SharedColumnsForSubclasses</Options>"
+        "            <MinimumSharedColumnCount>8</MinimumSharedColumnCount>"
+        "        </MapStrategy>"
+        "       </ClassMap>"
+        "     </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='UrlLink' modifier='Sealed'>"
+        "     <BaseClass>LinkElement</BaseClass>"
+        "    <ECProperty propertyName='Url' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='EmbeddedLink' modifier='Sealed'>"
+        "     <BaseClass>LinkElement</BaseClass>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='GeometricElement' modifier='Abstract'>"
+        "     <ECCustomAttributes>"
+        "      <ClassMap xmlns='ECDbMap.01.00'>"
+        "        <MapStrategy>"
+        "            <Options>JoinedTablePerDirectSubclass</Options>"
+        "        </MapStrategy>"
+        "       </ClassMap>"
+        "     </ECCustomAttributes>"
+        "    <BaseClass>Element</BaseClass>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Geometric3dElement' modifier='Abstract'>"
+        "     <ECCustomAttributes>"
+        "      <ClassMap xmlns='ECDbMap.01.00'>"
+        "        <MapStrategy>"
+        "            <Options>SharedColumnsForSubclasses</Options>"
+        "            <MinimumSharedColumnCount>16</MinimumSharedColumnCount>"
+        "        </MapStrategy>"
+        "       </ClassMap>"
+        "     </ECCustomAttributes>"
+        "    <BaseClass>GeometricElement</BaseClass>"
+        "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='VolumeElement'>"
+        "    <BaseClass>Geometric3dElement</BaseClass>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Annotation3dElement'>"
+        "    <BaseClass>Geometric3dElement</BaseClass>"
+        "    <ECProperty propertyName='Font' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "  <ECRelationshipClass typeName='ElementDrivesElement' strength='referencing' modifier='Abstract'>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='Element' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "  <ECRelationshipClass typeName='InformationElementDrivesInformationElement' strength='referencing' modifier='Sealed'>"
+        "   <BaseClass>ElementDrivesElement</BaseClass>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='InformationElement' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='InformationElement' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "  <ECEntityClass typeName='Model' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+        "    <ECCustomAttributes>"
+        "        <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "        </ClassMap>"
+        "    </ECCustomAttributes>"
+        "    <ECProperty propertyName='Code' typeName='string' />"
+        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='InformationElement' modifier='Abstract'>"
+        "     <BaseClass>Element</BaseClass>"
+        "     <ECCustomAttributes>"
+        "      <ClassMap xmlns='ECDbMap.01.00'>"
+        "        <MapStrategy>"
+        "            <Options>JoinedTablePerDirectSubclass</Options>"
+        "        </MapStrategy>"
+        "       </ClassMap>"
+        "     </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='LinkElement' modifier='Abstract'>"
+        "     <BaseClass>InformationElement</BaseClass>"
+        "     <ECCustomAttributes>"
+        "      <ClassMap xmlns='ECDbMap.01.00'>"
+        "        <MapStrategy>"
+        "            <Options>SharedColumnsForSubclasses</Options>"
+        "            <MinimumSharedColumnCount>8</MinimumSharedColumnCount>"
+        "        </MapStrategy>"
+        "       </ClassMap>"
+        "     </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='UrlLink' modifier='Sealed'>"
+        "     <BaseClass>LinkElement</BaseClass>"
+        "    <ECProperty propertyName='Url' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='EmbeddedLink' modifier='Sealed'>"
+        "     <BaseClass>LinkElement</BaseClass>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='GeometricElement' modifier='Abstract'>"
+        "     <ECCustomAttributes>"
+        "      <ClassMap xmlns='ECDbMap.01.00'>"
+        "        <MapStrategy>"
+        "            <Options>JoinedTablePerDirectSubclass</Options>"
+        "        </MapStrategy>"
+        "       </ClassMap>"
+        "     </ECCustomAttributes>"
+        "    <BaseClass>Element</BaseClass>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Geometric3dElement' modifier='Abstract'>"
+        "     <ECCustomAttributes>"
+        "      <ClassMap xmlns='ECDbMap.01.00'>"
+        "        <MapStrategy>"
+        "            <Options>SharedColumnsForSubclasses</Options>"
+        "            <MinimumSharedColumnCount>16</MinimumSharedColumnCount>"
+        "        </MapStrategy>"
+        "       </ClassMap>"
+        "     </ECCustomAttributes>"
+        "    <BaseClass>GeometricElement</BaseClass>"
+        "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='VolumeElement'>"
+        "    <BaseClass>Geometric3dElement</BaseClass>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Annotation3dElement'>"
+        "    <BaseClass>Geometric3dElement</BaseClass>"
+        "    <ECProperty propertyName='Font' typeName='string' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class='Model' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "  <ECRelationshipClass typeName='ElementDrivesElement' strength='referencing' modifier='Abstract'>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='Element' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='Element' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "  <ECRelationshipClass typeName='InformationElementDrivesInformationElement' strength='referencing' modifier='Sealed'>"
+        "   <BaseClass>ElementDrivesElement</BaseClass>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='InformationElement' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='InformationElement' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "  <ECRelationshipClass typeName='UrlLinkDrivesAnnotation3dElement' strength='referencing' modifier='Sealed'>"
+        "   <BaseClass>ElementDrivesElement</BaseClass>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='UrlLink' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='Annotation3dElement' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    //verify Adding new derived LinkTable relationship for different briefcaseIds.
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new Derived LinkTable relationship should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new Derived LinkTable relationship should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: add new Derived LinkTable relationship should fail");
+    ASSERT_FALSE(asserted);
+
+    //Verify updated schemas
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        //Insert Test Data
+        //Model
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Model(ECInstanceId, Name) VALUES(101, 'Model1')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Model(ECInstanceId, Name) VALUES(102, 'Model2')");
+
+        //VolumeElement
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.VolumeElement(ECInstanceId, Code, ModelId, Name) VALUES(201, 'Code1', 101, 'Volume1')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.VolumeElement(ECInstanceId, Code, ModelId, Name) VALUES(202, 'Code2', 102, 'Volume2')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.VolumeElement(ECInstanceId, Code, ModelId, Name) VALUES(203, 'Code3', 102, 'Volume3')");
+
+        //AnnotationElement
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Annotation3dElement(ECInstanceId, Code, ModelId, Font) VALUES(301, 'Code4', 101, 'Font1')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Annotation3dElement(ECInstanceId, Code, ModelId, Font) VALUES(302, 'Code5', 102, 'Font2')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Annotation3dElement(ECInstanceId, Code, ModelId, Font) VALUES(303, 'Code6', 102, 'Font3')");
+
+        //LinkUrl
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.UrlLink(ECInstanceId, Code, ModelId, Url) VALUES(401, 'Code7', 101, 'http://www.staufen.de')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.UrlLink(ECInstanceId, Code, ModelId, Url) VALUES(402, 'Code8', 101, 'http://www.staufen.de')");
+
+        //EmbeddedLink
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.EmbeddedLink(ECInstanceId,Code, ModelId, Name) VALUES(501, 'Code9', 102,'bliblablub')");
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.EmbeddedLink(ECInstanceId,Code, ModelId, Name) VALUES(502, 'Code10', 102,'bliblablub')");
+
+        ECClassId urlLInkId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("UrlLink")->GetId();
+        ECClassId embeddedLinkId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("EmbeddedLink")->GetId();
+        ECClassId annotation3dElementId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("Annotation3dElement")->GetId();
+
+        //InformationElementDrivesInformationElement
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO ts.InformationElementDrivesInformationElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401 , %llu , 501 , %llu )", urlLInkId.GetValue(), embeddedLinkId.GetValue());
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+
+        ecsql.Sprintf("INSERT INTO ts.InformationElementDrivesInformationElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401 , %llu , 502 , %llu )", urlLInkId.GetValue(), embeddedLinkId.GetValue());
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+
+        //UrlLinkDrivesAnnotation3dElement
+        ecsql.Sprintf("INSERT INTO ts.UrlLinkDrivesAnnotation3dElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402 , %llu , 301 , %llu )", urlLInkId.GetValue(), annotation3dElementId.GetValue());
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+
+        ecsql.Sprintf("INSERT INTO ts.UrlLinkDrivesAnnotation3dElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402 , %llu , 302 , %llu )", urlLInkId.GetValue(), annotation3dElementId.GetValue());
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+
+        ecsql.Sprintf("INSERT INTO ts.UrlLinkDrivesAnnotation3dElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402 , %llu , 303 , %llu )", urlLInkId.GetValue(), annotation3dElementId.GetValue());
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+
+        //Verify Insertions
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.ElementDrivesElement"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_EQ(5, stmt.GetValueInt(0)) << stmt.GetECSql();
+
+        stmt.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ONLY ts.ElementDrivesElement"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetECSql();
+
+        stmt.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.InformationElementDrivesInformationElement"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << stmt.GetECSql();
+
+        stmt.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.UrlLinkDrivesAnnotation3dElement"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_EQ(3, stmt.GetValueInt(0)) << stmt.GetECSql();
+
+        GetECDb().CloseDb();
+        }
     }
 END_ECDBUNITTESTS_NAMESPACE
