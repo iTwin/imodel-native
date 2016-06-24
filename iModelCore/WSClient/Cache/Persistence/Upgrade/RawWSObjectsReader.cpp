@@ -101,3 +101,11 @@ Utf8String RawWSObjectsReader::GetInstanceETag(const rapidjson::Value* instance)
         }
     return *it->second;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::SizeType RawWSObjectsReader::GetRelationshipInstanceCount(const rapidjson::Value* relationshipInstances) const
+    {
+    return 0;
+    }

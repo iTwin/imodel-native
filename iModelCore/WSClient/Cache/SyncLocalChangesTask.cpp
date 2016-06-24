@@ -13,7 +13,7 @@
 #include <WebServices/Client/WSChangeset.h>
 #include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
 
-#include "Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
