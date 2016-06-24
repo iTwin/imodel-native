@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 #include <rapidjson/prettywriter.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES

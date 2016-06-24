@@ -45,6 +45,14 @@ bool WSObjectsReader::Instances::IsEmpty() const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::SizeType WSObjectsReader::Instances::Size() const
+    {
+    return m_reader->GetInstanceCount();
+    }
+
+/*--------------------------------------------------------------------------------------+
 *  @bsimethod                                                   Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSObjectsReader::InstanceIterator WSObjectsReader::Instances::begin() const
@@ -241,6 +249,14 @@ bool WSObjectsReader::RelationshipInstances::IsValid() const
 bool WSObjectsReader::RelationshipInstances::IsEmpty() const
     {
     return begin() == end();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::SizeType WSObjectsReader::RelationshipInstances::Size() const
+    {
+    return m_reader->GetRelationshipInstanceCount(m_relationshipInstances);
     }
 
 /*--------------------------------------------------------------------------------------+

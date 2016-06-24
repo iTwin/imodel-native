@@ -49,10 +49,13 @@ struct EXPORT_VTABLE_ATTRIBUTE WSObjectsReader : public std::enable_shared_from_
 
         virtual bool HasReadErrors() const = 0;
         virtual rapidjson::SizeType GetInstanceCount() const = 0;
+
         virtual Instance GetInstance(rapidjson::SizeType index) const = 0;
         virtual Instance GetRelatedInstance(const rapidjson::Value* relatedInstance) const = 0;
         virtual RelationshipInstance GetRelationshipInstance(const rapidjson::Value* relationshipInstance) const = 0;
+
         virtual Utf8String GetInstanceETag(const rapidjson::Value* instance) const = 0;
+        virtual rapidjson::SizeType GetRelationshipInstanceCount(const rapidjson::Value* instance) const = 0;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -68,6 +71,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WSObjectsReader::Instances
 
         WSCLIENT_EXPORT bool IsValid() const;
         WSCLIENT_EXPORT bool IsEmpty() const;
+        WSCLIENT_EXPORT rapidjson::SizeType Size() const;
         WSCLIENT_EXPORT virtual InstanceIterator begin() const;
         WSCLIENT_EXPORT virtual InstanceIterator end() const;
     };
@@ -120,6 +124,7 @@ struct WSObjectsReader::RelationshipInstances
 
         WSCLIENT_EXPORT bool IsValid() const;
         WSCLIENT_EXPORT bool IsEmpty() const;
+        WSCLIENT_EXPORT rapidjson::SizeType Size() const;
         WSCLIENT_EXPORT RelationshipInstanceIterator begin() const;
         WSCLIENT_EXPORT RelationshipInstanceIterator end() const;
     };

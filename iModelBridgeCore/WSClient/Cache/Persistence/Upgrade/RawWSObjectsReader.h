@@ -44,6 +44,7 @@ struct RawWSObjectsReader : public WSObjectsReader
         virtual Instance GetRelatedInstance(const rapidjson::Value* relatedInstance) const override;
         virtual RelationshipInstance GetRelationshipInstance(const rapidjson::Value* relationshipInstance) const override;
         virtual Utf8String GetInstanceETag(const rapidjson::Value* instance) const override;
+        virtual rapidjson::SizeType GetRelationshipInstanceCount(const rapidjson::Value* relationshipInstances) const override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
