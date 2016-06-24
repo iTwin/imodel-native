@@ -81,37 +81,8 @@ void SyncCachedInstancesTask::CacheNextObjects()
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSQuery SyncCachedInstancesTask::GetQuery()
     {
-    Utf8String querySchemaName = m_objectsLeftToCache.front().schemaName;
-    Utf8String queryClassName = m_objectsLeftToCache.front().className;
-
-    const int maxObjectCountInQuery = 100;  // Reasonable server/client load
-    const int maxQueryStringLength = 1000;  // Default maximum URL length - 2K
-
-    int objectCountInQuery = 0;
-    Utf8String filter = "$id+in+[";
-
-    while (
-        filter.length() < maxQueryStringLength &&
-        objectCountInQuery < maxObjectCountInQuery &&
-        !m_objectsLeftToCache.empty() &&
-        m_objectsLeftToCache.front().schemaName.Equals(querySchemaName) &&
-        m_objectsLeftToCache.front().className.Equals(queryClassName)
-        )
-        {
-        if (objectCountInQuery > 0)
-            {
-            filter += ",";
-            }
-        filter += "'" + m_objectsLeftToCache.front().remoteId + "'";
-
-        m_objectsLeftToCache.pop_front();
-        objectCountInQuery++;
-        }
-
-    filter += "]";
-
-    WSQuery query(querySchemaName, queryClassName);
-    query.SetFilter(filter);
+    WSQuery query(m_objectsLeftToCache.front().schemaName, m_objectsLeftToCache.front().className);
+    query.AddFilterIdsIn(m_objectsLeftToCache);
 
     return query;
     }
