@@ -230,6 +230,7 @@
                 </Indexes>
             </ClassMap>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward"/>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
@@ -360,6 +361,21 @@
             <Class class="Model"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="has N elements" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="true">
+            <!-- WIP: cardinality should be (1,1) -->
             <Class class="Element" />
         </Target>
     </ECRelationshipClass>
@@ -807,11 +823,6 @@
     <ECEntityClass typeName="AnnotationTableRow">
         <!-- The aspect that holds properties of a row of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
         <ECProperty propertyName="RowIndex" typeName="int"/>
         <ECProperty propertyName="HeightLock" typeName="boolean"/>
         <ECProperty propertyName="Height" typeName="double"/>
@@ -832,11 +843,6 @@
     <ECEntityClass typeName="AnnotationTableColumn">
         <!-- The aspect that holds properties of a column of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
         <ECProperty propertyName="ColumnIndex" typeName="int"/>
         <ECProperty propertyName="WidthLock" typeName="boolean"/>
         <ECProperty propertyName="Width" typeName="double"/>
@@ -864,7 +870,6 @@
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
                         <Name>ix_dgn_AnnotationTableCell_ElementId</Name>
@@ -902,11 +907,6 @@
     <ECEntityClass typeName="AnnotationTableMerge">
         <!-- The aspect that holds properties describing merging of cells in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
         <ECStructProperty propertyName="RootCell" typeName="AnnotationTableCellIndex"/>
         <ECProperty propertyName="RowSpan" typeName="int"/>
         <ECProperty propertyName="ColumnSpan" typeName="int"/>
@@ -927,11 +927,6 @@
     <ECEntityClass typeName="AnnotationTableSymbology">
         <!-- The aspect that holds properties describing symbology in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
         <ECProperty propertyName="SymbologyKey" typeName="int"/>
         <ECProperty propertyName="Visible" typeName="boolean"/>
         <ECProperty propertyName="Color" typeName="int"/>
@@ -956,11 +951,6 @@
     <ECEntityClass typeName="AnnotationTableEdgeRun">
         <!-- The aspect that holds properties describing edges in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
         <ECProperty propertyName="HostType" typeName="int"/>
         <ECProperty propertyName="Host" typeName="int"/>
         <ECProperty propertyName="Start" typeName="int"/>
@@ -1092,10 +1082,11 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
-                    <!-- Each ElementUniqueAspect subclass should have its own table -->
-                    <Strategy>OwnTable</Strategy>
-                    <!-- Each ElementUniqueAspect subclass should determine its own MapStrategy -->
-                    <AppliesToSubclasses>False</AppliesToSubclasses>
+                    <!-- All subclasses of ElementUniqueAspect will share the same table -->
+                    <Strategy>SharedTable</Strategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <!-- The ECInstanceId for ElementUniqueAspect is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
@@ -1109,10 +1100,11 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
-                    <!-- Each ElementMultiAspect subclass should have its own table -->
-                    <Strategy>OwnTable</Strategy>
-                    <!-- Each ElementMultiAspect subclass should determine its own MapStrategy -->
-                    <AppliesToSubclasses>False</AppliesToSubclasses>
+                    <!-- All subclasses of ElementMultiAspect will share the same table -->
+                    <Strategy>SharedTable</Strategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
@@ -1132,13 +1124,6 @@
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <!-- All subclasses of ElementExternalKey will share the same table -->
-                    <Strategy>SharedTable</Strategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
                         <Name>ix_dgn_ElementExternalKey_ElementId_AuthorityId</Name>

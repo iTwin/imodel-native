@@ -318,14 +318,14 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
     ASSERT_TRUE( robot1.IsValid() );
         
     Statement stmt;
-    stmt.Prepare(*m_db, 
-        "SELECT aspect.ElementId, aspect.TestUniqueAspectProperty FROM " DGN_TABLE(DGN_CLASSNAME_Element) " e, dptest_TestUniqueAspect aspect," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " g, " DGN_VTABLE_SpatialIndex " rt WHERE"
+    stmt.Prepare(*m_db,        // aspect.sc01 == aspect.TestUniqueAspectProperty
+        "SELECT aspect.ElementId, aspect.sc01 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " e, " DGN_TABLE(DGN_CLASSNAME_ElementUniqueAspect) " aspect," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " g, " DGN_VTABLE_SpatialIndex " rt WHERE"
              " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)" // FROM R-Tree
              " AND g.ElementId=rt.ElementId"
              " AND DGN_point_min_distance_to_bbox(:testPoint, " AABB_FROM_PLACEMENT ") <= :maxDistance"  // select geoms that are within some distance of a specified point
              " AND e.Id=g.ElementId"
              " AND e.ECClassId=:ecClass"       //  select only Obstacles
-             " AND aspect.ElementId=e.Id AND aspect.TestUniqueAspectProperty=:propertyValue"       // ... with certain items
+             " AND aspect.ElementId=e.Id AND aspect.sc01=:propertyValue"       // ... with certain items
         );
 
     //  Initial placement
@@ -458,12 +458,12 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
     Utf8CP sql = stmt.GetNativeSql();
     Utf8String qplan = m_db->ExplainQuery(sql);
     auto scanRt = qplan.find("SCAN TABLE " DGN_VTABLE_SpatialIndex " VIRTUAL TABLE INDEX");
-    auto searchItem = qplan.find("SEARCH TABLE dptest_TestUniqueAspect USING INTEGER PRIMARY KEY");
+    //auto searchItem = qplan.find("SEARCH TABLE dptest_TestUniqueAspect USING INTEGER PRIMARY KEY");
     //auto searchElement = qplan.find("SEARCH TABLE dgn_Element USING COVERING INDEX"); WIP: removing ElementItem has changed the query plan, but not convinced that is an actual problem
     ASSERT_NE(Utf8String::npos, scanRt) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
-    ASSERT_NE(Utf8String::npos , searchItem ) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
+    //ASSERT_NE(Utf8String::npos , searchItem ) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
     //ASSERT_NE(Utf8String::npos , searchElement ) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
-    ASSERT_LT(scanRt , searchItem) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
+    //ASSERT_LT(scanRt , searchItem) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
     //ASSERT_LT(scanRt , searchElement) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
 
     //  Initial placement: Robot1 is not touching any obstacle
@@ -662,11 +662,11 @@ TEST_F(SqlFunctionsTest, spatialQuery)
     // This query uses DGN_spatial_overlap_aabb to find elements whose range overlaps the argument :bbox and are of class :ecClass and have
     // item property = :propertyValue.
     Statement stmt;
-    stmt.Prepare(*m_db, 
-        "SELECT aspect.ElementId,aspect.TestUniqueAspectProperty FROM " DGN_VTABLE_SpatialIndex " rt," DGN_TABLE(DGN_CLASSNAME_Element) " e,dptest_TestUniqueAspect aspect WHERE"
+    stmt.Prepare(*m_db,       // aspect.sc01 == aspect.TestUniqueAspectProperty
+        "SELECT aspect.ElementId,aspect.sc01 FROM " DGN_VTABLE_SpatialIndex " rt," DGN_TABLE(DGN_CLASSNAME_Element) " e," DGN_TABLE(DGN_CLASSNAME_ElementUniqueAspect) " aspect WHERE"
            " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)"      // select elements whose range overlaps box
            " AND e.Id=rt.ElementId AND e.ECClassId=:ecClass"        // and are of a specific ecClass 
-           " AND aspect.ElementId=e.Id AND aspect.TestUniqueAspectProperty=:propertyValue"   // ... with certain item value
+           " AND aspect.ElementId=e.Id AND aspect.sc01=:propertyValue"   // ... with certain item value
         );
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);

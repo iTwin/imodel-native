@@ -52,9 +52,6 @@
     <ECClass typeName="TestUniqueAspect" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
-            <ClassMap xmlns="ECDbMap.01.00">
-            <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-            </ClassMap>
         </ECCustomAttributes>
         <BaseClass>dgn:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TestUniqueAspectProperty" typeName="string" />

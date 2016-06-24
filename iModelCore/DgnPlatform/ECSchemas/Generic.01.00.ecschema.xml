@@ -74,14 +74,6 @@
         <BaseClass>dgn:ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
-                </MapStrategy>
-            </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
 
