@@ -132,6 +132,7 @@ AuthenticationHandlerPtr authenticationHandler
         //if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
+
         return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
         });
     }
@@ -749,6 +750,18 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Caleb.Shafer		             06/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbRepositoryConnection::UpdateEventServiceClient
+(
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+ICancellationTokenPtr cancellationToken
+)
+    {
+    return SetEventServiceClient(eventTypes, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSASTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICancellationTokenPtr cancellationToken) const
@@ -900,20 +913,13 @@ bool longpolling
 //---------------------------------------------------------------------------------------
 DgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
 bool longPolling,
 ICancellationTokenPtr cancellationToken
 )
     {
-    s_eventSubscriptionLock.lock();
-    bool isSuccess = SetEventServiceClient(eventTypes, cancellationToken);
-    s_eventSubscriptionLock.unlock();
-    if (!isSuccess)
-        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError)); 
-
-    /*if (!SetEventServiceClient(eventTypes, cancellationToken))
-        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));*/
-
+    if (m_eventSubscription == nullptr)
+        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
+    
     HttpResponse response;
     if (!GetEventServiceResponse(response, longPolling))
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
@@ -932,12 +938,11 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbServerEventCollectionTaskPtr DgnDbRepositoryConnection::GetEvents
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
 bool longPolling,
 ICancellationTokenPtr cancellationToken
 )
     {
-    if (!SetEventServiceClient(eventTypes, cancellationToken))
+    if (m_eventSubscription == nullptr)
         return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InternalServerError));
 
     bvector<Utf8String> responseStrings;

@@ -256,9 +256,29 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate (ICancellationTokenPt
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                 Caleb.Shafer	                    06/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbBriefcase::SetEventTypes(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes)
+    {
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (!m_db.IsValid() || !m_db->IsDbOpen())
+        {
+        return false;
+        }
+    if (!m_repositoryConnection)
+        {
+        return false;
+        }
+
+    m_repositoryConnection->UpdateEventServiceClient(eventTypes, nullptr);
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, bool longPolling, ICancellationTokenPtr cancellationToken)
+DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
@@ -270,7 +290,7 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bvector<DgnDbServerEvent:
         return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
 	
-    DgnDbServerEventTaskPtr currentEventTask = m_repositoryConnection->GetEvent(eventTypes, longPolling, cancellationToken);
+    DgnDbServerEventTaskPtr currentEventTask = m_repositoryConnection->GetEvent(longPolling, cancellationToken);
     auto getEventResult = currentEventTask->GetResult();
     if (!getEventResult.IsSuccess())
         return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(DgnDbServerError::Id::InternalServerError)); 
@@ -302,7 +322,7 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEvent(bvector<DgnDbServerEvent:
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventCollectionTaskPtr DgnDbBriefcase::GetEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, bool longPolling, ICancellationTokenPtr cancellationToken)
+DgnDbServerEventCollectionTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
@@ -314,7 +334,7 @@ DgnDbServerEventCollectionTaskPtr DgnDbBriefcase::GetEvents(bvector<DgnDbServerE
         return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
 
-    return m_repositoryConnection->GetEvents(eventTypes, longPolling, cancellationToken);
+    return m_repositoryConnection->GetEvents(longPolling, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------

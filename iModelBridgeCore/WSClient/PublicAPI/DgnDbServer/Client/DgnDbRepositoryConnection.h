@@ -239,11 +239,14 @@ public:
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocksById (LockableIdSet const& ids, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Receive Events from EventService
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventCollectionTaskPtr    GetEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+    
+    DGNDBSERVERCLIENT_EXPORT bool UpdateEventServiceClient(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Receive Events from EventService
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr    GetEvent(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventCollectionTaskPtr    GetEvents(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Receive Events from EventService
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr    GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Cancel Events from EventService
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr    CancelEventRequest(ICancellationTokenPtr cancellationToken = nullptr);
