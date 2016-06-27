@@ -28,6 +28,7 @@
     <file src="Assemblies\BeXmlG06.dll" target="build" />
     <file src="Assemblies\ImageppG06.dll" target="build" />
     <file src="Assemblies\NCSEcw.dll" target="build" />
+    <file src="Assemblies\PointoolsVortexAPIG06.dll" target="build" />
     <file src="Assemblies\RealityPackage.dll" target="build" />
     <file src="Assemblies\RealityPlatform.dll" target="build" />
     <file src="Files\Bentley.RealityDbECPluginC.targets" target="build" />

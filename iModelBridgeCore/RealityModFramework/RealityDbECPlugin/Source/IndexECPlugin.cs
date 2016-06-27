@@ -439,7 +439,7 @@ namespace IndexECPlugin.Source
 
             // Create data source.
             List<WmsSourceNet> wmsSourceList;// = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
-            List<RealityDataSourceNet> basicSourceList;
+            List<Tuple<RealityDataSourceNet, string>> basicSourceList;
 
             RealityDataPackager(sender, connection, queryModule, indexRequestedEntities, coordinateSystem, out basicSourceList, out wmsSourceList);
 
@@ -455,11 +455,9 @@ namespace IndexECPlugin.Source
             PinnedGroupNet pinnedGroup = PinnedGroupNet.Create();
             TerrainGroupNet terrainGroup = TerrainGroupNet.Create();
 
-            foreach ( RealityDataSourceNet realityDataSource in basicSourceList )
+            foreach ( Tuple<RealityDataSourceNet, string> realityDataSource in basicSourceList )
                 {
-                //We put these in imgGroup temporarily, since we have no way to classify these yet.
-
-                imgGroup.AddData(realityDataSource);
+                SortRealityDataSourceNet(imgGroup, modelGroup, terrainGroup, realityDataSource);
                 }
 
             foreach ( WmsSourceNet wmsSource in wmsSourceList )
@@ -469,29 +467,7 @@ namespace IndexECPlugin.Source
 
             foreach ( Tuple<RealityDataSourceNet, string> usgsSourceTuple in usgsSourceList )
                 {
-                //This switch case is temporary. The best thing we should have done
-                //was to create a method for this, but these "sourceNet" will probably
-                //change soon, so everything here is temporary until the database is in
-                //a more complete form
-                switch ( usgsSourceTuple.Item2 )
-                    {
-
-                    //TODO: Correct the switch case. The choice of the group for each class was not verified.
-                    case "Roadway":
-                    case "Bridge":
-                    case "Building":
-                    case "WaterBody":
-                    case "PointCloud":
-                        modelGroup.AddData(usgsSourceTuple.Item1);
-                        break;
-                    case "Terrain":
-                        terrainGroup.AddData(usgsSourceTuple.Item1);
-                        break;
-                    case "Imagery":
-                    default:
-                        imgGroup.AddData(usgsSourceTuple.Item1);
-                        break;
-                    }
+                SortRealityDataSourceNet(imgGroup, modelGroup, terrainGroup, usgsSourceTuple);
                 }
 
             foreach ( RealityDataSourceNet osmSource in osmSourceList )
@@ -511,6 +487,33 @@ namespace IndexECPlugin.Source
 
             Log.Logger.info("Created the package file " + instance.InstanceId + ". Region selected : " + selectedRegionStr);
             return instance.InstanceId;
+            }
+
+        private static void SortRealityDataSourceNet (ImageryGroupNet imgGroup, ModelGroupNet modelGroup, TerrainGroupNet terrainGroup, Tuple<RealityDataSourceNet, string> sourceTuple)
+            {
+            //This switch case is temporary. The best thing we should have done
+            //was to create a method for this, but these "sourceNet" will probably
+            //change soon, so everything here is temporary until the database is in
+            //a more complete form
+            switch ( sourceTuple.Item2 )
+                {
+
+                //TODO: Correct the switch case. The choice of the group for each class was not verified.
+                case "Roadway":
+                case "Bridge":
+                case "Building":
+                case "WaterBody":
+                case "PointCloud":
+                    modelGroup.AddData(sourceTuple.Item1);
+                    break;
+                case "Terrain":
+                    terrainGroup.AddData(sourceTuple.Item1);
+                    break;
+                case "Imagery":
+                default:
+                    imgGroup.AddData(sourceTuple.Item1);
+                    break;
+                }
             }
 
         private void UploadPackageInDatabase (IECInstance instance)
@@ -564,9 +567,9 @@ namespace IndexECPlugin.Source
                 }
             }
 
-        private void RealityDataPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities, string coordinateSystem, out List<RealityDataSourceNet> RDSNList, out List<WmsSourceNet> WMSList)
+        private void RealityDataPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities, string coordinateSystem, out List<Tuple<RealityDataSourceNet, string>> RDSNList, out List<WmsSourceNet> WMSList)
             {
-            RDSNList = new List<RealityDataSourceNet>();
+            RDSNList = new List<Tuple<RealityDataSourceNet, string>>();
             WMSList = new List<WmsSourceNet>();
             if ( basicRequestedEntities.Count == 0 )
                 {
@@ -595,6 +598,7 @@ namespace IndexECPlugin.Source
             query.SelectClause.SelectedProperties = new List<IECProperty>();
             query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Id"));
             query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Footprint"));
+            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Classification"));
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(basicRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
             query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
@@ -653,9 +657,10 @@ namespace IndexECPlugin.Source
                     string provider = "";
                     string fileInCompound = (firstSpatialDataSource.GetPropertyValue("LocationInCompound") == null || firstSpatialDataSource.GetPropertyValue("LocationInCompound").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("LocationInCompound").StringValue;
                     string metadata = "";
-                    List<string> sisterFiles = new List<string>();
+                    string classification = (spatialEntity.GetPropertyValue("Classification") == null || spatialEntity.GetPropertyValue("Classification").IsNull) ? null : spatialEntity.GetPropertyValue("Classification").StringValue;
 
-                    RDSNList.Add(RealityDataSourceNet.Create(uri, type, copyright, id, provider, filesize, fileInCompound, metadata, sisterFiles));
+                    List<string> sisterFiles = new List<string>();
+                    RDSNList.Add(new Tuple<RealityDataSourceNet, string>(RealityDataSourceNet.Create(uri, type, copyright, id, provider, filesize, fileInCompound, metadata, sisterFiles), classification));
                     }
                 }
             }
