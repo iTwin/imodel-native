@@ -148,6 +148,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
         //    t = EXPORT_VOLUME;
         //else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"importVolume"))
         //    t = IMPORT_VOLUME;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"loadNodes"))
+            t = TEST_LOADING;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"groupNodeHeaders"))
             t = TEST_GROUP_NODE_HEADERS;
 		else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
