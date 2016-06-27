@@ -23,7 +23,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 struct IDgnDbServerEventParser
     {
     public:
-        DGNDBSERVERCLIENT_EXPORT virtual Json::Value GenerateEventSubscriptionJson
+        DGNDBSERVERCLIENT_EXPORT virtual Json::Value GenerateEventSubscriptionWSChangeSetJson
             (
             bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr,
             Utf8String eventSubscriptionId = ""
@@ -63,11 +63,17 @@ struct DgnDbServerEventParser : public IDgnDbServerEventParser
             Utf8String responseString
             ) const override;
 
-        DGNDBSERVERCLIENT_EXPORT Json::Value GenerateEventSubscriptionJson
+        DGNDBSERVERCLIENT_EXPORT Json::Value GenerateEventSubscriptionWSChangeSetJson
             (
             bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr,
             Utf8String eventSubscriptionId = ""
             ) const override;
+
+        DGNDBSERVERCLIENT_EXPORT Json::Value GenerateEventSubscriptionWSObjectJson
+            (
+            bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr,
+            Utf8String eventSubscriptionId = ""
+            ) const;
 
         DGNDBSERVERCLIENT_EXPORT Json::Value GenerateEventSASJson() const override;
 

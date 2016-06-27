@@ -10,29 +10,144 @@
 
 #include "../../Utils/WebServicesTestsHelper.h"
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseEmpty();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseEmptyJson();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalid();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseValidLockEvent();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseValidRevisionEvent();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidLockEvent();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidRevisionEvent();
-Utf8String StubHttpResponseValidEventSubscriptionResponse();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidEventSubscriptionWSObjectResponse();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidEventSubscriptionWSChangeSetResponse();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseValidEventSASResponse();
-Utf8String StubHttpResponseInvalidEventSubscriptionResponse();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidEventSASResponse();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubGenerateValidEventSASJson();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubGenerateInvalidEventSASJson();
-Utf8String StubGenerateValidEventSubscriptionJsonSingleEvent();
-Utf8String StubGenerateValidEventSubscriptionJsonNoEvent();
-Utf8String StubGenerateInvalidEventSubscriptionJson();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateValidEventSubscriptionWSObjectJsonSingleEvent();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateValidEventSubscriptionWSObjectJsonNoEvent();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateValidEventSubscriptionWSChangeSetJsonSingleEvent();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateValidEventSubscriptionWSChangeSetJsonNoEvent();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateInvalidEventSubscriptionWSObjectJson();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateInvalidEventSubscriptionWSChangeSetJson();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP     StubHttpResponseEmptyContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP     StubHttpResponseInvalidContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP     StubHttpResponseValidLockEventContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP     StubHttpResponseInvalidLockEventContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP     StubHttpResponseValidRevisionEventContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP     StubHttpResponseInvalidRevisionEventContentType();
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 class DgnDbServerEventParserTests : public BaseMockHttpHandlerTest
     {
     void SetUp() override;

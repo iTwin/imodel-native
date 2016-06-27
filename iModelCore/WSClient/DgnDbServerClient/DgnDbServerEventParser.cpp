@@ -29,7 +29,11 @@ DgnDbServerEventParser& DgnDbServerEventParser::GetInstance()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Json::Value DgnDbServerEventParser::GenerateEventSubscriptionJson(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, Utf8String eventSubscriptionId) const
+Json::Value DgnDbServerEventParser::GenerateEventSubscriptionWSChangeSetJson
+(
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, 
+Utf8String eventSubscriptionId
+) const
     {
     Json::Value properties;
     properties[ServerSchema::Property::Id] = eventSubscriptionId;
@@ -53,6 +57,24 @@ Json::Value DgnDbServerEventParser::GenerateEventSubscriptionJson(bvector<DgnDbS
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
+Json::Value DgnDbServerEventParser::GenerateEventSubscriptionWSObjectJson
+(
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+Utf8String eventSubscriptionId
+) const
+    {
+    Json::Value request = Json::objectValue;
+    JsonValueR instance = request[ServerSchema::Instance] = Json::objectValue;
+    instance[ServerSchema::InstanceId] = "";
+    instance[ServerSchema::SchemaName] = ServerSchema::Schema::Repository;
+    instance[ServerSchema::ClassName] = ServerSchema::Class::EventSubscription;
+    instance[ServerSchema::Properties] = GenerateEventSubscriptionWSChangeSetJson(eventTypes, eventSubscriptionId);
+    return request;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Json::Value DgnDbServerEventParser::GenerateEventSASJson() const
     {
     Json::Value request = Json::objectValue;
@@ -70,10 +92,14 @@ Json::Value DgnDbServerEventParser::GenerateEventSASJson() const
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<Json::Value> GetProperties(Json::Value jsonResponse, bool isEventSubscription)
+std::shared_ptr<Json::Value> GetProperties
+(
+Json::Value jsonResponse, 
+bool isEventSubscription
+)
     {
     if (jsonResponse.empty() || jsonResponse.isNull())
-        return nullptr;
+        return nullptr;   
     
     Json::Value changedInstance;
     if (jsonResponse.isMember(ServerSchema::ChangedInstances) && jsonResponse[ServerSchema::ChangedInstances].isArray() && !jsonResponse[ServerSchema::ChangedInstances].empty())
@@ -82,15 +108,14 @@ std::shared_ptr<Json::Value> GetProperties(Json::Value jsonResponse, bool isEven
         changedInstance = jsonResponse[ServerSchema::ChangedInstance];
     else
         return nullptr;
-
+        
     if (
         !changedInstance.isMember(ServerSchema::InstanceAfterChange) ||
         !changedInstance[ServerSchema::InstanceAfterChange].isMember(ServerSchema::Properties)
         )
         return nullptr;
-
+        
     std::shared_ptr<Json::Value> properties = std::make_shared<Json::Value>(changedInstance[ServerSchema::InstanceAfterChange][ServerSchema::Properties]);
-
     if (isEventSubscription)
         {
         if (
@@ -99,6 +124,7 @@ std::shared_ptr<Json::Value> GetProperties(Json::Value jsonResponse, bool isEven
             !(*properties)[ServerSchema::Property::EventTypes].isArray()
             )
             return nullptr;
+            
         }
     else
         {
@@ -106,7 +132,7 @@ std::shared_ptr<Json::Value> GetProperties(Json::Value jsonResponse, bool isEven
             !properties->isMember(ServerSchema::Property::BaseAddress) ||
             !properties->isMember(ServerSchema::Property::EventServiceSASToken)
             )
-            return nullptr;
+            return nullptr;     
         }
 
     return properties;
@@ -115,7 +141,10 @@ std::shared_ptr<Json::Value> GetProperties(Json::Value jsonResponse, bool isEven
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventSubscriptionPtr DgnDbServerEventParser::ParseEventSubscription(Json::Value jsonResponse) const
+DgnDbServerEventSubscriptionPtr DgnDbServerEventParser::ParseEventSubscription
+(
+Json::Value jsonResponse
+) const
     {
     std::shared_ptr<Json::Value> propertiesPtr = GetProperties(jsonResponse, true);
     if (propertiesPtr == nullptr)
@@ -146,7 +175,10 @@ DgnDbServerEventSubscriptionPtr DgnDbServerEventParser::ParseEventSubscription(J
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventSASPtr DgnDbServerEventParser::ParseEventSAS(Json::Value jsonResponse) const
+DgnDbServerEventSASPtr DgnDbServerEventParser::ParseEventSAS
+(
+Json::Value jsonResponse
+) const
     {
     std::shared_ptr<Json::Value> propertiesPtr = GetProperties(jsonResponse, false);
     if (propertiesPtr == nullptr)
@@ -177,7 +209,7 @@ Utf8String responseString
     size_t jsonPosEnd = responseString.find_last_of('}');
     if (jsonPosStart == Utf8String::npos || jsonPosEnd == Utf8String::npos)
         return nullptr;
-
+        
     Utf8String actualJsonPart = responseString.substr(jsonPosStart, jsonPosEnd);
     if (0 == (BeStringUtilities::Stricmp
         (
@@ -191,7 +223,7 @@ Utf8String responseString
             reader.parse(actualJsonPart, data) &&
             !data.isArray() &&
             data.isMember(DgnDbServerEvent::EventTopic) &&
-            data.isMember(DgnDbServerEvent::UserId) &&
+            data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
             data.isMember(DgnDbServerEvent::LockEventProperties::ObjectId) &&
             data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
             data.isMember(DgnDbServerEvent::LockEventProperties::LockLevel) &&
@@ -202,7 +234,7 @@ Utf8String responseString
             return DgnDbServerLockEvent::Create
                                                (
                                                 data[DgnDbServerEvent::EventTopic].asString(),
-                                                data[DgnDbServerEvent::UserId].asString(),
+                                                data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
                                                 data[DgnDbServerEvent::LockEventProperties::ObjectId].asString(),
                                                 data[DgnDbServerEvent::LockEventProperties::LockType].asString(),
                                                 data[DgnDbServerEvent::LockEventProperties::LockLevel].asString(),
@@ -210,7 +242,8 @@ Utf8String responseString
                                                 data[DgnDbServerEvent::LockEventProperties::ReleasedWithRevision].asString(),
                                                 data[DgnDbServerEvent::LockEventProperties::Date].asString()
                                                );
-        return nullptr;
+            return nullptr;
+            
         }
     else if (0 == (BeStringUtilities::Stricmp
         (
@@ -224,7 +257,7 @@ Utf8String responseString
             reader.parse(actualJsonPart, data) &&
             !data.isArray() &&
             data.isMember(DgnDbServerEvent::EventTopic) &&
-            data.isMember(DgnDbServerEvent::UserId) &&
+            data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
             data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionId) &&
             data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionIndex) &&
             data.isMember(DgnDbServerEvent::RevisionEventProperties::Date)
@@ -232,15 +265,17 @@ Utf8String responseString
             return DgnDbServerRevisionEvent::Create
                                                    (
                                                     data[DgnDbServerEvent::EventTopic].asString(),
-                                                    data[DgnDbServerEvent::UserId].asString(),
+                                                    data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
                                                     data[DgnDbServerEvent::RevisionEventProperties::RevisionId].asString(),
                                                     data[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString(),
                                                     data[DgnDbServerEvent::RevisionEventProperties::Date].asString()
                                                    );
-        return nullptr;
+        else
+            return nullptr;         
         }
     else
         return nullptr;
+        
     }
 
 //---------------------------------------------------------------------------------------
