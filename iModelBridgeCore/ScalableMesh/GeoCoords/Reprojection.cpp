@@ -6,7 +6,7 @@
 |       $Date: 2011/11/23 21:47:18 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -158,8 +158,7 @@ private:
                                                                                              *m_targetGCSP);
 
         const StatusInt statLLToC = m_targetGCSP->CartesianFromLatLong (po_rTargetPt, po_rTargetLatLong);
-
-
+        
         // Status returns hardest error found in the three error statuses
         // The hardest error is the first one encountered that is not a warning (value 1 [cs_CNVRT_USFL]
         if (CSMAPCONV_S_OK != statCToLL && ((CSMAPCONV_S_OK == currentStatus) || (CSMAPCONV_S_USFL == currentStatus)))
@@ -169,7 +168,10 @@ private:
             else  // Both are positive (status may be SUCCESS) we use the highest value which is either warning or error
                 currentStatus = (statCToLL > currentStatus ? statCToLL : currentStatus);
             }
-        if ((CSMAPCONV_S_OK != statLLToLL) && ((CSMAPCONV_S_OK == currentStatus) || (CSMAPCONV_S_USFL == currentStatus))) // If stat2 has error and status not already hard error
+
+        //Datum converter not found usually occurs with Canada grid datum file not installed by the users, 
+        //but since the error is very small (few centimeters) we are not considering those errors as fatal.
+        if ((CSMAPCONV_S_OK != statLLToLL && REPROJECT_CSMAPERR_DatumConverterNotSet != statLLToLL) && ((CSMAPCONV_S_OK == currentStatus) || (CSMAPCONV_S_USFL == currentStatus))) // If stat2 has error and status not already hard error
             {
             if (0 > statLLToLL) // If stat2 is negative ... this is the one ...
                 currentStatus = statLLToLL;
