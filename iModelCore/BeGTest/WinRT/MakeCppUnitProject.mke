@@ -129,8 +129,6 @@ DLM_OBJECT_DEST     = $(o)
 DLM_SYMB_DEST       = $(o)
 DLM_MAP_DEST        = $(o)
 DLM_NO_SIGN         = 1
-DLM_NO_DEF          = 1
-DLM_NO_DLS          = 1
 DLM_NOENTRY         = 0
 LINKER_LIBRARIES   =   $[@wildcard $(collectionLibsDir)*$(libext)]
 
