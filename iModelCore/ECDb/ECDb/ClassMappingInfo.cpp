@@ -199,6 +199,7 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
         return ERROR;
         }
 
+
     DbTable const& parentJoinedTable = m_parentClassMap->GetJoinedTable();
     m_tableName = parentJoinedTable.GetName();
     m_ecInstanceIdColumnName.assign(parentJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName());
@@ -233,6 +234,50 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
         options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
     else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
         {
+        for (ECClassCP baseClass : GetECClass().GetBaseClasses())
+            {
+            ClassMap const* baseClassMap = GetECDbMap().GetClassMap(*baseClass);
+            BeAssert(baseClassMap != nullptr);
+            if (baseClassMap == &parentClassMap)
+                continue;
+
+            if (baseClassMap->GetMapStrategy().IsNotMapped())
+                continue;
+
+            if (&parentClassMap.GetPrimaryTable() != &baseClassMap->GetPrimaryTable() || &parentClassMap.GetJoinedTable() != &baseClassMap->GetJoinedTable())
+                {
+                std::vector<ClassMap const*> pathA, pathB;
+                parentClassMap.GetPathToParentOfJoinedTable(pathA);
+                baseClassMap->GetPathToParentOfJoinedTable(pathB);
+               
+                Utf8String msg ="Failed to map ECClass '" + Utf8String(GetECClass().GetFullName()) + "' which has more then one base classes that map to a different shared tables. Which is not supported. User must correct hierarchy and remove one of the baseClass or adjust ECDbMap MapStrategy accordingly.\n";
+                msg.append("First BaseClass '" + Utf8String(parentClassMap.GetClass().GetFullName()) + "' lead to following path \n");
+                for (int i = 0; i < pathA.size(); i++)
+                    {
+                    msg.append(Utf8String(i, '\t'));
+                    msg.append(pathA[i]->GetClass().GetFullName()).append(" [PrimaryTable= ").append(pathA[i]->GetPrimaryTable().GetName()).append("]");
+                    if (!pathA[i]->IsMappedToSingleTable())
+                        msg.append(" [JoinedTable= ").append(pathA[i]->GetJoinedTable().GetName()).append("]");
+
+                    msg.append("\n");
+                    }
+
+                msg.append("Second BaseClass '" + Utf8String(baseClassMap->GetClass().GetFullName()) + "' lead to following path \n");
+                for (int i = 0; i < pathB.size(); i++)
+                    {
+                    msg.append(Utf8String(i, '\t'));
+                    msg.append(pathB[i]->GetClass().GetFullName()).append(" [PrimaryTable= ").append(pathB[i]->GetPrimaryTable().GetName()).append("]");
+                    if (!pathB[i]->IsMappedToSingleTable())
+                        msg.append(" [JoinedTable= ").append(pathB[i]->GetJoinedTable().GetName()).append("]");
+
+                    msg.append("\n");
+                    }
+                msg.append("There could be more such base classes for this class but only first two discrepancies found is reported.");
+                m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, msg.c_str());
+                return ERROR;
+                }
+            }
+
         options = options | ECDbMapStrategy::Options::JoinedTable;
         if (Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
             {
