@@ -27,7 +27,7 @@ HFCMath::HFCMath ()
     memset(&(m_QuotientsShort[Max255]), 255, USHRT_MAX-Max255+1);
 
     m_MultiBy0X01010101 = new uint32_t[256];
-    for (int32_t i=0; i<256; ++i)
+    for (uint32_t i=0; i<256; ++i)
         m_MultiBy0X01010101[i] = i * 0x01010101;
     }
 

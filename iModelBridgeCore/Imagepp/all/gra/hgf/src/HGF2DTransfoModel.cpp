@@ -658,38 +658,8 @@ void HGF2DTransfoModel::GetStretchParamsAt(double*  po_pScaleFactorX,
     }
 
 /** -----------------------------------------------------------------------------
-    Studies the reversibility of the model over a region using the given step.
-    Since mzGCoord models are notably un-reversible when region of
-    operation is far from usual region of application, it is recommended
-    to estimate the reversibility of the model before using. The method
-    will sample coordinate transformation by converting direct then inverse
-    this result. The deviation from the original value is used in the
-    calculation of mean and maximum error which are returned.
-
-    @param pi_rPrecisionArea An extent over which to perform the study. The
-                             area may not be empty.
-
-    @param pi_Step The step used in X and Y for sampling. This value must be
-                   greater than 0.0
-
-
-    @param po_pMeanError Pointer to double that receives the mean error.
-
-    @param po_pMaxError  Pointer to double that receives the maximum error.
-
-    @param po_pScaleChangeMean Pointer to double that receives the mean scale change
-
-    @param po_pScaleChangeMax Pointer to double that receives the MAX scale change
-
-    @param pi_ScaleThreshold Value indicating the scale that will result in a stop
-                             of study. Even if study is stopped, at least one
-                             sample has been completely proecessed and thus
-                             all stats are valid. The threshold is specified as
-                             a change of scale from 1.0 (no scale change). This parameter
-                             is optional and defaults to 1.0 meaning a factor of 2.0
-                             will stop the process
-
-    -----------------------------------------------------------------------------
+ @bsimethod                                          Alain Robert
+-----------------------------------------------------------------------------
 */
 void HGF2DTransfoModel::StudyReversibilityPrecisionOver
 (
@@ -799,44 +769,14 @@ void HGF2DTransfoModel::StudyReversibilityPrecisionOver
     }
 
 
-
 /** -----------------------------------------------------------------------------
-    Studies the reversibility of the model over a region using the given step.
-    Since mzGCoord models are notably un-reversible when region of
-    operation is far from usual region of application, it is recommended
-    to estimate the reversibility of the model before using. The method
-    will sample coordinate transformation by converting direct then inverse
-    this result. The deviation from the original value is used in the
-    calculation of mean and maximum error which are returned.
-
-    @param pi_rPrecisionArea An extent over which to perform the study. The
-                             area may not be empty.
-
-    @param pi_Step The step used in X and Y for sampling. This value must be
-                   greater than 0.0
-
-
-    @param po_pMeanError Pointer to double that receives the mean error.
-
-    @param po_pMaxError  Pointer to double that receives the maximum error.
-
-    @param po_pScaleChangeMean Pointer to double that receives the mean scale change
-
-    @param po_pScaleChangeMax Pointer to double that receives the MAX scale change
-
-    @param pi_ScaleThreshold Value indicating the scale that will result in a stop
-                             of study. Even if study is stopped, at least one
-                             sample has been completely proecessed and thus
-                             all stats are valid. The threshold is specified as
-                             a change of scale from 1.0 (no scale change). This parameter
-                             is optional and defaults to 1.0 meaning a factor of 2.0
-                             will stop the process
-
-    -----------------------------------------------------------------------------
+ @bsimethod                                          Alain Robert
+-----------------------------------------------------------------------------
 */
 void HGF2DTransfoModel::GetEquivalenceToOver (const HGF2DTransfoModel& pi_rModel,
                                               const HGF2DLiteExtent& pi_PrecisionArea,
                                               double                pi_Step,
+                                              bool                  pi_Direct,
                                               double*               po_pMeanError,
                                               double*               po_pMaxError) const
     {
@@ -876,11 +816,22 @@ void HGF2DTransfoModel::GetEquivalenceToOver (const HGF2DTransfoModel& pi_rModel
              CurrentX < pi_PrecisionArea.GetXMax () ;
              CurrentX += pi_Step)
             {
-            // Convert using this
-            ConvertDirect (CurrentX, CurrentY, &TempX, &TempY);
+            if (pi_Direct)
+                {
+                // Convert using this
+                ConvertDirect (CurrentX, CurrentY, &TempX, &TempY);
 
-            // Convert using given
-            pi_rModel.ConvertDirect (CurrentX, CurrentY, &TempX1, &TempY1);
+                // Convert using given
+                pi_rModel.ConvertDirect (CurrentX, CurrentY, &TempX1, &TempY1);
+                }
+            else
+                {
+                // Convert using this
+                ConvertInverse (CurrentX, CurrentY, &TempX, &TempY);
+
+                // Convert using given
+                pi_rModel.ConvertInverse (CurrentX, CurrentY, &TempX1, &TempY1);
+                }
 
             // Compute difference
             double DeltaX = fabs (TempX - TempX1);
