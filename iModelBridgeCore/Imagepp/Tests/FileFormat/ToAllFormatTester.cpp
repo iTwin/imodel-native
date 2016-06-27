@@ -31,11 +31,14 @@ USING_NAMESPACE_IMAGEPP
 * Class definition
 * @bsimethod                                             Laurent.Robert-Veillette 04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-class ExportAllTester : public ExporterTestFixture<::testing::TestWithParam< HRFRasterFileCreator* >>
+class ExportAllTester : public ExporterTestFixture < ::testing::TestWithParam< ::std::tr1::tuple<std::wstring, HRFRasterFileCreator*> > >
     {
     public:
         ExportAllTester() {}
         virtual ~ExportAllTester() {};
+
+        std::wstring const& GetSourceFilename() { return ::std::tr1::get<0>(GetParam()); }
+        HRFRasterFileCreator& GetCreator() { return *::std::tr1::get<1>(GetParam()); }
  
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  6/2016
@@ -50,8 +53,7 @@ class ExportAllTester : public ExporterTestFixture<::testing::TestWithParam< HRF
             HRFRasterFileFactory::CreatorsMap const& creators = HRFRasterFileFactory::GetInstance()->GetCreatorsMap(HFC_CREATE_ONLY);
 
             for (auto& entry : creators)
-                {
-                
+                {                
                 if (HRFPWRasterFile::CLASS_ID == entry.first || // Causes a crash to export to this format.
                     HRFRawFile::CLASS_ID == entry.first      || // They cannot be reopened
                     HRFEpsFile::CLASS_ID == entry.first         // They cannot be reopened    
@@ -64,6 +66,28 @@ class ExportAllTester : public ExporterTestFixture<::testing::TestWithParam< HRF
 
         return s_creatorList;
         }
+
+        //----------------------------------------------------------------------------------------
+        // @bsimethod                                                   Mathieu.Marchand  6/2016
+        //----------------------------------------------------------------------------------------
+        static std::list<std::wstring> const& GetSourceList()
+            {
+            static std::list<std::wstring> s_sourceList;
+            static bool s_created = false;
+            if (!s_created)
+                {
+                BeFileName sourceDir = ImagePPTestConfig::GetConfig().GetSourceDir();
+                if (!sourceDir.IsEmpty())   // Empty mean disabled
+                    {
+                    s_sourceList.push_back(L"Images\\iTIFF\\TA00T1A2\\TS1_32bits_None_Tile.iTIFF");
+                    //s_sourceList.push_back(L"Images\\iTIFF\\1A02S142\\TS1_2C_Alpha_CCITT4_Strip.iTIFF");
+                    }
+
+                s_created = true;
+                }
+
+            return s_sourceList;
+            }
 
         // Sets up the stuff shared by all tests in this test case.
         //
@@ -237,16 +261,15 @@ TEST_P(ExportAllTester, ToAllFormats)
     //    - Skip some pixeltype in binary case.  Maybe it deserves its own test. BinaryToAllBinaryFormats
     //    -  Add a dump with info of build.  Source location, build type, date of run... do it in base 'ExporterTestFixture'.
 
-    ASSERT_TRUE(GetParam() != nullptr);
-
-    HRFRasterFileCreator& creator = *GetParam();
-    ASSERT_TRUE(creator.GetSupportedAccessMode().m_HasCreateAccess);
-
-    //&&MM should come from config.
-    BeFileName sourceFilename = ImagePPTestConfig::GetConfig().GetSourceDir();
-    sourceFilename.AppendToPath(L"Images\\iTIFF\\TA00T1A2\\TS1_32bits_None_Tile.iTIFF");
-    //sourceFilename.AppendToPath(L"Images\\iTIFF\\1A02S142\\TS1_2C_Alpha_CCITT4_Strip.iTIFF");
+    BeFileName sourceDir = ImagePPTestConfig::GetConfig().GetSourceDir();
+    if (sourceDir.IsEmpty())   // Empty mean disabled
+        return;
     
+    HRFRasterFileCreator& creator = GetCreator();
+    ASSERT_TRUE(creator.GetSupportedAccessMode().m_HasCreateAccess);
+   
+    BeFileName sourceFilename(sourceDir);
+    sourceFilename.AppendToPath(GetSourceFilename().c_str());
     ASSERT_TRUE(sourceFilename.DoesPathExist());
 
     WString outExtension(creator.GetDefaultExtension().c_str(), BentleyCharEncoding::Utf8);
@@ -384,13 +407,12 @@ TEST_P(ExportAllTester, ToAllFormats)
         }
     }
 
-INSTANTIATE_TEST_CASE_P(FormatTests, ExportAllTester, testing::ValuesIn(ExportAllTester::GetCreatorList()));
-
-//&&MM if we have a list of source.
-// INSTANTIATE_TEST_CASE_P(FormatTests, ExportAllTester,
-//                         ::testing::Combine(::testing::ValuesIn(ExportAllTester::GetCreatorList()),
-//                                            ::testing::ValuesIn(ExportAllTester::GetSourceList())
-//                                            ));
+INSTANTIATE_TEST_CASE_P(FormatTests, ExportAllTester,
+                                           // Path reliative to sourceDir
+                        ::testing::Combine(::testing::Values(L"Images\\iTIFF\\TA00T1A2\\TS1_32bits_None_Tile.iTIFF"),
+                                           //::testing::ValuesIn(ExportAllTester::GetSourceList())
+                                           ::testing::ValuesIn(ExportAllTester::GetCreatorList())
+                                           ));
 
 // #else
 // 
