@@ -75,7 +75,8 @@ struct ColumnFactory : NonCopyableClass
 
 struct ECDbMap;
 struct ECSqlPrepareContext;
-
+struct ECInstanceIdPropertyMap;
+struct ECClassIdPropertyMap;
 //=======================================================================================
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======
@@ -137,9 +138,9 @@ struct ClassMap : RefCountedBase
 
         PropertyMapCollection const& GetPropertyMaps() const { return m_propertyMaps; }
         PropertyMapCP GetPropertyMap(Utf8CP propertyName) const;
-        PropertyMapCP GetECInstanceIdPropertyMap() const;
-        PropertyMapCP GetECClassIdPropertyMap() const;
-
+        ECInstanceIdPropertyMap const* GetECInstanceIdPropertyMap() const;
+        ECClassIdPropertyMap const* GetECClassIdPropertyMap() const;
+        BentleyStatus ConfigureECClassId(DbColumn const& classIdColumn, bool loadingFromDisk = false);
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
 
         Type GetType() const { return m_type; }

@@ -43,7 +43,7 @@ struct ECDbMap :NonCopyableClass
         BentleyStatus PurgeOrphanTables() const;
         BentleyStatus PurgeOrphanColumns() const;
         BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
-        BentleyStatus CreateClassIdColumnIfNecessary(DbTable&, bset<ClassMap*> const&) const;
+        DbColumn const* CreateClassIdColumn(DbTable&, bset<ClassMap*> const&) const;
         MappingStatus AddClassMap(ClassMapPtr&) const;
         ClassMapsByTable GetClassMapsByTable() const;
         BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;

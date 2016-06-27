@@ -180,6 +180,7 @@ public:
     static Type PrimitiveTypeToColumnType(ECN::PrimitiveType);
     static bool IsCompatible(Type lhs, Type rhs);
     static Utf8CP KindToString(Kind);
+    static BentleyStatus MakePersisted(DbColumn& column);
     };
 
 //======================================================================================
@@ -421,7 +422,7 @@ public:
     ForeignKeyDbConstraint const* CreateForeignKeyConstraint(DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
     std::vector<DbConstraint const*> GetConstraints() const;
     BentleyStatus RemoveConstraint(DbConstraint const&);
-
+    //! Only changing to persistence type is supported in limited conditions
     bool IsNullTable() const;
     bool IsValid() const { return m_columns.size() > 0; }
     };

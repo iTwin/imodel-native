@@ -217,7 +217,7 @@ TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
             {
             ECPropertyCP prop = statement.GetColumnInfo(i).GetProperty();
             Utf8StringCR propName = prop->GetName();
-            bool expectedIsNull = propName.CompareTo(nonNullPropertyName) != 0 && !propName.Equals("ECInstanceId");
+            bool expectedIsNull = propName.CompareTo(nonNullPropertyName) != 0 && !propName.Equals("ECInstanceId") && !propName.Equals("ECClassId");
             if (prop->GetIsArray())
                 expectedIsNull = false; // arrays are never Null
 
@@ -622,26 +622,27 @@ TEST_F(ECDbInstances, SelectClause)
     ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(db, "SELECT * FROM [StartupCompany].[Employee]"));
     ASSERT_TRUE(BE_SQLITE_ROW == ecStatement.Step());
     EXPECT_TRUE(ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("ECInstanceId"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("EmployeeID"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(2).GetProperty()->GetName().Equals("FirstName"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(3).GetProperty()->GetName().Equals("JobTitle"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(4).GetProperty()->GetName().Equals("LastName"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(5).GetProperty()->GetName().Equals("ManagerID"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(6).GetProperty()->GetName().Equals("Room"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(7).GetProperty()->GetName().Equals("SSN"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(8).GetProperty()->GetName().Equals("Project"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(9).GetProperty()->GetName().Equals("WorkPhone"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(10).GetProperty()->GetName().Equals("MobilePhone"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(11).GetProperty()->GetName().Equals("FullName"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(12).GetProperty()->GetName().Equals("Certifications"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(13).GetProperty()->GetName().Equals("Location"));
-    EXPECT_TRUE(ecStatement.GetValueStruct(13).GetValue(0).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
-    EXPECT_TRUE(ecStatement.GetValueStruct(13).GetValue(1).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(14).GetProperty()->GetName().Equals("EmployeeType"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(15).GetProperty()->GetName().Equals("Address"));
-    EXPECT_TRUE(ecStatement.GetValueStruct(15).GetValue(0).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
-    EXPECT_TRUE(ecStatement.GetValueStruct(15).GetValue(1).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
-    EXPECT_TRUE(ecStatement.GetColumnInfo(16).GetProperty()->GetName().Equals("EmployeeRecordKey"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("ECClassId"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(2).GetProperty()->GetName().Equals("EmployeeID"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(3).GetProperty()->GetName().Equals("FirstName"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(4).GetProperty()->GetName().Equals("JobTitle"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(5).GetProperty()->GetName().Equals("LastName"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(6).GetProperty()->GetName().Equals("ManagerID"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(7).GetProperty()->GetName().Equals("Room"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(8).GetProperty()->GetName().Equals("SSN"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(9).GetProperty()->GetName().Equals("Project"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(10).GetProperty()->GetName().Equals("WorkPhone"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(11).GetProperty()->GetName().Equals("MobilePhone"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(12).GetProperty()->GetName().Equals("FullName"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(13).GetProperty()->GetName().Equals("Certifications"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(14).GetProperty()->GetName().Equals("Location"));
+    EXPECT_TRUE(ecStatement.GetValueStruct(14).GetValue(0).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
+    EXPECT_TRUE(ecStatement.GetValueStruct(14).GetValue(1).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(15).GetProperty()->GetName().Equals("EmployeeType"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(16).GetProperty()->GetName().Equals("Address"));
+    EXPECT_TRUE(ecStatement.GetValueStruct(16).GetValue(0).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
+    EXPECT_TRUE(ecStatement.GetValueStruct(16).GetValue(1).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(17).GetProperty()->GetName().Equals("EmployeeRecordKey"));
 
     }
     }

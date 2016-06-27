@@ -772,12 +772,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp(NativeSqlBuilder::List
         nativeSqlSnippet.AppendParenLeft();
 
     ClassMap const& classMap = classNameExp->GetInfo().GetMap();
-    DbColumn const* classIdColumn = nullptr;
-    if (classMap.GetJoinedTable().TryGetECClassIdColumn(classIdColumn))
+    ECClassIdPropertyMap const* classIdPropertyMap = classMap.GetECClassIdPropertyMap();
+    //!WIP_CLASSID need work ToNativeSql() is used in viewgenerator and ECSql this does not allow us but to add an addition parameter to it tell from where it is called.
+    //For this reason i am leaving following cases as is
+    if (classIdPropertyMap->IsPersisted())
         {
         auto classRefId = classRefExp->GetId().c_str();
-        auto classIdColumnName = classIdColumn->GetName().c_str();
-        nativeSqlSnippet.Append(classRefId, classIdColumnName);
+        nativeSqlSnippet.Append(classIdPropertyMap->ToNativeSql(classRefId, ECSqlType::Select, false).front());
         }
     else
         {

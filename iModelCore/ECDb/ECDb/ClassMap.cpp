@@ -303,6 +303,39 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                       Affan.Khan   02/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool loadingFromDisk)
+    {
+    if (!GetECDbMap().IsImportingSchema() && !loadingFromDisk)
+        {
+        BeAssert(false && "Can only be called during schema import");
+        return ERROR;
+        }
+
+    PropertyMapCP classIdPropertyMap = GetECClassIdPropertyMap();
+    if (classIdPropertyMap == nullptr)
+        {
+        std::vector<DbColumn const*> columns;
+        columns.push_back(&classIdColumn);
+
+        PropertyMapPtr ecclassIdPropertyMap = ECClassIdPropertyMap::Create(Schemas(), *this, columns);
+        if (ecclassIdPropertyMap == nullptr)
+            //log and assert already done in child method
+            return ERROR;
+
+        return GetPropertyMapsR().AddPropertyMap(ecclassIdPropertyMap, 1);
+        }
+
+    if (classIdPropertyMap->GetSingleColumn() != &classIdColumn)
+        {
+        BeAssert(false && "Invalid classMap");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan   02/2016
 //---------------------------------------------------------------------------------------
 void ClassMap::SetTable(DbTable& newTable, bool append /*= false*/)
@@ -544,11 +577,11 @@ BentleyStatus ClassMap::InitializeDisableECInstanceIdAutogeneration()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle  06/2013
 //---------------------------------------------------------------------------------------
-PropertyMapCP ClassMap::GetECInstanceIdPropertyMap() const
+ECInstanceIdPropertyMap const* ClassMap::GetECInstanceIdPropertyMap() const
     {
     PropertyMapPtr propMap = nullptr;
     if (GetPropertyMaps().TryGetPropertyMap(propMap, ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
-        return propMap.get();
+        return static_cast<ECInstanceIdPropertyMap const*>(propMap.get());
 
     return nullptr;
     }
@@ -556,11 +589,11 @@ PropertyMapCP ClassMap::GetECInstanceIdPropertyMap() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle  06/2013
 //---------------------------------------------------------------------------------------
-PropertyMapCP ClassMap::GetECClassIdPropertyMap() const
+ECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
     {
     PropertyMapPtr propMap = nullptr;
     if (GetPropertyMaps().TryGetPropertyMap(propMap, ECDbSystemSchemaHelper::ECCLASSID_PROPNAME))
-        return propMap.get();
+        return static_cast<ECClassIdPropertyMap const*>(propMap.get());
 
     return nullptr;
     }
@@ -641,15 +674,14 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
         {
         for (PropertyDbMapping const* propMapping : allPropertyMappings)
             {
-            if (propMapping->GetColumns().front()->GetKind() == DbColumn::Kind::ECClassId)
-                continue;
-
             for (DbColumn const* column : propMapping->GetColumns())
                 {
                 if (column->GetTable().GetType() == DbTable::Type::Joined)
                     joinedTables.insert(&column->GetTableR());
-                else
+                else if (!Enum::Contains(column->GetKind(), DbColumn::Kind::ECClassId ))
+                    {
                     tables.insert(&column->GetTableR());
+                    }
                 }
             }
 
@@ -674,6 +706,13 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
         return ERROR;
 
     if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap) != SUCCESS)
+        return ERROR;
+
+    PropertyDbMapping const* ecClassIdMapping = classMapping.FindPropertyMapping(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME);
+    if (ecClassIdMapping == nullptr)
+        return ERROR;
+
+    if (ConfigureECClassId(*ecClassIdMapping->ExpectingSingleColumn(), true) != SUCCESS)
         return ERROR;
 
     return AddPropertyMaps(ctx, baseClassMap, &classMapping, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;

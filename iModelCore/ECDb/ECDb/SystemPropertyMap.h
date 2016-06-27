@@ -69,6 +69,9 @@ public:
     ~ECClassIdPropertyMap() {}
     static PropertyMapPtr Create(ECDbSchemaManagerCR, ClassMap const&, std::vector<DbColumn const*>);
     static PropertyMapPtr Clone(ECClassIdPropertyMap const& proto) { return new ECClassIdPropertyMap(proto); }
+    ECN::ECClassId GetDefaultConstraintClassId() const { return m_defaultConstraintClassId; }
+    bool IsPersisted() const { return GetSingleColumn()->GetPersistenceType() == PersistenceType::Persisted; }
+
     };
 
 //=======================================================================================
@@ -143,6 +146,10 @@ struct RelConstraintECClassIdPropertyMap : RelationshipConstraintPropertyMap
         //!If this method returns false, the relationship table doesn't have a constraint class id column, but the class id
         //!column resides elsewhere.
         bool IsMappedToClassMapTables() const { return m_isMappedToClassMapTables; }
+        bool IsMappedToECClassId() const
+            {
+            return Enum::Contains(GetSingleColumn()->GetKind(), DbColumn::Kind::ECClassId);
+            }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
