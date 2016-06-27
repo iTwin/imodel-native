@@ -250,7 +250,7 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
                 parentClassMap.GetPathToParentOfJoinedTable(pathA);
                 baseClassMap->GetPathToParentOfJoinedTable(pathB);
                
-                Utf8String msg ="Failed to map ECClass '" + Utf8String(GetECClass().GetFullName()) + "' which has more then one base classes that map to a different shared tables. Which is not supported. User must correct hierarchy and remove one of the baseClass or adjust ECDbMap MapStrategy accordingly.\n";
+                Utf8String msg ="Failed to map ECClass '" + Utf8String(GetECClass().GetFullName()) + "' which has more than one base classes that map to a different shared tables. Which is not supported. User must correct hierarchy and remove one of the baseClass or adjust ECDbMap MapStrategy accordingly.\n";
                 msg.append("First BaseClass '" + Utf8String(parentClassMap.GetClass().GetFullName()) + "' lead to following path \n");
                 for (int i = 0; i < pathA.size(); i++)
                     {
