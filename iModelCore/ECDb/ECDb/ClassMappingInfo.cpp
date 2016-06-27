@@ -252,7 +252,7 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
                
                 Utf8String msg ="Failed to map ECClass '" + Utf8String(GetECClass().GetFullName()) + "' which has more than one base classes that map to a different shared tables. Which is not supported. User must correct hierarchy and remove one of the baseClass or adjust ECDbMap MapStrategy accordingly.\n";
                 msg.append("First BaseClass '" + Utf8String(parentClassMap.GetClass().GetFullName()) + "' lead to following path \n");
-                for (int i = 0; i < pathA.size(); i++)
+                for (size_t i = 0; i < pathA.size(); i++)
                     {
                     msg.append(Utf8String(i, '\t'));
                     msg.append(pathA[i]->GetClass().GetFullName()).append(" [PrimaryTable= ").append(pathA[i]->GetPrimaryTable().GetName()).append("]");
@@ -263,7 +263,7 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
                     }
 
                 msg.append("Second BaseClass '" + Utf8String(baseClassMap->GetClass().GetFullName()) + "' lead to following path \n");
-                for (int i = 0; i < pathB.size(); i++)
+                for (size_t i = 0; i < pathB.size(); i++)
                     {
                     msg.append(Utf8String(i, '\t'));
                     msg.append(pathB[i]->GetClass().GetFullName()).append(" [PrimaryTable= ").append(pathB[i]->GetPrimaryTable().GetName()).append("]");
