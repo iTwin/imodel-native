@@ -145,7 +145,7 @@ BentleyBuild.py -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh re Scalabl
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe</NMakeBuildCommandLine>
-    <NMakeOutput>$(OutRoot)Winx64\build\scalablemesh\ScalableMeshATP.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ScalableMeshATPexe\ScalableMeshATPexe.exe</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -c 
