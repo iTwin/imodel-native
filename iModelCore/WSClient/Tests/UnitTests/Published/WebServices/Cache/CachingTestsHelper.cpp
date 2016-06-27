@@ -189,6 +189,11 @@ WSObjectsResult StubWSObjectsResultInvalidInstances()
                 {
                 return nullptr;
                 }
+
+            rapidjson::SizeType GetRelationshipInstanceCount(const rapidjson::Value* instance) const override
+                {
+                return 0;
+                }
         };
 
     WSObjectsResponse response(StubReader::Create(), HttpStringBody::Create("{}"), HttpStatus::OK, "", "");
