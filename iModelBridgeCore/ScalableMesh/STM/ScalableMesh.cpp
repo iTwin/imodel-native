@@ -355,6 +355,11 @@ void IScalableMesh::SetEditFilesBasePath(const Utf8String& path)
     return _SetEditFilesBasePath(path);
     }
 
+IScalableMeshNodePtr IScalableMesh::GetRootNode()
+    {
+    return _GetRootNode();
+    }
+
 bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     {
     return _RemoveSkirt(clipID);
@@ -1863,6 +1868,14 @@ template <class POINT> void ScalableMesh<POINT>::_SetCurrentlyViewedNodes(const 
 template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
     {
     m_baseExtraFilesPath = WString(path.c_str(), BentleyCharEncoding::Utf8);
+    }
+
+template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()
+    {
+    auto ptr = HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>(nullptr);
+    if (m_scmIndexPtr == nullptr) return new ScalableMeshNode<POINT>(ptr);
+    auto nodeP = m_scmIndexPtr->GetRootNode();
+    return new ScalableMeshNode<POINT>(nodeP);
     }
 
 
