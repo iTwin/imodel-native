@@ -6,17 +6,32 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace S3MX.Source
-{
-    class S3MXAzureBlobApi
     {
+    class S3MXAzureBlobApi
+        {
         private readonly CloudStorageAccount _account;
         private readonly CloudBlobClient _blobClient;
 
-        public S3MXAzureBlobApi(string connectionString)
-        {
+        public S3MXAzureBlobApi (string connectionString)
+            {
             _account = CloudStorageAccount.Parse(connectionString);
             _blobClient = _account.CreateCloudBlobClient();
-        }
+            }
+
+        /// <summary>
+        /// Create the container if it doesn't exist
+        /// </summary>
+        /// <param name="containerName"></param>
+        /// <returns></returns>
+        public CloudBlobContainer CreateContainer
+        (
+            string containerName
+        )
+            {
+            CloudBlobContainer container = _blobClient.GetContainerReference(containerName);
+            container.CreateIfNotExists();
+            return container;
+            }
 
         /// <summary>
         /// Download a single file from the azure blob storage
@@ -25,17 +40,22 @@ namespace S3MX.Source
         /// <param name="targetBlob"></param>
         /// <param name="mStream"></param>
         /// <returns></returns>
-        public bool DownloadFile(string containerName, string targetBlob, ref MemoryStream mStream)
-        {
+        public bool DownloadFile
+        (
+            string containerName,
+            string targetBlob,
+            ref MemoryStream mStream
+        )
+            {
             CloudBlobContainer container = _blobClient.GetContainerReference(containerName);
-            if (!container.Exists())
+            if ( !container.Exists() )
                 return false;
 
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(targetBlob);
             blockBlob.DownloadToStream(mStream);
 
             return true;
-        }
+            }
 
         /// <summary>
         /// Upload a single file from an http request to azure blob storage
@@ -44,16 +64,21 @@ namespace S3MX.Source
         /// <param name="uploadDestination"></param>
         /// <param name="streamBackedDescriptor"></param>
         /// <returns></returns>
-        public bool UploadFile(string containerName, string uploadDestination, StreamBackedDescriptor streamBackedDescriptor)
-        {
+        public bool UploadFile 
+        (
+            string containerName,
+            string uploadDestination, 
+            StreamBackedDescriptor streamBackedDescriptor
+        )
+            {
             CloudBlobContainer container = _blobClient.GetContainerReference(containerName);
-            if (!container.Exists())
+            if ( !container.Exists() )
                 return false;
 
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(uploadDestination);
             blockBlob.UploadFromStream(streamBackedDescriptor.Stream);
             return true;
-        }
+            }
 
         /// <summary>
         /// List all Directory/Blob/PageBlob under the desired container
@@ -62,16 +87,21 @@ namespace S3MX.Source
         /// <param name="prefix">Set a prefix value to follow your desired path</param>
         /// <param name="useFlatBlobListing">Set to true if you want a flat list of all elements</param>
         /// <returns></returns>
-        public IEnumerable<IListBlobItem> ListDirectories(string containerName, string prefix = null, bool useFlatBlobListing = false)
-        {
-            CloudBlobContainer container = _blobClient.GetContainerReference(containerName);
-            if (!container.Exists())
+        public IEnumerable<IListBlobItem> ListDirectories
+        (
+            string containerName, 
+            string prefix = null,
+            bool useFlatBlobListing = false
+        )
             {
+            CloudBlobContainer container = _blobClient.GetContainerReference(containerName);
+            if ( !container.Exists() )
+                {
                 return null;
-            }
+                }
 
             return container.ListBlobs(prefix, useFlatBlobListing);
-        }
+            }
 
         /// <summary>
         /// Upload a whole directory to azure blob storage
@@ -81,8 +111,13 @@ namespace S3MX.Source
         /// <param name="containerName"></param>
         /// <param name="prefix"></param>
         /// <returns></returns>
-        public bool UploadDirectory(string sourceDirectory, string containerName, string prefix)
-        {
+        public bool UploadDirectory
+        (
+            string sourceDirectory, 
+            string containerName, 
+            string prefix
+        )
+            {
             return ExecuteWithExceptionHandlingAndReturnValue(
                 () =>
                 {
@@ -91,32 +126,32 @@ namespace S3MX.Source
 
                     var folder = new DirectoryInfo(sourceDirectory);
                     var files = folder.GetFiles();
-                    foreach (var fileInfo in files)
-                    {
+                    foreach ( var fileInfo in files )
+                        {
                         string blobName = fileInfo.Name;
-                        if (!string.IsNullOrEmpty(prefix))
-                        {
+                        if ( !string.IsNullOrEmpty(prefix) )
+                            {
                             blobName = prefix + "/" + blobName;
-                        }
+                            }
 
-                        using (var fileStream = File.OpenRead(fileInfo.FullName))
-                        {
+                        using ( var fileStream = File.OpenRead(fileInfo.FullName) )
+                            {
                             CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
                             blockBlob.UploadFromStream(fileStream);
+                            }
                         }
-                    }
                     var subFolders = folder.GetDirectories();
-                    foreach (var directoryInfo in subFolders)
-                    {
-                        var prefixTemp = directoryInfo.Name;
-                        if (!string.IsNullOrEmpty(prefix))
+                    foreach ( var directoryInfo in subFolders )
                         {
+                        var prefixTemp = directoryInfo.Name;
+                        if ( !string.IsNullOrEmpty(prefix) )
+                            {
                             prefixTemp = prefix + "/" + prefixTemp;
-                        }
+                            }
                         UploadDirectory(directoryInfo.FullName, containerName, prefixTemp);
-                    }
+                        }
                 });
-        }
+            }
 
         /// <summary>
         /// Download a whole directory stored in azure blob storage
@@ -126,52 +161,63 @@ namespace S3MX.Source
         /// <param name="downloadDirectory"></param>
         /// <param name="containerName"></param>
         /// <returns></returns>
-        public bool DownloadDirectory(string targetDirectory, string downloadDirectory, string containerName)
-        {
+        public bool DownloadDirectory
+        (
+            string targetDirectory, 
+            string downloadDirectory, 
+            string containerName
+        )
+            {
             return ExecuteWithExceptionHandlingAndReturnValue(
                 () =>
                 {
                     CloudBlobContainer container = _blobClient.GetContainerReference(containerName);
-                    foreach (IListBlobItem item in container.ListBlobs(null, true))
-                    {
-                        if (item.GetType() == typeof(CloudBlockBlob))
+                    foreach ( IListBlobItem item in container.ListBlobs(null, true) )
                         {
-                            CloudBlockBlob blob = (CloudBlockBlob)item;
+                        if ( item.GetType() == typeof(CloudBlockBlob) )
+                            {
+                            CloudBlockBlob blob = (CloudBlockBlob) item;
 
                             Directory.CreateDirectory(downloadDirectory + blob.Parent.Prefix.Replace("/", "\\"));
-                            using (var fileStream = File.OpenWrite(downloadDirectory + blob.Name.Replace("/", "\\")))
-                            {
+                            using ( var fileStream = File.OpenWrite(downloadDirectory + blob.Name.Replace("/", "\\")) )
+                                {
                                 blob.DownloadToStream(fileStream);
+                                }
                             }
                         }
-                    }
                 });
-        }
+            }
 
-        private void ExecuteWithExceptionHandling(Action action)
-        {
-            try
+        private void ExecuteWithExceptionHandling
+        (
+            Action action
+        )
             {
+            try
+                {
                 action();
-            }
-            catch (StorageException ex)
-            {
+                }
+            catch ( StorageException ex )
+                {
                 Console.WriteLine(ex.Message);
+                }
             }
-        }
 
-        private bool ExecuteWithExceptionHandlingAndReturnValue(Action action)
-        {
-            try
+        private bool ExecuteWithExceptionHandlingAndReturnValue
+        (
+            Action action
+        )
             {
+            try
+                {
                 action();
                 return true;
-            }
-            catch (StorageException ex)
-            {
+                }
+            catch ( StorageException ex )
+                {
                 Console.WriteLine(ex.Message);
                 return false;
+                }
             }
         }
     }
-}
