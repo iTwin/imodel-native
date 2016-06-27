@@ -31,6 +31,7 @@ enum class SMPoolDataTypeDesc
     Texture,
     Display, //Use to represents data created for display purpose, like QV element. 
     LinearFeature,
+    BcDTM,
     Unknown, 
     };
 

@@ -554,14 +554,14 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #ifdef SCALABLE_MESH_ATP    
             startClock = clock();
 #endif
-            if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
-                return BSIERROR;
+            //if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
+            //    return BSIERROR;
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastFilteringDuration += clock() - startClock;
             startClock = clock();
 #endif
-            //if (level == (int)depth)
+            if (level == (int)depth)
                 {
                 if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
                     return BSIERROR;

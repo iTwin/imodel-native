@@ -5,7 +5,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 bool IsOutsideEdge(MTGGraph* graphP, MTGNodeId id);
 
-void CreateGraphFromIndexBuffer(MTGGraph* graph, const long* buffer, int count, int pointCount, bvector<int>& componentContours, const DPoint3d* points);
+BENTLEY_SM_EXPORT void CreateGraphFromIndexBuffer(MTGGraph* graph, const long* buffer, int count, int pointCount, bvector<int>& componentContours, const DPoint3d* points);
 
 void MergeGraphs(MTGGraph * destGraphP, std::vector<DPoint3d>& destPoints, MTGGraph * srcGraphP, std::vector<DPoint3d>& inPoints, DPoint3d minCorner, DPoint3d maxCorner, std::vector<int>& pointToDestPointsMap, bvector<int>& componentContours);
 
@@ -32,6 +32,8 @@ void ExtractMeshIndicesFromGraph(std::vector<int32_t>& indices, MTGGraph* graphP
 size_t FastCountNodesAroundFace(MTGGraph* graphP, MTGNodeId id);
 
 void PrintGraph(Utf8String path, Utf8String name, MTGGraph* graphP);
+
+size_t CountExteriorFaces(MTGGraph* graphP);
 
 void UntieLoopsFromPolygon(bvector<DPoint3d>& polygon);
 
