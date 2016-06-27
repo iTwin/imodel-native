@@ -15,6 +15,84 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3717::_Upgrade(ECDbCR ecdb) const
+    {
+    StopWatch timer(true);
+    Utf8String sql;
+    sql.Sprintf("SELECT t.Id, t.Name, c.Name, c.Id FROM ec_Column c, ec_Table t "
+                "WHERE c.TableId=t.Id AND t.Type<>%d AND t.IsVirtual=%d AND ((c.ColumnKind & %d) <> 0 OR (c.ColumnKind & %d) <> 0) "
+                "AND c.NotNullConstraint=%d order by t.Id",
+                DbTable::Type::Existing, DbSchemaPersistenceManager::BoolToSqlInt(false),
+                Enum::ToInt(DbColumn::Kind::SourceECInstanceId), Enum::ToInt(DbColumn::Kind::TargetECInstanceId),
+                DbSchemaPersistenceManager::BoolToSqlInt(false));
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Retrieving foreign key columns that have to be updated failed. %s", 
+                   ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+
+    IdSet<DbColumnId> colsToUpdate;
+    DbTableId currentTableId;
+    Utf8String currentTableName;
+    bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> cols;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        DbTableId tableId = stmt.GetValueId<DbTableId>(0);
+        if (currentTableId.IsValid() && currentTableId != tableId)
+            {
+            //Next table found. Process columns of previous table now
+            Utf8String tableInfoSql;
+            tableInfoSql.Sprintf("pragma table_info('%s')", currentTableName.c_str());
+
+            Statement tableInfoStmt;
+            if (BE_SQLITE_OK != tableInfoStmt.Prepare(ecdb, tableInfoSql.c_str()))
+                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+            while (BE_SQLITE_ROW == tableInfoStmt.Step())
+                {
+                Utf8CP colName = tableInfoStmt.GetValueText(1);
+                auto it = cols.find(colName);
+                if (it == cols.end())
+                    continue;
+
+                if (DbSchemaPersistenceManager::IsTrue(tableInfoStmt.GetValueInt(3)))
+                    colsToUpdate.insert(it->second);
+                }
+
+            cols.clear();
+            }
+
+        currentTableId = tableId;
+        currentTableName.assign(stmt.GetValueText(1));
+        cols[stmt.GetValueText(2)] = stmt.GetValueId<DbColumnId>(3);
+        }
+
+    stmt.Finalize();
+
+    if (colsToUpdate.empty())
+        return BE_SQLITE_OK;
+
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE ec_Column SET NotNullConstraint=? WHERE InVirtualSet(?,Id)") ||
+        BE_SQLITE_OK != stmt.BindInt(1, DbSchemaPersistenceManager::BoolToSqlInt(true)) ||
+        BE_SQLITE_OK != stmt.BindVirtualSet(2, colsToUpdate) ||
+        BE_SQLITE_DONE != stmt.Step())
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+    BeAssert((int) colsToUpdate.size() == ecdb.GetModifiedRowCount());
+
+    timer.Stop();
+    LOG.debugv("ECDb profile upgrade: Updated NotNullConstraint column in table 'ec_Column' for "
+              "%" PRIu64 " Foreign Key columns. [%.4f ms]", (uint64_t) colsToUpdate.size(), timer.GetElapsedSeconds() * 1000.0);
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3715::_Upgrade(ECDbCR ecdb) const
     {
     Statement stmt;
