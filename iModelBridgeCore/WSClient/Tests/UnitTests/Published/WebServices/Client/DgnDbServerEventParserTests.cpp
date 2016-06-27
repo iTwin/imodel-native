@@ -20,21 +20,33 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseEmpty()
     {
     return "";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseEmptyJson()
     {
     return "{}";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalid()
     {
     return "abcd";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseValidLockEvent()
     {
     return R"(
@@ -43,7 +55,7 @@ Utf8String StubHttpResponseValidLockEvent()
               "Date":"SomeDate",
               "LockType":"SomeLockType",
               "EventTopic":"SomeEventTopic",
-              "UserId":"SomeUserId",
+              "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
               "ObjectId":"SomeObjectId",
               "LockLevel":"SomeLockLevel",
               "BriefcaseId":"SomeBriefcaseId",
@@ -52,6 +64,9 @@ Utf8String StubHttpResponseValidLockEvent()
              )";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseValidRevisionEvent()
     {
     return R"(
@@ -59,13 +74,16 @@ Utf8String StubHttpResponseValidRevisionEvent()
               {
               "Date":"SomeDate",
               "EventTopic":"SomeEventTopic",
-              "UserId":"SomeUserId",
+              "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
               "RevisionId":"RevisionId",
               "RevisionIndex":"SomeRevisionIndex"
               }
              )";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidLockEvent()
     {
     return R"(
@@ -78,6 +96,9 @@ Utf8String StubHttpResponseInvalidLockEvent()
              )";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidRevisionEvent()
     {
     return R"(
@@ -89,7 +110,10 @@ Utf8String StubHttpResponseInvalidRevisionEvent()
              )";
     }
 
-Utf8String StubHttpResponseValidEventSubscriptionResponse()
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidEventSubscriptionWSObjectResponse()
     {
     return R"(
              {
@@ -111,8 +135,40 @@ Utf8String StubHttpResponseValidEventSubscriptionResponse()
                               }
              }
              )";
-
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidEventSubscriptionWSChangeSetResponse()
+    {
+    return R"(
+             {
+            "changedInstances":
+                              [
+                              {
+                              "change":"Created",
+                              "instanceAfterChange" :
+                                                    {
+                                                    "instanceId":"SomeInstanceId",
+                                                    "schemaName" : "DgnDbServer",
+                                                    "className" : "EventSubscription",
+                                                    "properties" :
+                                                                 {
+                                                                 "Id":"SomeSubscriptionId",
+                                                                 "TopicName" : "SomeTopicName",
+                                                                 "EventTypes" : ["LockEvent", "RevisionEvent"]
+                                                                 }
+                                                    }
+                              }
+                              ]
+             }
+             )";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseValidEventSASResponse()
     {
     return R"(
@@ -136,7 +192,10 @@ Utf8String StubHttpResponseValidEventSASResponse()
              )";
     }
 
-Utf8String StubHttpResponseInvalidEventSubscriptionResponse()
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse()
     {
     return R"(
              {
@@ -157,6 +216,35 @@ Utf8String StubHttpResponseInvalidEventSubscriptionResponse()
              )";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse()
+    {
+    return R"(
+             {
+            "changedInstances":
+                              [
+                              {
+                              "change":"Created",
+                              "instanceAfterChange" :
+                                                    {
+                                                    "instanceId":"SomeInstanceId",
+                                                    "schemaName" : "DgnDbServer",
+                                                    "className" : "EventSubscription",
+                                                    "properties" :
+                                                                 {
+                                                                 }
+                                                    }
+                              }
+                              ]
+             }
+             )";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidEventSASResponse()
     {
     return R"(
@@ -178,6 +266,9 @@ Utf8String StubHttpResponseInvalidEventSASResponse()
              )";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubGenerateValidEventSASJson()
     {
     return R"(
@@ -197,6 +288,9 @@ Utf8String StubGenerateValidEventSASJson()
              )";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubGenerateInvalidEventSASJson()
     {
     return R"(
@@ -214,7 +308,10 @@ Utf8String StubGenerateInvalidEventSASJson()
              )";
     }
 
-Utf8String StubGenerateValidEventSubscriptionJsonSingleEvent()
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateValidEventSubscriptionWSObjectJsonSingleEvent()
     {
     return R"(
              {
@@ -234,7 +331,10 @@ Utf8String StubGenerateValidEventSubscriptionJsonSingleEvent()
              )";
     }
 
-Utf8String StubGenerateValidEventSubscriptionJsonNoEvent()
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateValidEventSubscriptionWSObjectJsonNoEvent()
     {
     return R"(
              {
@@ -254,7 +354,38 @@ Utf8String StubGenerateValidEventSubscriptionJsonNoEvent()
              )";
     }
 
-Utf8String StubGenerateInvalidEventSubscriptionJson()
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateValidEventSubscriptionWSChangeSetJsonSingleEvent()
+    {
+    return R"(
+			 {
+			 "Id":"",
+			 "TopicName":"", 
+			 "EventTypes": ["LockEvent"]
+			 }          
+             )";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateValidEventSubscriptionWSChangeSetJsonNoEvent()
+    {
+    return R"(
+			 {
+			 "Id":"",
+			 "TopicName":"", 
+			 "EventTypes": [] 
+			 }                   
+             )";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateInvalidEventSubscriptionWSObjectJson()
     {
     return R"(
              {
@@ -263,49 +394,87 @@ Utf8String StubGenerateInvalidEventSubscriptionJson()
 			           "instanceId":"",
 			           "schemaName":"DgnDbServer",
 			           "className":"EventSubscription",
-			            "properties":
-						            {
-						            }
-			            }
+			           "properties":
+						           {
+						           }
+			           }
              } 
              )";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubGenerateInvalidEventSubscriptionWSChangeSetJson()
+    {
+    return R"(
+             {
+			 "properties":
+						 {
+						 }	           
+             } 
+             )";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP StubHttpResponseEmptyContentType()
     {
     return "";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP StubHttpResponseInvalidContentType()
     {
     return "SomeContentType";
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP StubHttpResponseValidLockEventContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::LockEvent).c_str();
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP StubHttpResponseInvalidLockEventContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP StubHttpResponseValidRevisionEventContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent).c_str();
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8CP StubHttpResponseInvalidRevisionEventContentType()
     {
     return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 void DgnDbServerEventParserTests::SetUp()
     {
     BaseMockHttpHandlerTest::SetUp();
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 TEST_F(DgnDbServerEventParserTests, LockEventTests)
     {
     //Check for valid values as Json
@@ -316,6 +485,9 @@ TEST_F(DgnDbServerEventParserTests, LockEventTests)
     EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&lockEvent)); //DgnDbServerLockEvent is a subclass of DgnDbServerEvent
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 TEST_F(DgnDbServerEventParserTests, RevisionEventTests)
     {
     //Check for valid values
@@ -326,6 +498,9 @@ TEST_F(DgnDbServerEventParserTests, RevisionEventTests)
     EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&revisionEvent)); //DgnDbServerRevisionEvent is a subclass of DgnDbServerEvent
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 TEST_F(DgnDbServerEventParserTests, InvalidEventTests)
     {
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseEmpty()));
@@ -342,6 +517,9 @@ TEST_F(DgnDbServerEventParserTests, InvalidEventTests)
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidLockEvent()));
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
     {
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidLockEvent()));
@@ -352,24 +530,51 @@ TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
     }
 
-TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionJsonTest)
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionWSObjectJsonTest)
     {
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
 
     //No event
-    EXPECT_TRUE(reader.parse(StubGenerateValidEventSubscriptionJsonNoEvent(), generatedStubJson));
-    Json::Value actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson();
+    EXPECT_TRUE(reader.parse(StubGenerateValidEventSubscriptionWSObjectJsonNoEvent(), generatedStubJson));
+    Json::Value actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSObjectJson();
     EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
 
     //Single Event
-    EXPECT_TRUE(reader.parse(StubGenerateValidEventSubscriptionJsonSingleEvent(), generatedStubJson));
+    EXPECT_TRUE(reader.parse(StubGenerateValidEventSubscriptionWSObjectJsonSingleEvent(), generatedStubJson));
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
     eventTypes.push_back(DgnDbServerEvent::DgnDbServerEventType::LockEvent);
-    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(&eventTypes);
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSObjectJson(&eventTypes);
     EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionWSChangesetTest)
+    {
+    Json::Reader reader;
+    Json::Value generatedStubJson(Json::objectValue);
+
+    //No event
+    EXPECT_TRUE(reader.parse(StubGenerateValidEventSubscriptionWSChangeSetJsonNoEvent(), generatedStubJson));
+    Json::Value actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSChangeSetJson();
+    EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
+
+    //Single Event
+    EXPECT_TRUE(reader.parse(StubGenerateValidEventSubscriptionWSChangeSetJsonSingleEvent(), generatedStubJson));
+    bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
+    eventTypes.push_back(DgnDbServerEvent::DgnDbServerEventType::LockEvent);
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSChangeSetJson(&eventTypes);
+    EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 TEST_F(DgnDbServerEventParserTests, GenerateEventSASJsonTest)
     {
     Json::Reader reader;
@@ -380,6 +585,9 @@ TEST_F(DgnDbServerEventParserTests, GenerateEventSASJsonTest)
     EXPECT_EQ(0, actualGeneratedJson.compare(generatedStubJson));
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 //Need more error cases
 TEST_F(DgnDbServerEventParserTests, InvalidGenerateJsonTests)
     {
@@ -391,27 +599,41 @@ TEST_F(DgnDbServerEventParserTests, InvalidGenerateJsonTests)
     Json::Value actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSASJson();
     EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
 
-    //Invalid Subscription Generation
-    EXPECT_TRUE(reader.parse(StubGenerateInvalidEventSubscriptionJson(), generatedStubJson));
-    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson();
+    //Invalid WSObject Subscription Generation
+    EXPECT_TRUE(reader.parse(StubGenerateInvalidEventSubscriptionWSObjectJson(), generatedStubJson));
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSObjectJson();
     EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
 
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes1, eventTypes2;
     eventTypes1.push_back(DgnDbServerEvent::DgnDbServerEventType::LockEvent);
-    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(&eventTypes1);
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSObjectJson(&eventTypes1);
     EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
 
     eventTypes2.push_back(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent);
-    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(&eventTypes2);
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSObjectJson(&eventTypes2);
+    EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
+
+    //Invalid WSChangeSet Subscription Generation
+    EXPECT_TRUE(reader.parse(StubGenerateInvalidEventSubscriptionWSChangeSetJson(), generatedStubJson));
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSChangeSetJson();
+    EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
+
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSChangeSetJson(&eventTypes1);
+    EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
+
+    actualGeneratedJson = DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSChangeSetJson(&eventTypes2);
     EXPECT_NE(0, actualGeneratedJson.compare(generatedStubJson));
     }
 
-TEST_F(DgnDbServerEventParserTests, EventSubscriptionResponseTest)
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DgnDbServerEventParserTests, EventSubscriptionWSObjectResponseTest)
     {
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
 
-    EXPECT_TRUE(reader.parse(StubHttpResponseValidEventSubscriptionResponse(), generatedStubJson));
+    EXPECT_TRUE(reader.parse(StubHttpResponseValidEventSubscriptionWSObjectResponse(), generatedStubJson));
     DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(generatedStubJson);
     EXPECT_NE(nullptr, ptr);
     EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeSubscriptionId", ptr->GetSubscriptionId().c_str()));
@@ -420,14 +642,11 @@ TEST_F(DgnDbServerEventParserTests, EventSubscriptionResponseTest)
     bool isSuccess = false;
     for (auto eventType : eventTypes)
         {
-        if (DgnDbServerEvent::DgnDbServerEventType::LockEvent == eventType)
-            {
-            isSuccess = true;
-            }
-        else if (DgnDbServerEvent::DgnDbServerEventType::RevisionEvent == eventType)
-            {
-            isSuccess = true;
-            }
+        if  (
+            DgnDbServerEvent::DgnDbServerEventType::LockEvent == eventType || 
+            DgnDbServerEvent::DgnDbServerEventType::RevisionEvent == eventType
+            )
+            isSuccess = true;       
         else
             {
             isSuccess = false;
@@ -437,6 +656,40 @@ TEST_F(DgnDbServerEventParserTests, EventSubscriptionResponseTest)
     EXPECT_TRUE(isSuccess);
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DgnDbServerEventParserTests, EventSubscriptionWSChangeSetResponseTest)
+    {
+    Json::Reader reader;
+    Json::Value generatedStubJson(Json::objectValue);
+
+    EXPECT_TRUE(reader.parse(StubHttpResponseValidEventSubscriptionWSChangeSetResponse(), generatedStubJson));
+    DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(generatedStubJson);
+    EXPECT_NE(nullptr, ptr);
+    EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeSubscriptionId", ptr->GetSubscriptionId().c_str()));
+    EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeTopicName", ptr->GetTopicName().c_str()));
+    bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes = ptr->GetEventTypes();
+    bool isSuccess = false;
+    for (auto eventType : eventTypes)
+        {
+        if (
+            DgnDbServerEvent::DgnDbServerEventType::LockEvent == eventType ||
+            DgnDbServerEvent::DgnDbServerEventType::RevisionEvent == eventType
+            )
+            isSuccess = true;
+        else
+            {
+            isSuccess = false;
+            break;
+            }
+        }
+    EXPECT_TRUE(isSuccess);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 TEST_F(DgnDbServerEventParserTests, EventSASResponseTest)
     {
     Json::Reader reader;
@@ -449,13 +702,19 @@ TEST_F(DgnDbServerEventParserTests, EventSASResponseTest)
     EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeBaseAddress", ptr->GetBaseAddress().c_str()));
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 //Need more error cases -- Add more Invalid Stub responses
-TEST_F(DgnDbServerEventParserTests, InvalidEventResponseTests)
+TEST_F(DgnDbServerEventParserTests, InvalidEventSubscriptionAndSASResponseTests)
     {
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
 
-    EXPECT_TRUE(reader.parse(StubHttpResponseInvalidEventSubscriptionResponse(), generatedStubJson));
+    EXPECT_TRUE(reader.parse(StubHttpResponseInvalidEventSubscriptionWSObjectResponse(), generatedStubJson));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEventSubscription(generatedStubJson));
+
+    EXPECT_TRUE(reader.parse(StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse(), generatedStubJson));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEventSubscription(generatedStubJson));
 
     EXPECT_TRUE(reader.parse(StubHttpResponseInvalidEventSASResponse(), generatedStubJson));
