@@ -1977,17 +1977,18 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     if (!hit.GetGeomDetail().IsValidSurfaceHit())
         return; // AccuSnap will flash edge/segment geometry...
 
-    ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue());// Invert hilite color for good contrast...
+    ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue()); // Invert hilite color for good contrast...
+    ColorDef    colorFill = color;
     DPoint3d    pt = hit.GetHitPoint();
-    double      radius = (2.0 * aperture) * vp.GetPixelSizeAtPoint(&pt);
+    double      radius = (2.5 * aperture) * vp.GetPixelSizeAtPoint(&pt);
     DVec3d      normal = hit.GetGeomDetail().GetSurfaceNormal();
     RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
     DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
 
     GraphicPtr graphic = context.CreateGraphic();
 
-    color.SetAlpha(200);
-    graphic->SetSymbology(color, color, 1);
+    colorFill.SetAlpha(150);
+    graphic->SetSymbology(color, colorFill, 1);
     graphic->AddArc(ellipse, true, true);
     graphic->AddArc(ellipse, false, false);
 
