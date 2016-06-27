@@ -38,18 +38,18 @@
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
-	   <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
-      <SdkSource>ScalableMeshSDK</SdkSource>
+	      <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
+        <SdkSource>ScalableMeshSDK</SdkSource>
         <!-- For Importer-->
         <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
         <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>  -->
         <!--<SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>    -->
-        <Bindings>
-          <Directory SourceName="SdkSources/ScalableMeshSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />
-          <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
+        <Bindings>           
+            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>
             <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
-            <Assemblies ProductDirectoryName="MdlsysAsneeded">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
+            <Assemblies ProductDirectoryName="MdlsysAsneeded">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies>
+            <Directory SourceName="SdkSources/ScalableMeshSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
