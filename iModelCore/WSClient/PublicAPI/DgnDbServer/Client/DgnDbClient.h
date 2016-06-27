@@ -21,12 +21,37 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 typedef std::shared_ptr<struct DgnDbClient> DgnDbClientPtr;
+struct DgnDbServerBriefcaseInfo;
 DEFINE_TASK_TYPEDEFS(RepositoryInfoPtr, DgnDbServerRepository);
 DEFINE_TASK_TYPEDEFS(bvector<RepositoryInfoPtr>, DgnDbServerRepositories);
 DEFINE_TASK_TYPEDEFS(DgnDbBriefcasePtr, DgnDbServerBriefcase);
-DEFINE_TASK_TYPEDEFS(BeFileName, DgnDbServerFileName);
+DEFINE_TASK_TYPEDEFS(DgnDbServerBriefcaseInfo, DgnDbServerBriefcaseInfo);
 
 typedef std::function<BeFileName(BeFileName, BeSQLite::BeBriefcaseId, RepositoryInfoCR)> BriefcaseFileNameCallback;
+
+//=======================================================================================
+//! DgnDbServerBriefcaseInfo results.
+//@bsiclass                                       Andrius.Zonys                  06/2016
+//=======================================================================================
+struct DgnDbServerBriefcaseInfo
+{
+//__PUBLISH_SECTION_END__
+private:
+    BeFileName  m_filePath;
+    bool        m_isReadOnly;
+
+public:
+    DgnDbServerBriefcaseInfo () {};
+    DgnDbServerBriefcaseInfo (BeFileName filePath, bool isReadOnly);
+
+//__PUBLISH_SECTION_START__
+public:
+    //! Returns the briefcase file path.
+    DGNDBSERVERCLIENT_EXPORT BeFileName FilePath() const;
+
+    //! Returns true if briefcase can't be modified.
+    DGNDBSERVERCLIENT_EXPORT bool       IsReadOnly() const;
+};
 
 //=======================================================================================
 //! Client of DgnDbServer.
@@ -42,6 +67,7 @@ private:
     DgnDbRepositoryManagerPtr   m_repositoryManager;
     Utf8String                  m_serverUrl;
     Credentials                 m_credentials;
+    Utf8String                  m_projectId;
     ClientInfoPtr               m_clientInfo;
     AuthenticationHandlerPtr    m_authenticationHandler;
 
@@ -51,7 +77,6 @@ private:
     DgnDbServerRepositoryTaskPtr        InitializeRepository    (IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
                                                                  ObjectId repositoryObjectId, HttpRequest::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
-    AsyncTaskPtr<WSRepositoriesResult>  GetRepositoriesByPlugin (Utf8StringCR pluginId, ICancellationTokenPtr cancellationToken) const;
     DgnDbServerStatusTaskPtr            DownloadBriefcase       (DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
                                                                  Utf8StringCR url, bool doSync = true, HttpRequest::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -74,6 +99,9 @@ public:
 
     //! Credentials used to authenticate to the on-premise server.
     DGNDBSERVERCLIENT_EXPORT void                           SetCredentials          (CredentialsCR credentials);
+
+    //! ProjectId to bind repositories to. Required for IMS authentication and should be empty for Basic.
+    DGNDBSERVERCLIENT_EXPORT void                           SetProject              (Utf8StringCR projectId);
 
     //! Creates a connection to a repository. Use this method if you need to access repository information without acquirying a briefcase.
     //! If you already have a briefcase, please use DgnDbBriefcase.GetRepositoryConnection()
@@ -119,9 +147,9 @@ public:
     //! @param[in] doSync If set to true, it will download all of the revisions that have not been merged on server and merge locally.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
-    //! @return Asynchronous task that has downloaded file name as the result.
+    //! @return Asynchronous task that has downloaded file name and is read-only flag as the result.
     //! @note If localFileName is an existing file, this method will fail. If it is an existing directory, file name retrieved from server will be appended.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileNameTaskPtr     AcquireBriefcase        (RepositoryInfoCR repositoryInfo, BeFileNameCR localFileName, bool doSync = true,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfoTaskPtr AcquireBriefcase       (RepositoryInfoCR repositoryInfo, BeFileNameCR localFileName, bool doSync = true,
                                                                                      HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a briefcase of a repository from the server using callback to provide the file path.
@@ -131,9 +159,9 @@ public:
     //! @param[in] fileNameCallback Callback function, that takes baseDirectory, briefcase Id and repository info as arguments and returns full filename.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
-    //! @return Asynchronous task that has downloaded file name as the result.
+    //! @return Asynchronous task that has downloaded file name and is read-only flag as the result.
     //! @note Default callback will save repository at baseDirectory\\repositoryId\\briefcaseId\\fileName
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileNameTaskPtr     AcquireBriefcaseToDir   (RepositoryInfoCR repositoryInfo, BeFileNameCR baseDirectory, bool doSync = true,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfoTaskPtr AcquireBriefcaseToDir  (RepositoryInfoCR repositoryInfo, BeFileNameCR baseDirectory, bool doSync = true,
                                                                                      BriefcaseFileNameCallback const& fileNameCallback = DefaultFileNameCallback, 
                                                                                      HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
    

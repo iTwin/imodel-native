@@ -52,7 +52,6 @@ AuthenticationHandlerPtr   authenticationHandler
     {
     m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, authenticationHandler);
     m_wsRepositoryClient->SetCredentials(credentials);
-    //m_eventServiceClient = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -253,7 +252,6 @@ Json::Value CreateLockInstanceJson
 (
 bvector<uint64_t> const& ids,
 BeBriefcaseId            briefcaseId,
-Utf8StringCR             description,
 Utf8StringCR             releasedWithRevisionId,
 LockableType             type,
 LockLevel                level
@@ -261,8 +259,7 @@ LockLevel                level
     {
     Json::Value properties;
 
-    properties[ServerSchema::Property::Description] = description;
-    properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();
+    properties[ServerSchema::Property::BriefcaseId]          = briefcaseId.GetValue();
     properties[ServerSchema::Property::ReleasedWithRevision] = releasedWithRevisionId;
     RepositoryJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
     RepositoryJson::LockLevelToJson(properties[ServerSchema::Property::LockLevel], level);
@@ -288,16 +285,15 @@ WSChangeset&                     changeset,
 WSChangeset::ChangeState const&  changeState,
 bvector<uint64_t> const&         ids,
 BeBriefcaseId                    briefcaseId,
-Utf8StringCR                     description,
 Utf8StringCR                     releasedWithRevisionId,
 LockableType                     type,
 LockLevel                        level
 )
     {
-    if (ids.empty())
+    if (ids.empty ())
         return;
-    ObjectId lockObject(ServerSchema::Schema::Repository, ServerSchema::Class::MultiLock, "MultiLock");
-    changeset.AddInstance(lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson(ids, briefcaseId, description, releasedWithRevisionId, type, level)));
+    ObjectId lockObject (ServerSchema::Schema::Repository, ServerSchema::Class::MultiLock, "MultiLock");
+    changeset.AddInstance (lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson (ids, briefcaseId, releasedWithRevisionId, type, level)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -324,10 +320,8 @@ bool                            includeOnlyExclusive = false
             objects[index].push_back(lock.GetId().GetValue());
         }
 
-    Utf8String description = ""; //needswork: Currently DgnDb doesn't pass us a description for locks. Do we really need it?
-
     for (int i = 0; i < 9; ++i)
-        AddToInstance(changeset, changeState, objects[i], briefcaseId, description, releasedWithRevisionId, static_cast<LockableType>(i / 3), static_cast<LockLevel>(i % 3));
+        AddToInstance(changeset, changeState, objects[i], briefcaseId, releasedWithRevisionId, static_cast<LockableType>(i / 3), static_cast<LockLevel>(i % 3));
     }
 
 //---------------------------------------------------------------------------------------
@@ -375,8 +369,8 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     //How to set description here?
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-    SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified);
+    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
+    SetLocksJsonRequestToChangeSet (locks.GetLockSet (), briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified);
     return SendChangesetRequest(changeset, cancellationToken);
     }
 
@@ -391,8 +385,8 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     //How to set description here?
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-    SetLocksJsonRequestToChangeSet(locks, briefcaseId, "", *changeset, WSChangeset::ChangeState::Modified);
+    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
+    SetLocksJsonRequestToChangeSet (locks, briefcaseId, "", *changeset, WSChangeset::ChangeState::Modified);
     return SendChangesetRequest(changeset, cancellationToken);
     }
 
@@ -405,7 +399,7 @@ BeBriefcaseId         briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    auto changeset = LockDeleteAllJsonRequest(briefcaseId);
+    auto changeset = LockDeleteAllJsonRequest (briefcaseId);
     return SendChangesetRequest(changeset, cancellationToken);
     }
 
@@ -418,7 +412,7 @@ BeBriefcaseId         briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return QueryLocksInternal(nullptr, &briefcaseId, cancellationToken);
+    return QueryLocksInternal (nullptr, &briefcaseId, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -431,7 +425,7 @@ BeBriefcaseId         briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return QueryLocksInternal(&ids, &briefcaseId, cancellationToken);
+    return QueryLocksInternal (&ids, &briefcaseId, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -443,7 +437,7 @@ LockableIdSet const&  ids,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return QueryLocksInternal(&ids, nullptr, cancellationToken);
+    return QueryLocksInternal (&ids, nullptr, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -456,14 +450,14 @@ const BeBriefcaseId*  briefcaseId,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
+    WSQuery query (ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
     Utf8String filter;
 
     //Format the filter
     if (nullptr == ids && nullptr != briefcaseId)
         {
-        filter.Sprintf("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
-        query.SetFilter(filter);
+        filter.Sprintf ("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue ());
+        query.SetFilter (filter);
         }
     else if (nullptr != ids)
         {
@@ -473,19 +467,19 @@ ICancellationTokenPtr cancellationToken
             {
             Utf8String idString;
             if (nullptr == briefcaseId)
-                idString.Sprintf("'%d-%llu'", (int) id.GetType(), id.GetId().GetValue());
+                idString.Sprintf ("'%d-%llu'", (int)id.GetType (), id.GetId().GetValue());
             else
-                idString.Sprintf("'%d-%llu-%u'", (int) id.GetType(), id.GetId().GetValue(), briefcaseId->GetValue());
+                idString.Sprintf ("'%d-%llu-%u'", (int)id.GetType (), id.GetId().GetValue(), briefcaseId->GetValue ());
 
             if (!first)
-                idsString.append(",");
-            idsString.append(idString);
+                idsString.append (",");
+            idsString.append (idString);
 
             first = false;
             }
 
-        filter.Sprintf("$id+in+[%s]", idsString.c_str());
-        query.SetFilter(filter);
+        filter.Sprintf ("$id+in+[%s]", idsString.c_str());
+        query.SetFilter (filter);
         }
 
     //Execute query
@@ -500,11 +494,11 @@ ICancellationTokenPtr cancellationToken
                 DgnLock        lock;
                 BeBriefcaseId  briefcaseId;
                 Utf8String     repositoryId;
-                if (!GetLockFromServerJson(value[ServerSchema::Properties], lock, briefcaseId, repositoryId))
+                if (!GetLockFromServerJson (value[ServerSchema::Properties], lock, briefcaseId, repositoryId))
                     continue;//NEEDSWORK: log an error
 
                 if (lock.GetLevel() != LockLevel::None)
-                    locks.AddLock(lock, briefcaseId, repositoryId);
+                    locks.AddLock (lock, briefcaseId, repositoryId);
                 }
             return DgnDbServerLockSetResult::Success(locks);
             }
@@ -516,7 +510,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::AcquireBriefcaseId(ICancellationTokenPtr cancellationToken) const
+AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::AcquireBriefcaseId (ICancellationTokenPtr cancellationToken) const
     {
     Json::Value briefcaseIdJson = Json::objectValue;
     briefcaseIdJson[ServerSchema::Instance] = Json::objectValue;
@@ -528,13 +522,13 @@ AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::AcquireBriefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionPtr ParseRevision(JsonValueCR jsonValue)
+DgnDbServerRevisionPtr ParseRevision (JsonValueCR jsonValue)
     {
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     DgnDbServerHost::Adopt(host);
     RevisionStatus status;
     DgnDbServerRevisionPtr indexedRevision = DgnDbServerRevision::Create(DgnRevision::Create(&status, jsonValue[ServerSchema::Property::Id].asString(),
-        jsonValue[ServerSchema::Property::ParentId].asString(), jsonValue[ServerSchema::Property::MasterFileId].asString()));
+    jsonValue[ServerSchema::Property::ParentId].asString(), jsonValue[ServerSchema::Property::MasterFileId].asString()));
     DgnDbServerHost::Forget(host);
     if (RevisionStatus::Success == status)
         {
@@ -552,11 +546,11 @@ DgnDbServerRevisionPtr ParseRevision(JsonValueCR jsonValue)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              03/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetAllRevisions(ICancellationTokenPtr cancellationToken) const
+DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetAllRevisions (ICancellationTokenPtr cancellationToken) const
     {
-    BeAssert(DgnDbServerHost::IsInitialized());
-    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
-    return RevisionsFromQuery(query, cancellationToken);
+    BeAssert (DgnDbServerHost::IsInitialized ());
+    WSQuery query (ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
+    return RevisionsFromQuery (query, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1038,9 +1032,9 @@ ICancellationTokenPtr cancellationToken
         else
             finalResult->SetError(indexResult.GetError());
         })->Then<DgnDbServerRevisionsResult>([=] ()
-            {
-            return *finalResult;
-            });
+        {
+        return *finalResult;
+        });
     }
 
 //---------------------------------------------------------------------------------------

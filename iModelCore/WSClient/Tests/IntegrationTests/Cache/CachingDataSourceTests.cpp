@@ -17,8 +17,9 @@
 #include <WebServices/Connect/ImsClient.h>
 #include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
+#include <WebServices/Cache/Util/JsonUtil.h>
 
-#include "../../../Cache/Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
 #include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 
@@ -31,6 +32,8 @@ void CachingDataSourceTests::SetUp()
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);
 
     CacheTransactionManager::SetAllowUnsafeAccess(true);
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, NativeLogging::LOG_INFO);
     }
 
 BeFileName GetTestCachePath()
@@ -77,6 +80,26 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     auto objResult = ds->GetObjects(key, query,
                                     ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
     ASSERT_TRUE(objResult.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobalDev_Succeeds)
+    {
+    UrlProvider::Initialize(UrlProvider::Dev, UrlProvider::DefaultTimeout, &m_localState);
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://dev-wsg20-eus.cloudapp.net/";
+    Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
+    Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
+    BeFileName cachePath = GetTestCachePath();
+
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
     }
 
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds)
