@@ -29,4 +29,5 @@ void PrintTo(const RepositoryDef& value, ::std::ostream* os)
 struct RepositorySchemaUpgradeTests : public ::testing::TestWithParam<RepositoryDef>
     {
     static void SetUpTestCase();
+    void SetUp();
     };

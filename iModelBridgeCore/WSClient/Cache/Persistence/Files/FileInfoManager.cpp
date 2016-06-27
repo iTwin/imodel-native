@@ -224,7 +224,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMult
             continue;
             }
 
-        if (SUCCESS != m_fileStorage.CleanupCachedFile(filePath))
+        if (SUCCESS != m_fileStorage.RemoveStoredFile(fileInfo))
             {
             return ERROR;
             }
@@ -259,7 +259,8 @@ BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ec
     Json::Value externalFileInfoJson;
     m_dbAdapter.GetJsonInstance(externalFileInfoJson, {ecClass.GetId(), ecInstanceId});
 
-    CleanupExternalFile(externalFileInfoJson);
+    FileInfo info(Json::nullValue, externalFileInfoJson, CachedInstanceKey(), this);
+    return m_fileStorage.RemoveStoredFile(info);
 
     return SUCCESS;
     }
@@ -363,13 +364,4 @@ ECInstanceKey FileInfoManager::InsertFileInfoOwnership(ECInstanceKeyCR ownerKey,
         }
 
     return ownershipKey;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::CleanupExternalFile(JsonValueCR externalFileInfoJson)
-    {
-    FileInfo info(Json::nullValue, externalFileInfoJson, CachedInstanceKey(), this);
-    return m_fileStorage.CleanupCachedFile(info.GetFilePath());
     }

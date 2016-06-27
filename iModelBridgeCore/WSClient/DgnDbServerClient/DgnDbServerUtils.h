@@ -29,20 +29,20 @@ namespace ServerSchema
     static Utf8CP ClassName = "className";
     namespace Schema
         {
-        static Utf8CP Repository = "DgnDbServer";
-        static Utf8CP Admin = "DgnDbServerAdmin";
+        static Utf8CP Repository = "BIMCSRepository";
+        static Utf8CP Project = "BIMCSProject";
         }
     namespace Plugin
         {
-        static Utf8CP Repository = "DgnDbServer";
-        static Utf8CP Admin = "DgnDbServerAdmin";
+        static Utf8CP Repository = "BIMCSRepository";
+        static Utf8CP Project = "BIMCSProject";
         }
     namespace Class
         {
         static Utf8CP Briefcase = "DgnDbBriefcase";
         static Utf8CP Revision = "Revision";
         static Utf8CP File = "DgnDbFile";
-        static Utf8CP Repository = "DgnDbRepository";
+        static Utf8CP Repository = "BIMRepository";
         static Utf8CP Lock = "Lock";
         static Utf8CP MultiLock = "MultiLock";
         static Utf8CP EventSAS = "EventSAS";
@@ -52,6 +52,7 @@ namespace ServerSchema
         {
         static Utf8CP Id = "Id";
         static Utf8CP RepositoryName = "RepositoryName";
+        static Utf8CP ProjectId = "ProjectId";
         static Utf8CP FileName = "FileName";
         static Utf8CP FileId = "FileId";
         static Utf8CP Index = "Index";
@@ -78,6 +79,7 @@ namespace ServerSchema
 		static Utf8CP BaseAddress = "BaseAddress";
         static Utf8CP TopicName = "TopicName";
         static Utf8CP EventTypes = "EventTypes";
+        static Utf8CP IsReadOnly = "IsReadOnly";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     }

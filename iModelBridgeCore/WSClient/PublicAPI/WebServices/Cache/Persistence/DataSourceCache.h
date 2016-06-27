@@ -272,7 +272,7 @@ struct DataSourceCache : public IDataSourceCache
         //  Cached file managment
         //--------------------------------------------------------------------------------------------------------------------------------+
 
-        WSCACHE_EXPORT BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativePath = BeFileName()) override;
+        WSCACHE_EXPORT BentleyStatus SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativeDir = BeFileName()) override;
         WSCACHE_EXPORT FileCache     GetFileCacheLocation(ObjectIdCR objectId, FileCache defaultLocation = FileCache::Temporary) override;
     };
 

@@ -38,9 +38,9 @@ private:
 
     DgnDbBriefcase (Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
-    DgnDbServerRevisionsTaskPtr PullMergeAndPushInternal (HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
+    DgnDbServerRevisionsTaskPtr PullMergeAndPushInternal (Utf8CP description, HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
-    DgnDbServerRevisionsTaskPtr PullMergeAndPushRepeated (HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
+    DgnDbServerRevisionsTaskPtr PullMergeAndPushRepeated (Utf8CP description, HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, int delay = 0) const;
 
 public:
@@ -61,12 +61,13 @@ public:
                                                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Pull and merge incomming revisions and then send the outgoing revisions.
+    //! @param[in] description Revision description.
     //! @param[in] downloadCallback Download progress callback.
     //! @param[in] uploadCallback Upload progress callback.
     //! @param[in] cancellationToken
     //! @param[in] attemptsCount Maximum count of retries if fail.
     //! @return Asynchronous task that returns success or an error and list of pulled and merged revisions.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr    PullMergeAndPush        (HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr    PullMergeAndPush        (Utf8CP description = nullptr, HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
                                                                                          HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
                                                                                          ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1) const;
 
