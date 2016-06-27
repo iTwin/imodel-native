@@ -20,14 +20,15 @@
         <ECProperty propertyName="Path" typeName="string" />
     </ECClass>
     <ECClass typeName="Folder" isDomainClass="True">
-        <ECProperty propertyName="FolderName" typeName="string" />
-		<ECProperty propertyName="Prefix" typeName="string" />
+		<ECProperty propertyName="FolderName" typeName="string" />
         <ECProperty propertyName="ProjectId" typeName="string" />
+        <ECProperty propertyName="ParentFolderId" typeName="string" />
+        <ECProperty propertyName="RootFolder" typeName="string" />
         <ECProperty propertyName="ContentType" typeName="string" />
         <ECProperty propertyName="ModifiedTimeStamp" typeName="string" />
-        <ECProperty propertyName="ModifiedBy" typeName="string" />
+        <ECProperty propertyName="ModifiedBY" typeName="string" />
         <ECProperty propertyName="CreatedTimeStamp" typeName="string" />
         <ECProperty propertyName="CreatedBy" typeName="string" />
-        <ECProperty propertyName="Url" typeName="string" />
+        <ECProperty propertyName="Path" typeName="string" />
     </ECClass>
 </ECSchema>
