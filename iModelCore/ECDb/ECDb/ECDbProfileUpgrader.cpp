@@ -29,8 +29,7 @@ DbResult ECDbProfileUpgrader_3717::_Upgrade(ECDbCR ecdb) const
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
         {
-        LOG.errorv("ECDb profile upgrade failed: Retrieving foreign key columns that have to be updated failed. %s", 
-                   ecdb.GetLastError().c_str());
+        LOG.errorv("ECDb profile upgrade failed. %s", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
@@ -50,7 +49,10 @@ DbResult ECDbProfileUpgrader_3717::_Upgrade(ECDbCR ecdb) const
 
             Statement tableInfoStmt;
             if (BE_SQLITE_OK != tableInfoStmt.Prepare(ecdb, tableInfoSql.c_str()))
+                {
+                LOG.errorv("ECDb profile upgrade failed. %s", ecdb.GetLastError().c_str());
                 return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                }
 
             while (BE_SQLITE_ROW == tableInfoStmt.Step())
                 {
@@ -80,7 +82,10 @@ DbResult ECDbProfileUpgrader_3717::_Upgrade(ECDbCR ecdb) const
         BE_SQLITE_OK != stmt.BindInt(1, DbSchemaPersistenceManager::BoolToSqlInt(true)) ||
         BE_SQLITE_OK != stmt.BindVirtualSet(2, colsToUpdate) ||
         BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed. %s", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
 
     BeAssert((int) colsToUpdate.size() == ecdb.GetModifiedRowCount());
 
