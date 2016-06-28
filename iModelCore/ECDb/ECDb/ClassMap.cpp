@@ -301,11 +301,10 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
 
     return table.CreateTrigger(triggerName.c_str(), DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
     }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                       Affan.Khan   02/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool loadingFromDisk)
+BentleyStatus ClassMap::ConfigureECClassId(std::vector<DbColumn const*> const& columns, bool loadingFromDisk)
     {
     if (!GetECDbMap().IsImportingSchema() && !loadingFromDisk)
         {
@@ -316,9 +315,6 @@ BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool l
     PropertyMapCP classIdPropertyMap = GetECClassIdPropertyMap();
     if (classIdPropertyMap == nullptr)
         {
-        std::vector<DbColumn const*> columns;
-        columns.push_back(&classIdColumn);
-
         PropertyMapPtr ecclassIdPropertyMap = ECClassIdPropertyMap::Create(Schemas(), *this, columns);
         if (ecclassIdPropertyMap == nullptr)
             //log and assert already done in child method
@@ -326,14 +322,42 @@ BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool l
 
         return GetPropertyMapsR().AddPropertyMap(ecclassIdPropertyMap, 1);
         }
-
-    if (classIdPropertyMap->GetSingleColumn() != &classIdColumn)
+    std::vector<DbColumn const*>  existingColumns;
+    classIdPropertyMap->GetColumns(existingColumns);
+    if (existingColumns.size() != columns.size())
         {
         BeAssert(false && "Invalid classMap");
         return ERROR;
         }
 
+    for (DbColumn const* col : existingColumns)
+        {
+        if (std::find(columns.begin(), columns.end(), col) == columns.end())
+            {
+            BeAssert(false && "Invalid classMap");
+            return ERROR;
+            }
+        }
+
+    for (DbColumn const* col : columns)
+        {
+        if (std::find(existingColumns.begin(), existingColumns.end(), col) == existingColumns.end())
+            {
+            BeAssert(false && "Invalid classMap");
+            return ERROR;
+            }
+        }
+
     return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                       Affan.Khan   02/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool loadingFromDisk)
+    {
+    std::vector<DbColumn const*> columns;
+    columns.push_back(&classIdColumn);
+    return ConfigureECClassId(columns, loadingFromDisk);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan   02/2016
@@ -613,6 +637,9 @@ IssueReporter const& ClassMap::Issues() const { return m_ecDbMap.Issues(); }
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
     {
+    if (GetClass().GetName() == "ModelHasGeometricElements")
+        printf("");
+
     if (savedGraph.find(this) != savedGraph.end())
         return BentleyStatus::SUCCESS;
 
@@ -712,7 +739,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     if (ecClassIdMapping == nullptr)
         return ERROR;
 
-    if (ConfigureECClassId(*ecClassIdMapping->ExpectingSingleColumn(), true) != SUCCESS)
+    if (ConfigureECClassId(ecClassIdMapping->GetColumns(), true) != SUCCESS)
         return ERROR;
 
     return AddPropertyMaps(ctx, baseClassMap, &classMapping, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;

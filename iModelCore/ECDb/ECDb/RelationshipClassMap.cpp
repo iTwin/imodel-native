@@ -306,6 +306,8 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
 //+---------------+---------------+---------------+---------------+---------------+------
 MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo)
     {   
+    if (GetClass().GetName() == "ModelHasGeometricElements")
+        printf("");
     //Don't call base class method as end table map requires its own handling
     BeAssert(GetClass().GetRelationshipClassCP() != nullptr && classMapInfo.GetMapStrategy().IsForeignKeyMapping());
     BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&classMapInfo) != nullptr);
@@ -485,8 +487,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
             if (SUCCESS != ValidateForeignKeyColumn(*fkCol, cardinalityImpliesNotNullOnFkCol, foreignKeyColumnKind))
                 return ERROR;
 
-            columns.m_fkColumnsPerFkTable.push_back(fkCol);
-
+            ColumnLists::push_back(columns.m_fkColumnsPerFkTable, fkCol);
             if (fkColName.empty())
                 fkColName.assign(fkCol->GetName());
             else
@@ -543,7 +544,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                     }
                 }
 
-            columns.m_fkColumnsPerFkTable.push_back(fkCol);
+            ColumnLists::push_back(columns.m_fkColumnsPerFkTable, fkCol);
             }
         }
 
@@ -612,7 +613,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
             return ERROR;
             }
 
-        columns.m_relECClassIdColumnsPerFkTable.push_back(relClassIdCol);
+        ColumnLists::push_back(columns.m_relECClassIdColumnsPerFkTable, relClassIdCol);
         DbColumn const* fkTableClassIdCol = fkTable.GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
         //If ForeignEndClassId column is missing create a virtual one
         if (fkTableClassIdCol == nullptr)
@@ -642,11 +643,11 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 }
             }
 
-        columns.m_ecInstanceIdColumnsPerFkTable.push_back(fkTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId));
-        columns.m_classIdColumnsPerFkTable.push_back(fkTableClassIdCol);
+        ColumnLists::push_back(columns.m_ecInstanceIdColumnsPerFkTable, fkTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId));
+        ColumnLists::push_back(columns.m_classIdColumnsPerFkTable, fkTableClassIdCol);
 
         if (referencedTableClassIdCol != nullptr)
-            columns.m_referencedEndECClassIdColumns.push_back(referencedTableClassIdCol);
+            ColumnLists::push_back(columns.m_referencedEndECClassIdColumns, referencedTableClassIdCol);
         else
             {
             //referenced table doesn't have a class id col --> create a virtual one in the foreign end table
@@ -674,7 +675,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                     }
                 }
 
-            columns.m_referencedEndECClassIdColumns.push_back(fkTableReferencedEndClassIdCol);
+            ColumnLists::push_back(columns.m_referencedEndECClassIdColumns, fkTableReferencedEndClassIdCol);
             }
 
         //if FK table is a joined table, CASCADE is not allowed as it would leave orphaned rows in the parent of joined table.
@@ -780,6 +781,18 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
     if (GetPropertyMapsR().AddPropertyMap(PropertyMapFactory::ClonePropertyMap(GetECDbMap(), *basePropMap, GetClass(), nullptr)) != SUCCESS)
         return ERROR;
 
+    //ECClassId property map
+    PropertyMapCP classIdPropertyMap = baseRelClassMap.GetECClassIdPropertyMap();
+    if (classIdPropertyMap == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    if (GetPropertyMapsR().AddPropertyMap(PropertyMapFactory::ClonePropertyMap(GetECDbMap(), *classIdPropertyMap, GetClass(), nullptr)) != SUCCESS)
+        return ERROR;
+
+
     //ForeignEnd
     RelationshipConstraintMap const& baseForeignEndConstraintMap = baseRelClassMap.GetConstraintMap(GetForeignEnd());
     if (baseForeignEndConstraintMap.GetECInstanceIdPropMap() == nullptr || 
@@ -854,6 +867,9 @@ MappingStatus RelationshipClassEndTableMap::_MapPart2(SchemaImportContext& schem
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus RelationshipClassEndTableMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* baseClassMap)
     {
+    if (GetClass().GetName() == "ModelHasGeometricElements")
+        printf("");
+
     if (ClassMap::_Load(loadGraph, ctx, mapInfo, baseClassMap) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
 

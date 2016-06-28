@@ -38,6 +38,7 @@ void SystemPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList&
 SystemPropertyMap::SystemPropertyMap(Type type, ECPropertyCR ecProperty, std::vector<DbColumn const*> columns, ECSqlSystemProperty kind)
     : PropertyMap(type, ecProperty, ecProperty.GetName().c_str(), nullptr), m_kind(kind)
     {
+    BeAssert(!columns.empty());
     std::set<DbTable const*> tables;
     for (DbColumn const* column : columns)
         {
