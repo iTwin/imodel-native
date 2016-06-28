@@ -72,7 +72,7 @@
     <ECEntityClass typeName="ABFoo" modifier="None">
         <ECProperty propertyName="stringABFoo" typeName="string" readOnly="false"/>
     </ECEntityClass>
-    <ECEntityClass typeName="AClassThatDoesNotGetMappedToDb" modifier="None">
+    <ECEntityClass typeName="AClassThatDoesNotGetMappedToDb" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00.01">
                 <MapStrategy>

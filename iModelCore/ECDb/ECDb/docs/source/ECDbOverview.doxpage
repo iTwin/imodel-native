@@ -513,6 +513,9 @@
             to the table of the root class. Each direct subclass of this class is mapped to its own joined table. Can only be used with @b SharedTable and @b AppliesToSubclasses being true.
         - Property @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class.
           If false (default), the MapStrategy only applies to this class.
+        - @b Note: @b NotMapped always applies to subclasses to, if there are any. It is therefore not possible to unmap an ECClass 
+        that has subclasses which are mapped. Consequently, for @em NotMapped @b AppliesToSubclasses must be set to @c True if the
+        ECClass is <b>not sealed</b>.
     - @b TableName (optional, required for MapStrategies @em ExistingTable and <i>SharedTable (non-polymorphic)</i>):
     Specify a table name for this class (instead of letting ECDb choose a name)
     - @b Indexes (optional) : List of indexes to be created for properties of this class.
@@ -524,15 +527,17 @@
         - @b Where (optional): Creates a partial index. Right now only the special value <b>IndexedColumnsAreNotNull</b> is supported which
         creates a partial index ignoring any NULL values in the indexed columns.
 
+
     ####Examples
 
     #### MapStrategy NotMapped
 
-        <ECEntityClass typeName="AClassThatDoesNotGetMappedToDb">
+        <ECEntityClass typeName="Foo" modifier="Sealed">
             <ECCustomAttributes>
                 <ClassMap xmlns="ECDbMap.01.00">
                     <MapStrategy>
                       <Strategy>NotMapped</Strategy>
+                       <AppliesToSubclasses>False</AppliesToSubclasses>
                     </MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>

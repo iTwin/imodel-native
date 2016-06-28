@@ -15,6 +15,153 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3717::_Upgrade(ECDbCR ecdb) const
+    {
+    StopWatch timer(true);
+    Utf8String sql;
+    sql.Sprintf("SELECT t.Id, t.Name, c.Name, c.Id FROM ec_Column c, ec_Table t "
+                "WHERE c.TableId=t.Id AND t.Type<>%d AND t.IsVirtual=%d AND ((c.ColumnKind & %d) <> 0 OR (c.ColumnKind & %d) <> 0) "
+                "AND c.NotNullConstraint=%d order by t.Id",
+                DbTable::Type::Existing, DbSchemaPersistenceManager::BoolToSqlInt(false),
+                Enum::ToInt(DbColumn::Kind::SourceECInstanceId), Enum::ToInt(DbColumn::Kind::TargetECInstanceId),
+                DbSchemaPersistenceManager::BoolToSqlInt(false));
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+
+    IdSet<DbColumnId> colsToUpdate;
+    DbTableId currentTableId;
+    Utf8String currentTableName;
+    bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> cols;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        DbTableId tableId = stmt.GetValueId<DbTableId>(0);
+        if (currentTableId.IsValid() && currentTableId != tableId)
+            {
+            //Next table found. Process columns of previous table now
+            Utf8String tableInfoSql;
+            tableInfoSql.Sprintf("pragma table_info('%s')", currentTableName.c_str());
+
+            Statement tableInfoStmt;
+            if (BE_SQLITE_OK != tableInfoStmt.Prepare(ecdb, tableInfoSql.c_str()))
+                {
+                LOG.errorv("ECDb profile upgrade failed. %s", ecdb.GetLastError().c_str());
+                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                }
+
+            while (BE_SQLITE_ROW == tableInfoStmt.Step())
+                {
+                Utf8CP colName = tableInfoStmt.GetValueText(1);
+                auto it = cols.find(colName);
+                if (it == cols.end())
+                    continue;
+
+                if (DbSchemaPersistenceManager::IsTrue(tableInfoStmt.GetValueInt(3)))
+                    colsToUpdate.insert(it->second);
+                }
+
+            cols.clear();
+            }
+
+        currentTableId = tableId;
+        currentTableName.assign(stmt.GetValueText(1));
+        cols[stmt.GetValueText(2)] = stmt.GetValueId<DbColumnId>(3);
+        }
+
+    stmt.Finalize();
+
+    if (colsToUpdate.empty())
+        return BE_SQLITE_OK;
+
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE ec_Column SET NotNullConstraint=? WHERE InVirtualSet(?,Id)") ||
+        BE_SQLITE_OK != stmt.BindInt(1, DbSchemaPersistenceManager::BoolToSqlInt(true)) ||
+        BE_SQLITE_OK != stmt.BindVirtualSet(2, colsToUpdate) ||
+        BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    BeAssert((int) colsToUpdate.size() == ecdb.GetModifiedRowCount());
+
+    timer.Stop();
+    LOG.debugv("ECDb profile upgrade: Updated NotNullConstraint column in table 'ec_Column' for "
+              "%" PRIu64 " Foreign Key columns. [%.4f ms]", (uint64_t) colsToUpdate.size(), timer.GetElapsedSeconds() * 1000.0);
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3715::_Upgrade(ECDbCR ecdb) const
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT c.Id FROM ec_Class c, ec_Schema s WHERE c.SchemaId=s.Id AND s.Name='ECDb_System' AND c.Name='ECSqlSystemProperties'") ||
+        BE_SQLITE_ROW != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed: Retrieving ECClassId of ECClass 'ECDb_System:ECSqlSystemProperties' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    ECClassId ecsqlSystemPropertiesClassId = stmt.GetValueId<ECClassId>(0);
+
+    if (BE_SQLITE_ROW == stmt.Step())
+        {
+        LOG.error("ECDb profile upgrade failed: More than one ECClass with name 'ECDb_System:ECSqlSystemProperties' found unexpectedly.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stmt.Finalize();
+
+    Utf8String updateClassMapSql;
+    updateClassMapSql.Sprintf("UPDATE ec_ClassMap SET MapStrategyAppliesToSubclasses=1 WHERE ClassId=%s", ecsqlSystemPropertiesClassId.ToString().c_str());
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(updateClassMapSql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating MapStrategyAppliesToSubclasses to 1 in table ec_ClassMap for ECClass 'ECSqlSystemProperties' failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (ecdb.GetModifiedRowCount() != 1)
+        {
+        LOG.error("ECDb profile upgrade failed: Updating MapStrategyAppliesToSubclasses to 1 in table ec_ClassMap for ECClass 'ECSqlSystemProperties' should have affected a row. It didn't affect a row though.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    Utf8String updateCASql;
+    updateCASql.Sprintf("UPDATE ec_CustomAttribute SET Instance=? WHERE ContainerId=%s", ecsqlSystemPropertiesClassId.ToString().c_str());
+
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, updateCASql.c_str()) ||
+        BE_SQLITE_OK != stmt.BindText(1, "<ClassMap xmlns=\"ECDbMap.01.01\">"
+                                         "  <MapStrategy>"
+                                         "    <Strategy>NotMapped</Strategy>"
+                                         "    <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                         "  </MapStrategy>"
+                                         "</ClassMap>", Statement::MakeCopy::No) ||
+        BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating the respective ClassMap custom attribute entry for ECSqlSystemProperties in the table 'ec_CustomAttribute' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (ecdb.GetModifiedRowCount() != 1)
+        {
+        LOG.error("ECDb profile upgrade failed: Updating the respective ClassMap custom attribute entry for ECSqlSystemProperties in the table 'ec_CustomAttribute' should have affected a row. It didn't affect a row though.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Updated the ClassMap custom attribute on the ECClass 'ECDb_System:ECSqlSystemProperties': ECProperty 'AppliesToSubclasses' was set to True.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3712::_Upgrade(ECDbCR ecdb) const
     {
     if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE ec_KindOfQuantity("
@@ -521,6 +668,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
         "            <ClassMap xmlns='ECDbMap.01.00.01'>"
         "                <MapStrategy>"
         "                   <Strategy>NotMapped</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses> "
         "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
