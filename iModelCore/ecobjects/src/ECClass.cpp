@@ -1602,12 +1602,11 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         }
 
     bool resolveConflicts = false;
-    bool ignoreBaseClassConflict = false;
     if (nullptr != conversionSchema)
         {
         ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
         if (nullptr != conversionClass && conversionClass->GetCustomAttribute("IgnoreBaseClass").IsValid())
-            ignoreBaseClassConflict = true;
+            return SchemaReadStatus::Success;
         if (conversionSchema->IsDefined("ResolvePropertyNameConflicts"))
             resolveConflicts = true;
 
@@ -1618,13 +1617,6 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         {
         if (stat == ECObjectsStatus::BaseClassUnacceptable)
             {
-            if (ignoreBaseClassConflict)
-                {
-                LOG.warningv("Ignoring incompatible base class '%s:%s' (%d) for '%s:%s' (%d) due to 'IgnoreBaseClass' override.",
-                             baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType(),
-                             GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType());
-                return SchemaReadStatus::Success;
-                }
             LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has a base class '%s:%s' (%d) but their types differ.",
                        GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
                        baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
