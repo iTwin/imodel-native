@@ -25,6 +25,6 @@ JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 #TFS 440168
 ECDbMappingTestFixture.MapRelationshipsToExistingTable
 
-#failing due to disallowing multiinheritence in a given case
+#failing due to disallowing multiinheritence in a given case (Affan)
 ECDbMappingTestFixture.UserDefinedIndexTest
 ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
