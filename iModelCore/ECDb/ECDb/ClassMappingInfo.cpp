@@ -245,8 +245,8 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
                 {
                 m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                                              "ECClass '%s' has two base ECClasses which don't map to the same tables. "
-                                                                             "Base ECClass '%s' mapped to primary table '%s' and joined table '%s'. "
-                                                                             "Base ECClass '%s' mapped to primary table '%s' and joined table '%s'.",
+                                                                             "Base ECClass '%s' is mapped to primary table '%s' and joined table '%s'. "
+                                                                             "Base ECClass '%s' is mapped to primary table '%s' and joined table '%s'.",
                                                                              m_ecClass.GetFullName(), parentClassMap.GetClass().GetFullName(),
                                                                              parentClassMap.GetPrimaryTable().GetName().c_str(), parentClassMap.GetJoinedTable().GetName().c_str(),
                                                                              anotherBaseClass->GetFullName(), anotherBaseClassMap->GetPrimaryTable().GetName().c_str(),
