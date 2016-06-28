@@ -282,8 +282,7 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
         m_nodeQueryProcessorMutexes = new std::mutex[nbWorkingThreads];
                 
         m_queryObjectP = queryObjectP;
-        m_isCancel = false;
-        m_isConsumingNode = false;
+        m_isCancel = false;        
         m_loadTexture = loadTexture;        
         }
 
@@ -298,12 +297,6 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
 
     bool IsComplete()
         {        
-        if (m_producedFoundNodes.WaitConsumption())
-            return false;
-
-        if (m_isConsumingNode == true)
-            return false;
-
         size_t threadInd;
 
         for (threadInd = 0; threadInd < m_searchingNodes.size(); threadInd++)
@@ -316,7 +309,13 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
                 }
 
             m_searchingNodeMutexes[threadInd].unlock();
+            }
 
+        if (threadInd != m_searchingNodes.size())
+            return false;
+
+        for (threadInd = 0; threadInd < m_nodeQueryProcessors.size(); threadInd++)
+            {            
             m_nodeQueryProcessorMutexes[threadInd].lock();
             if (m_nodeQueryProcessors[threadInd] != 0)
                 {
@@ -326,10 +325,13 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
 
             m_nodeQueryProcessorMutexes[threadInd].unlock();
             }
-
-        if (threadInd != m_searchingNodes.size())
+        
+        if (threadInd != m_nodeQueryProcessors.size())
             return false;
 
+        if (m_producedFoundNodes.WaitConsumption())
+            return false;        
+        
         for (threadInd = 0; threadInd < m_toLoadNodes.size(); threadInd++)
             {
             m_toLoadNodeMutexes[threadInd].lock();
@@ -366,7 +368,7 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
     bvector<bvector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>>> m_searchingNodes;
     std::mutex*                                               m_searchingNodeMutexes;
     bvector<bvector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>>> m_toLoadNodes;
-    std::mutex*                                               m_toLoadNodeMutexes;
+    std::mutex*                                               m_toLoadNodeMutexes;    
     ProducedNodeContainer<POINT, EXTENT>                      m_producedFoundNodes;
     bvector<bvector<IScalableMeshCachedDisplayNodePtr>>       m_foundMeshNodes;
     std::mutex*                                               m_foundMeshNodeMutexes;
@@ -378,8 +380,7 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
     //atomic<int>                                               m_nbSearchingNodes;    
     atomic<bool>                                              m_isCancel;
     bool                                                      m_loadTexture;
-    const bset<uint64_t>                                       m_clipVisibilities;
-    atomic<bool>                                              m_isConsumingNode;
+    const bset<uint64_t>                                      m_clipVisibilities;    
     IScalableMeshPtr                                          m_scalableMeshPtr;
     IScalableMeshDisplayCacheManagerPtr                       m_displayCacheManagerPtr;
     };
@@ -537,21 +538,25 @@ private:
                 {
                 HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> nodePtr;
 
-                processingQueryPtr->m_searchingNodeMutexes[threadId].lock();
+                //processingQueryPtr->m_searchingNodeMutexes[threadId].lock();
 
                 if (processingQueryPtr->m_searchingNodes[threadId].size() > 0)
                     {                    
                     nodePtr = processingQueryPtr->m_searchingNodes[threadId].back();
-                    processingQueryPtr->m_searchingNodes[threadId].pop_back();                    
+                    //processingQueryPtr->m_searchingNodes[threadId].pop_back();                    
                     }
 
-                processingQueryPtr->m_searchingNodeMutexes[threadId].unlock();
+                //processingQueryPtr->m_searchingNodeMutexes[threadId].unlock();
 
                 if (nodePtr != 0)
                     {
                     processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].lock();
                     processingQueryPtr->m_nodeQueryProcessors[threadId] = NodeQueryProcessor<DPoint3d, YProtPtExtentType>::Create(nodePtr, processingQueryPtr->m_queryObjectP, 0, processingQueryPtr->m_loadTexture, &processingQueryPtr->m_producedFoundNodes, threadId);
                     processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].unlock();
+
+                    processingQueryPtr->m_searchingNodeMutexes[threadId].lock();                                    
+                    processingQueryPtr->m_searchingNodes[threadId].pop_back();                                        
+                    processingQueryPtr->m_searchingNodeMutexes[threadId].unlock();
 
                     if (!processingQueryPtr->m_isCancel)
                         {
@@ -600,12 +605,16 @@ private:
                         m_nbMissed++;
                         continue;
                         }
-            
-                    //NEEDS_WORK_SM : Should be set only if a no
-                    processingQueryPtr->m_isConsumingNode = true;
+                                
+                    processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
 
-                    if (processingQueryPtr->m_producedFoundNodes.ConsumeNode(consumedNodePtr))
-                        {                        
+                    bool result = processingQueryPtr->m_producedFoundNodes.ConsumeNode(consumedNodePtr);
+
+                    if (result)
+                        {
+                        processingQueryPtr->m_toLoadNodes[threadId].push_back(consumedNodePtr);                                        
+                        processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
+
 #ifdef DISPLAYLOG
                         fprintf(logger.GetFile(), "Consumed node : %I64d\n", consumedNodePtr->GetBlockID().m_integerID);
                         fflush(logger.GetFile());                                        
@@ -620,9 +629,15 @@ private:
                         processingQueryPtr->m_foundMeshNodeMutexes[threadId].lock();
                         processingQueryPtr->m_foundMeshNodes[threadId].push_back(meshNodePtr);
                         processingQueryPtr->m_foundMeshNodeMutexes[threadId].unlock();
-                        }                    
 
-                    processingQueryPtr->m_isConsumingNode = false;
+                        processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
+                        processingQueryPtr->m_toLoadNodes[threadId].pop_back();                                        
+                        processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
+                        }
+                    else
+                        {
+                        processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();                    
+                        }
                     }                
                 }
 
@@ -1466,7 +1481,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int               
                                                               const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
                                                               bool                                                                     loadTexture,
                                                               const bvector<bool>&                                                     clipVisibilities,
-                                                              const DMatrix4d*                                                         prevLocalToView,
+                                                              const DMatrix4d*                                                         prevLocalToView, 
                                                               const DMatrix4d*                                                         newLocalToView)
     {
     assert(_IsQueryComplete(queryId) == true);
