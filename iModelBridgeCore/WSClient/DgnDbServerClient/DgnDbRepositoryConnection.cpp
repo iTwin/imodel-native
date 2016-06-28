@@ -544,9 +544,9 @@ const BeBriefcaseId*  briefcaseId
             Utf8String idString;
             //NEEDSWORK - encode namespace and value
             if (nullptr != briefcaseId)
-                idString.Sprintf("'%d-%s-%s-%u'", id.GetAuthority().GetValue(), id.GetNamespace(), id.GetValue(), briefcaseId->GetValue());
+                idString.Sprintf("'%d-%s-%s-%u'", id.GetAuthority().GetValue(), id.GetNamespace().c_str(), id.GetValue().c_str(), briefcaseId->GetValue());
             else
-                idString.Sprintf("'%d-%s-%s'", id.GetAuthority().GetValue(), id.GetNamespace(), id.GetValue());
+                idString.Sprintf("'%d-%s-%s'", id.GetAuthority().GetValue(), id.GetNamespace().c_str(), id.GetValue().c_str());
 
             if (!first)
                 idsString.append(",");
@@ -562,8 +562,6 @@ const BeBriefcaseId*  briefcaseId
 
         filter.Sprintf("$id+in+[%s]", idsString.c_str());
         }
-
-    filter.Sprintf("%s", filter, ServerSchema::Property::State);
 
     return filter;
     }
@@ -785,7 +783,7 @@ ICancellationTokenPtr cancellationToken
 
     if (!locksFilter.empty() && !codesFilter.empty())
         {
-        filter.Sprintf("(%s)+or+(%s)", locksFilter, codesFilter);
+        filter.Sprintf("(%s)+or+(%s)", locksFilter.c_str(), codesFilter.c_str());
         }
     else
         {
