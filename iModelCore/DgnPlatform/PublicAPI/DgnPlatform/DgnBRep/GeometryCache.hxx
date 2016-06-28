@@ -5,16 +5,6 @@
 //#include <NCollection_Array1.hxx>
 //#include <TopTools_IndexedMapOfShape.hxx>
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Woverloaded-virtual"
-/*
-    .../GeometryCache.hxx:23:53: error: 'GeometryCache::Box' hides overloaded virtual function [-Werror,-Woverloaded-virtual]
-    .../BVH_PrimitiveSet.hxx:48:25: note: hidden overloaded virtual function 'BVH_PrimitiveSet<double, 3>::Box' declared here: different number of parameters (0 vs 1)
-    Mantis 0027634
-*/
-#endif
-
 //! This class implements a primitive set that will be used for BVH build
 //! or sorting using radix sort.
 class GeometryCache : public BVH_PrimitiveSet<Standard_Real, 3>
@@ -28,6 +18,9 @@ public:
 
   //! Returns the length of set of sensitives
   Standard_EXPORT virtual Standard_Integer Size() const Standard_OVERRIDE;
+
+  //! Make inherited method Box() visible to avoid CLang compilation error
+  using BVH_PrimitiveSet<Standard_Real, 3>::Box;
 
   //! Returns bounding box of sensitive with index theIdx
   Standard_EXPORT virtual BVH_Box<Standard_Real, 3> Box (const Standard_Integer theIdx) const Standard_OVERRIDE;
@@ -59,9 +52,5 @@ private:
   TopTools_IndexedMapOfShape           myShapes;
   NCollection_Array1<Standard_Integer> myIndexes; //!< An index array for BVH, since it uses indexation from 0 (unlike the TopTools_IndexedMapOfShape map)
 };
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #endif // _GeometryCache_Header
