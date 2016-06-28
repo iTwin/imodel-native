@@ -26,11 +26,13 @@ typedef std::shared_ptr<struct DgnDbRepositoryConnection>               DgnDbRep
 typedef struct DgnDbRepositoryConnection const&                         DgnDbRepositoryConnectionCR;
 
 struct DgnDbLockSetResultInfo;
+struct DgnDbCodeLockSetResultInfo;
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
 DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbLockSetResultInfo, DgnDbServerLockSet);
+DEFINE_TASK_TYPEDEFS(DgnDbCodeLockSetResultInfo, DgnDbServerCodeLockSet);
 
 //=======================================================================================
 //! DgnDbLockSet results.
@@ -56,6 +58,35 @@ public:
     DGNDBSERVERCLIENT_EXPORT const DgnLockInfoSet& GetLockStates () const;
 };
 
+//=======================================================================================
+//! DgnDbCodeSet and DgnDbLockSet results.
+//@bsiclass                                    Algirdas.Mikoliunas              06/2016
+//=======================================================================================
+struct DgnDbCodeLockSetResultInfo
+    {
+    //__PUBLISH_SECTION_END__
+    private:
+        DgnCodeSet      m_codes;
+        DgnCodeInfoSet  m_codeStates;
+        DgnLockSet      m_locks;
+        DgnLockInfoSet  m_lockStates;
+
+    public:
+        DgnDbCodeLockSetResultInfo() {};
+        void AddCode(const DgnCode dgnCode, DgnCodeState dgnCodeState, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
+        void AddLock(const DgnLock dgnLock, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
+
+        //__PUBLISH_SECTION_START__
+    public:
+        //! Returns the set of locks.
+        DGNDBSERVERCLIENT_EXPORT const DgnCodeSet& GetCodes() const;
+        //! Returns lock state information.
+        DGNDBSERVERCLIENT_EXPORT const DgnCodeInfoSet& GetCodeStates() const;
+        //! Returns the set of locks.
+        DGNDBSERVERCLIENT_EXPORT const DgnLockSet& GetLocks() const;
+        //! Returns lock state information.
+        DGNDBSERVERCLIENT_EXPORT const DgnLockInfoSet& GetLockStates() const;
+    };
 
 //=======================================================================================
 //! Connection to a repository on server.
@@ -112,6 +143,9 @@ private:
     //! Returns all available locks for given lock ids and briefcase id.
     DgnDbServerLockSetTaskPtr QueryLocksInternal (LockableIdSet const* ids, const BeSQLite::BeBriefcaseId* briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Returns all available codes and locks for given briefcase id.
+    DgnDbServerCodeLockSetTaskPtr QueryCodesLocksInternal(DgnCodeSet const* codes, LockableIdSet const* locks, const BeSQLite::BeBriefcaseId* briefcaseId, ICancellationTokenPtr cancellationToken) const;
+
     //! Sends a request from changeset.
     DgnDbServerStatusTaskPtr SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -139,17 +173,26 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AcquireLocks (LockRequestCR locks, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId,
                                                                   ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Aquire the requested set of locks.
+    //! @param[in] locks Set of locks to acquire
+    //! @param[in] set of codes to acquire
+    //! @param[in] briefcaseId
+    //! @param[in] lastRevisionId Last pulled revision id
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AcquireCodesLocks(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId,
+        ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Release certain locks.
     //! @param[in] locks Set of locks to release
     //! @param[in] briefcaseId
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DemoteLocks (const DgnLockSet& locks, BeSQLite::BeBriefcaseId briefcaseId,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DemoteCodesLocks (const DgnLockSet& locks, DgnCodeSet const& codes, BeSQLite::BeBriefcaseId briefcaseId,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete all currently held locks by specific briefcase.
     //! @param[in] briefcaseId
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr RelinquishLocks (BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr RelinquishCodesLocks (BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -203,5 +246,15 @@ public:
     //! @param[in] ids lock ids to query
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocksById (LockableIdSet const& ids, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all codes and locks by ids.
+    //! @param[in] briefcaseId
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryCodesLocksById(DgnCodeSet const& codes, LockableIdSet const& locks, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all codes and locks by briefcase id.
+    //! @param[in] briefcaseId
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
