@@ -55,10 +55,9 @@ public:
                 }
             else
                 {
-                wstringstream ss;
-                ss << m_pDataSource + L"p_" << m_pID << L".bin";
-                auto filename = ss.str().c_str();
-
+                wchar_t buffer[10000];
+                swprintf(buffer, L"%sp_%llu.bin", m_pDataSource.c_str(), m_pID);
+                WString filename(buffer);
                 if (s_stream_from_disk)
                     {
                     this->LoadFromLocal(filename);
@@ -450,10 +449,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
             {
-            wstringstream ss;
-            ss << m_pathToHeaders + L"n_" << ConvertBlockID(blockID) << L".bin";
-            auto filename = ss.str();
-
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
+            std::wstring filename(buffer);
             if (s_stream_from_disk)
                 {
                 BeFile file;
@@ -804,9 +802,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
                 if (m_use_node_header_grouping || s_stream_from_grouped_store)
                     {
-                    wstringstream ss;
-                    ss << m_rootDirectory + L"MasterHeaderWithGroups.bin";
-                    auto filename = ss.str();
+                    wchar_t buffer[10000];
+                    swprintf(buffer, L"%sMasterHeaderWithGroups.bin", m_rootDirectory.c_str());
+                    std::wstring filename(buffer);
                     if (m_nodeHeaderGroups.empty())
                         {
                         char* masterHeaderBuffer = nullptr;
@@ -974,12 +972,11 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             {
             HPRECONDITION(blockID.IsValid());
 
-            auto blockIDConvert = ConvertBlockID(blockID);
             if (NULL != DataTypeArray && countData > 0)
                 {
-                wstringstream ss;
-                ss << m_pathToPoints + L"p_" << blockIDConvert << L".bin";
-                auto filename = ss.str();
+                wchar_t buffer[10000];
+                swprintf(buffer, L"%sp_%llu.bin", m_pathToPoints.c_str(), blockID.m_integerID);
+                std::wstring filename(buffer);
                 BeFile file;
                 auto fileOpened = OPEN_FILE(file, filename.c_str(), BeFileAccess::Write);
                 if (BeFileStatus::Success != fileOpened)
@@ -1001,10 +998,10 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 Byte* data = new Byte[compressedPacket.GetDataSize() + sizeof(uint32_t)];
                 auto UncompressedSize = (uint32_t)uncompressedPacket.GetDataSize();
                 reinterpret_cast<uint32_t&>(*data) = UncompressedSize;
-                if (m_pointCache.count(blockIDConvert) > 0)
+                if (m_pointCache.count(blockID.m_integerID) > 0)
                     {
                     // must update data count
-                    auto& points = this->m_pointCache[blockIDConvert];
+                    auto& points = this->m_pointCache[blockID.m_integerID];
                     points.resize(UncompressedSize);
                     memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
                     }
@@ -1285,10 +1282,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             SerializeHeaderToBinary(header, headerData, headerSize);
             //SerializeHeaderToJSON(header, blockID, block);
 
-            wstringstream ss;
-            ss << m_pathToHeaders + L"n_" << ConvertBlockID(blockID) << L".bin";
-
-            auto filename = ss.str();
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
+            std::wstring filename(buffer);
             BeFile file;
             if (BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Write) || BeFileStatus::Success == file.Create(filename.c_str()))
                 {

@@ -87,9 +87,9 @@ class SMNodeGroupMasterHeader : public std::map<size_t, SMGroupNodeIds>, public 
             {
             assert(!m_pOldMasterHeader.empty()); // Old master header must be set!
 
-            wstringstream ss;
-            ss << WString(pi_pOutputDirPath + L"/MasterHeaderWithGroups.bin");
-            auto group_header_filename = ss.str();
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%s/MasterHeaderWithGroups.bin", pi_pOutputDirPath.c_str());
+            std::wstring group_header_filename(buffer);
             BeFile file;
             if (BeFileStatus::Success == OPEN_FILE(file, group_header_filename.c_str(), BeFileAccess::Write) ||
                 BeFileStatus::Success == file.Create(group_header_filename.c_str()))
@@ -375,9 +375,9 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
         void Save()
             {
             WString path(m_pOutputDirPath + L"\\g_");
-            wstringstream ss;
-            ss << path << this->GetID() << L".bin";
-            auto group_filename = ss.str();
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%s%llu.bin", path.c_str(), this->GetID());
+            std::wstring group_filename(buffer);
             BeFile file;
             if (BeFileStatus::Success == OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Write) ||
                 BeFileStatus::Success == file.Create(group_filename.c_str()))
@@ -447,9 +447,9 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             //static int nbDownloadedNodeHeaders = 0;
             //++nbDownloadedNodeHeaders;
             //std::cout << "total node headers fetched: " << nbDownloadedNodeHeaders << std::endl;
-            wstringstream ss;
-            ss << m_pDataSourceName + L"n_" << pi_pNodeID << L".bin";
-            auto filename = ss.str();
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%sn_%llu.bin", m_pDataSourceName.c_str(), pi_pNodeID);
+            std::wstring filename(buffer);
             if (s_stream_from_disk)
                 {
                 BeFile file;
@@ -489,9 +489,9 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             }
         StatusInt LoadFromLocal(std::unique_ptr<uint8_t>& pi_pBuffer, uint32_t& pi_pBufferSize)
             {
-            wstringstream ss;
-            ss << m_pDataSourceName << this->GetID() << L".bin";
-            auto group_filename = ss.str();
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%s%llu.bin", m_pDataSourceName.c_str(), this->GetID());
+            std::wstring group_filename(buffer);
             BeFile file;
             if (BeFileStatus::Success == OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Read))
                 {
@@ -514,9 +514,9 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             {
             assert(m_stream_store != nullptr);
 
-            wstringstream ss;
-            ss << m_pDataSourceName << this->GetID() << L".bin";
-            auto group_filename = ss.str();
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%s%llu.bin", m_pDataSourceName.c_str(), this->GetID());
+            std::wstring group_filename(buffer);
             StatusInt status;
             m_stream_store->DownloadBlob(group_filename.c_str(), [&pi_pBuffer, &pi_pBufferSize, &status](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
                 {

@@ -318,6 +318,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
 
+        virtual IScalableMeshNodePtr               _GetRootNode() override;
+
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
         virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
@@ -421,6 +423,12 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _ConvertToCloud(const WString& pi_pOutputDirPath) const override { return ERROR; }
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
+        virtual IScalableMeshNodePtr               _GetRootNode() override
+            {
+            assert(false);
+            auto ptr = HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>(nullptr);
+            return new ScalableMeshNode<POINT>(ptr);
+            }
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}
