@@ -372,7 +372,7 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DgnDbServerClient\DgnDbLocks.cpp">
+    <ClCompile Include="DgnDbServerClient\DgnDbRepositoryManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp">
@@ -872,7 +872,7 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevision.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbLocks.h">
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Hierarchy\ExtendedDataDelegate.h">

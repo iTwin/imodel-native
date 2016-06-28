@@ -16,7 +16,7 @@ DgnDbServerClientMkiSourceDir = $(DgnDbServerClientSourceDirectory)DgnDbServerCl
 DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerCommon.h                      \
 		                        $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcase.h                  \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbClient.h                     \
-								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbLocks.h                      \
+								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryManager.h          \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h       \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevision.h             \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerResult.h               \
@@ -40,7 +40,7 @@ $(o)DgnDbRepositoryConnection$(oext)       : $(DgnDbServerClientMkiSourceDir)Dgn
 
 $(o)DgnDbBriefcase$(oext)                  : $(DgnDbServerClientMkiSourceDir)DgnDbBriefcase.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)DgnDbLocks$(oext)                      : $(DgnDbServerClientMkiSourceDir)DgnDbLocks.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+$(o)DgnDbRepositoryManager$(oext)          : $(DgnDbServerClientMkiSourceDir)DgnDbRepositoryManager.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbClient$(oext)                     : $(DgnDbServerClientMkiSourceDir)DgnDbClient.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
