@@ -44,6 +44,8 @@ namespace ServerSchema
         static Utf8CP Repository = "BIMRepository";
         static Utf8CP Lock = "Lock";
         static Utf8CP MultiLock = "MultiLock";
+        static Utf8CP Code = "Code";
+        static Utf8CP MultiCode = "MultiCode";
         }
     namespace Property
         {
@@ -73,8 +75,14 @@ namespace ServerSchema
         static Utf8CP ConflictingLocks = "ConflictingLocks";
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
         static Utf8CP IsReadOnly = "IsReadOnly";
+        static Utf8CP AuthorityId = "AuthorityId";
+        static Utf8CP Namespace = "Namespace";
+        static Utf8CP Value = "Value";
+        static Utf8CP StateRevision = "StateRevision";
+        static Utf8CP State = "State";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
+    static Utf8CP DeleteAllCodes = "DeleteAll";
     }
 
 namespace Locks
@@ -161,5 +169,7 @@ struct DgnDbServerHost : public Dgn::DgnPlatformLib::Host
 
 bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
+bool GetCodeFromServerJson (JsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
+void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR revisionId);
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

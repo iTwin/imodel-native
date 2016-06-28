@@ -64,6 +64,29 @@ DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Algirdas.Mikoliunas               06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IBriefcaseManager::Response DgnDbRepositoryManager::QueryCodesLocksAvailable(Request const& req, DgnDbR db)
+    {
+    LockableIdSet lockIds;
+    for (auto const& lock : req.Locks().GetLockSet())
+        lockIds.insert(lock.GetLockableId());
+
+    DgnLockInfoSet lockStates;
+    DgnCodeInfoSet codeStates;
+    this->_QueryStates(lockStates, codeStates, lockIds, req.Codes());
+
+    if (lockStates.empty() && codeStates.empty())
+        {
+        return IBriefcaseManager::Response(IBriefcaseManager::RequestPurpose::Query, req.Options(), RepositoryStatus::Success);
+        }
+
+    // NEEDSWORK - handle errors
+    Response response(IBriefcaseManager::RequestPurpose::Query, req.Options(), RepositoryStatus::ServerUnavailable);
+    return response;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request const& req, DgnDbR db, bool queryOnly)
@@ -72,28 +95,20 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
     if (!m_connection)
         return Response (purpose, req.Options(), RepositoryStatus::ServerUnavailable);
 
-    if (req.Locks ().IsEmpty ())
+    if (req.Locks ().IsEmpty () && req.Codes().empty())
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
 
     Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
 
-    // NEEDSWORK_LOCKS: Handle codes
+    if (queryOnly)
+        {
+        return QueryCodesLocksAvailable(req, db);
+        }
+
     // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
-    auto result = m_connection->AcquireLocks (req.Locks (), db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
+    auto result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
-        if (queryOnly)
-            {
-            // NEEDSWORK_LOCKS: Handle queryOnly...this is a hack
-            DgnLockSet locks;
-            for (auto const& lock : req.Locks().GetLockSet())
-                locks.insert(DgnLock(lock.GetLockableId(), LockLevel::None));
-
-            auto retVal = _Demote(locks, req.Codes(), db);
-            BeAssert(RepositoryStatus::Success == retVal);
-            return IBriefcaseManager::Response(purpose, req.Options(), retVal);
-            }
-
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
         }
     else
@@ -130,11 +145,11 @@ RepositoryStatus DgnDbRepositoryManager::_Demote (DgnLockSet const& locks, DgnCo
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    if (locks.empty ())
+    if (locks.empty () && codes.empty())
         return RepositoryStatus::Success;
 
     // NEEDSWORK_LOCKS: Handle codes
-    auto result = m_connection->DemoteLocks (locks, db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
+    auto result = m_connection->DemoteCodesLocks (locks, codes, db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return RepositoryStatus::Success;
@@ -153,11 +168,10 @@ RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    // NEEDSWORK_LOCKS: Handle codes
-    if (Resources::Locks != (which & Resources::Locks)) 
+    if (Resources::None == which) 
         return RepositoryStatus::Success;
 
-    auto result = m_connection->RelinquishLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
+    auto result = m_connection->RelinquishCodesLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return RepositoryStatus::Success;//NEEDSWORK: Can delete locks partially
@@ -176,12 +190,12 @@ RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks,
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    // NEEDSWORK_LOCKS: Handle codes
     // NEEDSWORK_LOCKS: Handle unavailable locks + codes
-    auto result = m_connection->QueryLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
+    auto result = m_connection->QueryCodesLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         locks = result.GetValue ().GetLocks ();
+        codes = result.GetValue ().GetCodes ();
         return RepositoryStatus::Success;
         }
     else
@@ -198,14 +212,15 @@ RepositoryStatus DgnDbRepositoryManager::_QueryStates (DgnLockInfoSet& lockState
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    if (locks.empty ())
+    if (locks.empty () && codes.empty())
         return RepositoryStatus::Success;
 
-    // NEEDSWORK_LOCKS: Handle codes
-    auto result = m_connection->QueryLocksById (locks, m_cancellationToken)->GetResult ();
+    auto result = m_connection->QueryCodesLocksById (codes, locks, m_cancellationToken)->GetResult ();
+
     if (result.IsSuccess ())
         {
         lockStates = result.GetValue ().GetLockStates ();
+        codeStates = result.GetValue ().GetCodeStates ();
         return RepositoryStatus::Success;
         }
     else
