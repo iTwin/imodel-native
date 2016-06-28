@@ -924,10 +924,15 @@ BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPt
 //static
 BentleyStatus IndexMappingInfo::CreateFromIdSpecificationCAs(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR ecdb, ECN::ECClassCR ecClass)
     {
-    for (std::pair<Utf8String, Utf8String> const& idSpecCA : GetIdSpecCustomAttributeNames())
+    std::vector<std::pair<Utf8CP, Utf8CP>> idSpecCAs;
+    idSpecCAs.push_back(std::make_pair("BusinessKeySpecification", "PropertyName"));
+    idSpecCAs.push_back(std::make_pair("GlobalIdSpecification", "PropertyName"));
+    idSpecCAs.push_back(std::make_pair("SyncIDSpecification", "Property"));
+
+    for (std::pair<Utf8CP, Utf8CP> const& idSpecCA : idSpecCAs)
         {
-        Utf8StringCR caName = idSpecCA.first;
-        Utf8CP caPropName = idSpecCA.second.c_str();
+        Utf8CP caName = idSpecCA.first;
+        Utf8CP caPropName = idSpecCA.second;
         IECInstancePtr ca = ecClass.GetCustomAttribute(caName);
         if (ca == nullptr)
             continue;
@@ -936,8 +941,8 @@ BentleyStatus IndexMappingInfo::CreateFromIdSpecificationCAs(std::vector<IndexMa
         if (ECObjectsStatus::Success != ca->GetValue(v, caPropName) || v.IsNull() || Utf8String::IsNullOrEmpty(v.GetUtf8CP()))
             {
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                                         "Invalid %s on ECClass '%s'. Could not retrieve value of property '%s' from the custom attribute.",
-                                                                         caName.c_str(), ecClass.GetFullName(), caPropName);
+                                                          "Failed to map ECClass %s. Its custom attribute %s is invalid. Could not retrieve value of property '%s' from the custom attribute.",
+                                                          ecClass.GetFullName(), caName, caPropName);
             return ERROR;
             }
 
@@ -945,14 +950,14 @@ BentleyStatus IndexMappingInfo::CreateFromIdSpecificationCAs(std::vector<IndexMa
         if (ecClass.GetPropertyP(idPropName) == nullptr)
             {
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                          "Invalid %s on ECClass '%s'. The property '%s' specified in the custom attribute does not exist in the ECClass.",
-                                                          caName.c_str(), ecClass.GetFullName(), idPropName);
+                                                          "Failed to map ECClass %s. Its custom attribute %s is invalid. The property '%s' specified in the custom attribute does not exist in the ECClass.",
+                                                          ecClass.GetFullName(), caName, idPropName);
             return ERROR;
             }
 
         Utf8String indexName;
         indexName.Sprintf("ix_%s_%s_%s_%s", ecClass.GetSchema().GetNamespacePrefix().c_str(), ecClass.GetName().c_str(),
-                          caName.c_str(), idPropName);
+                          caName, idPropName);
 
         std::vector<Utf8String> indexPropNameVector;
         indexPropNameVector.push_back(idPropName);
@@ -960,22 +965,6 @@ BentleyStatus IndexMappingInfo::CreateFromIdSpecificationCAs(std::vector<IndexMa
         }
 
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-std::vector<std::pair<Utf8String, Utf8String>> const& IndexMappingInfo::GetIdSpecCustomAttributeNames()
-    {
-    if (s_idSpecCustomAttributeNames.empty())
-        {
-        s_idSpecCustomAttributeNames.push_back(std::make_pair("BusinessKeySpecification", "PropertyName"));
-        s_idSpecCustomAttributeNames.push_back(std::make_pair("GlobalIdSpecification", "PropertyName"));
-        s_idSpecCustomAttributeNames.push_back(std::make_pair("SyncIDSpecification", "Property"));
-        }
-
-    return s_idSpecCustomAttributeNames;
     }
 
 //---------------------------------------------------------------------------------

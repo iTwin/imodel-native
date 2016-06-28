@@ -193,8 +193,6 @@ struct IndexMappingInfo : RefCountedBase
         std::vector<Utf8String> m_properties;
         bool m_addPropsAreNotNullWhereExp;
 
-        static std::vector<std::pair<Utf8String, Utf8String>> s_idSpecCustomAttributeNames;
-
         IndexMappingInfo(Utf8CP name, bool isUnique, std::vector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
             : m_name(name), m_isUnique(isUnique), m_properties(properties), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
             {}
@@ -208,8 +206,6 @@ struct IndexMappingInfo : RefCountedBase
         IndexMappingInfo(Utf8CP name, IndexMappingInfo const& rhs) : m_name(name), m_isUnique(rhs.m_isUnique), m_properties(rhs.m_properties), m_addPropsAreNotNullWhereExp(rhs.m_addPropsAreNotNullWhereExp) {}
 
         static BentleyStatus CreateFromIdSpecificationCAs(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR, ECN::ECClassCR);
-
-        static std::vector<std::pair<Utf8String, Utf8String>> const& GetIdSpecCustomAttributeNames();
 
     public:
         static IndexMappingInfoPtr Clone(Utf8CP name, IndexMappingInfo const& rhs) { return new IndexMappingInfo(name, rhs); }
