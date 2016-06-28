@@ -30,8 +30,8 @@
         </Bindings>
     </Part>
 
-    <!-- We need this shim part because there is no LKG for WinRT, and thus WinRT builds cannot get a partfile from the LKG to see that the part excludes WinRT. -->
-    <Part Name="OpenCASCADEShim" ExcludePlatforms="WinRT*">
+    <!-- We need this shim part because there is no LKG for WinRT,MacOS and Linux, and thus builds cannot get a partfile from the LKG to see that the part excludes WinRT, MacOS or Linux. -->
+    <Part Name="OpenCASCADEShim" ExcludePlatforms="WinRT*,MacOS*,Linux*">
         <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/>
     </Part>
 
