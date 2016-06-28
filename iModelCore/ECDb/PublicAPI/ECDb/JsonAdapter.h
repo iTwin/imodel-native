@@ -374,24 +374,21 @@ public:
     };
 
 //=================================================================================
-//! Reads information associated with an instance of the class in the JSON format.
-//! @remarks This is mainly a convenience wrapper over @ref ECSqlStatement and
-//! @ref JsonECSqlSelectAdapter. The recommended use is for a simple retrieval of instances
-//! of a class. The utility however also provides the capability to gather other
-//! instances that have been deemed to be retrieved along with the requested
-//! instance for display purposes through the RelatedItemsDisplaySpecification
-//! custom attribute.
+//! Gets a cache of related items display specifications 
+//! @remarks Related Items Display Specifications are specified as schema custom attributes
+//! and used to identify all relationship paths originating from a parent class that need to 
+//! be presented along side the parent instance
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Ramanujam.Raman      09/2013
 //+===============+===============+===============+===============+===============+======
-struct JsonReader : NonCopyableClass
-    {
+struct RelatedItemsDisplaySpecificationsCache : public BeSQLite::Db::AppData
+{
     struct RelationshipPathInfo
-        {
+    {
         Utf8String m_path;
         ECN::ECSchemaCR m_defaultSchema;
         bset<ECN::ECClassCP> m_derivedClasses;
-        
+
         RelationshipPathInfo(Utf8CP path, ECN::ECSchemaCR defaultSchema) : m_path(path), m_defaultSchema(defaultSchema) {}
 
         RelationshipPathInfo(RelationshipPathInfo const& other) : m_defaultSchema(other.m_defaultSchema)
@@ -406,48 +403,62 @@ struct JsonReader : NonCopyableClass
             return *this;
             }
 
-        void InsertDerivedClass(ECN::ECClassCR derivedClass) 
-            { 
+        void InsertDerivedClass(ECN::ECClassCR derivedClass)
+            {
             m_derivedClasses.insert(&derivedClass);
             }
-        };
+    };
 
-    typedef bmap<ECN::ECClassCP, bvector<RelationshipPathInfo>> RelationshipPathInfosByClass;
     typedef bmap<ECN::ECClassId, bvector<ECN::ECRelationshipPath>> RelationshipPathsByClassId;
+    typedef bmap<ECN::ECClassCP, bvector<RelationshipPathInfo>> RelationshipPathInfosByClass;
 
-    struct RelatedItemsDisplaySpecificationsCache : public BeSQLite::Db::AppData
-        {
-        private:
-            ECDbCR m_ecDb;
-            RelationshipPathsByClassId m_pathsByClass;
+private:
+    ECDbCR m_ecDb;
+    RelationshipPathsByClassId m_pathsByClass;
 
-            BentleyStatus GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass) const;
-            BentleyStatus GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass, ECN::ECSchemaCR customAttributeContainerSchema, ECN::IECInstanceCR customAttributeSpecification) const;
-            RelationshipPathInfo& AddEntryToRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass, ECN::ECClassCR parentClass, Utf8CP path, ECN::ECSchemaCR defaultSchema) const;
-            
-            void RemoveDuplicates(RelationshipPathInfosByClass& pathInfoByClass) const;
-            void SortRelationshipPaths();
+    BentleyStatus GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass) const;
+    BentleyStatus GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass, ECN::ECSchemaCR customAttributeContainerSchema, ECN::IECInstanceCR customAttributeSpecification) const;
+    RelationshipPathInfo& AddEntryToRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass, ECN::ECClassCR parentClass, Utf8CP path, ECN::ECSchemaCR defaultSchema) const;
 
-            BentleyStatus ExtractRelationshipPaths(RelationshipPathInfosByClass const& pathInfosByClass);
+    void RemoveDuplicates(RelationshipPathInfosByClass& pathInfoByClass) const;
+    void SortRelationshipPaths();
 
-            void AddEntryToCache(ECN::ECClassCR parentClass, ECN::ECRelationshipPath const& path);
+    BentleyStatus ExtractRelationshipPaths(RelationshipPathInfosByClass const& pathInfosByClass);
 
-            void DumpCache(ECN::ECClassCP ecClass = nullptr) const;
+    void AddEntryToCache(ECN::ECClassCR parentClass, ECN::ECRelationshipPath const& path);
 
-            ECN::ECClassCP ResolveClass(Utf8StringCR possiblyQualifiedClassName, ECN::ECSchemaCR defaultSchema) const;
-           
-            static BeSQLite::Db::AppData::Key const& GetKey() { static BeSQLite::Db::AppData::Key s_key; return s_key; }
+    void DumpCache(ECN::ECClassCP ecClass = nullptr) const;
 
-        public:
-            explicit RelatedItemsDisplaySpecificationsCache(ECDbCR ecDb) : Db::AppData(), m_ecDb(ecDb) {}
-            ~RelatedItemsDisplaySpecificationsCache() {}
+    ECN::ECClassCP ResolveClass(Utf8StringCR possiblyQualifiedClassName, ECN::ECSchemaCR defaultSchema) const;
 
-            static RelatedItemsDisplaySpecificationsCache* Get(ECDbCR);
+    static BeSQLite::Db::AppData::Key const& GetKey() { static BeSQLite::Db::AppData::Key s_key; return s_key; }
 
-            BentleyStatus Initialize();
-            bool TryGetRelatedPaths(bvector<ECN::ECRelationshipPath>&, ECN::ECClassCR) const;
-        };
+    explicit RelatedItemsDisplaySpecificationsCache(ECDbCR ecDb) : Db::AppData(), m_ecDb(ecDb) {}
 
+    BentleyStatus Initialize();
+public:
+    ~RelatedItemsDisplaySpecificationsCache() {}
+
+    //! Get the RelatedItemsDisplaySpecificationCache for the specified ECDb
+    ECDB_EXPORT static RelatedItemsDisplaySpecificationsCache* Get(ECDbCR);
+
+    //! Get all related paths given a parent class
+    ECDB_EXPORT bool TryGetRelatedPaths(bvector<ECN::ECRelationshipPath>& relationshipPaths, ECN::ECClassCR parentClass) const;
+};
+
+//=================================================================================
+//! Reads information associated with an instance of the class in the JSON format.
+//! @remarks This is mainly a convenience wrapper over @ref ECSqlStatement and
+//! @ref JsonECSqlSelectAdapter. The recommended use is for a simple retrieval of instances
+//! of a class. The utility however also provides the capability to gather other
+//! instances that have been deemed to be retrieved along with the requested
+//! instance for display purposes through the RelatedItemsDisplaySpecification
+//! custom attribute.
+//! @ingroup ECDbGroup
+// @bsiclass                                                 Ramanujam.Raman      09/2013
+//+===============+===============+===============+===============+===============+======
+struct JsonReader : NonCopyableClass
+{
 private:
     ECDbCR m_ecDb;
     ECN::ECClassCP m_ecClass;
@@ -508,14 +519,14 @@ public:
     //! @ref JsonECSqlSelectAdapter::GetRowInstance for more details. 
     //! @see Read()
     ECDB_EXPORT BentleyStatus ReadInstance(JsonValueR jsonInstance, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::FormattedStrings)) const;
-    };
+};
 
 //=======================================================================================
 //! Insert JSON instances into ECDb file.
 //@bsiclass                                                 Ramanujam.Raman      02/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonInserter : NonCopyableClass
-    {
+{
 private:
     ECN::ECClassCR m_ecClass;
     ECInstanceInserter m_ecinstanceInserter;
@@ -549,14 +560,14 @@ public:
     //! @param[in] jsonValue the instance data
     //! @return SUCCESS if insert is successful, error code otherwise
     ECDB_EXPORT BentleyStatus Insert (ECInstanceKey& newInstanceKey, RapidJsonValueCR jsonValue) const;
-    };
+};
 
 //=======================================================================================
 //! Update EC content in the ECDb file through JSON values
 //@bsiclass                                                 Ramanujam.Raman      02/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonUpdater : NonCopyableClass
-    {
+{
 private:
     ECDbCR m_ecdb;
     ECN::ECClassCR m_ecClass;
@@ -614,14 +625,14 @@ public:
     //! @return SUCCESS in case of successful execution of the underlying ECSQL UPDATE. This means,
     //! SUCCESS is also returned if the specified instance does not exist in the file. ERROR otherwise.
     ECDB_EXPORT BentleyStatus Update(ECInstanceId const& instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
-    };
+};
 
 //=======================================================================================
 //! Delete EC content in the ECDb file
 //@bsiclass                                                 Ramanujam.Raman      02/2013
 //+===============+===============+===============+===============+===============+======
 struct JsonDeleter : NonCopyableClass
-    {
+{
 private:
     ECInstanceDeleter m_ecinstanceDeleter;
 
@@ -643,7 +654,7 @@ public:
     //! @return SUCCESS in case of successful execution of the underlying ECSQL DELETE. This means,
     //! SUCCESS is also returned if the specified instance does not exist in the file. ERROR otherwise.
     ECDB_EXPORT BentleyStatus Delete (ECInstanceId const& instanceId) const;
-    };
+};
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
