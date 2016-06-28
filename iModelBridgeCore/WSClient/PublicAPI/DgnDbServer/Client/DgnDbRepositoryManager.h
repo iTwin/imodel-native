@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbServer/Client/DgnDbLocks.h $
+|     $Source: PublicAPI/DgnDbServer/Client/DgnDbRepositoryManager.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
