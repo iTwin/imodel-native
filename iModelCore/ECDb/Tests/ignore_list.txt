@@ -27,37 +27,6 @@ ECDbMappingTestFixture.AddDerivedClassOfConstraintOnNsideOf1NRelationship
 ECDbMappingTestFixture.AddDerivedClassOfConstraintOn1sideOf1NRelationship
 ECDbMappingTestFixture.AddDerivedClassOfConstraintsForNNRelationship
 
-#failing due to disallowing multiinheritence in a given case
+#failing due to disallowing multiinheritence in a given case (Affan)
 ECDbMappingTestFixture.UserDefinedIndexTest
 ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
-
-ECDbFileInfoTests.IterateThroughEmbeddedFiles
-    # DgnDb61-16Q2-Dev WinX64 DEBUG
-    # Notified Hassan and Krischan
-    # F:\DgnDb61-16Q2-Dev\src-staging\ECDb\Tests\Published\ECDbFileInfoTests.cpp(249): error: Value of: file.GetFileSize ()
-    # Actual: 9059
-    # Expected: 9027
-
-JsonInserterTests.InsertJsonCppJSON
-    # DgnDb61-16Q2-Dev WinX64 DEBUG
-    # Notified Hassan and Krischan
-    # F:\DgnDb61-16Q2-Dev\src-staging\ECDb\Tests\Published\JsonInserterTests.cpp(91): error: Value of: false
-    # Actual: false
-    # Expected: true
-    # Inserted and Retrieved Json doesn't match
-
-JsonInserterTests.InsertRapidJson
-    # DgnDb61-16Q2-Dev WinX64 DEBUG
-    # Notified Hassan and Krischan
-    # F:\DgnDb61-16Q2-Dev\src-staging\ECDb\Tests\Published\JsonInserterTests.cpp(165): error: Value of: false
-    # Actual: false
-    # Expected: true
-    # Inserted and Retrieved Json doesn't match
-
-JsonReaderTests.JsonValueStruct
-    # DgnDb61-16Q2-Dev WinX64 DEBUG
-    # Notified Hassan and Krischan
-    # F:\DgnDb61-16Q2-Dev\src-staging\ECDb\Tests\Published\JsonReaderTests.cpp(199): error: Value of: false
-    # Actual: false
-    # Expected: true
-    # Inserted and Retrieved Json doesn't match
