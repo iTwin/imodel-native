@@ -234,46 +234,23 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
         options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
     else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
         {
-        for (ECClassCP baseClass : GetECClass().GetBaseClasses())
+        for (ECClassCP anotherBaseClass : m_ecClass.GetBaseClasses())
             {
-            ClassMap const* baseClassMap = GetECDbMap().GetClassMap(*baseClass);
-            BeAssert(baseClassMap != nullptr);
-            if (baseClassMap == &parentClassMap)
+            ClassMap const* anotherBaseClassMap = GetECDbMap().GetClassMap(*anotherBaseClass);
+            BeAssert(anotherBaseClassMap != nullptr);
+            if (anotherBaseClassMap == &parentClassMap || anotherBaseClassMap->GetMapStrategy().IsNotMapped())
                 continue;
 
-            if (baseClassMap->GetMapStrategy().IsNotMapped())
-                continue;
-
-            if (&parentClassMap.GetPrimaryTable() != &baseClassMap->GetPrimaryTable() || &parentClassMap.GetJoinedTable() != &baseClassMap->GetJoinedTable())
+            if (&parentClassMap.GetPrimaryTable() != &anotherBaseClassMap->GetPrimaryTable() || &parentClassMap.GetJoinedTable() != &anotherBaseClassMap->GetJoinedTable())
                 {
-                std::vector<ClassMap const*> pathA, pathB;
-                parentClassMap.GetPathToParentOfJoinedTable(pathA);
-                baseClassMap->GetPathToParentOfJoinedTable(pathB);
-               
-                Utf8String msg ="Failed to map ECClass '" + Utf8String(GetECClass().GetFullName()) + "' which has more than one base classes that map to a different shared tables. Which is not supported. User must correct hierarchy and remove one of the baseClass or adjust ECDbMap MapStrategy accordingly.\n";
-                msg.append("First BaseClass '" + Utf8String(parentClassMap.GetClass().GetFullName()) + "' lead to following path \n");
-                for (size_t i = 0; i < pathA.size(); i++)
-                    {
-                    msg.append(Utf8String(i, '\t'));
-                    msg.append(pathA[i]->GetClass().GetFullName()).append(" [PrimaryTable= ").append(pathA[i]->GetPrimaryTable().GetName()).append("]");
-                    if (!pathA[i]->IsMappedToSingleTable())
-                        msg.append(" [JoinedTable= ").append(pathA[i]->GetJoinedTable().GetName()).append("]");
-
-                    msg.append("\n");
-                    }
-
-                msg.append("Second BaseClass '" + Utf8String(baseClassMap->GetClass().GetFullName()) + "' lead to following path \n");
-                for (size_t i = 0; i < pathB.size(); i++)
-                    {
-                    msg.append(Utf8String(i, '\t'));
-                    msg.append(pathB[i]->GetClass().GetFullName()).append(" [PrimaryTable= ").append(pathB[i]->GetPrimaryTable().GetName()).append("]");
-                    if (!pathB[i]->IsMappedToSingleTable())
-                        msg.append(" [JoinedTable= ").append(pathB[i]->GetJoinedTable().GetName()).append("]");
-
-                    msg.append("\n");
-                    }
-                msg.append("There could be more such base classes for this class but only first two discrepancies found is reported.");
-                m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, msg.c_str());
+                m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                             "ECClass '%s' has two base ECClasses which don't map to the same tables. "
+                                                                             "Base ECClass '%s' mapped to primary table '%s' and joined table '%s'. "
+                                                                             "Base ECClass '%s' mapped to primary table '%s' and joined table '%s'.",
+                                                                             m_ecClass.GetFullName(), parentClassMap.GetClass().GetFullName(),
+                                                                             parentClassMap.GetPrimaryTable().GetName().c_str(), parentClassMap.GetJoinedTable().GetName().c_str(),
+                                                                             anotherBaseClass->GetFullName(), anotherBaseClassMap->GetPrimaryTable().GetName().c_str(),
+                                                                             anotherBaseClassMap->GetJoinedTable().GetName().c_str());
                 return ERROR;
                 }
             }
