@@ -31,10 +31,11 @@
         #define BENTLEYCONFIG_OS_APPLE_MACOS
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
         #define BENTLEYCONFIG_VIRTUAL_MEMORY   //  Assume the OS swapping is better than anything we would do
+        #define BENTLEYCONFIG_OPENCASCADE
     #endif
 
     #define BENTLEYCONFIG_DISPLAY_APPLE
-    #define BENTLEYCONFIG_OPENCASCADE
+
 
 #elif defined (ANDROID)
 
