@@ -144,7 +144,7 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 //----------------------------------------------------------------------------------------
 #define QUERY_ID 0 
 
-static double s_minScreenPixelsPerPoint = 1000;
+static double s_minScreenPixelsPerPoint = 350;
 
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
