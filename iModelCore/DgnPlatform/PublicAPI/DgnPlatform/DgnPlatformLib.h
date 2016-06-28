@@ -317,6 +317,8 @@ public:
             bool IsUsingAnRtlLocale() {return _IsUsingAnRtlLocale();}
             DGNPLATFORM_EXPORT virtual FreeType_LibraryP _GetFreeTypeLibrary();
             FreeType_LibraryP GetFreeTypeLibrary() {return _GetFreeTypeLibrary();}
+            DGNPLATFORM_EXPORT void Suspend();
+            DGNPLATFORM_EXPORT void Resume();
         };
 
         //! Allows interaction between the host and the LineStyleManager.
