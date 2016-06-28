@@ -31,7 +31,11 @@ CompileOptionsMki               = $(SrcScMeshSchema)ScalableMeshSchema.mki
 meshmodelDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
                                   $(BuildContext)PublicAPI/DgnPlatform/DgnPlatform.h \
                                   $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaCommon.h           \
-                                  $(ScMeshSchemaPublicApiSrc)IMeshSpatialModel.h            
+                                  $(ScMeshSchemaPublicApiSrc)IMeshSpatialModel.h  \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshHandler.h \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshDomain.h \
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaApi.h \
+                                  $(SrcScMeshSchema)ScalableMeshDisplayCacheManager.h
 always:
     !~@mkdir $(o)
 
@@ -56,6 +60,13 @@ MultiCompileDepends=$(_MakeFileSpec)
 #--------------------------------------------------------------------------------------
 $(o)IMeshSpatialModel$(oext)        : $(SrcScMeshSchema)IMeshSpatialModel.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
+$(o)ScalableMeshHandler$(oext)        : $(SrcScMeshSchema)ScalableMeshHandler.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshDomain$(oext)        : $(SrcScMeshSchema)ScalableMeshDomain.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshDisplayCacheManager$(oext)        : $(SrcScMeshSchema)ScalableMeshDisplayCacheManager.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+
+
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
@@ -74,11 +85,8 @@ DLM_OBJECT_FILES            = $(objs)
 DLM_OBJECT_DEST             = $(o)
 DLM_OBJECT_PCH              = $(o)ScalableMeshSchemaPCH$(oext) 
 DLM_DEST                    = $(o)
-DLM_NOMSBUILTINS            = 1
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
-DLM_NO_DLS                  = 1
-DLM_NO_DEF                  = 1
 
 LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
@@ -87,7 +95,9 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                                 $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
                                 $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ScalableMesh$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)qvision$(libext)
 
 
 #$(SYSTEM_LIBRARIES)

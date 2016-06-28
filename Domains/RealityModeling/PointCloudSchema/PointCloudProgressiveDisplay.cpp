@@ -105,7 +105,7 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
                 axis[2]= (float)direction.z;
                 }
             else
-                axis [__min (2, settings.GetPlaneAxis ())] = 1.0f;
+                axis [std::min<uint16_t>(2, settings.GetPlaneAxis ())] = 1.0f;
 
             PointCloudVortex::ShaderOptionfv( PtShaderOptions::PLANE_SHADER_VECTOR, axis ); 
             }
@@ -149,7 +149,7 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
             axis[2]= (float)direction.z;
             }
         else
-            axis [__min (2, settings.GetPlaneAxis ())] = 1.0f;
+            axis [std::min<uint16_t>(2, settings.GetPlaneAxis ())] = 1.0f;
         PointCloudVortex::ShaderOptionfv( PtShaderOptions::PLANE_SHADER_VECTOR, axis ); 
         }
     else
