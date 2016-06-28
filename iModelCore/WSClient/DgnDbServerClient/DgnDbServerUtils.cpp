@@ -239,4 +239,95 @@ void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const
         info.SetTracked ();
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas              06/2016
+//---------------------------------------------------------------------------------------
+bool CodeStateFromJson(DgnCodeStateR codeState, JsonValueCR value, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
+    {
+    if (value.isNull())
+        return false;
+
+    uint64_t stateInt;
+
+    if (value.isString())
+        {
+        if (SUCCESS != BeStringUtilities::ParseUInt64(stateInt, value.asCString()))
+            return false;
+        }
+    else
+        stateInt = (uint64_t)value.asInt64();
+
+    if (stateInt == 0)
+        {
+        codeState.SetAvailable();
+        return true;
+        }
+    else if (stateInt == 1)
+        {
+        codeState.SetReserved(briefcaseId);
+        return true;
+        }
+    else if (stateInt == 2)
+        {
+        codeState.SetUsed(revisionId);
+        return true;
+        }
+    else if (stateInt == 3)
+        {
+        codeState.SetDiscarded(revisionId);
+        return true;
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas              06/2016
+//---------------------------------------------------------------------------------------
+bool GetCodeFromServerJson(JsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
+    {
+    BeInt64Id      authorityId;
+    Utf8String     nameSpace = "";
+    Utf8String     value = "";
+
+    if (!BeInt64IdFromJson(authorityId, serverJson[ServerSchema::Property::AuthorityId]) ||
+        !StringFromJson(nameSpace, serverJson[ServerSchema::Property::Namespace]) ||
+        !StringFromJson(value, serverJson[ServerSchema::Property::Value]) ||
+        !RepositoryJson::BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
+        !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::State], briefcaseId, revisionId))
+        return false;
+
+    // State revision is optional
+    StringFromJson(revisionId, serverJson[ServerSchema::Property::StateRevision]);
+
+    code = DgnCode(DgnAuthorityId(authorityId.GetValue()), value, nameSpace);
+    
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas              06/2016
+//---------------------------------------------------------------------------------------
+void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR revisionId)
+    {
+    DgnCodeInfo&      info = *codeInfos.insert(DgnCodeInfo(dgnCode)).first;
+    
+    if (codeState.IsAvailable())
+        {
+        info.SetAvailable();
+        }
+    else if(codeState.IsReserved())
+        {
+        info.SetReserved(briefcaseId);
+        }
+    else if (codeState.IsUsed())
+        {
+        info.SetUsed(revisionId);
+        }
+    else if (codeState.IsDiscarded())
+        {
+        info.SetDiscarded(revisionId);
+        }
+    }
+
 END_BENTLEY_DGNDBSERVER_NAMESPACE
