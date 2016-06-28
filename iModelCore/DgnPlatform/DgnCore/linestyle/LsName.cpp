@@ -267,12 +267,16 @@ ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, ColorDef lineColor, 
     //  If a modified copy is required, the caller passed the copy. 
     BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
 
+#if defined (BENTLEYCONFIG_GRAPHICS_DIRECTX)
     DVec3d normal;
     normal.Init(0, 1, 0);
     DPoint3d zero;
     zero.Zero();
     //  NEEDSWORK_LINESTYLES -- it doesn't make sense to mirror this. Figure out why QV needs it
     m_transformForTexture.InitFromMirrorPlane(zero, normal);
+#else
+    m_transformForTexture.InitIdentity();
+#endif
     }
 
 //---------------------------------------------------------------------------------------
