@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 namespace DgnDbServerEvent
     {
     static Utf8CP EventTopic = "EventTopic";
-    static Utf8CP UserId = "FromEventSubscriptionId";
+    static Utf8CP FromEventSubscriptionId = "FromEventSubscriptionId";
     namespace LockEventProperties
         {
         static Utf8CP ObjectId = "ObjectId";

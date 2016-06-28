@@ -81,7 +81,6 @@ private:
     static EventServiceClient*         m_eventServiceClient;
     DgnDbServerEventSubscriptionPtr m_eventSubscription;
     DgnDbServerEventSASPtr m_eventSAS;
-    static BeMutex s_eventSubscriptionLock;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
@@ -97,7 +96,7 @@ private:
     bool SetEventServiceClient(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Sets EventServiceSubscription and EventServiceSAS.
-    bool SetEventServiceSubscriptionAndSAS(bool isCreate, bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+    bool SetEventServiceSubscriptionAndSAS(bool isCreate, bool getOnlySAS = false, bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);

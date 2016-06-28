@@ -616,8 +616,6 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 EventServiceClient* DgnDbRepositoryConnection::m_eventServiceClient = nullptr;
 
-BeMutex DgnDbRepositoryConnection::s_eventSubscriptionLock;
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
@@ -688,15 +686,19 @@ bvector<DgnDbServerEvent::DgnDbServerEventType> oldEventTypes
 bool DgnDbRepositoryConnection::SetEventServiceSubscriptionAndSAS
 (
 bool isCreate,
+bool getOnlySAS,
 bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, 
 ICancellationTokenPtr cancellationToken
 )
     {
-    auto eventSubscription = (isCreate) ? GetEventServiceSubscriptionId(eventTypes, cancellationToken)->GetResult() : UpdateEventServiceSubscriptionId(eventTypes, cancellationToken)->GetResult();
-    if (!eventSubscription.IsSuccess())
-        return false;
+    if (!getOnlySAS)
+        {
+        auto eventSubscription = (isCreate) ? GetEventServiceSubscriptionId(eventTypes, cancellationToken)->GetResult() : UpdateEventServiceSubscriptionId(eventTypes, cancellationToken)->GetResult();
+        if (!eventSubscription.IsSuccess())
+            return false;
 
-    m_eventSubscription = eventSubscription.GetValue();
+        m_eventSubscription = eventSubscription.GetValue();
+        }
 
     auto sasToken = GetEventServiceSAS(cancellationToken)->GetResult();
     if (!sasToken.IsSuccess())
@@ -718,7 +720,7 @@ ICancellationTokenPtr cancellationToken
     {
     if (m_eventServiceClient == nullptr)
         {
-        if (!SetEventServiceSubscriptionAndSAS(true, eventTypes, cancellationToken))
+        if (!SetEventServiceSubscriptionAndSAS(true, false, eventTypes, cancellationToken))
             return false;
 
         EventServiceClient *eventServiceClient = new EventServiceClient
@@ -733,7 +735,7 @@ ICancellationTokenPtr cancellationToken
         }
   
     bool isSame = CompareEventTypes(eventTypes, m_eventSubscription->GetEventTypes());
-    bool isSuccess = (!isSame) ? SetEventServiceSubscriptionAndSAS(false, eventTypes, cancellationToken) : true;
+    bool isSuccess = (!isSame) ? SetEventServiceSubscriptionAndSAS(false, false, eventTypes, cancellationToken) : true;
 
     if (!isSuccess)
         return false;
@@ -820,8 +822,20 @@ WSChangeset&									 changeset,
 const WSChangeset::ChangeState&					 changeState
 )
     {
-    ObjectId eventSubscriptionObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventSubscription, "EventSubscription");
-    changeset.AddInstance(eventSubscriptionObject, changeState, std::make_shared<Json::Value>(DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionJson(eventTypes, eventSubscriptionId)));
+    ObjectId eventSubscriptionObject
+        (
+        ServerSchema::Schema::Repository, 
+        ServerSchema::Class::EventSubscription, 
+        "EventSubscription"
+        );
+    changeset.AddInstance
+                         (
+                         eventSubscriptionObject, 
+                         changeState, 
+                         std::make_shared<Json::Value>(
+                         DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSChangeSetJson
+                                                                (eventTypes, eventSubscriptionId))
+                         );
     }
 
 //---------------------------------------------------------------------------------------
@@ -870,7 +884,28 @@ bool longpolling
         }
     else
         {
-        return false;
+        //Retry logic for getting an event
+        int retryCount = 0;
+        bool isSuccess = false;
+        while (retryCount <= 3)
+            {
+            retryCount++;
+            if (status == HttpStatus::Unauthorized)
+                {
+                if (!SetEventServiceSubscriptionAndSAS(false, false, nullptr, nullptr))
+                    continue;
+                m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
+                }
+            response = m_eventServiceClient->MakeReceiveDeleteRequest(longpolling);
+            status = response.GetHttpStatus();
+            if (status == HttpStatus::OK || status == HttpStatus::NoContent)
+                {
+                isSuccess = true;
+                returnResponse = response;
+                break;
+                }
+            }
+        return isSuccess;
         }
     }
 
