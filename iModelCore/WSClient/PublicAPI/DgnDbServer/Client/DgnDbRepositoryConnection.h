@@ -175,7 +175,7 @@ public:
 
     //! Aquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
-    //! @param[in] set of codes to acquire
+    //! @param[in] codes Set of codes to acquire
     //! @param[in] briefcaseId
     //! @param[in] lastRevisionId Last pulled revision id
     //! @param[in] cancellationToken
@@ -184,6 +184,7 @@ public:
 
     //! Release certain locks.
     //! @param[in] locks Set of locks to release
+    //! @param[in] codes Set of codes to release
     //! @param[in] briefcaseId
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DemoteCodesLocks (const DgnLockSet& locks, DgnCodeSet const& codes, BeSQLite::BeBriefcaseId briefcaseId,
@@ -236,19 +237,20 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocks (BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all available locks for given lock ids and briefcase id.
-    //! @param[in] ids lock ids to query
+    //! @param[in] ids Lock ids to query
     //! @param[in] briefcaseId
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocksById (LockableIdSet const& ids, BeSQLite::BeBriefcaseId briefcaseId,
                                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all available locks for given lock ids and for any briefcase.
-    //! @param[in] ids lock ids to query
+    //! @param[in] ids Lock ids to query
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocksById (LockableIdSet const& ids, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all codes and locks by ids.
-    //! @param[in] briefcaseId
+    //! @param[out] codes
+    //! @param[out] locks
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryCodesLocksById(DgnCodeSet const& codes, LockableIdSet const& locks, ICancellationTokenPtr cancellationToken = nullptr) const;
 
