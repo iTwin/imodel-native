@@ -880,12 +880,6 @@ void RelationshipMappingInfo::DetermineCardinality(ECRelationshipConstraintCR so
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::vector<std::pair<Utf8String, Utf8String>> IndexMappingInfo::s_idSpecCustomAttributeNames;
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
 BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR ecdb, ECClassCR ecClass, ECDbClassMap const* customClassMap)
     {
     if (customClassMap != nullptr)
