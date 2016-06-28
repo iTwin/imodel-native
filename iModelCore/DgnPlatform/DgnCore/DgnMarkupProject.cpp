@@ -1442,6 +1442,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         
         ViewFlags flags;
         memset(&flags, 0, sizeof(flags));
+        flags.weights = true;
         controller->GetViewFlagsR() = flags;
 
         for (auto const& catId : DgnCategory::QueryCategories(rdlModel.GetDgnDb()))
