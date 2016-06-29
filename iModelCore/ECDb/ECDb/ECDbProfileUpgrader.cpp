@@ -13,6 +13,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3720::_Upgrade(ECDbCR ecdb) const
+    {
+    return BE_SQLITE_ERROR_ProfileTooOld;
+    }
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3717::_Upgrade(ECDbCR ecdb) const
