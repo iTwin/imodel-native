@@ -38,8 +38,6 @@
 
 #include <icu4c/unicode/putil.h>
 #include <icu4c/unicode/ucnv.h>
-#include <icu4c/unicode/udata.h>
-#include <icu4c/unicode/uclean.h>
 
 // Conflicts with ICU.
 #define NO_UCHAR_TYPEDEF
@@ -50,7 +48,6 @@
 
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeFileName.h>
-#include <Bentley/BeFile.h>
 #include <Bentley/WString.h>
 #include <Bentley/ScopedArray.h>
 #include <Bentley/BeAssert.h>
@@ -2930,48 +2927,8 @@ WString  BeStringUtilities::ParseFileURI (WCharCP uri, WCharCP basePath)
 //---------------------------------------------------------------------------------------
 void BeStringUtilities::Initialize(BeFileNameCR assetPathW)
     {
-    // While ICU allows you to manually set the data file path, on Win32, it only accepts locale char*.
-    // This is unacceptable because install paths are Unicode, are under user control, and thus cannot be reliably represented in locale char*.
-    // However, we can short-circuit ICU's path searching and file open code by opening the data ourselves and passing a pointer.
-    // We must retain this data for the lifetime of calls to ICU.
-
-    // ICU can only maintain data statically per-process.
-    // However, the data file is version-specific to ICU, and contains all required locale data, so there should be no need to change during a process.
-
-    typedef bvector<Byte> T_IcuData;
-    static T_IcuData* s_icuData;
-
-    BeSystemMutexHolder holdBeSystemMutex;
-    
-    if (nullptr != s_icuData)
-        return;
-
-    s_icuData = new T_IcuData();
-
-    WString icuDataFileName(U_ICUDATA_NAME, BentleyCharEncoding::Utf8);
-    icuDataFileName += L".dat";
-
-    BeFileName icuDataPath = assetPathW;
-    icuDataPath.AppendToPath(icuDataFileName.c_str());
-
-    BeFile icuDataFile;
-    if (BeFileStatus::Success != icuDataFile.Open(icuDataPath.c_str(), BeFileAccess::Read))
-        {
-        BeAssert (false);
-        return;
-        }
-    
-    if (BeFileStatus::Success != icuDataFile.ReadEntireFile(*s_icuData))
-        {
-        BeAssert (false);
-        return;
-        }
-
-    UErrorCode icuErr = U_ZERO_ERROR;
-    udata_setCommonData(&s_icuData->at(0), &icuErr);
-
-    if (U_FAILURE(icuErr))
-        { BeAssert(false); }
+    Utf8String assetPath(assetPathW.c_str());
+    u_setDataDirectory(assetPath.c_str());
     }
 
 //---------------------------------------------------------------------------------------
