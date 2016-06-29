@@ -29,7 +29,6 @@ struct ValueExp : ComputedExp
         void SetIsConstant(bool isConstant) { m_isConstant = isConstant; }
     public:
         virtual ~ValueExp() {}
-
         bool IsConstant() const { return m_isConstant; }
     };
 

@@ -451,16 +451,17 @@ PropertyMapCollection& PropertyMapCollection::operator= (PropertyMapCollection&&
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus PropertyMapCollection::AddPropertyMap(PropertyMapPtr const& propertyMap)
+BentleyStatus PropertyMapCollection::AddPropertyMap(PropertyMapPtr const& propertyMap, size_t position)
     {
-    return AddPropertyMap(propertyMap->GetPropertyAccessString(), propertyMap);
+    return AddPropertyMap(propertyMap->GetPropertyAccessString(), propertyMap, position);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus PropertyMapCollection::AddPropertyMap(Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap)
+BentleyStatus PropertyMapCollection::AddPropertyMap(Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap, size_t position)
     {
+
     if (propertyMap.IsNull())
         {
         BeAssert(false && "propertyMap cannot be null");
@@ -471,9 +472,9 @@ BentleyStatus PropertyMapCollection::AddPropertyMap(Utf8CP propertyAccessString,
         BeAssert(false && "PropertyMap with same name or may be different case already exist");
         return ERROR;
         }
-
+    auto where = position > m_orderedCollection.size() ? m_orderedCollection.end() : m_orderedCollection.begin() + position;
     m_dictionary[propertyAccessString] = propertyMap;
-    m_orderedCollection.push_back(propertyMap.get());
+    m_orderedCollection.insert(where, propertyMap.get());
     return SUCCESS;
     }
 

@@ -246,7 +246,7 @@ TEST_F (ECDbFileInfoTests, IterateThroughEmbeddedFiles)
             {
             ASSERT_EQ (1, file.GetId ().GetValue());
             ASSERT_STREQ ("JSON", file.GetTypeUtf8 ());
-            ASSERT_EQ (9027, file.GetFileSize ());
+            ASSERT_EQ (9059, file.GetFileSize ());
             ASSERT_EQ (NULL, file.GetDescriptionUtf8 ());
             ASSERT_EQ (524288, file.GetChunkSize ());
             }

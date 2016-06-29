@@ -301,7 +301,64 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
 
     return table.CreateTrigger(triggerName.c_str(), DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                       Affan.Khan   02/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::ConfigureECClassId(std::vector<DbColumn const*> const& columns, bool loadingFromDisk)
+    {
+    if (!GetECDbMap().IsImportingSchema() && !loadingFromDisk)
+        {
+        BeAssert(false && "Can only be called during schema import");
+        return ERROR;
+        }
 
+    PropertyMapCP classIdPropertyMap = GetECClassIdPropertyMap();
+    if (classIdPropertyMap == nullptr)
+        {
+        PropertyMapPtr ecclassIdPropertyMap = ECClassIdPropertyMap::Create(Schemas(), *this, columns);
+        if (ecclassIdPropertyMap == nullptr)
+            //log and assert already done in child method
+            return ERROR;
+
+        return GetPropertyMapsR().AddPropertyMap(ecclassIdPropertyMap, 1);
+        }
+    std::vector<DbColumn const*>  existingColumns;
+    classIdPropertyMap->GetColumns(existingColumns);
+    if (existingColumns.size() != columns.size())
+        {
+        BeAssert(false && "Invalid classMap");
+        return ERROR;
+        }
+
+    for (DbColumn const* col : existingColumns)
+        {
+        if (std::find(columns.begin(), columns.end(), col) == columns.end())
+            {
+            BeAssert(false && "Invalid classMap");
+            return ERROR;
+            }
+        }
+
+    for (DbColumn const* col : columns)
+        {
+        if (std::find(existingColumns.begin(), existingColumns.end(), col) == existingColumns.end())
+            {
+            BeAssert(false && "Invalid classMap");
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                       Affan.Khan   02/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool loadingFromDisk)
+    {
+    std::vector<DbColumn const*> columns;
+    columns.push_back(&classIdColumn);
+    return ConfigureECClassId(columns, loadingFromDisk);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan   02/2016
 //---------------------------------------------------------------------------------------
@@ -544,11 +601,11 @@ BentleyStatus ClassMap::InitializeDisableECInstanceIdAutogeneration()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle  06/2013
 //---------------------------------------------------------------------------------------
-PropertyMapCP ClassMap::GetECInstanceIdPropertyMap() const
+ECInstanceIdPropertyMap const* ClassMap::GetECInstanceIdPropertyMap() const
     {
     PropertyMapPtr propMap = nullptr;
     if (GetPropertyMaps().TryGetPropertyMap(propMap, ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
-        return propMap.get();
+        return static_cast<ECInstanceIdPropertyMap const*>(propMap.get());
 
     return nullptr;
     }
@@ -556,11 +613,11 @@ PropertyMapCP ClassMap::GetECInstanceIdPropertyMap() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle  06/2013
 //---------------------------------------------------------------------------------------
-PropertyMapCP ClassMap::GetECClassIdPropertyMap() const
+ECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
     {
     PropertyMapPtr propMap = nullptr;
     if (GetPropertyMaps().TryGetPropertyMap(propMap, ECDbSystemSchemaHelper::ECCLASSID_PROPNAME))
-        return propMap.get();
+        return static_cast<ECClassIdPropertyMap const*>(propMap.get());
 
     return nullptr;
     }
@@ -580,6 +637,9 @@ IssueReporter const& ClassMap::Issues() const { return m_ecDbMap.Issues(); }
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
     {
+    if (GetClass().GetName() == "ModelHasGeometricElements")
+        printf("");
+
     if (savedGraph.find(this) != savedGraph.end())
         return BentleyStatus::SUCCESS;
 
@@ -641,15 +701,14 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
         {
         for (PropertyDbMapping const* propMapping : allPropertyMappings)
             {
-            if (propMapping->GetColumns().front()->GetKind() == DbColumn::Kind::ECClassId)
-                continue;
-
             for (DbColumn const* column : propMapping->GetColumns())
                 {
                 if (column->GetTable().GetType() == DbTable::Type::Joined)
                     joinedTables.insert(&column->GetTableR());
-                else
+                else if (!Enum::Contains(column->GetKind(), DbColumn::Kind::ECClassId ))
+                    {
                     tables.insert(&column->GetTableR());
+                    }
                 }
             }
 
@@ -674,6 +733,13 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
         return ERROR;
 
     if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap) != SUCCESS)
+        return ERROR;
+
+    PropertyDbMapping const* ecClassIdMapping = classMapping.FindPropertyMapping(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME);
+    if (ecClassIdMapping == nullptr)
+        return ERROR;
+
+    if (ConfigureECClassId(ecClassIdMapping->GetColumns(), true) != SUCCESS)
         return ERROR;
 
     return AddPropertyMaps(ctx, baseClassMap, &classMapping, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;

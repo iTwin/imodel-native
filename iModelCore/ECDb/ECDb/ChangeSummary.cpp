@@ -381,7 +381,7 @@ void TableMapDetail::InitSystemColumnMaps()
     m_columnMapByAccessString["ECInstanceId"] = ChangeSummary::ColumnMap(instanceIdColumnName, instanceIdColumnIndex, true /* isSystemColumn */);
 
     DbColumn const* classIdColumn = m_dbTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
-    if (classIdColumn != nullptr)
+    if (classIdColumn->GetPersistenceType() != PersistenceType::Virtual)
         {
         Utf8StringCR classIdColumnName = classIdColumn->GetName();
         int classIdColumnIndex = GetColumnIndexByName(classIdColumnName);
@@ -1084,6 +1084,9 @@ bool ChangeExtractor::ChangeAffectsClass(ClassMapCR classMap) const
     DbTable const* dbTable = m_tableMap->GetDetail()->GetDbTable();
     for (PropertyMapCP propertyMap : classMap.GetPropertyMaps())
         {
+        if (propertyMap->GetType() == PropertyMap::Type::ECClassId)
+            continue;
+
         // TODO: MapsToTable() doesn't seem to work
         DbTable const* table = propertyMap->GetSingleTable();
         if (!table || table->GetId() != dbTable->GetId())

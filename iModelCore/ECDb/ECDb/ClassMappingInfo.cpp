@@ -694,8 +694,8 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     DetermineCardinality();
 
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    std::vector<ECClass const*> sourceClasses = m_ecdbMap.GetClassesFromRelationshipEnd(relClass->GetSource());
-    std::vector<ECClass const*> targetClasses = m_ecdbMap.GetClassesFromRelationshipEnd(relClass->GetTarget());
+    std::vector<ECClass const*> sourceClasses = m_ecdbMap.GetFlattenListOfClassesFromRelationshipEnd(relClass->GetSource());
+    std::vector<ECClass const*> targetClasses = m_ecdbMap.GetFlattenListOfClassesFromRelationshipEnd(relClass->GetTarget());
     if (ContainsClassWithNotMappedStrategy(sourceClasses) || ContainsClassWithNotMappedStrategy(targetClasses))
         {
         LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "The source or target constraint contains at least one ECClass which is not mapped. Therefore the ECRelationshipClass is not mapped either.");

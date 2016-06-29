@@ -67,7 +67,7 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
                 status = updater->Update(*updatedInstance);
                 ASSERT_EQ (SUCCESS, status);
 
-                SqlPrintfString ecSql ("SELECT c0.[ECInstanceId], c0.GetECClassId() as ECClassId, * FROM %s.%s c0 WHERE ECInstanceId=%s", Utf8String(schemaName).c_str(), Utf8String(className).c_str(), Utf8String(instance->GetInstanceId()).c_str());
+                SqlPrintfString ecSql ("SELECT c0.[ECInstanceId], c0.ECClassId, * FROM %s.%s c0 WHERE ECInstanceId=%s", Utf8String(schemaName).c_str(), Utf8String(className).c_str(), Utf8String(instance->GetInstanceId()).c_str());
                 ECSqlStatement statement;
                 ECSqlStatus prepareStatus = statement.Prepare (ecdb, ecSql.GetUtf8CP());
                 ECInstanceECSqlSelectAdapter dataAdapter (statement);

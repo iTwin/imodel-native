@@ -49,8 +49,8 @@ public:
 
     PropertyMapCollection& operator= (PropertyMapCollection&& rhs);
 
-    BentleyStatus AddPropertyMap(PropertyMapPtr const& propertyMap);
-    BentleyStatus AddPropertyMap(Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap);
+    BentleyStatus AddPropertyMap(PropertyMapPtr const& propertyMap, size_t position = UINT_MAX);
+    BentleyStatus AddPropertyMap(Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap, size_t position = UINT_MAX);
 
     size_t Size() const { return m_orderedCollection.size();}
     bool IsEmpty() const { return Size() == 0; }

@@ -175,7 +175,7 @@ TEST_F(ECInstanceInserterTests, InsertSingleRuleInstance)
     auto status = inserter.Insert(*testInstance);
     ASSERT_EQ(SUCCESS, status);
 
-    Utf8CP ecsql = "SELECT GetECClassId() as ECClassId, * FROM ECRules.RuleSet";
+    Utf8CP ecsql = "SELECT * FROM ECRules.RuleSet";
     ECSqlStatement queryStatement;
     ASSERT_EQ(ECSqlStatus::Success, queryStatement.Prepare(ecdb, ecsql));
     ECInstanceECSqlSelectAdapter dataAdapter(queryStatement);

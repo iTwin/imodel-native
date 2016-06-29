@@ -431,8 +431,10 @@ MappingStatus ECDbMap::DoMapSchemas()
         {
         ClassMapPtr baseClassMapPtr = nullptr;
         if (SUCCESS != TryGetClassMap(baseClassMapPtr, ctx, *baseClass))
+            {
+            BeAssert(false);
             return ERROR;
-
+            }
         baseClassMap = baseClassMapPtr.get();
         }
 
@@ -457,22 +459,27 @@ MappingStatus ECDbMap::DoMapSchemas()
     classMapTmp->SetId(classMapInfo.GetId());
 
     if (MappingStatus::Error == AddClassMap(classMapTmp))
+        {
+        BeAssert(false);
         return ERROR;
+        }
 
     std::set<ClassMap const*> loadGraph;
     if (SUCCESS != classMapTmp->Load(loadGraph, ctx, classMapInfo, baseClassMap))
+        {
+        BeAssert(false);
         return ERROR;
-
+        }
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
     // Construct and initialize the class map
     if (ecRelationshipClass != nullptr)
         {
-        for (ECClassCP endECClassToLoad : GetClassesFromRelationshipEnd(ecRelationshipClass->GetSource()))
+        for (ECClassCP endECClassToLoad : GetFlattenListOfClassesFromRelationshipEnd(ecRelationshipClass->GetSource()))
             {
             ctx.AddConstraintClass(*endECClassToLoad);
             }
 
-        for (ECClassCP endECClassToLoad : GetClassesFromRelationshipEnd(ecRelationshipClass->GetTarget()))
+        for (ECClassCP endECClassToLoad : GetFlattenListOfClassesFromRelationshipEnd(ecRelationshipClass->GetTarget()))
             {
             ctx.AddConstraintClass(*endECClassToLoad);
             }
@@ -994,9 +1001,28 @@ BentleyStatus ECDbMap::FinishTableDefinitions(bool onlyCreateClassIdColumns) con
         {
         DbTable* table = kvPair.first;
         bset<ClassMap*> const& classMaps = kvPair.second;
+        bool canEdit = table->GetEditHandleR().CanEdit();
+        if (!canEdit) table->GetEditHandleR().BeginEdit();
+        DbColumn const* classIdColumn = CreateClassIdColumn(*table, classMaps);
+        if (!canEdit) table->GetEditHandleR().EndEdit();
 
-        if (SUCCESS != CreateClassIdColumnIfNecessary(*table, classMaps))
+        if (classIdColumn == nullptr)
+            {
+            BeAssert(false && "Failed to create/configure classId column");
             return ERROR;
+            }
+
+        for (ClassMap* classMap : classMaps)
+            {
+            if (classMap->HasJoinedTable() && table->GetType() == DbTable::Type::Primary)
+                continue;
+
+            if (classMap->ConfigureECClassId(*classIdColumn) != SUCCESS)
+                {
+                BeAssert(false && "Failed to add classmap");
+                return ERROR;
+                }
+            }
 
         if (onlyCreateClassIdColumns)
             continue;
@@ -1011,63 +1037,86 @@ BentleyStatus ECDbMap::FinishTableDefinitions(bool onlyCreateClassIdColumns) con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbMap::CreateClassIdColumnIfNecessary(DbTable& table, bset<ClassMap*> const& classMaps) const
+DbColumn const* ECDbMap::CreateClassIdColumn(DbTable& table, bset<ClassMap*> const& classMaps) const
     {
-    if (table.GetFilteredColumnFirst(DbColumn::Kind::ECClassId) != nullptr ||
-        table.GetPersistenceType() != PersistenceType::Persisted ||
-        table.GetType() == DbTable::Type::Existing)
-        return SUCCESS;
-
+    DbColumn *existingClassIdCol = const_cast<DbColumn*>(table.GetFilteredColumnFirst(DbColumn::Kind::ECClassId));
+    ClassMap const* firstClassMap = *classMaps.begin();
     bool addClassIdCol = false;
     if (classMaps.size() == 1)
-        addClassIdCol = (*classMaps.begin())->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable;
+        addClassIdCol = firstClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable;
     else
         addClassIdCol = classMaps.size() > 1;
 
-    if (!addClassIdCol)
-        return SUCCESS;
+    //Check if already exist if does then see if need to change it persistence type or not. If yes then change to persisted and add index.
+    if (existingClassIdCol != nullptr)
+        {
+        if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing)
+            return existingClassIdCol;
 
-    DbColumn* ecClassIdColumn = table.CreateColumn(ECDB_COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Persisted);
+        if (existingClassIdCol->GetPersistenceType() != PersistenceType::Virtual)
+            return existingClassIdCol;
+
+        if (addClassIdCol)
+            {
+            if (DbColumn::MakePersisted(*existingClassIdCol) != SUCCESS)
+                {
+                BeAssert(false && "Changing persistence type from virtual to persisted failed");
+                return nullptr;
+                }
+
+            Utf8String indexName("ix_");
+            indexName.append(table.GetName()).append("_ecclassid");
+            return GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {existingClassIdCol},
+                                              false, true, ECClassId()) != nullptr ? existingClassIdCol : nullptr;
+            }
+
+        return existingClassIdCol;
+        }
+
+    DbColumn* ecClassIdColumn = table.CreateColumn(ECDB_COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, addClassIdCol ? PersistenceType::Persisted : PersistenceType::Virtual);
     if (ecClassIdColumn == nullptr)
-        return ERROR;
+        {
+        BeAssert(false && "Faield to create ECClassId column");
+        return nullptr;
+        }
 
     ecClassIdColumn->GetConstraintsR().SetNotNullConstraint();
     //whenever we create a class id column, we index it to speed up the frequent class id look ups
-    Utf8String indexName("ix_");
-    indexName.append(table.GetName()).append("_ecclassid");
-    return GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {ecClassIdColumn},
-                                      false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
+    if (ecClassIdColumn->GetPersistenceType() == PersistenceType::Persisted)
+        {
+        Utf8String indexName("ix_");
+        indexName.append(table.GetName()).append("_ecclassid");
+        return GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {ecClassIdColumn},
+                                          false, true, ECClassId()) != nullptr ? ecClassIdColumn : nullptr;
+        }
+
+    return ecClassIdColumn;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
+std::vector<ECClassCP> ECDbMap::GetFlattenListOfClassesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
     {
-    //for recursive lambdas, iOS requires us to define the lambda variable before assigning the actual function to it.
-    std::function<void(std::vector<ECClassCP>&, ECClassP, bool)> gatherClassesDelegate;
-    gatherClassesDelegate =
-        [this, &gatherClassesDelegate] (std::vector<ECClassCP>& classes, ECClassP ecClass, bool includeSubclasses)
+    std::vector<ECClassCP> constraintClasses;
+    LightweightCache::RelationshipEnd endOfInterest = &relationshipEnd.GetRelationshipClass().GetSource() == &relationshipEnd ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
+    for (auto const& constraintKey : GetLightweightCache().GetConstraintClassesForRelationshipClass(relationshipEnd.GetRelationshipClass().GetId()))
         {
-        classes.push_back(ecClass);
-        if (includeSubclasses)
+        if (Enum::Contains(endOfInterest, constraintKey.second))
             {
-            for (auto childClass : ecClass->GetDerivedClasses())
+            ECClassCP constrantClass = GetECDb().Schemas().GetECClass(constraintKey.first);
+            if (constrantClass == nullptr)
                 {
-                gatherClassesDelegate(classes, childClass, includeSubclasses);
+                BeAssert(false && "Failed to read ECClass");
+                constraintClasses.clear();
+                return constraintClasses;
                 }
-            }
-        };
 
-    bool isPolymorphic = relationshipEnd.GetIsPolymorphic();
-    std::vector<ECClassCP> classes;
-    for (ECClassCP ecClass : relationshipEnd.GetClasses())
-        {
-        ECClassP ecClassP = const_cast<ECClassP> (ecClass);
-        gatherClassesDelegate(classes, ecClassP, isPolymorphic);
+            constraintClasses.push_back(constrantClass);
+            }
         }
 
-    return classes;
+    return constraintClasses;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1087,7 +1136,6 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
 
     std::map<PersistenceType, std::set<DbTable const*>> tables;
     bool abstractEndPoint = relationshipEnd.GetClasses().size() == 1 && relationshipEnd.GetClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
-    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
     for (ClassMap const* classMap : classMaps)
         {
         if (abstractEndPoint)

@@ -605,7 +605,6 @@ BentleyStatus DbTable::SetMinimumSharedColumnCount(int minimumSharedColumnCount)
     return SUCCESS;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                          muhammad.zaighum                           01/2015
 //---------------------------------------------------------------------------------------
@@ -916,6 +915,27 @@ bool DbColumn::IsUnique() const
     return m_constraints.HasUniqueConstraint() || IsOnlyColumnOfPrimaryKeyConstraint();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Affan.Khan 02/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus DbColumn::MakePersisted(DbColumn& column)
+    {
+    if (column.GetTableR().GetEditHandleR().AssertNotInEditMode())
+        return ERROR;
+
+    if (column.GetPersistenceType() == PersistenceType::Persisted)
+        return SUCCESS;
+
+    if (column.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(false && "Virtual table cannot have persistence column");
+        return ERROR;
+        }
+
+    column.m_persistenceType = PersistenceType::Persisted;
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------

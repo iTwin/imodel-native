@@ -34,6 +34,7 @@ struct ECSqlPrepareContext
                 static bool IsSystemProperty(Utf8CP accessString)
                     {
                     return BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) == 0 ||
+                        BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::ECCLASSID_PROPNAME) == 0 ||
                         BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME) == 0 ||
                         BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME) == 0 ||
                         BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME) == 0 ||

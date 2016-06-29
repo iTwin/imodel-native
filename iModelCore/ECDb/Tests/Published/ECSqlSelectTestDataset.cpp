@@ -530,16 +530,16 @@ ECSqlTestDataset ECSqlSelectTestDataset::CommonGeometryTests (int rowCountPerCla
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Common Geometry properties cannot be ordered by ECSQL");
 
     ecsql = "SELECT * FROM ecsql.PASpatial";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 7, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 8, rowCountPerClass);
 
     ecsql = "SELECT p.* FROM ecsql.PASpatial p";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 7, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 8, rowCountPerClass);
 
     ecsql = "SELECT count(*) FROM ecsql.PASpatial p";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, 1);
 
     ecsql = "SELECT * FROM ecsql.SSpatial";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT SpatialStructProp FROM ecsql.SSpatial";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -1048,10 +1048,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::FromTests( int rowCountPerClass )
 
     // select from relationship classes
     Utf8CP ecsql = "SELECT * FROM ONLY ecsql.PSAHasPSA";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6, 0);
 
     ecsql = "SELECT * FROM ecsql.PSAHasPSA";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6, 0);
 
     ecsql = "SELECT ECInstanceId, SourceECInstanceId, TargetECInstanceId FROM ONLY ecsql.PSAHasPSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
@@ -1060,10 +1060,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::FromTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
 
     ecsql = "SELECT * FROM ONLY ecsql.PSAHasP";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6, 0);
 
     ecsql = "SELECT * FROM ecsql.PSAHasP";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6, 0);
 
     ecsql = "SELECT ECInstanceId, SourceECInstanceId, TargetECInstanceId FROM ONLY ecsql.PSAHasP";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
@@ -1425,7 +1425,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
     ecsql = "select PSA.*, P.* FROM ecsql.PSA JOIN ecsql.P USING ecsql.PSAHasP";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 36, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 38, 0);
 
     ecsql = "SELECT end1.I, end2.I FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.PSA end2 USING ecsql.PSAHasPSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
@@ -1506,7 +1506,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "select * FROM ecsql.PSA INNER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId INNER JOIN ecsql.P ON P.ECInstanceId = PSAHasP.TargetECInstanceId";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 41, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 44, 0);
 
     //RIGHT JOIN
     ecsql = "select * FROM ecsql.PSA RIGHT JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId";
@@ -1514,40 +1514,40 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
 
     //LEFT JOIN not a good example
     ecsql = "select * FROM ecsql.PSA LEFT JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 28, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 30, rowCountPerClass);
 
     ecsql = "select * FROM ecsql.PSAHasPSA_1N";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6, 0);
 
     ecsql = "select * FROM ecsql.PSAHasPSA_11";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6, 0);
 
     ecsql = "select * FROM ecsql.PSAHasPSA_NN";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 10, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 11, 0);
 
     ecsql = "select * FROM ecsql.PHasSA_11P";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 11, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 12, 0);
 
     ecsql = "select * FROM ecsql.PHasP_1NPSA";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 16, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 17, 0);
 
     ecsql = "select REL.* FROM ONLY ecsql.PSAHasPSA_1N REL ORDER BY REL.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6, 0);
 
     ecsql = "select REL.* FROM ONLY ecsql.PSAHasPSA_11 REL ORDER BY REL.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6, 0);
 
     ecsql = "select REL.* FROM ONLY ecsql.PSAHasPSA_NN REL ORDER BY REL.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 10, 0);
-
-    ecsql = "select REL.* FROM ONLY ecsql.PHasSA_11P REL ORDER BY REL.ECInstanceId DESC";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 11, 0);
 
+    ecsql = "select REL.* FROM ONLY ecsql.PHasSA_11P REL ORDER BY REL.ECInstanceId DESC";
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 12, 0);
+
     ecsql = "select REL.* FROM ONLY ecsql.PHasP_1NPSA REL ORDER BY REL.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 16, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 17, 0);
 
     ecsql = "select * FROM ecsql.PHasP_1NPSA, ecsql.PSAHasPSA_1N, ecsql.PSAHasPSA_11, ecsql.PSAHasPSA_NN, ecsql.PHasSA_11P";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 47, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 52, 0);
 
     ecsql = "select COUNT (*) FROM ONLY ecsql.PHasP_1NPSA, ONLY ecsql.PSAHasPSA_1N, ONLY ecsql.PSAHasPSA_11, ONLY ecsql.PSAHasPSA_NN, ONLY ecsql.PHasSA_11P";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, 1);
@@ -1556,25 +1556,25 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "select * FROM ecsql.PSA JOIN ecsql.PSA child USING ecsql.PSAHasPSA_1N FORWARD";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 51, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 54, 0);
 
     ecsql = "select PSAHasPSA_1N.*, PARENT.*, CHILD.* FROM ONLY ecsql.PSA PARENT JOIN ecsql.PSA CHILD USING ecsql.PSAHasPSA_1N RelationShipAliasNotAllowedYet FORWARD";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "select PSAHasPSA_1N.*, PARENT.*, CHILD.* FROM ONLY ecsql.PSA PARENT JOIN ecsql.PSA CHILD USING ecsql.PSAHasPSA_1N FORWARD ORDER BY PSAHasPSA_1N.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 51, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 54, 0);
 
     ecsql = "select  PSAHasPSA_11.*, PARENT.*, CHILD.*  FROM ONLY ecsql.PSA PARENT JOIN ecsql.PSA CHILD USING ecsql.PSAHasPSA_11 BACKWARD ORDER BY PSAHasPSA_11.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 51, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 54, 0);
 
     ecsql = "select PSAHasPSA_NN.*, PARENT.*, CHILD.* FROM ONLY ecsql.PSA PARENT JOIN  ecsql.PSA CHILD USING ecsql.PSAHasPSA_NN FORWARD ORDER BY PSAHasPSA_NN.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 56, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 59, 0);
 
     ecsql = "select PHasSA_11P.*, P.*, SA.* FROM ONLY ecsql.P JOIN ecsql.SA USING ecsql.PHasSA_11P ORDER BY PHasSA_11P.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 27, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 30, 0);
 
     ecsql = "select PHasP_1NPSA.*, PARENT.*, CHILD.* FROM ecsql.P PARENT JOIN ecsql.P CHILD USING ecsql.PHasP_1NPSA BACKWARD ORDER BY PHasP_1NPSA.ECInstanceId DESC";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 42, 0);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 45, 0);
 
     return dataset;
     }
@@ -1775,19 +1775,19 @@ ECSqlTestDataset ECSqlSelectTestDataset::MiscTests (int rowCountPerClass)
     //*******************************************************
     
     ecsql = "SELECT * FROM ecsql.PSA a";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 23, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 24, rowCountPerClass);
 
     ecsql = "SELECT * FROM ecsql.P";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 13, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 14, rowCountPerClass);
 
     ecsql = "SELECT * FROM ecsql.P WHERE ECInstanceId >= 0";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 13, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 14, rowCountPerClass);
 
     ecsql = "SELECT a.* FROM ecsql.P a WHERE a.ECInstanceId >= 0";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 13, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 14, rowCountPerClass);
 
     ecsql = "SELECT * FROM ecsql.SA";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4, rowCountPerClass);
 
 
     //*******************************************************
@@ -2385,79 +2385,79 @@ ECSqlTestDataset ECSqlSelectTestDataset::PolymorphicTests( int rowCountPerClass 
 
     //Do non-polymorphic query on TablePerHierarchy    
     ecsql = "SELECT * FROM ONLY ecsql.THBase";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TH1";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TH2";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TH3";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TH4";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TH5";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 2, rowCountPerClass);
 
     //Do polymorphic query on TablePerHierarchy    
     ecsql = "SELECT * FROM ecsql.THBase";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1 + 1, rowCountPerClass * 6);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1 + 2, rowCountPerClass * 6);
 
     ecsql = "SELECT * FROM ecsql.TH1";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2 + 1, rowCountPerClass * 5);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2 + 2, rowCountPerClass * 5);
 
     ecsql = "SELECT * FROM ecsql.TH2";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3 + 1, rowCountPerClass * 4);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3 + 2, rowCountPerClass * 4);
 
     ecsql = "SELECT * FROM ecsql.TH3";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4 + 1, rowCountPerClass * 3);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4 + 2, rowCountPerClass * 3);
 
     ecsql = "SELECT * FROM ecsql.TH4";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5 + 1, rowCountPerClass * 2);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5 + 2, rowCountPerClass * 2);
 
     ecsql = "SELECT * FROM ecsql.TH5";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 1, rowCountPerClass * 1);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 2, rowCountPerClass * 1);
 
     //Do non-polymorphic query on TablePerClass    
     ecsql = "SELECT * FROM ONLY ecsql.TCBase";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TC1";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TC2";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TC3";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TC4";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5 + 2, rowCountPerClass);
 
     ecsql = "SELECT * FROM ONLY ecsql.TC5";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 1, rowCountPerClass);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 2, rowCountPerClass);
 
     //Do polymorphic query on TablePerClass    
     ecsql = "SELECT * FROM ecsql.TCBase";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1 + 1, rowCountPerClass * 6);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1 + 2, rowCountPerClass * 6);
 
     ecsql = "SELECT * FROM ecsql.TC1";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2 + 1, rowCountPerClass * 5);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2 + 2, rowCountPerClass * 5);
 
     ecsql = "SELECT * FROM ecsql.TC2";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3 + 1, rowCountPerClass * 4);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3 + 2, rowCountPerClass * 4);
 
     ecsql = "SELECT * FROM ecsql.TC3";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4 + 1, rowCountPerClass * 3);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 4 + 2, rowCountPerClass * 3);
 
     ecsql = "SELECT * FROM ecsql.TC4";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5 + 1, rowCountPerClass * 2);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5 + 2, rowCountPerClass * 2);
 
     ecsql = "SELECT * FROM ecsql.TC5";
-    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 1, rowCountPerClass * 1);
+    ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 6 + 2, rowCountPerClass * 1);
 
     ecsql = "select ECInstanceId FROM ecsql.Empty";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);

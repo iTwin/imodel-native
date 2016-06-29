@@ -43,7 +43,7 @@ struct ECDbMap :NonCopyableClass
         BentleyStatus PurgeOrphanTables() const;
         BentleyStatus PurgeOrphanColumns() const;
         BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
-        BentleyStatus CreateClassIdColumnIfNecessary(DbTable&, bset<ClassMap*> const&) const;
+        DbColumn const* CreateClassIdColumn(DbTable&, bset<ClassMap*> const&) const;
         MappingStatus AddClassMap(ClassMapPtr&) const;
         ClassMapsByTable GetClassMapsByTable() const;
         BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
@@ -56,7 +56,7 @@ struct ECDbMap :NonCopyableClass
 
         ClassMap const* GetClassMap(ECN::ECClassCR) const;
         ClassMap const* GetClassMap(ECN::ECClassId) const;
-        std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
+        std::vector<ECN::ECClassCP> GetFlattenListOfClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
         std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
         DbTable const* GetPrimaryTable(DbTable const& joinedTable) const;
         //!Loads the class maps if they were not loaded yet

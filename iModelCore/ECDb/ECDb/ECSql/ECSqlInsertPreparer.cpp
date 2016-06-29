@@ -364,10 +364,9 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         }
 
     //if table has a class id column, handle this here
-    DbColumn const* classIdColumn = classMap.GetJoinedTable().FindColumn(ECDB_COL_ECClassId);
-    if (classIdColumn != nullptr)
+    if (classMap.GetECClassIdPropertyMap()->IsPersisted())
         {
-        NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder(classIdColumn->GetName().c_str())};
+        NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder(classMap.GetECClassIdPropertyMap()->GetSingleColumn()->GetName().c_str())};
         nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
 
         NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
@@ -425,11 +424,18 @@ ECSqlStatus ECSqlInsertPreparer::ValidateConstraintClassId(ECClassId& retrievedC
         }
     //Sometime SourceECClassId/TargetECClassId  propertyMap is mapped to another table where ECClassId exist.
     //In this case if user did not specify it is not a error..
+#ifndef WIP_ECCLASSID    
+    if (!constraintClassIdPropMap->IsMappedToClassMapTables() || constraintClassIdPropMap->IsMappedToECClassId())
+        {
+        return ECSqlStatus::Success;
+        }
+#else
     if (!constraintClassIdPropMap->IsMappedToClassMapTables() || Enum::Contains(constraintClassIdPropMap->GetSingleColumn()->GetKind(), DbColumn::Kind::ECClassId))
         {
         return ECSqlStatus::Success;
         }
 
+#endif
     //user did not specify constraint class id in ECSQL -> try to find it which checks whether user should have specified one (because of ambiguity)
     if (!constraintMap.TryGetSingleClassIdFromConstraint(retrievedConstraintClassId))
         {
@@ -498,10 +504,13 @@ ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& ins
     //if constraint class id maps to virtual column then ignore it as the column does not exist in the table.
     if (constraintClassIdPropMap.IsVirtual())
         return ECSqlStatus::Success;
-
+#ifndef WIP_ECCLASSID
+    if (!constraintClassIdPropMap.IsMappedToClassMapTables() || constraintClassIdPropMap.IsMappedToECClassId())
+        return ECSqlStatus::Success;
+#else
     if (!constraintClassIdPropMap.IsMappedToClassMapTables() || Enum::Contains(constraintClassIdPropMap.GetSingleColumn()->GetKind(), DbColumn::Kind::ECClassId))
         return ECSqlStatus::Success;
-
+#endif
     auto classIdColSqlSnippet = constraintClassIdPropMap.ToNativeSql(nullptr, ECSqlType::Insert, false);
     if (!classIdColSqlSnippet.empty())
         {
