@@ -19,7 +19,6 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Cache/Util/JsonUtil.h>
 
-#include <WebServices/Cache/Util/JsonUtil.h>
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
 #include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 
@@ -315,6 +314,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+// WIP06: fails due to schema compatibility issues to 06xx ECv3 ECDb
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -539,8 +539,8 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net";
-    Utf8String repositoryId = "IssuePlugin--default";
+    Utf8String serverUrl = "https://dev-punchlist-eus.cloudapp.net/"; // Only DEV has 06xx support now
+    Utf8String repositoryId = "IssuePluginV1.1--default"; // New plugin version for 06xx compatibility
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
