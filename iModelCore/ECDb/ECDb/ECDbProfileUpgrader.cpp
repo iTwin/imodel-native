@@ -108,7 +108,7 @@ DbResult ECDbProfileUpgrader_3715::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    ECClassId ecsqlSystemPropertiesClassId = stmt.GetValueId<ECClassId>(0);
+    Utf8String ecsqlSystemPropertiesClassIdStr = stmt.GetValueId<ECClassId>(0).ToString();
 
     if (BE_SQLITE_ROW == stmt.Step())
         {
@@ -119,7 +119,8 @@ DbResult ECDbProfileUpgrader_3715::_Upgrade(ECDbCR ecdb) const
     stmt.Finalize();
 
     Utf8String updateClassMapSql;
-    updateClassMapSql.Sprintf("UPDATE ec_ClassMap SET MapStrategyAppliesToSubclasses=1 WHERE ClassId=%s", ecsqlSystemPropertiesClassId.ToString().c_str());
+    updateClassMapSql.Sprintf("UPDATE ec_ClassMap SET MapStrategyAppliesToSubclasses=%d WHERE ClassId=%s", 
+                              DbSchemaPersistenceManager::BoolToSqlInt(true), ecsqlSystemPropertiesClassIdStr.c_str());
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(updateClassMapSql.c_str()))
         {
@@ -134,7 +135,9 @@ DbResult ECDbProfileUpgrader_3715::_Upgrade(ECDbCR ecdb) const
         }
 
     Utf8String updateCASql;
-    updateCASql.Sprintf("UPDATE ec_CustomAttribute SET Instance=? WHERE ContainerId=%s", ecsqlSystemPropertiesClassId.ToString().c_str());
+    updateCASql.Sprintf("UPDATE ec_CustomAttribute SET Instance=? WHERE ContainerId=%s AND "
+                        "ClassId IN (SELECT c.Id FROM ec_Class c, ec_Schema s WHERE c.SchemaId = s.Id AND s.Name = 'ECDbMap' AND c.Name = 'ClassMap')", 
+                        ecsqlSystemPropertiesClassIdStr.c_str());
 
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, updateCASql.c_str()) ||
         BE_SQLITE_OK != stmt.BindText(1, "<ClassMap xmlns=\"ECDbMap.01.01\">"
