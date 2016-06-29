@@ -25,7 +25,11 @@ dirToSearch = $(OutRoot)Winx64/BuildContexts/WSClient/VendorAPI
 dirToSearch = $(OutRoot)Winx64/BuildContexts/WSClient/PublicAPI
 %include cincapnd.mki
 
-%include $(SrcRoot)bsicommon/sharedmki/BuildUnitTests.mke
+# Generate <prg.h> version file for tests
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+%include $(SrcBsiCommon)sharedmki/CreateBuildVersionHeader.mki 
+
+%include $(SrcBsiCommon)sharedmki/BuildUnitTests.mke
 # $(o) is now $(BEGTEST_OUTPUT)$(BEGTEST_NAME)
 
 #---------------------------------------------------------------------------------------+
