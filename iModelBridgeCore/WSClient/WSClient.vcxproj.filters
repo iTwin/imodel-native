@@ -378,7 +378,7 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DgnDbServerClient\DgnDbLocks.cpp">
+    <ClCompile Include="DgnDbServerClient\DgnDbRepositoryManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp">
@@ -908,7 +908,7 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevision.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbLocks.h">
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Hierarchy\ExtendedDataDelegate.h">
@@ -1028,6 +1028,9 @@
     <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1079,6 +1082,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Issue_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.08.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\FileAccess_V3Conversion.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.09.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />
