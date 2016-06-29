@@ -27,9 +27,9 @@ dirToSearch = $(OutRoot)Winx64/BuildContexts/WSClient/PublicAPI
 
 # Generate <prg.h> version file for tests
 o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
-%include $(SrcBsiCommon)sharedmki/CreateBuildVersionHeader.mki 
+%include $(SrcRoot)bsicommon/sharedmki/CreateBuildVersionHeader.mki 
 
-%include $(SrcBsiCommon)sharedmki/BuildUnitTests.mke
+%include $(SrcRoot)bsicommon/sharedmki/BuildUnitTests.mke
 # $(o) is now $(BEGTEST_OUTPUT)$(BEGTEST_NAME)
 
 #---------------------------------------------------------------------------------------+
