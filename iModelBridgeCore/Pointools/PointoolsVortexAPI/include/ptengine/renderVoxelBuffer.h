@@ -52,7 +52,7 @@ private:
 	int					m_numPoints;
 	int					m_fromPoint;
 
-	ubyte				m_selCol[4];
+	// unused - ubyte				m_selCol[4];
 };
 	//-------------------------------------------------------------------------
 	// SelectedPointsBuffer

@@ -186,6 +186,6 @@ namespace pointsengine
 		~BufferScopedLock()						{	m_buffer->unlock(); }
 	private:
 		PointsBufferI	*m_buffer;
-		bool			m_isLocked;
+		// unused - bool			m_isLocked;
 	};
 }
