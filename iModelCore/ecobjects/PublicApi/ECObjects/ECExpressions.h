@@ -14,6 +14,7 @@
 #include "ECInstance.h"
 
 #include <ECUnits/Units.h>
+#include <Bentley/BeThread.h>
 
 #define EXPR_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
@@ -313,7 +314,7 @@ public:
 struct InternalECSymbolProviderManager
     {
 private:
-    
+    BeMutex m_mutex;
     bvector<IECSymbolProviderCP>         m_symbolProviders;
 
     InternalECSymbolProviderManager();
