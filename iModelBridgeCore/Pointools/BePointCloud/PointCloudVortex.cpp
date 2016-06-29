@@ -201,10 +201,10 @@ float PointCloudVortex::GetDynamicFrameRate()
     {
     return ptGetDynamicFrameRate();
     }
-//void PointCloudVortex::StaticOptimizer(float opt)
-//    {
-//    ptStaticOptimizer(opt);
-//    }
+void PointCloudVortex::StaticOptimizer(float opt)
+    {
+    ptStaticOptimizer(opt);
+    }
 //float PointCloudVortex::GetStaticOptimizer()
 //    {
 //    return ptGetStaticOptimizer();
