@@ -144,6 +144,10 @@
                     <IsNullable>False</IsNullable>
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Namespace" typeName="string">
@@ -153,9 +157,13 @@
                     <Collation>NoCase</Collation>
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Value" typeName="string">
+        <ECProperty propertyName="Value" displayLabel="Code" typeName="string">
             <!-- Note: use Code.[Value] in ECSql since "Value" is a reserved word -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -281,75 +289,74 @@
     <ECEntityClass typeName="GraphicalModel2d" modifier="Abstract">
         <BaseClass>GeometricModel2d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="SpatialModel">
+    <ECEntityClass typeName="SpatialModel" displayLabel="Spatial Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="DrawingModel">
+    <ECEntityClass typeName="DrawingModel" displayLabel="Drawing Model">
         <BaseClass>GraphicalModel2d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="SectionDrawingModel">
+    <ECEntityClass typeName="SectionDrawingModel" displayLabel="Section Drawing Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>DrawingModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="SheetModel">
+    <ECEntityClass typeName="SheetModel" displayLabel="Sheet Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalModel2d</BaseClass>
         <ECProperty propertyName="SheetSize" displayLabel="Sheet Size" typeName="point2d"/>
     </ECEntityClass>
-
-    <ECEntityClass typeName="ComponentModel">
+    <ECEntityClass typeName="ComponentModel" displayLabel="Component Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="InformationModel" modifier="Abstract">
+    <ECEntityClass typeName="InformationModel" modifier="Abstract" displayLabel="Information Model">
         <BaseClass>Model</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="DefinitionModel">
+    <ECEntityClass typeName="DefinitionModel" displayLabel="Definition Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="LinkModel">
+    <ECEntityClass typeName="LinkModel" displayLabel="Link Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="DictionaryModel">
+    <ECEntityClass typeName="DictionaryModel" displayLabel="Dictionary Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="GroupInformationModel">
+    <ECEntityClass typeName="GroupInformationModel" displayLabel="Group Information Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="FunctionalModel">
+    <ECEntityClass typeName="FunctionalModel" displayLabel="Functional Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>Model</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="WebMercatorModel">
+    <ECEntityClass typeName="WebMercatorModel" displayLabel="Web Mercator Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>SpatialModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="StreetMapModel">
+    <ECEntityClass typeName="StreetMapModel" displayLabel="Street Map Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
@@ -1234,6 +1241,17 @@
         </ECProperty>
         <ECProperty propertyName="Rank" typeName="int">
             <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LastMod"  displayLabel="Last Modified" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
                 <HideProperty xmlns="EditorCustomAttributes.01.03">
                     <If2D>True</If2D>
                     <If3D>True</If3D>
