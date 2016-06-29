@@ -275,6 +275,7 @@ public:
     bool IsStandaloneId() const {return Standalone()==m_id;} //!< Determine whether this is the id of a standalone briefcase not associated with any master briefcase (special id==1)
     uint32_t GetValue() const {BeAssert(IsValid()); BeAssert(m_id<MaxRepo()); return m_id;} //!< Get the briefcase id as a uint32_t
     bool operator==(BeBriefcaseId const& rhs) const {return rhs.m_id==m_id;}
+    bool operator!=(BeBriefcaseId const& rhs) const { return !(*this == rhs); }
 };
 
 //=======================================================================================
