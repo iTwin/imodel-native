@@ -35,9 +35,15 @@ public:
     myDir (theDir),
     myRadius (theRadius)
   {
-    myInvDir = gp_Vec (Abs (theDir.X()) < Precision::Confusion() ? 0.0 : 1.0 / theDir.X(),
-                       Abs (theDir.Y()) < Precision::Confusion() ? 0.0 : 1.0 / theDir.Y(),
-                       Abs (theDir.Z()) < Precision::Confusion() ? 0.0 : 1.0 / theDir.Z());
+    // handle zeros and very small numbers in coordinates of
+    // direction vector
+    Standard_Real aXInv = 1.0 / Max (Abs (theDir.X()), 1e-30);
+    Standard_Real aYInv = 1.0 / Max (Abs (theDir.Y()), 1e-30);
+    Standard_Real aZInv = 1.0 / Max (Abs (theDir.Z()), 1e-30);
+    aXInv = std::copysign (aXInv, theDir.X());
+    aYInv = std::copysign (aYInv, theDir.Y());
+    aZInv = std::copysign (aZInv, theDir.Z());
+    myInvDir = gp_Vec (aXInv, aYInv, aZInv);
 
     mySqRadius = theRadius * theRadius;
   }
