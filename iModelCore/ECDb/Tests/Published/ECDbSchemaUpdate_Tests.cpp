@@ -61,7 +61,7 @@ struct ECSchemaUpdateTests : public SchemaImportTestFixture
 
             AssertSchemaImport(asserted, ecdb, SchemaItem(SchemaXml, expectedToSucceed, assertMessage));
 
-            if (briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
+            if (expectedToSucceed)
                 m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
 
             ecdb.CloseDb();
@@ -435,77 +435,6 @@ TEST_F(ECSchemaUpdateTests, UpdatingECDbMapCAIsNotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ClassModifierToAbstract)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.01'>"
-        "                <MapStrategy>"
-        "                   <Strategy>SharedTable</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='Sealed' >"
-        "       <BaseClass>Koo</BaseClass>"
-        "       <ECProperty propertyName='L2' typeName='long' />"
-        "       <ECProperty propertyName='S2' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //! We only like to see if insertion works. If data is left then import will fail for second schema as we do not allow rows
-    Savepoint sp(GetECDb(), "TestData");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (1, 't1')"); //Abstract
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L2, S2) VALUES (2, 't2')");
-    sp.Cancel();
-
-    //Delete some properties
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.01'>"
-        "                <MapStrategy>"
-        "                   <Strategy>SharedTable</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
-        "       <BaseClass>Koo</BaseClass>"
-        "       <ECProperty propertyName='L2' typeName='long' />"
-        "       <ECProperty propertyName='S2' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", false);
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-    ASSERT_FALSE(asserted);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                          03/16
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ClassModifier)
     {
     SchemaItem schemaItem(
@@ -612,6 +541,132 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Moo (L5, S5) VALUES (11, 't11')");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Voo (L6, S6) VALUES (12, 't12')"); //New class added
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Goo (L3, S3) VALUES (8, 't8')"); //Class deleted
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, UpdateECClassModifierToAbstract)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='Sealed' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //! We only like to see if insertion works. If data is left then import will fail for second schema as we do not allow rows
+    Savepoint sp(GetECDb(), "TestData");
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_DONE, "INSERT INTO TestSchema.Koo (L1, S1) VALUES (1, 't1')"); //Abstract
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Foo (L2, S2) VALUES (2, 't2')");
+    sp.Cancel();
+
+    //Delete some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", false);
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteProperty_OwnTable)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    //Delete some properties
+    Utf8CP deleteECProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, deleteECProperty, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Deleting ECProperty is not supported as property is mapped to OwnTable");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, deleteECProperty, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Deleting ECProperty is not supported as property is mapped to OwnTable");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, deleteECProperty, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Deleting ECProperty is not supported as property is mapped to OwnTable");
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -739,146 +794,7 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_SharedTable)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     06/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteProperty_OwnTable)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' modifier='None' >"
-        "       <BaseClass>Foo</BaseClass>"
-        "       <ECProperty propertyName='L2' typeName='long' />"
-        "       <ECProperty propertyName='S2' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //Delete some properties
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Foo' modifier='None' >"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' modifier='None' >"
-        "       <BaseClass>Foo</BaseClass>"
-        "       <ECProperty propertyName='L2' typeName='long' />"
-        "       <ECProperty propertyName='S2' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", false, "Deleting ECProperty is not supported as property is mapped to OwnTable");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-    ASSERT_FALSE(asserted);
-    GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //Make sure PropertyMap is persisted
-    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, S1");
-    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, S1, L2, S2");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     06/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteVirtualColumns)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //Delete and Add some properties
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Foo' modifier='None' >"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='D1' typeName='long' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Deletion of Virtual column is expected to be supported");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-    ASSERT_FALSE(asserted);
-    GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, -S1, +D1");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     06/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Foo' modifier='None' >"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' modifier='None' >"
-        "       <BaseClass>Foo</BaseClass>"
-        "       <ECProperty propertyName='L2' typeName='long' />"
-        "       <ECProperty propertyName='S2' typeName='string' />"
-        "       <ECProperty propertyName='L1' typeName='long' />"//Overridden Property
-        "       <ECProperty propertyName='S1' typeName='string' />"//Overridden Property
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    SchemaItem deleteOverriddenProperty(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Foo' modifier='None' >"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' modifier='None' >"
-        "       <BaseClass>Foo</BaseClass>"
-        "       <ECProperty propertyName='L2' typeName='long' />"
-        "       <ECProperty propertyName='S2' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", false, "Deletion of Overridden properties is not supported");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), deleteOverriddenProperty);
-    ASSERT_FALSE(asserted);
-
-    //Make sure ECClass definition still exists
-    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, S1");
-    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, L2, S1, S2");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     06/16
+// @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
     {
@@ -1002,6 +918,267 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddDeleteVirtualColumns)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='Abstract' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    //Delete and Add some properties
+    Utf8CP editedSchemaItem =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='D1' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaItem, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Addition or Deletion of Virtual column is expected to be supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaItem, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Addition or Deletion of Virtual column is expected to be supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaItem, filePath, BeBriefcaseId(123), true, "ClientBriefcase: Addition or Deletion of Virtual column is expected to be supported");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, -S1, +D1");
+
+        GetECDb().CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "       <ECProperty propertyName='L1' typeName='long' />"//Overridden Property
+        "       <ECProperty propertyName='S1' typeName='string' />"//Overridden Property
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP deleteOverriddenProperty =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, deleteOverriddenProperty, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Deletion of Overridden properties is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, deleteOverriddenProperty, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Deletion of Overridden properties is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, deleteOverriddenProperty, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Deletion of Overridden properties is not supported");
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteProperties_SharedTable_ClientBriefCase)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    GetECDb().ChangeBriefcaseId(BeBriefcaseId(123));
+
+    //Delete some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='D2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable_ClientBriefCase)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    GetECDb().ChangeBriefcaseId(BeBriefcaseId(123));
+
+    //Delete some properties
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='D2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
@@ -1012,8 +1189,6 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>"
         "       <ECProperty propertyName = 'ColumnName' typeName = 'string' description = 'If not specified, the ECProperty name is used. It must follow EC Identifier specification.' />"
         "       <ECProperty propertyName = 'IsNullable' typeName = 'boolean' description = 'If false, values must not be unset for this property.' />"
-        "       <ECProperty propertyName = 'IsUnique' typeName = 'boolean' description = 'Only allow unique values for this property.' />"
-        "       <ECProperty propertyName = 'Collation' typeName = 'string' description = 'Specifies how string comparisons should work for this property. Possible values: Binary (default): bit to bit matching. NoCase: The same as binary, except that the 26 upper case characters of ASCII are folded to their lower case equivalents before comparing. Note that it only folds ASCII characters. RTrim: The same as binary, except that trailing space characters are ignored.' />"
         "   </ECCustomAttributeClass>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' >"
         "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' >"
@@ -1030,8 +1205,11 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
     //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
+    Utf8CP editedCAProperties =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>"
@@ -1045,96 +1223,84 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         "        <ECCustomAttributes>"
         "            <TestCA xmlns='TestSchema.01.00'>"
         "                <IsNullable>false</IsNullable>"
+        "                <IsUnique>true</IsUnique>"
         "                <ColumnName>TestProperty1</ColumnName>"
         "            </TestCA>"
         "        </ECCustomAttributes>"
         "       </ECProperty>"
         "   </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    AssertSchemaUpdate(asserted, editedCAProperties, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Modifying CA Properties is supported");
     ASSERT_FALSE(asserted);
 
-    //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
-    ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
-    ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
-    ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
-
-    ECClassCP testClass = testSchema->GetClassCP("TestClass");
-    ASSERT_TRUE(testClass != nullptr);
-    ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
-    ASSERT_TRUE(testClass->GetDescription() == "modified test class");
-
-    ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
-    ASSERT_TRUE(testProperty != nullptr);
-    ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
-    ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
-
-    CloseReOpenECDb();
-
-    //Verify attributes via ECSql using MataSchema
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
-    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
-    ASSERT_STREQ("modified test class", statement.GetValueText(1));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
-    ASSERT_STREQ("this is modified property", statement.GetValueText(1));
-
-    //Verify class and Property accessible using new ECSchemaPrefix
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT TestProperty FROM ts_modified.TestClass");
-
-    //verify CA changes
-    testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
-    ASSERT_TRUE(testProperty != nullptr);
-    IECInstancePtr propertyMapCA = testProperty->GetCustomAttribute("TestCA");
-    ASSERT_TRUE(propertyMapCA != nullptr);
-    ECValue val;
-    ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "IsNullable"));
-    ASSERT_FALSE(val.GetBoolean());
-
-    val.Clear();
-    ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
-    ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   AFfan Khan                     03/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, SqlSchemaChangeIsNotSupportedOnClientBriefcase)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
-
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-    BeBriefcaseId newClientSideBriefcaseId(123);
-    GetECDb().ChangeBriefcaseId(newClientSideBriefcaseId);
-    //Upgrade with some attributes and import schema
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
-        "</ECSchema>", false, "Db Tables Modifications not allowed on Client Briefcase");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedCAProperties, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Modifying CA Properties is supported");
     ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedCAProperties, filePath, BeBriefcaseId(123), true, "ClientBriefcase: Modifying CA Properties is supported");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+        //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
+        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ASSERT_TRUE(testSchema != nullptr);
+        ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
+        ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
+
+        ECClassCP testClass = testSchema->GetClassCP("TestClass");
+        ASSERT_TRUE(testClass != nullptr);
+        ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
+        ASSERT_TRUE(testClass->GetDescription() == "modified test class");
+
+        ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
+        ASSERT_TRUE(testProperty != nullptr);
+        ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
+        ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
+
+        //Verify attributes via ECSql using MataSchema
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+        ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+        ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
+        ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+
+        //Verify class and Property accessible using new ECSchemaPrefix
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT TestProperty FROM ts_modified.TestClass");
+
+        //verify CA changes
+        testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
+        ASSERT_TRUE(testProperty != nullptr);
+        IECInstancePtr propertyMapCA = testProperty->GetCustomAttribute("TestCA");
+        ASSERT_TRUE(propertyMapCA != nullptr);
+        ECValue val;
+        ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "IsNullable"));
+        ASSERT_FALSE(val.GetBoolean());
+
+        val.Clear();
+        ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
+        ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1151,77 +1317,61 @@ TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
     //Upgrade with some attributes and import schema
-    SchemaItem editedSchemaItem(
+    Utf8CP addNewEntityClass =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    AssertSchemaUpdate(asserted, addNewEntityClass, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Adding New Entity Class is supported");
     ASSERT_FALSE(asserted);
 
-    //Verify Schema attributes upgraded successfully
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
-    ASSERT_TRUE(testSchema != nullptr);
-
-    //Verify Newly Added Entity Class exists
-    ECClassCP entityClass = testSchema->GetClassCP("TestClass");
-    ASSERT_TRUE(entityClass != nullptr);
-    ASSERT_TRUE(entityClass->GetDisplayLabel() == "Test Class");
-    ASSERT_TRUE(entityClass->GetDescription() == "This is test Class");
-
-    CloseReOpenECDb();
-
-    //Verify attributes via ECSql using MataSchema
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Test Class", statement.GetValueText(0));
-    ASSERT_STREQ("This is test Class", statement.GetValueText(1));
-
-    //Query newly added Entity Class
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     05/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewEntityClassWithECDbMapCA)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "</ECSchema>", false, "Delete class containing ECDbMap CA is not supposed to be deleted");
-
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-
-    //Add Goo with ECDbMap CA Applied On it==========================================================================================
-    SchemaItem addGooWithCA(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.01'>"
-        "               <MapStrategy>"
-        "                  <Strategy>SharedTable</Strategy>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='S' typeName='string' />"
-        "       <ECProperty propertyName='D' typeName='double' />"
-        "       <ECProperty propertyName='L' typeName='long' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Add New Class with ECDbMap CA is supposed to be not supported");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), addGooWithCA);
+    asserted = false;
+    AssertSchemaUpdate(asserted, addNewEntityClass, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Adding New Entity Class is supported");
     ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, addNewEntityClass, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Db Tables Modifications not allowed");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        //verify tables
+        //new class should be added with new namespace prefix
+        ASSERT_TRUE(GetECDb().TableExists("ts_modified_TestClass"));
+
+        //Verify Schema attributes upgraded successfully
+        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ASSERT_TRUE(testSchema != nullptr);
+
+        //Verify Newly Added Entity Class exists
+        ECClassCP entityClass = testSchema->GetClassCP("TestClass");
+        ASSERT_TRUE(entityClass != nullptr);
+        ASSERT_TRUE(entityClass->GetDisplayLabel() == "Test Class");
+        ASSERT_TRUE(entityClass->GetDescription() == "This is test Class");
+
+        //Verify attributes via ECSql using MataSchema
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Test Class", statement.GetValueText(0));
+        ASSERT_STREQ("This is test Class", statement.GetValueText(1));
+
+        //Query newly added Entity Class
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.TestClass"));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1242,8 +1392,11 @@ TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
     //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
@@ -1251,76 +1404,241 @@ TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
         "       </ECProperty>"
         "   </ECEntityClass>"
         "   <ECEntityClass typeName='NewTestClass' displayLabel='New Test Class' description='This is New test Class' modifier='None' />"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Adding New Entity Class is supported");
     ASSERT_FALSE(asserted);
 
-    //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
-    ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
-    ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
-    ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Adding New Entity Class is supported");
+    ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = testSchema->GetClassCP("TestClass");
-    ASSERT_TRUE(testClass != nullptr);
-    ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
-    ASSERT_TRUE(testClass->GetDescription() == "modified test class");
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Db Tables Modifications not allowed");
+    ASSERT_FALSE(asserted);
 
-    ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
-    ASSERT_TRUE(testProperty != nullptr);
-    ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
-    ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-    //verify newly added Entity Class exists
-    ECClassCP newTestClass = testSchema->GetClassCP("NewTestClass");
-    ASSERT_TRUE(newTestClass != nullptr);
-    ASSERT_TRUE(newTestClass->GetDisplayLabel() == "New Test Class");
-    ASSERT_TRUE(newTestClass->GetDescription() == "This is New test Class");
+        //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
+        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ASSERT_TRUE(testSchema != nullptr);
+        ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
+        ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
-    CloseReOpenECDb();
+        ECClassCP testClass = testSchema->GetClassCP("TestClass");
+        ASSERT_TRUE(testClass != nullptr);
+        ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
+        ASSERT_TRUE(testClass->GetDescription() == "modified test class");
 
-    //Verify attributes via ECSql using MataSchema
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
-    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+        ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
+        ASSERT_TRUE(testProperty != nullptr);
+        ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
+        ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
 
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
-    ASSERT_STREQ("modified test class", statement.GetValueText(1));
+        //verify newly added Entity Class exists
+        ECClassCP newTestClass = testSchema->GetClassCP("NewTestClass");
+        ASSERT_TRUE(newTestClass != nullptr);
+        ASSERT_TRUE(newTestClass->GetDisplayLabel() == "New Test Class");
+        ASSERT_TRUE(newTestClass->GetDescription() == "This is New test Class");
 
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description From ec.ECClassDef WHERE Name='NewTestClass'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("New Test Class", statement.GetValueText(0));
-    ASSERT_STREQ("This is New test Class", statement.GetValueText(1));
+        //Verify attributes via ECSql using MataSchema
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+        ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
 
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
-    ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+        ASSERT_STREQ("modified test class", statement.GetValueText(1));
 
-    //Query existing and newly added Entity Classes
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description From ec.ECClassDef WHERE Name='NewTestClass'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("New Test Class", statement.GetValueText(0));
+        ASSERT_STREQ("This is New test Class", statement.GetValueText(1));
 
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.NewTestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
+        ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+
+        //Query existing and newly added Entity Classes
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.NewTestClass"));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+        GetECDb().CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddNewECDbMapCANotSupported)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    //Add New ECDbMapCA on ECClass
+    Utf8CP addECDbMapCA =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, addECDbMapCA, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Adding New ECDbMapCA is supposed to be not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, addECDbMapCA, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Adding New ECDbMapCA is supposed to be not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, addECDbMapCA, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Adding New ECDbMapCA is supposed to be not supported");
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddNewCA)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    //Add new CA
+    Utf8CP addCAOnClass =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
+        "                <Hidden>True</Hidden>"
+        "            </DisplayOptions>"
+        "        </ECCustomAttributes>"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, addCAOnClass, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Adding New CA is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, addCAOnClass, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Adding New CA is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, addCAOnClass, filePath, BeBriefcaseId(123), true, "ClientBriefcase: Adding New CA is supported");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ASSERT_TRUE(testSchema != nullptr);
+        ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
+        ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
+
+        ECClassCP testClass = testSchema->GetClassCP("TestClass");
+        ASSERT_TRUE(testClass != nullptr);
+        ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
+        ASSERT_TRUE(testClass->GetDescription() == "modified test class");
+
+        //verify tables
+        ASSERT_TRUE(GetECDb().TableExists("ts_TestClass"));
+
+        //Verify attributes via ECSql using MataSchema
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+        ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+        ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.TestClass"));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+        //Verify newly added CA
+        testClass = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass");
+        ASSERT_TRUE(testClass != nullptr);
+        IECInstancePtr bsca = testClass->GetCustomAttribute("DisplayOptions");
+        ASSERT_TRUE(bsca != nullptr);
+
+        ECValue val;
+        ASSERT_EQ(ECObjectsStatus::Success, bsca->GetValue(val, "Hidden"));
+        ASSERT_TRUE(val.GetBoolean());
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewProperty)
+TEST_F(ECSchemaUpdateTests, AddNewECProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1406,8 +1724,11 @@ TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
     //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
@@ -1415,191 +1736,81 @@ TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
         "       </ECProperty>"
         "       <ECProperty propertyName='NewTestProperty' displayLabel='New Test Property' description='this is new property' typeName='string' />"
         "   </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new property should be successful");
     ASSERT_FALSE(asserted);
 
-    //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
-    ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
-    ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
-    ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
-
-    ECClassCP testClass = testSchema->GetClassCP("TestClass");
-    ASSERT_TRUE(testClass != nullptr);
-    ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
-    ASSERT_TRUE(testClass->GetDescription() == "modified test class");
-
-    ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
-    ASSERT_TRUE(testProperty != nullptr);
-    ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
-    ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
-
-    //verify newly added Property exists
-    ECPropertyCP newTestProperty = testClass->GetPropertyP("NewTestProperty");
-    ASSERT_TRUE(newTestProperty != nullptr);
-    ASSERT_TRUE(newTestProperty->GetDisplayLabel() == "New Test Property");
-    ASSERT_TRUE(newTestProperty->GetDescription() == "this is new property");
-
-    CloseReOpenECDb();
-
-    //Verify attributes via ECSql using MataSchema
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
-    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
-    ASSERT_STREQ("modified test class", statement.GetValueText(1));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
-    ASSERT_STREQ("this is modified property", statement.GetValueText(1));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='NewTestProperty'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("New Test Property", statement.GetValueText(0));
-    ASSERT_STREQ("this is new property", statement.GetValueText(1));
-
-    //Query existing and newly added Entity Classes
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty, NewTestProperty FROM ts_modified.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     03/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewCAOnNewClass)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
-        "</ECSchema>");
-
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //Upgrade with some attributes and import schema
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
-        "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' />"
-        "   <ECEntityClass typeName='NewTestClass' displayLabel='New Test Class' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "                <Hidden>True</Hidden>"
-        "            </DisplayOptions>"
-        "        </ECCustomAttributes>"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new property should be successful");
     ASSERT_FALSE(asserted);
 
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
-    ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
-    ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
-    ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
-
-    ECClassCP testClass = testSchema->GetClassCP("TestClass");
-    ASSERT_TRUE(testClass != nullptr);
-    ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
-    ASSERT_TRUE(testClass->GetDescription() == "modified test class");
-
-    //verify tables
-    ASSERT_TRUE(GetECDb().TableExists("ts_TestClass"));
-    //new class should be added with new namespace prefix
-    ASSERT_TRUE(GetECDb().TableExists("ts_modified_NewTestClass"));
-
-    CloseReOpenECDb();
-
-    //Verify attributes via ECSql using MataSchema
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
-    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
-    ASSERT_STREQ("modified test class", statement.GetValueText(1));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel FROM ec.ECClassDef WHERE Name='TestClass'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.NewTestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
-    //Verify newly added CA
-    testClass = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("NewTestClass");
-    ASSERT_TRUE(testClass != nullptr);
-    IECInstancePtr bsca = testClass->GetCustomAttribute("DisplayOptions");
-    ASSERT_TRUE(bsca != nullptr);
-
-    ECValue val;
-    ASSERT_EQ(ECObjectsStatus::Success, bsca->GetValue(val, "Hidden"));
-    ASSERT_TRUE(val.GetBoolean());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     03/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddingNewECDbMapCANotSupported)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
-        "</ECSchema>");
-
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.01'>"
-        "               <MapStrategy>"
-        "                  <Strategy>SharedTable</Strategy>"
-        "                   <Options>SharedColumns</Options>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "   </ECEntityClass>"
-        "</ECSchema>", false, "Adding new ECDbMap Custom Attribute is not supported, schema rejected");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: Db Tables Modifications not allowed");
     ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
+        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ASSERT_TRUE(testSchema != nullptr);
+        ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
+        ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
+
+        ECClassCP testClass = testSchema->GetClassCP("TestClass");
+        ASSERT_TRUE(testClass != nullptr);
+        ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
+        ASSERT_TRUE(testClass->GetDescription() == "modified test class");
+
+        ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
+        ASSERT_TRUE(testProperty != nullptr);
+        ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
+        ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
+
+        //verify newly added Property exists
+        ECPropertyCP newTestProperty = testClass->GetPropertyP("NewTestProperty");
+        ASSERT_TRUE(newTestProperty != nullptr);
+        ASSERT_TRUE(newTestProperty->GetDisplayLabel() == "New Test Property");
+        ASSERT_TRUE(newTestProperty->GetDescription() == "this is new property");
+
+        //Verify attributes via ECSql using MataSchema
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+        ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+        ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
+        ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='NewTestProperty'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("New Test Property", statement.GetValueText(0));
+        ASSERT_STREQ("this is new property", statement.GetValueText(1));
+
+        //Query existing and newly added Entity Classes
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty, NewTestProperty FROM ts_modified.TestClass"));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1619,8 +1830,11 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
     //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>"
@@ -1636,63 +1850,78 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
         "        </ECCustomAttributes>"
         "       </ECProperty>"
         "   </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: New CA on Property should be successful");
     ASSERT_FALSE(asserted);
 
-    //Verify Schema, Class and property attributes upgraded successfully
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
-    ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
-    ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
-    ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: New CA on Property should be successful");
+    ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = testSchema->GetClassCP("TestClass");
-    ASSERT_TRUE(testClass != nullptr);
-    ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
-    ASSERT_TRUE(testClass->GetDescription() == "modified test class");
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: New CA on Property should be successful");
+    ASSERT_FALSE(asserted);
 
-    ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
-    ASSERT_TRUE(testProperty != nullptr);
-    ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
-    ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-    CloseReOpenECDb();
+        //Verify Schema, Class and property attributes upgraded successfully
+        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ASSERT_TRUE(testSchema != nullptr);
+        ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
+        ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
-    //Verify attributes via ECSql using MataSchema
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
-    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+        ECClassCP testClass = testSchema->GetClassCP("TestClass");
+        ASSERT_TRUE(testClass != nullptr);
+        ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
+        ASSERT_TRUE(testClass->GetDescription() == "modified test class");
 
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
-    ASSERT_STREQ("modified test class", statement.GetValueText(1));
+        ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
+        ASSERT_TRUE(testProperty != nullptr);
+        ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
+        ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
 
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
-    ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+        //Verify attributes via ECSql using MataSchema
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+        ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
 
-    //Query Property
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+        ASSERT_STREQ("modified test class", statement.GetValueText(1));
 
-    //verify newly added CA on Property
-    testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
-    ASSERT_TRUE(testProperty != nullptr);
-    IECInstancePtr testCA = testProperty->GetCustomAttribute("TestCA");
-    ASSERT_TRUE(testCA != nullptr);
-    ECValue val;
-    ASSERT_EQ(ECObjectsStatus::Success, testCA->GetValue(val, "IsUnique"));
-    ASSERT_FALSE(val.GetBoolean());
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+        ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+        ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
+        ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+
+        //Query Property
+        statement.Finalize();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+        //verify newly added CA on Property
+        testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
+        ASSERT_TRUE(testProperty != nullptr);
+        IECInstancePtr testCA = testProperty->GetCustomAttribute("TestCA");
+        ASSERT_TRUE(testCA != nullptr);
+        ECValue val;
+        ASSERT_EQ(ECObjectsStatus::Success, testCA->GetValue(val, "IsUnique"));
+        ASSERT_FALSE(val.GetBoolean());
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1709,7 +1938,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddMinimumSharedColumnsCount)
         "            <ClassMap xmlns='ECDbMap.01.01'>"
         "                <MapStrategy>"
         "                   <Strategy>SharedTable</Strategy>"
-        "                   <Options>SharedColumns</Options>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
         "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
         "                 </MapStrategy>"
         "            </ClassMap>"
@@ -1722,7 +1951,10 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddMinimumSharedColumnsCount)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem editedSchemaItem(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
@@ -1731,30 +1963,40 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddMinimumSharedColumnsCount)
         "            <ClassMap xmlns='ECDbMap.01.01'>"
         "                <MapStrategy>"
         "                   <Strategy>SharedTable</Strategy>"
-        "                   <Options>SharedColumns</Options>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
         "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
         "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
         "                 </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
-        "       <ECProperty propertyName='P2' typeName='int' />"
-        "       <ECProperty propertyName='P3' typeName='int' />"
-        "       <ECProperty propertyName='P4' typeName='int' />"
-        "       <ECProperty propertyName='P5' typeName='int' />"
-        "       <ECProperty propertyName='P6' typeName='int' />"
         "   </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Update ECDbMapCA add MinimumSharedColumnCount is supported");
     ASSERT_FALSE(asserted);
 
-    CloseReOpenECDb();
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Update ECDbMapCA add MinimumSharedColumnCount is supported");
+    ASSERT_FALSE(asserted);
 
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 8));
-    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: Db modifications are not supported");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        //Verify number of columns
+        std::vector<std::pair<Utf8String, int>> testItems;
+        testItems.push_back(std::make_pair("ts_Parent", 8));
+        AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1794,7 +2036,10 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountForSubClasses_AddProperty)
     testItems.push_back(std::make_pair("ts_Parent", 8));
     AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsForSubClasses");
 
-    SchemaItem editedSchemaItem(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
@@ -1810,7 +2055,6 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountForSubClasses_AddProperty)
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
-        "       <ECProperty propertyName='P2' typeName='int' />"
         "   </ECEntityClass>"
         "    <ECEntityClass typeName='Sub1' modifier='None'>"
         "        <BaseClass>Parent</BaseClass>"
@@ -1819,19 +2063,33 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountForSubClasses_AddProperty)
         "        <ECProperty propertyName='S3' typeName='double' />"
         "        <ECProperty propertyName='S4' typeName='double' />"
         "        <ECProperty propertyName='S5' typeName='double' />"
-        "        <ECProperty propertyName='S6' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: Add new property to sharedColumns in SharedTable should be successful");
     ASSERT_FALSE(asserted);
 
-    CloseReOpenECDb();
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: Add new property to sharedColumns in SharedTable should be successful");
+    ASSERT_FALSE(asserted);
 
-    //Verify number of columns after upgrade
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 10));
-    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsForSubClasses");
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: Add new property to sharedColumns in SharedTable should be successful");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        //Verify number of columns after upgrade
+        testItems.clear();
+        testItems.push_back(std::make_pair("ts_Parent", 8));
+        AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsForSubClasses");
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1872,7 +2130,10 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountWithJoinedTable_AddProperty
     testItems.push_back(std::make_pair("ts_Sub1", 7));
     AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsWithJoinedTable");
 
-    SchemaItem editedSchemaItem(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP addPropertiesToSharedColumns =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
@@ -1896,20 +2157,34 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountWithJoinedTable_AddProperty
         "        <ECProperty propertyName='S3' typeName='double' />"
         "        <ECProperty propertyName='S4' typeName='double' />"
         "        <ECProperty propertyName='S5' typeName='double' />"
-        "        <ECProperty propertyName='S6' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    AssertSchemaUpdate(asserted, addPropertiesToSharedColumns, filePath, BeBriefcaseId(0), true, "Master Briefcase: Add new property to sharedColumns in a JoinedTable should be successful");
     ASSERT_FALSE(asserted);
 
-    CloseReOpenECDb();
+    asserted = false;
+    AssertSchemaUpdate(asserted, addPropertiesToSharedColumns, filePath, BeBriefcaseId(1), true, "standalone Briefcase: Add new property to sharedColumns in a JoinedTable should be successful");
+    ASSERT_FALSE(asserted);
 
-    //Verify number of columns after upgrade
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Sub1", 8));
-    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsWithJoinedTable");
+    asserted = false;
+    AssertSchemaUpdate(asserted, addPropertiesToSharedColumns, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: Add new property to sharedColumns in a JoinedTable should be successful");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        //Verify number of columns after upgrade
+        testItems.clear();
+        testItems.push_back(std::make_pair("ts_Parent", 3));
+        testItems.push_back(std::make_pair("ts_Sub1", 7));
+        AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsWithJoinedTable");
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2209,17 +2484,29 @@ TEST_F(ECSchemaUpdateTests, Delete_ECDbMapCANotSupported)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
     //Delete ECDbMap CA
-    SchemaItem DeleteECDbMapCA(
+    Utf8CP DeleteECDbMapCA =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "       <ECProperty propertyName='S' typeName='string' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Deleting ECDbMap CustomAttribute Not supported");
+        "</ECSchema>";
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), DeleteECDbMapCA);
+    AssertSchemaUpdate(asserted, DeleteECDbMapCA, filePath, BeBriefcaseId(0), false, "Master Briefcase: Deleting ECDbMap CustomAttribute Not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, DeleteECDbMapCA, filePath, BeBriefcaseId(1), false, "standalone Briefcase: Deleting ECDbMap CustomAttribute Not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, DeleteECDbMapCA, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: Deleting ECDbMap CustomAttribute Not supported");
     ASSERT_FALSE(asserted);
     }
 
@@ -4446,7 +4733,10 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem schemaWithDeletedConstraintClass(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP schemaWithDeletedConstraintClass =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
@@ -4470,11 +4760,19 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
         "           <Class class='C' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", true, "ECClass can be deleted unless it's the last relationship constraint.");
+        "</ECSchema>";
+
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedConstraintClass);
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(0), true, "MasterBriefcase: ConstraintClass can be deleted unless it's the last relationship constraint");
     ASSERT_FALSE(asserted);
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: ConstraintClass can be deleted unless it's the last relationship constraint");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: ConstraintClass can be deleted unless it's the last relationship constraint");
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -4544,8 +4842,10 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
     //Verify Insertion
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT * FROM ts.RelClass");
 
-    GetECDb().SaveChanges();
-    SchemaItem schemaWithDeletedConstraintClass(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP schemaWithDeletedConstraintClass =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
@@ -4579,13 +4879,28 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
         "           <Class class='C' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", true, "only Direct relationship constraint classes can't be deleted.");
+        "</ECSchema>";
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedConstraintClass);
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Only Direct relationship constraint classes can't be deleted");
     ASSERT_FALSE(asserted);
 
-    //Verify relationship Instance should be deleted along with deletion of constaint class
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT * FROM ts.RelClass");
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Only Direct relationship constraint classes can't be deleted");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: Only Direct relationship constraint classes can't be deleted");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        //Verify relationship Instance should be deleted along with deletion of constaint class
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT * FROM ts.RelClass");
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -4624,7 +4939,10 @@ TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem relationshipWithForeignKeyMapping(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP relationshipWithForeignKeyMapping =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='Foo' modifier='None'>"
@@ -4641,14 +4959,21 @@ TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
         "           <Class class='Roo' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", false, "Deleting ECRelationship with ForeignKey Mapping is supported");
+        "</ECSchema>";
 
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), relationshipWithForeignKeyMapping);
+    AssertSchemaUpdate(asserted, relationshipWithForeignKeyMapping, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Deleting ECRelationship with ForeignKey Mapping is supported");
     ASSERT_FALSE(asserted);
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem linkTableECRelationship(
+    asserted = false;
+    AssertSchemaUpdate(asserted, relationshipWithForeignKeyMapping, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Deleting ECRelationship with ForeignKey Mapping is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, relationshipWithForeignKeyMapping, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: Deleting ECRelationship with ForeignKey Mapping is supported");
+    ASSERT_FALSE(asserted);
+
+    Utf8CP linkTableECRelationship =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='Foo' modifier='None'>"
@@ -4665,12 +4990,19 @@ TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
         "           <Class class='Roo' />"
         "       </Target>"
         "     </ECRelationshipClass>"
-        "</ECSchema>", true, "Deletion of LinkTable mapped relationship is supported");
+        "</ECSchema>";
 
     asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), linkTableECRelationship);
+    AssertSchemaUpdate(asserted, linkTableECRelationship, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Deletion of LinkTable mapped relationship is supported");
     ASSERT_FALSE(asserted);
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, linkTableECRelationship, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Deletion of LinkTable mapped relationship is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, linkTableECRelationship, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: Sql Db changes are not supported");
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -4704,7 +5036,7 @@ TEST_F(ECSchemaUpdateTests, DeleteECStructClassUnSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AllowChangeOfIndexName)
+TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_ChangeIndexName)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4743,7 +5075,10 @@ TEST_F(ECSchemaUpdateTests, AllowChangeOfIndexName)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem schemaWithIndexNameModified(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP schemaWithIndexNameModified =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
@@ -4765,7 +5100,6 @@ TEST_F(ECSchemaUpdateTests, AllowChangeOfIndexName)
         "           </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='PB' typeName='int' />"
-        "        <ECProperty propertyName='PB1' typeName='int' />"
         "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
         "    </ECEntityClass>"
         "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
@@ -4776,26 +5110,43 @@ TEST_F(ECSchemaUpdateTests, AllowChangeOfIndexName)
         "          <Class class ='B' />"
         "      </Target>"
         "   </ECRelationshipClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), schemaWithIndexNameModified);
+    AssertSchemaUpdate(asserted, schemaWithIndexNameModified, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Updating ECDbMapCA, modifying index Name is supported");
     ASSERT_FALSE(asserted);
 
-    ECClassCP b = GetECDb().Schemas().GetECClass("TestSchema", "B");
-    ASSERT_NE(b, nullptr);
-    IECInstancePtr ca = b->GetCustomAttribute("ClassMap");
-    ASSERT_FALSE(ca.IsNull());
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaWithIndexNameModified, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Updating ECDbMapCA, modifying index Name is supported");
+    ASSERT_FALSE(asserted);
 
-    ECValue indexes, indexName;
-    ASSERT_EQ(ca->GetValue(indexes, "Indexes", 0), ECObjectsStatus::Success);
-    ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
-    ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial");
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaWithIndexNameModified, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: Updating ECDbMapCA, modifying index Name is supported");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        ECClassCP b = GetECDb().Schemas().GetECClass("TestSchema", "B");
+        ASSERT_NE(b, nullptr);
+        IECInstancePtr ca = b->GetCustomAttribute("ClassMap");
+        ASSERT_FALSE(ca.IsNull());
+
+        ECValue indexes, indexName;
+        ASSERT_EQ(ca->GetValue(indexes, "Indexes", 0), ECObjectsStatus::Success);
+        ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
+        ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial");
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeletePropertyUsedAsKeyProperty)
+TEST_F(ECSchemaUpdateTests, DeleteNavigationProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4863,7 +5214,6 @@ TEST_F(ECSchemaUpdateTests, ValidateModifingAddingDeletingBaseClassNotSupported)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    Savepoint sp(GetECDb(), "schemaImport");
     SchemaItem schemaWithDeletedBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -4875,9 +5225,7 @@ TEST_F(ECSchemaUpdateTests, ValidateModifingAddingDeletingBaseClassNotSupported)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedBaseClass);
     ASSERT_FALSE(asserted);
-    sp.Cancel();
 
-    sp.Begin();
     SchemaItem schemaWithModifedBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -4890,9 +5238,7 @@ TEST_F(ECSchemaUpdateTests, ValidateModifingAddingDeletingBaseClassNotSupported)
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), schemaWithModifedBaseClass);
     ASSERT_FALSE(asserted);
-    sp.Cancel();
 
-    sp.Begin();
     SchemaItem schemaWithNewBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -4906,7 +5252,6 @@ TEST_F(ECSchemaUpdateTests, ValidateModifingAddingDeletingBaseClassNotSupported)
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), schemaWithNewBaseClass);
     ASSERT_FALSE(asserted);
-    sp.Cancel();
     }
 
 //---------------------------------------------------------------------------------------
@@ -4961,59 +5306,6 @@ TEST_F(ECSchemaUpdateTests, ModifyExistingECEnumeration)
         "   <ECEnumerator value = '1' displayLabel = 'bat' />"
         " </ECEnumeration>"
         "</ECSchema>", false, "Modifying ECEnumeration is not suppported");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-    ASSERT_FALSE(asserted);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewECEnumeration)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
-
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
-        "   <ECEnumerator value = '0' displayLabel = 'txt' />"
-        "   <ECEnumerator value = '1' displayLabel = 'bat' />"
-        " </ECEnumeration>"
-        "</ECSchema>", true, "Adding new ECEnumeration is supported");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-    ASSERT_FALSE(asserted);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                     04/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECClassModifier)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' />"
-        "</ECSchema>");
-
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //Try Updating Class modifier
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' modifier='Abstract' />"
-        "</ECSchema>", false, "Updating class Modifier is not supported");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
@@ -5461,7 +5753,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationshipConstrainsRoleLabel)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyProperties)
+TEST_F(ECSchemaUpdateTests, ModifyECProperties)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5482,8 +5774,10 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    Savepoint sp(GetECDb(), "SchemaUpdate");
-    SchemaItem modifiedECPropertyType(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP modifiedECPropertyType =
         //SchemaItem with modified ECProperty type
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -5497,14 +5791,20 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying ECSchema Property type is not supported");
+        "</ECSchema>";
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedECPropertyType);
+    AssertSchemaUpdate(asserted, modifiedECPropertyType, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECProperty typeName is not supported");
     ASSERT_FALSE(asserted);
-    sp.Cancel();
 
-    sp.Begin();
-    SchemaItem modifiedECStructPropertyType(
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedECPropertyType, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECProperty typeName is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedECPropertyType, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECProperty typeName is not supported");
+    ASSERT_FALSE(asserted);
+
+    Utf8CP modifiedECStructPropertyType =
         //SchemaItem with modified ECStructProperty type
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -5518,15 +5818,20 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying ECStructProperty is not supported");
+        "</ECSchema>";
     asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedECStructPropertyType);
+    AssertSchemaUpdate(asserted, modifiedECStructPropertyType, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECStructProperty is not supported");
     ASSERT_FALSE(asserted);
-    sp.Cancel();
 
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedECStructPropertyType, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECStructProperty is not supported");
+    ASSERT_FALSE(asserted);
 
-    sp.Begin();
-    SchemaItem modifiedECStructArrayPropertyType(
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedECStructPropertyType, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECStructProperty is not supported");
+    ASSERT_FALSE(asserted);
+
+    Utf8CP modifiedECStructArrayPropertyType =
         //SchemaItem with modified ECStructArrayProperty type
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -5540,14 +5845,20 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying ECStructArrayProperty is not supported");
+        "</ECSchema>";
     asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedECStructArrayPropertyType);
+    AssertSchemaUpdate(asserted, modifiedECStructArrayPropertyType, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECStructArrayProperty is not supported");
     ASSERT_FALSE(asserted);
-    sp.Cancel();
 
-    sp.Begin();
-    SchemaItem modifiedPrimitiveArrayType(
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedECStructArrayPropertyType, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECStructArrayProperty is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedECStructArrayPropertyType, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECStructArrayProperty is not supported");
+    ASSERT_FALSE(asserted);
+
+    Utf8CP modifiedPrimitiveArrayType =
         //SchemaItem with modified IsPrimitiveArray Type
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -5561,14 +5872,20 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying ECArrayProperty is not supported");
+        "</ECSchema>";
     asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedPrimitiveArrayType);
+    AssertSchemaUpdate(asserted, modifiedPrimitiveArrayType, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECArrayProperty is not supported");
     ASSERT_FALSE(asserted);
-    sp.Cancel();
 
-    sp.Begin();
-    SchemaItem modifiedPrimitiveType(
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedPrimitiveArrayType, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECArrayProperty is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedPrimitiveArrayType, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECArrayProperty is not supported");
+    ASSERT_FALSE(asserted);
+
+    Utf8CP modifiedPrimitiveType =
         //SchemaItem with modified IsPrimitive type
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -5582,14 +5899,20 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying IsPrimitiveType is not supported");
+        "</ECSchema>";
     asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedPrimitiveType);
+    AssertSchemaUpdate(asserted, modifiedPrimitiveType, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying IsPrimitiveType is not supported");
     ASSERT_FALSE(asserted);
-    sp.Cancel();
 
-    sp.Begin();
-    SchemaItem modifiedECPropertyArrayMixOccurs(
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedPrimitiveType, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying IsPrimitiveType is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedPrimitiveType, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying IsPrimitiveType is not supported");
+    ASSERT_FALSE(asserted);
+
+    Utf8CP modifiedECPropertyArrayMixOccurs =
         //SchemaItem with Modified ECPropertyArray MinOccurs
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -5603,15 +5926,20 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying ECPropertyArray minOccurs is not Supported");
+        "</ECSchema>";
     asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedECPropertyArrayMixOccurs);
+    AssertSchemaUpdate(asserted, modifiedECPropertyArrayMixOccurs, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECPropertyArray minOccurs is not Supported");
     ASSERT_FALSE(asserted);
-    sp.Cancel();
 
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedECPropertyArrayMixOccurs, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECPropertyArray minOccurs is not Supported");
+    ASSERT_FALSE(asserted);
 
-    sp.Begin();
-    SchemaItem modifiedECArrayPropertyMaxOccurs(
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedECPropertyArrayMixOccurs, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECPropertyArray minOccurs is not Supported");
+    ASSERT_FALSE(asserted);
+
+    Utf8CP modifiedECArrayPropertyMaxOccurs =
         //SchemaItem with Modified ECArrayProperty MaxOccurs
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -5625,15 +5953,20 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='10' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying ECArrayProperty maxOccuers is not supported");
+        "</ECSchema>";
     asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedECArrayPropertyMaxOccurs);
+    AssertSchemaUpdate(asserted, modifiedECArrayPropertyMaxOccurs, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECArrayProperty maxOccuers is not supported");
     ASSERT_FALSE(asserted);
-    sp.Cancel();
 
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedECArrayPropertyMaxOccurs, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECArrayProperty maxOccuers is not supported");
+    ASSERT_FALSE(asserted);
 
-    sp.Begin();
-    SchemaItem modifiedExtendedType(
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedECArrayPropertyMaxOccurs, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECArrayProperty maxOccuers is not supported");
+    ASSERT_FALSE(asserted);
+
+    Utf8CP modifiedExtendedType =
         //SchemaItem with Modifed Extended Type
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -5647,32 +5980,18 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='email' />"
         "   </ECEntityClass>"
-        "</ECSchema>", true);
+        "</ECSchema>";
     asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedExtendedType);
+    AssertSchemaUpdate(asserted, modifiedExtendedType, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Modifying extendedTypeName is expected to be successful");
     ASSERT_FALSE(asserted);
-    sp.Cancel();
 
-    sp.Begin();
-    SchemaItem modifiedReadonlyFlag(
-        //SchemaItem with Modified readonly flag
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECStructClass typeName='ChangeInfoStruct' modifier='None'>"
-        "       <ECProperty propertyName='ChangeStatus' typeName='int' readOnly='false' />"
-        "   </ECStructClass>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' >"
-        "       <ECProperty propertyName='PrimitiveProperty' typeName='string' readOnly='true' />"
-        "       <ECArrayProperty propertyName='PrimitiveArrayProperty' minOccurs='0' maxOccurs='5' typeName='string' />"
-        "       <ECStructProperty propertyName='structProp' typeName='ChangeInfoStruct' readOnly='false' />"
-        "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
-        "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Modifying ReadOnly flag is supported");
     asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedReadonlyFlag);
+    AssertSchemaUpdate(asserted, modifiedExtendedType, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Modifying extendedTypeName is expected to be successful");
     ASSERT_FALSE(asserted);
-    sp.Cancel();
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, modifiedExtendedType, filePath, BeBriefcaseId(123), true, "ClientBriefcase: Modifying extendedTypeName is expected to be successful");
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -5767,18 +6086,14 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     P2            -> ReadWrite
     */
 
-    ECSqlStatement statement;
     //Insert should be successfull
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW1', 'P1_Val1', 'P2_Val1')"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW1', 'P1_Val1', 'P2_Val1')");
 
-    statement.Finalize();
-    ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P1='P1_Val1new'"));
+    //readonly property can't be updated
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P1='P1_Val1new'");
 
-    statement.Finalize();
     //skipping readonly Property, Update should be successful.
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P2='P2_Val1new' WHERE P2='P2_Val1'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P2='P2_Val1new' WHERE P2='P2_Val1'");
 
     //Update schema 
     SchemaItem schemaItem2(
@@ -5792,7 +6107,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
         "</ECSchema>", true, "Modifying readonly Flag is expected to succeed");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), schemaItem2);
-    EXPECT_FALSE(asserted);
+    ASSERT_FALSE(asserted);
 
     /*-------------------After 2nd Schema Import--------------------------
     ReadWriteProp -> ReadWrite
@@ -5801,20 +6116,15 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     */
 
     //Verify Insert
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW2', 'P1_Val2', 'P2_Val2')"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW2', 'P1_Val2', 'P2_Val2')");
 
     //Verify Update
-    statement.Finalize();
-    ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass SET ReadWriteProp='RW2new', P2='P2_Val2new'"));
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "UPDATE ts.TestClass SET ReadWriteProp='RW2new', P2='P2_Val2new'");
 
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass SET ReadWriteProp='RW2new', P1='P1_Val2new' WHERE P1='P1_Val2'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "UPDATE ts.TestClass SET ReadWriteProp='RW2new', P1='P1_Val2new' WHERE P1='P1_Val2'");
 
     //Verify Select
-    statement.Finalize();
+    ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT P2 FROM ts.TestClass WHERE ReadWriteProp='RW1new'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_STREQ("P2_Val1new", statement.GetValueText(0));
@@ -5826,14 +6136,14 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
 
     //Verify Delete
     Savepoint sp(GetECDb(), "To Revert Delete Operation");
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "DELETE FROM ts.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM ts.TestClass");
 
     statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT COUNT(*) FROM ts.TestClass"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
+
     sp.Cancel();
 
     //Update schema 
@@ -5855,20 +6165,15 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     P1            -> ReadOnly
     P2            -> ReadWrite
     */
-    statement.Finalize();
+
     //Insert should be successfull
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW1', 'P1_Val3', 'P2_Val3')"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW1', 'P1_Val3', 'P2_Val3')");
 
-    //Verify Update
-    statement.Finalize();
+    //verify update
     //Update Prepare should fail for ReadOnlyProp
-    ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P1='P1_Val3new''"));
-
-    statement.Finalize();
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P1='P1_Val3new'");
     //skipping readonly Property Update should be successful.
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P2='P2_Val3new' WHERE P1 = 'P1_Val3'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P2='P2_Val3new' WHERE P1 = 'P1_Val3'");
 
     //Verify Select
     statement.Finalize();
@@ -5876,15 +6181,49 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_STREQ("P1_Val3", statement.GetValueText(0));
 
-    statement.Finalize();
     //Verify Delete
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "DELETE FROM ts.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "DELETE FROM ts.TestClass");
 
     statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT COUNT(*) FROM ts.TestClass"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(0, statement.GetValueInt(0));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnlyOnClientBriefcase)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECProperty propertyName='ReadWriteProp' typeName='string' readOnly='false' />"
+        "       <ECProperty propertyName='P1' typeName='string' readOnly='true' />"
+        "       <ECProperty propertyName='P2' typeName='string' readOnly='false' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    GetECDb().ChangeBriefcaseId(BeBriefcaseId(123));
+
+    //Update schema 
+    SchemaItem schemaItem2(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECProperty propertyName='ReadWriteProp' typeName='string' readOnly='false' />"
+        "       <ECProperty propertyName='P1' typeName='string' readOnly='false' />"// readOnly='false' after update
+        "       <ECProperty propertyName='P2' typeName='string' readOnly='true' />"//readOnly='true' after update
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Modifying readonly Flag is expected to succeed");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaItem2);
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -5929,7 +6268,10 @@ TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem editedSchemaItem(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP changeCAPropertyValues =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>"
@@ -5960,35 +6302,68 @@ TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
         "        </ECCustomAttributes>"
         "       </ECProperty>"
         "   </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
 
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    AssertSchemaUpdate(asserted, changeCAPropertyValues, filePath, BeBriefcaseId(0), true, "Master Briefcase: Modifying CA Properties values is supported");
     ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, changeCAPropertyValues, filePath, BeBriefcaseId(1), true, "standalone Briefcase: Modifying CA Properties values is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, changeCAPropertyValues, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: Modifying CA Properties values is supported");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        Statement stmt;
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(GetECDb(), "Select ec_CustomAttribute.[Instance] from ec_Property  INNER JOIN ec_CustomAttribute ON ec_CustomAttribute.[ContainerId] = ec_Property.[Id] Where ec_Property.[Name] = 'TestProperty'"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("<TestCA xmlns=\"TestSchema.01.00\">\n    <BinaryProp>10100011</BinaryProp>\n    <BooleanProp>False</BooleanProp>\n    <DateTimeProp>20160510</DateTimeProp>\n    <DoubleProp>2.0001000000000002</DoubleProp>\n    <IntegerProp>20</IntegerProp>\n    <LongProp>2000000</LongProp>\n    <Point2DProp>4,5.5</Point2DProp>\n    <Point3DProp>35.5,45.5,55.5</Point3DProp>\n    <StringProp>'This is Modified String Property'</StringProp>\n</TestCA>\n", stmt.GetValueText(0));
+        stmt.Finalize();
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteCAClassNotSupported)
+TEST_F(ECSchemaUpdateTests, DeleteECCustomAttributeClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass' />"
         "</ECSchema>");
-    bool asserted = false;
-    ECDb ecdb;
-    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
-    ASSERT_FALSE(asserted);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem deleteAllCA(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP deleteECCustomAttribute =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>", false, "Deleting a Custom Attribute Class is not supported.");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, deleteECCustomAttribute, filePath, BeBriefcaseId(0), false, "Master Briefcase: Deleting a ECCustomAttributeClass is not supported");
+    ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    AssertSchemaUpdate(asserted, deleteECCustomAttribute, filePath, BeBriefcaseId(1), false, "standalone Briefcase: Deleting a ECCustomAttributeClass is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, deleteECCustomAttribute, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: Deleting a ECCustomAttributeClass is not supported");
     ASSERT_FALSE(asserted);
     }
 
@@ -6142,7 +6517,7 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
     ecdb.ExecuteSql("UPDATE test_Employee SET TitleId = 4 WHERE Id = 401");
 
     // Map ECSchema to exisitng table
-    SchemaItem deleteAllCA(
+    SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap'/>"
@@ -6184,7 +6559,7 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
         "</ECSchema>");
 
     asserted = false;
-    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     ECSqlStatement stmt;
@@ -6237,12 +6612,15 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
         "       </ECProperty>"
         "   </ECEntityClass>"
         "</ECSchema>");
-    bool asserted = false;
-    ECDb ecdb;
-    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
-    ASSERT_FALSE(asserted);
 
-    SchemaItem deleteAllCA(
+    SetupECDb("deletecainstancewithoutproperty.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP deleteAllCA =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass'>"
@@ -6250,114 +6628,142 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
         "   <ECEntityClass typeName='TestClass' modifier='None' >"
         "       <ECProperty propertyName='prop' typeName='boolean' />"
         "   </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
 
-    asserted = false;
-    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, deleteAllCA, filePath, BeBriefcaseId(0), true, "Master Briefcase: Deleting CA without Properties are expected to be supported");
     ASSERT_FALSE(asserted);
 
-    ECSchemaCP ecSchema = ecdb.Schemas().GetECSchema("TestSchema");
-    ECClassCP testClass = ecSchema->GetClassCP("TestClass");
-    ECPropertyP ecProperty = testClass->GetPropertyP("prop");
+    asserted = false;
+    AssertSchemaUpdate(asserted, deleteAllCA, filePath, BeBriefcaseId(1), true, "standalone Briefcase: Deleting CA without Properties are expected to be supported");
+    ASSERT_FALSE(asserted);
 
-    IECInstancePtr systemSchemaCA = ecSchema->GetCustomAttribute("SystemSchema");
-    ASSERT_TRUE(systemSchemaCA == nullptr);
+    asserted = false;
+    AssertSchemaUpdate(asserted, deleteAllCA, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: Deleting CA without Properties are expected to be supported");
+    ASSERT_FALSE(asserted);
 
-    IECInstancePtr classCA = testClass->GetCustomAttribute("TestCA");
-    ASSERT_TRUE(classCA == nullptr);
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-    IECInstancePtr propertyCA = ecProperty->GetCustomAttribute("TestCA");
-    ASSERT_TRUE(propertyCA == nullptr);
+        ECSchemaCP ecSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECClassCP testClass = ecSchema->GetClassCP("TestClass");
+        ECPropertyP ecProperty = testClass->GetPropertyP("prop");
+
+        IECInstancePtr systemSchemaCA = ecSchema->GetCustomAttribute("SystemSchema");
+        ASSERT_TRUE(systemSchemaCA == nullptr);
+
+        IECInstancePtr classCA = testClass->GetCustomAttribute("TestCA");
+        ASSERT_TRUE(classCA == nullptr);
+
+        IECInstancePtr propertyCA = ecProperty->GetCustomAttribute("TestCA");
+        ASSERT_TRUE(propertyCA == nullptr);
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddAndUpdatePropertiesWithEnumAndKoQ)
+TEST_F(ECSchemaUpdateTests, AddKoQAndUpdatePropertiesWithKoQ)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECEntityClass typeName='Foo' >"
-        "    <ECProperty propertyName='Length' typeName='double' />" // kindOfQuantity='s1:MyKindOfQuantity'
-        "    <ECProperty propertyName='Homepage' typeName='string' />" // extendedTypeName='URL'
-        "    <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' />" //kindOfQuantity = 's1:MyKindOfQuantity'
+        "    <ECProperty propertyName='Length' typeName='double' />"
+        "    <ECProperty propertyName='Homepage' typeName='string' />"
+        "    <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' />"
         "    <ECArrayProperty propertyName='Favorites' typeName='string'  minOccurs='0' maxOccurs='unbounded' />"
-        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
         "  </ECEntityClass>"
         "</ECSchema>");
 
-    bool asserted = false;
-    ECDb ecdb;
-    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
-    ASSERT_FALSE(asserted);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem deleteAllCA(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <KindOfQuantity typeName='MyKindOfQuantity' description='My KindOfQuantity'"
         "                    displayLabel='My KindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
         "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
-        "    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
-        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
-        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
-        "    </ECEnumeration>"
         "    <ECEntityClass typeName='Foo' >"
-        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />"
-        "        <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
-        "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>"
-        "        <ECArrayProperty propertyName='Favorites' typeName='string' extendedTypeName='URL' minOccurs='0' maxOccurs='unbounded' />"
-        "        <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
+        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />" // kindOfQuantity='s1:MyKindOfQuantity'
+        "        <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />" // extendedTypeName='URL'
+        "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>" // kindOfQuantity='s1:MyKindOfQuantity'
+        "        <ECArrayProperty propertyName='Favorites' typeName='string' extendedTypeName='URL' minOccurs='0' maxOccurs='unbounded' />" // extendedTypeName='URL'
         "    </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: AddKoQAndUpdatePropertiesWithKoQ is supported");
+    ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: AddKoQAndUpdatePropertiesWithKoQ is supported");
     ASSERT_FALSE(asserted);
-    ECEnumerationCP nonStrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
-    ASSERT_TRUE(nonStrictEnum != nullptr);
-    KindOfQuantityCP myKindOfQuantity = ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
-    ASSERT_TRUE(myKindOfQuantity != nullptr);
-    ECClassCP foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
-    ASSERT_TRUE(foo != nullptr);
 
-    PrimitiveECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
-    PrimitiveECPropertyCP foo_homepage = foo->GetPropertyP("Homepage")->GetAsPrimitiveProperty();
-    ArrayECPropertyCP foo_alternativeLengths = foo->GetPropertyP("AlternativeLengths")->GetAsArrayProperty();
-    ArrayECPropertyCP foo_favorites = foo->GetPropertyP("Favorites")->GetAsArrayProperty();
-    PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: AddKoQAndUpdatePropertiesWithKoQ is supported");
+    ASSERT_FALSE(asserted);
 
-    ASSERT_TRUE(foo_length != nullptr);
-    ASSERT_TRUE(foo_homepage != nullptr);
-    ASSERT_TRUE(foo_alternativeLengths != nullptr);
-    ASSERT_TRUE(foo_favorites != nullptr);
-    ASSERT_TRUE(foo_type != nullptr);
-    ASSERT_TRUE(foo_length->GetKindOfQuantity() == myKindOfQuantity);
-    ASSERT_TRUE(foo_alternativeLengths->GetKindOfQuantity() == myKindOfQuantity);
-    ASSERT_TRUE(foo_homepage->GetExtendedTypeName() == "URL");
-    ASSERT_TRUE(foo_favorites->GetExtendedTypeName() == "URL");
-    ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        KindOfQuantityCP myKindOfQuantity = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
+        ASSERT_TRUE(myKindOfQuantity != nullptr);
+        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+
+        PrimitiveECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
+        ASSERT_TRUE(foo_length != nullptr);
+        ASSERT_TRUE(foo_length->GetKindOfQuantity() == myKindOfQuantity);
+
+        PrimitiveECPropertyCP foo_homepage = foo->GetPropertyP("Homepage")->GetAsPrimitiveProperty();
+        ASSERT_TRUE(foo_homepage != nullptr);
+        ASSERT_TRUE(foo_homepage->GetExtendedTypeName() == "URL");
+
+        ArrayECPropertyCP foo_alternativeLengths = foo->GetPropertyP("AlternativeLengths")->GetAsArrayProperty();
+        ASSERT_TRUE(foo_alternativeLengths != nullptr);
+        ASSERT_TRUE(foo_alternativeLengths->GetKindOfQuantity() == myKindOfQuantity);
+
+        ArrayECPropertyCP foo_favorites = foo->GetPropertyP("Favorites")->GetAsArrayProperty();
+        ASSERT_TRUE(foo_favorites != nullptr);
+        ASSERT_TRUE(foo_favorites->GetExtendedTypeName() == "URL");
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                     05/16
+// @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToUnStrictEnum)
+TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToNonStrictEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECEntityClass typeName='Foo' >"
-        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "    <ECProperty propertyName='Type' typeName='int' />"
         "  </ECEntityClass>"
         "</ECSchema>");
 
-    bool asserted = false;
-    ECDb ecdb;
-    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
-    ASSERT_FALSE(asserted);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem deleteAllCA(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
@@ -6367,41 +6773,60 @@ TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToUnStrictEnum)
         "    <ECEntityClass typeName='Foo' >"
         "        <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: changing primitive to NonString Enum is supported");
+    ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaImport(asserted, ecdb, deleteAllCA);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: changing primitive to NonString Enum is supported");
     ASSERT_FALSE(asserted);
-    ECEnumerationCP nonStrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
-    ASSERT_TRUE(nonStrictEnum != nullptr);
-    ECClassCP foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
-    ASSERT_TRUE(foo != nullptr);
 
-    PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: changing primitive to NonString Enum is supported");
+    ASSERT_FALSE(asserted);
 
-    ASSERT_TRUE(foo_type != nullptr);
-    ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        ECEnumerationCP nonStrictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+        ASSERT_TRUE(nonStrictEnum != nullptr);
+        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+
+        PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+        ASSERT_TRUE(foo_type != nullptr);
+        ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                     05/16
+// @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToStrictEnum)
+TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToStrictEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECEntityClass typeName='Foo' >"
-        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "    <ECProperty propertyName='Type' typeName='int' />"
         "  </ECEntityClass>"
         "</ECSchema>");
 
-    bool asserted = false;
-    ECDb ecdb;
-    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
-    ASSERT_FALSE(asserted);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem modified(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
@@ -6411,98 +6836,225 @@ TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToStrictEnum)
         "    <ECEntityClass typeName='Foo' >"
         "        <ECProperty propertyName='Type' typeName='StrictEnum' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false);
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), false, "Master Briefcase: changing primitive to Strict Enum is not supported");
+    ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaImport(asserted, ecdb, modified);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), false, "standalone Briefcase: changing primitive to Strict Enum is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: changing primitive to Strict Enum is not supported");
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                     05/16
+// @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ChangingPrimitiveToAnotherPrimitive)
+TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToPrimitive)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECEntityClass typeName='Foo' >"
-        "    <ECProperty propertyName='Type' typeName='int' />" // NonStrictEnum
+        "    <ECProperty propertyName='Type' typeName='int' />"
         "  </ECEntityClass>"
         "</ECSchema>");
 
-    bool asserted = false;
-    ECDb ecdb;
-    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
-    ASSERT_FALSE(asserted);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem modified(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
-        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
-        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
-        "    </ECEnumeration>"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECProperty propertyName='Type' typeName='string' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false);
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), false, "Master Briefcase: changing primitive to another primitive is not supported");
+    ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaImport(asserted, ecdb, modified);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), false, "standalone Briefcase: changing primitive to another primitive is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: changing primitive to another primitive is not supported");
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                     05/16
+// @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ChangingEnumToPrimitive)
+TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToPrimitive)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>" // StrictEnum
         "        <ECEnumerator value = '0' displayLabel = 'txt' />"
         "        <ECEnumerator value = '1' displayLabel = 'bat' />"
         "    </ECEnumeration>"
         "  <ECEntityClass typeName='Foo' >"
-        "    <ECProperty propertyName='Type' typeName='StrictEnum' />" // NonStrictEnum
+        "    <ECProperty propertyName='Type' typeName='StrictEnum' />"
         "  </ECEntityClass>"
         "</ECSchema>");
 
-    bool asserted = false;
-    ECDb ecdb;
-    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
-    ASSERT_FALSE(asserted);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem modified(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>" // StrictEnum
         "        <ECEnumerator value = '0' displayLabel = 'txt' />"
         "        <ECEnumerator value = '1' displayLabel = 'bat' />"
         "    </ECEnumeration>"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECProperty propertyName='Type' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: changing Enum to primitive should be successful");
+    ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaImport(asserted, ecdb, modified);
-    ECEnumerationCP strictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "StrictEnum");
-    ASSERT_TRUE(strictEnum != nullptr);
-    ECClassCP foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
-    ASSERT_TRUE(foo != nullptr);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: changing Enum to primitive should be successful");
+    ASSERT_FALSE(asserted);
 
-    PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: changing Enum to primitive should be successful");
+    ASSERT_FALSE(asserted);
 
-    ASSERT_TRUE(foo_type != nullptr);
-    ASSERT_TRUE(foo_type->GetEnumeration() == nullptr);
-    ASSERT_TRUE(foo_type->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        ECEnumerationCP strictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+        ASSERT_TRUE(strictEnum != nullptr);
+        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+
+        PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+        ASSERT_TRUE(foo_type != nullptr);
+        ASSERT_TRUE(foo_type->GetEnumeration() == nullptr);
+        ASSERT_TRUE(foo_type->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                     05/16
+// @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ChangingEnumToEnum)
+TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToEnum)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>" // StrictEnum
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEnumeration typeName='UnStrictEnum' backingTypeName='int' isStrict='False'>" // NonStrictEnum
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='StrictEnum' />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='Goo' >"
+        "    <ECProperty propertyName='Type' typeName='UnStrictEnum' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>" // StrictEnum
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEnumeration typeName='UnStrictEnum' backingTypeName='int' isStrict='False'>" // NonStrictEnum
+        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='UnStrictEnum' />"
+        "    </ECEntityClass>"
+        "  <ECEntityClass typeName='Goo' >"
+        "    <ECProperty propertyName='Type' typeName='StrictEnum' />"
+        "  </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: changing Enum to Enum should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: changing Enum to Enum should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: changing Enum to Enum should be successful");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        ECEnumerationCP strictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+        ASSERT_TRUE(strictEnum != nullptr);
+        ECEnumerationCP unstrictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "UnStrictEnum");
+        ASSERT_TRUE(unstrictEnum != nullptr);
+
+        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+        ECClassCP goo = GetECDb().Schemas().GetECClass("TestSchema", "Goo");
+        ASSERT_TRUE(foo != nullptr);
+
+        PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+        ASSERT_TRUE(foo_type != nullptr);
+        ASSERT_TRUE(foo_type->GetEnumeration() == unstrictEnum);
+
+        PrimitiveECPropertyCP goo_type = goo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+        ASSERT_TRUE(goo_type != nullptr);
+        ASSERT_TRUE(goo_type->GetEnumeration() == strictEnum);
+
+        GetECDb().CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, RemoveExistingEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6516,41 +7068,50 @@ TEST_F(ECSchemaUpdateTests, ChangingEnumToEnum)
         "  </ECEntityClass>"
         "</ECSchema>");
 
-    bool asserted = false;
-    ECDb ecdb;
-    AssertSchemaImport(ecdb, asserted, schemaItem, "deletecainstancewithoutproperty.ecdb");
-    ASSERT_FALSE(asserted);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem modified(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEnumeration typeName='StrictEnum' backingTypeName='int' isStrict='True'>"
-        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
-        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
-        "    </ECEnumeration>"
-        "    <ECEnumeration typeName='UnStrictEnum' backingTypeName='int' isStrict='False'>"
-        "        <ECEnumerator value = '0' displayLabel = 'txt' />"
-        "        <ECEnumerator value = '1' displayLabel = 'bat' />"
-        "    </ECEnumeration>"
         "    <ECEntityClass typeName='Foo' >"
-        "        <ECProperty propertyName='Type' typeName='UnStrictEnum' />"
+        "        <ECProperty propertyName='Type' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), false, "Master Briefcase: Deleting Enum is not supported");
+    ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaImport(asserted, ecdb, modified);
-    ECEnumerationCP strictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "StrictEnum");
-    ASSERT_TRUE(strictEnum != nullptr);
-    ECEnumerationCP unstrictEnum = ecdb.Schemas().GetECEnumeration("TestSchema", "UnStrictEnum");
-    ASSERT_TRUE(unstrictEnum != nullptr);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), false, "standalone Briefcase: Deleting Enum is not supported");
+    ASSERT_FALSE(asserted);
 
-    ECClassCP foo = ecdb.Schemas().GetECClass("TestSchema", "Foo");
-    ASSERT_TRUE(foo != nullptr);
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: Deleting Enum is not supported");
+    ASSERT_FALSE(asserted);
 
-    PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-    ASSERT_TRUE(foo_type != nullptr);
-    ASSERT_TRUE(foo_type->GetEnumeration() == unstrictEnum);
+        ECEnumerationCP strictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+        ASSERT_TRUE(strictEnum != nullptr);
+        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+
+        PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+        ASSERT_TRUE(foo_type != nullptr);
+        ASSERT_TRUE(foo_type->GetEnumeration() == strictEnum);
+
+        GetECDb().CloseDb();
+        }
     }
 
 //---------------------------------------------------------------------------------------
