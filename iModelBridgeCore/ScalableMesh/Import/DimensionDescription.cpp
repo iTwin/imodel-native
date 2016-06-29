@@ -578,10 +578,14 @@ void DimensionOrg::push_back (const DimensionDef& pi_rDimension)
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DimensionOrg::Impl::ComputeTypeSize () const
-    {
+    {        
     size_t TotalSize = 0;
-    std::transform(m_dimensions.begin(), m_dimensions.end(), ImagePP::AccumulateIter(TotalSize), 
-                   std::mem_fun_ref(&DimensionDef::GetTypeSize));
+
+    for (auto& dimension : m_dimensions)
+        {
+        TotalSize += dimension.GetTypeSize();
+        }
+
     return TotalSize;
     }
 
@@ -675,8 +679,12 @@ const size_t DimensionOrgGroup::Impl::UNDEFINED_TYPE_SIZE = (std::numeric_limits
 size_t DimensionOrgGroup::Impl::ComputeTypeSize () const                     
     {
     size_t TotalSize = 0;
-    std::transform(m_separateOrgs.begin(), m_separateOrgs.end(), ImagePP::AccumulateIter(TotalSize), 
-                   std::mem_fun_ref(&DimensionOrg::GetTypeSize));
+
+    for (auto& org : m_separateOrgs)
+        {
+        TotalSize += org.GetTypeSize();
+        }
+    
     return TotalSize;
     }
 

@@ -231,7 +231,13 @@ void IDTMFeatureArray<PointType, HeaderType>::Insert   (const_iterator  pi_Posit
     HPRECONDITION(pi_Begin <= pi_End);
 
     size_t          InsertedPointsQty   = 0;
-    transform(pi_Begin, pi_End, Bentley::ImagePP::AccumulateIter(InsertedPointsQty), mem_fun_ref(&value_type::GetSize));
+    const_iterator  start = pi_Begin;
+
+    while (start != pi_End)
+        {
+        InsertedPointsQty += pi_Begin->GetSize();
+        start++;
+        }    
 
     PointArray::iterator    InsertedPointIt  = m_Points.Insert(pi_Position->Begin(), InsertedPointsQty);
     HeaderArray::iterator   InsertedHeaderit = EditHeaders().Insert(pi_Position->GetHeaderIter(), distance(pi_Begin, pi_End));
