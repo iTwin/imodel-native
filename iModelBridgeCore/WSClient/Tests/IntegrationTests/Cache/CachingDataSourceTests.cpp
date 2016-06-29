@@ -319,7 +319,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws22";
+    Utf8String serverUrl = "https://viltest2-5.bentley.com/ws22";
     Utf8String repositoryId = "Bentley.eB--viltest2-5.bentley.com~2CeB_Mobile";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
@@ -335,7 +335,23 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG23ProjectWisePluginRepository_Suc
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
+    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws23";
+    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
+    Credentials creds("admin", "admin");
+    BeFileName cachePath = GetTestCachePath();
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
+    client->SetCredentials(creds);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG24ProjectWisePluginRepository_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws24";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
@@ -370,7 +386,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
+    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws23";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
@@ -526,11 +542,11 @@ TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_F
     EXPECT_EQ(ECInstanceId(1ull), statement.GetValueId <ECInstanceId>(0));
     }
 
-TEST_F(CachingDataSourceTests, GetObjects_WSG2PWSpatialQuery_Succeeds)
+TEST_F(CachingDataSourceTests, GetObjects_WSG24PWSpatialQuery_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
+    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws24";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
