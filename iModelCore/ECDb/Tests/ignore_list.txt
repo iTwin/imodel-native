@@ -31,3 +31,6 @@ ECSchemaUpdateTests.UpdateECDbMapCA_ChangeIndexName
 
 #TFS 485980
 ECSchemaUpdateTests.UpdateECDbMapCA_AddMinimumSharedColumnsCount
+
+#hassan need to look at it
+ECSchemaUpdateTests.*
