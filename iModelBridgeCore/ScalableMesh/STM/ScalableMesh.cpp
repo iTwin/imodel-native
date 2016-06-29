@@ -370,9 +370,9 @@ int IScalableMesh::ConvertToCloud(const WString& pi_pOutputDirPath) const
     }
 
 #ifdef SCALABLE_MESH_ATP
-int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
+int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const
     {
-    return _LoadAllNodeHeaders(nbLoadedNodes);
+    return _LoadAllNodeHeaders(nbLoadedNodes, level);
     }
 
 int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
@@ -2057,9 +2057,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
 /*----------------------------------------------------------------------------+
 |MrDTM::_LoadAllNodeHeaders
 +----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLoadedNodes) const
+template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const
     {    
-    m_scmIndexPtr->LoadTree(nbLoadedNodes);    
+    m_scmIndexPtr->LoadTree(nbLoadedNodes, level);
     return SUCCESS;
     } 
 

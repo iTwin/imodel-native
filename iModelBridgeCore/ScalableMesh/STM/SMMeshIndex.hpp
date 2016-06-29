@@ -1400,6 +1400,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFea
             {
             if (defs[i][j] < GetPointsPtr()->size()) feature.push_back(this->GetPointsPtr()->operator[](defs[i][j]));
             }
+        if (IsClosedFeature(defs[i][0]) &&feature.size() > 0)
+            if (!feature.back().AlmostEqual(feature.front()))
+                feature.push_back(feature.front());
         points.push_back(feature);
         types.push_back((DTMFeatureType)defs[i][0]);
         }
@@ -1429,7 +1432,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
     newFeatureDef.push_back((int32_t)type);
     newFeatureDef.push_back(&indexes[0], indexes.size());*/
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
-    linearFeaturesPtr->push_back((int)indexes.size());
+    linearFeaturesPtr->push_back((int)indexes.size()+1); //include type flag
     linearFeaturesPtr->push_back((int32_t)type);
     linearFeaturesPtr->push_back(&indexes[0], indexes.size());
     return 0;
@@ -1448,6 +1451,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
         DRange3d extentClipped;
         bvector<DPoint3d> pointsClipped;
         ClipFeatureDefinition(type, m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, points, extent);
+        if (!m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) return 0;
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
@@ -1507,7 +1511,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
             newFeatureDef.push_back((int32_t)type);
             newFeatureDef.push_back(&indexes[0], indexes.size());*/
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
-            linearFeaturesPtr->push_back((int)indexes.size());
+            linearFeaturesPtr->push_back((int)indexes.size()+1);
             linearFeaturesPtr->push_back((int32_t)type);
             linearFeaturesPtr->push_back(&indexes[0], indexes.size());
             }
@@ -2185,10 +2189,15 @@ void SMMeshIndexNode<POINT, EXTENT>::UpdateFromGraph(MTGGraph * graph, bvector<D
     graph->DropMask(visitedMask);
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(this->GetGraphPtr());
 
-    if (graphPtr->EditData() != nullptr) delete graphPtr->EditData();
-    MTGGraph* graphP  =  new MTGGraph(*graph);
-    graphPtr->SetData(graphP);
-    graphPtr->SetDirty();
+    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(this->GetBlockID().m_integerID, this->GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph, (uint64_t)m_SMIndex));
+    SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
+
+    MTGGraph* graphP = new MTGGraph(*graph);
+    storedMemoryPoolItem->SetData(graphP);
+    storedMemoryPoolItem->SetDirty();
+    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)this->m_SMIndex);
+
+
     //this->SetGraphDirty();
     this->m_nodeHeader.m_nbFaceIndexes = faceIndices.size();
     assert(faceIndices.size() % 3 == 0);

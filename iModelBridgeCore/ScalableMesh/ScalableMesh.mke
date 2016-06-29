@@ -280,6 +280,8 @@ $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(
 
 $(o)SMStreamingTileStore$(oext) : $(stmDir)SMStreamingTileStore.cpp $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
+$(o)SMNodeGroup$(oext) : $(stmDir)SMNodeGroup.cpp $(stmDir)SMNodeGroup.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
 $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}
 
 $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCompileDepends}

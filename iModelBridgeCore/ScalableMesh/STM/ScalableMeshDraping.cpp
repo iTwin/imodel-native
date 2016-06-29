@@ -604,6 +604,33 @@ bool MeshTraversalQueue::SetStartPoint(DPoint3d pt)
     return true;
     }
 
+bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
+    {
+    DPoint3d transformedPt = testPoint;
+    m_UorsToStorage.Multiply(transformedPt);
+    DPoint3d startPt = transformedPt;
+
+    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
+    params->SetLevel(m_scmPtr->GetTerrainDepth());
+    bvector<IScalableMeshNodePtr> nodes;
+    params->SetDirection(direction);
+    m_scmPtr->GetCurrentlyViewedNodes(m_nodeSelection);
+    QueryNodesBasedOnParams(nodes, startPt, params);
+    m_nodeSelection.clear();
+    bvector<bool> clips;
+    for (auto& node : nodes)
+        {
+        BcDTMPtr dtmP = node->GetBcDTM();
+        if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(pointOnDTM, direction, transformedPt))
+            {
+            m_transform.Multiply(pointOnDTM);
+            return true;
+            }
+        }
+        return false;
+    }
+
 bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
     DPoint3d transformedPt = testPoint;

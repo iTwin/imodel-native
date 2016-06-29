@@ -566,7 +566,7 @@ public:
     virtual bool Destroy();
 
 
-    void LoadTreeNode(size_t& nLoaded);
+    void LoadTreeNode(size_t& nLoaded, int level);
 
     uint32_t       GetNbObjects() const;
 
@@ -1469,7 +1469,7 @@ public:
     -----------------------------------------------------------------------------*/
     size_t              GetSplitTreshold() const;
 
-        void LoadTree (size_t& nLoaded);
+    void LoadTree (size_t& nLoaded, int level);
     void SetGenerating(bool isGenerating)
         {
         m_isGenerating = isGenerating;
