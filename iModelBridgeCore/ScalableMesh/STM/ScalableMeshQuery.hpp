@@ -1038,8 +1038,6 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
 //        auto isStreaming = s_useStreamingStore;        
 
-//        if(isStreaming) s_streamingMutex.lock();
-    
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
 
     IScalableMeshMeshPtr meshP;
@@ -1168,7 +1166,6 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             }        
         }
     
-    //if (isStreaming) s_streamingMutex.unlock();
     if (meshP == nullptr || meshP->GetNbFaces() == 0) return nullptr;
     return meshP;    
     }
@@ -1332,7 +1329,6 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
                 
         if (meshPtr->GetNbFaces() == 0)
             {                        
-            //if (isStreaming) s_streamingMutex.unlock();
             return nullptr;
             }
 
@@ -1422,7 +1418,6 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
         meshP = meshPtr.get();        
         }
             
-    //if (isStreaming) s_streamingMutex.unlock();
     if (meshP != nullptr && meshP->GetNbFaces() == 0) return nullptr;
 
     return meshP;
