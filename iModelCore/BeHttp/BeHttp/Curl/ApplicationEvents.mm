@@ -13,8 +13,11 @@
 #include <queue>
 #include "CurlHttpHandler.h"
 
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 USING_NAMESPACE_BENTLEY_HTTP
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -25,7 +28,7 @@ void ApplicationEventsManager::InitializeApplicationEventsListening ()
     
     [center addObserverForName:UIApplicationWillEnterForegroundNotification object:nil queue:mainQueue usingBlock:^(NSNotification *note)
         {
-        for (auto listener : s_applicationEventsListeners)
+        for (auto listener : m_applicationEventsListeners)
             listener->_OnApplicationResume ();
         }];
     }

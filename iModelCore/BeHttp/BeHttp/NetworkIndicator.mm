@@ -10,6 +10,9 @@
 #endif
 #include "NetworkIndicator.h"
 
+
+#import <UIKit/UIKit.h>
+
 USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
