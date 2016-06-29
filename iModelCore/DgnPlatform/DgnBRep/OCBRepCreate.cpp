@@ -182,8 +182,8 @@ static BentleyStatus bodyFromBSurface(TopoDS_Shape& shape, MSBsplineSurfaceCR bS
 
     surface->GetUKnots(uKnots);
     surface->GetVKnots(vKnots);
-    OCBRep::GetOcctKnots(occtUKnots, occtUMultiplicities, uKnots, surface->GetIntUOrder());
-    OCBRep::GetOcctKnots(occtVKnots, occtVMultiplicities, vKnots, surface->GetIntVOrder());
+    OCBRepUtil::GetOcctKnots(occtUKnots, occtUMultiplicities, uKnots, surface->GetIntUOrder());
+    OCBRepUtil::GetOcctKnots(occtVKnots, occtVMultiplicities, vKnots, surface->GetIntVOrder());
     
     for (int i=0; i < surface->GetIntNumUPoles(); i++)
         for (int j=0; j < surface->GetIntNumVPoles(); j++)
