@@ -248,6 +248,31 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
         options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
     else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
         {
+        for (ECClassCP anotherBaseClass : m_ecClass.GetBaseClasses())
+            {
+            ClassMap const* anotherBaseClassMap = GetECDbMap().GetClassMap(*anotherBaseClass);
+            BeAssert(anotherBaseClassMap != nullptr);
+            if (anotherBaseClassMap == &parentClassMap || anotherBaseClassMap->GetMapStrategy().IsNotMapped())
+                continue;
+
+            //! Skip interface classes implement by primary class
+            if (anotherBaseClassMap->IsMappedToSingleTable() && anotherBaseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
+                continue;
+
+            if (&parentClassMap.GetPrimaryTable() != &anotherBaseClassMap->GetPrimaryTable() || &parentClassMap.GetJoinedTable() != &anotherBaseClassMap->GetJoinedTable())
+                {
+                m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                             "ECClass '%s' has two base ECClasses which don't map to the same tables. "
+                                                                             "Base ECClass '%s' is mapped to primary table '%s' and joined table '%s'. "
+                                                                             "Base ECClass '%s' is mapped to primary table '%s' and joined table '%s'.",
+                                                                             m_ecClass.GetFullName(), parentClassMap.GetClass().GetFullName(),
+                                                                             parentClassMap.GetPrimaryTable().GetName().c_str(), parentClassMap.GetJoinedTable().GetName().c_str(),
+                                                                             anotherBaseClass->GetFullName(), anotherBaseClassMap->GetPrimaryTable().GetName().c_str(),
+                                                                             anotherBaseClassMap->GetJoinedTable().GetName().c_str());
+                return ERROR;
+                }
+            }
+
         options = options | ECDbMapStrategy::Options::JoinedTable;
         if (Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
             {
@@ -1204,7 +1229,7 @@ BentleyStatus IndexMappingInfo::CreateFromIdSpecificationCAs(std::vector<IndexMa
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus IndexMappingInfoCache::TryGetIndexInfos(std::vector<IndexMappingInfoPtr> const*& indexInfos, ClassMapCR classMap) const
+BentleyStatus IndexMappingInfoCache::TryGetIndexInfos(std::vector<IndexMappingInfoPtr> const*& indexInfos, ClassMap const& classMap) const
     {
     //first look in class map info cache
     auto classMapInfoCacheIt = m_schemaImportContext.GetClassMappingInfoCache().find(&classMap);

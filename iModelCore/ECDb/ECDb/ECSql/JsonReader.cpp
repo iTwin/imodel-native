@@ -147,7 +147,7 @@ BentleyStatus JsonReader::AddInstancesFromSpecifiedClassPath(JsonValueR allInsta
         ECRelationshipPath pathFromDerivedClass = pathFromRelatedClass;
         pathFromDerivedClass.SetEndClass(*selectClass, ECRelationshipPath::End::Root);
 
-        if (SUCCESS != AddInstancesFromPreparedStatement(allInstances, allDisplayInfo, *statement, formatOptions, pathFromDerivedClass.ToString()))
+        if (SUCCESS != AddInstancesFromPreparedStatement(allInstances, allDisplayInfo, *statement, formatOptions, pathFromDerivedClass))
             {
             status = ERROR;
             continue;
@@ -302,6 +302,21 @@ void JsonReader::AddCategories(JsonValueR allCategories, JsonValueR addCategorie
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 06 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+void JsonReader::OverrideCategories(JsonValueR addCategories, Utf8StringCR categoryName, Utf8StringCR categoryLabel)
+    {
+    for (int categoryIndex = 0; categoryIndex < (int) addCategories.size(); categoryIndex++)
+        {
+        Json::Value& addCategory = addCategories[categoryIndex];
+        addCategory["CategoryName"] = categoryName;
+        addCategory["DisplayLabel"] = categoryLabel;
+        addCategory["Priority"] = 1500; // TODO: Arbitrarily higher than Miscellaneous
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -316,12 +331,13 @@ void JsonReader::AddInstances(JsonValueR allInstances, JsonValueR addInstances, 
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus JsonReader::AddInstancesFromPreparedStatement(JsonValueR allInstances, JsonValueR allDisplayInfo, ECSqlStatement& statement, JsonECSqlSelectAdapter::FormatOptions const& formatOptions, Utf8StringCR pathFromRelatedClassStr)
+BentleyStatus JsonReader::AddInstancesFromPreparedStatement(JsonValueR allInstances, JsonValueR allDisplayInfo, ECSqlStatement& statement, JsonECSqlSelectAdapter::FormatOptions const& formatOptions, ECRelationshipPath const& pathFromRelatedClass)
     {
     statement.Reset();
     JsonECSqlSelectAdapter jsonAdapter(statement, formatOptions);
 
     int currentInstanceIndex = (int) allInstances.size();
+    Utf8String pathFromRelatedClassStr = pathFromRelatedClass.ToString();
 
     BentleyStatus status = SUCCESS;
 
@@ -364,8 +380,14 @@ BentleyStatus JsonReader::AddInstancesFromPreparedStatement(JsonValueR allInstan
             * Consolidate display info
             */
             Json::Value addDisplayInfo;
-            jsonAdapter.GetRowDisplayInfo(addDisplayInfo); // TODO: Setup move constructors in Json::Value
+            jsonAdapter.GetRowDisplayInfo(addDisplayInfo);
             SetRelationshipPath(addDisplayInfo["Classes"], pathFromRelatedClassStr);
+            if (pathFromRelatedClass.GetRelatedClassSpecifierCount() > 0)
+                {
+                // Setup the category as the display label of the class
+                ECClassCP rootClass = pathFromRelatedClass.GetEndClass(ECRelationshipPath::End::Root);
+                OverrideCategories(addDisplayInfo["Categories"], rootClass->GetName(), rootClass->GetDisplayLabel());
+                }
 
             // Consolidate the categories
             if (!allDisplayInfo.isMember("Categories"))
@@ -666,7 +688,7 @@ BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::ExtractRelatio
                 ECRelationshipPath derivedPath = basePath;
                 
                 derivedPath.SetEndClass(*derivedClass, ECRelationshipPath::End::Leaf);
-
+                
                 if (!derivedPath.Validate())
                     {
                     status = ERROR;
