@@ -47,17 +47,15 @@ struct ECSchemaUpdateTests : public SchemaImportTestFixture
         //+---------------+---------------+---------------+---------------+---------------+------
         void AssertSchemaUpdate(bool &asserted, Utf8CP SchemaXml, BeFileName seedFilePath, BeBriefcaseId briefcaseId, bool expectedToSucceed, Utf8CP assertMessage)
             {
-            Utf8String dbFileName;//% PRIu64 
+            Utf8String dbFileName;
             dbFileName.Sprintf("schemaupdate_briefcaseId_%" PRIu64 ".ecdb", briefcaseId.GetValue());
 
             ECDb ecdb;
             CloneECDb(ecdb, dbFileName.c_str(), seedFilePath);
             ASSERT_TRUE(ecdb.IsDbOpen());
 
-            if (!briefcaseId.IsMasterId())
-                {
-                ecdb.ChangeBriefcaseId(briefcaseId);
-                }
+            if (briefcaseId != ecdb.GetBriefcaseId())
+                ASSERT_EQ(BE_SQLITE_OK, ecdb.ChangeBriefcaseId(briefcaseId));
 
             AssertSchemaImport(asserted, ecdb, SchemaItem(SchemaXml, expectedToSucceed, assertMessage));
 
