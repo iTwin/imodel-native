@@ -12,7 +12,7 @@
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 #include <DgnDbServer/Client/DgnDbBriefcase.h>
-#include <DgnDbServer/Client/DgnDbLocks.h>
+#include <DgnDbServer/Client/DgnDbRepositoryManager.h>
 
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
