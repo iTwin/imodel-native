@@ -47,7 +47,7 @@
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WSClientIntegrationTests WebServices* -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)util\gtest\include;$(SrcRoot)util\gmock\include;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include;C:\dev\Graphite0505\src\WSClient\Tests\UnitTests\Published\Utils;$(IncludePath)</IncludePath>
+    <IncludePath>$(SrcRoot)util\gtest\include;$(SrcRoot)util\gmock\include;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include;$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\build\WSClientIntegrationTests\gensrc\;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>

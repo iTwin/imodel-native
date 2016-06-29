@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/IntegrationTests/IntegrationTests.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -22,6 +22,10 @@ dirToSearch = $(wsClientUnitTestsDir)Utils/
 %include cincapnd.mki
 dirToSearch = $(OutRoot)Winx64/Product/MobileDgnSdk-Winx64/include
 %include cincapnd.mki
+
+# Generate <prg.h> version file for tests
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+%include $(SrcBsiCommon)sharedmki/CreateBuildVersionHeader.mki 
 
 %include $(SrcBsiCommon)sharedmki/BuildUnitTests.mke
 # $(o) is now $(BEGTEST_OUTPUT)$(BEGTEST_NAME)

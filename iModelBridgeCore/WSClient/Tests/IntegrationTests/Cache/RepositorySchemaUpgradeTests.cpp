@@ -12,6 +12,9 @@
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
 #include <Bentley/BeFileListIterator.h>
 
+#include <prg.h>
+static Utf8CP BUILD_VERSION = REL_V "." MAJ_V "." MIN_V "." SUBMIN_V;
+
 StubLocalState s_localState;
 IHttpHandlerPtr s_proxy;
 ConnectSignInManagerPtr s_signInManager;
@@ -74,10 +77,17 @@ Utf8String GetDateStr(DateTimeCR dateTime)
     return Utf8PrintfString("%04d-%02d-%02d", dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay());
     }
 
-BeFileName GetOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId, Utf8StringCR dateStr)
+BeFileName GetOutputPath()
     {
     BeFileName path = s_outRootPath;
+    path.AppendToPath(BeFileName(BUILD_VERSION));
     path.AppendToPath(BeFileName(GetEnvStr(s_env)));
+    return path;
+    }
+
+BeFileName GetOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId, Utf8StringCR dateStr)
+    {
+    BeFileName path = GetOutputPath();
     path.AppendToPath(BeFileName(dateStr));
     path.AppendToPath(BeFileName(testName));
     path.AppendToPath(BeFileName(repositoryId));
@@ -99,8 +109,7 @@ BeFileName GetNewOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId)
 
 BeFileName GetPreviousOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId)
     {
-    BeFileName path = s_outRootPath;
-    path.AppendToPath(BeFileName(GetEnvStr(s_env)));
+    BeFileName path = GetOutputPath();
     path.AppendToPath(L"*");
 
     auto todayStr = GetDateStr(DateTime::GetCurrentTimeUtc());
