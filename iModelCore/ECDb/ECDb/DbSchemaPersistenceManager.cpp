@@ -427,13 +427,19 @@ BentleyStatus DbSchemaPersistenceManager::Save(ECDbCR ecdb, DbSchema const& dbSc
     for (auto const& kvPair : dbMappings.GetPropertyPaths())
         {
         if (BE_SQLITE_OK != InsertPropertyPath(ecdb, *kvPair.second))
+            {
+            BeAssert(false && "Failed to save propertyPath");
             return ERROR;
+            }
         }
 
     for (auto const& kvPair : dbMappings.GetClassMappings())
         {
         if (BE_SQLITE_OK != InsertClassMapping(ecdb, *kvPair.second))
+            {
+            BeAssert(false && "Failed to save ClassMapping");
             return ERROR;
+            }
         }
 
     for (auto const& kvPair : dbMappings.GetClassMappings())
@@ -444,7 +450,10 @@ BentleyStatus DbSchemaPersistenceManager::Save(ECDbCR ecdb, DbSchema const& dbSc
         for (PropertyDbMapping const* propertyMap : propMappings)
             {
             if (BE_SQLITE_OK != InsertPropertyMapping(ecdb, *propertyMap))
+                {
+                BeAssert(false && "Failed to save PropertyMap");
                 return ERROR;
+                }
             }
         }
 

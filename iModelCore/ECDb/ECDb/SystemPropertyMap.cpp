@@ -38,6 +38,7 @@ void SystemPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList&
 SystemPropertyMap::SystemPropertyMap(Type type, ECPropertyCR ecProperty, std::vector<DbColumn const*> columns, ECSqlSystemProperty kind)
     : PropertyMap(type, ecProperty, ecProperty.GetName().c_str(), nullptr), m_kind(kind)
     {
+    BeAssert(!columns.empty());
     std::set<DbTable const*> tables;
     for (DbColumn const* column : columns)
         {
@@ -157,8 +158,29 @@ PropertyMapPtr ECClassIdPropertyMap::Create(ECDbSchemaManagerCR schemaManager, C
 //+---------------+---------------+---------------+---------------+---------------+-
 NativeSqlBuilder::List ECClassIdPropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, DbTable const* tableFilter) const
     {
-    BeAssert(false && "Not implemented yet");
-    return NativeSqlBuilder::List();
+    NativeSqlBuilder nativeSqlSnippet;
+ 
+    if (wrapInParentheses)
+        nativeSqlSnippet.AppendParenLeft(); //SelectClause, WhereClause, InsertCaluse, UpdateClause
+
+    if (IsPersisted())
+        {
+        nativeSqlSnippet.Append(classIdentifier, GetColumn().GetName().c_str());
+        }
+    else
+        {
+        Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+        GetDefaultConstraintClassId().ToString(classIdStr);
+        nativeSqlSnippet.Append(classIdStr).AppendSpace().Append(/*GetColumn().GetName().c_str()*/ ECDB_COL_ECClassId);
+        }
+
+    if (wrapInParentheses)
+        nativeSqlSnippet.AppendParenRight();
+
+    NativeSqlBuilder::List nativeSqlSnippets;
+    nativeSqlSnippets.push_back(std::move(nativeSqlSnippet));
+
+    return {nativeSqlSnippet};
     }
 
 //******************************** RelationshipConstraintPropertyMap ****************************************

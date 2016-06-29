@@ -109,6 +109,12 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
             //The referenced end class id cols are either from the FK table, or if the referenced table has its own class id column, that one is taken.
             //WIP_FOR_AFFAN: Is this safe enough? Does consuming code know that the prop map has columns to another table??
             std::vector<DbColumn const*> m_referencedEndECClassIdColumns; //ReferencedEnd ECClassId in the referenced table or fk table
+            static void push_back(std::vector<DbColumn const*>& list, DbColumn const* column)
+                {
+                BeAssert(column != nullptr);
+                if (std::find(list.begin(), list.end(), column) == list.end())
+                    list.push_back(column);
+                }
             };
 
         struct ForeignKeyColumnInfo : NonCopyableClass

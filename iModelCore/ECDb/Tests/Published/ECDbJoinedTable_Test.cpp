@@ -1145,12 +1145,11 @@ void JoinedTableECDbMapStrategyTests::VerifyInsertedInstance (ECDbR ecdb, Utf8CP
         }
 
     ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ()) << "Select test instance with '" << ecsql << "' failed. Step failed";
-    ASSERT_EQ (sourceInstanceId.GetValue (), stmt.GetValueInt64 (1)) << "Get Source InstanceId failed : " << ecsql;
-    ASSERT_EQ (sourceClassId, stmt.GetValueId<ECClassId>(2)) << "Get SourceClassId failed : " << ecsql;
-    ASSERT_EQ (targetInstanceId.GetValue (), stmt.GetValueInt64 (3)) << "Get TargetInstanceId failed : " << ecsql;
-    ASSERT_EQ (targetClassId, stmt.GetValueId<ECClassId>(4)) << "Get TargetClassId failed : " << ecsql;
+    ASSERT_EQ (sourceInstanceId.GetValue (), stmt.GetValueInt64 (2)) << "Get Source InstanceId failed : " << ecsql;
+    ASSERT_EQ (sourceClassId, stmt.GetValueId<ECClassId>(3)) << "Get SourceClassId failed : " << ecsql;
+    ASSERT_EQ (targetInstanceId.GetValue (), stmt.GetValueInt64 (4)) << "Get TargetInstanceId failed : " << ecsql;
+    ASSERT_EQ (targetClassId, stmt.GetValueId<ECClassId>(5)) << "Get TargetClassId failed : " << ecsql;
     }
-
 //---------------------------------------------------------------------------------------
 //           Foo  (JoinedTablePerDirectSubclass)  
 //            |
@@ -1249,7 +1248,6 @@ TEST_F (JoinedTableECDbMapStrategyTests, SelfJoinRelationships)
     fooHasFooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
-
     ecsql.Sprintf (ToSelectECSql (db, "FooHasFoo").c_str (), fooHasFooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, fooInstanceId1, fooClassId, fooClassId);
     }
@@ -2823,7 +2821,7 @@ TEST_F(JoinedTableECSqlStatementsTests, PersistSqlForQueryOnAbstractBaseClass)
     {
     SetUpECSqlStatementTestsDb();
 
-    Utf8CP expectedGeneratedECSql = "SELECT [Person].[ECInstanceId] FROM (SELECT [ECST_Person].ECClassId,[ECST_Person].[ECInstanceId] FROM [ECST_Person]) [Person]";
+    Utf8CP expectedGeneratedECSql = "SELECT [Person].[ECInstanceId] FROM (SELECT [ECST_Person].[ECInstanceId],[ECST_Person].[ECClassId] FROM [ECST_Person]) [Person]";
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ECInstanceId FROM ECST.Person"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());

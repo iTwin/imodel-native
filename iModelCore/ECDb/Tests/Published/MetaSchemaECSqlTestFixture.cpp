@@ -80,6 +80,8 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, ECSq
 
         if (colName.EqualsI("ECInstanceId"))
             ASSERT_EQ(expectedSchema.GetId().GetValue(), val.GetId<ECSchemaId>().GetValue()) << "ECSchemaDef.ECInstanceId";
+        else if (colName.EqualsI("ECClassId"))
+            ASSERT_EQ(GetECDb().Schemas().GetECClass("MetaSchema", "ECSchemaDef")->GetId(), val.GetId<ECClassId>()) << "ECSchemaDef.ECClassId";
         else if (colName.EqualsI("Name"))
             ASSERT_STREQ(expectedSchema.GetName().c_str(), val.GetText()) << "ECSchemaDef.Name";
         else if (colName.EqualsI("DisplayLabel"))
@@ -162,6 +164,12 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
         if (colName.EqualsI("ECInstanceId"))
             {
             ASSERT_EQ(expectedClass.GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECClassDef.ECInstanceId";
+            continue;
+            }
+
+        if (colName.EqualsI("ECClassId"))
+            {
+            ASSERT_EQ(GetECDb().Schemas().GetECClass("MetaSchema", "ECClassDef")->GetId(), val.GetId<ECClassId>()) << "ECClassDef.ECClassId";
             continue;
             }
 
@@ -325,6 +333,13 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEn
             continue;
             }
 
+        if (colName.EqualsI("ECClassId"))
+            {
+            ASSERT_EQ(GetECDb().Schemas().GetECClass("MetaSchema", "ECEnumerationDef")->GetId(), val.GetId<ECClassId>()) << "ECEnumerationDef.ECClassId";
+            continue;
+            }
+
+
         if (colName.EqualsI("SchemaId"))
             {
             ASSERT_EQ(expectedEnum.GetSchema().GetId().GetValue(), val.GetId<ECSchemaId>().GetValue()) << "ECEnumerationDef.SchemaId";
@@ -487,6 +502,12 @@ void MetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR expect
             continue;
             }
 
+        if (colName.EqualsI("ECClassId"))
+            {
+            ASSERT_EQ(GetECDb().Schemas().GetECClass("MetaSchema", "KindOfQuantityDef")->GetId(), val.GetId<ECClassId>()) << "KindOfQuantityDef.ECClassId";
+            continue;
+            }
+
         if (colName.EqualsI("SchemaId"))
             {
             ASSERT_EQ(expectedKoq.GetSchema().GetId().GetValue(), val.GetId<ECSchemaId>().GetValue()) << "KindOfQuantityDef.SchemaId";
@@ -626,6 +647,12 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
         if (colName.EqualsI("ECInstanceId"))
             {
             ASSERT_EQ(expectedProp.GetId().GetValue(), val.GetId<ECPropertyId>().GetValue()) << "ECPropertyDef.ECInstanceId for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            continue;
+            }
+        
+        if (colName.EqualsI("ECClassId"))
+            {
+            ASSERT_EQ(GetECDb().Schemas().GetECClass("MetaSchema", "ECPropertyDef")->GetId(), val.GetId<ECClassId>()) << "ECPropertyDef.ECClassId";
             continue;
             }
 

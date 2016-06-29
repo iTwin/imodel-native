@@ -435,7 +435,7 @@ IECInstancePtr ECInstanceECSqlSelectAdapter::FindRelationshipEndpoint(ECInstance
     if (nullptr == endpointClass)
         return instance;
 
-    Utf8String ecsql ("SELECT GetECClassId() as ECClassId, * FROM ");
+    Utf8String ecsql ("SELECT * FROM ");
     ecsql.append (endpointClass->GetECSqlName()).append (" WHERE ECInstanceId=?");
     ECSqlStatement statement;
     ECSqlStatus status = statement.Prepare (*(m_ecSqlStatement.GetECDb ()), ecsql.c_str ());

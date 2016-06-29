@@ -31,9 +31,10 @@ private:
     static DbResult AssignProfileVersion(ECDbR, bool onProfileCreation);
 
     //! Expected version of the ECDb profile for this version of the ECDb API.
-    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 7, 1, 7); }
+    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 7, 2, 0); }
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
-    static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 7, 0, 0); }
+    //! WIP upgrade is been written and will be reverted back to 3.7.0.0
+    static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 7, 2, 0); }
 
     static DbResult RunUpgraders(ECDbCR, SchemaVersion const& currentProfileVersion);
 
