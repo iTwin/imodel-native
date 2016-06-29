@@ -637,11 +637,8 @@ IssueReporter const& ClassMap::Issues() const { return m_ecDbMap.Issues(); }
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
     {
-    if (GetClass().GetName() == "ModelHasGeometricElements")
-        printf("");
-
     if (savedGraph.find(this) != savedGraph.end())
-        return BentleyStatus::SUCCESS;
+        return SUCCESS;
 
     savedGraph.insert(this);
     std::set<PropertyMapCP> baseProperties;

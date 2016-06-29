@@ -306,8 +306,6 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
 //+---------------+---------------+---------------+---------------+---------------+------
 MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo)
     {   
-    if (GetClass().GetName() == "ModelHasGeometricElements")
-        printf("");
     //Don't call base class method as end table map requires its own handling
     BeAssert(GetClass().GetRelationshipClassCP() != nullptr && classMapInfo.GetMapStrategy().IsForeignKeyMapping());
     BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&classMapInfo) != nullptr);
@@ -867,11 +865,8 @@ MappingStatus RelationshipClassEndTableMap::_MapPart2(SchemaImportContext& schem
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus RelationshipClassEndTableMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* baseClassMap)
     {
-    if (GetClass().GetName() == "ModelHasGeometricElements")
-        printf("");
-
-    if (ClassMap::_Load(loadGraph, ctx, mapInfo, baseClassMap) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    if (ClassMap::_Load(loadGraph, ctx, mapInfo, baseClassMap) != SUCCESS)
+        return ERROR;
 
     ECRelationshipClassCR relationshipClass = GetRelationshipClass();
 
