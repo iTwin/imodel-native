@@ -19,10 +19,9 @@ VendorAPIDir                = $(baseDir)VendorAPI/
 BuildContext                = $(OutputRootDir)BuildContexts/BeSecurity/
 BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
 
-#---------------------------------------------------------------------------------------+
-# Paths
-#---------------------------------------------------------------------------------------+
-BeSecurityHeaders       = $(BeSecurityPublicApiDir)SecureStore.h    
+BeSecurityHeaders           = $(BeSecurityPublicApiDir)SecureStore.h
+BeSecurityHeaders           + $(BeSecuritySourceDir)BEKeychainItem.h
+BeSecurityHeaders           + $(BeSecuritySourceDir)libsrc/KeychainItemWrapper/KeychainItemWrapper.h
 
 o = $(OutputRootDir)build/BeSecurity/
 always:
@@ -47,6 +46,10 @@ $(o)SecureStoreIos$(oext)                   : $(BeSecuritySourceDir)SecureStoreI
 
 _llvm_no_arc_option = -fno-objc-arc
 LLVMSpecialCompOpts + $(_llvm_no_arc_option)
+
+$(o)BEKeychainItem$(oext)                   : $(BeSecuritySourceDir)BEKeychainItem.m $(BeSecurityHeaders) ${MultiCompileDepends}
+
+$(o)KeychainItemWrapper$(oext)              : $(BeSecuritySourceDir)libsrc/KeychainItemWrapper/KeychainItemWrapper.m $(BeSecurityHeaders) ${MultiCompileDepends}
 
 _llvm_no_arc_option = 
 

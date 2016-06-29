@@ -5,13 +5,12 @@
  |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
-#include <DgnClientFx/Utils/SecureStore.h>
+#include <BeSecurity/SecureStore.h>
 #import "BEKeychainItem.h"
 #import <CommonCrypto/CommonCryptor.h>
 #include <Bentley/Base64Utilities.h>
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_SECURITY
 
 #define KEY_NAMESPACE   "Keys"
 #define KEY_ALIAS       "MobileDgnSecureStore"
