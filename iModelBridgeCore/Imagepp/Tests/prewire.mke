@@ -13,4 +13,13 @@ baseDir                     = $(_makeFilePath)
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
+imageTestConfig=$(baseDir)ImagePPTest.config.xml
+
+%if defined (IMAGEPPTEST_CONFIG)
+    %message Using user defined 'ImagePPTest.config.xml' IMAGEPPTEST_CONFIG=$(IMAGEPPTEST_CONFIG)
+%endif
+
+$(BuildContext)Delivery/UnitTests/ImagePPTest.config.xml : $(imageTestConfig)
+    $(LinkFirstDepToFirstTarget)
+
 

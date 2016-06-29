@@ -279,15 +279,5 @@
 #include "../../PrivateApi/ImagePPInternal/gra/ImageAllocator.h"
 #include "../../PrivateApi/ImagePPInternal/gra/Task.h"
 
-/*---------------------------------------------------------------------------------**//**
-* Generic host for all our tests.
-* @bsiclass                                              
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct TestImageppLibHost : ImagePP::ImageppLib::Host
-    {
-    TestImageppLibHost(){};
-    virtual ~TestImageppLibHost(){};
-    virtual void _RegisterFileFormat() override {}
-    };
-
+#include "./Common/ImagePPTestConfig.h"
 USING_NAMESPACE_IMAGEPP

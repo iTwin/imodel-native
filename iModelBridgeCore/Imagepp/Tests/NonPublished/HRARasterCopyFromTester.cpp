@@ -26,27 +26,6 @@ static HFCPtr<HGF2DWorldCluster> s_pHMRWorld(new HGFHMRStdWorldCluster());
 struct RasterCreator;
 typedef vector<RasterCreator*> VectorCreators;
 
-/*
-class LibInitializer
-    {
-    public:
-    static LibInitializer& Initialize()
-        {
-        static LibInitializer instance;
-        return instance;
-        }
-
-    private:
-    LibInitializer() 
-        {
-        ImagePP::ImageppLib::Initialize(m_imagePPHost);
-        }
-
-    LibInitializer(LibInitializer const&) = delete;
-    void operator=(LibInitializer const&) = delete;
-    TestImageppLibHost m_imagePPHost;
-    };
-*/
 
 /*=================================================================================**//**
 * This creator class exist to delay the creation after the ::testing::Combine operation.
@@ -218,18 +197,14 @@ struct cTiffPyramidCreator : RasterCreator
 +===============+===============+===============+===============+===============+======*/
 class HRARasterCopyFromBase
     {
-private:
-        TestImageppLibHost m_imagePPHost;
 protected:
     HRARasterCopyFromBase()
         :m_pool(1 /*use of a small pool to generate tile flush*/) // Memory pool shared by all rasters. (in KB)
         {
-        ImagePP::ImageppLib::Initialize(m_imagePPHost);
         };
 
     virtual ~HRARasterCopyFromBase()
         {
-        ImagePP::ImageppLib::GetHost().Terminate(false);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -563,6 +538,8 @@ class HRARasterCopyFromTester : public HRARasterCopyFromBase,
     protected:
     HFCPtr<HRARaster> GetSource() { return ::std::tr1::get<0>(GetParam())->Create(m_pool);}
     HFCPtr<HRARaster> GetSink()   { return ::std::tr1::get<1>(GetParam())->Create(m_pool);}
+
+    virtual void SetUp() override {ImagePPTestConfig::GetConfig().SetUp();}
     };
 
 /*=================================================================================**//**
@@ -574,6 +551,8 @@ class HRARasterCopyFromTester2 : public HRARasterCopyFromBase,
     protected:
     HFCPtr<HRARaster> GetSource() { return GetParam()->Create(m_pool);}
     HFCPtr<HRARaster> GetSink()   { return GetParam()->Create(m_pool);} //Not used, but has to be defined
+
+    virtual void SetUp() override { ImagePPTestConfig::GetConfig().SetUp(); }
     };
 
 /*=================================================================================**//**
@@ -586,6 +565,8 @@ class HRARasterCopyFromTesterNonLinear : public HRARasterCopyFromBase,
     protected:
     HFCPtr<HRARaster> GetSource() { return NULL;} //Not used, but has to be defined
     HFCPtr<HRARaster> GetSink()   { return NULL;} //Not used, but has to be defined
+
+    virtual void SetUp() override { ImagePPTestConfig::GetConfig().SetUp(); }
     };
 
 /*---------------------------------------------------------------------------------**//**
