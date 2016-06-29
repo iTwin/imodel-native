@@ -13,6 +13,18 @@
         </SupplementalSchemaMetaData>
     </ECCustomAttributes>
 
+    <ECClass typeName="Document">
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>true</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
+
     <ECClass typeName="Environment">
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb requires one table for relationship end -->
@@ -62,6 +74,18 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="SavedSearchResult" >
+        <ECCustomAttributes>
+            <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                    <AppliesToSubclasses>true</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="SavedSearchDirectParent" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.01.00">

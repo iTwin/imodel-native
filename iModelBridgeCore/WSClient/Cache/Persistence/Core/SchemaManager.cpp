@@ -210,5 +210,10 @@ BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadConte
     if (SupplementedSchemaStatus::Success != builder.UpdateSchema(schema, supplSchemas))
         return ERROR;
 
+    LOG.warningv(
+        "Adjustements for server schema '%s' were applied due to compatibility issues to 06xx ECv3 ECDb. "
+        "Some data may not be possible to cache - consider verifying required functionality.", 
+        schema.GetFullSchemaName().c_str());
+
     return SUCCESS;
     }
