@@ -38,7 +38,7 @@ void CachingDataSourceTests::SetUp()
 
 BeFileName GetTestCachePath()
     {
-    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
+    BeFileName cachePath = StubFilePath("TestWSCache-" + BeGuid().ToString() + ".ecdb");
     CacheEnvironment env = StubCacheEnvironemnt();
 
     cachePath.BeDeleteFile();
@@ -382,11 +382,11 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws23";
+    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws24";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
@@ -498,51 +498,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository
     ASSERT_TRUE(syncResult.IsSuccess());
     }
 
-TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_FindsChanges)
-    {
-    auto schemaPath = GetTestsAssetsDir();
-    schemaPath.AppendToPath(LR"(\ECSchemas\WSClient\Cache\DSCacheSchema.01.05.ecschema.xml)");
-
-    // Setup ECDb
-    ECDb db;
-    ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(":memory:"));
-
-    // Setup Schema
-    auto context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, schemaPath, *context));
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(context->GetCache()));
-
-    ECClassCP rootClass = db.GetClassLocater().LocateClass("DSCacheSchema", "Root");
-    ASSERT_NE(nullptr, rootClass);
-
-    // Names
-    Utf8String rootName = "Foo";
-
-    // Test quety for same instance
-    Utf8String ecsql = "SELECT ECInstanceId FROM [DSC].[Root] WHERE [Name] = ? LIMIT 1 ";
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(db, ecsql.c_str()));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
-    EXPECT_EQ(BE_SQLITE_DONE, statement.Step());
-
-    // Insert one instnace
-    Json::Value rootInstance;
-    rootInstance["Name"] = rootName;
-    rootInstance["Persistence"] = 0;
-
-    JsonInserter inserter(db, *rootClass);
-    ASSERT_EQ(SUCCESS, inserter.Insert(rootInstance));
-
-    // Try again
-    statement.Reset();
-    statement.ClearBindings();
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
-    EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
-    EXPECT_EQ(ECInstanceId(1ull), statement.GetValueId <ECInstanceId>(0));
-    }
-
-TEST_F(CachingDataSourceTests, GetObjects_WSG24PWSpatialQuery_Succeeds)
+TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -577,116 +533,6 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG24PWSpatialQuery_Succeeds)
     auto result = ds->GetObjects(resultsKey, *query, ICachingDataSource::DataOrigin::CachedOrRemoteData, nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     BeDebugLog(result.GetValue().GetJson().toStyledString().c_str());
-    }
-
-TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepositoryAndECDbAdapterFiledRelationshipClassMethods_MeasurePerformance)
-    {
-    // Test can be copied to app to test performance on device.
-
-    auto m_clientInfo = StubValidClientInfo();
-    BeFileName tempDir = DgnClientFxCommon::GetApplicationPaths().GetTemporaryDirectory();
-    BeFileName cachePath(L"C:\\temp\\temp.ecdb");
-    //BeFileName cachePath(tempDir + L"/temp.ecdb");
-
-    Utf8String serverUrl = "https://crossrail-dev.bentley.com/ws";
-    Utf8String repositoryId = "Bentley.eB--wazdevcrapp01~2CCrossRailDev";
-    Credentials creds("bentleyadmin", "bentleyadmin");
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, m_clientInfo);
-    client->SetCredentials(creds);
-
-    CacheEnvironment env;
-    env.persistentFileCacheDir = tempDir;
-    env.temporaryFileCacheDir = tempDir;
-
-    auto ds = CachingDataSource::OpenOrCreate(client, cachePath, env)->GetResult().GetValue();
-    BeAssert(nullptr != ds);
-
-    ds->GetCacheAccessThread()->ExecuteAsync([=]
-        {
-        auto txn = ds->StartCacheTransaction();
-
-        uint64_t a, b;
-        bvector<ECRelationshipClassCP> rels;
-
-        ECClassCP aClass, bClass = nullptr;
-
-        auto setSchemas = [&]
-            {
-            aClass = txn.GetCache().GetAdapter().GetECClass("eB_Dynamic.Global_Projects_CON");
-            bClass = txn.GetCache().GetAdapter().GetECClass("eB_Dynamic.Global_Events_OBS");
-            };
-
-        auto callMultipleTimes = [&] (std::function<void()> f)
-            {
-            setSchemas();
-            f();
-            f();
-            };
-
-        a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-        bvector<ECN::ECSchemaCP> eschemas;
-        txn.GetCache().GetECDb().Schemas().GetECSchemas(eschemas);
-        b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-        BeDebugLog(Utf8PrintfString("GetECSchemas  took:%lld ms rels:%d", b - a).c_str());
-
-        //txn.GetCache().GetECDb().ClearCache();
-
-        callMultipleTimes([&]
-            {
-            a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            rels = txn.GetCache().GetAdapter().FindRelationshipClasses(aClass->GetId(), bClass->GetId());
-            b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClasses  took:%lld ms rels:%d", b - a, rels.size()).c_str());
-            });
-
-        //txn.GetCache().GetECDb().ClearCache();
-
-        callMultipleTimes([&]
-            {
-            a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            rels = txn.GetCache().GetAdapter().FindRelationshipClassesInSchema(aClass->GetId(), bClass->GetId(), "eB_Dynamic");
-            b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesInSchema  took:%lld ms rels:%d", b - a, rels.size()).c_str());
-            });
-
-        //txn.GetCache().GetECDb().ClearCache();
-
-        callMultipleTimes([&]
-            {
-            a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            rels = txn.GetCache().GetAdapter().FindRelationshipClassesWithSource(aClass->GetId(), "eB_Dynamic");
-            b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesWithSource  took:%lld ms rels:%d", b - a, rels.size()).c_str());
-            });
-
-        for (auto rel : rels)
-            {
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesWithSource %s:%s",
-                Utf8String(rel->GetSchema().GetName()).c_str(),
-                Utf8String(rel->GetName()).c_str()).c_str());
-            }
-
-        //txn.GetCache().GetECDb().ClearCache();
-
-        callMultipleTimes([&]
-            {
-            a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            txn.GetCache().GetAdapter().FindRelationshipClassWithSource(aClass->GetId(), bClass->GetId());
-            b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithSource  took:%lld ms", b - a).c_str());
-            });
-
-        //txn.GetCache().GetECDb().ClearCache();
-
-        callMultipleTimes([&]
-            {
-            a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            txn.GetCache().GetAdapter().FindRelationshipClassWithTarget(aClass->GetId(), bClass->GetId());
-            b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithTarget  took:%lld ms", b - a).c_str());
-            });
-        })->Wait();
     }
 
 TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
