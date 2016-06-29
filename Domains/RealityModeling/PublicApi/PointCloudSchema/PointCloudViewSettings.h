@@ -464,7 +464,7 @@ struct ViewSettingsData
 struct PointCloudViewSettings : public RefCounted<IPointCloudViewSettings>
     {
     private:
-        int                         m_viewIndex;
+        // unused - int                         m_viewIndex;
         ViewSettingsData            m_data;
         bool                        m_hasAdvancedInfo;
 
