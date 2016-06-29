@@ -1489,6 +1489,7 @@ protected:
     GraphicListPtr     m_dynamics;
     Decorations        m_decorations;
     double             m_frameRateGoal; // frames per second
+    uint32_t           m_minimumFrameRate;
     BeAtomic<uint32_t> m_graphicsPerSecondScene;
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
@@ -1526,6 +1527,7 @@ public:
     virtual Image _ReadImage(Point2d targetSize) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
+    virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
 
@@ -1547,14 +1549,18 @@ public:
 
     static double DefaultFrameRateGoal() 
         {
-#ifdef BENTLEY_CONFIG_OS_WINDOWS // *** WIP - we are trying to predict the likely graphics performance of the box.
-        return 25.0; // Plan for the best on Windows (desktop) computers.
+#ifdef BENTLEYCONFIG_GRAPHICS_DIRECTX // *** WIP - we are trying to predict the likely graphics performance of the box.
+        return 20.0; // Plan for the best on Windows (desktop) computers.
 #else
-        return 5.0; // Plan for the worst on mobile devices
+        return 10.0; // Plan for the worst on mobile devices
 #endif
         }
+
     double GetFrameRateGoal() const {return m_frameRateGoal;}
     void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
+    static int const FRAME_RATE_MIN_DEFAULT = 5;
+    uint32_t GetMinimumFrameRate() const {return m_minimumFrameRate;}
+    uint32_t SetMinimumFrameRate(uint32_t minimumFrameRate) {return _SetMinimumFrameRate(minimumFrameRate);}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }

@@ -33,13 +33,15 @@ DateTimeFormatterTest.*                                 # UmarH fails randomly, 
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line style unless we reload the file ( which will reload the cache )
 
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # notified Raman
+
 DependencyRevisionTest.TestDependency # sometimes fails on 0601 winx64 optimized; notified Paul
-#F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(687): error: Value of: c->GetIntegerProperty(2)
-#Actual: 123
-#Expected: 321
-#F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(688): error: Value of: c->GetIntegerProperty(3)
-#Actual: 456
-#Expected: 654
+    # F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(687): error: Value of: c->GetIntegerProperty(2)
+    # Actual: 123
+    # Expected: 321
+    # F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(688): error: Value of: c->GetIntegerProperty(3)
+    # Actual: 456
+    # Expected: 654
+
 DgnDb.GetCoordinateSystemProperties # on merge from graphite0505; notified John
 
 DgnECNavigatorTest.* # expected to fail until merge is done

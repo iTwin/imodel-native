@@ -902,16 +902,47 @@ static void addIsoCurve(Render::GraphicBuilderR graphic, Adaptor3d_CurveOnSurfac
         }
     else
         {
-//GeomAbs_Hyperbola,
-//GeomAbs_Parabola,
-//GeomAbs_BezierCurve,
-//GeomAbs_OffsetCurve,
-//GeomAbs_OtherCurve
-//        Handle(Geom_BSplineCurve) geomBCurve = GeomConvert::CurveToBSplineCurve(curve); // Handle everything else (Beziers etc.) by conversion to bSpline.
+        // Approximate everything else (Other, Bezier etc.) as a bspline...guess this ok...it's not like this api makes a lick of sense???
+        Handle(Adaptor3d_HCurve) hCurveAdaptor = curveOnSurf.Trim(param1, param2, Precision::Confusion());
+        GeomConvert_ApproxCurve approxCurve(hCurveAdaptor, Precision::Confusion(), GeomAbs_C2, 1000, 9);
+  
+        if (!approxCurve.HasResult())
+            return;
 
-//  Standard_EXPORT Handle(Geom_BezierCurve) Bezier() const Standard_OVERRIDE;
-        printf(">>> Missing iso: %d\n", (int) curveOnSurf.GetType());
+        ICurvePrimitivePtr curve = OCBRep::ToCurvePrimitive(approxCurve.Curve(), param1, param2);
+
+        if (!curve.IsValid())
+            return;
+
+        graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
         }
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static Standard_Real getAdjustedRadialStartParam(Standard_Real minParam, Standard_Real step)
+    {
+    Standard_Real startParam = 0.0; // Radial u/v parameters aren't always between 0 and 2pi...
+
+    if (minParam > 0.0)
+        {
+        do
+            {
+            startParam += step;
+
+            } while (startParam < minParam);
+        }
+    else if (minParam < 0.0)
+        {
+        do
+            {
+            startParam -= step;
+
+            } while (startParam > minParam);
+        }
+
+    return startParam;
     }
 #endif
 
@@ -949,7 +980,6 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntity
             }
         }
 
-    includeFaceIso = false; // NEEDSWORK...
     if (includeFaceIso)
         {
         // NOTE: Adapted from DBRep_IsoBuilder gibberish...
@@ -965,20 +995,59 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntity
             if (surface.IsNull() || surface->IsKind(STANDARD_TYPE(Geom_Plane)))
                 continue;
 
+            Standard_Integer numUIsos = 0, numVIsos = 0;
+            Standard_Real stepU = 0.0, stepV = 0.0, uParamStart = 0.0, vParamStart = 0.0;
+            Standard_Real faceUMin = 0.0, faceUMax = 0.0, faceVMin = 0.0, faceVMax = 0.0; 
+
+            BRepTools::UVBounds(face, faceUMin, faceUMax, faceVMin, faceVMax);
+
+            Standard_Real deltaU = Abs(faceUMax - faceUMin);
+            Standard_Real deltaV = Abs(faceVMax - faceVMin);
+            Standard_Real confusion = Min(deltaU, deltaV) * 1.e-8;
+
+            Handle(Standard_Type) kindOfSurface = surface->DynamicType();
+
+            if (STANDARD_TYPE(Geom_RectangularTrimmedSurface) == kindOfSurface)
+                kindOfSurface = Handle(Geom_RectangularTrimmedSurface)::DownCast(surface)->BasisSurface()->DynamicType();
+
+            if (STANDARD_TYPE(Geom_CylindricalSurface) == kindOfSurface ||
+                STANDARD_TYPE(Geom_ConicalSurface) == kindOfSurface)
+                {
+                numUIsos = 4; // Trim will exclude iso if outside face bounds...
+                stepU = msGeomConst_piOver2;
+                uParamStart = getAdjustedRadialStartParam(faceUMin, stepU);
+                }
+            else if (STANDARD_TYPE(Geom_ToroidalSurface) == kindOfSurface || 
+                     STANDARD_TYPE(Geom_SphericalSurface) == kindOfSurface)
+                {
+                numUIsos = numVIsos = 4; // Trim will exclude iso if outside face bounds...
+                stepU = stepV = msGeomConst_piOver2;
+                uParamStart = getAdjustedRadialStartParam(faceUMin, stepU);
+                vParamStart = getAdjustedRadialStartParam(faceVMin, stepV);
+                }
+            else
+                {
+//                STANDARD_TYPE(Geom_SurfaceOfLinearExtrusion) == kindOfSurface
+//                STANDARD_TYPE(Geom_SurfaceOfRevolution) == kindOfSurface
+
+                continue; // NEEDSWORK...
+
+//                numUIsos = numVIsos = 4;
+//
+//                stepU = (numUIsos > 0 ? (deltaU / (Standard_Real) numUIsos) : 0.0);
+//                stepV = (numVIsos > 0 ? (deltaV / (Standard_Real) numVIsos) : 0.0);
+//
+//                uParamStart = faceUMin + stepU;
+//                vParamStart = faceVMin + stepV;
+                }
+
+            if (0 == numUIsos && 0 == numVIsos)
+                continue;
+
             Handle(GeomAdaptor_HSurface) hSurfAdaptor = new GeomAdaptor_HSurface(surface);
             curveOnSurf.Load(hSurfAdaptor);
             hatcher.Clear();
-
-            Standard_Integer numUIsos = 2, numVIsos = 2;
-            Standard_Real faceUMin = 0.0, faceUMax = 0.0, faceVMin = 0.0, faceVMax = 0.0; 
-            TColStd_Array1OfReal faceUParam(1, numUIsos);
-            TColStd_Array1OfReal faceVParam(1, numVIsos);
-            TColStd_Array1OfInteger faceUInd(1, numUIsos);
-            TColStd_Array1OfInteger faceVInd(1, numVIsos);
-
-            faceUInd.Init(0);
-            faceVInd.Init(0);
-            BRepTools::UVBounds(face, faceUMin, faceUMax, faceVMin, faceVMax);
+            hatcher.Confusion3d(confusion);
 
             // Retrieving the edges and loading them into the hatcher.
             TopExp_Explorer expEdges;
@@ -1041,43 +1110,50 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntity
                 }
 
             // Loading and trimming the hatchings.
-            Standard_Integer iIso;
-            Standard_Real deltaU = Abs(faceUMax - faceUMin);
-            Standard_Real deltaV = Abs(faceVMax - faceVMin);
-            Standard_Real confusion = Min(deltaU, deltaV) * 1.e-8;
+            TColStd_Array1OfReal faceUParam(numUIsos > 0 ? 1 : 0, numUIsos);
+            TColStd_Array1OfReal faceVParam(numVIsos > 0 ? 1 : 0, numVIsos);
+            TColStd_Array1OfInteger faceUInd(numUIsos > 0 ? 1 : 0, numUIsos);
+            TColStd_Array1OfInteger faceVInd(numVIsos > 0 ? 1 : 0, numVIsos);
+
+            faceUInd.Init(0);
+            faceVInd.Init(0);
             
-            hatcher.Confusion3d(confusion);
-
-            Standard_Real stepU = deltaU / (Standard_Real) numUIsos;
-
             if (stepU > confusion)
                 {
-                Standard_Real uParam = faceUMin + stepU / 2.0;
+                Standard_Real uParam = uParamStart;
                 gp_Dir2d dir(0.0, 1.0);
 
-                for (iIso = 1; iIso <= numUIsos; iIso++)
+                for (Standard_Integer iIso = 1; iIso <= numUIsos; iIso++)
                     {
                     faceUParam(iIso) = uParam;
-                    gp_Pnt2d origin(uParam, 0.0);
-                    Geom2dAdaptor_Curve hCurve(new Geom2d_Line(origin, dir));
-                    faceUInd(iIso) = hatcher.AddHatching(hCurve);
+
+                    if (!((fabs(uParam - faceUMin) < confusion) || (fabs(uParam - faceUMax) < confusion)))
+                        {
+                        gp_Pnt2d origin(uParam, 0.0);
+                        Geom2dAdaptor_Curve hCurve(new Geom2d_Line(origin, dir));
+                        faceUInd(iIso) = hatcher.AddHatching(hCurve);
+                        }
+
                     uParam += stepU;
                     }
                 }
 
-            Standard_Real stepV = deltaV / (Standard_Real) numVIsos;
-
             if (stepV > confusion)
                 {
-                Standard_Real vParam = faceVMin + stepV / 2.0;
+                Standard_Real vParam = vParamStart;
                 gp_Dir2d dir(1.0, 0.0);
 
-                for (iIso = 1; iIso <= numVIsos ; iIso++)
+                for (Standard_Integer iIso = 1; iIso <= numVIsos ; iIso++)
                     {
                     faceVParam(iIso) = vParam;
-                    gp_Pnt2d origin(0.0, vParam);
-                    Geom2dAdaptor_Curve hCurve(new Geom2d_Line(origin, dir));
-                    faceVInd(iIso) = hatcher.AddHatching(hCurve);
+
+                    if (!((fabs(vParam - faceVMin) < confusion) || (fabs(vParam - faceVMax) < confusion)))
+                        {
+                        gp_Pnt2d origin(0.0, vParam);
+                        Geom2dAdaptor_Curve hCurve(new Geom2d_Line(origin, dir));
+                        faceVInd(iIso) = hatcher.AddHatching(hCurve);
+                        }
+
                     vParam += stepV;
                     }
                 }
@@ -1085,7 +1161,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntity
             // Computation.
             hatcher.Trim();
 
-            for (iIso = 1; iIso <= numUIsos ; iIso++)
+            for (Standard_Integer iIso = 1; iIso <= numUIsos ; iIso++)
                 {
                 Standard_Integer index = faceUInd(iIso);
 
@@ -1093,7 +1169,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntity
                     hatcher.ComputeDomains(index);
                 }
 
-            for (iIso = 1; iIso <= numVIsos ; iIso++)
+            for (Standard_Integer iIso = 1; iIso <= numVIsos ; iIso++)
                 {
                 Standard_Integer index = faceVInd(iIso);
 
