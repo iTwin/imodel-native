@@ -740,7 +740,6 @@ bool OCBRep::Locate::Edges(TopoDS_Shape const& shape, DRay3dCR boresite, double 
     TopExp::MapShapes(shape, TopAbs_EDGE, allEdge);
     TopExp::MapShapes(shape, TopAbs_VERTEX, allVert);
 
-//    PrimitivePicker picker(allVert, allEdge, PrimitivePicker::PrimitivePicker_TypeOfAlgo::PrimitivePicker_PCACHE); // NEEDSWORK: Mantis report filed...
     PrimitivePicker picker(allVert, allEdge, PrimitivePicker::PrimitivePicker_TypeOfAlgo::PrimitivePicker_BRUTE_FORCE);
 
     NCollection_Array1<Standard_Character> pickedEdge(1, allEdge.Size());
@@ -775,7 +774,6 @@ bool OCBRep::Locate::Vertices(TopoDS_Shape const& shape, DRay3dCR boresite, doub
     TopExp::MapShapes(shape, TopAbs_EDGE, allEdge);
     TopExp::MapShapes(shape, TopAbs_VERTEX, allVert);
 
-//    PrimitivePicker picker(allVert, allEdge, PrimitivePicker::PrimitivePicker_TypeOfAlgo::PrimitivePicker_PCACHE); // NEEDSWORK: Mantis report filed...
     PrimitivePicker picker(allVert, allEdge, PrimitivePicker::PrimitivePicker_TypeOfAlgo::PrimitivePicker_BRUTE_FORCE);
 
     NCollection_Array1<Standard_Character> pickedEdge(1, allEdge.Size());
