@@ -1419,8 +1419,9 @@ public:
     virtual DVec2d _GetDpiScale() const = 0;
     virtual void* _GetNativeDevice() const = 0;
 #if defined (BENTLEYCONFIG_DISPLAY_WIN32)
-    virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::Target
+    virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::System
 #endif
+    virtual TargetPtr _CreateTarget(double frameRateGoal) = 0;
     double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
     Window const* GetWindow() const {return m_window.get();}
 };
