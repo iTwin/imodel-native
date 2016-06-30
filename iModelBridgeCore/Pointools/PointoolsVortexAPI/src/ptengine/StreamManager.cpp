@@ -26,7 +26,7 @@ pt::SimpleTimer					test_timer[50];
 bool							testLastRefreshInit = false;
 pt::TimeStamp					testLastRefresh;
 
-pointsengine::StreamManager		streamManager;
+
 
 
 namespace pointsengine
@@ -34,7 +34,11 @@ namespace pointsengine
 
 StreamManager &getStreamManager(void)
 {
-	return streamManager;
+    // Never free this class. It causes a crash at application shutdown because we are trying to use a mutex.
+    // See "If a static variable must be defined, it must be of primitive type or a raw pointer type only"
+    // http://bsw-wiki.bentley.com/bin/view.pl/Main/CPlusPlusSpecific
+    static pointsengine::StreamManager*	s_pstreamManager = new pointsengine::StreamManager;
+    return *s_pstreamManager;
 }
 
 
@@ -51,6 +55,8 @@ StreamManager::StreamManager(void)
 
 StreamManager::~StreamManager(void)
 {
+// *** WILL NEVER BE CALLED ***  See getStreamManager for details.
+
 	MutexScope mutexScope(streamManagerMutex);
 
 	if(getStreamScheduler() != NULL)
