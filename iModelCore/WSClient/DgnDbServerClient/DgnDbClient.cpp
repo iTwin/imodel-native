@@ -166,14 +166,13 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-Json::Value RepositoryCreationJson(Utf8StringCR projectId, Utf8StringCR repositoryName, Utf8StringCR repositoryGuid, Utf8StringCR description, Utf8StringCR localPath, bool published)
+Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR repositoryGuid, Utf8StringCR description, Utf8StringCR localPath, bool published)
     {
     Json::Value repositoryCreation(Json::objectValue);
     JsonValueR instance = repositoryCreation[ServerSchema::Instance] = Json::objectValue;
     instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
     instance[ServerSchema::ClassName] = ServerSchema::Class::Repository;
     JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
-    properties[ServerSchema::Property::ProjectId] = projectId;
     properties[ServerSchema::Property::Description] = description;
     properties[ServerSchema::Property::RepositoryName] = repositoryName;
     properties[ServerSchema::Property::FileId] = repositoryGuid;
@@ -285,7 +284,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
     Utf8String project;
     project.Sprintf ("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
-    Json::Value repositoryCreationJson = RepositoryCreationJson(m_projectId, repositoryName, dbFileId, description, dbFileName, published);
+    Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, dbFileId, description, dbFileName, published);
     client->SetCredentials(m_credentials);
     std::shared_ptr<DgnDbServerRepositoryResult> finalResult = std::make_shared<DgnDbServerRepositoryResult>();
     return client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), callback, cancellationToken)
