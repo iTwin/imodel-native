@@ -495,3 +495,79 @@ GraphicBuilderPtr GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic) con
     return m_builder->_CreateSubGraphic(subToGraphic);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, double saesNpcSq)
+    {
+    double frameRateGoal = target.GetFrameRateGoal();
+
+    // We have to have enough draw events before we can tell how well we are doing.
+    if (m_drawCount < 10)
+        return frameRateGoal;
+
+    double successPct = (m_drawCount - m_abortCount) / (double)m_drawCount;
+
+    auto viewRect = target.GetDevice()->GetWindow()->_GetViewRect();
+    double pixelsPerNpc = viewRect.Width(); // use pixels across as an approximation. Maybe we should measure the diagonal?
+    double pixelsPerInch = target.GetDevice()->PixelsFromInches(1.0);
+    double inchesPerNpc = pixelsPerNpc / pixelsPerInch; // inches/NPC = pixels/NPC * inches/pixel
+    
+    double smallestRangeDrawnNpc = sqrt(saesNpcSq);
+
+    // from here on, all measurements are in inches
+    double smallestRangeDrawn = smallestRangeDrawnNpc * inchesPerNpc;   // size of the diagonal of the smallest range returned by the query
+
+    static const double FINE_ELEMENT_RES = 1 / 16.0; 
+
+    DEBUG_PRINTF("frameRateGoal=%lf smallestRangeDrawn=%lf successPct=%lf", frameRateGoal, smallestRangeDrawn, successPct);
+
+    static volatile double s_longTermSuccessRate = 0.80;
+
+    if ((m_drawCount >= 10 * frameRateGoal) && (successPct > s_longTermSuccessRate))
+        {
+        // After a long string of successes, reset the stats. Otherwise, we won't notice when aborts start happening again.
+        Reset();
+        DEBUG_PRINTF("Reset stats");
+        return frameRateGoal;
+        }
+
+    static volatile double s_shortTermSuccessRate = 0.95;
+
+    if (successPct <= s_shortTermSuccessRate)
+        {
+        Reset();
+
+        // We have been failing too often to draw the whole scene in the time allotted for a frame. 
+        // About all we can do is allow more time per frame. I can only hope that the update planner does not increase the element count!!
+        if (frameRateGoal > target.GetMinimumFrameRate())
+            {
+            --frameRateGoal;
+            WARN_PRINTF("ABORTS TOO MUCH => -frameRateGoal -> %lf (smallestRangeDrawn=%lf)", frameRateGoal, smallestRangeDrawn);
+            }
+
+        return frameRateGoal;
+        }
+
+    // If we got here, we know that we have been able draw all elements in the scene in the time allotted at least most of the time.
+    
+    if (0 == (m_drawCount % (int)frameRateGoal))
+        {
+        // If we have been succeeding for 1 second or more, then maybe we should increase the frame rate.
+        // That would have the benefit of making everything smoother. However, that would also have the effect of making the update planner reduce
+        // the number of elements per scene, that is, increase dropout. That would be OK if we are currently drawing too many small elements anyway.
+        // If we are not drawing small elements, then don't increase the frame rate, as the rejected elements would be too noticable.
+        if (smallestRangeDrawn < FINE_ELEMENT_RES)
+            {
+            Reset();
+            if (frameRateGoal < FRAME_RATE_MAX)
+                {
+                ++frameRateGoal;
+                WARN_PRINTF("SUCCESS @ FINE => +frameRateGoal -> %lf (smallestRangeDrawn=%lf)", frameRateGoal, smallestRangeDrawn);
+                }
+            }
+        }
+
+    return frameRateGoal;
+    }
+
