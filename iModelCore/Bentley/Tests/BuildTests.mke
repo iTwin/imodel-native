@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/BuildTests.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 # ***
@@ -25,7 +25,7 @@ BEGTEST_OUTPUT=$(OutputRootDir)build/Bentley/UnitTests/
 o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
 %ifdef UsePublishedApi
-    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/Bentley/
+    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/Bentley
 %endif
 
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki

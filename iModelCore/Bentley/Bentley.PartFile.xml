@@ -79,12 +79,12 @@
         </Bindings>
     </Part>
 
-  <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
-    <SubPart PartName="PrewireForUnitTests" />
-    <Bindings>
-      <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
-    </Bindings>
-  </Part>
+    <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+        </Bindings>
+    </Part>
 
     <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
     <Part Name="Tests">

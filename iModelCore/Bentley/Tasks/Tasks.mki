@@ -1,0 +1,46 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Tasks/Tasks.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+TasksSourceDir    = $(baseDir)Tasks/
+TasksPublicApiDir = $(baseDir)PublicAPI/Bentley/Tasks/
+
+TasksHeaders      = $(TasksPublicApiDir)AsyncError.h             \
+                    $(TasksPublicApiDir)AsyncResult.h            \
+                    $(TasksPublicApiDir)AsyncTask.h              \
+                    $(TasksPublicApiDir)AsyncTaskRunner.h        \
+                    $(TasksPublicApiDir)AsyncTaskRunnerPool.h    \
+                    $(TasksPublicApiDir)AsyncTaskRunnerFactory.h \
+                    $(TasksPublicApiDir)AsyncTasksManager.h      \
+                    $(TasksPublicApiDir)CancellationToken.h      \
+                    $(TasksPublicApiDir)ConcurrentQueue.h        \
+                    $(TasksPublicApiDir)ITaskRunner.h            \
+                    $(TasksPublicApiDir)TaskScheduler.h          \
+                    $(TasksPublicApiDir)Tasks.h             	 \
+                    $(TasksPublicApiDir)UniqueTaskHolder.h       \
+                    $(TasksPublicApiDir)WorkerThread.h           \
+                    $(TasksPublicApiDir)WorkerThreadPool.h
+                        
+#---------------------------------------------------------------------------------------+
+#   Files to compile 
+#---------------------------------------------------------------------------------------+
+$(o)WorkerThread$(oext)                   : $(TasksSourceDir)WorkerThread.cpp ${TasksHeaders} ${MultiCompileDepends}
+
+$(o)WorkerThreadPool$(oext)               : $(TasksSourceDir)WorkerThreadPool.cpp ${TasksHeaders} ${MultiCompileDepends}
+
+$(o)AsyncTaskRunner$(oext)                : $(TasksSourceDir)AsyncTaskRunner.cpp ${TasksHeaders} ${MultiCompileDepends}
+
+$(o)AsyncTaskRunnerPool$(oext)            : $(TasksSourceDir)AsyncTaskRunnerPool.cpp ${TasksHeaders} ${MultiCompileDepends}
+
+$(o)TaskScheduler$(oext)                  : $(TasksSourceDir)TaskScheduler.cpp ${TasksHeaders} ${MultiCompileDepends}
+
+$(o)AsyncTask$(oext)                      : $(TasksSourceDir)AsyncTask.cpp ${TasksHeaders} ${MultiCompileDepends}
+
+$(o)AsyncError$(oext)                     : $(TasksSourceDir)AsyncError.cpp ${TasksHeaders} ${MultiCompileDepends}
+
+$(o)AsyncTasksManager$(oext)              : $(TasksSourceDir)AsyncTasksManager.cpp ${TasksHeaders} ${MultiCompileDepends}
+
+$(o)CancellationToken$(oext)              : $(TasksSourceDir)CancellationToken.cpp ${TasksHeaders} ${MultiCompileDepends}
