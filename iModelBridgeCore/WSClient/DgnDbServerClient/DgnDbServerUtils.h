@@ -51,7 +51,6 @@ namespace ServerSchema
         {
         static Utf8CP Id = "Id";
         static Utf8CP RepositoryName = "RepositoryName";
-        static Utf8CP ProjectId = "ProjectId";
         static Utf8CP FileName = "FileName";
         static Utf8CP FileId = "FileId";
         static Utf8CP Index = "Index";
