@@ -50,8 +50,9 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
             );
         size_t CountHoldingParents(ECInstanceKeyCR instanceKey, const bset<ECInstanceKey>* parentsToIgnore);
 
+        BentleyStatus DeleteInstances(const ECInstanceKeyMultiMap& instances, bset<ECInstanceKey>& deleted);
+        BentleyStatus DeleteInstancesDirectly(const ECInstanceKeyMultiMap& instances, bset<ECInstanceKey>& deleted);
         BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId instanceId, bset<ECInstanceKey>& additionalToDeleteOut);
-        BentleyStatus DeleteInstancesDirectly(const ECInstanceKeyMultiMap& instances);
 
     public:
         WSCACHE_EXPORT ECDbAdapter(ObservableECDb& ecDb);
@@ -118,7 +119,7 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
             ICancellationTokenPtr ct = nullptr
             ) override;
 
-        WSCACHE_EXPORT int  CountClassInstances(ECClassCP ecClass) override;
+        WSCACHE_EXPORT int CountClassInstances(ECClassCP ecClass) override;
         WSCACHE_EXPORT ECInstanceId FindInstance(ECClassCP ecClass, Utf8CP whereClause = nullptr) override;
         WSCACHE_EXPORT bset<ECInstanceId> FindInstances(ECClassCP ecClass, Utf8CP whereClause = nullptr) override;
 

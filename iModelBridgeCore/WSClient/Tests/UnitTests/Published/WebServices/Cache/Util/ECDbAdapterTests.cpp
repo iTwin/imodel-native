@@ -1380,6 +1380,36 @@ TEST_F(ECDbAdapterTests, DeleteInstances_RelatedChildChildrenInstances_NotifiesE
     EXPECT_NCONTAIN(notDeletedInstances, cc.GetECInstanceId());
     }
 
+TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsInstancesAndDeletedInstance_SkipsAdditonalDeletedAndSucceeds)
+    {
+    auto db = GetTestDb();
+    ECDbAdapter adapter(*db);
+
+    auto ecClass = adapter.GetECClass("TestSchema.TestClass");
+
+    ECInstanceKey a, b, c;
+    INSERT_INSTANCE(*db, ecClass, a);
+    INSERT_INSTANCE(*db, ecClass, b);
+    INSERT_INSTANCE(*db, ecClass, c);
+
+    CREATE_MockECDbAdapterDeleteListener(listener);
+    EXPECT_CALL(listener, OnBeforeDelete(Ref(*ecClass), a.GetECInstanceId(), _))
+        .WillRepeatedly(Invoke([&] (ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>& additionalToDelete)
+        {
+        EXPECT_INSTANCE_EXISTS(db, a);
+        additionalToDelete.insert(a);
+        additionalToDelete.insert(b);
+        return SUCCESS;
+        }));
+    EXPECT_CALL_OnBeforeDelete(listener, db, b);
+    adapter.RegisterDeleteListener(&listener);
+
+    EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({a})));
+    auto notDeletedInstances = adapter.FindInstances(ecClass);
+    EXPECT_EQ(1, notDeletedInstances.size());
+    EXPECT_CONTAINS(notDeletedInstances, c.GetECInstanceId());
+    }
+
 TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete_DeletesAdditionalInstances)
     {
     auto db = GetTestDb();
