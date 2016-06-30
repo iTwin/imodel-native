@@ -78,9 +78,11 @@ struct CachedResponseManager : public IDeleteHandler
             );
 
         BentleyStatus InsertInfo(CachedResponseInfoR info);
+        ECInstanceKeyMultiMap FindInfosContainingInstance(ECInstanceKeyCR instance);
         ECInstanceKey SavePage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag);
         ECInstanceKey FindPage(CachedResponseInfoCR info, uint64_t page);
         bvector<ECInstanceKey> FindPages(ECInstanceKeyCR responseKey);
+        bvector<ECInstanceKey> FindPagesContainingInstance(ECInstanceKeyCR instance);
         ECInstanceKey InsertPage(CachedResponseInfoCR info, uint64_t page, Utf8StringCR cacheTag);
         BentleyStatus UpdatePage(ECInstanceId pageId, Utf8StringCR cacheTag);
         BentleyStatus UpdatePageCacheDate(ECInstanceId pageId);
@@ -112,6 +114,8 @@ struct CachedResponseManager : public IDeleteHandler
         ECInstanceKey FindInfo(CachedResponseKeyCR responseKey);
         //! Delete query info and any response instances that are not held anything else
         BentleyStatus DeleteInfo(CachedResponseKeyCR responseKey);
+        //! Gets all CachedResponceKeys containing instance as a result or additional instance.
+        BentleyStatus GetResponsesContainingInstance(ECInstanceKeyCR instance, bset<CachedResponseKey>& keysOut, Utf8StringCR responseName = "");
         //! Delete responses that were accessed before date specified
         BentleyStatus DeleteResponses(Utf8StringCR responseName, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& instancesToLeave);
         //! Delete responses with same name

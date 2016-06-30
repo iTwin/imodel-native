@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/HierarchyManager.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -89,6 +89,9 @@ struct HierarchyManager : public ECDbDeleteHandler
 
         BentleyStatus ReadTargetKeys(ECInstanceKeyCR source, ECRelationshipClassCP relationshipClass, bvector<ECInstanceKey>& targetsOut);
         BentleyStatus ReadTargetKeys(ECInstanceKeyCR source, ECRelationshipClassCP relationshipClass, ECInstanceKeyMultiMap& targetsOut);
+
+        BentleyStatus ReadSourceKeys(ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass, bvector<ECInstanceKey>& sourcesOut);
+        BentleyStatus ReadSourceKeys(ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass, ECInstanceKeyMultiMap& sourcesOut);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
