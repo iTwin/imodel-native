@@ -53,8 +53,10 @@ $(o)KeychainItemWrapper$(oext)              : $(BeSecuritySourceDir)libsrc/Keych
 
 _llvm_no_arc_option = 
 
-# Recipes for .mm don't put the objs to MultiCompileObjectList so do that manually 
-MultiCompileObjectList + $(o)SecureStoreIos$(oext)      
+# Recipes for .m and .mm don't put the objs to MultiCompileObjectList so do that manually 
+MultiCompileObjectList + $(o)SecureStoreIos$(oext)
+MultiCompileObjectList + $(o)BEKeychainItem$(oext)
+MultiCompileObjectList + $(o)KeychainItemWrapper$(oext)
                               
 %endif
 
