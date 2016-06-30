@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+   <Part Name="folly" BentleyBuildMakeFile="folly.mke" ApiNumber="G06">
+        <SubPart PartName="BentleyDll" PartFile="Bentley"  Repository="Bentley" />
+        <Bindings>
+            <VendorNotices>Delivery/folly-notice.txt</VendorNotices>
+            <VendorAPI Domain="folly"/>
+            <Libs>Delivery/$(libprefix)BeFolly$(libext)</Libs>
+            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(libprefix)BeFolly$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+</BuildContext>
