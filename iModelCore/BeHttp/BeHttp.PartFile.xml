@@ -66,7 +66,7 @@
     <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
     <Part Name="L10N-BeHttpXliffs-en" OnlyPlatforms="x64"
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
-        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-BeHttp/en/">
+        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/BeHttp/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-BeHttp/en/">
         <SubPart PartName="BeHttp-Xliffs" />
     </Part>
 
