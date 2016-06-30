@@ -78,6 +78,7 @@ namespace ServerSchema
         static Utf8CP AuthorityId = "AuthorityId";
         static Utf8CP Namespace = "Namespace";
         static Utf8CP Value = "Value";
+        static Utf8CP Values = "Values";
         static Utf8CP StateRevision = "StateRevision";
         static Utf8CP State = "State";
         }
