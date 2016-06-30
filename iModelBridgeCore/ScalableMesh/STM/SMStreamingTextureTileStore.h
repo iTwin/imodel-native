@@ -61,9 +61,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 void Load()
                     {
                     assert(m_ID != -1);
-                    wstringstream ss;
-                    ss << m_DataSource << L"t_" << m_ID << L".bin";
-                    auto filename = ss.str();
+                    wchar_t buffer[10000];
+                    swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), m_ID);
+                    std::wstring filename(buffer);
 
                     if (s_stream_from_disk)
                         {
@@ -238,9 +238,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
         static void OpenOrCreateBeFile(BeFile& file, const WString& path, HPMBlockID blockID)
             {
-            wstringstream ss;
-            ss << path << L"t_" << blockID.m_integerID << L".bin";
-            auto filename = ss.str();
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%st_%llu.bin", path.c_str(), blockID.m_integerID);
+            std::wstring filename(buffer);
             auto fileOpenedOrCreated = BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Write)
                 || BeFileStatus::Success == file.Create(filename.c_str());
             assert(fileOpenedOrCreated);

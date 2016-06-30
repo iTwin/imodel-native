@@ -47,6 +47,11 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "ScalableMeshQuery.h"
 #include "Edits/ClipUtilities.hpp"
 #include "SMSQLiteFeatureTileStore.h"
+
+#ifdef MAPBOX_PROTOTYPE
+    #include <ImagePP\all\h\HRFMapboxFile.h>
+#endif
+
 using namespace IDTMFile;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 extern bool s_inEditing;
@@ -781,16 +786,40 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
     auto cluster = new HGFHMRStdWorldCluster();
     pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(cluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
     HIMMosaic::RasterList rasterList;
+    
     for (auto& source : filteredSources)
         {
-
-        WString path = WString(L"file://") + source->GetPath();
+        WString path;
+        
+        if (source->GetPath().StartsWith(L"http://"))
+            {
+            path = source->GetPath();
+            }
+        else
+            {
+            path = WString(L"file://") + source->GetPath();
+            }
+            
+            
         HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
         HFCPtr<HRSObjectStore> pObjectStore;
         HFCPtr<HRFRasterFile>  pRasterFile;
         HFCPtr<HRARaster>      pRaster;
         // HFCPtr<HRAOnDemandRaster> pOnDemandRaster;
-        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+
+#ifdef MAPBOX_PROTOTYPE
+        HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
+
+        if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
+            {
+            pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+            }
+        else
+#endif		
+            {
+            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+            }
+                                                                                                                            
         pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
         pObjectStore = new HRSObjectStore(s_rasterMemPool,
                                           pRasterFile,

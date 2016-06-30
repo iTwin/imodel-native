@@ -17,23 +17,29 @@ size_t s_max_group_common_ancestor = 2;
 StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
     {
     unique_lock<mutex> lk(m_pGroupMutex, std::defer_lock);
-    if (!lk.try_lock())
+    auto& nodeHeader = this->GetNodeHeader(priorityNodeID);
+    if (!lk.try_lock() || m_pIsLoading)
         {
-        //assert(m_pIsLoading || m_pIsLoaded);
-        // Someone else is loading the group, however, we can check if node is ready to be consumed
-        auto& nodeHeader = this->GetNodeHeader(priorityNodeID);
+        // Someone else is loading the group
         if (nodeHeader.size == 0)
             {
-            assert(m_pIsLoading == true);
+            // Data not ready yet, wait until it becomes ready
+#ifdef DEBUG_GROUPS
             globalGroupMtx.lock();
             std::cout << "[" << this->m_pGroupHeader->GetID() << "] is being put to sleep" << std::endl;
             globalGroupMtx.unlock();
-            lk.lock();
-            m_pGroupCV.wait(lk, [this] {return !m_pIsLoading; }); // not ready yet
+#endif
+            if (!lk.owns_lock()) lk.lock();
+            m_pGroupCV.wait(lk, [this, &nodeHeader]
+                {
+                if (!m_pIsLoading && m_pIsLoaded) return true;
+                return nodeHeader.size > 0;
+                });
+#ifdef DEBUG_GROUPS
             globalGroupMtx.lock();
             std::cout << "[" << this->m_pGroupHeader->GetID() << "] is waking up..." << std::endl;
             globalGroupMtx.unlock();
-            assert(nodeHeader.size > 0);
+#endif
             }
         }
     else {
@@ -42,6 +48,12 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
         if (s_is_virtual_grouping)
             {
             this->LoadGroupParallel();
+            if (!lk.owns_lock()) lk.lock();
+            m_pGroupCV.wait(lk, [this, &nodeHeader]
+                {
+                if (!m_pIsLoading && m_pIsLoaded) return true;
+                return nodeHeader.size > 0;
+                }); // not ready yet
             }
         else {
             std::unique_ptr<uint8_t> inBuffer = nullptr;
@@ -81,13 +93,12 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
             m_pGroupCV.notify_all();
             }
         }
+    assert(nodeHeader.size > 0);
     return SUCCESS;
     }
 
 void SMNodeGroup::LoadGroupParallel()
     {
-    std::mutex mutex;
-    std::unique_lock<std::mutex> lk(mutex);
     std::condition_variable cv;
     std::thread thread(std::bind([&cv](SMNodeGroup* group) ->void
         {
@@ -113,6 +124,7 @@ void SMNodeGroup::LoadGroupParallel()
             memmove(group->m_pRawHeaders.data() + *currentPosition, rawHeader, nodeHeader.size);
             *currentPosition += nodeHeader.size;
             delete rawHeader;
+            group->m_pGroupCV.notify_all();
             });
         for (auto nodeHeader : *group->m_pGroupHeader) group->m_pNodeFetchDistributor(std::move(nodeHeader.blockid));
 #ifdef DEBUG_GROUPS
@@ -130,11 +142,7 @@ void SMNodeGroup::LoadGroupParallel()
         group->m_pIsLoading = false;
         group->m_pIsLoaded = true;
         group->m_pGroupCV.notify_all();
-        //cv.notify_one();
         }, this));
-    //s_threads[0].detach();
-
-    //cv.wait(lk, [this] {return this->m_pIsLoaded; });
-    thread.join();
+    thread.detach();
     }
 
