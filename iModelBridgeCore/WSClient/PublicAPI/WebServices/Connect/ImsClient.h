@@ -56,7 +56,7 @@ struct ImsClient : IImsClient
         WSCLIENT_EXPORT static ImsClientPtr GetShared();
 
         //! Create new client
-        //! @param clientInfo - client applicaiton info, see ClientInfo documentation for more info
+        //! @param info - client applicaiton info, see ClientInfo documentation for more info
         //! @param httpHandler - custom httpHandler to route requests trough
         WSCLIENT_EXPORT static ImsClientPtr Create(ClientInfoPtr info, IHttpHandlerPtr httpHandler = nullptr);
 
