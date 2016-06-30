@@ -39,7 +39,7 @@
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
-<!--        <SubPart PartName="folly"               PartFile="Facebook"     Repository="Libsrc-facebook"/> -->
+        <SubPart PartName="folly"               PartFile="Facebook"     Repository="Libsrc-facebook"/> 
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
@@ -174,9 +174,6 @@
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
         <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
-        
-        <!-- Temporary while Mike Embick determines the feasibility of this library via unit tests. -->
-        <!-- <SubPart PartName="GraphVizLibrary" PartFile="graphviz" Repository="libsrc-graphviz"/> -->
         
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>

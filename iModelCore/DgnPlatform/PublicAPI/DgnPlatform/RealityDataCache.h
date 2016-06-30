@@ -7,8 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
+
+#ifndef _M_CEE // can't include this file in managed compilands
+
 #include <DgnPlatform/DgnPlatform.h>
-#include <deque>
+#include <queue>
 #include <folly/futures/Future.h>
 
 #define BEGIN_BENTLEY_REALITYDATA_NAMESPACE  BEGIN_BENTLEY_DGN_NAMESPACE namespace RealityData {
@@ -18,7 +21,7 @@
 BEGIN_BENTLEY_REALITYDATA_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache2)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FileSource)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(HttpSource)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Payload)
@@ -30,6 +33,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Work)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(WorkerThread)
 
 DEFINE_REF_COUNTED_PTR(Cache)
+DEFINE_REF_COUNTED_PTR(Cache2)
 DEFINE_REF_COUNTED_PTR(FileSource)
 DEFINE_REF_COUNTED_PTR(HttpSource)
 DEFINE_REF_COUNTED_PTR(Payload)
@@ -447,7 +451,7 @@ protected:
     RefCountedPtr<StorageThreadPool> m_threadPool;
     BeAtomic<bool> m_hasChanges;
     BeMutex m_saveChangesMux;
-    BeSQLite::Db m_database;
+    BeSQLite::Db m_db;
     uint32_t m_idleTime;
     RefCountedPtr<BeSQLite::BusyRetry> m_retry;
 
@@ -486,43 +490,6 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   06/16
-//=======================================================================================
-struct FollyPool : folly::Executor
-{
-private:
-    struct Worker
-    {
-        FollyPool* m_pool;
-
-        Worker(Worker&& other) noexcept : m_pool(other.m_pool){other.m_pool=nullptr;}
-        Worker(FollyPool& pool) noexcept;
-        Worker& operator=(Worker&& other) {Worker(std::move(other)).swap(*this); return *this;}
-        Worker(Worker const&) = delete;
-        void swap(Worker& rhs){FollyPool* tmp = m_pool; m_pool = rhs.m_pool; rhs.m_pool = tmp;}
-        void Work();
-        THREAD_MAIN_DECL Main(void* arg);
-    };
-
-    friend struct Worker;
-    bvector<Worker> m_workers;
-    std::queue<folly::Func> m_tasks;
-    BeConditionVariable m_cv;
-    bool m_stop = false;
-
-    bool HasWork() const {return m_tasks.empty();}
-    bool Stopped() const {return m_stop;}
-    virtual void add(folly::Func func) override;
-
-public:
-    DGNPLATFORM_EXPORT FollyPool(int);
-    DGNPLATFORM_EXPORT ~FollyPool();
-    void WaitForIdle();
-};
- 
-
-
-//=======================================================================================
 //! The reality data cache class which manages two objects - a source and optionally a storage.
 //! Storages are responsible for caching the reality data and returning it quickly on demand.
 //! Sources are responsible for retrieving the reality data from its primary source, e.g.
@@ -535,7 +502,6 @@ private:
     StoragePtr m_storage;
     SourcePtr  m_source;
     CacheResult m_result; // for synchronous requests
-    FollyPool* m_follyPool = nullptr;
 
     CacheResult HandleStorageResponse(StorageResponse const& response, Options);
     CacheResult ResolveResult(StorageResult storageResult, SourceResult sourceResult = SourceResult::Error_NotFound) const;
@@ -545,7 +511,7 @@ private:
 
 public:
     //! Create a new reality data cache.
-    Cache() {m_follyPool = new FollyPool(8);}
+    Cache() {}
 
     // note: these might be called from any thread!
     DGNPLATFORM_EXPORT virtual void _OnResponseReceived(SourceResponse const& response, Options);
@@ -571,7 +537,6 @@ public:
         PayloadPtr temp(&payload); // in case it was passed with 0 refcount
         return CacheResult::NotFound;
         }
-    FollyPool* GetFollyPool() {return m_follyPool;}
 };
 
 //=======================================================================================
@@ -698,6 +663,52 @@ struct EXPORT_VTABLE_ATTRIBUTE HttpSource : AsyncSource
     DGNPLATFORM_EXPORT virtual SourceResult _Request(Payload& data, Options options, Cache& responseReceiver) override;
 };
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct Cache2 : BeSQLite::BusyRetry
+{
+    typedef std::chrono::steady_clock::time_point TimePoint;
+    struct Worker : RefCountedBase
+    {
+        Cache2& m_cache;
+        bool m_hasChanges = false;
+        TimePoint m_saveTime;
 
+        Worker(Cache2& cache) : m_cache(cache) {}
+        Worker(Worker const&) = delete;
+        void Work();
+        void Start();
+        void SaveChanges();
+        THREAD_MAIN_DECL Main(void* arg);
+    };
+
+protected:
+    typedef RefCountedPtr<Worker> WorkerPtr;
+    bool m_isStopped=false;
+    std::chrono::milliseconds m_saveDelay = std::chrono::seconds(2);
+    WorkerPtr m_worker;
+    BentleyApi::BeConditionVariable m_cv;
+    BeSQLite::Db m_db;
+
+    //! Called to prepare the database for storing specific type of data (the type
+    //! must be known to the implementation).
+    virtual BentleyStatus _Prepare() const = 0;
+
+    //! Called to free some space in the database.
+    //! @param[in] db The database to cleanup.
+    virtual BentleyStatus _Cleanup() const = 0;
+
+public:
+    Cache2() = default;
+    DGNPLATFORM_EXPORT ~Cache2();
+
+    DGNPLATFORM_EXPORT BentleyStatus OpenAndPrepare(BeFileNameCR cacheName);
+    DGNPLATFORM_EXPORT void ScheduleSave();
+    bool IsStopped() const {return m_isStopped;}
+    BeSQLite::DbR GetDb() {return m_db;}
+};
 
 END_BENTLEY_REALITYDATA_NAMESPACE
+
+#endif // _M_CEE 
