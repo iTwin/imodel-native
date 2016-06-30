@@ -454,7 +454,7 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
     SymmetricKeyAlgorithmProvider^ objAlg = SymmetricKeyAlgorithmProvider::OpenAlgorithm (strAlgName);
 
     // Read data
-    Utf8String utf8Value = m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ()).asString();
+    Utf8String utf8Value = m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ());
     if (utf8Value.empty()) // if value is empty then this represents a deleted item and needs no decryption
         return Utf8String("");
 

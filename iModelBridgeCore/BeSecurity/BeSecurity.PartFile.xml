@@ -27,13 +27,17 @@
     
     <Part Name="BeSecurityLibrary" BentleyBuildMakeFile="BeSecurity.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BeSecurityLibrary-OpenSSL" />
         <SubPart PartName="BentleyDll"                 PartFile="Bentley"          Repository="Bentley" />
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="BeOpenSSL"                  PartFile="BeOpenSSL"        Repository="Libsrc-openssl"/>
         <Bindings>
             <Libs ProductDirectoryName="BeSecurityLibs">Delivery/$(libprefix)BeSecurity$(libext)</Libs>
             <Assemblies ProductDirectoryName="BeSecurityNativeAssemblies">Delivery/$(shlibprefix)BeSecurity$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
+    </Part>
+
+    <Part Name="BeSecurityLibrary-OpenSSL" ExcludePlatforms="WinRT*">
+        <SubPart PartName="BeOpenSSL" PartFile="BeOpenSSL" Repository="Libsrc-openssl"/>
     </Part>
     
     <Part Name="BeSecurityMavenArchive" BentleyBuildMakeFile="nonport/android/BeSecurity/BeSecurityMavenArchive.mke" OnlyPlatforms="Android*">

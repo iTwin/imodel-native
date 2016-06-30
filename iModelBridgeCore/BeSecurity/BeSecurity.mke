@@ -5,10 +5,11 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%include mdl.mki
-
 CompileOptionsMki = $(SrcRoot)BeSecurity/BeSecurityCompileOptions.mki
 %include $(CompileOptionsMki)
+
+%include mdl.mki
+
 #--------------------------------------------------------------------------------------
 #   Building the BeSecurity library
 #--------------------------------------------------------------------------------------
@@ -77,9 +78,11 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-LINKER_LIBRARIES = $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
-LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
-LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Bentley$(stlibext)
+LINKER_LIBRARIES = $(BuildContextLibsDirectory)$(libprefix)Bentley$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+%if $(TARGET_PLATFORM) != "WinRT"
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
+%endif
 %if $(TARGET_PLATFORM) == "Windows"
     LINKER_LIBRARIES + crypt32.lib
 %endif
