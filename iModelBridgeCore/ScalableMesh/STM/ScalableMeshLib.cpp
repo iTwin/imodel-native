@@ -38,6 +38,7 @@ void ScalableMeshLib::Host::Initialize()
     BeAssert (NULL == m_scalableTerrainModelAdmin);   
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
     InitializeProgressiveQueries();
+    RegisterPODImportPlugin();
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
     }
     

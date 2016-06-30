@@ -92,8 +92,8 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 	else
 		{
 		WString outputDir;
-		int maxLevel;
-		bool exportTexture;
+		int maxLevel = 0;
+		//bool exportTexture;
 
 		assert(ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode) == true);
 
@@ -454,17 +454,11 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     IScalableMeshATP::GetDouble(WString(L"nTimeToFilterGround"), nTimeToFilterGround);
                     IScalableMeshATP::GetInt(L"chosenAccelerator", acceleratorUseCpu);
                     // L"File Name,Mesher,Filter,Nb Input Points,Nb Output Points,Point Kept (%%),File Size (Mb),Accelerator Used,GroundDetection: Time for seeds(s),GroundDetection: Time for Params Estimation (s), GroundDetection: Time for TIN growing (s),GroundDetection (s),GroundDetection(%%), Import Points (%%),Balancing (%%),Meshing (%%),Filtering (%%),Stitching (%%),Duration (minutes),Duration (hours), GroundDetection(minutes), Import Points (minutes),Balancing (minutes),Meshing (minutes),Filtering (minutes),Stitching (minutes),Status\n";
-
+                    
                     fwprintf(pResultFile,
-                             L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f(%.5f s),%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
+                             L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
                              stmFileName.c_str(), mesher.c_str(), filter.c_str(), trimming.c_str(), IScalableMeshSourceCreator::GetNbImportedPoints(), pointCount,
-                             (double)pointCount / IScalableMeshSourceCreator::GetNbImportedPoints() * 100.0, (double)fileSize / 1024.0 / 1024.0,
-                             acceleratorUseCpu == ACCELERATOR_CPU ? L"CPU" : L"GPU",
-                             nTimeToCreateSeeds,
-                             nTimeToEstimateParams,
-                             nTimeToFilterGround,
-                             GetGroundDetectionDuration(),
-                             GetGroundDetectionDuration() * 60,
+                             (double)pointCount / IScalableMeshSourceCreator::GetNbImportedPoints() * 100.0, (double)fileSize / 1024.0 / 1024.0,                             
                              GetGroundDetectionDuration() / minutes * 100,
                              (IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration()) / minutes * 100, //Import points duration includes ground detection duration.
                              IScalableMeshSourceCreator::GetLastBalancingDuration() / minutes * 100,
@@ -472,6 +466,10 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                              IScalableMeshSourceCreator::GetLastFilteringDuration() / minutes * 100,
                              IScalableMeshSourceCreator::GetLastStitchingDuration() / minutes * 100,
                              minutes, hours,
+                             acceleratorUseCpu == ACCELERATOR_CPU ? L"CPU" : L"GPU",
+                             nTimeToCreateSeeds,
+                             nTimeToEstimateParams,
+                             nTimeToFilterGround,
                              GetGroundDetectionDuration(),
                              IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration(),
                              IScalableMeshSourceCreator::GetLastBalancingDuration(),
