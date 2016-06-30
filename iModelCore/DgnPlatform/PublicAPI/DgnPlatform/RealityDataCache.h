@@ -696,7 +696,6 @@ protected:
     virtual BentleyStatus _Prepare() const = 0;
 
     //! Called to free some space in the database.
-    //! @param[in] db The database to cleanup.
     virtual BentleyStatus _Cleanup() const = 0;
 
 public:
