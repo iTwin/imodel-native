@@ -27,6 +27,8 @@
 
 #include <ScalableMesh\IScalableMeshQuery.h>
 
+class DataSourceAccount;
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 
@@ -592,8 +594,8 @@ public:
     virtual void         SaveAllOpenGroups() const;
 
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
-    void                 SavePointsToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore);
-    virtual void         SaveGroupedNodeHeaders(SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
+    void                 SavePointsToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    virtual void         SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -1076,7 +1078,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    void SavePointDataToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    void SavePointDataToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1315,9 +1317,9 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    StatusInt           SaveGroupedNodeHeaders(const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
-    StatusInt           SavePointsToCloud(const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
-    StatusInt           SaveMasterHeaderToCloud(const WString& pi_pOutputDirectoryName) const;
+    StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
+    StatusInt           SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
+    StatusInt           SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName) const;
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
 
 #ifdef INDEX_DUMPING_ACTIVATED    
