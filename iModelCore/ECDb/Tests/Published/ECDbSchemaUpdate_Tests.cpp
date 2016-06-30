@@ -5035,7 +5035,7 @@ TEST_F(ECSchemaUpdateTests, DeleteECStructClassUnSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_ChangeIndexName)
+TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5049,6 +5049,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_ChangeIndexName)
         "           <ClassMap xmlns = 'ECDbMap.01.00'>"
         "               <Indexes>"
         "                   <DbIndex>"
+        "                       <Name>IDX_Partial_Index</Name>"
         "                       <IsUnique>False</IsUnique>"
         "                       <Properties>"
         "                           <string>AId</string>"
@@ -5073,6 +5074,16 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_ChangeIndexName)
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    ECClassCP b = GetECDb().Schemas().GetECClass("TestSchema", "B");
+    ASSERT_NE(b, nullptr);
+    IECInstancePtr ca = b->GetCustomAttribute("ClassMap");
+    ASSERT_FALSE(ca.IsNull());
+
+    ECValue indexes, indexName;
+    ASSERT_EQ(ca->GetValue(indexes, "Indexes", 0), ECObjectsStatus::Success);
+    ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
+    ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial_Index");
 
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
@@ -5140,6 +5151,44 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_ChangeIndexName)
 
         GetECDb().CloseDb();
         }
+
+    Utf8CP schemaWithIndexDeleted =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='PA' typeName='int' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns = 'ECDbMap.01.00'>"
+        "           </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PB' typeName='int' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='AHasB' direction='Backward' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='A' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='B' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaWithIndexDeleted, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Updating ECDbMapCA, deleting DbIndexes is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaWithIndexDeleted, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Updating ECDbMapCA, deleting DbIndexes is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, schemaWithIndexDeleted, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: Updating ECDbMapCA, deleting DbIndexes is not supported");
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
