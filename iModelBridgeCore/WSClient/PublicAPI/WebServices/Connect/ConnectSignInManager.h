@@ -94,6 +94,10 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
     public:
         //! Can be created after MobileDgn is initialized.
         //! Will renew sign-in information asynchronously if needed.
+        //! @param clientInfo - client applicaiton info, see ClientInfo documentation for more details
+        //! @param httpHandler - custom HttpHandler to route requests trough
+        //! @param localState - custom LocalState to store encrypted authentication information between sessions
+        //! @param secureStore - custom encryption provider
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
             (
             ClientInfoPtr clientInfo,
@@ -104,6 +108,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
 
         //! Can be created after MobileDgn is initialized.
         //! Will renew sign-in information asynchronously if needed.
+        //! @param client - custom ImsClient for authenticating user
+        //! @param localState - custom LocalState to store encrypted authentication information between sessions
+        //! @param secureStore - custom encryption provider
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
             (
             IImsClientPtr client,
