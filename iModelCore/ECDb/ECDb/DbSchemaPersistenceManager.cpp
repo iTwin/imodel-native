@@ -945,14 +945,21 @@ bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& tabl
         namesOfExistingColumnsSet.insert(name);
         }
 
+    std::vector<DbColumn const*> persistedColumns;
     for (DbColumn const* col : table.GetColumns())
+        {
+        if (col->GetPersistenceType() == PersistenceType::Persisted)
+            persistedColumns.push_back(col);
+        }
+
+    for (DbColumn const* col : persistedColumns)
         {
         if (namesOfExistingColumnsSet.find(col->GetName()) == namesOfExistingColumnsSet.end())
             return true; //new column
         }
 
     //no columns were added. So difference in columns means that columns was deleted -> which also means that the table changed.
-    return table.GetColumns().size() != namesOfExistingColumns.size();
+    return persistedColumns.size() != namesOfExistingColumns.size();
     }
 
 
