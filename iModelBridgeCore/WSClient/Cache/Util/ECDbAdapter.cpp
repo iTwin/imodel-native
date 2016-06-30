@@ -1088,6 +1088,15 @@ BentleyStatus ECDbAdapter::OnBeforeDelete(ECClassCR ecClass, ECInstanceId instan
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instances)
     {
+    bset<ECInstanceKey> deleted;
+    return DeleteInstances(instances, deleted);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instances, bset<ECInstanceKey>& deleted)
+    {
     if (instances.empty())
         return SUCCESS;
 
@@ -1100,6 +1109,8 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
 
     for (ECInstanceKeyCR key : allInstancesBeingDeleted)
         {
+        allInstancesBeingDeletedMap.insert({key.GetECClassId(), key.GetECInstanceId()});
+
         ECClassCP ecClass = GetECClass(key);
         if (nullptr == ecClass)
             return ERROR;
@@ -1109,24 +1120,27 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
             if (SUCCESS != listener->OnBeforeDelete(*ecClass, key.GetECInstanceId(), additionalInstancesSet))
                 return ERROR;
             }
-
-        allInstancesBeingDeletedMap.insert({key.GetECClassId(), key.GetECInstanceId()});
         }
 
-    if (SUCCESS != DeleteInstancesDirectly(allInstancesBeingDeletedMap))
+    if (SUCCESS != DeleteInstancesDirectly(allInstancesBeingDeletedMap, deleted))
         return ERROR;
 
     ECInstanceKeyMultiMap additionalInstancesMap;
     for (auto& key : additionalInstancesSet)
-        additionalInstancesMap.insert({key.GetECClassId(), key.GetECInstanceId()});
+        {
+        if (deleted.find(key) != deleted.end())
+            continue;
 
-    return DeleteInstances(additionalInstancesMap);
+        additionalInstancesMap.insert({key.GetECClassId(), key.GetECInstanceId()});
+        }
+
+    return DeleteInstances(additionalInstancesMap, deleted);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbAdapter::DeleteInstancesDirectly(const ECInstanceKeyMultiMap& instances)
+BentleyStatus ECDbAdapter::DeleteInstancesDirectly(const ECInstanceKeyMultiMap& instances, bset<ECInstanceKey>& deleted)
     {
     for (auto it = instances.begin(); it != instances.end();)
         {
@@ -1153,6 +1167,11 @@ BentleyStatus ECDbAdapter::DeleteInstancesDirectly(const ECInstanceKeyMultiMap& 
         DbResult result;
         if (BE_SQLITE_DONE != (result = statement->Step()))
             return ERROR;
+
+        for (auto id : ids)
+            {
+            deleted.insert({ecClassId, id});
+            }
         }
 
     return SUCCESS;
@@ -1322,7 +1341,8 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
 
     statement->BindId(1, instanceToDelete.GetECInstanceId());
 
-    if (BE_SQLITE_ROW != statement->Step())
+    auto status = statement->Step();
+    if (BE_SQLITE_ROW != status)
         {
         return ERROR;
         }
