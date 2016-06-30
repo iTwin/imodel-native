@@ -895,12 +895,25 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntity
                 continue;
 
             graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
+
+            if (context.CheckStop())
+                return;
             }
         }
 
     if (includeFaceIso)
         {
-        // NEEDSWORK..
+        Geom2dHatch_Hatcher hatcher = Geom2dHatch_Hatcher(Geom2dHatch_Intersector(1.e-10, 1.e-10), 1.e-8, 1.e-8);
+
+        for (TopExp_Explorer ex(*shape, TopAbs_FACE); ex.More(); ex.Next())
+            {
+            TopoDS_Face const& face = TopoDS::Face(ex.Current());
+
+            OCBRepUtil::HatchFace(graphic, hatcher, face);
+
+            if (context.CheckStop())
+                return;
+            }
         }
 #endif
     }
@@ -921,7 +934,6 @@ ISolidKernelEntityCP    m_entity;
 bool                    m_includeEdges;
 bool                    m_includeFaceIso;
 
-ViewContextP            m_sourceContext;
 CurveVectorPtr          m_curves;
 
 public:
@@ -929,7 +941,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-explicit RuleCollector(bool includeEdges, bool includeFaceIso, ViewContextP sourceContext = nullptr)
+explicit RuleCollector(bool includeEdges, bool includeFaceIso)
     {
     m_surface   = nullptr;
     m_primitive = nullptr;
@@ -937,16 +949,9 @@ explicit RuleCollector(bool includeEdges, bool includeFaceIso, ViewContextP sour
 
     m_includeEdges   = includeEdges;
     m_includeFaceIso = includeFaceIso;
-
-    m_sourceContext = sourceContext;
     }
 
 virtual ~RuleCollector() {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual DrawPurpose _GetProcessPurpose() const override {return (nullptr != m_sourceContext ? m_sourceContext->GetDrawPurpose() : DrawPurpose::CaptureGeometry);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/14
@@ -971,16 +976,6 @@ virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics(ViewContextR context) override
     {
-    if (nullptr != m_sourceContext)
-        {
-        DgnViewportP vp = m_sourceContext->GetViewport();
-
-        if (nullptr != vp && SUCCESS != context.Attach(vp, context.GetDrawPurpose())) // For locate of cone silhouettes...
-            return;
-
-        context.GetGeometryStreamEntryIdR() = m_sourceContext->GetGeometryStreamEntryId(); // For CurvePrimitiveId...
-        }
-
     Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
     if (m_surface)
@@ -1012,9 +1007,9 @@ END_UNNAMED_NAMESPACE
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso, ViewContextP context)
+CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
     {
-    RuleCollector   rules(includeEdges, includeFaceIso, context);
+    RuleCollector   rules(includeEdges, includeFaceIso);
 
     rules.SetSolidPrimitive(primitive);
     GeometryProcessor::Process(rules, dgnDb);
@@ -1025,9 +1020,9 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, Dgn
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso, ViewContextP context)
+CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
     {
-    RuleCollector   rules(includeEdges, includeFaceIso, context);
+    RuleCollector   rules(includeEdges, includeFaceIso);
 
     rules.SetBsplineSurface(surface);
     GeometryProcessor::Process(rules, dgnDb);
@@ -1038,9 +1033,9 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnD
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso, ViewContextP context)
+CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
     {
-    RuleCollector   rules(includeEdges, includeFaceIso, context);
+    RuleCollector   rules(includeEdges, includeFaceIso);
 
     rules.SetSolidEntity(entity);
     GeometryProcessor::Process(rules, dgnDb);

@@ -114,7 +114,6 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
             return DgnDbStatus::InvalidParent;
         }
 
-    // TODO? Base implementation doesn't check for cycles...
     return T_Super::_SetParentId(parentId);
     }
 

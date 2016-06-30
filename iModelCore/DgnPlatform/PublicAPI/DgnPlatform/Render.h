@@ -1420,8 +1420,9 @@ public:
     virtual DVec2d _GetDpiScale() const = 0;
     virtual void* _GetNativeDevice() const = 0;
 #if defined (BENTLEYCONFIG_DISPLAY_WIN32)
-    virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::Target
+    virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::System
 #endif
+    virtual TargetPtr _CreateTarget(double frameRateGoal) = 0;
     double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
     Window const* GetWindow() const {return m_window.get();}
 };
@@ -1465,6 +1466,32 @@ struct System
 };
 
 //=======================================================================================
+//! Provides an algorithm for dynamically adjusting the frame rate goal of a
+//! Render::Target based on the ratio of successfully drawn to aborted frames and other
+//! factors.
+// @bsistruct                                                   Paul.Connelly   06/16
+//=======================================================================================
+struct FrameRateAdjuster
+{
+private:
+    uint32_t        m_drawCount = 0;
+    uint32_t        m_abortCount = 0;
+public:
+    static uint32_t const FRAME_RATE_MIN = 1;
+    static uint32_t const FRAME_RATE_MAX = 30;
+
+    //! Computes an adjusted frame rate goal based on factors like draw/abort ratio, smallest attempted element size, etc
+    //! @param[in]      target    The target who's frame rate goal is to be adjusted
+    //! @param[in]      saesNpcSq The smallest attempted element size (NPC squared)
+    //! @return The adjusted frame rate goal
+    DGNPLATFORM_EXPORT double AdjustFrameRate(Render::TargetCR target, double saesNpcSq);
+
+    void Reset() { m_drawCount = m_abortCount = 0; }    //!< Reset abort/draw counts
+    void IncrementDrawCount() { ++m_drawCount; }        //!< Increment the number of frames drawn
+    void IncrementAbortCount() { ++m_abortCount; }      //!< Increment the number of drawn frames aborted
+};
+
+//=======================================================================================
 //! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
 //! A Render:Target holds a reference to a Render::Device, and a Render::System
@@ -1473,6 +1500,12 @@ struct System
 //=======================================================================================
 struct Target : RefCounted<NonCopyableClass>
 {
+    struct SceneParameters
+        {
+        double m_saesNpcSq;     // smallest attempted element size (NPC squared)
+        SceneParameters(double n = 0) : m_saesNpcSq(n) {}
+        };
+
 protected:
     bool               m_abort;
     System&            m_system;
@@ -1483,6 +1516,7 @@ protected:
     GraphicListPtr     m_dynamics;
     Decorations        m_decorations;
     double             m_frameRateGoal; // frames per second
+    uint32_t           m_minimumFrameRate;
     BeAtomic<uint32_t> m_graphicsPerSecondScene;
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
@@ -1499,13 +1533,13 @@ protected:
 public:
     struct Debug
     {
-        static void SaveGPS(int);
+        static void SaveGPS(int, double);
         DGNPLATFORM_EXPORT static void SaveSceneTarget(int);
         DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
     };
     virtual void _OnDestroy() {}
-    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
+    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, SceneParameters const& parms = SceneParameters()) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
@@ -1520,6 +1554,7 @@ public:
     virtual Image _ReadImage(Point2d targetSize) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
+    virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
 
@@ -1539,9 +1574,20 @@ public:
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
-    static double DefaultFrameRateGoal() {return 15.0;}
+    static double DefaultFrameRateGoal() 
+        {
+#ifdef BENTLEYCONFIG_GRAPHICS_DIRECTX // *** WIP - we are trying to predict the likely graphics performance of the box.
+        return 20.0; // Plan for the best on Windows (desktop) computers.
+#else
+        return 10.0; // Plan for the worst on mobile devices
+#endif
+        }
+
     double GetFrameRateGoal() const {return m_frameRateGoal;}
     void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
+    static int const FRAME_RATE_MIN_DEFAULT = 5;
+    uint32_t GetMinimumFrameRate() const {return m_minimumFrameRate;}
+    uint32_t SetMinimumFrameRate(uint32_t minimumFrameRate) {return _SetMinimumFrameRate(minimumFrameRate);}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }

@@ -35,9 +35,20 @@ public:
     myDir (theDir),
     myRadius (theRadius)
   {
-    myInvDir = gp_Vec (Abs (theDir.X()) < Precision::Confusion() ? 0.0 : 1.0 / theDir.X(),
-                       Abs (theDir.Y()) < Precision::Confusion() ? 0.0 : 1.0 / theDir.Y(),
-                       Abs (theDir.Z()) < Precision::Confusion() ? 0.0 : 1.0 / theDir.Z());
+    // handle zeros and very small numbers in coordinates of
+    // direction vector
+    Standard_Real aXInv = 1.0 / Max (Abs (theDir.X()), 1e-30);
+    Standard_Real aYInv = 1.0 / Max (Abs (theDir.Y()), 1e-30);
+    Standard_Real aZInv = 1.0 / Max (Abs (theDir.Z()), 1e-30);
+#if !defined (ANDROID)
+    aXInv = std::copysign (aXInv, theDir.X());
+    aYInv = std::copysign (aYInv, theDir.Y());
+    aZInv = std::copysign (aZInv, theDir.Z());
+#else
+    BeAssert(false);
+    // Reported on OCCT Mantis as 0027659
+#endif
+    myInvDir = gp_Vec (aXInv, aYInv, aZInv);
 
     mySqRadius = theRadius * theRadius;
   }
@@ -119,8 +130,9 @@ public:
   //! Cleans up edge and vertex maps
   Standard_EXPORT ~PrimitivePicker();
 
-  //! Runs the algorithm for egde overlap detection and stores the
-  //! result in the given array thePickedEdges.
+  //! Runs the algorithm for egde overlap detection, stores detection
+  //! result in the given array thePickedEdges and parameter on edge in
+  //! the corresponding item of given theCurveParams array.
   //! The result is a binary map - each item of the array corresponds
   //! to the edge with the same index in TopTools_IndexedMapOfShape map
   //! of edges. If the edge is overlapped by the given cylinder, 1 will
@@ -128,7 +140,8 @@ public:
   Standard_EXPORT void PickEdges (const gp_Pnt& theRayOrigin,
                                   const gp_Dir& theRayDir,
                                   const Standard_Real theRadius,
-                                  NCollection_Array1<Standard_Character>& thePickedEdges);
+                                  NCollection_Array1<Standard_Character>& thePickedEdges,
+                                  NCollection_Array1<Standard_Real>&      theCurveParams);
 
   //! Runs the algorithm for vertex overlap detection and stores the
   //! result in the given array thePickedVerts.
@@ -150,7 +163,8 @@ public:
 protected:
 
   //! Traverses BVH tree for edges, in case if BVH-based search was chosen.
-  Standard_EXPORT void traverseEdges (NCollection_Array1<Standard_Character>& thePickedEdges);
+  Standard_EXPORT void traverseEdges (NCollection_Array1<Standard_Character>& thePickedEdges,
+                                      NCollection_Array1<Standard_Real>&      theCurveParams);
 
   //! Sorts vertex data in corresponding geometry cache, in case if it was not sorted yet.
   //! Splits vertex cache onto patches with fixed size. Iterates through all the patches in

@@ -12,19 +12,20 @@ BEGIN_UNNAMED_NAMESPACE
     static int s_gps;
     static int s_sceneTarget;
     static int s_progressiveTarget;
+    static double s_frameRateGoal;
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Target::VerifyRenderThread() {DgnDb::VerifyRenderThread();}
-void Render::Target::Debug::SaveGPS(int gps) {s_gps=gps; Show();}
+void Render::Target::Debug::SaveGPS(int gps, double fr) {s_gps=gps; s_frameRateGoal=fr; Show();}
 void Render::Target::Debug::SaveSceneTarget(int val) {s_sceneTarget=val; Show();}
 void Render::Target::Debug::SaveProgressiveTarget(int val) {s_progressiveTarget=val; Show();}
 void Render::Target::Debug::Show()
     {
 #if defined (DEBUG_LOGGING) 
-    NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, PD=%d", s_gps, s_sceneTarget, s_progressiveTarget);
+    NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, PD=%d, FR=%lf", s_gps, s_sceneTarget, s_progressiveTarget, s_frameRateGoal);
 #endif
     }
 
@@ -40,7 +41,7 @@ void Render::Target::RecordFrameTime(uint32_t count, double seconds, bool isFrom
         seconds = .00001;
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
-    Render::Target::Debug::SaveGPS(gps);
+    Render::Target::Debug::SaveGPS(gps, m_frameRateGoal);
 
     // Typically GPS increases as progressive display continues. We cannot let CreateScene graphics
     // be affected by the progressive display rate.  
@@ -224,11 +225,11 @@ void DgnViewport::StartRenderThread()
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
-struct DestroyTargetTask : Render::NonSceneTask
+struct DestroyTargetTask : Render::SceneTask
 {
     virtual Utf8CP _GetName() const override {return "Destroy Target";}
     virtual Outcome _Process(StopWatch& timer) override {m_target->_OnDestroy(); return Outcome::Finished;}
-    DestroyTargetTask(Render::Target& target) : NonSceneTask(&target, Operation::DestroyTarget) {}
+    DestroyTargetTask(Render::Target& target) : SceneTask(&target, Operation::DestroyTarget) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,9 +242,22 @@ void DgnViewport::SetRenderTarget(Target* newTarget)
         RenderQueue().AddAndWait(*new DestroyTargetTask(*m_renderTarget));
 
     m_renderTarget = newTarget; 
+    if (newTarget)
+        newTarget->SetMinimumFrameRate(m_minimumFrameRate);
+
     m_sync.InvalidateFirstDrawComplete();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2016
+//---------------------------------------------------------------------------------------
+uint32_t DgnViewport::SetMinimumTargetFrameRate(uint32_t frameRate)
+    {
+    m_minimumFrameRate = frameRate;
+    if (m_renderTarget.IsValid())
+        m_minimumFrameRate = m_renderTarget->SetMinimumFrameRate(m_minimumFrameRate);
+    return m_minimumFrameRate;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
@@ -479,5 +493,81 @@ PolyfaceHeaderPtr GraphicBuilder::TriMeshArgs::ToPolyface() const
 GraphicBuilderPtr GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic) const
     {
     return m_builder->_CreateSubGraphic(subToGraphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, double saesNpcSq)
+    {
+    double frameRateGoal = target.GetFrameRateGoal();
+
+    // We have to have enough draw events before we can tell how well we are doing.
+    if (m_drawCount < 10)
+        return frameRateGoal;
+
+    double successPct = (m_drawCount - m_abortCount) / (double)m_drawCount;
+
+    auto viewRect = target.GetDevice()->GetWindow()->_GetViewRect();
+    double pixelsPerNpc = viewRect.Width(); // use pixels across as an approximation. Maybe we should measure the diagonal?
+    double pixelsPerInch = target.GetDevice()->PixelsFromInches(1.0);
+    double inchesPerNpc = pixelsPerNpc / pixelsPerInch; // inches/NPC = pixels/NPC * inches/pixel
+    
+    double smallestRangeDrawnNpc = sqrt(saesNpcSq);
+
+    // from here on, all measurements are in inches
+    double smallestRangeDrawn = smallestRangeDrawnNpc * inchesPerNpc;   // size of the diagonal of the smallest range returned by the query
+
+    static const double FINE_ELEMENT_RES = 1 / 16.0; 
+
+    DEBUG_PRINTF("frameRateGoal=%lf smallestRangeDrawn=%lf successPct=%lf", frameRateGoal, smallestRangeDrawn, successPct);
+
+    static volatile double s_longTermSuccessRate = 0.80;
+
+    if ((m_drawCount >= 10 * frameRateGoal) && (successPct > s_longTermSuccessRate))
+        {
+        // After a long string of successes, reset the stats. Otherwise, we won't notice when aborts start happening again.
+        Reset();
+        DEBUG_PRINTF("Reset stats");
+        return frameRateGoal;
+        }
+
+    static volatile double s_shortTermSuccessRate = 0.95;
+
+    if (successPct <= s_shortTermSuccessRate)
+        {
+        Reset();
+
+        // We have been failing too often to draw the whole scene in the time allotted for a frame. 
+        // About all we can do is allow more time per frame. I can only hope that the update planner does not increase the element count!!
+        if (frameRateGoal > target.GetMinimumFrameRate())
+            {
+            --frameRateGoal;
+            WARN_PRINTF("ABORTS TOO MUCH => -frameRateGoal -> %lf (smallestRangeDrawn=%lf)", frameRateGoal, smallestRangeDrawn);
+            }
+
+        return frameRateGoal;
+        }
+
+    // If we got here, we know that we have been able draw all elements in the scene in the time allotted at least most of the time.
+    
+    if (0 == (m_drawCount % (int)frameRateGoal))
+        {
+        // If we have been succeeding for 1 second or more, then maybe we should increase the frame rate.
+        // That would have the benefit of making everything smoother. However, that would also have the effect of making the update planner reduce
+        // the number of elements per scene, that is, increase dropout. That would be OK if we are currently drawing too many small elements anyway.
+        // If we are not drawing small elements, then don't increase the frame rate, as the rejected elements would be too noticable.
+        if (smallestRangeDrawn < FINE_ELEMENT_RES)
+            {
+            Reset();
+            if (frameRateGoal < FRAME_RATE_MAX)
+                {
+                ++frameRateGoal;
+                WARN_PRINTF("SUCCESS @ FINE => +frameRateGoal -> %lf (smallestRangeDrawn=%lf)", frameRateGoal, smallestRangeDrawn);
+                }
+            }
+        }
+
+    return frameRateGoal;
     }
 
