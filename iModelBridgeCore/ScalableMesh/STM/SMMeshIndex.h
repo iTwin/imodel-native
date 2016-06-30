@@ -586,7 +586,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
     typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
     typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
-    void         SaveMeshToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+    void         SaveMeshToCloud(DataSourceAccount *dataSourceAccount,
+                                 HFCPtr<StreamingPointStoreType> pi_pPointStore,
                                  HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                  HFCPtr<StreamingUVStoreType> pi_pUVStore,
                                  HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
@@ -794,7 +795,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
         typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
         typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
-        virtual void        GetCloudFormatStores(const WString& pi_pOutputDirPath,
+        virtual void        GetCloudFormatStores(DataSourceAccount *dataSourceAccount,
+		                                         const WString& pi_pOutputDirPath,
                                                  const bool& pi_pCompress,
                                                  HFCPtr<StreamingPointStoreType>& po_pPointStore,
                                                  HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
@@ -802,7 +804,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                                                  HFCPtr<StreamingIndiceStoreType>& po_pUVIndiceStore,
                                                  HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const;
 
-        StatusInt           SaveMeshToCloud(const WString& pi_pOutputDirPath, const bool& pi_pCompress);
+        StatusInt           SaveMeshToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const bool& pi_pCompress);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
 

@@ -400,6 +400,24 @@ void RunPrecisionTest(WString& stmFileName)
 
     }
 
+void RunIntersectRay()
+    {
+    DPoint3d testPt = DPoint3d::From(303665.63996983197,256052.27654610365,11299.552886447620);
+    DPoint3d endPt = DPoint3d::From(303665.65128480532,256052.54358510373,11298.589267153598);
+
+    TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromTinFile(L"E:\\makeTM\\ptPick.tin");
+    DPoint3d ptOut;
+    dtm->IntersectVector(ptOut, testPt, endPt);
+
+    DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(303780.30394857755, 259172.41251152655, 52.999999999999993),
+                                           DPoint3d::From(303810.29302139767, 259171.62779438784, 49.999999999999993),
+                                           DPoint3d::From(303809.50776461099, 259141.63913370154, 53.999999999999993));
+    DRay3d ray = DRay3d::FromOriginAndVector(testPt, DVec3d::FromStartEnd(testPt, endPt));
+    double param;
+    DPoint3d rayOut;
+    ray.Intersect(rayOut, param, plane);
+    }
+
 void RunWriteTileTest(WString& stmFileName, const wchar_t* tileID)
     {
  /*   LOG_SET_PATH_W("E:\\output\\scmesh\\2016-04-15\\")
@@ -683,6 +701,62 @@ void RunSelectPointsTest()
     SelectPointsToStitch(stitchedPts,&g, range2, allVerts1);
     }
 
+void ParseNodeInfo(ScalableMesh::IScalableMeshNodePtr& node, bvector<size_t>& ptsAtLevel, bvector<size_t>& nodesAtLevel)
+    {
+    size_t ptCount = node->GetPointCount();
+    nodesAtLevel[node->GetLevel()]++;
+    ptsAtLevel[node->GetLevel()] += ptCount;
+
+    //std::cout << " NODE " << node->GetNodeId() << " HAS " << ptCount << " POINTS AT LEVEL " << node->GetLevel() << std::endl;
+
+    bvector<bool> clips;
+    ScalableMesh::IScalableMeshMeshFlagsPtr flags = ScalableMesh::IScalableMeshMeshFlags::Create();
+    flags->SetLoadGraph(false);
+    ScalableMesh::IScalableMeshMeshPtr mesh = node->GetMesh(flags, clips);
+    if (mesh.get() == nullptr)
+        {
+        //std::cout << " NO MESH FOR NODE " << node->GetNodeId() << std::endl;
+        }
+    else
+        {
+       // std::cout << " NODE " << node->GetNodeId() << " HAS " << mesh->GetNbFaces() << " FACES " << std::endl;
+        }
+
+    bvector<ScalableMesh::IScalableMeshNodePtr> childrenNodes = node->GetChildrenNodes();
+    if (mesh.get() == nullptr && childrenNodes.size() > 0 && childrenNodes.front()->GetPointCount() > 0)
+        {
+        std::cout << " NODE " << node->GetNodeId() << " HAS " << ptCount << " POINTS AT LEVEL " << node->GetLevel() << std::endl;
+        std::cout << " NODE " << node->GetNodeId() << " HAS " << childrenNodes.size() << " CHILDREN " << std::endl;
+        std::cout << " NODE " << childrenNodes.front()->GetNodeId() << " HAS " << childrenNodes.front()->GetPointCount() << " POINTS AT LEVEL " << childrenNodes.front()->GetLevel() << std::endl;
+        }
+    //std::cout << " NODE " << node->GetNodeId() << " HAS " << childrenNodes.size() << " CHILDREN " << std::endl;
+    for (auto child : childrenNodes)
+        {
+        ParseNodeInfo(child, ptsAtLevel, nodesAtLevel);
+        }
+    }
+
+void RunParseTree(WString& stmFileName)
+    {
+
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+    bvector<size_t> nPointsAtLevel((size_t)meshP->GetNbResolutions());
+    bvector<size_t> nNodesAtLevel((size_t)meshP->GetNbResolutions());
+    ScalableMesh::IScalableMeshNodePtr root = meshP->GetRootNode();
+
+
+    ParseNodeInfo(root, nPointsAtLevel, nNodesAtLevel);
+
+    for (size_t i = 0; i < (size_t)meshP->GetNbResolutions(); ++i)
+        {
+        std::cout << " AT LEVEL " << i << " WE HAVE " << nPointsAtLevel[i] << " POINTS AND " << nNodesAtLevel[i] << " NODES " << std::endl;
+        }
+
+
+    }
+
 int wmain(int argc, wchar_t* argv[])
 {
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
@@ -860,7 +934,10 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     //RunDTMClipTest();
     //RunDTMTriangulateTest();
     //RunDTMSTMTriangulateTest();
-    RunSelectPointsTest();
+   // RunSelectPointsTest();
+    //RunIntersectRay();
+    WString stmFileName(argv[1]);
+    RunParseTree(stmFileName);
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
     std::cout << "THE END" << std::endl;

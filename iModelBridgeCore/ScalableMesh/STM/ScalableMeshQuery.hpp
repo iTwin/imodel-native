@@ -1109,10 +1109,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(m_meshNode->GetPtsIndicePtr());
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes(m_meshNode->GetUVsIndicesPtr());
             RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords(m_meshNode->GetUVCoordsPtr());
-                                                                        
-            status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, flags->ShouldLoadTexture() ? uvCoords->size() : 0, 
-                                         flags->ShouldLoadTexture() ? &(*uvCoords)[0] : 0, 
-                                         flags->ShouldLoadTexture() ? &(*uvIndexes)[0] : 0);
+            if (faceIndexes->size() > 0)
+                {
+                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, flags->ShouldLoadTexture() ? uvCoords->size() : 0,
+                                             flags->ShouldLoadTexture() ? &(*uvCoords)[0] : 0,
+                                             flags->ShouldLoadTexture() ? &(*uvIndexes)[0] : 0);
+                }
             
             if (meshPtr->GetNbFaces() == 0)
                 {                                              
@@ -2136,7 +2138,7 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
 	LOAD_NODE
 
 	bvector<IScalableMeshNodePtr> children;
-	
+    if (m_node->m_nodeHeader.m_IsLeaf) return children;
 	if (m_node->GetSubNodeNoSplit() != NULL)
 		{
 		auto var = m_node->GetSubNodeNoSplit();

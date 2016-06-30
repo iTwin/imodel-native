@@ -223,11 +223,11 @@ private:
         return ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
-                            storedType,
-                            gcs,
-                            (hasRange) ? &range : 0,
-                            data),
+            ILayerDescriptor::CreateLayerDescriptor(L"",
+                                                    storedType,
+                                                    gcs,
+                                                    (hasRange) ? &range : 0,
+                                                    data),
             true
             );
 

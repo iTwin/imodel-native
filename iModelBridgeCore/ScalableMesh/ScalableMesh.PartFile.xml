@@ -14,16 +14,23 @@
         <Files ProductDirectoryName="MdlsysAsneeded" >Delivery\$(shlibprefix)PCLWrapper$(shlibext)</Files>          
       </Bindings>
     </Part>
-
+	
     <Part Name="AzureSDK">
         <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
             <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
         </Bindings>
-
     </Part>
-    
+
+    <Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke">
+        <SubPart PartName="AzureSDK" />
+        <Bindings>
+            <Libs>delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>    
+            <VendorAPI Domain="CloudDataSource" />
+        </Bindings>
+    </Part>
+	    
     <Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke">
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
         <!--<SubPart PartName="PCLWrapper" />
@@ -34,7 +41,7 @@
         <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
         <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>          
         <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
-        <SubPart PartName="AzureSDK"/>
+        <SubPart PartName="CloudDataSource" />
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />

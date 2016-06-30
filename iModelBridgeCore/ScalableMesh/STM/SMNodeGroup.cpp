@@ -15,6 +15,92 @@ size_t s_max_group_depth = 2;
 size_t s_max_group_common_ancestor = 2;
 
 StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
+{
+	unique_lock<mutex> lk(m_pGroupMutex, std::defer_lock);
+	auto& nodeHeader = this->GetNodeHeader(priorityNodeID);
+	if (!lk.try_lock() || m_pIsLoading)
+	{
+		// Someone else is loading the group
+		if (nodeHeader.size == 0)
+            {
+            // Data not ready yet, wait until it becomes ready
+            if (lk.owns_lock()) lk.unlock();
+            this->WaitFor(nodeHeader);
+            }
+        }
+    else 
+	{
+        assert(m_pIsLoading == false);
+        m_pIsLoading = true;
+        if (s_is_virtual_grouping)
+            {
+            this->LoadGroupParallel();
+
+            if (lk.owns_lock()) lk.unlock();
+
+            this->WaitFor(nodeHeader);
+		    }
+		else 
+		{
+			assert(m_pIsLoading == false);
+
+			std::unique_ptr<DataSource::Buffer[]>		dest;
+			DataSource								*	dataSource;
+			DataSource::DataSize						readSize;
+
+			DataSourceBuffer::BufferSize				destSize = 5 * 1024 * 1024;
+
+			m_pIsLoading = true;
+
+			dataSource = initializeDataSource(dest, destSize);
+			if (dataSource == nullptr)
+			{
+				m_pIsLoading = false;
+				m_pGroupCV.notify_all();
+				return ERROR;
+			}
+
+			loadFromDataSource(dataSource, dest.get(), destSize, readSize);
+
+			if (readSize > 0)
+			{
+				uint32_t position = 0;
+				size_t id;
+				memcpy(&id, dest.get(), sizeof(size_t));
+				assert(m_pGroupHeader->GetID() == id);
+				position += sizeof(size_t);
+
+				size_t numNodes;
+				memcpy(&numNodes, dest.get() + position, sizeof(numNodes));
+				assert(m_pGroupHeader->size() == numNodes);
+				position += sizeof(numNodes);
+
+				memcpy(m_pGroupHeader->data(), dest.get() + position, numNodes * sizeof(SMNodeHeader));
+				position += (uint32_t)numNodes * sizeof(SMNodeHeader);
+
+				const auto headerSectionSize = readSize - position;
+				m_pRawHeaders.resize(headerSectionSize);
+				memcpy(m_pRawHeaders.data(), dest.get() + position, headerSectionSize);
+			}
+			else
+			{
+				m_pIsLoading = false;
+				m_pGroupCV.notify_all();
+				return ERROR;
+			}
+		}
+
+		m_pIsLoading = false;
+		m_pIsLoaded = true;
+		m_pGroupCV.notify_all();
+	}
+
+	assert(nodeHeader.size > 0);
+	return SUCCESS;
+}
+
+
+StatusInt SMNodeGroup::Load_Old(const uint64_t& priorityNodeID)
     {
     unique_lock<mutex> lk(m_pGroupMutex, std::defer_lock);
     auto& nodeHeader = this->GetNodeHeader(priorityNodeID);

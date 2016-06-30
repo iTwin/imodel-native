@@ -142,6 +142,12 @@
     <Filter Include="Includes\STM\ScalableMesh\Streaming">
       <UniqueIdentifier>{379d0ae1-b880-44d3-b4c8-50beeca511ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\STM\CloudDataSource">
+      <UniqueIdentifier>{e26b8da1-1e16-44b6-ab85-cc061a00ff26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\STM\CloudDataSource">
+      <UniqueIdentifier>{9a8b6b78-8dd3-4104-bc21-f7e0075efdf0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GeoCoords\GCSWktParsing.h">
@@ -417,8 +423,92 @@
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.hpp">
       <Filter>Includes\PublicAPI\GeoCoords</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\All.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\Base.h">
       <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAll.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAllToLayer.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAllToLayerType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAllToType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayer.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerToLayer.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerToLayerType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerToType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerTypeToLayer.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerTypeToLayerType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerTypeToType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportTypeToLayer.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportTypeToLayerType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportTypeToType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\All.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Attachments.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Base.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultSourceGCS.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetGCS.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetLayer.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetType.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Extraction.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Filtering.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\SourceFilters.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\TargetFilters.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\All.h">
       <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
@@ -849,6 +939,9 @@
     <ClInclude Include="STM\SMSQLiteSkirtDefinitionsTileStore.h">
       <Filter>Includes\STM</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDataStore.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
     <ClInclude Include="STM\Edits\Skirts.h">
       <Filter>Includes\STM\Edits</Filter>
     </ClInclude>
@@ -858,7 +951,100 @@
     <ClInclude Include="stm\ScalableMeshDb.h">
       <Filter>Includes\STM</Filter>
     </ClInclude>
-    <ClInclude Include="stm\ComputeMemoryUseTraits.h">
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\ActivitySemaphore.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSource.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccount.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccountAzure.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccountCached.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccountFile.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAzure.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceBuffer.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceBuffered.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceCached.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceCloud.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceFile.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceLocator.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceManager.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceManagerPCH.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceManagerTest.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceMode.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceService.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceServiceAzure.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceServiceFile.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceServiceManager.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceStatus.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceStoreConfig.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceTransferScheduler.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceURL.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\Manager.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\PerformanceTimer.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\Status.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\stdafx.h">
+      <Filter>Includes\STM\CloudDataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\SMDataSourceParams.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ISMDataStore.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ISMDataStore.hpp">
       <Filter>Includes\STM</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1266,6 +1452,75 @@
     <ClCompile Include="stm\ScalableMeshDb.cpp">
       <Filter>Source\STM</Filter>
     </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\ActivitySemaphore.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSource.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccount.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccountAzure.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccountCached.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccountFile.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAzure.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceBuffer.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceBuffered.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceCached.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceCloud.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceFile.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceLocator.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceManager.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceManagerPCH.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceManagerTest.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceService.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceServiceAzure.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceServiceFile.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceServiceManager.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceTransferScheduler.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceURL.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\PerformanceTimer.cpp">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Import\Import.mke.realOrig" />
@@ -1279,6 +1534,10 @@
     <None Include="PublicAPI\ScalableMesh\__BENTLEY_INTERNAL_ONLY__" />
     <None Include="ScalableMesh.mke" />
     <None Include="ScalableMesh.mki" />
+    <None Include="STM\ScalableMesh\CloudDataSource\CloudDataSourcePolicy.mki">
+      <Filter>Source\STM\CloudDataSource</Filter>
+    </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="transkit\transkit.xml" />

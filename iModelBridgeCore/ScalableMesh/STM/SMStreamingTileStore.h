@@ -18,6 +18,7 @@
 #include "Threading\LightThreadPool.h"
 #include <curl/curl.h>
 #include <condition_variable>
+#include <CloudDataSource/DataSourceAccount.h>
 #ifdef VANCOUVER_API
 #define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
 #define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
@@ -44,8 +45,27 @@ public:
         unique_lock<mutex> lock(m_pPointBlockMutex);
         m_pPointBlockCV.wait(lock, [this]() { return m_pIsLoaded; });
         }
+		
     void SetLoading() { m_pIsLoading = true; }
-    void Load()
+
+	DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize)
+	{
+		if (dataSourceAccount == nullptr)
+			return nullptr;
+															// Get the thread's DataSource or create a new one
+		DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
+		if (dataSource == nullptr)
+			return nullptr;
+															// Make sure caching is enabled for this DataSource
+		dataSource->setCachingEnabled(true);
+
+		dest.reset(new unsigned char[destSize]);
+															// Return the DataSource
+		return dataSource;
+	}
+
+	
+    void Load_Old()
         {
         if (!this->IsLoaded())
             {
@@ -74,12 +94,60 @@ public:
             }
         assert(this->IsLoaded());
         }
+	
+    void Load(DataSourceAccount *dataSourceAccount)
+    {
+		if (!IsLoaded())
+        {
+			if (IsLoading())
+            {
+            	LockAndWait();
+            }
+			else
+			{
+				wchar_t buffer[10000];
+				swprintf(buffer, L"%sp_%llu.bin", m_pDataSource.c_str(), m_pID);
+			
+				std::unique_ptr<DataSource::Buffer[]>		dest;
+				DataSource								*	dataSource;
+				DataSource::DataSize						readSize;
+
+				DataSourceURL	dataSourceURL(buffer);
+
+				DataSourceBuffer::BufferSize	destSize = 5 * 1024 * 1024;
+
+				dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
+				if (dataSource == nullptr)
+					return;
+
+				if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+					return;
+
+				if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+					return;
+
+				if (dataSource->close().isFailed())
+					return;
+
+				if (readSize > 0)
+				{
+					m_pIsLoaded = true;
+
+					uint32_t uncompressedSize = *reinterpret_cast<uint32_t *>(dest.get());
+					uint32_t sizeData = (uint32_t)readSize - sizeof(uint32_t);
+					DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
+				}
+			}
+        }
+	}
+	
     void UnLoad()
         {
         m_pIsLoaded = false;
         m_pIsLoading = false;
         this->clear();
-        }
+	}
+	
     void SetLoaded()
         {
         m_pIsLoaded = true;
@@ -251,7 +319,6 @@ private:
     condition_variable m_pPointBlockCV;
     mutex m_pPointBlockMutex;
     };
-
 
 template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore : public SMPointTileStore<POINT, EXTENT>// , public HFCShareableObject<SMPointTileStore<POINT, EXTENT> >
     {
@@ -447,7 +514,51 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             assert(dataIndex == maxCountData);
             }
 
-        void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
+		void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
+		{
+			//NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
+			wstringstream								ss;
+			std::unique_ptr<DataSource::Buffer[]>		dest;
+			DataSource								*	dataSource;
+			DataSource::DataSize						readSize;
+			wchar_t										buffer[10000];
+
+			swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
+
+			DataSourceURL	dataSourceURL(buffer);
+
+			DataSourceBuffer::BufferSize	destSize = 5 * 1024 * 1024;
+
+			dataSource = initializeDataSource(dest, destSize);
+			if (dataSource == nullptr)
+				return;
+
+			if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+				return;
+
+			if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+				return;
+
+			if (dataSource->close().isFailed())
+				return;
+
+			if (readSize > 0)
+			{
+				po_pDataSize = readSize;
+
+				uint8_t *buffer = new uint8_t[readSize];
+				if (buffer)
+				{
+					po_pBinaryData.reset(buffer);
+					memmove(po_pBinaryData.get(), dest.get(), po_pDataSize);
+				}
+
+				assert(buffer);
+				assert(readSize > 0);
+			}
+		}
+
+        void GetNodeHeaderBinary_Old(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
             {
             wchar_t buffer[10000];
             swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
@@ -493,6 +604,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     });
                 }
             }
+
 
         void ReadNodeHeaderFromJSON(SMPointNodeHeader<EXTENT>* header, const Json::Value& nodeHeader) const
             {
@@ -625,6 +737,23 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
             }
 
+		DataSource *initializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
+		{
+			if (getDataSourceAccount() == nullptr)
+				return nullptr;
+															// Get the thread's DataSource or create a new one
+			DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+			if (dataSource == nullptr)
+				return nullptr;
+															// Make sure caching is enabled for this DataSource
+			dataSource->setCachingEnabled(true);
+
+			dest.reset(new unsigned char[destSize]);
+															// Return the DataSource
+			return dataSource;
+		}
+		
+		
         Json::Value GetNodeHeaderJSON(HPMBlockID blockID)
             {
             uint64_t headerSize = 0;
@@ -647,12 +776,16 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 block.SetID(blockID.m_integerID);
                 block.SetDataSource(m_pathToPoints);
                 block.SetStore(m_stream_store);
-                block.Load();
+                block.Load(getDataSourceAccount());
                 }
             assert(block.GetID() == blockID.m_integerID);
             assert(block.IsLoaded() && !block.empty());
             return block;
             }
+
+	protected:
+
+		DataSourceAccount *m_dataSourceAccount;
 
     public:
         enum SMStreamingDataType
@@ -665,7 +798,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         // Constructor / Destructor
 
-        SMStreamingPointTaggedTileStore(const WString& path, SMStreamingDataType type, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
+        SMStreamingPointTaggedTileStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStreamingDataType type, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
             :m_rootDirectory(path),
             m_pathToPoints(path),
             m_pathToHeaders(headers_path),
@@ -674,6 +807,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
             m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")
             {
+			setDataSourceAccount(dataSourceAccount);			
             bool haveHeaders = false;
             switch (type)
                 {
@@ -744,6 +878,17 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 }
             }
 
+		void setDataSourceAccount(DataSourceAccount *dataSourceAccount)
+		{
+			m_dataSourceAccount = dataSourceAccount;
+		}
+
+
+		DataSourceAccount *getDataSourceAccount(void) const
+		{
+			return m_dataSourceAccount;
+		}
+
         virtual bool HasSpatialReferenceSystem()
             {
             // NEEDS_WORK_SM_STREAMING : Add check to spatial reference system
@@ -806,7 +951,150 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             return true;
             }
 
-        virtual size_t LoadMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
+		virtual size_t LoadMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
+		{
+			std::unique_ptr<DataSource::Buffer[]>			dest;
+			DataSource								*	dataSource;
+			DataSource::DataSize						readSize;
+			DataSourceBuffer::BufferSize				destSize = 5 * 1024 * 1024;
+
+			if (indexHeader != NULL)
+			{
+
+				if (m_use_node_header_grouping || s_stream_from_grouped_store)
+				{
+					wchar_t buffer[10000];
+
+					swprintf(buffer, L"%sMasterHeaderWithGroups.bin", m_rootDirectory.c_str());
+
+					DataSourceURL	dataSourceURL(buffer);
+										
+
+					if (m_nodeHeaderGroups.empty())
+					{
+						dataSource = initializeDataSource(dest, destSize);
+						if (dataSource == nullptr)
+							return 0;
+
+						if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+							return 0;
+
+						if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+							return 0;
+
+						dataSource->close();
+
+						headerSize = readSize;
+
+						uint64_t position = 0;
+
+						uint32_t sizeOfOldMasterHeaderPart;
+						memcpy(&sizeOfOldMasterHeaderPart, dest.get() + position, sizeof(sizeOfOldMasterHeaderPart));
+						position += sizeof(sizeOfOldMasterHeaderPart);
+						assert(sizeOfOldMasterHeaderPart == sizeof(SQLiteIndexHeader));
+
+						SQLiteIndexHeader oldMasterHeader;
+						memcpy(&oldMasterHeader, dest.get() + position, sizeof(SQLiteIndexHeader));
+						position += sizeof(SQLiteIndexHeader);
+						indexHeader->m_SplitTreshold = oldMasterHeader.m_SplitTreshold;
+						indexHeader->m_balanced = oldMasterHeader.m_balanced;
+						indexHeader->m_depth = oldMasterHeader.m_depth;
+                        indexHeader->m_isTerrain = oldMasterHeader.m_isTerrain;
+						indexHeader->m_singleFile = oldMasterHeader.m_singleFile;
+                        assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
+
+						auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
+						indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+
+                        memcpy(&s_is_virtual_grouping, reinterpret_cast<char *>(dest.get()) + position, sizeof(s_is_virtual_grouping));
+                        position += sizeof(s_is_virtual_grouping);
+
+
+						// Parse rest of file -- group information
+						while (position < headerSize)
+						{
+                            size_t group_id;
+                            memcpy(&group_id, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id));
+                            position += sizeof(group_id);
+
+                            uint64_t group_totalSizeOfHeaders(0);
+                            if (s_is_virtual_grouping)
+							{
+                                memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
+                                position += sizeof(group_totalSizeOfHeaders);
+							}
+
+                            size_t group_numNodes;
+                            memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(size_t));
+                            position += sizeof(size_t);
+                            //assert(group_size <= s_max_number_nodes_in_group);
+
+                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(getDataSourceAccount(), group_id, group_numNodes, group_totalSizeOfHeaders));
+                            // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
+                            group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_", m_stream_store);
+                            m_nodeHeaderGroups.push_back(group);
+
+                            vector<uint64_t> nodeIds(group_numNodes);
+                            memcpy(nodeIds.data(), reinterpret_cast<char *>(dest.get()) + position, group_numNodes*sizeof(uint64_t));
+                            position += group_numNodes*sizeof(uint64_t);
+
+                            group->GetHeader()->resize(group_numNodes);
+                            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
+							{
+                                return SMNodeHeader{ nodeId, 0, 0 };
+							});
+						}
+					}
+				}
+				else
+				{
+					Json::Reader	reader;
+					Json::Value		masterHeader;
+
+					DataSourceURL dataSourceURL(m_rootDirectory.data());
+					
+					dataSourceURL.append(L"MasterHeader.sscm");
+
+					dataSource = initializeDataSource(dest, destSize);
+					if (dataSource == nullptr)
+						return 0;
+
+					if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+						return 0;
+
+					if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+						return 0;
+
+					dataSource->close();
+
+					headerSize = readSize;
+
+					reader.parse(reinterpret_cast<char *>(dest.get()), reinterpret_cast<char *>(&(dest.get()[readSize])), masterHeader);
+
+					indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
+					indexHeader->m_balanced = masterHeader["balanced"].asBool();
+					indexHeader->m_depth = masterHeader["depth"].asUInt();
+                    indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
+
+					auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
+					indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+/* Needed?
+					if (masterHeader.isMember("singleFile"))
+					{
+						indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
+						HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
+					}
+*/
+				}
+
+				return headerSize;
+			}
+
+			return 0;
+		}
+
+
+		virtual size_t LoadMasterHeader_Old(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
             {
 
             if (indexHeader != NULL)
@@ -894,7 +1182,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             position += sizeof(size_t);
                             //assert(group_size <= s_max_number_nodes_in_group);
 
-                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(group_id, group_numNodes, group_totalSizeOfHeaders));
+                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(getDataSourceAccount(), group_id, group_numNodes, group_totalSizeOfHeaders));
                             // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
                             group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_", m_stream_store);
                             group->SetDistributor(*m_NodeHeaderFetchDistributor);

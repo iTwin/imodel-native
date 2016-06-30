@@ -151,7 +151,9 @@ struct ExeHost : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Host
     ExeHost()
         {
         BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Initialize(*this);
+        RegisterPODImportPlugin();
         }
+
     BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
         {
         return *new ExeAdmin();
