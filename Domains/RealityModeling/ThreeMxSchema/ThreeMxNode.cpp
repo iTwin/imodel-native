@@ -131,7 +131,7 @@ void Node::SetAbandoned()
 * it arrives. Set its "abandoned" flag to tell the download thread it can skip it (it will get deleted when the download thread releases its reference to it.)
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Node::UnloadChildren(uint64_t olderThan)
+void Node::UnloadChildren(std::chrono::steady_clock::time_point olderThan)
     {
     if (ChildLoad::Ready != m_childLoad.load()) // children aren't loaded, nothing to do
         return;
@@ -180,8 +180,8 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
     trimesh.m_numIndices = (int32_t) m_indices.size();
     trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
     trimesh.m_numPoints = (int32_t) m_points.size();
-    trimesh.m_points = m_points.empty() ? nullptr : &m_points.front();
-    trimesh.m_normals = m_normals.empty() ? nullptr: &m_normals.front();
+    trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
+    trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
     trimesh.m_textureUV = nullptr;
     return trimesh.ToPolyface();
     }

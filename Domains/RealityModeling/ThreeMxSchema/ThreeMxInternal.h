@@ -11,6 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/Render.h>
+#include <folly/BeFolly.h>
 #include <ThreeMx/ThreeMxApi.h>
 
 USING_NAMESPACE_BENTLEY_DGN

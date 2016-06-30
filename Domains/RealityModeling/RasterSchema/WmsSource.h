@@ -9,6 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RasterSchema/WmsHandler.h>
+#include <DgnPlatform/RealityDataCache.h>
 #include "RasterSource.h"
 
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
@@ -47,6 +48,5 @@ private:
     //uint32_t    m_metaTileSizeX;    //&&MM todo.
     //uint32_t    m_metaTileSizeY;
 };
-
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/RealityDataCache.h>
 
 #define BEGIN_BENTLEY_THREEMX_NAMESPACE      BEGIN_BENTLEY_NAMESPACE namespace ThreeMx {
 #define END_BENTLEY_THREEMX_NAMESPACE        } END_BENTLEY_NAMESPACE
@@ -36,6 +37,8 @@ DEFINE_REF_COUNTED_PTR(Geometry)
 DEFINE_REF_COUNTED_PTR(Node)
 DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(ThreeMxModel)
+
+typedef std::chrono::steady_clock::time_point TimePoint;
 
 //=======================================================================================
 // A ByteStream with a "current position". Used for reading 3MX files
@@ -102,11 +105,10 @@ struct DrawArgs
     SceneR m_scene;
     Dgn::Render::GraphicArray m_graphics;
     MissingNodes m_missing;
-    uint64_t m_now ;
-    uint64_t m_purgeOlderThan;
+    TimePoint m_now ;
+    TimePoint m_purgeOlderThan;
 
-
-    DrawArgs(Dgn::RenderContextR context, SceneR scene, uint64_t now, uint64_t purgeOlderThan) : m_context(context), m_scene(scene), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
+    DrawArgs(Dgn::RenderContextR context, SceneR scene, TimePoint now, TimePoint purgeOlderThan) : m_context(context), m_scene(scene), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
     void DrawGraphics(); // place all entries in the GraphicArray into a GroupNode and send it to the RenderContext.
 };
 
@@ -140,11 +142,11 @@ private:
     double m_radius = 0.0;
     double m_maxScreenDiameter = 0.0;
     NodeP m_parent;
-    bvector<GeometryPtr> m_geometry;
+    std::list<GeometryPtr> m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
     BeAtomic<int> m_childLoad;
     ChildNodes m_childNodes;
-    mutable uint64_t m_childrenLastUsed = 0;
+    mutable TimePoint m_childrenLastUsed;
 
     void SetAbandoned();
     bool ReadHeader(JsonValueCR pt, Utf8String&, bvector<Utf8String>& nodeResources);
@@ -171,7 +173,7 @@ public:
     bool AreChildrenValid() const {return m_childLoad.load() == ChildLoad::Ready;}
     bool AreChildrenNotLoaded() const {return m_childLoad.load() == ChildLoad::NotLoaded;}
     bool IsDisplayable() const {return GetMaxDiameter() > 0.0;}
-    void UnloadChildren(uint64_t olderThan);
+    void UnloadChildren(TimePoint olderThan);
     int CountNodes() const;
     ChildNodes const* GetChildren() const {return AreChildrenValid() ? &m_childNodes : nullptr;}
     NodeCP GetParent() const {return m_parent;}
@@ -202,31 +204,32 @@ private:
     Transform m_location;
     double m_scale = 1.0;
     NodePtr m_rootNode;
-    uint32_t m_expirationTime = 20 * 1000; // save unused nodes for 20 seconds (value is in milliseconds)
-    Dgn::RealityData::CachePtr m_cache;
+    std::chrono::seconds m_expirationTime = std::chrono::seconds(20); // save unused nodes for 20 seconds
+    Dgn::RealityData::Cache2Ptr m_cache;
     Dgn::Render::SystemP m_renderSystem = nullptr;
 
     BentleyStatus ReadGeoLocation(SceneInfo const&);
     BentleyStatus LoadScene(); // synchronous
-    bool IsHttp() const {return m_isHttp;}
     Dgn::RealityData::CacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
     void CreateCache();
 
 public:
+    bool IsHttp() const {return m_isHttp;}
     Utf8String ConstructNodeName(Node& node) {return m_rootDir + node.GetChildFile();}
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     DPoint3d GetNodeCenter(Node const& node) const {return DPoint3d::FromProduct(m_location, node.GetCenter());}
     double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
     void Draw(DrawArgs& args) {m_rootNode->Draw(args, 0);}
     Dgn::ElementAlignedBox3d ComputeRange() {return m_rootNode->ComputeRange();}
-    void SetNodeExpirationTime(uint32_t val) {m_expirationTime = val;} //! set expiration time for unused nodes, in milliseconds
-    uint32_t GetNodeExpirationTime() const {return m_expirationTime;} //! get expiration time for unused nodes, in milliseconds
+    void SetNodeExpirationTime(std::chrono::seconds val) {m_expirationTime = val;} //! set expiration time for unused nodes
+    std::chrono::seconds GetNodeExpirationTime() const {return m_expirationTime;} //! get expiration time for unused nodes
     int CountNodes() const {return m_rootNode->CountNodes();}
     bool UseFixedResolution()const {return m_useFixedResolution;}
     bool IsLocatable() const {return m_locatable;}
     double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetLocation() const {return m_location;}
     double GetScale() const {return m_scale;}
+    Dgn::RealityData::Cache2Ptr GetCache() const {return m_cache;}
     THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
     THREEMX_EXPORT BentleyStatus DeleteCacheFile(); //! delete the local SQLite file holding the cache of downloaded tiles.
     THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP sceneFile, Dgn::Render::SystemP);
