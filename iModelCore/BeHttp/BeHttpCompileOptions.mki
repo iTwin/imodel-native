@@ -13,7 +13,7 @@ ENABLE_CPP_CX_EXTENSIONS = 1
     %include mdl.mki
 %endif
 
-%if $(TARGET_PLATFORM)=="Windows"
+%if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
     # Ignore inheritance via dominance warning
     cDefs + -wd4250
 	#Ignore unknown pragmas (i.e. pragma mark)

@@ -7,6 +7,7 @@
  +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <BeHttp/Http.h>
+#include <Bentley/RefCounted.h>
 #include <Bentley/Tasks/AsyncTaskRunner.h>
 
 BEGIN_BENTLEY_HTTP_NAMESPACE

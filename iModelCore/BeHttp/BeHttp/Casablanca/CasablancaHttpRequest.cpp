@@ -442,7 +442,7 @@ http::method CasablancaHttpRequest::StringToHttpMethod (Utf8String methodStr)
 void CasablancaHttpRequest::ConvertResponseHeaders (http::http_headers casaHeaders)
     {
     Utf8String logMessage = "Response Headers:\n";
-    for (const bpair<string_t, string_t>& casaHeader : casaHeaders)
+    for (const std::pair<string_t, string_t>& casaHeader : casaHeaders)
         {
         Utf8String key = ToUtf8String (casaHeader.first);
         Utf8String value = ToUtf8String (casaHeader.second);
