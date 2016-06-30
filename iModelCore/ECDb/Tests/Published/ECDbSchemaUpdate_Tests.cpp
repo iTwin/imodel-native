@@ -1297,6 +1297,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         val.Clear();
         ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
         ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
+
         GetECDb().CloseDb();
         }
     }
@@ -4769,7 +4770,7 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: ConstraintClass can be deleted unless it's the last relationship constraint");
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: ConstraintClass can be deleted unless it's the last relationship constraint");
     ASSERT_FALSE(asserted);
     }
 
@@ -7610,7 +7611,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: add new Derived LinkTable relationship should fail");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: add new Derived LinkTable relationship should be successful as it do not modify Db");
     ASSERT_FALSE(asserted);
 
     //Verify updated schemas
