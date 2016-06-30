@@ -49,17 +49,15 @@ struct ImsClient : IImsClient
 
     public:
         // TODO: static API for compatibility with old static code (ConnectSpaces, ConnectSetup, etc.)
-        // Will be DEPRECATED in future.
+        //! Will be DEPRECATED in future.
         WSCLIENT_EXPORT static void InitializeShared(ClientInfoPtr info, IHttpHandlerPtr httpHandler = nullptr);
         WSCLIENT_EXPORT static void UnitializeShared();
-        // Will be DEPRECATED in future.
+        //! Will be DEPRECATED in future.
         WSCLIENT_EXPORT static ImsClientPtr GetShared();
 
         //! Create new client
-        //! @param clientInfo - client applicaiton info
+        //! @param clientInfo - client applicaiton info, see ClientInfo documentation for more info
         //! @param httpHandler - custom httpHandler to route requests trough
-        //! @param activeStsUrl
-        //! @param delegationStsUrl
         WSCLIENT_EXPORT static ImsClientPtr Create(ClientInfoPtr info, IHttpHandlerPtr httpHandler = nullptr);
 
         //! Get security token using credentials
