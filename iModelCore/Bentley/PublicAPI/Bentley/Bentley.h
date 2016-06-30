@@ -221,8 +221,6 @@
 
 #endif  // mdl_resource_compiler
 
-
-
 #if !defined (NO_BENTLEY_PUBLIC)
 #define Public
 #endif
@@ -271,6 +269,7 @@
 #endif
 
 BEGIN_BENTLEY_NAMESPACE
+
 enum BentleyTrueFalse
     {
     TRUE  = 1,

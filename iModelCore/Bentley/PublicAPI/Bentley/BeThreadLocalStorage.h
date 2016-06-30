@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__BENTLEY_INTERNAL_ONLY__
+//__PUBLISH_SECTION_START__
 
 #include "Bentley.h"
 
@@ -24,19 +24,19 @@ s_tls = new BeThreadLocalStorage();
 ...start a thread ...
 
 // At some point in a thread, store a value in thread-local storage.
-s_tls->SetValue (new MyObject);
+s_tls->SetValue(new MyObject);
 
 // At some later point in a thread, retrieve a value from thread-local storage.
 MyObject* obj = s_tls->GetValue();
-if (NULL != obj)
+if (nullptr != obj)
     { obj->MethodCall(); ... }
 
 // Before the thread exits, clean up the stored value.
 MyObject* obj = s_tls->GetValue();
-if (NULL != obj)
+if (nullptr != obj)
     {
+    s_tls->SetValue(nullptr);
     delete obj;
-    s_tls->SetValue (NULL);
     }
 
 ...end the thread...
