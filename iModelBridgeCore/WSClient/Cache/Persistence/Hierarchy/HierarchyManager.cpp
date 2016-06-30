@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/HierarchyManager.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -96,6 +96,35 @@ bvector<ECInstanceKey>& targetsOut
     for (auto& pair : targetsMap)
         {
         targetsOut.push_back(ECInstanceKey(pair.first, pair.second));
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HierarchyManager::ReadSourceKeys
+(
+ECInstanceKeyCR target,
+ECRelationshipClassCP relationshipClass,
+bvector<ECInstanceKey>& sourcesOut
+)
+    {
+    if (nullptr == relationshipClass)
+        {
+        return ERROR;
+        }
+
+    ECInstanceKeyMultiMap sourcesMap;
+    if (SUCCESS != ReadSourceKeys(target, relationshipClass, sourcesMap))
+        {
+        return ERROR;
+        }
+
+    for (auto& pair : sourcesMap)
+        {
+        sourcesOut.push_back(ECInstanceKey(pair.first, pair.second));
         }
 
     return SUCCESS;
@@ -412,13 +441,52 @@ ECInstanceKeyMultiMap& keysOut
     auto statement = m_statementCache->GetPreparedStatement(key, [&]
         {
         return 
-            "SELECT rel.TargetECClassId, rel.TargetECInstanceId "
-            "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*relationshipClass) +  " rel "
-            "WHERE rel.SourceECClassId = ? AND rel.SourceECInstanceId = ? ";
+            "SELECT TargetECClassId, TargetECInstanceId "
+            "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*relationshipClass) +  " "
+            "WHERE SourceECClassId = ? AND SourceECInstanceId = ? ";
         });
 
     statement->BindInt64(1, source.GetECClassId());
     statement->BindId(2, source.GetECInstanceId());
+
+    ECSqlStepStatus status;
+    while (ECSqlStepStatus::HasRow == (status = statement->Step()))
+        {
+        ECClassId ecClassId = statement->GetValueInt64(0);
+        ECInstanceId ecId = statement->GetValueId<ECInstanceId>(1);
+
+        keysOut.insert({ecClassId, ecId});
+        }
+
+    return ECSqlStepStatus::Done == status ? SUCCESS : ERROR;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HierarchyManager::ReadSourceKeys
+(
+ECInstanceKeyCR target,
+ECRelationshipClassCP relationshipClass,
+ECInstanceKeyMultiMap& keysOut
+)
+    {
+    if (!target.IsValid() || nullptr == relationshipClass)
+        {
+        return ERROR;
+        }
+
+    Utf8PrintfString key("HierarchyManager::ReadSourceKeys:%lld", relationshipClass->GetId());
+    auto statement = m_statementCache->GetPreparedStatement(key, [&]
+        {
+        return
+            "SELECT SourceECClassId, SourceECInstanceId "
+            "FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*relationshipClass) + 
+            "WHERE TargetECClassId = ? AND TargetECInstanceId = ?";
+        });
+
+    statement->BindInt64(1, target.GetECClassId());
+    statement->BindId(2, target.GetECInstanceId());
 
     ECSqlStepStatus status;
     while (ECSqlStepStatus::HasRow == (status = statement->Step()))

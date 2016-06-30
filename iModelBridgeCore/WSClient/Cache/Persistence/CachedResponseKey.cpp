@@ -67,10 +67,24 @@ bool CachedResponseKey::IsValid() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CachedResponseKey::operator== (const CachedResponseKey& other) const
+bool CachedResponseKey::operator==(const CachedResponseKey& other) const
     {
     return
         m_parent == other.m_parent &&
         m_name == other.m_name &&
         m_holder == other.m_holder;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CachedResponseKey::operator<(const CachedResponseKey& other) const
+    {
+    if (m_parent != other.m_parent)
+        return m_parent < other.m_parent;
+
+    if (m_holder != other.m_holder)
+        return m_holder < other.m_holder;
+
+    return m_name.CompareTo(other.m_name) < 0;
     }
