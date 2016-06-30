@@ -1,3 +1,11 @@
+//:>--------------------------------------------------------------------------------------+
+//:>
+//:>     $Source: STM/ScalableMesh/Streaming/AzureStorage.h $
+//:>
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>
+//:>+--------------------------------------------------------------------------------------
+
 #pragma once
 
 // https://azure.microsoft.com/en-us/documentation/articles/storage-c-plus-plus-how-to-use-blobs/
@@ -10,6 +18,7 @@
 
 #ifndef NDEBUG
 #define DEBUG_AZURE
+extern std::mutex s_consoleMutex;
 #endif
 
 #ifdef DEBUG_AZURE
@@ -272,7 +281,6 @@ namespace scalable_mesh
                 {
 #ifdef DEBUG_AZURE
                 static std::atomic<int> s_parallelCalls = 0;
-                static std::mutex s_consoleMutex;
 
                 s_parallelCalls += 1;
 

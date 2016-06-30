@@ -38,7 +38,7 @@ extern size_t s_max_group_size;
 extern size_t s_max_group_depth;
 extern size_t s_max_group_common_ancestor;
 
-extern std::mutex fileMutex;
+//extern std::mutex fileMutex;
 
 struct SMNodeHeader {
     uint64_t blockid;
@@ -63,6 +63,143 @@ private:
 
 struct SMGroupNodeIds : bvector<uint64_t> {
     uint64_t m_pSizeOfRawHeaders;
+    };
+
+template <typename Type, typename Queue = std::queue<Type>>
+class SMNodeDistributor : Queue, std::mutex, std::condition_variable, public HFCShareableObject<SMNodeDistributor<Type, Queue> >{
+    typename Queue::size_type capacity;
+    unsigned int m_concurrency;
+    bool done = false;
+    std::vector<std::thread> threads;
+    std::function<void(Type)> m_WorkFunction;
+
+public:
+    typedef HFCPtr<SMNodeDistributor<Type, Queue>> Ptr;
+    SMNodeDistributor(unsigned int concurrency = std::thread::hardware_concurrency()
+                //, unsigned int concurrency = 2
+                , typename Queue::size_type max_items_per_thread = 500)
+        : capacity{ concurrency * max_items_per_thread },
+        m_concurrency{ concurrency }
+        {
+        if (!concurrency)
+            throw std::invalid_argument("Concurrency must be non-zero");
+        if (!max_items_per_thread)
+            throw std::invalid_argument("Max items per thread must be non-zero");
+        }
+    template<typename Function>
+    SMNodeDistributor(Function function
+                , unsigned int concurrency = std::thread::hardware_concurrency()
+                //, unsigned int concurrency = 2
+                , typename Queue::size_type max_items_per_thread = 500
+                )
+        : capacity{ concurrency * max_items_per_thread }
+        {
+        if (!concurrency)
+            throw std::invalid_argument("Concurrency must be non-zero");
+        if (!max_items_per_thread)
+            throw std::invalid_argument("Max items per thread must be non-zero");
+
+        for (unsigned int count{ 0 }; count < concurrency; count += 1)
+            threads.emplace_back(static_cast<void (SMNodeDistributor::*)(Function)>
+                                 (&SMNodeDistributor::consume), this, function);
+        }
+
+    SMNodeDistributor(SMNodeDistributor &&) = default;
+    SMNodeDistributor &operator=(SMNodeDistributor &&) = delete;
+
+    ~SMNodeDistributor()
+        {
+        this->CancelAll();
+        for (auto &&thread : threads) if (thread.joinable()) thread.join();
+        }
+
+    void InitCustomWork(std::function<void(Type)>&& function)
+        {
+        m_WorkFunction = std::move(function);
+        threads.resize(m_concurrency);
+        this->SpawnThreads();
+        }
+
+    void AddWorkItem(Type &&value)
+        {
+        std::unique_lock<std::mutex> lock(*this);
+        while (Queue::size() == capacity)
+            {
+#ifdef DEBUG_GROUPS
+            s_consoleMutex.lock();
+            std::cout << "[" << std::this_thread::get_id() << "] Queue is full, waiting for jobs to complete" << std::endl;
+            s_consoleMutex.unlock();
+#endif
+            wait(lock, [this] 
+                {
+                return this->done;
+                });
+            }
+        Queue::push(std::forward<Type>(value));
+        notify_one();
+        }
+
+    template <typename Function>
+    void Wait(Function function)
+        {
+        std::unique_lock<std::mutex> lock(*this);
+        wait(lock, function);
+        }
+
+    void CancelAll()
+        {
+        std::unique_lock<std::mutex> lock(*this);
+        done = true;
+        notify_all();
+        }
+
+private:
+    template <typename Function>
+    void Consume(Function process)
+        {
+        std::unique_lock<std::mutex> lock(*this);
+        while (true) {
+            if (!Queue::empty()) {
+#ifdef DEBUG_GROUPS
+                s_consoleMutex.lock();
+                std::cout << "[" << std::this_thread::get_id() << "] Going to perform work" << std::endl;
+                s_consoleMutex.unlock();
+#endif
+                Type item{ std::move(Queue::front()) };
+                Queue::pop();
+                notify_one();
+                lock.unlock();
+                process(item);
+                lock.lock();
+                }
+            else if (done) {
+#ifdef DEBUG_GROUPS
+                s_consoleMutex.lock();
+                std::cout << "[" << std::this_thread::get_id() << "] Finished work" << std::endl;
+                s_consoleMutex.unlock();
+#endif
+                break;
+                }
+            else {
+#ifdef DEBUG_GROUPS
+                s_consoleMutex.lock();
+                std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
+                s_consoleMutex.unlock();
+#endif
+                wait(lock);
+                }
+            }
+        }
+
+    void SpawnThreads()
+        {
+        assert(m_WorkFunction != nullptr);
+        for (auto &thread : threads)
+            {
+            thread = std::thread(static_cast<void (SMNodeDistributor::*)(std::function<void(Type)>)>
+                                 (&SMNodeDistributor::Consume), this, m_WorkFunction);
+            }
+        }
     };
 
 class SMNodeGroupMasterHeader : public std::map<size_t, SMGroupNodeIds>, public HFCShareableObject<SMNodeGroupMasterHeader>
@@ -147,124 +284,17 @@ class SMNodeGroupMasterHeader : public std::map<size_t, SMGroupNodeIds>, public 
         bvector<uint8_t> m_pOldMasterHeader;
     };
 
-static std::mutex globalGroupMtx;
 class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
     {
-    template <typename Type, typename Queue = std::queue<Type>>
-    class distributor : Queue, std::mutex, std::condition_variable {
-        typename Queue::size_type capacity;
-        unsigned int m_concurrency;
-        bool done = false;
-        std::vector<std::thread> threads;
-
     public:
-        distributor(unsigned int concurrency = std::thread::hardware_concurrency()
-                    //, unsigned int concurrency = 2
-                    , typename Queue::size_type max_items_per_thread = 500)
-            : capacity{ concurrency * max_items_per_thread },
-              m_concurrency{ concurrency }
-            {
-            if (!concurrency)
-                throw std::invalid_argument("Concurrency must be non-zero");
-            if (!max_items_per_thread)
-                throw std::invalid_argument("Max items per thread must be non-zero");
-            }
-        template<typename Function>
-        distributor(Function function
-                    , unsigned int concurrency = std::thread::hardware_concurrency()
-                    //, unsigned int concurrency = 2
-                    , typename Queue::size_type max_items_per_thread = 500
-                    )
-            : capacity{ concurrency * max_items_per_thread }
-            {
-            if (!concurrency)
-                throw std::invalid_argument("Concurrency must be non-zero");
-            if (!max_items_per_thread)
-                throw std::invalid_argument("Max items per thread must be non-zero");
-
-            for (unsigned int count{ 0 }; count < concurrency; count += 1)
-                threads.emplace_back(static_cast<void (distributor::*)(Function)>
-                                     (&distributor::consume), this, function);
-            }
-
-        distributor(distributor &&) = default;
-        distributor &operator=(distributor &&) = delete;
-
-        ~distributor()
-            {
-            Wait();
-            }
-
-        template <typename Function>
-        void SetJob(Function function)
-            {
-            for (unsigned int count{ 0 }; count < m_concurrency; count += 1)
-                threads.emplace_back(static_cast<void (distributor::*)(Function)>
-                                     (&distributor::consume), this, function);
-            }
-        void operator()(Type &&value)
-            {
-            std::unique_lock<std::mutex> lock(*this);
-            while (Queue::size() == capacity)
-                {
-#ifdef DEBUG_GROUPS
-                //std::cout << "distributor queue is full, waiting for jobs to complete... " << this << std::endl;
-#endif
-                wait(lock);
-                }
-            Queue::push(std::forward<Type>(value));
-            notify_one();
-            }
-
-        void Wait()
-            {
-                    {
-                    std::lock_guard<std::mutex> guard(*this);
-                    done = true;
-                    notify_all();
-                    }
-                    for (auto &&thread : threads) if (thread.joinable()) thread.join();
-            }
-
-    private:
-        template <typename Function>
-        void consume(Function process)
-            {
-#ifdef DEBUG_GROUPS
-            //std::cout << this << " is starting to process queue..." << Queue::size() << std::endl;
-#endif
-            std::unique_lock<std::mutex> lock(*this);
-            while (true) {
-                if (!Queue::empty()) {
-                    Type item{ std::move(Queue::front()) };
-                    Queue::pop();
-                    notify_one();
-                    lock.unlock();
-                    process(item);
-                    lock.lock();
-                    }
-                else if (done) {
-#ifdef DEBUG_GROUPS
-                    //std::cout << this << " done adding to queue, no more items can be added... " << this << std::endl;
-#endif
-                    break;
-                    }
-                else {
-#ifdef DEBUG_GROUPS
-                    //std::cout << "distributor queue is empty but not done yet... " << this << std::endl;
-#endif
-                    wait(lock);
-                    }
-                }
-            }
-        };
-    public:
+        typedef std::pair<uint64_t, SMNodeGroup*> DistributeData;
 
         SMNodeGroup(const size_t& pi_pID, const size_t& pi_pSize, const uint64_t& pi_pTotalSizeOfHeaders)
             : m_pGroupHeader(new SMGroupHeader(pi_pID, pi_pSize)),
-            m_pRawHeaders(pi_pTotalSizeOfHeaders),
-            m_stream_store(nullptr)
-            {};
+              m_pRawHeaders(pi_pTotalSizeOfHeaders),
+              m_stream_store(nullptr)
+            {
+            };
 
         SMNodeGroup(WString& pi_pDataSourceName, scalable_mesh::azure::Storage& pi_pStreamStore)
             {
@@ -313,6 +343,8 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
         void SetHeader(HFCPtr<SMGroupHeader> pi_pGroupHeader) { m_pGroupHeader = pi_pGroupHeader; }
 
         HFCPtr<SMGroupHeader> GetHeader() { return m_pGroupHeader; }
+
+        void SetHeaderDataAtCurrentPosition(const uint64_t& nodeID, const uint8_t* rawHeader, const uint64_t& headerSize);
 
         void IncreaseDepth() { ++m_pDepth; }
 
@@ -420,6 +452,11 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
         void LoadGroupParallel();
 
+        void SetDistributor(SMNodeDistributor<SMNodeGroup::DistributeData>& pi_pNodeDistributor)
+            {
+            m_NodeDistributorPtr = &pi_pNodeDistributor;
+            }
+
         bool ContainsNode(const uint64_t& pi_pNodeID)
             {
             assert(!m_pGroupHeader->empty());
@@ -438,15 +475,32 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 }));
             }
 
+        static void SetWorkTo(SMNodeDistributor<DistributeData>& pi_pNodeDistributor)
+            {
+            // Initialize custom work specific to node header group parallel downloads
+            pi_pNodeDistributor.InitCustomWork([](DistributeData data)
+                {
+                #ifdef DEBUG_GROUPS
+                s_consoleMutex.lock();
+                std::cout << "Processing... " << data.first << std::endl;
+                s_consoleMutex.unlock();
+                #endif
+                uint64_t nodeID = data.first;
+                SMNodeGroup* group = data.second;
+                bvector<uint8_t> rawHeader;
+                auto headerSize = group->GetSingleNodeFromStore(nodeID, rawHeader);
+                assert(headerSize == rawHeader.size());
+                group->SetHeaderDataAtCurrentPosition(nodeID, rawHeader.data(), headerSize);
+                ++group->m_pProgress;
+                group->m_pGroupCV.notify_all();
+                });
+
+            }
+
     private:
 
-        uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, uint8_t* pi_pData)
+        uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, bvector<uint8_t>& pi_pData)
             {
-            //static set<uint64_t> nodeIds;
-            //assert(nodeIds.insert(pi_pNodeID).second);
-            //static int nbDownloadedNodeHeaders = 0;
-            //++nbDownloadedNodeHeaders;
-            //std::cout << "total node headers fetched: " << nbDownloadedNodeHeaders << std::endl;
             wchar_t buffer[10000];
             swprintf(buffer, L"%sn_%llu.bin", m_pDataSourceName.c_str(), pi_pNodeID);
             std::wstring filename(buffer);
@@ -459,15 +513,12 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                     }
                 uint64_t fileSize;
                 file.GetSize(fileSize);
-                bvector<uint8_t> inBuffer(fileSize);
+                pi_pData.resize(fileSize);
+
                 uint32_t bytes_read = 0;
-                file.Read(pi_pData, &bytes_read, fileSize);
+                file.Read(pi_pData.data(), &bytes_read, fileSize);
                 assert(bytes_read == fileSize);
                 return fileSize;
-                //PointBlock block;
-                //block.SetDataSource(filename.c_str());
-                //block.SetStore(*m_stream_store);
-                //block.Load();
                 }
             else
                 {
@@ -480,13 +531,14 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                         return;
                         }
                     dataSize = (uint64_t)buffer.size();
+                    pi_pData.resize(dataSize);
 
-                    //pi_pData = new uint8_t[dataSize];
-                    memmove(pi_pData, buffer.data(), dataSize);
+                    memmove(pi_pData.data(), buffer.data(), dataSize);
                     });
                 return dataSize;
                 }
             }
+
         StatusInt LoadFromLocal(std::unique_ptr<uint8_t>& pi_pBuffer, uint32_t& pi_pBufferSize)
             {
             wchar_t buffer[10000];
@@ -535,6 +587,32 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             return status;
             }
 
+        void WaitFor(SMNodeHeader& pi_pNode)
+            {
+#ifdef DEBUG_GROUPS
+            //s_consoleMutex.lock();
+            //std::cout << "[" << std::this_thread::get_id() <<"," << this->m_pGroupHeader->GetID() << "," << pi_pNode.blockid << "] waiting..." << std::endl;
+            //s_consoleMutex.unlock();
+#endif
+            unique_lock<mutex> lk(m_pGroupMutex);
+            if (!lk.owns_lock()) lk.lock();
+            m_pGroupCV.wait(lk, [this, &pi_pNode]
+                {
+                if (!m_pIsLoading && m_pIsLoaded)
+                    {
+                    assert(pi_pNode.size > 0);
+                    return true;
+                    }
+                return pi_pNode.size > 0;
+                });
+#ifdef DEBUG_GROUPS
+            lk.unlock();
+            s_consoleMutex.lock();
+            std::cout << "[" << std::this_thread::get_id() << "," << this->m_pGroupHeader->GetID() << "," << pi_pNode.blockid << "] ready!" << std::endl;
+            s_consoleMutex.unlock();
+#endif
+            }
+
     private:
         bool   m_pIsLoaded = false;
         bool   m_pIsLoading = false;
@@ -543,12 +621,14 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
         size_t m_pNumLevels = 0;
         size_t m_pDepth = 0;
         size_t m_pAncestor = -1;
+        uint64_t m_pCurrentPosition = 0;
+        uint64_t m_pProgress = 0;
         bvector<uint8_t> m_pRawHeaders;
         WString m_pOutputDirPath;
         WString m_pDataSourceName;
         HFCPtr<SMGroupHeader> m_pGroupHeader;
-        distributor<uint64_t> m_pNodeFetchDistributor;
         scalable_mesh::azure::Storage* m_stream_store;
+        SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeDistributorPtr;
         condition_variable m_pGroupCV;
         mutex m_pGroupMutex;
     };

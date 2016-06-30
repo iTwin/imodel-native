@@ -32,7 +32,7 @@ extern bool s_stream_from_file_server;
 extern bool s_stream_from_grouped_store;
 extern bool s_is_virtual_grouping;
 
-extern std::mutex fileMutex;
+//extern std::mutex fileMutex;
 
 // Helper point block data structure
 struct PointBlock : public bvector<uint8_t> {
@@ -697,6 +697,12 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 {
                 // Set default path to headers relative to root directory
                 m_pathToHeaders = m_rootDirectory + L"headers/";
+
+                if (m_use_node_header_grouping && s_is_virtual_grouping)
+                    {
+                    m_NodeHeaderFetchDistributor = new SMNodeDistributor<SMNodeGroup::DistributeData>();
+                    SMNodeGroup::SetWorkTo(*m_NodeHeaderFetchDistributor);
+                    }
                 }
 
             // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
@@ -721,6 +727,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         assert(ERROR_PATH_NOT_FOUND != GetLastError());
                         }
                     }
+
                 }
             else
                 {
@@ -730,6 +737,11 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         virtual ~SMStreamingPointTaggedTileStore()
             {
+            if (m_NodeHeaderFetchDistributor)
+                {
+                m_NodeHeaderFetchDistributor->CancelAll();
+                m_NodeHeaderFetchDistributor = nullptr;
+                }
             }
 
         virtual bool HasSpatialReferenceSystem()
@@ -885,6 +897,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(group_id, group_numNodes, group_totalSizeOfHeaders));
                             // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
                             group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_", m_stream_store);
+                            group->SetDistributor(*m_NodeHeaderFetchDistributor);
                             m_nodeHeaderGroups.push_back(group);
 
                             vector<uint64_t> nodeIds(group_numNodes);
@@ -1347,6 +1360,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
         WString m_storage_connection_string;
         scalable_mesh::azure::Storage m_stream_store;
+        SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
         mutable std::map<IDTMFile::NodeID, PointBlock> m_pointCache;

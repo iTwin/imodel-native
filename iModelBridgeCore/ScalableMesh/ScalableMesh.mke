@@ -278,6 +278,8 @@ $(o)ScalableMeshDb$(oext) : $(stmDir)ScalableMeshDb.cpp $(stmDir)ScalableMeshDb.
 
 $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h $(stmDir)SMPointTileStore.h ${MultiCompileDepends}
 
+$(o)AzureStorage$(oext) : $(stmDir)ScalableMesh/Streaming/AzureStorage.cpp $(stmDir)ScalableMesh/Streaming/AzureStorage.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
 $(o)SMStreamingTileStore$(oext) : $(stmDir)SMStreamingTileStore.cpp $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)SMNodeGroup$(oext) : $(stmDir)SMNodeGroup.cpp $(stmDir)SMNodeGroup.h $(PCHHeaderDepends) ${MultiCompileDepends}
