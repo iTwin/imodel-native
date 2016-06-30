@@ -16,15 +16,16 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 struct DgnDbServerRevisionEvent : public DgnDbServerEvent::GenericEvent
     {
     private:
-        Utf8String m_repoId;
-        Utf8String m_userId;
+        Utf8String m_eventTopic;
+        Utf8String m_fromEventSubscriptionId;
         Utf8String m_revisionId;
         Utf8String m_revisionIndex;
         Utf8String m_date;
+
         DgnDbServerRevisionEvent
                                 (
-                                Utf8String repoId,
-                                Utf8String userId, 
+                                Utf8String eventTopic,
+                                Utf8String fromEventSubscriptionId,
                                 Utf8String revisionId, 
                                 Utf8String revisionIndex, 
                                 Utf8String date
@@ -33,14 +34,14 @@ struct DgnDbServerRevisionEvent : public DgnDbServerEvent::GenericEvent
     public:
         DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<struct DgnDbServerRevisionEvent> Create
                                                                                                (
-                                                                                               Utf8String repoId, 
-                                                                                               Utf8String userId, 
+                                                                                               Utf8String eventTopic,
+                                                                                               Utf8String fromEventSubscriptionId,
                                                                                                Utf8String revisionId, 
                                                                                                Utf8String revisionIndex, 
                                                                                                Utf8String date
                                                                                                );
-        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetRepoId();
-        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetUserId();
+        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
+        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
         DGNDBSERVERCLIENT_EXPORT virtual const type_info& GetEventType();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetDate();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetRevisionId();

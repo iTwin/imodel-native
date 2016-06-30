@@ -12,6 +12,7 @@
 #include <DgnDbServer/Client/DgnDbServerEventParser.h>
 #include <DgnDbServer/Client/DgnDbServerLockEvent.h>
 #include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
+#include <DgnDbServer/Client/DgnDbServerCodeEvent.h>
 
 using namespace ::testing;
 using namespace ::std;
@@ -84,6 +85,27 @@ Utf8String StubHttpResponseValidRevisionEvent()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidCodeEvent()
+    {
+    return R"(
+              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
+              {
+              "Date":"SomeDate",
+              "CodeAuthorityId":"SomeCodeAuthorityId",
+              "EventTopic":"SomeEventTopic",
+              "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
+              "Namespace":"SomeNamespace",
+              "Value":"SomeValue",
+              "State":"SomeState",
+              "BriefcaseId":"SomeBriefcaseId",
+              "UsedWithRevision":"SomeUsedWithRevision"
+              }
+             )";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidLockEvent()
     {
     return R"(
@@ -113,6 +135,21 @@ Utf8String StubHttpResponseInvalidRevisionEvent()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidCodeEvent()
+    {
+    return R"(
+              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
+              {
+              "Date":"SomeDate",
+              "CodeAuthorityId":"SomeLockType",
+              "EventTopic":"SomeEventTopic"
+              }
+             )";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseValidEventSubscriptionWSObjectResponse()
     {
     return R"(
@@ -123,7 +160,7 @@ Utf8String StubHttpResponseValidEventSubscriptionWSObjectResponse()
                               "instanceAfterChange" :
                                                     {
                                                     "instanceId":"SomeInstanceId",
-                                                    "schemaName" : "DgnDbServer",
+                                                    "schemaName" : "BIMCSRepository",
                                                     "className" : "EventSubscription",
                                                     "properties" :
                                                                  {
@@ -151,7 +188,7 @@ Utf8String StubHttpResponseValidEventSubscriptionWSChangeSetResponse()
                               "instanceAfterChange" :
                                                     {
                                                     "instanceId":"SomeInstanceId",
-                                                    "schemaName" : "DgnDbServer",
+                                                    "schemaName" : "BIMCSRepository",
                                                     "className" : "EventSubscription",
                                                     "properties" :
                                                                  {
@@ -179,7 +216,7 @@ Utf8String StubHttpResponseValidEventSASResponse()
                               "instanceAfterChange" :
                                                     {
                                                     "instanceId":"SomeInstanceId",
-                                                    "schemaName" : "DgnDbServer",
+                                                    "schemaName" : "BIMCSRepository",
                                                     "className" : "EventSAS",
                                                     "properties" :
                                                                  {
@@ -205,7 +242,7 @@ Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse()
                               "instanceAfterChange" :
                                                     {
                                                     "instanceId":"SomeInstanceId",
-                                                    "schemaName" : "DgnDbServer",
+                                                    "schemaName" : "BIMCSRepository",
                                                     "className" : "EventSubscription",
                                                     "properties" :
                                                                  {
@@ -230,7 +267,7 @@ Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse()
                               "instanceAfterChange" :
                                                     {
                                                     "instanceId":"SomeInstanceId",
-                                                    "schemaName" : "DgnDbServer",
+                                                    "schemaName" : "BIMCSRepository",
                                                     "className" : "EventSubscription",
                                                     "properties" :
                                                                  {
@@ -255,7 +292,7 @@ Utf8String StubHttpResponseInvalidEventSASResponse()
                               "instanceAfterChange" :
                                                     {
                                                     "instanceId":"SomeInstanceId",
-                                                    "schemaName" : "DgnDbServer",
+                                                    "schemaName" : "BIMCSRepository",
                                                     "className" : "EventSAS",
                                                     "properties" :
                                                                  {
@@ -276,13 +313,13 @@ Utf8String StubGenerateValidEventSASJson()
              "instance":
                        {
 			           "instanceId":"",
-			           "schemaName":"DgnDbServer",
+			           "schemaName":"BIMCSRepository",
 			           "className":"EventSAS",
-			            "properties":
-						            {
-						            "BaseAddress":"",
-						            "EventServiceSASToken":""
-						            }
+			           "properties":
+						           {
+						           "BaseAddress":"",
+						           "EventServiceSASToken":""
+						           }
 			            }
              } 
              )";
@@ -298,7 +335,7 @@ Utf8String StubGenerateInvalidEventSASJson()
              "instance":
                        {
 			           "instanceId":"",
-			           "schemaName":"DgnDbServer",
+			           "schemaName":"BIMCSRepository",
 			           "className":"EventSAS",
 			            "properties":
 						            {
@@ -318,7 +355,7 @@ Utf8String StubGenerateValidEventSubscriptionWSObjectJsonSingleEvent()
              "instance":
                        {
 			           "instanceId":"",
-			           "schemaName":"DgnDbServer",
+			           "schemaName":"BIMCSRepository",
 			           "className":"EventSubscription",
 			            "properties":
 						            {
@@ -341,7 +378,7 @@ Utf8String StubGenerateValidEventSubscriptionWSObjectJsonNoEvent()
              "instance":
                        {
 			           "instanceId":"",
-			           "schemaName":"DgnDbServer",
+			           "schemaName":"BIMCSRepository",
 			           "className":"EventSubscription",
 			            "properties":
 						            {
@@ -392,7 +429,7 @@ Utf8String StubGenerateInvalidEventSubscriptionWSObjectJson()
              "instance":
                        {
 			           "instanceId":"",
-			           "schemaName":"DgnDbServer",
+			           "schemaName":"BIMCSRepository",
 			           "className":"EventSubscription",
 			           "properties":
 						           {
@@ -467,6 +504,22 @@ Utf8CP StubHttpResponseInvalidRevisionEventContentType()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
+Utf8CP StubHttpResponseValidCodeEventContentType()
+    {
+    return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::CodeEvent).c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8CP StubHttpResponseInvalidCodeEventContentType()
+    {
+    return DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::UnknownEventType).c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 void DgnDbServerEventParserTests::SetUp()
     {
     BaseMockHttpHandlerTest::SetUp();
@@ -481,8 +534,11 @@ TEST_F(DgnDbServerEventParserTests, LockEventTests)
     DgnDbServerEventPtr validPtr = DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidLockEvent());
     EXPECT_NE(nullptr, validPtr);
     EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::LockEvent, DgnDbServerEventParser::GetInstance().GetEventType(validPtr));
-    DgnDbServerLockEvent& lockEvent = dynamic_cast<DgnDbServerLockEvent&>(*validPtr);
-    EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&lockEvent)); //DgnDbServerLockEvent is a subclass of DgnDbServerEvent
+    DgnDbServerLockEvent& lockEvent1 = dynamic_cast<DgnDbServerLockEvent&>(*validPtr);
+    EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&lockEvent1)); //DgnDbServerLockEvent is a subclass of DgnDbServerEvent
+    std::shared_ptr<struct DgnDbServerLockEvent> lockEvent2 = DgnDbServerEventParser::GetInstance().GetLockEvent(validPtr);
+    EXPECT_NE(nullptr, lockEvent2);
+    EXPECT_EQ(lockEvent1.GetLockType(), lockEvent2->GetLockType());
     }
 
 //---------------------------------------------------------------------------------------
@@ -494,8 +550,27 @@ TEST_F(DgnDbServerEventParserTests, RevisionEventTests)
     DgnDbServerEventPtr validPtr = DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidRevisionEvent());
     EXPECT_NE(nullptr, validPtr);
     EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent, DgnDbServerEventParser::GetInstance().GetEventType(validPtr));
-    DgnDbServerRevisionEvent& revisionEvent = dynamic_cast<DgnDbServerRevisionEvent&>(*validPtr);
-    EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&revisionEvent)); //DgnDbServerRevisionEvent is a subclass of DgnDbServerEvent
+    DgnDbServerRevisionEvent& revisionEvent1 = dynamic_cast<DgnDbServerRevisionEvent&>(*validPtr);
+    EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&revisionEvent1)); //DgnDbServerRevisionEvent is a subclass of DgnDbServerEvent
+    std::shared_ptr<struct DgnDbServerRevisionEvent> revisionEvent2 = DgnDbServerEventParser::GetInstance().GetRevisionEvent(validPtr);
+    EXPECT_NE(nullptr, revisionEvent2);
+    EXPECT_EQ(revisionEvent1.GetRevisionId(), revisionEvent2->GetRevisionId());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DgnDbServerEventParserTests, CodeEventTests)
+    {
+    //Check for valid values
+    DgnDbServerEventPtr validPtr = DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseValidCodeEvent());
+    EXPECT_NE(nullptr, validPtr);
+    EXPECT_EQ(DgnDbServerEvent::DgnDbServerEventType::CodeEvent, DgnDbServerEventParser::GetInstance().GetEventType(validPtr));
+    DgnDbServerCodeEvent& codeEvent1 = dynamic_cast<DgnDbServerCodeEvent&>(*validPtr);
+    EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&codeEvent1)); //DgnDbServerCodeEvent is a subclass of DgnDbServerEvent
+    std::shared_ptr<struct DgnDbServerCodeEvent> codeEvent2 = DgnDbServerEventParser::GetInstance().GetCodeEvent(validPtr);
+    EXPECT_NE(nullptr, codeEvent2);
+    EXPECT_EQ(codeEvent1.GetCodeAuthorityId(), codeEvent2->GetCodeAuthorityId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -509,12 +584,23 @@ TEST_F(DgnDbServerEventParserTests, InvalidEventTests)
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidLockEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseInvalidRevisionEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidLockEventContentType(), StubHttpResponseValidCodeEvent()));
+
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmpty()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseEmptyJson()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalid()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidLockEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseInvalidRevisionEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidRevisionEventContentType(), StubHttpResponseValidCodeEvent()));
+
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseEmpty()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseEmptyJson()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseInvalid()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseInvalidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseInvalidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseValidCodeEventContentType(), StubHttpResponseValidRevisionEvent()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -525,15 +611,26 @@ TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidLockEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidLockEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidRevisionEventContentType(), StubHttpResponseValidLockEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidCodeEventContentType(), StubHttpResponseValidLockEvent()));
+
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidRevisionEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidRevisionEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidRevisionEventContentType(), StubHttpResponseValidRevisionEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidCodeEventContentType(), StubHttpResponseValidRevisionEvent()));
+
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseEmptyContentType(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidContentType(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidLockEventContentType(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidRevisionEventContentType(), StubHttpResponseValidCodeEvent()));
+    EXPECT_EQ(nullptr, DgnDbServerEventParser::GetInstance().ParseEvent(StubHttpResponseInvalidCodeEventContentType(), StubHttpResponseValidCodeEvent()));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionWSObjectJsonTest)
+TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionWSObjectJsonTest) //problem
     {
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
@@ -575,7 +672,7 @@ TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionWSChangesetTest)
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-TEST_F(DgnDbServerEventParserTests, GenerateEventSASJsonTest)
+TEST_F(DgnDbServerEventParserTests, GenerateEventSASJsonTest) //problem
     {
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);

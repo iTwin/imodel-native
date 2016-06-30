@@ -77,7 +77,8 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerBoolTaskPtr             IsBriefcaseUpToDate     (ICancellationTokenPtr cancellationToken = nullptr) const;
 
     DGNDBSERVERCLIENT_EXPORT bool                               SetEventTypes (bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr);
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventStringTaskPtr      GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventStringTaskPtr      GetEventString(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr            GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
     DGNDBSERVERCLIENT_EXPORT DgnDbServerEventCollectionTaskPtr  GetEvents(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr      CancelEventRequest(ICancellationTokenPtr cancellationToken = nullptr);
 
