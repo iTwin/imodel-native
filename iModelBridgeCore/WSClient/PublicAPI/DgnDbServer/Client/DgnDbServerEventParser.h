@@ -81,10 +81,13 @@ struct DgnDbServerEventParser : public IDgnDbServerEventParser
 
         DGNDBSERVERCLIENT_EXPORT DgnDbServerEventSASPtr ParseEventSAS(Json::Value jsonResponse) const override;
 
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerEvent::DgnDbServerEventType GetEventType
-            (
-            DgnDbServerEventPtr eventPtr
-            ) const override;
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerEvent::DgnDbServerEventType GetEventType(DgnDbServerEventPtr eventPtr) const override;
+
+        DGNDBSERVERCLIENT_EXPORT std::shared_ptr<struct DgnDbServerLockEvent> GetLockEvent(DgnDbServerEventPtr eventPtr);
+
+        DGNDBSERVERCLIENT_EXPORT std::shared_ptr<struct DgnDbServerRevisionEvent> GetRevisionEvent(DgnDbServerEventPtr eventPtr);
+
+        DGNDBSERVERCLIENT_EXPORT std::shared_ptr<struct DgnDbServerCodeEvent> GetCodeEvent(DgnDbServerEventPtr eventPtr);
     };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

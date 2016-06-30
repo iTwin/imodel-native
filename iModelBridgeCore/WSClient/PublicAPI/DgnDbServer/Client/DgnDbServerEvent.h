@@ -35,11 +35,22 @@ namespace DgnDbServerEvent
         static Utf8CP RevisionIndex = "RevisionIndex";
         static Utf8CP Date = "Date";
         }
+    namespace CodeEventProperties
+        {
+        static Utf8CP CodeAuthorityId = "CodeAuthorityId";
+        static Utf8CP Namespace = "Namespace";
+        static Utf8CP Value = "Value";
+        static Utf8CP State = "State";
+        static Utf8CP BriefcaseId = "BriefcaseId";
+        static Utf8CP UsedWithRevision = "UsedWithRevision";
+        static Utf8CP Date = "Date";
+        }
 
     enum DgnDbServerEventType
         {
         LockEvent,
         RevisionEvent,
+        CodeEvent,
         UnknownEventType
         };
 
@@ -52,8 +63,9 @@ namespace DgnDbServerEvent
             {
             switch (eventType)
                 {
-                    case DgnDbServerEventType::LockEvent:   return "LockEvent";
+                    case DgnDbServerEventType::LockEvent:       return "LockEvent";
                     case DgnDbServerEventType::RevisionEvent:   return "RevisionEvent";
+                    case DgnDbServerEventType::CodeEvent:       return "CodeEvent";
                     case DgnDbServerEventType::UnknownEventType:
                     default:      return "UnknownEventType";
                 }
@@ -64,6 +76,8 @@ namespace DgnDbServerEvent
                 return DgnDbServerEventType::LockEvent;
             else if (0 == (BeStringUtilities::Stricmp("RevisionEvent", eventName)))
                 return DgnDbServerEventType::RevisionEvent;
+            else if (0 == (BeStringUtilities::Stricmp("CodeEvent", eventName)))
+                return DgnDbServerEventType::CodeEvent;
             else
                 return DgnDbServerEventType::UnknownEventType;
             }
@@ -76,13 +90,12 @@ namespace DgnDbServerEvent
         {
         public:
             DGNDBSERVERCLIENT_EXPORT virtual const type_info& GetEventType() { return typeid(this); }
-            DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetRepoId() { return ""; }
-            DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetUserId() { return ""; }
+            DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic() { return ""; }
+            DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId() { return ""; }
         };
     }
 
 typedef std::shared_ptr<struct DgnDbServerEvent::GenericEvent> DgnDbServerEventPtr;
-
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerEventPtr>, DgnDbServerEventCollection);
 DEFINE_TASK_TYPEDEFS(DgnDbServerEventPtr, DgnDbServerEvent);
 DEFINE_TASK_TYPEDEFS(DgnDbServerEvent::DgnDbServerEventType, DgnDbServerEventType);

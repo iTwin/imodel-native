@@ -13,10 +13,17 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             65/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionEvent::DgnDbServerRevisionEvent(Utf8String repoId, Utf8String userId, Utf8String revisionId, Utf8String revisionIndex, Utf8String date)
+DgnDbServerRevisionEvent::DgnDbServerRevisionEvent
+(
+Utf8String eventTopic, 
+Utf8String fromEventSubscriptionId, 
+Utf8String revisionId, 
+Utf8String revisionIndex, 
+Utf8String date
+)
     {
-    m_repoId = repoId;
-    m_userId = userId;
+    m_eventTopic = eventTopic;
+    m_fromEventSubscriptionId = fromEventSubscriptionId;
     m_revisionId = revisionId;
     m_revisionIndex = revisionIndex;
     m_date = date;
@@ -25,25 +32,39 @@ DgnDbServerRevisionEvent::DgnDbServerRevisionEvent(Utf8String repoId, Utf8String
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerRevisionEvent> DgnDbServerRevisionEvent::Create(Utf8String repoId, Utf8String userId, Utf8String revisionId, Utf8String revisionIndex, Utf8String date)
+std::shared_ptr<struct DgnDbServerRevisionEvent> DgnDbServerRevisionEvent::Create
+(
+Utf8String eventTopic, 
+Utf8String fromEventSubscriptionId, 
+Utf8String revisionId, 
+Utf8String revisionIndex, 
+Utf8String date
+)
     {
-    return std::shared_ptr<struct DgnDbServerRevisionEvent>(new DgnDbServerRevisionEvent(repoId, userId, revisionId, revisionIndex, date));
+    return std::shared_ptr<struct DgnDbServerRevisionEvent>
+        (new DgnDbServerRevisionEvent
+               (
+               eventTopic,
+               fromEventSubscriptionId,
+               revisionId, 
+               revisionIndex,
+               date));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionEvent::GetRepoId()
+Utf8String DgnDbServerRevisionEvent::GetEventTopic()
     {
-    return m_repoId;
+    return m_eventTopic;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionEvent::GetUserId()
+Utf8String DgnDbServerRevisionEvent::GetFromEventSubscriptionId()
     {
-    return m_userId;
+    return m_fromEventSubscriptionId;
     }
 
 //---------------------------------------------------------------------------------------

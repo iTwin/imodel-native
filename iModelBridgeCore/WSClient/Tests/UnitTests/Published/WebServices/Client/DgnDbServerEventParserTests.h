@@ -38,12 +38,22 @@ Utf8String StubHttpResponseValidRevisionEvent();
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidCodeEvent();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidLockEvent();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidRevisionEvent();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidCodeEvent();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
@@ -144,6 +154,16 @@ Utf8CP     StubHttpResponseValidRevisionEventContentType();
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Utf8CP     StubHttpResponseInvalidRevisionEventContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8CP     StubHttpResponseValidCodeEventContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8CP     StubHttpResponseInvalidCodeEventContentType();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016

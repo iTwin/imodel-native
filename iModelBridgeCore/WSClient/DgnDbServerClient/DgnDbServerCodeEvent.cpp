@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnDbServerClient/DgnDbServerLockEvent.cpp $
+|     $Source: DgnDbServerClient/DgnDbServerCodeEvent.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbServerLockEvent.h>
+#include <DgnDbServer/Client/DgnDbServerCodeEvent.h>
 #include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
@@ -13,62 +13,64 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             65/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerLockEvent::DgnDbServerLockEvent
+DgnDbServerCodeEvent::DgnDbServerCodeEvent
 (
-Utf8String eventTopic, 
-Utf8String fromSubscriptionId, 
-Utf8String objectId, 
-Utf8String lockType, 
-Utf8String lockLevel, 
-Utf8String briefcaseId, 
-Utf8String releasedWithRevision, 
+Utf8String eventTopic,
+Utf8String fromEventSubscriptionId,
+Utf8String codeAuthorityId,
+Utf8String codeNamespace,
+Utf8String value,
+Utf8String state,
+Utf8String briefcaseId,
+Utf8String usedWithRevision,
 Utf8String date
 )
     {
     m_eventTopic = eventTopic;
-    m_fromEventSubscriptionId = fromSubscriptionId;
-    m_objectId = objectId;
-    m_lockType = lockType;
-    m_lockLevel = lockLevel;
+    m_fromEventSubscriptionId = fromEventSubscriptionId;
+    m_codeAuthorityId = codeAuthorityId;
+    m_codeNamespace = codeNamespace;
+    m_value = value;
+    m_state = state;
     m_briefcaseId = briefcaseId;
-    m_releasedWithRevision = releasedWithRevision;
+    m_usedWithRevision = usedWithRevision;
     m_date = date;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerLockEvent> DgnDbServerLockEvent::Create
+std::shared_ptr<struct DgnDbServerCodeEvent> DgnDbServerCodeEvent::Create
 (
-Utf8String eventTopic, 
-Utf8String fromSubscriptionId, 
-Utf8String objectId, 
-Utf8String lockType, 
-Utf8String lockLevel, 
-Utf8String briefcaseId, 
-Utf8String releasedWithRevision, 
+Utf8String eventTopic,
+Utf8String fromEventSubscriptionId,
+Utf8String codeAuthorityId,
+Utf8String codeNamespace,
+Utf8String value,
+Utf8String state,
+Utf8String briefcaseId,
+Utf8String usedWithRevision,
 Utf8String date
 )
     {
-    return std::shared_ptr<struct DgnDbServerLockEvent>
-        (new DgnDbServerLockEvent
-               (
-               eventTopic, 
-               fromSubscriptionId, 
-               objectId, 
-               lockType, 
-               lockLevel, 
-               briefcaseId, 
-               releasedWithRevision, 
-               date
-               )
-         );
+    return std::shared_ptr<struct DgnDbServerCodeEvent>
+        (new DgnDbServerCodeEvent
+                (
+                eventTopic,
+                fromEventSubscriptionId,
+                codeAuthorityId,
+                codeNamespace,
+                value,
+                state,
+                briefcaseId,
+                usedWithRevision,
+                date));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetEventTopic()
+Utf8String DgnDbServerCodeEvent::GetEventTopic()
     {
     return m_eventTopic;
     }
@@ -76,7 +78,7 @@ Utf8String DgnDbServerLockEvent::GetEventTopic()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetFromEventSubscriptionId()
+Utf8String DgnDbServerCodeEvent::GetFromEventSubscriptionId()
     {
     return m_fromEventSubscriptionId;
     }
@@ -84,7 +86,7 @@ Utf8String DgnDbServerLockEvent::GetFromEventSubscriptionId()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetDate()
+Utf8String DgnDbServerCodeEvent::GetDate()
     {
     return m_date;
     }
@@ -92,47 +94,55 @@ Utf8String DgnDbServerLockEvent::GetDate()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetObjectId()
+Utf8String DgnDbServerCodeEvent::GetCodeAuthorityId()
     {
-    return m_objectId;
+    return m_codeAuthorityId;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetLockType()
+Utf8String DgnDbServerCodeEvent::GetNamespace()
     {
-    return m_lockType;
+    return m_codeNamespace;
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Caleb.Shafer						06/2016
+//@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetLockLevel()
+Utf8String DgnDbServerCodeEvent::GetValue()
     {
-    return m_lockLevel;
+    return m_value;
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Caleb.Shafer						06/2016
+//@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetBriefcaseId()
+Utf8String DgnDbServerCodeEvent::GetState()
+    {
+    return m_state;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Arvind.Venkateswaran             06/2016
+//---------------------------------------------------------------------------------------
+Utf8String DgnDbServerCodeEvent::GetBriefcaseId()
     {
     return m_briefcaseId;
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Caleb.Shafer						06/2016
+//@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetReleasedWithRevision()
+Utf8String DgnDbServerCodeEvent::GetUsedWithRevision()
     {
-    return m_releasedWithRevision;
+    return m_usedWithRevision;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-const type_info& DgnDbServerLockEvent::GetEventType()
+const type_info& DgnDbServerCodeEvent::GetEventType()
     {
     const type_info& tp = typeid(this);
     return tp;

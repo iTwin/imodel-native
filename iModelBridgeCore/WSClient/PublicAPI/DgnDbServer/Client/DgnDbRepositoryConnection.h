@@ -20,6 +20,7 @@
 #include <DgnDbServer/Client/DgnDbServerEventParser.h>
 #include <DgnDbServer/Client/DgnDbServerLockEvent.h>
 #include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
+#include <DgnDbServer/Client/DgnDbServerCodeEvent.h>
 #include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
