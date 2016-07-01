@@ -222,8 +222,22 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo()
         return info;
 
     SamlTokenPtr token = m_persistence->GetToken();
+    if (nullptr == token)
+        return info;
+        
+    info = GetUserInfo(*token);
+    return info;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                           Andrius.Paulauskas     06/2016
+//--------------------------------------------------------------------------------------
+ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo(SamlTokenCR token)
+    {
+    UserInfo info;
+
     bmap<Utf8String, Utf8String> attributes;
-    if (nullptr == token || SUCCESS != token->GetAttributes(attributes))
+    if (SUCCESS != token.GetAttributes(attributes))
         return info;
 
     info.username = attributes["name"];
@@ -232,6 +246,14 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo()
     info.userId = attributes["userid"];
 
     return info;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                           Andrius.Paulauskas     06/2016
+//--------------------------------------------------------------------------------------
+Utf8String ConnectSignInManager::GetLastUsername()
+    {
+    return m_secureStore->Decrypt(m_localState.GetValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser).asString().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -364,7 +386,7 @@ void ConnectSignInManager::CheckUserChange()
     if (!IsSignedIn())
         return;
 
-    Utf8String storedUsername = m_secureStore->Decrypt(m_localState.GetValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser).asString().c_str());
+    Utf8String storedUsername = GetLastUsername();
     if (storedUsername.empty())
         return;
 
