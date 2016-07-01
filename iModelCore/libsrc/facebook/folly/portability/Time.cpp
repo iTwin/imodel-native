@@ -135,7 +135,8 @@ extern "C" int clock_gettime(clockid_t clock_id, struct timespec* tp) {
   FILETIME createTime, exitTime, kernalTime, userTime;
   switch (clock_id) {
     case CLOCK_REALTIME: {
-      constexpr size_t kDeltaEpochIn100NS = 116444736000000000ULL;
+      // BENTLEY_CHANGE - constexpr size_t kDeltaEpochIn100NS = 116444736000000000ULL;
+      constexpr uint64_t kDeltaEpochIn100NS = 116444736000000000ULL;
 
       GetSystemTimeAsFileTime(&createTime);
       return timeToTimespec(tp, ftToUint(createTime) - kDeltaEpochIn100NS);

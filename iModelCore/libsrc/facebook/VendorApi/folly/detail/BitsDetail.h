@@ -23,7 +23,8 @@ namespace detail {
 // __builtin_popcount directly, as it's presumably inlined.
 // If not, use runtime detection using __attribute__((__ifunc__))
 // (see Bits.cpp)
-#ifdef _MSC_VER
+// BENTLEY_CHANGE: #ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_M_X64)
 inline int popcount(unsigned int x) {
   return __popcnt(x);
 }
