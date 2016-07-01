@@ -22,15 +22,13 @@ struct DgnDbServerEventSubscription
     {
     //__PUBLISH_SECTION_END__
     private:
-        Utf8String m_topicName;
         Utf8String m_subscriptionId;
         bvector<DgnDbServerEvent::DgnDbServerEventType> m_eventTypes;
 
-        DgnDbServerEventSubscription(Utf8String topicName, Utf8String subscriptionId, bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes);
+        DgnDbServerEventSubscription(Utf8String subscriptionId, bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes);
         //__PUBLISH_SECTION_START__
     public:
-        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventSubscriptionPtr Create(Utf8String topicName, Utf8String subscriptionId, bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes);
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetTopicName();
+        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventSubscriptionPtr Create(Utf8String subscriptionId, bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes);
         DGNDBSERVERCLIENT_EXPORT Utf8String GetSubscriptionId();
         DGNDBSERVERCLIENT_EXPORT bvector<DgnDbServerEvent::DgnDbServerEventType> GetEventTypes();
     };

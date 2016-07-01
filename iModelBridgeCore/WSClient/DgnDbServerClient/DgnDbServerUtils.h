@@ -79,7 +79,6 @@ namespace ServerSchema
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
 		static Utf8CP EventServiceSASToken = "EventServiceSASToken";
 		static Utf8CP BaseAddress = "BaseAddress";
-        static Utf8CP TopicName = "TopicName";
         static Utf8CP EventTypes = "EventTypes";
         static Utf8CP IsReadOnly = "IsReadOnly";
         static Utf8CP AuthorityId = "AuthorityId";

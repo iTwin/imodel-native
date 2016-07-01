@@ -1156,7 +1156,7 @@ const WSChangeset::ChangeState&					 changeState
                          changeState, 
                          std::make_shared<Json::Value>(
                          DgnDbServerEventParser::GetInstance().GenerateEventSubscriptionWSChangeSetJson
-                                                                (eventTypes, eventSubscriptionId))
+                                                                (eventTypes))
                          );
     }
 

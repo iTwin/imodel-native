@@ -32,13 +32,10 @@ DgnDbServerEventParser& DgnDbServerEventParser::GetInstance()
 //---------------------------------------------------------------------------------------
 Json::Value DgnDbServerEventParser::GenerateEventSubscriptionWSChangeSetJson
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
-Utf8String eventSubscriptionId
+bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes
 ) const
     {
     Json::Value properties;
-    properties[ServerSchema::Property::Id] = eventSubscriptionId;
-    properties[ServerSchema::Property::TopicName] = "";
     properties[ServerSchema::Property::EventTypes] = Json::arrayValue;
     if (eventTypes != nullptr)
         {
@@ -66,10 +63,10 @@ Utf8String eventSubscriptionId
     {
     Json::Value request = Json::objectValue;
     JsonValueR instance = request[ServerSchema::Instance] = Json::objectValue;
-    instance[ServerSchema::InstanceId] = "";
+    instance[ServerSchema::InstanceId] = eventSubscriptionId;
     instance[ServerSchema::SchemaName] = ServerSchema::Schema::Repository;
     instance[ServerSchema::ClassName] = ServerSchema::Class::EventSubscription;
-    instance[ServerSchema::Properties] = GenerateEventSubscriptionWSChangeSetJson(eventTypes, eventSubscriptionId);
+    instance[ServerSchema::Properties] = GenerateEventSubscriptionWSChangeSetJson(eventTypes);
     return request;
     }
 
@@ -121,7 +118,6 @@ bool isEventSubscription
         {
         if (
             !properties->isMember(ServerSchema::Property::Id) ||
-            !properties->isMember(ServerSchema::Property::TopicName) ||
             !(*properties)[ServerSchema::Property::EventTypes].isArray()
             )
             return nullptr;
@@ -152,9 +148,8 @@ Json::Value jsonResponse
         return nullptr;
 
     Json::Value properties = *propertiesPtr;
-    Utf8String topicName = properties[ServerSchema::Property::TopicName].asCString();
     Utf8String id = properties[ServerSchema::Property::Id].asCString();
-    if (Utf8String::IsNullOrEmpty(topicName.c_str()) || Utf8String::IsNullOrEmpty(id.c_str()))
+    if (Utf8String::IsNullOrEmpty(id.c_str()))
         return nullptr;
 
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
@@ -170,7 +165,7 @@ Json::Value jsonResponse
             }
         }
 
-    return DgnDbServerEventSubscription::Create(topicName, id, eventTypes);
+    return DgnDbServerEventSubscription::Create(id, eventTypes);
     }
 
 //---------------------------------------------------------------------------------------
