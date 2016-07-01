@@ -468,6 +468,9 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerCodeEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
