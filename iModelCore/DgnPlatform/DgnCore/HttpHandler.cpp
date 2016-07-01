@@ -29,8 +29,6 @@ public:
     ~CurlHolder() {curl_easy_cleanup(m_curl);}
     CURL* Get() const {return m_curl;}
 };
-#endif
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
@@ -87,6 +85,8 @@ static int httpProgressCallback(void* clientp, int64_t dltotal, int64_t dlnow, i
     return cancellationToken->_ShouldCancelHttpRequest();
     }
 
+#endif
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -140,7 +140,6 @@ Http::Request::Status Http::PerformRequest(Response& response, Request const& re
 
 #else
     BeAssert(false);
-    return HttpRequestStatus::UnknownError;
+    return Request::Status::UnknownError;
 #endif
     }
-
