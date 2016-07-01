@@ -342,6 +342,7 @@ bool                            includeOnlyExclusive = false
 //---------------------------------------------------------------------------------------
 int CodeStateToInt(DgnCodeStateCR state)
     {
+    //NEEDSWORK: Make DgnCodeState::Type public
     if (state.IsReserved())
         {
         return 1;
@@ -770,7 +771,8 @@ ICancellationTokenPtr cancellationToken
 
     if (!locksFilter.empty() && !codesFilter.empty())
         {
-        filter.Sprintf("(%s)+or+(%s)", locksFilter.c_str(), codesFilter.c_str());
+        //NEEDSWORK: EvaluationHelper defaults filters to true if properties are not found. Should be or instead of and.
+        filter.Sprintf("(%s)+and+(%s)", locksFilter.c_str(), codesFilter.c_str());
         }
     else
         {
@@ -811,6 +813,102 @@ ICancellationTokenPtr cancellationToken
         else
             return DgnDbServerCodeLockSetResult::Error(result.GetError());
         });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             06/2016
+//---------------------------------------------------------------------------------------
+WSQuery CreateUnavailableLocksQuery(const BeBriefcaseId briefcaseId, const uint64_t lastRevisionIndex)
+    {
+    std::set<Utf8String> classes;
+    classes.insert(ServerSchema::Class::Lock);
+    classes.insert(ServerSchema::Class::Code);
+
+    WSQuery query(ServerSchema::Schema::Repository, classes);
+    Utf8String filter;
+    Utf8String locksFilter, codesFilter;
+    locksFilter.Sprintf("%s+ne+%u+or+%s+gt+%u", ServerSchema::Property::LockLevel, LockLevel::None,
+                        ServerSchema::Property::ReleasedWithRevisionIndex, lastRevisionIndex);
+
+    //NEEDSWORK: Make DgnCodeState::Type public
+    codesFilter.Sprintf("%s+ne+%u+and+(%s+ne+%u+or+%s+gt+%u)", ServerSchema::Property::State, 0,
+                        ServerSchema::Property::State, 3, ServerSchema::Property::StateRevisionIndex, lastRevisionIndex);
+
+    //NEEDSWORK: EvaluationHelper defaults filters to true if properties are not found. Should be or instead of and.
+    filter.Sprintf("%s+ne+%u+and+((%s)+and+(%s))", ServerSchema::Property::BriefcaseId,
+                   briefcaseId.GetValue(), locksFilter.c_str(), codesFilter.c_str());
+
+    query.SetFilter(filter);
+    return query;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             06/2016
+//---------------------------------------------------------------------------------------
+void AddCodeLock(DgnDbCodeLockSetResultInfo& codesLocksSet, JsonValueCR codeLockJson)
+    {
+    DgnCode        code;
+    DgnCodeState   codeState;
+    DgnLock        lock;
+    BeBriefcaseId  briefcase;
+    Utf8String     repository;
+    if (GetLockFromServerJson(codeLockJson[ServerSchema::Properties], lock, briefcase, repository))
+        {
+        codesLocksSet.AddLock(lock, briefcase, repository);
+        }
+    else if (GetCodeFromServerJson(codeLockJson[ServerSchema::Properties], code, codeState, briefcase, repository))
+        {
+        codesLocksSet.AddCode(code, codeState, briefcase, repository);
+        }
+    //NEEDSWORK: log an error
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesLocks
+(
+    const BeBriefcaseId   briefcaseId,
+    Utf8StringCR lastRevisionId,
+    ICancellationTokenPtr cancellationToken
+) const
+    {
+    if (briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
+        return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Error(DgnDbServerError::Id::InvalidBriefcase));
+    std::shared_ptr<DgnDbServerCodeLockSetResult> finalResult = std::make_shared<DgnDbServerCodeLockSetResult>();
+    return GetRevisionById(lastRevisionId, cancellationToken)->Then([=] (DgnDbServerRevisionResultCR revisionResult)
+        {
+        uint64_t revisionIndex = 0;
+        if (!revisionResult.IsSuccess() && revisionResult.GetError().GetId() != DgnDbServerError::Id::InvalidRevision)
+            {
+            finalResult->SetError(revisionResult.GetError());
+            return;
+            }
+        else if (revisionResult.IsSuccess())
+            {
+            revisionIndex = revisionResult.GetValue()->GetIndex();
+            }
+
+        auto query = CreateUnavailableLocksQuery(briefcaseId, revisionIndex);
+        
+        m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (const WSObjectsResult& result)
+            {
+            if (!result.IsSuccess())
+                {
+                finalResult->SetError(result.GetError());
+                return;
+                }
+            DgnDbCodeLockSetResultInfo codesLocks;
+            for (auto const& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
+                {
+                AddCodeLock(codesLocks, value);
+                }
+            finalResult->SetSuccess(codesLocks);
+            });
+        })->Then<DgnDbServerCodeLockSetResult>([=] ()
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
