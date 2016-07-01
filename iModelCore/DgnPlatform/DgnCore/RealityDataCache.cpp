@@ -8,6 +8,10 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/HttpHandler.h>
 
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
+#include <folly/futures/Future.h>
+#endif
+
 #ifndef BENTLEY_WINRT
     #include <curl/curl.h>
     #ifdef GetCurrentTime
@@ -404,8 +408,8 @@ void Storage::Terminate()
     m_threadPool->Terminate();
     m_threadPool->WaitUntilAllThreadsIdle();
 
-    if (m_database.IsDbOpen())
-        m_database.CloseDb();
+    if (m_db.IsDbOpen())
+        m_db.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -413,12 +417,12 @@ void Storage::Terminate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Storage::OpenAndPrepare(BeFileNameCR fileName)
     {
-    DbResult result = m_database.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, m_retry.get()));
+    DbResult result = m_db.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, m_retry.get()));
 
     if (BE_SQLITE_OK != result)
         {
         Db::CreateParams createParams(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8, false, DefaultTxn::Yes, m_retry.get());
-        if (BeSQLite::BE_SQLITE_OK != (result = m_database.CreateNewDb(fileName, BeSQLite::BeGuid(), createParams)))
+        if (BeSQLite::BE_SQLITE_OK != (result = m_db.CreateNewDb(fileName, BeSQLite::BeGuid(), createParams)))
             {
             RDCLOG(LOG_ERROR, "%s: %s", fileName.GetNameUtf8().c_str(), Db::InterpretDbResult(result));
             BeAssert(false);
@@ -426,13 +430,13 @@ BentleyStatus Storage::OpenAndPrepare(BeFileNameCR fileName)
             }
         }        
 
-    if (SUCCESS != _PrepareDatabase(m_database))
+    if (SUCCESS != _PrepareDatabase(m_db))
         {
         BeAssert(false);
         return ERROR;
         }
     
-    if (BE_SQLITE_OK != (result = m_database.SaveChanges()))
+    if (BE_SQLITE_OK != (result = m_db.SaveChanges()))
         {
         RDCLOG(LOG_ERROR, "%s: %s", fileName.GetNameUtf8().c_str(), Db::InterpretDbResult(result));
         BeAssert(false);
@@ -447,7 +451,7 @@ BentleyStatus Storage::OpenAndPrepare(BeFileNameCR fileName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Storage::wt_Cleanup()
     {
-    BentleyStatus result = _CleanupDatabase(m_database);
+    BentleyStatus result = _CleanupDatabase(m_db);
     BeAssert(SUCCESS == result);
     }
 
@@ -456,7 +460,7 @@ void Storage::wt_Cleanup()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Storage::wt_SaveChanges()
     {
-    auto result = m_database.SaveChanges();
+    auto result = m_db.SaveChanges();
     BeAssert(BeSQLite::BE_SQLITE_OK == result);
     m_hasChanges.store(false);
     }
@@ -466,7 +470,7 @@ void Storage::wt_SaveChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StorageResult Storage::wt_Select(Payload& data, Options options, Cache& responseReceiver)
     {
-    StorageResult result = (SUCCESS == data._LoadFromStorage(m_database)) ? StorageResult::Success : StorageResult::NotFound;
+    StorageResult result = (SUCCESS == data._LoadFromStorage(m_db)) ? StorageResult::Success : StorageResult::NotFound;
     responseReceiver._OnResponseReceived(*new StorageResponse(result, data), options, !options.m_forceSynchronous);
     return result;
     }
@@ -490,7 +494,7 @@ StorageResult Storage::_Select(Payload& data, Options options, Cache& responseRe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Storage::wt_Persist(Payload const& data)
     {
-    BentleyStatus result = data._PersistToStorage(m_database);
+    BentleyStatus result = data._PersistToStorage(m_db);
     BeAssert(SUCCESS == result);
     m_hasChanges.store(true);
     }
@@ -791,7 +795,7 @@ void Payload::ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& hea
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct HttpSourceRequest : AsyncSourceRequest, IHttpRequestCancellationToken
+struct HttpSourceRequest : AsyncSourceRequest, Http::CancellationToken
 {
     virtual bool _ShouldCancelHttpRequest() const override {return ShouldCancelRequest();}
 
@@ -810,32 +814,31 @@ struct HttpSourceRequest : AsyncSourceRequest, IHttpRequestCancellationToken
             header["If-None-Match"] = m_payload->GetEntityTag();
 
         Utf8StringCR url = m_payload->GetPayloadId();
-        HttpResponsePtr response;
-        HttpRequestStatus requestStatus = HttpHandler::Instance().Request(response, HttpRequest(url.c_str(), header), this);
+        Http::Response response;
+        Http::Request::Status requestStatus = Http::PerformRequest(response, Http::Request(url.c_str(), header), this);
         switch (requestStatus)
             {
-            case HttpRequestStatus::NoConnection:
+            case Http::Request::Status::NoConnection:
                 return new SourceResponse(SourceResult::Error_NoConnection, *m_payload);
 
-            case HttpRequestStatus::CouldNotResolveHost:
-            case HttpRequestStatus::CouldNotResolveProxy:
+            case Http::Request::Status::CouldNotResolveHost:
+            case Http::Request::Status::CouldNotResolveProxy:
                 return new SourceResponse(SourceResult::Error_CouldNotResolveHost,  *m_payload);
 
-            case HttpRequestStatus::UnknownError:
+            case Http::Request::Status::UnknownError:
                 BeAssert(false && "All HTTP errors should be handled");
                 return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
 
-        if (requestStatus == HttpRequestStatus::Aborted || ShouldCancelRequest())
+        if (requestStatus == Http::Request::Status::Aborted || ShouldCancelRequest())
             return new SourceResponse(SourceResult::Cancelled, *m_payload);
 
-        BeAssert(response.IsValid());
-        switch (response->GetStatus())
+        switch (response.m_status)
             {
-            case HttpResponseStatus::Success:
+            case Http::Response::Status::Success:
                 {
-                m_payload->ParseExpirationDateAndETag(response->GetHeader());
-                if (SUCCESS != m_payload->_LoadFromHttp(response->GetHeader(), response->GetBody()))
+                m_payload->ParseExpirationDateAndETag(response.m_header);
+                if (SUCCESS != m_payload->_LoadFromHttp(response.m_header, response.m_body))
                     {
                     RDCLOG(LOG_INFO, "[%lld] response 200 but unable to initialize reality data",(uint64_t)BeThreadUtilities::GetCurrentThreadId());
                     return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
@@ -843,19 +846,19 @@ struct HttpSourceRequest : AsyncSourceRequest, IHttpRequestCancellationToken
                 return new SourceResponse(SourceResult::Success, *m_payload);
                 }
 
-            case HttpResponseStatus::NotModified:
+            case Http::Response::Status::NotModified:
                 {
                 m_payload->ParseExpirationDateAndETag(header);
                 return new SourceResponse(SourceResult::NotModified, *m_payload);
                 }
 
-            case HttpResponseStatus::NotFound:
+            case Http::Response::Status::NotFound:
                 return new SourceResponse(SourceResult::Error_NotFound, *m_payload);
 
-            case HttpResponseStatus::Forbidden:
+            case Http::Response::Status::Forbidden:
                 return new SourceResponse(SourceResult::Error_AccessDenied, *m_payload);
 
-            case HttpResponseStatus::GatewayTimeout:
+            case Http::Response::Status::GatewayTimeout:
                 return new SourceResponse(SourceResult::Error_GatewayTimeout, *m_payload);
 
             default:
@@ -1453,3 +1456,117 @@ bool WorkerThread::TerminateRequested() const
     BeMutexHolder lock(m_cv.GetMutex());
     return m_terminate;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Cache2::Worker::SaveChanges()
+    {
+    if (m_hasChanges)
+        {
+        m_cache._Cleanup();
+        m_cache.m_db.SaveChanges();
+        m_hasChanges = false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Cache2::Worker::Work()
+    {
+    for(;;)
+        {
+        BeMutexHolder lock(m_cache.m_cv.GetMutex());
+
+        if (!m_hasChanges)
+            m_cache.m_cv.InfiniteWait(lock);
+
+        while (m_saveTime > std::chrono::steady_clock::now())
+            {
+            m_cache.m_cv.RelativeWait(lock, 1000);
+            }
+
+        SaveChanges();
+
+        if (m_cache.IsStopped())
+            return;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+THREAD_MAIN_IMPL Cache2::Worker::Main(void* arg)
+    {
+    BeThreadUtilities::SetCurrentThreadName("CacheSave");
+    ((Worker*)arg)->Work();
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Cache2::Worker::Start()
+    {
+    BeThreadUtilities::StartNewThread(50*1024, Main, this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Cache2::ScheduleSave()
+    {
+    BeMutexHolder lock(m_cv.GetMutex());
+
+    m_worker->m_hasChanges = true;
+    m_worker->m_saveTime = std::chrono::steady_clock::now() + m_saveDelay;
+    m_cv.notify_one();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Cache2::~Cache2()
+    {
+    BeMutexHolder lock(m_cv.GetMutex());
+    m_isStopped = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Cache2::OpenAndPrepare(BeFileNameCR fileName)
+    {
+    DbResult result = m_db.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, this));
+
+    if (BE_SQLITE_OK != result)
+        {
+        Db::CreateParams createParams(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8, false, DefaultTxn::Yes, this);
+        if (BeSQLite::BE_SQLITE_OK != (result = m_db.CreateNewDb(fileName, BeSQLite::BeGuid(), createParams)))
+            {
+            RDCLOG(LOG_ERROR, "%s: %s", fileName.GetNameUtf8().c_str(), Db::InterpretDbResult(result));
+            BeAssert(false);
+            return ERROR;
+            }
+        }        
+
+    if (SUCCESS != _Prepare())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    
+    if (BE_SQLITE_OK != (result = m_db.SaveChanges()))
+        {
+        RDCLOG(LOG_ERROR, "%s: %s", fileName.GetNameUtf8().c_str(), Db::InterpretDbResult(result));
+        BeAssert(false);
+        return ERROR;
+        }
+    
+    m_worker = new Worker(*this);
+    m_worker->Start();
+    
+    return SUCCESS;
+    }
+

@@ -239,6 +239,7 @@ protected:
 
     void ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat, BottomUp bottomUp);
     void ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat);
+
 public:
     //! Construct a blank invalid Image
     Image() {}
@@ -1419,8 +1420,9 @@ public:
     virtual DVec2d _GetDpiScale() const = 0;
     virtual void* _GetNativeDevice() const = 0;
 #if defined (BENTLEYCONFIG_DISPLAY_WIN32)
-    virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::Target
+    virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::System
 #endif
+    virtual TargetPtr _CreateTarget(double frameRateGoal) = 0;
     double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
     Window const* GetWindow() const {return m_window.get();}
 };
@@ -1461,6 +1463,32 @@ struct System
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
+};
+
+//=======================================================================================
+//! Provides an algorithm for dynamically adjusting the frame rate goal of a
+//! Render::Target based on the ratio of successfully drawn to aborted frames and other
+//! factors.
+// @bsistruct                                                   Paul.Connelly   06/16
+//=======================================================================================
+struct FrameRateAdjuster
+{
+private:
+    uint32_t        m_drawCount = 0;
+    uint32_t        m_abortCount = 0;
+public:
+    static uint32_t const FRAME_RATE_MIN = 1;
+    static uint32_t const FRAME_RATE_MAX = 30;
+
+    //! Computes an adjusted frame rate goal based on factors like draw/abort ratio, smallest attempted element size, etc
+    //! @param[in]      target    The target who's frame rate goal is to be adjusted
+    //! @param[in]      saesNpcSq The smallest attempted element size (NPC squared)
+    //! @return The adjusted frame rate goal
+    DGNPLATFORM_EXPORT double AdjustFrameRate(Render::TargetCR target, double saesNpcSq);
+
+    void Reset() { m_drawCount = m_abortCount = 0; }    //!< Reset abort/draw counts
+    void IncrementDrawCount() { ++m_drawCount; }        //!< Increment the number of frames drawn
+    void IncrementAbortCount() { ++m_abortCount; }      //!< Increment the number of drawn frames aborted
 };
 
 //=======================================================================================

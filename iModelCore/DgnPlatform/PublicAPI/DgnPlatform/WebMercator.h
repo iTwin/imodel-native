@@ -10,6 +10,7 @@
 
 #include <DgnPlatform/DgnViewport.h>
 #include <DgnPlatform/DgnDbTables.h>
+#include <DgnPlatform/RealityDataCache.h>
 #include <algorithm>
 
 #ifdef min

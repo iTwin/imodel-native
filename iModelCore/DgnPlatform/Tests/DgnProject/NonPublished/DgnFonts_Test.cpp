@@ -34,7 +34,7 @@ TEST_F(FontTests, CRUD_DbFontMapDirect)
     DgnFontPtr shxFont = DgnFontPersistence::File::FromShxFile(shxFilepath);
 
     BeFileName ttfFontPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Teleindicadores1.ttf", L"Teleindicadores1.ttf", __FILE__)) << "Unable to test file";
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Karla-Regular.ttf", L"Karla-Regular.ttf", __FILE__)) << "Unable to test file";
     bvector<BeFileName> pathList;
     pathList.push_back(ttfFontPath);
     T_DgnFontPtrs ttfFontList = DgnFontPersistence::File::FromTrueTypeFiles(pathList, nullptr);
@@ -228,7 +228,7 @@ TEST_F(FontTests, EmbedTTFont)
     DgnFonts& dbFonts = m_db->Fonts();
 
     BeFileName ttfFontPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Teleindicadores1.ttf", L"Teleindicadores1.ttf", __FILE__)) << "Unable to test file";
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Karla-Regular.ttf", L"Karla-Regular.ttf", __FILE__)) << "Unable to test file";
     bvector<BeFileName> pathList;
     pathList.push_back(ttfFontPath);
     T_DgnFontPtrs ttfFontList = DgnFontPersistence::File::FromTrueTypeFiles(pathList, nullptr);
@@ -299,7 +299,7 @@ TEST_F(FontTests, EmbeddedInUserDefinedFontTable)
     ASSERT_TRUE( SUCCESS  == dbFonts.DbFontMap().CreateFontTable());
 
     BeFileName ttfFontPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Teleindicadores1.ttf", L"Teleindicadores1.ttf", __FILE__)) << "Unable to test file";
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Karla-Regular.ttf", L"Karla-Regular.ttf", __FILE__)) << "Unable to test file";
     bvector<BeFileName> pathList;
     pathList.push_back(ttfFontPath);
     T_DgnFontPtrs ttfFontList = DgnFontPersistence::File::FromTrueTypeFiles(pathList, nullptr);

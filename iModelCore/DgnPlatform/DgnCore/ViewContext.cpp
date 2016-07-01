@@ -26,7 +26,7 @@ ViewContext::ViewContext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::VisitElement(DgnElementId elementId, bool allowLoad) 
+StatusInt ViewContext::_VisitElement(DgnElementId elementId, bool allowLoad) 
     {
     DgnElements& pool = m_dgndb->Elements();
     DgnElementCPtr el = allowLoad ? pool.GetElement(elementId) : pool.FindElement(elementId);
@@ -788,108 +788,6 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
 
     return vec[0].Distance(vec[1]);
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 12/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewContext::RasterDisplayParams::RasterDisplayParams()
-    : m_flags(0), m_contrast(50), m_brightness(50), m_greyScale(false), m_applyBinaryWhiteOnWhiteReversal(false), m_quality(1.0)
-    {
-    m_backgroundColor = ColorDef::Black();      // Background color for binary image.
-    m_foregroundColor = ColorDef::White();      // Foreground color for binary image.
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 12/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::RasterDisplayParams::operator==(RasterDisplayParams const& rhs) const
-    {
-    if (this == &rhs)
-        return true;
-
-    return (memcmp(this, &rhs, sizeof(*this)) == 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 12/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::RasterDisplayParams::operator!=(RasterDisplayParams const& rhs) const
-    {
-    return !(operator==(rhs));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::RasterDisplayParams::SetContrast(int8_t value)     
-    {
-    m_contrast = value;
-    m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_Contrast;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::RasterDisplayParams::SetBrightness(int8_t value)   
-    {
-    m_brightness = value;
-    m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_Brightness;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::RasterDisplayParams::SetGreyscale(bool value)
-    {
-    m_greyScale = value;
-    m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_GreyScale;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::RasterDisplayParams::SetApplyBinaryWhiteOnWhiteReversal(bool value)
-    {
-    m_applyBinaryWhiteOnWhiteReversal = value;
-    m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_ApplyBinaryWhiteOnWhiteReversal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::RasterDisplayParams::SetEnableGrid(bool value)
-    {
-    m_enableGrid = value;
-    m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_EnableGrid;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::RasterDisplayParams::SetBackgroundColor(ColorDef value)
-    {
-    m_backgroundColor = value;
-    m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_BackgroundColor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::RasterDisplayParams::SetForegroundColor(ColorDef value)
-    {
-    m_foregroundColor = value;
-    m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_ForegroundColor;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::RasterDisplayParams::SetQualityFactor(double factor)
-    {
-    m_quality = factor;
-    m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_Quality;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
