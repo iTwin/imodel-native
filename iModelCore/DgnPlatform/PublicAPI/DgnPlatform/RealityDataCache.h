@@ -7,7 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
+
+#ifndef _M_CEE // can't include this file in managed compilands
+
 #include <DgnPlatform/DgnPlatform.h>
+#include <queue>
+#include <chrono>
 
 #define BEGIN_BENTLEY_REALITYDATA_NAMESPACE  BEGIN_BENTLEY_DGN_NAMESPACE namespace RealityData {
 #define END_BENTLEY_REALITYDATA_NAMESPACE    } END_BENTLEY_DGN_NAMESPACE
@@ -16,7 +21,7 @@
 BEGIN_BENTLEY_REALITYDATA_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache2)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FileSource)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(HttpSource)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Payload)
@@ -28,6 +33,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Work)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(WorkerThread)
 
 DEFINE_REF_COUNTED_PTR(Cache)
+DEFINE_REF_COUNTED_PTR(Cache2)
 DEFINE_REF_COUNTED_PTR(FileSource)
 DEFINE_REF_COUNTED_PTR(HttpSource)
 DEFINE_REF_COUNTED_PTR(Payload)
@@ -445,7 +451,7 @@ protected:
     RefCountedPtr<StorageThreadPool> m_threadPool;
     BeAtomic<bool> m_hasChanges;
     BeMutex m_saveChangesMux;
-    BeSQLite::Db m_database;
+    BeSQLite::Db m_db;
     uint32_t m_idleTime;
     RefCountedPtr<BeSQLite::BusyRetry> m_retry;
 
@@ -558,7 +564,7 @@ protected:
     mutable RefCountedPtr<SourceResponse> m_response; // set only for sync requests
 
     AsyncSourceRequest(IAsyncRequestCancellationToken* cancellationToken, Options options, Payload& payload) : m_cancellationToken(cancellationToken), m_options(options), m_payload(&payload) {}
-
+              
     //! Returns true if the request was cancelled.
     DGNPLATFORM_EXPORT bool ShouldCancelRequest() const;
 
@@ -621,7 +627,8 @@ protected:
         }
     AsyncSource(int numThreads, SchedulingMethod schedulingMethod)
         : m_threadPool(ThreadPool::Create(numThreads, numThreads, schedulingMethod)), m_ignoreRequestsUntil(0), m_terminateRequested(false)
-        {}
+        {
+        }
 
 protected:
     //! Queues a request for handling on the work thread. Derived classes should use this
@@ -656,4 +663,51 @@ struct EXPORT_VTABLE_ATTRIBUTE HttpSource : AsyncSource
     DGNPLATFORM_EXPORT virtual SourceResult _Request(Payload& data, Options options, Cache& responseReceiver) override;
 };
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct Cache2 : BeSQLite::BusyRetry
+{
+    typedef std::chrono::steady_clock::time_point TimePoint;
+    struct Worker : RefCountedBase
+    {
+        Cache2& m_cache;
+        bool m_hasChanges = false;
+        TimePoint m_saveTime;
+
+        Worker(Cache2& cache) : m_cache(cache) {}
+        Worker(Worker const&) = delete;
+        void Work();
+        void Start();
+        void SaveChanges();
+        THREAD_MAIN_DECL Main(void* arg);
+    };
+
+protected:
+    typedef RefCountedPtr<Worker> WorkerPtr;
+    bool m_isStopped=false;
+    std::chrono::milliseconds m_saveDelay = std::chrono::seconds(2);
+    WorkerPtr m_worker;
+    BentleyApi::BeConditionVariable m_cv;
+    BeSQLite::Db m_db;
+
+    //! Called to prepare the database for storing specific type of data (the type
+    //! must be known to the implementation).
+    virtual BentleyStatus _Prepare() const = 0;
+
+    //! Called to free some space in the database.
+    virtual BentleyStatus _Cleanup() const = 0;
+
+public:
+    Cache2() = default;
+    DGNPLATFORM_EXPORT ~Cache2();
+
+    DGNPLATFORM_EXPORT BentleyStatus OpenAndPrepare(BeFileNameCR cacheName);
+    DGNPLATFORM_EXPORT void ScheduleSave();
+    bool IsStopped() const {return m_isStopped;}
+    BeSQLite::DbR GetDb() {return m_db;}
+};
+
 END_BENTLEY_REALITYDATA_NAMESPACE
+
+#endif // _M_CEE 

@@ -2,7 +2,7 @@
 #
 #     $Source: DgnPlatform.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 OutDgnPlatformBuild             = $(OutBuildDir)DgnPlatform/
@@ -34,33 +34,23 @@ MuiBaseName                     = $(appName)
 nameToDefine                    = NOMINMAX
 %include cdefapnd.mki
 
-%if defined (DEBUG) && !defined (DISABLE_HANDLE_CHECKS)
-    nameToDefine                = DEBUG_BREAKS
-    %include cdefapnd.mki
-%endif
-
 %if defined (debug)                     # If bmake  +ddebug
     nameToDefine                = PAGALLOC_PAGE_DEBUG_CHECK_DOUBLE_FREE=1
     %include cdefapnd.mki
 %endif
-nameToDefine                    = DGN_PLATFORM_MT
-%include cdefapnd.mki
-
-nameToDefine                    = BENTLEY_PORTABLE_CODE
-%include cdefapnd.mki
 
 # so that we can #include "DgnPlatformInternal.h"
-dirToSearch                     = $(SrcDgnPlatform)
+dirToSearch  = $(SrcDgnPlatform)
 %include cincapnd.mki
 
 # ICU header files require additional include paths... do this vs. modifying vendor APIs.
-dirToSearch                     = $(BuildContext)VendorAPI/icu4c/
+dirToSearch = $(BuildContext)VendorAPI/icu4c/
 %include cincapnd.mki
 
 # Freetype2 header files require additional include paths... do this vs. modifying vendor APIs.
-dirToSearch                     = $(BuildContext)VendorAPI/freetype2/
+dirToSearch = $(BuildContext)VendorAPI/freetype2/
 %include cincapnd.mki
 
-dirToSearch                     = $(PrivateApiSrc)
+dirToSearch  = $(PrivateApiSrc)
 %include cincapnd.mki
 
