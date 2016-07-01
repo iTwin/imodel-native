@@ -26,7 +26,7 @@ enum DgnDbSchemaValues : int32_t
     DGNDB_CURRENT_VERSION_Minor = 1,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
     DGNDB_CURRENT_VERSION_Sub2  = 1,
-//__PUBLISH_SECTION_END__
+
     //------------------------------
     // Schema change history
     //------------------------------
@@ -34,7 +34,6 @@ enum DgnDbSchemaValues : int32_t
     // 6.0.1.2 - Introduce MinimumSharedColumnCount for dgn_GeometricElement2d=8 and dgn_GeometricElement3d=16
     // 6.1.0.0 - BIS clean-up activities (move classes to Markup domain, shared colums for dgn:Model, dgn:GeometryPart --> element, etc.)
     // 6.1.0.1 - GroupInformation-related changes, mark completion of this round of BIS clean-up
-//__PUBLISH_SECTION_START__
 
     DGNDB_SUPPORTED_VERSION_Major = 6,  // oldest version of the schema supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 1,
@@ -194,8 +193,8 @@ public:
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
     DgnAuthorities& Authorities() const {return const_cast<DgnAuthorities&>(m_authorities);} //!< The authorities associated with this DgnDb
     DgnSearchableText& SearchableText() const { return const_cast<DgnSearchableText&>(m_searchableText); } //!< The searchable text table for this DgnDb
-    DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
-    DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The Revisions for this DgnDb.
+    DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
+    DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     DgnQueryQueue& GetQueryQueue() const {return const_cast<DgnQueryQueue&>(m_queryQueue);}

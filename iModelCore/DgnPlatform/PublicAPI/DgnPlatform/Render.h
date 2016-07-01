@@ -239,6 +239,7 @@ protected:
 
     void ReadJpeg(uint8_t const* srcData, uint32_t srcLen, Format targetFormat, BottomUp bottomUp);
     void ReadPng(uint8_t const* srcData, uint32_t srcLen, Format targetFormat);
+
 public:
     //! Construct a blank invalid Image
     Image() {}

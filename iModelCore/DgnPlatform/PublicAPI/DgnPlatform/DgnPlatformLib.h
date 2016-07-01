@@ -15,7 +15,6 @@
 #include "NotificationManager.h"
 #include "TxnManager.h"
 #include "SolidKernel.h"
-#include "RealityDataCache.h"
 #include "DgnViewport.h"
 #include <BeSQLite/L10N.h>
 #include <Logging/bentleylogging.h>
