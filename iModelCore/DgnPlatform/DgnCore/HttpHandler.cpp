@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/HttpHandler.h>
+#include <mutex>
 
 #ifndef BENTLEY_WINRT
 #include <curl/curl.h>
