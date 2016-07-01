@@ -8,7 +8,9 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/HttpHandler.h>
 
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <folly/futures/Future.h>
+#endif
 
 #ifndef BENTLEY_WINRT
     #include <curl/curl.h>
