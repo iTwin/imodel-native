@@ -89,7 +89,7 @@ void BeThreadLocalStorage::Delete(void* key)
     TlsFree(toKey(key));
 #elif defined (BENTLEY_WINRT)
     // note: FLS acts the same as TLS if you don't create fibers
-    FlsFree(toKey(m_key));
+    FlsFree(toKey(key));
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
         pthread_key_delete(toKey(key));
