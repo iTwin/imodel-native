@@ -1374,6 +1374,150 @@ TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddNewSubClassMappedToSharedTable)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    GetECDb().ChangeBriefcaseId(BeBriefcaseId(123));
+
+    SchemaItem schemaWithNewSubClass(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Sub1' modifier='None' >"
+        "       <BaseClass>Parent</BaseClass>"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding new Class to SharedTable is expected to succeed");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithNewSubClass);
+    ASSERT_FALSE(asserted);
+
+    SchemaItem schemaWithNewSubClassWithNewProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Sub1' modifier='None' >"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='Sub1' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", false, "Adding new column to SharedTable is expected to fail");
+
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithNewSubClassWithNewProperty);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddNewClass_NewProperty_MappedTo_SharedTable_SharedColumns)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Sub1' modifier='None' >"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='Sub1' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    GetECDb().ChangeBriefcaseId(BeBriefcaseId(123));
+
+    SchemaItem schemaWithNewSubClassWithProperty(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Sub1' modifier='None' >"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='Sub1' typeName='int' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Sub2' modifier='None' >"
+        "       <BaseClass>Sub1</BaseClass>"
+        "       <ECProperty propertyName='Sub2' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding new Class with new property to SharedTable_SharedColumns is expected to fail");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), schemaWithNewSubClassWithProperty);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
@@ -1700,6 +1844,96 @@ TEST_F(ECSchemaUpdateTests, AddNewECProperty)
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+        GetECDb().CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_SharedColumns)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "       <ECProperty propertyName='P2' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Parent", 7));
+    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
+
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Parent -> P1, P2");
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "       <ECProperty propertyName='P3' typeName='int' />"
+        "       <ECProperty propertyName='P4' typeName='int' />"
+        "       <ECProperty propertyName='P5' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Add Delete New Property to sharedColumns should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Add Delete New Property to sharedColumns should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: Add Delete New Property to sharedColumns should be successful");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        testItems.clear();
+        testItems.push_back(std::make_pair("ts_Parent", 7));
+        AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
+
+        ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Parent -> P1, -P2, +P3, +P4, +P5");
+
+        //Verify insert
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Parent(P1, P3, P4, P5) VALUES(1, 2, 3, 4)");
 
         GetECDb().CloseDb();
         }
@@ -5085,6 +5319,11 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
     ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
     ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial_Index");
 
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(GetECDb(), "SELECT NULL FROM ec_Index WHERE Name='IDX_Partial_Index'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    stmt.Finalize();
+
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
 
@@ -5149,6 +5388,12 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
         ASSERT_EQ(indexes.GetStruct()->GetValue(indexName, "Name"), ECObjectsStatus::Success);
         ASSERT_STREQ(indexName.GetUtf8CP(), "IDX_Partial");
 
+        //verify entry updated in ec_Index table
+        Statement statement;
+        ASSERT_EQ(BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT NULL FROM ec_Index WHERE Name='IDX_Partial'"));
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+
+        statement.Finalize();
         GetECDb().CloseDb();
         }
 
@@ -7369,23 +7614,22 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
     //verify Adding new derived endtable relationship for different briefcaseIds.
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new Derived EndTable relationship should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Add new Derived EndTable relationship should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new Derived EndTable relationship should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Add new Derived EndTable relationship should be successful");
     ASSERT_FALSE(asserted);
 
-#ifdef TFS481303
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: add new Derived EndTable relationship should succeed as it doens't change db schema");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: Add new Derived EndTable relationship should succeed as it doens't change db schema");
     ASSERT_FALSE(asserted);
-#endif // TFS481303
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
+        GetECDb().Schemas().CreateECClassViewsInDb();
         //Insert Test Data
         //Model
         ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Model(ECInstanceId, Name) VALUES(101, 'Model1')");
