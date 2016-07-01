@@ -683,34 +683,8 @@ LINKER_LIBRARIES_DELAYLOADED + \
     %endif
 %endif
 
-# JavaScript Support
-%ifndef BENTLEYCONFIG_NO_JAVASCRIPT
-    LINKER_LIBRARIES +    $(ContextSubpartsLibs)$(libprefix)BeJavaScript$(stlibext)
-    %if $(TARGET_PLATFORM) == "Windows"
-        %if defined (BEJAVASCRIPT_USE_CHAKRACORE)
-            LINKER_LIBRARIES + $(ContextSubpartsLibs)ChakraCore.lib
-        %else
-            %if !defined (NDEBUG) && !defined (DGNCLIENTFXJS_WINDOWS_FORCE_V8_ENGINE)
-                %if defined (BEJAVASCRIPT_FORCE_JSRT_EDGE_MODE) && (" " != $[@findstring "[Version 10.", $[@readstdout ver]])
-                    LINKER_LIBRARIES + chakrart.lib
-                %else
-                    LINKER_LIBRARIES + jsrt.lib
-                %endif
-            %else
-                LINKER_LIBRARIES + $(ContextSubpartsLibs)libv8.lib
-            %endif
-        %endif
-    %elif $(TARGET_PLATFORM) == "WinRT"
-        %if $(MSVC_VERSION) >= 1900
-            LINKER_LIBRARIES + chakrart.lib
-        %else
-            LINKER_LIBRARIES + jsrt.lib
-        %endif
-    %elif $(TARGET_PLATFORM) == "Android"
-        LINKER_LIBRARIES + $(ContextLibPrefix)v8_base.arm.a
-        LINKER_LIBRARIES + $(ContextLibPrefix)v8_snapshot.a
-    %endif
-%endif
+# Link in JavaScript support
+%include $(SrcRoot)bsicommon/sharedmki/AppendJavaScriptLinkerLibraries.mki
 
 %include $(sharedMki)linkLibrary.mki
 
