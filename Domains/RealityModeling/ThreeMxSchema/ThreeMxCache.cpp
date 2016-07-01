@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
 #include <DgnPlatform/HttpHandler.h>
+#include <folly/futures/Future.h>
 
 #define TABLE_NAME_ThreeMx "ThreeMx"
 
