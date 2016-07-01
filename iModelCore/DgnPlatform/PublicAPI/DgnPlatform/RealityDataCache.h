@@ -12,7 +12,7 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 #include <queue>
-#include <folly/futures/Future.h>
+#include <chrono>
 
 #define BEGIN_BENTLEY_REALITYDATA_NAMESPACE  BEGIN_BENTLEY_DGN_NAMESPACE namespace RealityData {
 #define END_BENTLEY_REALITYDATA_NAMESPACE    } END_BENTLEY_DGN_NAMESPACE
