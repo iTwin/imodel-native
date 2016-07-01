@@ -195,6 +195,117 @@ Json::Value jsonResponse
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                 Arvind.Venkateswaran	              07/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
+    {
+    Json::Reader reader;
+    Json::Value data(Json::objectValue);
+    if (
+        reader.parse(jsonString, data) &&
+        !data.isArray() &&
+        data.isMember(DgnDbServerEvent::EventTopic) &&
+        data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
+        data.isMember(DgnDbServerEvent::LockEventProperties::ObjectId) &&
+        data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
+        data.isMember(DgnDbServerEvent::LockEventProperties::LockLevel) &&
+        data.isMember(DgnDbServerEvent::LockEventProperties::BriefcaseId) &&
+        data.isMember(DgnDbServerEvent::LockEventProperties::ReleasedWithRevision) &&
+        data.isMember(DgnDbServerEvent::LockEventProperties::Date)
+        )
+        return DgnDbServerLockEvent::Create
+        (
+        data[DgnDbServerEvent::EventTopic].asString(),
+        data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
+        data[DgnDbServerEvent::LockEventProperties::ObjectId].asString(),
+        data[DgnDbServerEvent::LockEventProperties::LockType].asString(),
+        data[DgnDbServerEvent::LockEventProperties::LockLevel].asString(),
+        data[DgnDbServerEvent::LockEventProperties::BriefcaseId].asString(),
+        data[DgnDbServerEvent::LockEventProperties::ReleasedWithRevision].asString(),
+        data[DgnDbServerEvent::LockEventProperties::Date].asString()
+        );
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Arvind.Venkateswaran	              07/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerEventPtr ParseIntoRevisionEvent(Utf8String jsonString)
+    {
+    Json::Reader reader;
+    Json::Value data(Json::objectValue);
+    if (
+        reader.parse(jsonString, data) &&
+        !data.isArray() &&
+        data.isMember(DgnDbServerEvent::EventTopic) &&
+        data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
+        data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionId) &&
+        data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionIndex) &&
+        data.isMember(DgnDbServerEvent::RevisionEventProperties::Date)
+        )
+        return DgnDbServerRevisionEvent::Create
+        (
+        data[DgnDbServerEvent::EventTopic].asString(),
+        data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
+        data[DgnDbServerEvent::RevisionEventProperties::RevisionId].asString(),
+        data[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString(),
+        data[DgnDbServerEvent::RevisionEventProperties::Date].asString()
+        );
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Arvind.Venkateswaran	              07/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
+    {
+    Json::Reader reader;
+    Json::Value data(Json::objectValue);
+    if (
+        reader.parse(jsonString, data) &&
+        !data.isArray() &&
+        data.isMember(DgnDbServerEvent::EventTopic) &&
+        data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
+        data.isMember(DgnDbServerEvent::CodeEventProperties::CodeAuthorityId) &&
+        data.isMember(DgnDbServerEvent::CodeEventProperties::Namespace) &&
+        data.isMember(DgnDbServerEvent::CodeEventProperties::Value) &&
+        data.isMember(DgnDbServerEvent::CodeEventProperties::State) &&
+        data.isMember(DgnDbServerEvent::CodeEventProperties::BriefcaseId) &&
+        data.isMember(DgnDbServerEvent::CodeEventProperties::UsedWithRevision) &&
+        data.isMember(DgnDbServerEvent::CodeEventProperties::Date)
+        )
+        return DgnDbServerCodeEvent::Create
+        (
+        data[DgnDbServerEvent::EventTopic].asString(),
+        data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
+        data[DgnDbServerEvent::CodeEventProperties::CodeAuthorityId].asString(),
+        data[DgnDbServerEvent::CodeEventProperties::Namespace].asString(),
+        data[DgnDbServerEvent::CodeEventProperties::Value].asString(),
+        data[DgnDbServerEvent::CodeEventProperties::State].asString(),
+        data[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asString(),
+        data[DgnDbServerEvent::CodeEventProperties::UsedWithRevision].asString(),
+        data[DgnDbServerEvent::CodeEventProperties::Date].asString()
+        );
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Arvind.Venkateswaran	              07/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerEventPtr ParseIntoDeleteAllLocksEvent(Utf8String jsonString)
+    {
+    return nullptr; //to be implemented
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Arvind.Venkateswaran	              07/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerEventPtr ParseIntoDeleteAllCodesEvent(Utf8String jsonString)
+    {
+    return nullptr; //to be implemented
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerEventPtr DgnDbServerEventParser::ParseEvent
@@ -212,105 +323,17 @@ Utf8String responseString
         return nullptr;
    
     Utf8String actualJsonPart = responseString.substr(jsonPosStart, jsonPosEnd);
-    if (0 == (BeStringUtilities::Stricmp
-        (
-        DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::LockEvent).c_str(),
-        responseContentType
-        )))
+    DgnDbServerEvent::DgnDbServerEventType eventType = DgnDbServerEvent::Helper::GetEventTypeFromEventName(responseContentType);
+    switch (eventType)
         {
-        Json::Reader reader;
-        Json::Value data(Json::objectValue);
-        if (
-            reader.parse(actualJsonPart, data) &&
-            !data.isArray() &&
-            data.isMember(DgnDbServerEvent::EventTopic) &&
-            data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-            data.isMember(DgnDbServerEvent::LockEventProperties::ObjectId) &&
-            data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
-            data.isMember(DgnDbServerEvent::LockEventProperties::LockLevel) &&
-            data.isMember(DgnDbServerEvent::LockEventProperties::BriefcaseId) &&
-            data.isMember(DgnDbServerEvent::LockEventProperties::ReleasedWithRevision) &&
-            data.isMember(DgnDbServerEvent::LockEventProperties::Date)
-            )
-            return DgnDbServerLockEvent::Create
-            (
-            data[DgnDbServerEvent::EventTopic].asString(),
-            data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-            data[DgnDbServerEvent::LockEventProperties::ObjectId].asString(),
-            data[DgnDbServerEvent::LockEventProperties::LockType].asString(),
-            data[DgnDbServerEvent::LockEventProperties::LockLevel].asString(),
-            data[DgnDbServerEvent::LockEventProperties::BriefcaseId].asString(),
-            data[DgnDbServerEvent::LockEventProperties::ReleasedWithRevision].asString(),
-            data[DgnDbServerEvent::LockEventProperties::Date].asString()
-            );
-        return nullptr;
-
-        }
-    else if (0 == (BeStringUtilities::Stricmp
-        (
-        DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent).c_str(),
-        responseContentType
-        )))
-        {
-        Json::Reader reader;
-        Json::Value data(Json::objectValue);
-        if (
-            reader.parse(actualJsonPart, data) &&
-            !data.isArray() &&
-            data.isMember(DgnDbServerEvent::EventTopic) &&
-            data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-            data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionId) &&
-            data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionIndex) &&
-            data.isMember(DgnDbServerEvent::RevisionEventProperties::Date)
-            )
-            return DgnDbServerRevisionEvent::Create
-            (
-            data[DgnDbServerEvent::EventTopic].asString(),
-            data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-            data[DgnDbServerEvent::RevisionEventProperties::RevisionId].asString(),
-            data[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString(),
-            data[DgnDbServerEvent::RevisionEventProperties::Date].asString()
-            );
-        return nullptr;
-        }
-    else if (0 == (BeStringUtilities::Stricmp
-        (
-        DgnDbServerEvent::Helper::GetEventNameFromEventType(DgnDbServerEvent::DgnDbServerEventType::CodeEvent).c_str(),
-        responseContentType
-        )))
-        {
-        Json::Reader reader;
-        Json::Value data(Json::objectValue);
-        if (
-            reader.parse(actualJsonPart, data) &&
-            !data.isArray() &&
-            data.isMember(DgnDbServerEvent::EventTopic) &&
-            data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-            data.isMember(DgnDbServerEvent::CodeEventProperties::CodeAuthorityId) &&
-            data.isMember(DgnDbServerEvent::CodeEventProperties::Namespace) &&
-            data.isMember(DgnDbServerEvent::CodeEventProperties::Value) &&
-            data.isMember(DgnDbServerEvent::CodeEventProperties::State) &&
-            data.isMember(DgnDbServerEvent::CodeEventProperties::BriefcaseId) &&
-            data.isMember(DgnDbServerEvent::CodeEventProperties::UsedWithRevision) &&
-            data.isMember(DgnDbServerEvent::CodeEventProperties::Date)
-            )
-            return DgnDbServerCodeEvent::Create
-            (
-            data[DgnDbServerEvent::EventTopic].asString(),
-            data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-            data[DgnDbServerEvent::CodeEventProperties::CodeAuthorityId].asString(),
-            data[DgnDbServerEvent::CodeEventProperties::Namespace].asString(),
-            data[DgnDbServerEvent::CodeEventProperties::Value].asString(),
-            data[DgnDbServerEvent::CodeEventProperties::State].asString(),
-            data[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asString(),
-            data[DgnDbServerEvent::CodeEventProperties::UsedWithRevision].asString(),
-            data[DgnDbServerEvent::CodeEventProperties::Date].asString()
-            );
-            return nullptr;           
-        }
-    else
-        return nullptr;
-        
+            case DgnDbServerEvent::DgnDbServerEventType::LockEvent:        return ParseIntoLockEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::RevisionEvent:    return ParseIntoRevisionEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::CodeEvent:        return ParseIntoCodeEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::DeleteAllLocks:   return ParseIntoDeleteAllLocksEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::DeleteAllCodes:   return ParseIntoDeleteAllCodesEvent(actualJsonPart);
+            default:
+            case DgnDbServerEvent::DgnDbServerEventType::UnknownEventType: return nullptr;
+        }    
     }
 
 //---------------------------------------------------------------------------------------
@@ -326,7 +349,6 @@ DgnDbServerEventPtr eventPtr
 
     const type_info& eventType = eventPtr->GetEventType();
     Utf8String returnedEventName = eventType.name();
-
     if (returnedEventName.ContainsI(typeid(DgnDbServerLockEvent).name()))
         return DgnDbServerEvent::DgnDbServerEventType::LockEvent;
     else if (returnedEventName.ContainsI(typeid(DgnDbServerRevisionEvent).name()))
