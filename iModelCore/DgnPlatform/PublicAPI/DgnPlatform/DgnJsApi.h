@@ -116,6 +116,12 @@ typedef JsDgnLock* JsDgnLockP;
 struct JsRepositoryRequest;
 typedef JsRepositoryRequest* JsRepositoryRequestP;
 
+struct JsViewport;
+typedef JsViewport* JsViewportP;
+
+struct JsViewController;
+typedef JsViewController* JsViewControllerP;
+
 #define JS_ITERATOR_IMPL(JSITCLASS,CPPCOLL) typedef CPPCOLL T_CppColl;\
     T_CppColl::const_iterator m_iter;\
     JSITCLASS(CPPCOLL::const_iterator it) : m_iter(it) {;}
@@ -1566,6 +1572,37 @@ struct JsRepositoryRequest : RefCountedBaseWithCreate
 
     STUB_OUT_SET_METHOD(Briefcase, JsDgnDbP);
 };
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/16
+//=======================================================================================
+struct JsViewController : RefCountedBaseWithCreate
+    {
+    ViewControllerPtr m_controller;
+    JsViewController(ViewControllerR vc) : m_controller(&vc) {;}
+
+    JsDgnModelP GetTargetModel() const 
+        {
+        return m_controller->GetTargetModel()? new JsDgnModel(*m_controller->GetTargetModel()): nullptr;
+        }
+    void SetTargetModel(JsDgnModelP m) 
+        {
+        m_controller->SetTargetModel(m? m->m_model->ToGeometricModelP(): nullptr);
+        }
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/16
+//=======================================================================================
+struct JsViewport : RefCountedBaseWithCreate
+    {
+    DgnViewportPtr m_vp;
+
+    JsViewport(DgnViewportR vp) : m_vp(&vp) {}
+
+    JsViewControllerP GetViewController() const {return new JsViewController(m_vp->GetViewControllerR());}
+    STUB_OUT_SET_METHOD(ViewController, JsViewControllerP);
+    };
 
 END_BENTLEY_DGN_NAMESPACE
 

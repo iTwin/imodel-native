@@ -1621,5 +1621,36 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         Dispose(): void;
     }
 
-    type ECPropertyCollectionP = cxx_pointer<ECPropertyCollection>;}
+    type ECPropertyCollectionP = cxx_pointer<ECPropertyCollection>;
 
+    /**
+     * A ViewController
+     */
+    class ViewController implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsViewController ***/
+
+        /** The DgnModel that will be the target of tools that add new elements. */
+        TargetModel: DgnModelP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ViewControllerP = cxx_pointer<ViewController>;
+
+    /**
+     * A DgnViewport
+     */
+    class Viewport implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsViewport ***/
+
+        /** The ViewController for this view */
+        ViewController: ViewControllerP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ViewportP = cxx_pointer<Viewport>;
+
+}
