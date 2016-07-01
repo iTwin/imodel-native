@@ -15,12 +15,10 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscription::DgnDbServerEventSubscription
 (
-Utf8String topicName,
 Utf8String subscriptionId,
 bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes
 )
     {
-    m_topicName = topicName;
     m_subscriptionId = subscriptionId;
     m_eventTypes = eventTypes;
     }
@@ -30,20 +28,11 @@ bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionPtr DgnDbServerEventSubscription::Create
 (
-Utf8String topicName, 
 Utf8String subscriptionId, 
 bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes
 )
     {
-    return DgnDbServerEventSubscriptionPtr(new DgnDbServerEventSubscription(topicName, subscriptionId, eventTypes));
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerEventSubscription::GetTopicName()
-    {
-    return m_topicName;
+    return DgnDbServerEventSubscriptionPtr(new DgnDbServerEventSubscription(subscriptionId, eventTypes));
     }
 
 //---------------------------------------------------------------------------------------

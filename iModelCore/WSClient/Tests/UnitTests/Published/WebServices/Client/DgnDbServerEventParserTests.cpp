@@ -164,8 +164,6 @@ Utf8String StubHttpResponseValidEventSubscriptionWSObjectResponse()
                                                     "className" : "EventSubscription",
                                                     "properties" :
                                                                  {
-                                                                 "Id":"SomeSubscriptionId",
-                                                                 "TopicName" : "SomeTopicName",
                                                                  "EventTypes" : ["LockEvent", "RevisionEvent"]
                                                                  }
                                                     }
@@ -192,8 +190,6 @@ Utf8String StubHttpResponseValidEventSubscriptionWSChangeSetResponse()
                                                     "className" : "EventSubscription",
                                                     "properties" :
                                                                  {
-                                                                 "Id":"SomeSubscriptionId",
-                                                                 "TopicName" : "SomeTopicName",
                                                                  "EventTypes" : ["LockEvent", "RevisionEvent"]
                                                                  }
                                                     }
@@ -359,8 +355,6 @@ Utf8String StubGenerateValidEventSubscriptionWSObjectJsonSingleEvent()
 			           "className":"EventSubscription",
 			            "properties":
 						            {
-						            "Id":"",
-						            "TopicName":"", 
 						            "EventTypes": ["LockEvent"] 
 						            }
 			            }
@@ -382,9 +376,7 @@ Utf8String StubGenerateValidEventSubscriptionWSObjectJsonNoEvent()
 			           "className":"EventSubscription",
 			            "properties":
 						            {
-						            "Id":"",
-						            "TopicName":"", 
-						            "EventTypes": [] 
+						            "EventTypes": []
 						            }
 			            }
              } 
@@ -398,8 +390,6 @@ Utf8String StubGenerateValidEventSubscriptionWSChangeSetJsonSingleEvent()
     {
     return R"(
 			 {
-			 "Id":"",
-			 "TopicName":"", 
 			 "EventTypes": ["LockEvent"]
 			 }          
              )";
@@ -412,8 +402,6 @@ Utf8String StubGenerateValidEventSubscriptionWSChangeSetJsonNoEvent()
     {
     return R"(
 			 {
-			 "Id":"",
-			 "TopicName":"", 
 			 "EventTypes": [] 
 			 }                   
              )";
@@ -734,7 +722,6 @@ TEST_F(DgnDbServerEventParserTests, EventSubscriptionWSObjectResponseTest)
     DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(generatedStubJson);
     EXPECT_NE(nullptr, ptr);
     EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeSubscriptionId", ptr->GetSubscriptionId().c_str()));
-    EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeTopicName", ptr->GetTopicName().c_str()));
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes = ptr->GetEventTypes();
     bool isSuccess = false;
     for (auto eventType : eventTypes)
@@ -765,7 +752,6 @@ TEST_F(DgnDbServerEventParserTests, EventSubscriptionWSChangeSetResponseTest)
     DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(generatedStubJson);
     EXPECT_NE(nullptr, ptr);
     EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeSubscriptionId", ptr->GetSubscriptionId().c_str()));
-    EXPECT_EQ(0, BeStringUtilities::Stricmp("SomeTopicName", ptr->GetTopicName().c_str()));
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes = ptr->GetEventTypes();
     bool isSuccess = false;
     for (auto eventType : eventTypes)
