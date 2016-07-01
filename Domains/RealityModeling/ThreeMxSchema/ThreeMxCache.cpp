@@ -7,7 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
 #include <DgnPlatform/HttpHandler.h>
+
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <folly/futures/Future.h>
+#endif
 
 #define TABLE_NAME_ThreeMx "ThreeMx"
 
@@ -289,6 +292,7 @@ BentleyStatus ThreeMxTileCache::_Cleanup() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RealityData::CacheResult Scene::RequestData(NodeP node, bool synchronous, MxStreamBuffer* output)
     {
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
     DgnDb::VerifyClientThread();
     BeAssert(output || node);
 
@@ -320,6 +324,9 @@ RealityData::CacheResult Scene::RequestData(NodeP node, bool synchronous, MxStre
         }
 
     return RealityData::CacheResult::Success;
+#else
+    return RealityData::CacheResult::Error;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

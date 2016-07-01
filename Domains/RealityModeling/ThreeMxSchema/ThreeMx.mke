@@ -106,8 +106,11 @@ LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
                    $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
                    $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                    $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
-                   $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext) \
                    $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
                    $(ContextSubpartsLibs)$(stlibprefix)lzma$(stlibext)
+
+%if (("Windows" == TARGET_PLATFORM) || ("WinRT" == TARGET_PLATFORM))
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+%endif
 
 %include $(sharedMki)LinkLibrary.mki
