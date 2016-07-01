@@ -630,7 +630,7 @@ TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionWSObjectJsonTest) //problem
+TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionWSObjectJsonTest)
     {
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
@@ -672,7 +672,7 @@ TEST_F(DgnDbServerEventParserTests, GenerateEventSubscriptionWSChangesetTest)
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-TEST_F(DgnDbServerEventParserTests, GenerateEventSASJsonTest) //problem
+TEST_F(DgnDbServerEventParserTests, GenerateEventSASJsonTest)
     {
     Json::Reader reader;
     Json::Value generatedStubJson(Json::objectValue);
