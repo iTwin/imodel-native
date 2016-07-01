@@ -141,7 +141,7 @@
     <!-- *** ********************************************************** *** -->
     <!-- If you move this part, you must fix up the BuildStrategies that point to it. -->
     <!-- TRICKY: Documents are only actually published for x64,x86 but we must do other processing for other platforms and other cases so no platforms can be excluded! -->
-    <Part Name="UnitTests_Documents" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishDocuments.mke" BMakeOptions="-dUNIT_TESTS_NAME=ECDbUnitTests -dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnPlatformTest/DgnDbUnitTests/ -dUNIT_TESTS_DOCUMENTS_PREBUILTS_SUBDIR=DgnDb -dUNIT_TESTS_PUBLISH_CONFIG=${SrcRoot}/BeGTest/UnitTestPublisherConfiguration.xml">
+    <Part Name="UnitTests_Documents" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishDocuments.mke" BMakeOptions="-dUNIT_TESTS_NAME=ECDbUnitTests -dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnClientSdkUnitTestData/ -dUNIT_TESTS_DOCUMENTS_PREBUILTS_SUBDIR=DgnDb -dUNIT_TESTS_PUBLISH_CONFIG=${SrcRoot}/BeGTest/UnitTestPublisherConfiguration.xml">
         <SubPart PartName="LinkDgnDbPublisherIntoToolContext" PartFile="BeGTest" Repository="BeGTest" />
         <SubPart PartName="DgnDbUnitTestsData"/>
         <Bindings>
@@ -151,7 +151,7 @@
     </Part>
 
     <Part Name="DgnDbUnitTestsData" OnlyPlatforms="x64,x86">
-        <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
+        <RequiredRepository>DgnClientSdkUnitTestData</RequiredRepository>
     </Part>
 
     <Part Name="DgnDbTestUtils" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=DgnDbTestUtils">
