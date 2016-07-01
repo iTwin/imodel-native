@@ -51,6 +51,8 @@ namespace DgnDbServerEvent
         LockEvent,
         RevisionEvent,
         CodeEvent,
+        DeleteAllLocks,
+        DeleteAllCodes,
         UnknownEventType
         };
 
@@ -59,6 +61,7 @@ namespace DgnDbServerEvent
     +---------------+---------------+---------------+---------------+---------------+------*/
     struct Helper
         {
+
         DGNDBSERVERCLIENT_EXPORT static Utf8String GetEventNameFromEventType(DgnDbServerEventType eventType)
             {
             switch (eventType)
@@ -66,10 +69,13 @@ namespace DgnDbServerEvent
                     case DgnDbServerEventType::LockEvent:       return "LockEvent";
                     case DgnDbServerEventType::RevisionEvent:   return "RevisionEvent";
                     case DgnDbServerEventType::CodeEvent:       return "CodeEvent";
+                    case DgnDbServerEventType::DeleteAllLocks:  return "DeleteAllLocks";
+                    case DgnDbServerEventType::DeleteAllCodes:  return "DeleteAllCodes";
                     case DgnDbServerEventType::UnknownEventType:
                     default:      return "UnknownEventType";
                 }
             }
+
         DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventType GetEventTypeFromEventName(Utf8CP eventName)
             {
             if (0 == (BeStringUtilities::Stricmp("LockEvent", eventName)))
@@ -78,6 +84,10 @@ namespace DgnDbServerEvent
                 return DgnDbServerEventType::RevisionEvent;
             else if (0 == (BeStringUtilities::Stricmp("CodeEvent", eventName)))
                 return DgnDbServerEventType::CodeEvent;
+            else if (0 == (BeStringUtilities::Stricmp("DeleteAllLocks", eventName)))
+                return DgnDbServerEventType::DeleteAllLocks;
+            else if (0 == (BeStringUtilities::Stricmp("DeleteAllCodes", eventName)))
+                return DgnDbServerEventType::DeleteAllCodes;
             else
                 return DgnDbServerEventType::UnknownEventType;
             }
