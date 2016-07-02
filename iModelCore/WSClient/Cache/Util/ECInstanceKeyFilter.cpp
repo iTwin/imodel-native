@@ -166,3 +166,44 @@ Utf8StringCR label
         statement.BindText(firstArgIndex, label.c_str(), IECSqlBinder::MakeCopy::No);
         });
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECInstanceKeyFilter::FilterWherePropertiesLike
+(
+CacheTransactionCR txn,
+const ECInstanceKeyMultiMap& instances,
+ECInstanceKeyMultiMap& result,
+bset<Utf8String> properties,
+Utf8String searchTerm
+)
+    {
+    Utf8String whereClause = "";
+    for (Utf8StringCR property : properties)
+        {
+        if (!whereClause.empty())
+            {
+            whereClause += " OR ";
+            }
+
+        whereClause += "[" + property + "] LIKE ?";
+        }
+    whereClause = "(" + whereClause + ")";
+
+    searchTerm = "%" + searchTerm + "%";
+
+    return FilterByWhereClause(
+        txn,
+        instances.begin(),
+        instances.end(),
+        result,
+        whereClause,
+        [&] (ECSqlStatement& statement, int firstArgIndex)
+        {
+        for (int i = 0; i < properties.size(); i++)
+            {
+            statement.BindText(firstArgIndex + i, searchTerm.c_str(), IECSqlBinder::MakeCopy::No);
+            }
+        });
+    }

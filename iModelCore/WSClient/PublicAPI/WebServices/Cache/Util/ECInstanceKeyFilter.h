@@ -64,6 +64,15 @@ public:
         Utf8StringCR label,
         bset<ECClassCP> ecClasses
         );
+
+    WSCACHE_EXPORT static BentleyStatus FilterWherePropertiesLike
+        (
+        CacheTransactionCR txn,
+        const ECInstanceKeyMultiMap& instances,
+        ECInstanceKeyMultiMap& result,
+        bset<Utf8String> properties,
+        Utf8String searchTerm
+        );
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
