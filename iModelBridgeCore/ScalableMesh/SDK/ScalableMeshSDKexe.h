@@ -26,7 +26,17 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 namespace ScalableMeshSDKexe
     {
-  
+
+
+    struct ImportParameters
+        {
+        bool decimateInput;
+        WString tempPath;
+        uint32_t maximumNbOfPoints;
+        WString gcsKeyName;
+        BeXmlNodeP pRootNode;
+        };
+
     struct ExeViewManager : IViewManager
         {
         protected:
@@ -50,7 +60,8 @@ namespace ScalableMeshSDKexe
         virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() { return *GeoCoordinates::DgnGeoCoordinationAdmin::Create(NULL, *m_acsManager); }
 
             BeFileName          m_inputFileName;
-            IScalableMeshPtr                m_sMesh;
+            BeXmlDomPtr         m_pImportDefinitionXmlDom;
+            IScalableMeshPtr    m_sMesh;
             HANDLE m_pipe;
 
             WString GetArgValueW(WCharCP arg);
@@ -65,7 +76,10 @@ namespace ScalableMeshSDKexe
             BentleyStatus Initialize(int argc, WCharP argv[]);
             BentleyStatus OpenScalableMesh(WCharCP path);
             size_t CountPoints();
-            BentleyStatus ParseImportDefinition(BeXmlNodeP pTestNode);            
+            BentleyStatus DoImportSTM(const ImportParameters& params);
+            BentleyStatus DoImportDirect(const ImportParameters& params);
+            BentleyStatus ParseImportDefinition(BeXmlNodeP pTestNode, ImportParameters& params);
+            bool OpenXmlImportFile();
             void Start();
             void Import();
 

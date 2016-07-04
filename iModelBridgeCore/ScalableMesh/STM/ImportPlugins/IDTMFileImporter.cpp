@@ -289,7 +289,7 @@ class IDTMFileCreator : public LocalFileSourceCreatorBase
             ScalableMeshData data = ScalableMeshData::GetNull();
             data.AddExtent(layerRange);
 
-            contentDesc.Add(LayerDescriptor(L"",
+            contentDesc.Add(ILayerDescriptor::CreateLayerDescriptor(L"",
                             dataTypes,
                             gcs, 
                             &layerRange,

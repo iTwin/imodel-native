@@ -9,17 +9,17 @@
 
 /*__PUBLISH_SECTION_START__*/
 
+#include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
-//#include <DgnPlatform\ElementHandle.h>
+#include <DgnPlatform\ElementHandle.h>
 
 #include <DgnPlatform\DgnPlatform.r.h>
-//#include <DgnPlatform\ElementHandle.h>
-//#include <RmgrTools\Tools\DataExternalizer.h>
-#include <BePointCloud\BePointCloudApi.h>
-/*#include <DgnPlatform\IPointCloud.h>
+#include <DgnPlatform\ElementHandle.h>
+#include <RmgrTools\Tools\DataExternalizer.h>
+#include <DgnPlatform\IPointCloud.h>
 #include <DgnPlatform\PointCloudClipHandler.h>
 #include <PointCloud\PointCloudDataQuery.h>
-#include <PointCloud\PointCloudChannel.h>*/
+#include <PointCloud\PointCloudChannel.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -43,14 +43,14 @@ typedef struct GroundDetectionParameters const& GroundDetectionParametersCR;
 *</category>
 * @bsimethod                                    Marc.Bedard                     04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*struct GroundDetectionLogger
+struct GroundDetectionLogger
     {
     public:
         BENTLEY_SM_EXPORT static void GroundDetectionLogger::OutputTimerToLogger(StopWatch& timer);
         BENTLEY_SM_EXPORT static  BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger* Get();
     };
 
-#define GROUNDDLOG GroundDetectionLogger::Get()*/
+#define GROUNDDLOG GroundDetectionLogger::Get()
 
 //Uncomment line below to prevent running logger code (disable completely the logger) 
 #define DISABLELOGGER 1

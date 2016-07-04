@@ -283,19 +283,19 @@ $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCom
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
 #-----------------------------------------------------------------------
-#$(o)GroundDetectionManager$(oext) : $(automaticGroundDetectionDir)GroundDetectionManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)GroundDetectionManager$(oext) : $(automaticGroundDetectionDir)GroundDetectionManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)PointCloudClassification$(oext) : $(automaticGroundDetectionDir)PointCloudClassification.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)PointCloudClassification$(oext) : $(automaticGroundDetectionDir)PointCloudClassification.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)AutomaticGroundDetectionInternalConfig$(oext) : $(automaticGroundDetectionDir)AutomaticGroundDetectionInternalConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)AutomaticGroundDetectionInternalConfig$(oext) : $(automaticGroundDetectionDir)AutomaticGroundDetectionInternalConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)PointCloudEditGroundDetection$(oext) : $(automaticGroundDetectionDir)PointCloudEditGroundDetection.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)PointCloudEditGroundDetection$(oext) : $(automaticGroundDetectionDir)PointCloudEditGroundDetection.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)PointCloudQuadTree$(oext) : $(automaticGroundDetectionDir)PointCloudQuadTree.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)PointCloudQuadTree$(oext) : $(automaticGroundDetectionDir)PointCloudQuadTree.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)TileLoaderQueue$(oext) : $(automaticGroundDetectionDir)TileLoaderQueue.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)TileLoaderQueue$(oext) : $(automaticGroundDetectionDir)TileLoaderQueue.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Importer plugins
@@ -308,31 +308,31 @@ $(o)XYZFileImporter$(oext) : $(importerPluginsDir)XYZFileImporter.cpp $(PCHHeade
 
 $(o)LandXMLFileImporter$(oext) : $(importerPluginsDir)LandXMLFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #   Importer from DcStmCore
-#$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)XYZAsciiSource$(oext) : $(importerPluginsDir)XYZAsciiSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)CivilElemSource$(oext) : $(importerPluginsDir)CivilElemSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)CivilElemSource$(oext) : $(importerPluginsDir)CivilElemSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #-----------------------------------------------------------------------

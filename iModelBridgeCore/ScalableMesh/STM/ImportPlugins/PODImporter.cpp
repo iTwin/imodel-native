@@ -8,28 +8,13 @@
 
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
-#include <PointoolsVortexAPI_DLL/vortexLicense.c>
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_ResultCodes.h>
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp>
 #include <ScalableMesh\ScalableMeshLib.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
 #include <ScalableMesh\Import\Plugin\TypeConversionFilterV0.h>
-//#include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
+#include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
 #include <ScalableMesh\Type\IScalableMeshPoint.h>
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
-//#include <ScalableMesh\AutomaticGroundDetection\GroundDetectionManager.h>
-
-#include <BePointCloud/BePointCloudApi.h>
-#include <BePointCloud/PointCloudTypes.h>
-#include <BePointCloud/BePointCloudCommon.h>
-#include <BePointCloud/PointCloudColorDef.h>
-#include <BePointCloud/PointCloudHandle.h>
-#include <BePointCloud/PointCloudScene.h>
-#include <BePointCloud/PointCloudChannelHandler.h>
-#include <BePointCloud/PointCloudDataQuery.h>
-#include <BePointCloud/PointCloudQueryBuffer.h>
-#include <BePointCloud/PointCloudVortex.h>
+#include <ScalableMesh\AutomaticGroundDetection\GroundDetectionManager.h>
 
 #include "PluginUtils.h"
 
@@ -48,7 +33,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
-USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
+USING_NAMESPACE_BENTLEY_POINTCLOUD
 
 
 namespace { //BEGIN UNAMED NAMESPACE
@@ -65,11 +50,12 @@ private:
     friend class                    PODFileSourceCreator;
     friend class                    PODElementSourceCreator;
 
-
+    auto_ptr<ElementHandle>         m_elementHandleP;
+    const PointCloudHandler&        m_handler;
 
     bool                            m_isSingleElementOwner;
 
-    PointCloudScenePtr              m_pointCloudScenePtr;
+    IPointCloudFileQueryPtr         m_fileQueryPtr;
     bool                            m_hasInternalClassification;
 
     bool                            m_WantClassification;
@@ -79,12 +65,16 @@ private:
     * @description
     * @bsimethod                                                  Raymond.Gauthier   10/2010
     +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit                        PODSource          (bool                                    isSingleElementOwner,
-                                                        const PointCloudScenePtr&          pointCloudScenePtr
+    explicit                        PODSource          (EditElementHandle*                      elementHandleP,
+                                                        const PointCloudHandler&                handler,
+                                                        bool                                    isSingleElementOwner,
+                                                        const IPointCloudFileQueryPtr&          fileQueryPtr
                                                         )
-        :   m_isSingleElementOwner(isSingleElementOwner),
-            m_pointCloudScenePtr(pointCloudScenePtr),
-            m_hasInternalClassification(m_pointCloudScenePtr->HasClassificationChannel())
+        :   m_elementHandleP(elementHandleP),
+            m_handler(handler),
+            m_isSingleElementOwner(isSingleElementOwner),
+            m_fileQueryPtr(fileQueryPtr),
+            m_hasInternalClassification(m_fileQueryPtr->HasClassificationChannel())
         {
         }
 
@@ -92,12 +82,20 @@ private:
     * @description
     * @bsimethod                                                  Raymond.Gauthier   08/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static PODSource*               CreateFrom                                 (WString fileName)
+    static PODSource*               CreateFrom                                 (auto_ptr<EditElementHandle>&       editElementHandleP)
         {
-        PointCloudScenePtr pointCloudScenePtr = PointCloudScene::Create(fileName.c_str());
+        PointCloudHandler* handlerP = dynamic_cast<PointCloudHandler*>(&editElementHandleP->GetHandler ());
+        if (0 == handlerP)
+            throw FileIOException();
 
-        return new PODSource(true,
-                             pointCloudScenePtr);
+        IPointCloudFileQueryPtr fileQueryPtr(IPointCloudFileQuery::CreateFileQuery(*editElementHandleP));
+        if (0 == fileQueryPtr.get())
+            throw FileIOException();
+
+        return new PODSource(editElementHandleP.release(),
+                             *handlerP,
+                             true,
+                             fileQueryPtr);
         }
 
 
@@ -107,7 +105,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Close                                     () override
         {
-        //m_elementHandleP.reset(); // Dispose of element
+        m_elementHandleP.reset(); // Dispose of element
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -121,7 +119,7 @@ private:
 
         GCS gcs(GCS::GetNull());
 
-        if (SUCCESS != m_pointCloudScenePtr->GetMetaTag(L"Survey.GeoReference", WKT) && 0 != WKT.size())
+        if (SUCCESS != m_fileQueryPtr->GetMetaTag (L"Survey.GeoReference", WKT) && 0 != WKT.size())
             {
             gcsError = true;
             }
@@ -171,10 +169,10 @@ private:
     * @description
     * @bsimethod                                                  Raymond.Gauthier   11/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
-    /*GCS                             GetElementGCS                              () const
+    GCS                             GetElementGCS                              () const
         {
         return GetBSIElementGCSFromRootPerspective(m_elementHandleP->GetModelRef());
-        }*/
+        }
 
     /*---------------------------------------------------------------------------------**//**
     * @description
@@ -186,7 +184,7 @@ private:
         uint32_t num_clouds;
         uint64_t num_points;
 
-        if (SUCCESS != m_pointCloudScenePtr->GetMetaData (name, num_clouds, num_points, &range.low, &range.high))
+        if (SUCCESS != m_fileQueryPtr->GetMetaData (name, num_clouds, num_points, &range.low, &range.high))
             throw CustomException(L"Error fetching metadata");
         return true;
         }
@@ -212,7 +210,7 @@ private:
         const DataTypeSet storedType(HasClassification() ? PointType3d64f_R16G16B16_I16_C8Creator().Create() :
                                                            PointType3d64f_R16G16B16_I16Creator().Create());
 
-        const GCS gcs(GetFileGCS());
+        const GCS gcs(IsFromFile() ? GetFileGCS() : GetElementGCS());
 
         DRange3d range = { {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0} };
         bool hasRange(IsFromFile() ? GetFileRange(range) : GetElementRange(range));
@@ -223,7 +221,7 @@ private:
         return ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
+            ILayerDescriptor::CreateLayerDescriptor(L"",
                             storedType,
                             gcs,
                             (hasRange) ? &range : 0,
@@ -243,10 +241,11 @@ private:
         }
 
 public:
+    ElementHandle&                     GetElementHandle                       () { return *m_elementHandleP; }
 
-    const PointCloudScenePtr     GetFileQuery                           () const { return m_pointCloudScenePtr; }
+    const IPointCloudFileQuery&     GetFileQuery                           () const { return *m_fileQueryPtr; }
 
-    void                            SetFileQuery                           (PointCloudScenePtr pointCloudScenePtr) { m_pointCloudScenePtr = pointCloudScenePtr;}
+    void                            SetFileQuery                           (IPointCloudFileQueryPtr fileQuery) {m_fileQueryPtr=fileQuery;}
 
     bool                            HasInternalClassification              () const { return m_hasInternalClassification; }    
 
@@ -254,7 +253,7 @@ public:
 
     void                            SetClassification                      (bool hasInternalClassification) { m_hasInternalClassification = hasInternalClassification;}
     
-    bool                            IsTransient                            () const { return 0/* == m_elementHandleP->GetElementRef()*/; }
+    bool                            IsTransient                            () const { return 0 == m_elementHandleP->GetElementRef(); }
 
     bool                            IsFromFile                             () const { return IsTransient(); }
 
@@ -272,7 +271,7 @@ public:
         {
         // When source is drawn from an existing element it may be clipped. However, when
         // drawn from a file, we assumed it couldn't.
-        /*if (IsFromFile())
+        if (IsFromFile())
             return false;
         
 
@@ -302,7 +301,7 @@ public:
         if (pClipRef.IsValid())
             return true;
 
-        // We found no clips or masks*/
+        // We found no clips or masks
         return false;
         }
 
@@ -342,8 +341,17 @@ class PODFileSourceCreator : public LocalFileSourceCreatorBase
     virtual SourceBase*             _Create                                (const LocalFileSourceRef&   sourceRef,
                                                                             Log&                        log) const override
         {      
+        auto_ptr<EditElementHandle> editElementHandleP(new EditElementHandle);
+        // Create the point cloud element
 
-        return PODSource::CreateFrom(sourceRef.GetPath());
+        assert(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef() != 0);        
+
+        DgnDocumentMonikerPtr monikerPtr = PointCloudDisplay::CreateDocumentMonikerFromFileName(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef(), sourceRef.GetPath().c_str());
+        PointCloudPropertiesPtr propsP = PointCloudProperties::Create (*monikerPtr, *ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef());
+        if (SUCCESS != PointCloudDisplay::CreateElement (*editElementHandleP, *ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef(), *propsP))
+            throw FileIOException();
+
+        return PODSource::CreateFrom(editElementHandleP);
         }
     };
 
@@ -357,14 +365,12 @@ class PODElementSourceCreator : public DGNElementSourceCreatorBase
     {
     virtual uint32_t                    _GetElementType                    () const override
         {
-        //return EXTENDED_ELM;
-        return 0;
+        return EXTENDED_ELM;
         }
 
     virtual uint32_t                    _GetElementHandlerID               () const override
         {
-        //return ElementHandlerId(XATTRIBUTEID_PointCloudHandler, PointCloudMinorId_Handler).GetId();
-        return 0;
+        return ElementHandlerId(XATTRIBUTEID_PointCloudHandler, PointCloudMinorId_Handler).GetId();
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -383,8 +389,9 @@ class PODElementSourceCreator : public DGNElementSourceCreatorBase
     virtual SourceBase*             _Create                                (const DGNElementSourceRef&  sourceRef,
                                                                             Log&                        log) const override
         {
+        auto_ptr<EditElementHandle> editElementHandleP(new EditElementHandle(sourceRef.GetElementRef(), sourceRef.GetModelRef()));
 
-        return PODSource::CreateFrom(sourceRef.GetLocalFileP()->GetPath());
+        return PODSource::CreateFrom(editElementHandleP);
         }
     };
 
@@ -395,12 +402,6 @@ class PODElementSourceCreator : public DGNElementSourceCreatorBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 #define PointCloudChannels_Is_Point_Visible(bValue)     ( (bValue &  0x07) != 0)  //if one of the first 3 bits On
 
-struct RgbColorDef
-    {
-    Byte    red;
-    Byte    green;
-    Byte    blue;
-    };
 
 class PODPointExtractor : public InputExtractorBase
     {
@@ -409,15 +410,15 @@ private:
 
     static const uint32_t               MAX_PT_QTY = 100000;
 
-    PointCloudScenePtr              m_pointCloudScenePtr;
-    PointCloudChannelVector         m_queryChannels;
+    IPointCloudDataQueryPtr          m_dataQueryPtr;
+
     
     PODPacketProxy<DPoint3d>        m_packetXYZ;
     PODPacketProxy<RgbColorDef>     m_packetRGB;
     PODPacketProxy<short>           m_packetIntensity;
     
     bool                            m_reachedEof;
-    PointCloudQueryBuffersPtr       m_pointCloudQueryBufferPtr;
+    IPointCloudQueryBuffersPtr      m_pointCloudQueryBufferPtr;
     bool                            m_isClip;
 
 
@@ -425,18 +426,16 @@ private:
     * @description
     * @bsimethod                                                  Raymond.Gauthier   10/2010
     +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit                        PODPointExtractor  (const PointCloudScenePtr& pointCloudScenePtr,
+    explicit                        PODPointExtractor  (const IPointCloudDataQueryPtr& dataQueryPtr, 
                                                         bool                           isClip)
-        :   m_pointCloudScenePtr(pointCloudScenePtr),
+        :   m_dataQueryPtr(dataQueryPtr),
             m_reachedEof(false), 
             m_isClip(isClip)
         {
-        
-        m_pointCloudQueryBufferPtr = PointCloudQueryBuffers::Create(MAX_PT_QTY, (uint32_t)PointCloudChannelId::Rgb |
-                                                                   (uint32_t)PointCloudChannelId::Xyz |
-                                                                   (uint32_t)PointCloudChannelId::Intensity |
-                                                                   (uint32_t)PointCloudChannelId::Filter);
-
+        m_pointCloudQueryBufferPtr = m_dataQueryPtr->CreateBuffers(MAX_PT_QTY, (uint32_t)PointCloudChannelId::Rgb | 
+                                                                               (uint32_t)PointCloudChannelId::Xyz | 
+                                                                               (uint32_t)PointCloudChannelId::Intensity |
+                                                                               (uint32_t)PointCloudChannelId::Filter);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -455,13 +454,8 @@ private:
     * @bsimethod                                                  Raymond.Gauthier   10/2010
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Read                          () override
-        {
-        PThandle query = m_pointCloudScenePtr->GetVisiblePointsQueryHandle()->GetHandle();
-        PointCloudVortex::SetQueryScope(query, m_pointCloudScenePtr->GetSceneHandle());
-        PointCloudVortex::SetQueryRGBMode(query, QUERY_RGB_MODE_ACTUAL);
-        PointCloudVortex::SetQueryDensity(query, QUERY_DENSITY_FULL, 1.0);
-
-        uint32_t pointsReadQty = m_pointCloudQueryBufferPtr->GetPoints(query);
+        {        
+        const UInt pointsReadQty = m_dataQueryPtr->GetPoints (*m_pointCloudQueryBufferPtr);                        
 
         unsigned char* filterBufferP(m_pointCloudQueryBufferPtr->GetFilterBuffer());
 
@@ -474,11 +468,7 @@ private:
                 if (PointCloudChannels_Is_Point_Visible(filterBufferP[pointInd]))
                     {
                     m_packetXYZ.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetXyzBuffer()[pointInd];
-                    RgbColorDef tmpColor;
-                    tmpColor.blue = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd].GetBlue();
-                    tmpColor.red = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd].GetRed();
-                    tmpColor.green = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd].GetGreen();
-                    m_packetRGB.Edit()[packetInd] = tmpColor;
+                    m_packetRGB.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd];
                     m_packetIntensity.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetIntensityBuffer()[pointInd];
                     packetInd++;
                     }            
@@ -488,11 +478,14 @@ private:
             {
             memcpy(m_packetXYZ.Edit(), m_pointCloudQueryBufferPtr->GetXyzBuffer(), sizeof(DPoint3d) * pointsReadQty);
             memcpy(m_packetRGB.Edit(), m_pointCloudQueryBufferPtr->GetRgbBuffer(), sizeof(RgbColorDef) * pointsReadQty);
+            memcpy(m_packetIntensity.Edit(), m_pointCloudQueryBufferPtr->GetIntensityBuffer(), sizeof(Int16) * pointsReadQty);            
+
             packetInd = pointsReadQty;
             }
         
         m_packetXYZ.SetSize(packetInd);
         m_packetRGB.SetSize(packetInd);
+        m_packetIntensity.SetSize(packetInd);
 
         m_reachedEof = (0 == pointsReadQty);
         }
@@ -521,9 +514,10 @@ private:
 
 
 
-    PointCloudScenePtr              m_pointCloudScenePtr;
-    PointCloudQueryBuffersPtr       m_pointCloudQueryBufferPtr;
-    PointCloudChannelVector         m_queryChannels;
+    IPointCloudDataQueryPtr         m_dataQueryPtr;
+    IPointCloudQueryBuffersPtr      m_pointCloudQueryBufferPtr;
+    IPointCloudChannelVector        m_queryChannels;
+    EditElementHandle               m_elHandle;
 
     PODPacketProxy<DPoint3d>        m_packetXYZ;
     PODPacketProxy<RgbColorDef>     m_packetRGB;
@@ -540,15 +534,17 @@ private:
     * @bsimethod                                                  Raymond.Gauthier   10/2010
     +---------------+---------------+---------------+---------------+---------------+------*/
     explicit                        PODPointExtractorWithInternalClassif
-                                                                   (PointCloudScenePtr pointCloudScenePtr,
+                                                                   (const IPointCloudDataQueryPtr& dataQueryPtr,
+                                                                    ElementHandle& elHandle,
                                                                     bool isClip,
                                                                     bool isGroundDetection)
-        :   m_pointCloudScenePtr(pointCloudScenePtr),
+        :   m_dataQueryPtr(dataQueryPtr),
+            m_elHandle(elHandle, true),
             m_reachedEof(false), 
             m_isClip(isClip),
             m_isGroundDetection(isGroundDetection)
         {
-        //m_elHandle.AddToModel();
+        m_elHandle.AddToModel();
 
         if (m_isGroundDetection)
         {
@@ -558,8 +554,8 @@ private:
 #endif
             //NEEDS_WORK_SM_IMPORTER_GROUND
             //NEEDS_WORK_SM_IMPORTER : Should backup the current classif file if any and restore it after
-//            GroundDetectionParametersPtr pParam(GroundDetectionParameters::Create());
-//            GroundDetectionManager::DoGroundDetection(m_elHandle, *pParam);
+            GroundDetectionParametersPtr pParam(GroundDetectionParameters::Create());
+            GroundDetectionManager::DoGroundDetection(m_elHandle, *pParam);
 
 #ifdef SCALABLE_MESH_ATP
             double t = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
@@ -569,12 +565,10 @@ private:
         }
         
         ////NEEDS_WORK_SM_IMPORTER_GROUND
-//        m_queryChannels.push_back(GroundDetectionManager::GetChannelFromPODElement(m_elHandle));
+        m_queryChannels.push_back(GroundDetectionManager::GetChannelFromPODElement(m_elHandle));
 
         uint32_t channelFlags = ((uint32_t)PointCloudChannelId::Rgb | (uint32_t)PointCloudChannelId::Xyz | (uint32_t)PointCloudChannelId::Intensity | (uint32_t)PointCloudChannelId::Classification| (uint32_t)PointCloudChannelId::Filter);
-
-        m_pointCloudQueryBufferPtr = PointCloudQueryBuffers::Create(MAX_PT_QTY, channelFlags, m_queryChannels);
-        //m_pointCloudQueryBufferPtr = m_dataQueryPtr->CreateBuffers(MAX_PT_QTY, channelFlags, m_queryChannels);
+        m_pointCloudQueryBufferPtr = m_dataQueryPtr->CreateBuffers(MAX_PT_QTY, channelFlags, m_queryChannels);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -595,13 +589,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Read                          () override
         {
-
-        PThandle query = m_pointCloudScenePtr->GetVisiblePointsQueryHandle()->GetHandle();
-        PointCloudVortex::SetQueryScope(query, m_pointCloudScenePtr->GetSceneHandle());
-        PointCloudVortex::SetQueryRGBMode(query, QUERY_RGB_MODE_ACTUAL);
-        PointCloudVortex::SetQueryDensity(query, QUERY_DENSITY_FULL, 1.0);
-
-        uint32_t pointsReadQty = m_pointCloudQueryBufferPtr->GetPoints(query);
+        const uint32_t pointsReadQty = m_dataQueryPtr->GetPoints (*m_pointCloudQueryBufferPtr);
                 
         size_t packetInd = 0;
 
@@ -615,15 +603,11 @@ private:
                     {
                     if(m_isGroundDetection)
                         {
-                        unsigned char* classificationBuffer = (unsigned char*)m_pointCloudQueryBufferPtr->GetChannelBuffer((IPointCloudChannelP)(m_queryChannels[0]));
+                        unsigned char* classificationBuffer = (unsigned char*)m_pointCloudQueryBufferPtr->GetChannelBuffer(m_queryChannels[0]);
                         if(classificationBuffer[pointInd] == GROUND_CHANNEL_NUMBER) // if ground
                             {
                             m_packetXYZ.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetXyzBuffer()[pointInd];
-                            RgbColorDef tmpColor;
-                            tmpColor.blue = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd].GetBlue();
-                            tmpColor.red = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd].GetRed();
-                            tmpColor.green = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd].GetGreen();
-                            m_packetRGB.Edit()[packetInd] = tmpColor;
+                            m_packetRGB.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd];
                             m_packetIntensity.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetIntensityBuffer()[pointInd];
                             m_classification.Edit()[packetInd] = classificationBuffer[pointInd];
                             packetInd++;
@@ -632,11 +616,7 @@ private:
                     else
                         {
                         m_packetXYZ.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetXyzBuffer()[pointInd];
-                        RgbColorDef tmpColor;
-                        tmpColor.blue = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd].GetBlue();
-                        tmpColor.red = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd].GetRed();
-                        tmpColor.green = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd].GetGreen();
-                        m_packetRGB.Edit()[packetInd] = tmpColor;
+                        m_packetRGB.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd];
                         m_packetIntensity.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetIntensityBuffer()[pointInd];
                         m_classification.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetClassificationBuffer()[pointInd];
                         packetInd++;
@@ -648,8 +628,8 @@ private:
             {
             memcpy(m_packetXYZ.Edit(), m_pointCloudQueryBufferPtr->GetXyzBuffer(), sizeof(DPoint3d) * pointsReadQty);
             memcpy(m_packetRGB.Edit(), m_pointCloudQueryBufferPtr->GetRgbBuffer(), sizeof(RgbColorDef) * pointsReadQty);
-            memcpy(m_packetIntensity.Edit(), m_pointCloudQueryBufferPtr->GetIntensityBuffer(), sizeof(int64_t) * pointsReadQty);
-            memcpy(m_classification.Edit(), m_pointCloudQueryBufferPtr->GetClassificationBuffer(), sizeof(unsigned char) * pointsReadQty);
+            memcpy(m_packetIntensity.Edit(), m_pointCloudQueryBufferPtr->GetIntensityBuffer(), sizeof(Int16) * pointsReadQty);
+            memcpy(m_classification.Edit(), m_pointCloudQueryBufferPtr->GetClassificationBuffer(), sizeof(UChar) * pointsReadQty);
 
             packetInd = pointsReadQty;
             }
@@ -673,7 +653,7 @@ private:
 
     ~PODPointExtractorWithInternalClassif()
         {
-//            m_elHandle.DeleteFromModel();
+            m_elHandle.DeleteFromModel();
         }
     };
 
@@ -723,15 +703,15 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
     * @bsimethod                                                  Raymond.Gauthier   03/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
     static InputExtractorBase*                  CreateExtractor                    (PODSource&                     sourceBase,
-                                                                                    const PointCloudScenePtr& pointCloudScenePtr,
+                                                                                    const IPointCloudDataQueryPtr& dataQueryPtr, 
                                                                                     bool                           isClipped,
                                                                                     bool                           isGroundDetection)
         {
         // NEEDS_WORK_SM : internal classification => classification ?
-       /* if (sourceBase.HasInternalClassification() || isGroundDetection)
-            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection);*/
+        if (sourceBase.HasInternalClassification() || isGroundDetection)
+            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection);
 
-        return new PODPointExtractor(pointCloudScenePtr, isClipped);
+        return new PODPointExtractor(dataQueryPtr, isClipped);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -753,7 +733,7 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
                                                  (numeric_limits<double>::max)()};
 
 
-        /*ElementHandle& rElementHandle = sourceBase.GetElementHandle();
+        ElementHandle& rElementHandle = sourceBase.GetElementHandle();
 
         IPointCloudDataQueryPtr pDataQuery = IPointCloudDataQuery::CreateBoundingBoxQuery(rElementHandle, BottomExtentCorner, TopExtentCorner);
 
@@ -764,26 +744,17 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
 
         pDataQuery->GetUORToNativeTransform(transform);
 
-        /*if (sourceBase.IsFromFile())
-            pDataQuery->SetIgnoreTransform(true);*/
+        if (sourceBase.IsFromFile())
+            pDataQuery->SetIgnoreTransform(true);
 
-        //pDataQuery->SetDensity (IPointCloudDataQuery::QUERY_DENSITY_FULL, 1);
-        //IPointCloudChannelVector queryChannels;
-        //IPointCloudDataQueryPtr pDataQuery;
-        /*IPointCloudDataQueryPtr pDataQuery = IPointCloudDataQuery::CreateBuffers(100000, (uint32_t)PointCloudChannelId::Rgb |
-                                                                                 (uint32_t)PointCloudChannelId::Xyz |
-                                                                                 (uint32_t)PointCloudChannelId::Intensity |
-                                                                                 (uint32_t)PointCloudChannelId::Filter,
-                                                                                 queryChannels);*/
-
-        PointCloudScenePtr pointCloudScene = sourceBase.GetFileQuery();
+        pDataQuery->SetDensity (IPointCloudDataQuery::QUERY_DENSITY_FULL, 1);
 
         const bool isClipped = sourceBase.IsClipped();
         
         SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
         ScalableMeshData data = sourceImportConf->GetReplacementSMData();
 
-        return CreateExtractor(sourceBase, pointCloudScene, isClipped, data.IsGroundDetection());
+        return CreateExtractor(sourceBase, pDataQuery, isClipped, data.IsGroundDetection());
         }
     };
 
@@ -840,7 +811,7 @@ class Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverter : public TypeConversionFi
 
         while (srcPtP != srcPtEnd)
             {
-           // if (!shouldPtBeRemoved(*srcPtP, *srcPtClassP))
+            if (!shouldPtBeRemoved(*srcPtP, *srcPtClassP))
                 {
                 *dstPtP++ = *srcPtP;
                 }
@@ -857,7 +828,7 @@ class Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverter : public TypeConversionFi
                                                                         PacketGroup&                    dst) override
         {
         m_srcPtPacket.AssignTo(src[SRC_POINT_DIM]);
-        //m_srcPtClassifPacket.AssignTo(src[SRC_CLASSIF_DIM]);
+        m_srcPtClassifPacket.AssignTo(src[SRC_CLASSIF_DIM]);
         m_dstPtPacket.AssignTo(dst[DST_POINT_DIM]);
         }
 
@@ -875,8 +846,7 @@ class Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverter : public TypeConversionFi
             } SHOULD_POINT_BE_REMOVED_PREDICATE;
 
         m_dstPtPacket.SetSize(RemovePointsIf(m_srcPtPacket.Get(),
-                                             //m_srcPtClassifPacket.Get(),
-                                             nullptr,
+                                             m_srcPtClassifPacket.Get(),
                                              m_srcPtPacket.GetSize(),
                                              m_dstPtPacket.Edit(),
                                              SHOULD_POINT_BE_REMOVED_PREDICATE));
@@ -939,19 +909,6 @@ void RegisterPODImportPlugin()
         return;
     else
         {
-
-        static bool s_loaded = false;
-        if (!s_loaded)
-            {
-            s_loaded = LoadPointoolsDLL("PointoolsVortexAPI.dll");
-            }
-
-        if (!ptIsInitialized())
-            {
-            ptInitialize(vortexLicCode);
-            }
-
-        BePointCloudApi::Initialize();
         static const SourceRegistry::AutoRegister<PODFileSourceCreator> s_RegisterPODFile;
         static const SourceRegistry::AutoRegister<PODElementSourceCreator> s_RegisterPODElement;
         static const ExtractorRegistry::AutoRegister<PODPointExtractorCreator> s_RegisterPODExtractor;

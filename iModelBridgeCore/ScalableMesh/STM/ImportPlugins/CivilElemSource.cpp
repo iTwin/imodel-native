@@ -87,7 +87,7 @@ class CivilElementSourceDecorator : public SourceBase
 
 
         ContentConfig contentConfig;
-        contentConfig.push_back(storageGCSConfig);
+        contentConfig.SetGCSConfig(storageGCSConfig);
 
         if (ContentDescriptor::S_SUCCESS != descriptor.Configure(contentConfig, GetLog()))
             throw CustomError(L"Error configuring descriptor!");
