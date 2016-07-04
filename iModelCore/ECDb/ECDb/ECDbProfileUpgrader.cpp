@@ -142,9 +142,9 @@ DbResult ECDbProfileUpgrader_3715::_Upgrade(ECDbCR ecdb) const
         }
 
     Utf8String updateCASql;
-    updateCASql.Sprintf("UPDATE ec_CustomAttribute SET Instance=? WHERE ContainerId=%s AND "
+    updateCASql.Sprintf("UPDATE ec_CustomAttribute SET Instance=? WHERE ContainerId=%s AND ContainerType=%d AND "
                         "ClassId IN (SELECT c.Id FROM ec_Class c, ec_Schema s WHERE c.SchemaId = s.Id AND s.Name = 'ECDbMap' AND c.Name = 'ClassMap')", 
-                        ecsqlSystemPropertiesClassIdStr.c_str());
+                        ecsqlSystemPropertiesClassIdStr.c_str(), Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class));
 
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, updateCASql.c_str()) ||
         BE_SQLITE_OK != stmt.BindText(1, "<ClassMap xmlns=\"ECDbMap.01.01\">"
