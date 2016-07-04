@@ -63,39 +63,6 @@ TEST_F(ECDbSchemaTests, OrderOfPropertyIsPreservedInTableColumns)
     ASSERT_FALSE(GetECDb().TableExists("os_OrderedStruct"));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Affan.Khan                         05/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaTests, DWGRTest)
-    {
-    //DWGR19_L0.01.01.ecschema.xml
-    //DWGR19_L1.01.01.ecschema.xml
-    ECDbR ecdb = SetupECDb("dwgr.ecdb", BeFileName(L"DWGR19_L0.01.01.ecschema.xml"));
-    ecdb.SaveChanges();
-
-    //Import 2nd Schema
-    ECSchemaPtr ecSchema = nullptr;
-    ECSchemaReadContextPtr readContext = nullptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, readContext, L"DWGR19_L1.01.01.ecschema.xml", nullptr);
-    ASSERT_TRUE(ecSchema != NULL);
-    ASSERT_TRUE(readContext.IsValid());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
-    ecdb.SaveChanges();
-
-    ECSchemaCP dwgr19_L0 = ecdb.Schemas().GetECSchema("DWGR19_L0");
-    ASSERT_TRUE(dwgr19_L0 != nullptr);
-
-    ECSchemaCP dwgr19_L1 = ecdb.Schemas().GetECSchema("DWGR19_L1");
-    ASSERT_TRUE(dwgr19_L1 != nullptr);
-
-    WString dwgr19_l0_xml, dwgr19_l1_xml;
-    dwgr19_L0->WriteToXmlString(dwgr19_l0_xml);
-    dwgr19_L1->WriteToXmlString(dwgr19_l1_xml);
-
-    ASSERT_TRUE(dwgr19_l0_xml.find(L"Category") != WString::npos);
-    ASSERT_TRUE(dwgr19_l1_xml.find(L"Category") != WString::npos);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethods                                     Affan.Khan                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
