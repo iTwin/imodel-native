@@ -8,8 +8,10 @@
 #include "RasterSchemaInternal.h"
 #include "RasterQuadTree.h"
 
-static const uint32_t DRAW_CHILDREN_DELTA = 2;
-static const uint32_t DRAW_COARSER_DELTA = 5;
+static const uint32_t DRAW_FINER_DELTA = 2;
+static const uint32_t DRAW_COARSER_DELTA = 6;
+static const double   DRAW_COARSER_BIAS = -100.0 * DgnUnits::OneMillimeter();
+static const double   DRAW_FINER_BIAS = -50.0 * DgnUnits::OneMillimeter();
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
@@ -220,6 +222,22 @@ void TileDataQuery::Run()
     m_isFinished = true;
     }
 
+
+BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
+//=======================================================================================
+// @bsiclass                                                    Mathieu.Marchand  7/2016
+//=======================================================================================
+struct DrawArgs
+    {
+    RenderContextR m_context;
+    Render::GraphicArray m_graphics;
+
+    DrawArgs(RenderContextR context) : m_context(context) {}
+    void AddGraphic(Render::GraphicR gra) { m_graphics.Add(gra); }
+    void DrawGraphics(double zBias);
+    RenderContextR GetContext(){return m_context;}
+    };
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
@@ -232,6 +250,9 @@ protected:
     RasterQuadTreeR m_raster;
     DgnViewportR    m_viewport;         // the viewport we are scheduled on.   
 
+    //----------------------------------------------------------------------------------------
+    // @bsiclass
+    //----------------------------------------------------------------------------------------
     struct SortByResolution
         {
         bool operator ()(const RasterTilePtr& lhs, const RasterTilePtr& rhs) const
@@ -253,9 +274,9 @@ protected:
     //! Displays tiled rasters and schedules downloads. 
     virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 
-    void FindBackgroudTiles(SortedTiles& backgroundTiles, std::vector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta, DgnViewportCR viewport);
+    void FindCoarserTiles(SortedTiles& coarserTiles, std::vector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta, DgnViewportCR viewport);
     
-    void DrawLoadedChildren(RasterTileR tile, uint32_t resolutionDelta, RenderContextR context);
+    bool DrawFinerTiles(RasterTileR tile, uint32_t resolutionDelta, DrawArgs& drawArgs);
 
 public:
     static bool ShouldDrawInContext(RenderContextR context);
@@ -264,6 +285,7 @@ public:
 
     static RefCountedPtr<RasterProgressiveDisplay> Create(RasterQuadTreeR raster, RenderContextR context);
 };
+END_BENTLEY_RASTERSCHEMA_NAMESPACE
 
 //----------------------------------------------------------------------------------------
 //-------------------------------  RasterTile --------------------------------------------
@@ -373,7 +395,7 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool RasterTile::Draw(RenderContextR context)
+bool RasterTile::Draw(DrawArgs& drawArgs)
     {
 #ifndef NDEBUG  // debug build only.
     // Corners are in this order:
@@ -385,7 +407,7 @@ bool RasterTile::Draw(RenderContextR context)
     static bool s_DrawTileShape = false;
     if(s_DrawTileShape)
         {
-        auto pTileInfoGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+        auto pTileInfoGraphic = drawArgs.GetContext().CreateGraphic(Render::Graphic::CreateParams(drawArgs.GetContext().GetViewport()));
         Render::GraphicParams graphicParams;
         graphicParams.SetLineColor(ColorDef(222, 0, 0, 128));
         graphicParams.SetIsFilled(false);
@@ -401,7 +423,7 @@ bool RasterTile::Draw(RenderContextR context)
         pTileInfoGraphic->AddLineString(_countof(box), box);
 
         DPoint3d centerPt = DPoint3d::FromInterpolate(uvPts[0], 0.5, uvPts[3]);
-        double pixelSize = context.GetPixelSizeAtPoint(&centerPt);
+        double pixelSize = drawArgs.GetContext().GetPixelSizeAtPoint(&centerPt);
 
         Utf8String tileText;
         tileText.Sprintf("%d:%d,%d", m_tileId.resolution, m_tileId.x, m_tileId.y);
@@ -418,16 +440,16 @@ bool RasterTile::Draw(RenderContextR context)
         pTileInfoGraphic->ActivateGraphicParams(graphicParams);
         pTileInfoGraphic->AddTextString (*textStr);
 
-        context.OutputGraphic(*pTileInfoGraphic, nullptr);
+        drawArgs.AddGraphic(*pTileInfoGraphic);
         }
 #endif
 
-    Dgn::Render::GraphicP pTileGraphic = GetCachedGraphic(context.GetViewportR());
+    Dgn::Render::GraphicP pTileGraphic = GetCachedGraphic(drawArgs.GetContext().GetViewportR());
     if(pTileGraphic == nullptr)
         return false;
-    
-    context.OutputGraphic(*pTileGraphic, nullptr);
-    
+
+    drawArgs.AddGraphic(*pTileGraphic);
+   
     return true;
     }
 
@@ -435,6 +457,24 @@ bool RasterTile::Draw(RenderContextR context)
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
 RasterSource::Resolution const& RasterTile::GetResolution() const {return m_tree.GetSource().GetResolution(m_tileId.resolution);}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2016
+//----------------------------------------------------------------------------------------
+RasterTileP RasterTile::FindCachedCoarserTile(uint32_t resolutionDelta, Dgn::DgnViewportCR viewport)
+    {
+    uint32_t maxResolution = GetId().resolution + resolutionDelta;
+    for (RasterTileP pParent = GetParentP(); NULL != pParent; pParent = pParent->GetParentP())
+        {
+        if (pParent->HasCachedGraphic(viewport))
+            return pParent; // found!
+
+        if (pParent->GetId().resolution >= maxResolution)
+            break;
+        }
+
+    return nullptr;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -768,43 +808,41 @@ bool RasterProgressiveDisplay::ShouldDrawInContext(RenderContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-void RasterProgressiveDisplay::DrawLoadedChildren(RasterTileR tile, uint32_t resolutionDelta, RenderContextR context)
+bool RasterProgressiveDisplay::DrawFinerTiles(RasterTileR tile, uint32_t resolutionDelta, DrawArgs& drawArgs)
     {
     if(0 == resolutionDelta)
-        return;
+        return false;
+
+    bool allPartsCovered = true;
 
     for(uint32_t i=0; i < 4; ++i)
         {
         RasterTileP pChild = tile.GetChildP(i);
-        if(NULL == pChild)
+        if (NULL == pChild)
+            {
+            allPartsCovered = false;
             continue;
+            }
 
-        if(!pChild->Draw(context))
-            DrawLoadedChildren(*pChild, resolutionDelta-1, context);
+        if (!pChild->Draw(drawArgs))
+            allPartsCovered = DrawFinerTiles(*pChild, resolutionDelta-1, drawArgs);
         }
+
+    return allPartsCovered;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-void RasterProgressiveDisplay::FindBackgroudTiles(SortedTiles& backgroundTiles, std::vector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta, DgnViewportCR viewport)
+void RasterProgressiveDisplay::FindCoarserTiles(SortedTiles& coarserTiles, std::vector<RasterTilePtr> const& visibleTiles, uint32_t resolutionDelta, DgnViewportCR viewport)
     {
-    for(auto const& pTile : visibleTiles)
+    for (auto const& pTile : visibleTiles)
         {
-        if(!pTile->HasCachedGraphic(viewport))
+        if (!pTile->HasCachedGraphic(viewport))
             {
-            uint32_t maxResolution = pTile->GetId().resolution + resolutionDelta;
-            for(RasterTileP pParent = pTile->GetParentP(); NULL != pParent; pParent = pParent->GetParentP())
-                {
-                if(pParent->HasCachedGraphic(viewport))
-                    {
-                    backgroundTiles.insert(pParent);
-                    break;
-                    }
-
-                if(pParent->GetId().resolution >= maxResolution)
-                    break;
-                }
+            RasterTileP pCoarserTile = pTile->FindCachedCoarserTile(resolutionDelta, viewport);
+            if (nullptr != pCoarserTile)
+                coarserTiles.insert(pCoarserTile);
             }
         }
     }
@@ -818,27 +856,24 @@ void RasterProgressiveDisplay::Draw (RenderContextR context)
 
     m_raster.QueryVisible(m_visiblesTiles, context);
 
-    // Draw background tiles if any, that gives feedback when zooming in.
-    // Background tiles need to be draw from coarser resolution to finer resolution to make sure coarser tiles are not hiding finer tiles.
-    //&&MM  - this causes z-fighting. poss sol. use qv setDepth.  
-    //      - will also cause problems with transparent(or translucent?) raster.
-    //      >>>> look for context.GetViewport()->SetNeedsHeal() in webmercator.  also play with depth for temporary tiles.
-    //      >>>> What is a CreateGroupNode??    
-    SortedTiles backgroundTiles;
-    FindBackgroudTiles(backgroundTiles, m_visiblesTiles, DRAW_COARSER_DELTA, context.GetViewportR());
-    for(RasterTilePtr& pTile : backgroundTiles)
-        {
-        BeAssert(pTile->HasCachedGraphic(context.GetViewportR()));
-        pTile->Draw(context);
-        }
+    std::set<RasterTileP> coarserTiles; // use a set so we do not draw them more than once.
 
-    // Draw what we have, everything else will be generated in the background.
-    for(RasterTilePtr& pTile : m_visiblesTiles)
+    DrawArgs drawArgs(context);
+    DrawArgs finerDrawArgs(context);
+
+    // Draw what we have in cache, everything else will be generated in the background.
+    for (RasterTilePtr& pTile : m_visiblesTiles)
         {
-        if(!pTile->Draw(context))
+        if (!pTile->Draw(drawArgs))
             {
-            // Draw finer resolution.
-            DrawLoadedChildren(*pTile, DRAW_CHILDREN_DELTA, context);
+            // Draw finer resolution as substitute while the needed tile is computed.
+            if (!DrawFinerTiles(*pTile, DRAW_FINER_DELTA, finerDrawArgs))
+                {
+                // If finer tiles did not cover all area, we need to draw a coarser tile to fill the void.
+                RasterTileP pCoarserTile = pTile->FindCachedCoarserTile(DRAW_COARSER_DELTA, context.GetViewportR());
+                if (nullptr != pCoarserTile)
+                    coarserTiles.insert(pCoarserTile);
+                }
 
             BeAssert(!pTile->HasCachedGraphic(context.GetViewportR()));
 
@@ -847,6 +882,20 @@ void RasterProgressiveDisplay::Draw (RenderContextR context)
             m_queriedTiles.emplace_back(pQuery);
             }
         }
+
+    // Draw coarser tiles that we have.
+    DrawArgs coarserDrawArgs(context);
+    for (auto& pCoarserTile : coarserTiles)
+        {
+        BeAssert(pCoarserTile->HasCachedGraphic(context.GetViewportR()));
+        pCoarserTile->Draw(coarserDrawArgs);
+        }
+    coarserDrawArgs.DrawGraphics(DRAW_COARSER_BIAS);
+
+    // Finer...
+    finerDrawArgs.DrawGraphics(DRAW_FINER_BIAS);
+
+    drawArgs.DrawGraphics(0.0);
 
     if(!m_queriedTiles.empty())
         context.GetViewportR().ScheduleTerrainProgressiveTask(*this);
@@ -857,6 +906,8 @@ void RasterProgressiveDisplay::Draw (RenderContextR context)
 //----------------------------------------------------------------------------------------
 ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
+    DrawArgs drawArgs(context);
+
     for (auto pTileQueryItr = m_queriedTiles.begin(); pTileQueryItr != m_queriedTiles.end();  /* incremented or erased in loop*/ )
         {
         TileDataQueryPtr pTileQuery = (*pTileQueryItr).get();
@@ -883,10 +934,7 @@ ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(Progressive
             pTileGraphic->AddTile(*pTileQuery->GetTileP(), tileNode.GetCorners());
             
             tileNode.SaveGraphic(context.GetViewportR(), *pTileGraphic);
-
-            //&&MM not sure if we should redraw here.  this is immediate mode! 
-            //  only create graphics and ask for a redraw? not good if the pool is full!
-            tileNode.Draw(context);
+            tileNode.Draw(drawArgs);
 
             // CheckStop only if we drawn something.
             if (context.CheckStop())
@@ -894,12 +942,35 @@ ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(Progressive
             }
         }
 
-    //&&MM should probably show intermidate.
+    drawArgs.DrawGraphics(0.0);
+
     if (m_queriedTiles.empty())
         {
-        wantShow = WantShow::Yes;
+        //&&MM TODO Needs heal.
+//         if (Raster has transparency/translucency)
+//             context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones due to transparency
+//         else
+               wantShow = WantShow::Yes;
+
         return Completion::Finished;
         }        
 
     return Completion::Aborted;
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  7/2016
+//----------------------------------------------------------------------------------------
+void DrawArgs::DrawGraphics(double zBias)
+    {
+    if (m_graphics.m_entries.empty())
+        return;
+
+    //&&MM if we have rasters in 3d space, other than top view, or we see the raster from underneath that z-bias trick won't work.
+    //     That z-bias must be perpendicular to the view plane. Review when we will support raster plane et layerInModel(only for 2d top view?!?).
+    Transform biasTrans;
+    biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, zBias));
+    auto group = m_context.CreateGroupNode(Render::Graphic::CreateParams(nullptr, biasTrans), m_graphics, nullptr);
+    m_context.OutputGraphic(*group, nullptr);
     }
