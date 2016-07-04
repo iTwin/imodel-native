@@ -35,8 +35,6 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ScalableMesh/Import/Source.h>
 #include <ScalableMesh/Import/Importer.h>
 
-#include <ScalableMesh/Import/Config/All.h>
-
 #include <ScalableMesh/Import/Error/Source.h>
 
 #include "../Import/Sink.h"
@@ -56,7 +54,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "Plugins/ScalableMeshIDTMFileTraits.h"
 
 #include "ScalableMeshStorage.h"
-#include <ScalableMesh/IScalableMeshStream.h>
+
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
 
@@ -416,7 +414,7 @@ StatusInt IScalableMeshSourceImporter::Impl::SyncWithSources ()
 
     // Remove sources which have been removed or modified
 #if 0 //NEEDS_WORK_SM_IMPORTER : ?
-    if (BSISUCCESS != RemoveSourcesFrom<PointIndexType>(pointIndex, listRemoveExtent))
+    if (BSISUCCESS != RemoveSourcesFrom<MeshIndexType>(pointIndex, listRemoveExtent))
         return BSIERROR;          
 #endif
 
@@ -490,7 +488,7 @@ StatusInt IScalableMeshSourceImporter::Impl::ImportSourcesTo (Sink* sinkP)
     const ContentDescriptor& targetContentDescriptor(sinkPtr->GetDescriptor());
     assert(1 == targetContentDescriptor.GetLayerCount());
 
-    const GCS& targetGCS(targetContentDescriptor.LayersBegin()->GetGCS());
+    const GCS& targetGCS((*targetContentDescriptor.LayersBegin())->GetGCS());
     // NEEDS_WORK_SM : PARTIAL_UPDATE :remove
     const ScalableMeshData& targetScalableMeshData = ScalableMeshData::GetNull();
 
@@ -926,7 +924,7 @@ int IScalableMeshSourceImporter::Impl::ImportClipMaskSource  (const IDTMSource& 
             return BSIERROR;
 
         // Import
-        const Importer::Status importStatus = importerPtr->Import(dataSource.GetConfig().GetSequence(), dataSource.GetConfig().GetConfig());
+        const Importer::Status importStatus = importerPtr->Import(dataSource.GetConfig().GetSequence(), *dataSource.GetConfig().GetConfig());
         if(importStatus != Importer::S_SUCCESS)
             return BSIERROR;
 
@@ -961,24 +959,31 @@ int IScalableMeshSourceImporter::Impl::TraverseSource  (SourcesImporter&        
         if(state != UpToDateState::ADD && state != UpToDateState::PARTIAL_ADD)
             return status;
 
-        ImportConfig importConfig(sourceImportConfig.GetConfig());
-
+        RefCountedPtr<ImportConfig> importConfig(sourceImportConfig.GetConfig());
         // For the moment we always want to combine imported source layers to first STM layer.
-        importConfig.push_back(DefaultTargetLayerConfig(0));
+        //importConfig.push_back(DefaultTargetLayerConfig(0));
+        importConfig->SetDefaultTargetLayer(0);
 
         // Ensure that sources that have no GCSs and no user selected GCS may fall-back on the STM's GCS
-        importConfig.push_back(DefaultSourceGCSConfig(targetGCS));
+        //importConfig.push_back(DefaultSourceGCSConfig(targetGCS));
+        importConfig->SetDefaultSourceGCS(new GCS(targetGCS));
 
         // NEEDS_WORK_SM : ensure that sources that have no Extent ?
-        importConfig.push_back(DefaultTargetScalableMeshConfig(targetScalableMeshData));
+        //importConfig.push_back(DefaultTargetScalableMeshConfig(targetScalableMeshData));
+        importConfig->SetDefaultTargetSMData(new ScalableMeshData(targetScalableMeshData));
 
         if (!clipShapePtr->IsEmpty())
-            importConfig.push_back(TargetFiltersConfig(ClipMaskFilterFactory::CreateFrom(clipShapePtr)));
+            {
+            CustomFilteringSequence seq;
+            seq.push_back(ClipMaskFilterFactory::CreateFrom(clipShapePtr));
+            //importConfig.push_back(TargetFiltersConfig(ClipMaskFilterFactory::CreateFrom(clipShapePtr)));
+            importConfig->SetTargetFilters(seq);
+            }
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(dataSource));
 
 
-        importer.AddSource(sourceRef, sourceConfig, importConfig, importSequence, srcImportConfig/*, vecRange*/);
+        importer.AddSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
         }
     catch (...)
         {

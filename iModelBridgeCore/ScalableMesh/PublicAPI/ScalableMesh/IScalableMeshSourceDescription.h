@@ -20,7 +20,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 struct ContentDescriptor;
-struct LayerDescriptor;
+struct ILayerDescriptor;
 struct ContentConfig;
 struct ImportSequence;
 struct Source;
@@ -50,19 +50,19 @@ private:
     friend struct                           SourceLayerDescriptorHolder;
 
     uint32_t                                    m_id;
-    const Import::LayerDescriptor*          m_descriptorP;
+    RefCountedPtr<const Import::ILayerDescriptor>          m_descriptorP;
     const void*                             m_implP;
 
     explicit                                SourceLayerDescriptor      (uint32_t                            layer,
-                                                                        const Import::LayerDescriptor&  descriptor);   
+                                                                        const Import::ILayerDescriptor&  descriptor);   
 
                                             SourceLayerDescriptor      (const SourceLayerDescriptor&    rhs);
     SourceLayerDescriptor&                  operator=                  (const SourceLayerDescriptor&    rhs);
 public:
-    BENTLEYSTM_EXPORT uint32_t                        GetID                      () const;
-    BENTLEYSTM_EXPORT const WChar*              GetName                    () const;
+    BENTLEY_SM_EXPORT uint32_t                        GetID                      () const;
+    BENTLEY_SM_EXPORT const WChar*              GetName                    () const;
 
-    BENTLEYSTM_EXPORT const Import::LayerDescriptor&
+    BENTLEY_SM_EXPORT const Import::ILayerDescriptor&
                                             GetDescriptor              () const;
     };
 
@@ -107,8 +107,8 @@ public:
         explicit                            IncompleteType             (uint32_t                        layer,
                                                                         const Import::DataType&     type);
 
-        BENTLEYSTM_EXPORT uint32_t                    GetLayerID                 () const;
-        BENTLEYSTM_EXPORT const Import::DataType& GetType                    () const;
+        BENTLEY_SM_EXPORT uint32_t                    GetLayerID                 () const;
+        BENTLEY_SM_EXPORT const Import::DataType& GetType                    () const;
 
         };
 
@@ -116,49 +116,49 @@ public:
     typedef const IncompleteType*           IncompleteTypeCIter;
     typedef const SourceLayerDescriptor*    LayerCIter;
 
-    BENTLEYSTM_EXPORT                             ~SourceDescriptor          ();
+    BENTLEY_SM_EXPORT                             ~SourceDescriptor          ();
 
 
-    BENTLEYSTM_EXPORT static SourceDescriptorCPtr CreateOriginalFor          (const IDTMSource&               source);
-    BENTLEYSTM_EXPORT static SourceDescriptorCPtr CreateOriginalFor          (const IDTMSource&               source,
+    BENTLEY_SM_EXPORT static SourceDescriptorCPtr CreateOriginalFor          (const IDTMSource&               source);
+    BENTLEY_SM_EXPORT static SourceDescriptorCPtr CreateOriginalFor          (const IDTMSource&               source,
                                                                         Status&                         status);
-    BENTLEYSTM_EXPORT static SourceDescriptorCPtr CreateOriginalFor          (const IDTMSource&               source,
+    BENTLEY_SM_EXPORT static SourceDescriptorCPtr CreateOriginalFor          (const IDTMSource&               source,
                                                                         Status&                         status,
                                                                         StatusInt&                      statusEx);
 
-    BENTLEYSTM_EXPORT static SourceDescriptorCPtr CreateFor                  (const IDTMSource&               source);   
-    BENTLEYSTM_EXPORT static SourceDescriptorCPtr CreateFor                  (const IDTMSource&               source,
+    BENTLEY_SM_EXPORT static SourceDescriptorCPtr CreateFor                  (const IDTMSource&               source);   
+    BENTLEY_SM_EXPORT static SourceDescriptorCPtr CreateFor                  (const IDTMSource&               source,
                                                                         Status&                         status);
-    BENTLEYSTM_EXPORT static SourceDescriptorCPtr CreateFor                  (const IDTMSource&               source,
+    BENTLEY_SM_EXPORT static SourceDescriptorCPtr CreateFor                  (const IDTMSource&               source,
                                                                         Status&                         status,
                                                                         StatusInt&                      statusEx);
 
 
-    BENTLEYSTM_EXPORT static Import::SourcePtr    CreateOriginalSourceFor    (const IDTMSource&               source);
-    BENTLEYSTM_EXPORT static Import::SourcePtr    CreateOriginalSourceFor    (const IDTMSource&               source,
+    BENTLEY_SM_EXPORT static Import::SourcePtr    CreateOriginalSourceFor    (const IDTMSource&               source);
+    BENTLEY_SM_EXPORT static Import::SourcePtr    CreateOriginalSourceFor    (const IDTMSource&               source,
                                                                         Status&                         status);
-    BENTLEYSTM_EXPORT static Import::SourcePtr    CreateOriginalSourceFor    (const IDTMSource&               source,
+    BENTLEY_SM_EXPORT static Import::SourcePtr    CreateOriginalSourceFor    (const IDTMSource&               source,
                                                                         Status&                         status,
                                                                         StatusInt&                      statusEx);
 
-    BENTLEYSTM_EXPORT static Import::SourcePtr    ConfigureSource            (const Import::SourcePtr&        sourcePtr,
+    BENTLEY_SM_EXPORT static Import::SourcePtr    ConfigureSource            (const Import::SourcePtr&        sourcePtr,
                                                                         const SourceImportConfig&       config);
 
-    BENTLEYSTM_EXPORT bool                        HoldsIncompleteTypes       () const;
-    BENTLEYSTM_EXPORT bool                        IsPod                      () const;
+    BENTLEY_SM_EXPORT bool                        HoldsIncompleteTypes       () const;
+    BENTLEY_SM_EXPORT bool                        IsPod                      () const;
 
-    BENTLEYSTM_EXPORT IncompleteTypeCIter         IncompleteTypesBegin       () const;
-    BENTLEYSTM_EXPORT IncompleteTypeCIter         IncompleteTypesEnd         () const;
-
-
-    BENTLEYSTM_EXPORT uint32_t                        GetLayerSelectionSize      () const;
-
-    BENTLEYSTM_EXPORT LayerCIter                  LayerSelectionBegin        () const;
-    BENTLEYSTM_EXPORT LayerCIter                  LayerSelectionEnd          () const;
+    BENTLEY_SM_EXPORT IncompleteTypeCIter         IncompleteTypesBegin       () const;
+    BENTLEY_SM_EXPORT IncompleteTypeCIter         IncompleteTypesEnd         () const;
 
 
-    BENTLEYSTM_EXPORT uint32_t                        GetLayerCount              () const;
-    BENTLEYSTM_EXPORT const Import::ContentDescriptor&
+    BENTLEY_SM_EXPORT uint32_t                        GetLayerSelectionSize      () const;
+
+    BENTLEY_SM_EXPORT LayerCIter                  LayerSelectionBegin        () const;
+    BENTLEY_SM_EXPORT LayerCIter                  LayerSelectionEnd          () const;
+
+
+    BENTLEY_SM_EXPORT uint32_t                        GetLayerCount              () const;
+    BENTLEY_SM_EXPORT const Import::ContentDescriptor&
                                             GetDescriptor              () const;
     };
 

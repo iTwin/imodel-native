@@ -23,6 +23,7 @@
 #include <ScalableMesh/IScalableMeshTime.h>
 #include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
+#include <ImagePP\all\h\HIMMosaic.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -53,86 +54,88 @@ private:
         IScalableMeshCreator&                      operator=                  (const IScalableMeshCreator&);
 
 public:
-        BENTLEYSTM_EXPORT virtual                 ~IScalableMeshCreator             ();
+        BENTLEY_SM_EXPORT virtual                 ~IScalableMeshCreator             ();
 
 
 
 
 
-        //BENTLEYSTM_EXPORT bool                    AreAllSourcesReachable     () const;
+        //BENTLEY_SM_EXPORT bool                    AreAllSourcesReachable     () const;
 
-        BENTLEYSTM_EXPORT StatusInt               Create                     (bool isSingleFile = true);    
+        BENTLEY_SM_EXPORT StatusInt               Create                     (bool isSingleFile = true);    
+
+        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP);
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.
-        BENTLEYSTM_EXPORT const GeoCoords::GCS&   GetAdvancedGCS             () const;
+        BENTLEY_SM_EXPORT const GeoCoords::GCS&   GetAdvancedGCS             () const;
 
-        BENTLEYSTM_EXPORT const GeoCoords::GCS&   GetGCS                     () const;
+        BENTLEY_SM_EXPORT const GeoCoords::GCS&   GetGCS                     () const;
 
-        BENTLEYSTM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
+        BENTLEY_SM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
                                                   GetBaseGCS                 () const;
 
-        BENTLEYSTM_EXPORT Time                    GetLastSyncTime            () const;
+        BENTLEY_SM_EXPORT Time                    GetLastSyncTime            () const;
 
-        BENTLEYSTM_EXPORT Time                    GetLastModified            () const;
-        BENTLEYSTM_EXPORT Time                    GetLastModifiedCheckTime   () const;
+        BENTLEY_SM_EXPORT Time                    GetLastModified            () const;
+        BENTLEY_SM_EXPORT Time                    GetLastModifiedCheckTime   () const;
 
-        //BENTLEYSTM_EXPORT StatusInt               UpdateLastModified         ();
+        //BENTLEY_SM_EXPORT StatusInt               UpdateLastModified         ();
         // TDORAY: Consider adding a versions that takes as argument the minimum last time checked for
         // which it is not worth updating.
 
-       // BENTLEYSTM_EXPORT void                    ResetLastModified          ();
+       // BENTLEY_SM_EXPORT void                    ResetLastModified          ();
         
         // TDORAY: Temporary way of solving our sources edition problem. This should not be required anymore once we
         // trap all source edit calls via the decorator pattern so that creator is notified of source edit operation. In
         // order to implement this, we'll need to stop dynamic_casting sources.
-       /* BENTLEYSTM_EXPORT void                    SetSourcesDirty            ();
-        BENTLEYSTM_EXPORT bool                    HasDirtySources            () const;*/
+       /* BENTLEY_SM_EXPORT void                    SetSourcesDirty            ();
+        BENTLEY_SM_EXPORT bool                    HasDirtySources            () const;*/
 
-        BENTLEYSTM_EXPORT StatusInt               SaveToFile                 ();        
+        BENTLEY_SM_EXPORT StatusInt               SaveToFile                 ();        
 
-        BENTLEYSTM_EXPORT StatusInt               SetCompression             (ScalableMeshCompressionType        compressionType);
+        BENTLEY_SM_EXPORT StatusInt               SetCompression             (ScalableMeshCompressionType        compressionType);
 
 
-        BENTLEYSTM_EXPORT StatusInt               SetGCS                     (const GeoCoords::GCS&       gcs);
+        BENTLEY_SM_EXPORT StatusInt               SetGCS                     (const GeoCoords::GCS&       gcs);
 
-        BENTLEYSTM_EXPORT StatusInt               SetBaseGCS                 (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
+        BENTLEY_SM_EXPORT StatusInt               SetBaseGCS                 (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
                                                                                                     gcsPtr);
 
 
 
-        BENTLEYSTM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath,
+        BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath,
                                                                                      StatusInt&                status);
 
-        BENTLEYSTM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const IScalableMeshPtr&     scmPtr,
+        BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const IScalableMeshPtr&     scmPtr,
                                                                                      StatusInt&                  status);
 
-       /* BENTLEYSTM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath);
+       /* BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath);
 
-        BENTLEYSTM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const IScalableMeshPtr&   scmPtr);*/
+        BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const IScalableMeshPtr&   scmPtr);*/
 
        /* // TDORAY: For next versions: Add overloads taking as parameters a working dir path and maybe a listing 
         //         of environment variables. This supplementary information will enable STM relocation without 
         //         sources relocation (by specifying previous STM dir as working dir). Another solution could
         //         be to provide a Relocate functionality.
 
-        BENTLEYSTM_EXPORT const IDTMSourceCollection& GetSources                 () const;
-        BENTLEYSTM_EXPORT IDTMSourceCollection&       EditSources                ();*/
+        BENTLEY_SM_EXPORT const IDTMSourceCollection& GetSources                 () const;
+        BENTLEY_SM_EXPORT IDTMSourceCollection&       EditSources                ();*/
 
 
 #ifdef SCALABLE_MESH_ATP
 
-        BENTLEYSTM_EXPORT static unsigned __int64 GetNbImportedPoints();    
+        BENTLEY_SM_EXPORT static unsigned __int64 GetNbImportedPoints();    
 
-        BENTLEYSTM_EXPORT static double GetImportPointsDuration();
+        BENTLEY_SM_EXPORT static double GetImportPointsDuration();
 
-        BENTLEYSTM_EXPORT static double GetLastBalancingDuration();
+        BENTLEY_SM_EXPORT static double GetLastBalancingDuration();
 
-        BENTLEYSTM_EXPORT static double GetLastMeshingDuration();
+        BENTLEY_SM_EXPORT static double GetLastMeshingDuration();
 
-        BENTLEYSTM_EXPORT static double GetLastFilteringDuration();
+        BENTLEY_SM_EXPORT static double GetLastFilteringDuration();
 
-        BENTLEYSTM_EXPORT static double GetLastStitchingDuration();
+        BENTLEY_SM_EXPORT static double GetLastStitchingDuration();
 #endif                           
     };
 

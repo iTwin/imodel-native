@@ -8,6 +8,14 @@
 
 #include <cpprest/filestream.h>
 
+#ifndef NDEBUG
+#define DEBUG_AZURE
+#endif
+
+#ifdef DEBUG_AZURE
+#include <Bentley\BeConsole.h>
+#endif
+
 namespace scalable_mesh
     {
     using namespace azure;
@@ -26,8 +34,8 @@ namespace scalable_mesh
         class Storage {
 
         public:
-            typedef std::vector<Byte> point_buffer_type;
-            typedef concurrency::streams::container_buffer<std::vector<Byte>> point_buffer_type2;
+            typedef std::vector<uint8_t> point_buffer_type;
+            typedef concurrency::streams::container_buffer<std::vector<uint8_t>> point_buffer_type2;
 
         private:
             account m_storage;
@@ -262,20 +270,34 @@ namespace scalable_mesh
 
             void DownloadBlob(const std::wstring& blob_name, std::function<void(point_buffer_type)> callback) const
                 {
+#ifdef DEBUG_AZURE
+                static std::atomic<int> s_parallelCalls = 0;
+                static std::mutex s_consoleMutex;
+
+                s_parallelCalls += 1;
+
+                s_consoleMutex.lock();
+                wprintf(L"Threads in DownloadBlob : %i      blob name: %s \r\n", (int)s_parallelCalls, blob_name.c_str());
+                //BeConsole::Printf("Threads in DownloadBlob : %i      blob name: %s \r\n", s_parallelCalls);
+                //BeConsole::WPrintf(L"blob name : %s \r\n", blob_name.c_str());
+                s_consoleMutex.unlock();
+#endif
                 point_buffer_type2 buffer;
-                auto block_blob = this->GetBlockBlob(blob_name);
-                if (block_blob.is_valid() && block_blob.exists())
+                try
                     {
-                    try
-                        {
-                        block_blob.download_to_stream(concurrency::streams::ostream(buffer));
-                        callback(buffer.collection());
-                        }
-                    catch (const std::exception& e)
-                        {
-                        std::wcout << U("Error: ") << e.what() << std::endl;
-                        }
+                    auto block_blob = this->GetBlockBlob(blob_name);
+                    assert(block_blob.is_valid() && block_blob.exists());
+                    block_blob.download_to_stream(concurrency::streams::ostream(buffer));
+                    callback(buffer.collection());
                     }
+                catch (const std::exception& e)
+                    {
+                    std::wcout << U("Error: ") << e.what() << std::endl;
+                    assert(!"There is an error downloading from Azure");
+                    }
+#ifdef DEBUG_AZURE
+                s_parallelCalls -= 1;
+#endif
                 }
 
             void DownloadBlobRange(const std::wstring& blob_name, const uint64_t& offset, const uint64_t& length, std::function<void(point_buffer_type)> callback) const

@@ -32,8 +32,8 @@ private:
 
         // initialize codec
         HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(pi_compressedPacket.GetDataSize());
-        pi_uncompressedPacket.SetBufferOwnership(true);
-        pi_uncompressedPacket.SetBuffer(new Byte[pi_uncompressedPacket.GetDataSize()], pi_uncompressedPacket.GetDataSize() * sizeof(Byte));
+       /* pi_uncompressedPacket.SetBufferOwnership(true);
+        pi_uncompressedPacket.SetBuffer(new Byte[pi_uncompressedPacket.GetDataSize()], pi_uncompressedPacket.GetDataSize() * sizeof(Byte));*/
         const size_t compressedDataSize = pCodec->DecompressSubset(pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize() * sizeof(Byte), pi_uncompressedPacket.GetBufferAddress(), pi_uncompressedPacket.GetBufferSize() * sizeof(Byte));
         pi_uncompressedPacket.SetDataSize(compressedDataSize);
 
@@ -74,6 +74,12 @@ public:
         // return string for GCS
         return string();
     }
+
+    virtual uint64_t GetNextID() const override
+        {
+        //return m_smSQLiteFile->GetLastInsertRowId(); // This only works if last insert was performed on the same database connection
+        return m_smSQLiteFile->GetLastNodeId();
+        }
 
     virtual void Close()
     {
@@ -137,6 +143,8 @@ public:
     if (header == nullptr) return 0;
     if (header->m_ptsIndiceID.size() > 0)header->m_ptsIndiceID[0] = blockID;
     SQLiteNodeHeader nodeHeader = *header;
+    if (header->m_SubNodeNoSplitID.IsValid() && !header->m_apSubNodeID[0].IsValid())
+        nodeHeader.m_apSubNodeID[0] = nodeHeader.m_SubNodeNoSplitID;
     nodeHeader.m_nodeID = blockID.m_integerID;
     nodeHeader.m_graphID = nodeHeader.m_nodeID;
     m_smSQLiteFile->SetNodeHeader(nodeHeader);
@@ -147,15 +155,20 @@ public:
     {
     if (header == nullptr) return 0;
     SQLiteNodeHeader nodeHeader;
+    if (header->m_meshComponents != nullptr) delete[] header->m_meshComponents;
     nodeHeader.m_nodeID = blockID.m_integerID;
     if (!m_smSQLiteFile->GetNodeHeader(nodeHeader)) return 1;
-    //nodeHeader.m_nodeCount = GetBlockDataCount(blockID);
+    //nodeHeader.m_nbPoints = GetBlockDataCount(blockID);
     *header = nodeHeader;
     header->m_IsLeaf = header->m_apSubNodeID.size() == 0 || (!header->m_apSubNodeID[0].IsValid());
     header->m_IsBranched = !header->m_IsLeaf && (header->m_apSubNodeID.size() > 1 && header->m_apSubNodeID[1].IsValid());
-    if (!header->m_IsLeaf && !header->m_IsBranched) header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
+    if (!header->m_IsLeaf && !header->m_IsBranched)
+        {
+        header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
+        header->m_apSubNodeID[0] = HPMBlockID();
+        }
     //if (header->m_ptsIndiceID.size() > 0)header->m_ptsIndiceID[0] = blockID;
-    if (header->m_areTextured)
+    if (header->m_isTextured)
         {
         header->m_uvID = blockID;
         header->m_ptsIndiceID[0] = HPMBlockID();
@@ -173,9 +186,10 @@ public:
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
     pi_compressedPacket.SetBuffer(&ptData[0], ptData.size());
     pi_compressedPacket.SetDataSize(ptData.size());
-    pi_uncompressedPacket.SetDataSize(uncompressedSize);
+    pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(POINT));
+    pi_uncompressedPacket.SetBufferOwnership(false);
     LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
-    memcpy(DataTypeArray, pi_uncompressedPacket.GetBufferAddress(), std::min(uncompressedSize, maxCountData*sizeof(POINT)));
+    //memcpy(DataTypeArray, pi_uncompressedPacket.GetBufferAddress(), std::min(uncompressedSize, maxCountData*sizeof(POINT)));
     return std::min(uncompressedSize, maxCountData*sizeof(POINT));
     }
 

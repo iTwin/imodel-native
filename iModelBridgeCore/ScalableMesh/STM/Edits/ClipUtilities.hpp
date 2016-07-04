@@ -4,6 +4,7 @@
 #include <Vu/VuApi.h>
 #include <TerrainModel/Core/DTMIterators.h>
 #include "..\ScalableMeshQuery.h"
+
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 //#define DEBUG 1
@@ -13,11 +14,13 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 //=======================================================================================
 template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIndexes, vector<POINT>& nodePts, bvector<DPoint3d>& pts, EXTENT& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP)
     {
+    if (meshP->GetNbFaceIndexes() == 0) return;
     DPoint3d origins[6];
     DVec3d normals[6];
     nodeRange.Get6Planes(origins, normals);
     DPlane3d planes[6];
     ClipPlane clipPlanes[6];
+
     for (size_t i = 0; i < 6; ++i)
         {
         normals[i].Negate();

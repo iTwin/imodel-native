@@ -119,43 +119,43 @@ private:
         IScalableMeshSourceImporter&                      operator=                  (const IScalableMeshSourceImporter&);
 
 public:
-        BENTLEYSTM_EXPORT virtual                 ~IScalableMeshSourceImporter             ();
+        BENTLEY_SM_EXPORT virtual                 ~IScalableMeshSourceImporter             ();
 
-        BENTLEYSTM_EXPORT bool                    AreAllSourcesReachable     () const;
+        BENTLEY_SM_EXPORT bool                    AreAllSourcesReachable     () const;
 
-        BENTLEYSTM_EXPORT StatusInt               Import                     ();    
+        BENTLEY_SM_EXPORT StatusInt               Import                     ();    
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.
-        BENTLEYSTM_EXPORT const GeoCoords::GCS&   GetAdvancedGCS             () const;
+        BENTLEY_SM_EXPORT const GeoCoords::GCS&   GetAdvancedGCS             () const;
 
-        BENTLEYSTM_EXPORT const GeoCoords::GCS&   GetGCS                     () const;
+        BENTLEY_SM_EXPORT const GeoCoords::GCS&   GetGCS                     () const;
 
-        BENTLEYSTM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
+        BENTLEY_SM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
                                             GetBaseGCS                 () const;
                                         
         
         // TDORAY: Temporary way of solving our sources edition problem. This should not be required anymore once we
         // trap all source edit calls via the decorator pattern so that creator is notified of source edit operation. In
         // order to implement this, we'll need to stop dynamic_casting sources.
-        BENTLEYSTM_EXPORT void                    SetSourcesDirty            ();
-        BENTLEYSTM_EXPORT bool                    HasDirtySources            () const;
+        BENTLEY_SM_EXPORT void                    SetSourcesDirty            ();
+        BENTLEY_SM_EXPORT bool                    HasDirtySources            () const;
 
-        BENTLEYSTM_EXPORT StatusInt               Store                     (IScalableMeshSourceImporterStoragePtr& sourceImporterStoragePtr);        
+        BENTLEY_SM_EXPORT StatusInt               Store                     (IScalableMeshSourceImporterStoragePtr& sourceImporterStoragePtr);        
 
-        BENTLEYSTM_EXPORT StatusInt               SetCompression             (ScalableMeshCompressionType        compressionType);
+        BENTLEY_SM_EXPORT StatusInt               SetCompression             (ScalableMeshCompressionType        compressionType);
 
-        BENTLEYSTM_EXPORT StatusInt               SetGCS                     (const GeoCoords::GCS&       gcs);
+        BENTLEY_SM_EXPORT StatusInt               SetGCS                     (const GeoCoords::GCS&       gcs);
 
-        BENTLEYSTM_EXPORT StatusInt               SetBaseGCS                 (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& gcsPtr);
+        BENTLEY_SM_EXPORT StatusInt               SetBaseGCS                 (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& gcsPtr);
         
-        BENTLEYSTM_EXPORT StatusInt               SetFeatureCallback         (WriteFeatureCallbackFP writeFeatureCallbackFP);
+        BENTLEY_SM_EXPORT StatusInt               SetFeatureCallback         (WriteFeatureCallbackFP writeFeatureCallbackFP);
 
-        BENTLEYSTM_EXPORT StatusInt               SetPointsCallback          (WritePointsCallbackFP  writePointsCallbackFP);
+        BENTLEY_SM_EXPORT StatusInt               SetPointsCallback          (WritePointsCallbackFP  writePointsCallbackFP);
 
-        BENTLEYSTM_EXPORT static IScalableMeshSourceImporterPtr Create ();        
+        BENTLEY_SM_EXPORT static IScalableMeshSourceImporterPtr Create ();        
 
-        BENTLEYSTM_EXPORT static IScalableMeshSourceImporterPtr Create (IScalableMeshSourceImporterStoragePtr& sourceImporterStoragePtr, 
+        BENTLEY_SM_EXPORT static IScalableMeshSourceImporterPtr Create (IScalableMeshSourceImporterStoragePtr& sourceImporterStoragePtr, 
                                                                  StatusInt&                      status);    
 
         
@@ -164,9 +164,9 @@ public:
         //         sources relocation (by specifying previous STM dir as working dir). Another solution could
         //         be to provide a Relocate functionality.
 
-        BENTLEYSTM_EXPORT const IDTMSourceCollection&
+        BENTLEY_SM_EXPORT const IDTMSourceCollection&
                                             GetSources                 () const;
-        BENTLEYSTM_EXPORT IDTMSourceCollection&   EditSources                ();
+        BENTLEY_SM_EXPORT IDTMSourceCollection&   EditSources                ();
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

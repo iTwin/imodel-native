@@ -11,7 +11,7 @@
 
 
 
-#include <ImagePP/all/h/HPMDataStore.h>
+#include <../STM/IScalableMeshDataStore.h>
 /*#include <ImagePP/all/h/IDTMTypes.h>
 #include <ImagePP/all/h/IDTMFile.h>
 #include <ImagePP/all/h/HGFSpatialIndex.h>
@@ -174,7 +174,7 @@ public:
 
     static bool IsPointOutterIn2D(const DRange3d& extent, const POINT& point)
         {
-        return !extent.IsContainedXY(point);
+        return extent.IsContainedXY(point);
         }
     };
 
@@ -436,7 +436,7 @@ public:
             bool        m_totalCountDefined;         // Indicates if the total count of objects in node and subnode is up to date
             uint64_t      m_totalCount;                // This value indicates the total number of points in node all recursively all sub-nodes.
             bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
-            bool        m_areTextured;               // Indicates if the node contains Texture or not
+            bool        m_isTextured;               // Indicates if the node contains Texture or not
 
 
             //INFORMATION NOT PERSISTED
@@ -500,10 +500,12 @@ public:
     HPMBlockID  m_graphID;
     std::vector<HPMBlockID>  m_textureID;
     HPMBlockID  m_uvID;
+
+    //NEEDS_WORK_SM - should not be a vector.
     std::vector<HPMBlockID>  m_ptsIndiceID;
     std::vector<HPMBlockID>  m_uvsIndicesID;
     size_t      m_numberOfMeshComponents;
-    int*        m_meshComponents;
+    int*        m_meshComponents = nullptr;
     size_t m_nodeCount;
 
 
@@ -514,13 +516,13 @@ public:
 
     ~SMPointNodeHeader()
          {
-              //  if (nullptr != m_meshComponents) delete[] m_meshComponents;
+           if (nullptr != m_meshComponents) delete[] m_meshComponents;
          }
 
     SMPointNodeHeader<EXTENT>& operator=(const SQLiteNodeHeader& nodeHeader)
         {
         m_arePoints3d = nodeHeader.m_arePoints3d;
-        m_areTextured = nodeHeader.m_areTextured;
+        m_isTextured = nodeHeader.m_isTextured;
         m_contentExtentDefined = nodeHeader.m_contentExtentDefined;
         m_contentExtent = ExtentOp<EXTENT>::Create(nodeHeader.m_contentExtent.low.x, nodeHeader.m_contentExtent.low.y, nodeHeader.m_contentExtent.low.z,
                                                    nodeHeader.m_contentExtent.high.x, nodeHeader.m_contentExtent.high.y, nodeHeader.m_contentExtent.high.z);
@@ -567,7 +569,7 @@ public:
         {
         SQLiteNodeHeader header;
         header.m_arePoints3d = m_arePoints3d;
-        header.m_areTextured = m_areTextured;
+        header.m_isTextured = m_isTextured;
         header.m_contentExtentDefined = m_contentExtentDefined;
         header.m_contentExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_contentExtent), ExtentOp<EXTENT>::GetYMin(m_contentExtent), ExtentOp<EXTENT>::GetZMin(m_contentExtent),
                                                 ExtentOp<EXTENT>::GetXMax(m_contentExtent), ExtentOp<EXTENT>::GetYMax(m_contentExtent), ExtentOp<EXTENT>::GetZMax(m_contentExtent));
@@ -599,6 +601,7 @@ public:
         for (auto& id : m_uvsIndicesID) header.m_uvsIndicesID[&id - &m_uvsIndicesID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
         header.m_apSubNodeID.resize(m_apSubNodeID.size());
         for (auto& id : m_apSubNodeID) header.m_apSubNodeID[&id - &m_apSubNodeID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        if (header.m_SubNodeNoSplitID != -1) header.m_apSubNodeID[0] = header.m_SubNodeNoSplitID;
         for (size_t i = 0; i < 26; ++i)
             {
             header.m_apNeighborNodeID[i].resize(m_apNeighborNodeID[i].size());
@@ -654,11 +657,17 @@ public:
 
 
 
-template <class POINT, class EXTENT> class SMPointTileStore: public IHPMPermanentStore<POINT, SMPointIndexHeader<EXTENT>, SMPointNodeHeader<EXTENT>>
+template <class POINT, class EXTENT> class SMPointTileStore: public IScalableMeshDataStore<POINT, SMPointIndexHeader<EXTENT>, SMPointNodeHeader<EXTENT>>
     {
 public:
     SMPointTileStore() {};
     virtual ~SMPointTileStore() {};
+
+    virtual uint64_t GetNextID() const
+        {
+        //assert(false); // Not implemented!
+        return -1;
+        }
     };
 
 template <typename POINT, typename EXTENT> class SMPointTaggedTileStore : public SMPointTileStore<POINT, EXTENT>// , public HFCShareableObject<SMPointTileStore<POINT, EXTENT> >

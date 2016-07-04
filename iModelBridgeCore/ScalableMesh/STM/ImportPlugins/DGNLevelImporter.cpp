@@ -31,7 +31,9 @@
 #include "DGNModelUtilities.h"      
 #include "PluginUtils.h"
 #include "ElemSourceRef.h"
-#include "ElementType.h"
+
+#include " ..\..\ScalableMeshDgn\DgnInterface.h"
+//#include "ElementType.h"
 
 
 #define PointCloudMinorId_Handler 1
@@ -46,16 +48,6 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 namespace { //BEGIN UNAMED NAMESPACE
 
 
-struct ElementStats
-    {
-    ElementPointStats   m_point;
-    ElementLinearStats  m_linear;
-    ElementMeshStats    m_mesh;
-
-    explicit            ElementStats           ()
-        {
-        }
-    };
 
 
 struct DTMFeaturesStruct
@@ -69,6 +61,7 @@ struct DTMFeaturesStruct
     {}
 };
 
+#if 0
 struct RefHolder
     {
     DGNModelRefHolder   m_modelRef;
@@ -133,7 +126,7 @@ int ComputeCountsCallback(ElementRefP elmRef, void* userArgP, ScanCriteria* scan
 
     return SUCCESS;
     }
- 
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @description
 * NTERAY: This whole method should be redesigned in order to implement a kind of
@@ -269,7 +262,7 @@ public:
         {
         return m_levelID;
         }
-
+#if 0
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsimethod                                                Jean-Francois.Cote   11/2012
@@ -306,7 +299,7 @@ public:
         elementIt.AddSingleElementTypeTest(EXTENDED_ELM);
         elementIt.Scan(CreateSourceRefListCallback, userArgP);
         }
-
+#endif
 private:
     friend class            DGNLevelSourceCreator;
 
@@ -402,30 +395,33 @@ struct DGNSourceRefVisitor : SourceRefVisitor
 
     static bool                         IsActiveDgnFile        (const WChar*                          dgnFilePath)
         {
-        DgnFileP activeDgnFile(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP());
+       /* DgnFileP activeDgnFile(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP());
                             
-        return 0 != activeDgnFile && 0 == wcscmp(dgnFilePath, activeDgnFile->GetFileName().c_str());
+        return 0 != activeDgnFile && 0 == wcscmp(dgnFilePath, activeDgnFile->GetFileName().c_str());*/
+        return false; //they can't be the active model, because we only support dgnv8 and this is running from dgndb.
         }
 
     static bool                         IsActiveModel          (uint32_t                                  modelID)
         {              
-        if (INVALID_MODELREF == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef())
+       /* if (INVALID_MODELREF == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef())
             return false;
         assert(0 == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetParentModelRefP()); // Active model should also be a root model
 
         const ModelId activeModelID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetModelId(); 
 
-        return activeModelID == modelID;
+        return activeModelID == modelID;*/
+        return false;
         }
 
 
     static bool                         IsActiveModel          (const WChar*                          modelName)
         {               
-        if (INVALID_MODELREF == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef())
+        /*if (INVALID_MODELREF == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef())
             return false;
         assert(0 == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetParentModelRefP()); // Active model should also be a root model
      
-        return 0 == wcscmp(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetModelNameCP(), modelName);
+        return 0 == wcscmp(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetModelNameCP(), modelName);*/
+        return false;
         }
 
     // TDORAY: Add dgn model source ref?
@@ -441,7 +437,7 @@ struct DGNSourceRefVisitor : SourceRefVisitor
         return dgnFile;
         }
 
-    static DGNFileHolder                GetActiveDgnFile       ()
+    /*static DGNFileHolder                GetActiveDgnFile       ()
         {               
         return DGNFileHolder::CreateFromActive(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP());
         }
@@ -449,18 +445,18 @@ struct DGNSourceRefVisitor : SourceRefVisitor
     static DGNModelRefHolder            GetActiveModel         ()
         {       
         return DGNModelRefHolder::CreateFromActive(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef());
-        }
+        }*/
 
 
     static DGNModelRefHolder            OpenRootModel          (const WChar*                          filePath,
                                                                 uint32_t                                  modelID)
         {
-        const bool isActiveDgnFile = IsActiveDgnFile(filePath);
+       /* const bool isActiveDgnFile = IsActiveDgnFile(filePath);
 
         if (isActiveDgnFile && IsActiveModel(modelID))
-            return GetActiveModel();
+            return GetActiveModel();*/
 
-        DGNFileHolder dgnFile(isActiveDgnFile ? GetActiveDgnFile() : OpenFile(filePath));
+        DGNFileHolder dgnFile(/*isActiveDgnFile ? GetActiveDgnFile() : */OpenFile(filePath));
 
         StatusInt modelOpenStatus = BSISUCCESS;
         DGNModelRefHolder modelRef = FindDGNModel(dgnFile, modelID, modelOpenStatus);
@@ -474,12 +470,12 @@ struct DGNSourceRefVisitor : SourceRefVisitor
     static DGNModelRefHolder            OpenRootModel          (const WChar*                          filePath,
                                                                 const WChar*                          modelName)
         {
-        const bool isActiveDgnFile = IsActiveDgnFile(filePath);
+        /*const bool isActiveDgnFile = IsActiveDgnFile(filePath);
 
         if (isActiveDgnFile && IsActiveModel(modelName))
-            return GetActiveModel();
+            return GetActiveModel();*/
 
-        DGNFileHolder dgnFile(isActiveDgnFile ? GetActiveDgnFile() : OpenFile(filePath));
+        DGNFileHolder dgnFile(/*isActiveDgnFile ? GetActiveDgnFile() : */OpenFile(filePath));
 
         StatusInt modelOpenStatus = BSISUCCESS;
         DGNModelRefHolder modelRef = FindDGNModel(dgnFile, modelName, modelOpenStatus);

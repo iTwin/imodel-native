@@ -5,7 +5,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 bool IsOutsideEdge(MTGGraph* graphP, MTGNodeId id);
 
-void CreateGraphFromIndexBuffer(MTGGraph* graph, const long* buffer, int count, int pointCount, bvector<int>& componentContours, const DPoint3d* points);
+BENTLEY_SM_EXPORT void CreateGraphFromIndexBuffer(MTGGraph* graph, const long* buffer, int count, int pointCount, bvector<int>& componentContours, const DPoint3d* points);
 
 void MergeGraphs(MTGGraph * destGraphP, std::vector<DPoint3d>& destPoints, MTGGraph * srcGraphP, std::vector<DPoint3d>& inPoints, DPoint3d minCorner, DPoint3d maxCorner, std::vector<int>& pointToDestPointsMap, bvector<int>& componentContours);
 
@@ -33,6 +33,8 @@ size_t FastCountNodesAroundFace(MTGGraph* graphP, MTGNodeId id);
 
 void PrintGraph(Utf8String path, Utf8String name, MTGGraph* graphP);
 
+size_t CountExteriorFaces(MTGGraph* graphP);
+
 void UntieLoopsFromPolygon(bvector<DPoint3d>& polygon);
 
 bool RemoveKnotsFromGraph(MTGGraph* graphP, std::vector<DPoint3d>& ptsToModify);
@@ -46,5 +48,20 @@ void RecomputeExterior(MTGGraph * graphP);
 void RemoveOverhangsFromPolygon(bvector<DPoint3d>& polygon);
 
 bool HasOverlapWithNeighborsXY(MTGGraph* graphP, MTGNodeId boundaryId, const DPoint3d* pts);
+
+void TagFeatureEdges(MTGGraph* graphP, DTMFeatureType tagValue, size_t featureSize, const int32_t* featureData, bool tagEnds = true);
+
+void ReadFeatureTags(MTGGraph * graphP, std::vector<int>& pointToDestPointsMap, bvector<bvector<int32_t>>& features, std::map<int,int>& componentForPoints);
+
+void ReadFeatureTags(MTGGraph * graphP, std::vector<int>& pointToDestPointsMap, bvector<bvector<int32_t>>& features);
+
+struct TaggedEdge
+    {
+    int tag;
+    int vtx1;
+    int vtx2;
+    };
+
+void ReadFeatureEndTags(MTGGraph * graphP, std::vector<int>& pointToDestPointsMap, bvector<TaggedEdge>& featureEdges);
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

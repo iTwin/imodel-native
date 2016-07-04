@@ -417,92 +417,8 @@
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.hpp">
       <Filter>Includes\PublicAPI\GeoCoords</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\All.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\Base.h">
       <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAll.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAllToLayer.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAllToLayerType.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAllToType.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayer.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerToLayer.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerToLayerType.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerToType.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerType.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerTypeToLayer.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerTypeToLayerType.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerTypeToType.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportType.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportTypeToLayer.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportTypeToLayerType.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportTypeToType.h">
-      <Filter>Includes\PublicAPI\Import\Command</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\All.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Attachments.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Base.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultSourceGCS.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetGCS.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetLayer.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetType.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Extraction.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Filtering.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\SourceFilters.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\TargetFilters.h">
-      <Filter>Includes\PublicAPI\Import\Config</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\All.h">
       <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
@@ -930,6 +846,21 @@
     </ClInclude>
     <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
     <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
+    <ClInclude Include="STM\SMSQLiteSkirtDefinitionsTileStore.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Edits\Skirts.h">
+      <Filter>Includes\STM\Edits</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\SMMemoryPool.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="stm\ScalableMeshDb.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="stm\ComputeMemoryUseTraits.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1326,13 +1257,19 @@
     <ClCompile Include="STM\Edits\Skirts.cpp">
       <Filter>Source\STM\Edits</Filter>
     </ClCompile>
+    <ClCompile Include="STM\SMStreamingTileStore.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMMemoryPool.cpp">
+      <Filter>Includes\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="stm\ScalableMeshDb.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableTerrainModel.mke" />
-    <None Include="ScalableTerrainModel.mki" />
     <None Include="Import\Import.mke.realOrig" />
     <None Include="mki\AssertScalableTerrainModelPolicy.mki" />
-    <None Include="mki\ScalableTerrainModelPolicy.mki" />
     <None Include="PrivateAPI\STMInternal\Foundations\_Description.mki" />
     <None Include="PublicAPI\ScalableMesh\Foundations\_Description.mki" />
     <None Include="PublicAPI\ScalableMesh\GeoCoords\_Description.mki" />

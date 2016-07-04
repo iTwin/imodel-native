@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:51:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,7 +19,7 @@
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 namespace Plugin { namespace V0 {
 
-BENTLEYSTM_EXPORT Import::Plugin::V0::SourceBase*         CreateSTMSource                (const WChar*              path,
+BENTLEY_SM_EXPORT Import::Plugin::V0::SourceBase*         CreateSTMSource                (const WChar*              path,
                                                                                     Import::Log&                log);
 
 

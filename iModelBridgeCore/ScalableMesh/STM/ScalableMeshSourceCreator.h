@@ -31,6 +31,7 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
         friend struct                       IScalableMeshSourceCreator;
         IDTMSourceCollection                m_sources;
+        DRange2d                           m_extent;
 
         Time                                m_lastSourcesModificationTime;
         Time                                m_lastSourcesModificationCheckTime;
@@ -70,9 +71,11 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
                                                                               const Import::ScalableMeshData&         targetScalableMeshData);
 
 
-        StatusInt                           ApplyEditsFromSources(HFCPtr<IndexType>& pIndex);
+        StatusInt                           ApplyEditsFromSources(HFCPtr<MeshIndexType>& pIndex);
 
-        StatusInt                           ImportRasterSourcesTo(HFCPtr<IndexType>& pIndex);
+        StatusInt                           GetRasterSources(HFCPtr<HIMMosaic>& pMosaicP);
+
+        StatusInt                           ImportRasterSourcesTo(HFCPtr<MeshIndexType>& pIndex);
 
         StatusInt                           ImportSourcesTo(Import::Sink*                           sinkP);
 

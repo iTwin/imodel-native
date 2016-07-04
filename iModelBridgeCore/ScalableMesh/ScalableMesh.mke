@@ -13,9 +13,12 @@ SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 
 
 %include  mdl.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshLibName.mki
 
 #this means we can use CGAL with the modules that were licensed to us
 %include $(BuildContext)SubParts/Files/LicensedComponents.mki
+
+DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 
 dirToSearch=$(BuildContext)VendorAPI/CGAL
 %include cincapnd.mki
@@ -61,11 +64,11 @@ always:
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp  $(PublicApiIncludes) -I${BuildContext}PublicAPI
+PchExtraOptions    = -Zm180 -openmp  $(PublicApiIncludes) -I${BuildContext}PublicAPI -DVANCOUVER_API
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION 
+CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION  -DVANCOUVER_API
 
 %if !defined (3DMesh)
 CCPchOpts + -DNO_3D_MESH
@@ -151,8 +154,6 @@ $(o)Importer$(oext) : $(importDir)Importer.cpp $(importDir)ImporterImpl.h $(PCHH
 
 $(o)ImportPolicy$(oext) : $(importDir)ImportPolicy.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ImporterCommandVisitor$(oext) : $(importDir)ImporterCommandVisitor.cpp $(importDir)ImporterImpl.h $(PCHHeaderDepends)  ${MultiCompileDepends}
-
 $(o)InternalContentDescriptor$(oext) : $(importDir)InternalContentDescriptor.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)InternalImporterConfig$(oext) : $(importDir)InternalImporterConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -169,18 +170,13 @@ $(o)ContentConfig$(oext) : $(importDir)ContentConfig.cpp $(PCHHeaderDepends)  ${
 
 $(o)ImportSequence$(oext) : $(importDir)ImportSequence.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ImportConfigs$(oext) : $(importDir)ImportConfigs.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-$(o)ContentConfigs$(oext) : $(importDir)ContentConfigs.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-$(o)ImportCommands$(oext) : $(importDir)ImportCommands.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #-----------------------------------------------------------------------
 #   Build STM
 #-----------------------------------------------------------------------
 
-$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)IScalableMeshATP$(oext) : $(stmDir)IScalableMeshATP.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -195,6 +191,8 @@ $(o)ScalableMeshQuery$(oext) : $(stmDir)ScalableMeshQuery.cpp $(stmDir)ScalableM
 $(o)ScalableMeshMesher$(oext) : $(stmDir)ScalableMeshMesher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)SMMeshIndex$(oext) : $(stmDir)SMMeshIndex.cpp $(stmDir)SMMeshIndex.hpp $(stmDir)SMMeshIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)SMMemoryPool$(oext) : $(stmDir)SMMemoryPool.cpp $(stmDir)SMMemoryPool.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -242,8 +240,6 @@ $(o)ScalableMeshSourceDescription$(oext) : $(stmDir)ScalableMeshSourceDescriptio
 
 $(o)ScalableMeshSourceImportConfig$(oext) : $(stmDir)ScalableMeshSourceImportConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshStream$(oext) : $(stmDir)ScalableMeshStream.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
 $(o)ScalableMeshURL$(oext) : $(stmDir)ScalableMeshURL.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshPolicy$(oext) : $(stmDir)ScalableMeshPolicy.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -272,28 +268,34 @@ $(o)ScalableMeshScheduler$(oext) : $(stmDir)Threading/ScalableMeshScheduler.cpp 
 
 $(o)LightThreadPool$(oext) : $(stmDir)Threading/LightThreadPool.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)ScalableMeshDb$(oext) : $(stmDir)ScalableMeshDb.cpp $(stmDir)ScalableMeshDb.h ${MultiCompileDepends}
 
-%if defined (VANCOUVER)
+$(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h $(stmDir)SMPointTileStore.h ${MultiCompileDepends}
+
+$(o)SMStreamingTileStore$(oext) : $(stmDir)SMStreamingTileStore.cpp $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)SMNodeGroup$(oext) : $(stmDir)SMNodeGroup.cpp $(stmDir)SMNodeGroup.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
 $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}
-%endif
+
+$(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
 #-----------------------------------------------------------------------
-$(o)GroundDetectionManager$(oext) : $(automaticGroundDetectionDir)GroundDetectionManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)GroundDetectionManager$(oext) : $(automaticGroundDetectionDir)GroundDetectionManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudClassification$(oext) : $(automaticGroundDetectionDir)PointCloudClassification.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudClassification$(oext) : $(automaticGroundDetectionDir)PointCloudClassification.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)AutomaticGroundDetectionInternalConfig$(oext) : $(automaticGroundDetectionDir)AutomaticGroundDetectionInternalConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)AutomaticGroundDetectionInternalConfig$(oext) : $(automaticGroundDetectionDir)AutomaticGroundDetectionInternalConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudEditGroundDetection$(oext) : $(automaticGroundDetectionDir)PointCloudEditGroundDetection.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudEditGroundDetection$(oext) : $(automaticGroundDetectionDir)PointCloudEditGroundDetection.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudQuadTree$(oext) : $(automaticGroundDetectionDir)PointCloudQuadTree.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudQuadTree$(oext) : $(automaticGroundDetectionDir)PointCloudQuadTree.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)TileLoaderQueue$(oext) : $(automaticGroundDetectionDir)TileLoaderQueue.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)TileLoaderQueue$(oext) : $(automaticGroundDetectionDir)TileLoaderQueue.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Importer plugins
@@ -306,31 +308,31 @@ $(o)XYZFileImporter$(oext) : $(importerPluginsDir)XYZFileImporter.cpp $(PCHHeade
 
 $(o)LandXMLFileImporter$(oext) : $(importerPluginsDir)LandXMLFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #   Importer from DcStmCore
-$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)XYZAsciiSource$(oext) : $(importerPluginsDir)XYZAsciiSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)CivilElemSource$(oext) : $(importerPluginsDir)CivilElemSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)CivilElemSource$(oext) : $(importerPluginsDir)CivilElemSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #-----------------------------------------------------------------------
@@ -376,7 +378,6 @@ $(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaun
 %include MultiCppCompileGo.mki
 
 certDir             = $(bsiCerts)
-
 
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.

@@ -382,45 +382,19 @@ SourcePtr SourceFactory::Create    (const SourceRef&        sourceRef,
                                     Status&                 status,
                                     StatusInt&              statusEx) const
     {
-    class SourceCreator : public SourceRefVisitor
+    if (sourceRef.m_basePtr.get() != nullptr)
         {
-        virtual void    _Visit             (const LocalFileSourceRef&       sourceRef) override
+        auto* dgnElementSource = dynamic_cast<DGNElementSourceRef*>(sourceRef.m_basePtr.get());
+        if (dgnElementSource != nullptr)
             {
-            m_sourcePtr = m_impl.CreateSourceFor(sourceRef, m_status, m_statusEx);
-            m_foundSpecialization = true;
+            return m_pImpl->CreateSourceFor(*dgnElementSource, status, statusEx);
             }
-
-        virtual void    _Visit             (const DGNElementSourceRef&       sourceRef) override
+        auto* localFileSource = dynamic_cast<LocalFileSourceRef*>(sourceRef.m_basePtr.get());
+        if (localFileSource != nullptr)
             {
-            m_sourcePtr = m_impl.CreateSourceFor(sourceRef, m_status, m_statusEx);
-            m_foundSpecialization = true;
+            return m_pImpl->CreateSourceFor(*localFileSource, status, statusEx);
             }
-
-    public:
-        const SourceFactory::Impl&      
-                        m_impl;
-        SourcePtr       m_sourcePtr;
-        Status&         m_status;
-        StatusInt&      m_statusEx;
-        bool            m_foundSpecialization;
-
-        explicit        SourceCreator      (const SourceFactory::Impl&      impl,
-                                            Status&                         status,
-                                            StatusInt&                      statusEx)
-            :   m_impl(impl),
-                m_status(status),
-                m_statusEx(statusEx),
-                m_foundSpecialization(false)
-            {
-            
-            }
-        };
-
-    SourceCreator sourceCreator(*m_pImpl, status, statusEx);
-    sourceRef.Accept(sourceCreator);
-
-    if (sourceCreator.m_foundSpecialization)
-        return sourceCreator.m_sourcePtr;
+        }
 
     return m_pImpl->CreateSourceFor(sourceRef, status, statusEx);
     }

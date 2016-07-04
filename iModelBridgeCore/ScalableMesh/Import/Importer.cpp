@@ -13,8 +13,8 @@
 #include "../STM/ImagePPHeaders.h"
 
 #include <ScalableMesh/Import/Importer.h>
+#include <ScalableMesh/Import/Command/Base.h>
 #include "ImporterImpl.h"
-#include "ImporterCommandVisitor.h"
 
 #include <ScalableMesh/Import/Source.h>
 #include <ScalableMesh/Import/ContentDescriptor.h>
@@ -122,8 +122,12 @@ Importer::Status Importer::Import  (const ImportSequence&   sequence,
     {
     try
         {
+        //Config importConfig;
+        //config.Accept(importConfig);
         Config importConfig;
-        config.Accept(importConfig);
+        //config.Accept(importConfig);
+        const Config* cfgImpl = dynamic_cast<const Config*>(&config);
+        if (cfgImpl != nullptr) importConfig = *cfgImpl;
 
         m_pImpl->Import(sequence, importConfig);
         return S_SUCCESS;
@@ -161,7 +165,9 @@ Importer::Status Importer::Import  (const ImportCommand&    command,
     try
         {
         Config importConfig;
-        config.Accept(importConfig);
+        //config.Accept(importConfig);
+        const Config* cfgImpl = dynamic_cast<const Config*>(&config);
+        if (cfgImpl != nullptr) importConfig = *cfgImpl;
 
         m_pImpl->Import(command, importConfig);
         return S_SUCCESS;
@@ -196,8 +202,7 @@ Importer::Status Importer::Import  (const ImportCommand&    command)
 void ImporterImpl::Import      (const ImportSequence&   sequence,
                                 const Config&           config)
     {
-    CommandVisitor sequenceVisitor(*this, config);
-    sequence.Accept(sequenceVisitor);
+    std::for_each(sequence.GetCommands().begin(), sequence.GetCommands().end(), [&config, this] (const ImportCommand& command) { /*command.m_basePtr.get()->_Execute(*this, config);*/ this->Import(command, config); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -207,8 +212,24 @@ void ImporterImpl::Import      (const ImportSequence&   sequence,
 void ImporterImpl::Import      (const ImportCommand&    command,
                                 const Config&           config)
     {
-    CommandVisitor commandVisitor(*this, config);
-    command.Accept(commandVisitor);
+
+    for (Internal::ContentDesc::LayerCIter layerIt = m_sourceDesc.LayersBegin(), layersEnd = m_sourceDesc.LayersEnd();
+         layerIt != layersEnd;
+         ++layerIt)
+        {
+        if (command.IsSourceLayerSet() && command.GetSourceLayer() != layerIt->GetID()) continue;
+        uint32_t sourceLayer = layerIt->GetID();
+        const uint32_t targetLayer = command.IsTargetLayerSet() ? command.GetTargetLayer() : (config.HasDefaultTargetLayer() ? config.GetDefaultTargetLayer() : sourceLayer);
+        const LayerDesc& layerDesc = m_sourceDesc.GetLayer(sourceLayer);
+
+        for (LayerDesc::TypeCIterator typeIt = layerDesc.TypesBegin(), typesEnd = layerDesc.TypesEnd(); typeIt != typesEnd; ++typeIt)
+            {
+            if (command.IsSourceTypeSet() && !(command.GetSourceType() == typeIt->GetFamily())) continue;
+            const DataTypeFamily& sourceType = typeIt->GetFamily();
+            const DataTypeFamily& targetType = command.IsTargetTypeSet() ? command.GetTargetType() : (config.HasDefaultTargetType() ? config.GetDefaultTargetType() : sourceType);
+            Import(sourceLayer, sourceType, targetLayer, targetType, config);
+            }
+        }
     }
 
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ImagePP/all/h/HPMDataStore.h>
+#include <../STM/IScalableMeshDataStore.h>
 /*#include <ImagePP/all/h/IDTMTypes.h>
 #include <ImagePP/all/h/IDTMFile.h>*/
 #include <ImagePP/all/h/HCDPacket.h>
@@ -9,7 +9,7 @@
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
 #include "SMSQLiteFile.h"
 
-class SMSQLiteTextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGData (Byte*), size
+class SMSQLiteTextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JPEGData (Byte*), size
 {
 public:
 
@@ -73,31 +73,31 @@ public:
 
     virtual HPMBlockID StoreNewBlock(Byte* DataTypeArray, size_t countData)
         {
-		return StoreBlock(DataTypeArray, countData, HPMBlockID());
+        return StoreBlock(DataTypeArray, countData, HPMBlockID());
         }
 
     virtual HPMBlockID StoreBlock(Byte* DataTypeArray, size_t countData, HPMBlockID blockID)
         {
         HCDPacket pi_uncompressedPacket, pi_compressedPacket;
         pi_uncompressedPacket.SetBuffer(DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int)); // The data block starts with 12 bytes of metadata, followed by pixel data
-		pi_uncompressedPacket.SetDataSize(countData - 3 * sizeof(int));
-		// Retrieve width, height and number of channels from the first 12 bytes of the data block
-		int w = ((int*)DataTypeArray)[0];
-		int h = ((int*)DataTypeArray)[1];
-		int nOfChannels = ((int*)DataTypeArray)[2];
-		int format = 0; // Keep an int to define the format and possible other options
-		// Compress the image with JPEG
+        pi_uncompressedPacket.SetDataSize(countData - 3 * sizeof(int));
+        // Retrieve width, height and number of channels from the first 12 bytes of the data block
+        int w = ((int*)DataTypeArray)[0];
+        int h = ((int*)DataTypeArray)[1];
+        int nOfChannels = ((int*)DataTypeArray)[2];
+        int format = 0; // Keep an int to define the format and possible other options
+        // Compress the image with JPEG
         WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, w, h, nOfChannels);
-		// Create the compressed data block by storing width, height, number of channels and format before the compressed image block		
-		bvector<uint8_t> texData(4 * sizeof(int) + pi_compressedPacket.GetDataSize());
-		int *pHeader = (int*)(texData.data());
-		pHeader[0] = w;
-		pHeader[1] = h;
-		pHeader[2] = nOfChannels;
-		pHeader[3] = format;
-		memcpy(texData.data() + 4 * sizeof(int), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+        // Create the compressed data block by storing width, height, number of channels and format before the compressed image block		
+        bvector<uint8_t> texData(4 * sizeof(int) + pi_compressedPacket.GetDataSize());
+        int *pHeader = (int*)(texData.data());
+        pHeader[0] = w;
+        pHeader[1] = h;
+        pHeader[2] = nOfChannels;
+        pHeader[3] = format;
+        memcpy(texData.data() + 4 * sizeof(int), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
         int64_t id = blockID.IsValid() ? blockID.m_integerID : SQLiteNodeHeader::NO_NODEID;
-		m_smSQLiteFile->StoreTexture(id, texData, pi_uncompressedPacket.GetDataSize()); // We store the number of bytes of the uncompressed image, ignoring the bytes used to store width, height, number of channels and format
+        m_smSQLiteFile->StoreTexture(id, texData, pi_uncompressedPacket.GetDataSize()); // We store the number of bytes of the uncompressed image, ignoring the bytes used to store width, height, number of channels and format
         return HPMBlockID(id);
         }
 
@@ -123,11 +123,9 @@ public:
     auto codec = new HCDCodecIJG(width, height, nOfChannels * 8);// (pi_compressedPacket.GetDataSize()); // 24 bits per pixels
     codec->SetQuality(70);
     codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
-    HFCPtr<HCDCodec> pCodec = codec;
-    pi_uncompressedPacket.SetBufferOwnership(true);
-    pi_uncompressedPacket.SetBuffer(new Byte[pi_uncompressedPacket.GetDataSize()], pi_uncompressedPacket.GetDataSize() * sizeof(Byte));
+    HFCPtr<HCDCodec> pCodec = codec;    
     const size_t uncompressedDataSize = pCodec->DecompressSubset(pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize() * sizeof(Byte), pi_uncompressedPacket.GetBufferAddress(), pi_uncompressedPacket.GetBufferSize() * sizeof(Byte));
-    pi_uncompressedPacket.SetDataSize(uncompressedDataSize);
+    assert(uncompressedDataSize == pi_uncompressedPacket.GetDataSize());    
     return true;
     }
 
@@ -136,22 +134,31 @@ public:
     bvector<uint8_t> ptData;
     size_t uncompressedSize = 0;
     m_smSQLiteFile->GetTexture(blockID.m_integerID, ptData, uncompressedSize);
-    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+
+    assert(uncompressedSize + sizeof(int) * 3 == maxCountData);
+    HCDPacket pi_uncompressedPacket(DataTypeArray + sizeof(int) * 3, uncompressedSize, uncompressedSize);    
+    HCDPacket pi_compressedPacket;
     pi_compressedPacket.SetBuffer(ptData.data() + 4 * sizeof(int), ptData.size() - 4 * sizeof(int));
     pi_compressedPacket.SetDataSize(ptData.size() - 4 * sizeof(int));
-    pi_uncompressedPacket.SetDataSize(uncompressedSize);
-	int *pHeader = (int*)(ptData.data());
-	int w = pHeader[0];
-	int h = pHeader[1];
-	int nOfChannels = pHeader[2];
-	//int format = pHeader[3]; // The format is not used yet, but is may be useful in the future to support other compression than JPEG
-    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket,w,h,nOfChannels);
+    
+    int *pHeader = (int*)(ptData.data());
+    int w = pHeader[0];
+    int h = pHeader[1];
+    int nOfChannels = pHeader[2];
+    //int format = pHeader[3]; // The format is not used yet, but is may be useful in the future to support other compression than JPEG
+    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket, w, h, nOfChannels);    
     ((int*)DataTypeArray)[0] = w;
     ((int*)DataTypeArray)[1] = h;
-	((int*)DataTypeArray)[2] = nOfChannels;
-    memcpy(DataTypeArray + 3 * sizeof(int), pi_uncompressedPacket.GetBufferAddress(), std::min(pi_uncompressedPacket.GetDataSize(), maxCountData - 3 * sizeof(int)));
-    return std::min(pi_uncompressedPacket.GetDataSize() + 3 * sizeof(int), maxCountData);
+    ((int*)DataTypeArray)[2] = nOfChannels;
+    return maxCountData;    
     }
+
+    size_t LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+        {
+        size_t uncompressedSize = 0;
+        m_smSQLiteFile->GetTexture(blockID.m_integerID, DataTypeArray, uncompressedSize);
+        return DataTypeArray.size();
+        }
 
     virtual bool DestroyBlock(HPMBlockID blockID)
     {

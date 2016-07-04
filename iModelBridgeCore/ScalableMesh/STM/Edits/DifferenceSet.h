@@ -40,6 +40,7 @@ struct DifferenceSet
     DifferenceSet(const DifferenceSet& d) :clientID(d.clientID), firstIndex(d.firstIndex), addedVertices(d.addedVertices),
         addedFaces(d.addedFaces), removedVertices(d.removedVertices), removedFaces(d.removedFaces), addedUvs(d.addedUvs), addedUvIndices(d.addedUvIndices)
         {
+        toggledForID = d.toggledForID;
         if (d.upToDate) upToDate = true;
         else upToDate = false;
         }
@@ -54,12 +55,13 @@ struct DifferenceSet
         removedVertices = d.removedVertices;
         addedUvs = d.addedUvs;
         addedUvIndices = d.addedUvIndices;
+        toggledForID = d.toggledForID;
         if (d.upToDate) upToDate = true;
         else upToDate = false;
         return *this;
         }
 
-    bool IsEmpty()
+    bool IsEmpty() const
         {
         return addedFaces.empty() && removedFaces.empty();
         }
@@ -72,8 +74,9 @@ struct DifferenceSet
     DifferenceSet MergeSetWith(DifferenceSet& d, const DPoint3d* vertices);
     DifferenceSet MergeSetWith(DifferenceSet& d, const DPoint3d* vertices, bvector<DPoint3d>& clip1, bvector<DPoint3d>& clip2);
     static DifferenceSet  FromPolyfaceSet(bvector<PolyfaceHeaderPtr>& polyMesh, const DPoint3d* vertices, size_t nVertices);
-    static DifferenceSet  FromPolyfaceSet(bvector<PolyfaceHeaderPtr>& polyMesh, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints);
-    static DifferenceSet  FromPolyface(PolyfaceHeaderPtr& polyMeshes, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints);
+    PolyfaceHeaderPtr ToPolyfaceMesh(const DPoint3d* points, size_t nofPoints);
+    static DifferenceSet  FromPolyfaceSet(bvector<PolyfaceHeaderPtr>& polyMesh, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints, size_t maxPtIdx);
+    static DifferenceSet  FromPolyface(PolyfaceHeaderPtr& polyMeshes, map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> & mapOfPoints, size_t maxPtIdx);
     };
 template<typename T>
 static bool sort_yx
@@ -113,6 +116,20 @@ struct DPoint2dZYXTolerancedSortComparison
 
         }
     bool operator() (const DPoint2d& pointA, const DPoint2d &pointB) const
+        {
+        return sort_yx<double>(pointA.x, pointA.y, pointB.x, pointB.y, m_absTol);
+        }
+    };
+
+
+struct DPoint3dYXTolerancedSortComparison
+    {
+    double m_absTol;
+    DPoint3dYXTolerancedSortComparison(double absTol) : m_absTol(absTol)
+        {
+
+        }
+    bool operator() (const DPoint3d& pointA, const DPoint3d &pointB) const
         {
         return sort_yx<double>(pointA.x, pointA.y, pointB.x, pointB.y, m_absTol);
         }

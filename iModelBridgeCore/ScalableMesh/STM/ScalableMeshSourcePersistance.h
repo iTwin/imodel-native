@@ -18,8 +18,8 @@
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-struct BinaryOStream;
-struct BinaryIStream;
+//struct BinaryOStream;
+//struct BinaryIStream;
 struct DocumentEnv;
 
 /*---------------------------------------------------------------------------------**//**
@@ -38,6 +38,24 @@ struct SourceSerializer
         const DocumentEnv&              env,
         uint32_t                            formatVersion) const;
 
+    };
+
+enum DTMSourceId
+    {
+    DTM_SOURCE_ID_BASE_V0,
+    DTM_SOURCE_ID_LOCAL_FILE_V0,
+    DTM_SOURCE_ID_IN_MEMORY_BASE_V0,
+    DTM_SOURCE_ID_DGN_V0,
+    DTM_SOURCE_ID_DGN_LEVEL_V0,
+    DTM_SOURCE_ID_IN_MEMORY_DGN_LEVEL_V0,
+    DTM_SOURCE_ID_BC_OBJ_V0,
+    DTM_SOURCE_ID_GROUP_V0,
+    DTM_SOURCE_ID_DGN_V1,
+    DTM_SOURCE_ID_DGN_REFERENCE_LEVEL_V0,
+    DTM_SOURCE_ID_DGN_LEVEL_V1,
+    DTM_SOURCE_ID_DGN_REFERENCE_LEVEL_V1,
+
+    DTM_SOURCE_ID_QTY
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

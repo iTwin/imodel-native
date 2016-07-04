@@ -9,12 +9,12 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ScalableMeshPCH.h>
+#include <ScalableMeshPCH.h>   
 #include "../STM/ImagePPHeaders.h"
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/LocalTransform.h>
-
+                      
 #include <ScalableMesh/Foundations/Log.h>
 #include <ScalableMesh/Foundations/Exception.h>
 

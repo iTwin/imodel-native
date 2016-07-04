@@ -3,9 +3,11 @@
 #include <Bentley/RefCounted.h>
 #include <BeSQLite\BeSQLite.h>
 #include <ScalableMesh/import/DataSQLite.h>
+#include "ScalableMeshDb.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
+USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 using namespace std;
 
@@ -29,7 +31,7 @@ struct SQLiteNodeHeader
     bool        m_totalCountDefined;         // Indicates if the total count of objects in node and subnode is up to date
     uint64_t      m_totalCount;                // This value indicates the total number of points in node all recursively all sub-nodes.
     bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
-    bool        m_areTextured;               // Indicates if the node contains Texture or not
+    bool        m_isTextured;               // Indicates if the node contains Texture or not
     int  m_parentNodeID; //Required when loading 
     std::vector<int>  m_apSubNodeID;
     int  m_SubNodeNoSplitID;
@@ -95,6 +97,8 @@ public:
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
 
+    void CommitAll();
+
     static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status);
     void SetSource();
     bool SetWkt(WCharCP extendedWkt);
@@ -116,25 +120,33 @@ public:
     bool GetAccessMode() { return m_database->IsReadonly(); }
     bool IsSingleFile();
 
+    //uint64_t GetLastInsertRowId() { return m_database->GetLastInsertRowId(); }
+    uint64_t GetLastNodeId();
+
+
     void GetPoints(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSize);
     void GetIndices(int64_t nodeID, bvector<uint8_t>& indices, size_t& uncompressedSize);
-    void GetUVs(int64_t nodeID, bvector<uint8_t>& uvs, size_t& uncompressedSize);
+    void GetUVs(int64_t nodeID, bvector<uint8_t>& uvCoords, size_t& uncompressedSize);
     bool LoadSources(SourcesDataSQLite& sourcesData);
     void GetUVIndices(int64_t nodeID, bvector<uint8_t>& uvIndices, size_t& uncompressedSize);
     void GetTexture(int64_t nodeID, bvector<uint8_t>& texture, size_t& uncompressedSize);
     void GetGraph(int64_t nodeID, bvector<uint8_t>& graph, size_t& uncompressedSize);
     void GetFeature(int64_t featureID, bvector<uint8_t>& featureData, size_t& uncompressedSize);
     void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
+    void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
     void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize);
 
     void StorePoints(int64_t& nodeID, const bvector<uint8_t>& pts, size_t uncompressedSize);
     void StoreIndices(int64_t& nodeID, const bvector<uint8_t>& indices, size_t uncompressedSize);
-    void StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvs, size_t uncompressedSize);
+    void StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvCoords, size_t uncompressedSize);
     void StoreUVIndices(int64_t& nodeID, const bvector<uint8_t>& uvIndices, size_t uncompressedSize);
     void StoreTexture(int64_t& nodeID, const bvector<uint8_t>& texture, size_t uncompressedSize);
     void StoreGraph(int64_t& nodeID, const bvector<uint8_t>& graph, size_t uncompressedSize);
     void StoreFeature(int64_t& featureID, const bvector<uint8_t>& featureData, size_t uncompressedSize);
     void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
+    void SetClipPolygonMetadata(uint64_t& clipID, double importance, int nDimensions);
+    void GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions);
+    void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
     void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize);
 
     size_t GetNumberOfPoints(int64_t nodeID);
@@ -144,10 +156,14 @@ public:
     size_t GetTextureByteCount(int64_t nodeID);
     size_t GetNumberOfFeaturePoints(int64_t featureID);
     size_t GetClipPolygonByteCount(int64_t clipID);
+    size_t GetSkirtPolygonByteCount(int64_t skirtID);
+
+
+    void GetAllClipIDs(bvector<uint64_t>& allIds);
 
     bool m_autocommit = true;
 private:
-    BeSQLite::Db* m_database;
+    ScalableMeshDb* m_database;
 
     // string table name
     const std::string m_sMasterHeaderTable = "SMMasterHeader";

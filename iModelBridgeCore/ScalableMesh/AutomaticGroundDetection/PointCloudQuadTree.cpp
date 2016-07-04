@@ -395,16 +395,6 @@ bool PointCloudQuadTree::createSeeds(std::vector<QuadSeedPtr>& seeds, double dis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Thomas.Butzbach                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if 0 //NEEDS_WORK_SM_IMPORTER Not required?
-void PointCloudQuadTree::drawTree(EditElementHandleR elHandle)
-    {
-    m_root->drawNode(elHandle);
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Thomas.Butzbach                 02/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudQuadTree::visitUnmarkedNodes(std::vector<QuadSeedPtr>& seeds)
     {
     // visit All node which are not already visited
@@ -771,62 +761,6 @@ size_t PointCloudQuadNode::getAllDataPoints(IPointCloudDataQueryPtr& query, IPoi
             
     return query->GetPoints (*queryBuffer.get());
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Thomas.Butzbach                 02/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-// For debug
-#if 0 //NEEDS_WORK_SM_IMPORTER Not required?
-void PointCloudQuadNode::drawNode(EditElementHandleR elHandle)
-    {
-    std::vector<DPoint3d> verticesAxes(5);
-
-    verticesAxes[0].x	= m_corner[0].x;
-    verticesAxes[0].y	= m_corner[0].y;
-    verticesAxes[0].z   = m_corner[1].z;
-
-    verticesAxes[1].x	= m_corner[1].x;
-    verticesAxes[1].y	= m_corner[0].y;
-    verticesAxes[1].z   = m_corner[1].z;
-
-    verticesAxes[2].x	= m_corner[1].x;
-    verticesAxes[2].y	= m_corner[1].y;
-    verticesAxes[2].z   = m_corner[1].z;
-
-    verticesAxes[3].x	= m_corner[0].x;
-    verticesAxes[3].y	= m_corner[1].y;
-    verticesAxes[3].z   = m_corner[1].z;
-
-    verticesAxes[4].x	= m_corner[0].x;
-    verticesAxes[4].y	= m_corner[0].y;
-    verticesAxes[4].z   = m_corner[1].z;
-
-    DPoint3d linePoints[2];
-    MSElement lineElm;
-    MSElementDescrP lineElmdscrP;
-
-    for(int i = 0; i<4; i++)
-        {
-        linePoints[0] = verticesAxes[i];
-        linePoints[1] = verticesAxes[i+1];
-        mdlLineString_create(&lineElm, NULL, linePoints, 2);
-        mdlElmdscr_new (&lineElmdscrP, NULL, &lineElm);
-        EditElementHandle lineElement(lineElmdscrP, true, true, elHandle.GetModelRef());
-        uint32_t color = 6+m_depth*16;
-        if(color > 246)
-            color=246;
-        uint32_t weight = m_tree->getMaxDepth()-m_depth;
-        int32_t style = 0;
-        mdlElement_setSymbology(lineElement.GetElementP(), &color, &weight, &style);
-        lineElement.AddToModel();
-        }
-
-
-    if(m_dataSize > m_tree->getMaxSize())
-        for(size_t i = 0; i < 4; i++)
-            m_region[i]->drawNode(elHandle);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Thomas.Butzbach                 02/2014

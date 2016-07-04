@@ -14,6 +14,15 @@
         <Files ProductDirectoryName="MdlsysAsneeded" >Delivery\$(shlibprefix)PCLWrapper$(shlibext)</Files>          
       </Bindings>
     </Part>
+
+    <Part Name="AzureSDK">
+        <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
+        <Bindings>
+            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
+            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
+        </Bindings>
+
+    </Part>
     
     <Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke">
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
@@ -21,10 +30,11 @@
         <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>     
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>
         <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
+        <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
         <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
         <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>          
         <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
-        <SubPart PartName="wastorage"       PartFile="${SrcBsiCommon}CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
+        <SubPart PartName="AzureSDK"/>
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
@@ -34,9 +44,8 @@
         <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>  
         <SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>
         <Bindings>
-            <Libs ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
-            <Files ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Files> 
-            <Assemblies ProductDirectoryName="MdlsysAsneeded">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
+            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
@@ -51,15 +60,30 @@
             </Files>
         </Bindings>
     </Part>
-	
-	<Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+
+    <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
-		<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="RasterSchema"            PartFile="RealityModeling"          Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Bindings>
-			<Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>
+          <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>
         </Bindings>
     </Part>
-    
+
+  <Part Name="MemoryPoolTestExe" BentleyBuildMakeFile="Tests/MemoryPoolTest/MemoryPoolTester.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+    <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
+    <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs"/>    
+    <Bindings>
+      <Files ProductDirectoryName="MemoryPoolTester">Delivery\MemoryPoolTester.exe</Files>
+    </Bindings>
+  </Part>
+      
+  <Part Name="ScalableMeshCommandLineTest" BentleyBuildMakeFile="Tests/ScalableMeshCommandLineTest.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+    <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
+      <Bindings>
+        <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScMeshTest.exe</Files>
+      </Bindings>
+  </Part>
     <ProductDirectoryList ListName="ScalableMeshSDK">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="ECSchemas"  Deliver="true" Path="Dlls"/>
@@ -79,6 +103,12 @@
         <ProductDirectory Name="AdobeAssemblies" Deliver="false"/>
         <ProductDirectory Name="PdfLibinitNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="MdlsysAsneededSmartsolid" Path="Dlls"/>
+        <ProductDirectory Name="MdlsysAsneeded" Path="Dlls"/>
+        <ProductDirectory Name="Assemblies" Path="Dlls"/>
+        <ProductDirectory Name="PCLLicenses" Path="Notices"/>
+        <ProductDirectory Name="wastorageAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="LicenseAssemblies" Path="Dlls"/>
         <ProductDirectory Name="AdobeResource" Deliver="false"/>
         <ProductDirectory Name="CSMapMergeModules" Deliver="false"/>
         <ProductDirectory Name="GeoCoordData" Deliver="true" Path="Dlls/GeoCoordinateData"/>
@@ -96,7 +126,8 @@
         <ProductDirectory Name="JpegAssemblies" Deliver="false"/>
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
-        <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>              
+        <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="GlewAssemblies" Deliver="false"/>        
     </ProductDirectoryList>
   
     <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
@@ -150,8 +181,13 @@
 		<ProductDirectory Name="Assemblies" Path="Dlls"/>
 		<ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
 		<ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="wastorageAssemblies" Path="Dlls" />
         <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />
 		<ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
+		<ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
+        <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />
+    <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />
     </ProductDirectoryList>
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >
@@ -162,11 +198,27 @@
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord" Repository="GeoCoord" />
         <SubPart PartName="DgnPlatformDataFiles" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>-->
-		<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />        
         <Directories DirectoryListName="ScalableMeshATP" />        
     </Product>
- 	<ProductDirectoryList ListName="ScalableMeshCmd">
+
+
+
+    <ProductDirectoryList ListName="MemoryPoolTest">
+      <ProductDirectory Name="BentleyNativeAssemblies" Path=""/>      
+      <ProductDirectory Name="GeomNativeAssemblies" Path=""/>      
+      <ProductDirectory Name="MemoryPoolTester" Path="" Deliver="true"/>            
+    </ProductDirectoryList>
+  
+  
+    <Product Name="MemoryPoolTest" SaveProduct="true" >
+        <SubPart PartName="MemoryPoolTestExe" />                           
+        <Directories DirectoryListName="MemoryPoolTest" />      
+    </Product> 
+                 
+
+  <ProductDirectoryList ListName="ScalableMeshCmd">
         <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
         <ProductDirectory Name="Assemblies" Path="Dlls"/>
         <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
@@ -178,7 +230,19 @@
         <ProductDirectory Name="GeoCoordData" Deliver="true" Path="Dlls/GeoCoordinateData"/>
         <ProductDirectory Name="Libs" Deliver="false" />
         <ProductDirectory Name="Libs" LibType="static" Deliver="false" />
+      <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
+      <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
+      <ProductDirectory Name="wastorageAssemblies" Path="Dlls" />
+      <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
+      <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />
+      <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
+      <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
     </ProductDirectoryList>   
-
+      
+    <Product Name="ScalableMeshCommandLine">
+        <SubPart PartName="ScalableMeshCommandLineTest" />  
+        <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />            
+        <Directories DirectoryListName="ScalableMeshCmd" />        
+    </Product>
   
   </BuildContext>

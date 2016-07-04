@@ -1,12 +1,12 @@
 #pragma once
-#include <ImagePP/all/h/HPMDataStore.h>
+#include "IScalableMeshDataStore.h"
 #include "SMPointTileStore.h"
 #include <Mtg/MtgStructs.h>
 #include "SMSQLiteFile.h"
 #undef min
 #undef max
 
-class SMSQLiteGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
+class SMSQLiteGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
 {
 private:
 

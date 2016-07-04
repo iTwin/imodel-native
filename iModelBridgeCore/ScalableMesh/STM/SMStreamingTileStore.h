@@ -12,10 +12,12 @@
 
 
 #include "SMPointTileStore.h"
+#include "SMNodeGroup.h"
 #include <ImagePP/all/h/HCDCodecZlib.h>
-//#include "ScalableMesh/Streaming/AzureStorage.h"
+#include "ScalableMesh/Streaming/AzureStorage.h"
+#include "Threading\LightThreadPool.h"
 #include <curl/curl.h>
-
+#include <condition_variable>
 #ifdef VANCOUVER_API
 #define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
 #define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
@@ -25,287 +27,237 @@
 #endif
 
 //static bool s_useStreamingStore = true;
-static bool s_save_grouped_store = false;
-static bool s_stream_from_disk = false;
-static bool s_stream_from_file_server = false;
-static bool s_stream_from_grouped_store = true;
-static uint32_t s_max_number_nodes_in_group = 100;
-static size_t s_max_group_size = 256 << 10; // 256 KB
-static size_t s_max_group_depth = 5;
-static size_t s_max_group_common_ancestor = 2;
+extern bool s_stream_from_disk;
+extern bool s_stream_from_file_server;
+extern bool s_stream_from_grouped_store;
+extern bool s_is_virtual_grouping;
 
 extern std::mutex fileMutex;
 
-struct SMGroupInfo {
+// Helper point block data structure
+struct PointBlock : public bvector<uint8_t> {
 public:
-    SMGroupInfo() : m_pGroupID(-1) {}
-    SMGroupInfo(const size_t& pi_pGroupID, const std::vector<uint64_t>& pi_pNodeHeaderIDs) : m_pGroupID(pi_pGroupID), m_pNodeHeaderIDs(pi_pNodeHeaderIDs) {}
-    size_t GetSize() { return m_pNodeHeaderIDs.size(); }
-    size_t GetID() { return m_pGroupID; }
-    std::vector<uint64_t>::pointer GetData() { return m_pNodeHeaderIDs.data(); }
-    void ReserveIDs(const size_t& pi_pCount) { m_pNodeHeaderIDs.reserve(pi_pCount); }
-    void AddNodeID(const uint64_t& pi_pIDToAdd) { m_pNodeHeaderIDs.push_back(pi_pIDToAdd); }
-    std::vector<uint64_t>::iterator begin() { return m_pNodeHeaderIDs.begin(); }
-    std::vector<uint64_t>::iterator end() { return m_pNodeHeaderIDs.end(); }
-
-private:
-    size_t m_pGroupID;
-    std::vector<uint64_t> m_pNodeHeaderIDs;
-    };
-
-class SMNodeGroupMasterHeader : public std::vector<SMGroupInfo>
-    {
-    public:
-        SMNodeGroupMasterHeader() {}
-
-        void AddGroup(const size_t& pi_pGroupID, size_type pi_pCount = 10000)
+    bool IsLoading() { return m_pIsLoading; }
+    bool IsLoaded() { return m_pIsLoaded; }
+    void LockAndWait()
+        {
+        unique_lock<mutex> lock(m_pPointBlockMutex);
+        m_pPointBlockCV.wait(lock, [this]() { return m_pIsLoaded; });
+        }
+    void SetLoading() { m_pIsLoading = true; }
+    void Load()
+        {
+        if (!this->IsLoaded())
             {
-            reserve(pi_pCount);
-            push_back(SMGroupInfo{ pi_pGroupID, std::vector<uint64_t>() });
-            front().ReserveIDs(s_max_number_nodes_in_group);
-            }
-
-        void SaveToFile(const WString pi_pMasterHeaderPath, const WString pi_pOutputDirPath)
-            {
-
-            // First, we need to copy the old Master Header file -- then append group information --
-            wstringstream ssOldMasterHeader;
-            ssOldMasterHeader << WString(pi_pMasterHeaderPath + L"\\MasterHeader.sscm");
-            auto oldMasterHeaderFilename = ssOldMasterHeader.str();
-            BeFile oldMasterHeaderFile;
-            if (BeFileStatus::Success != OPEN_FILE(oldMasterHeaderFile, oldMasterHeaderFilename.c_str(), BeFileAccess::Read)) //oldMasterHeaderFile.Open(oldMasterHeaderFilename.c_str(), BeFileAccess::Read, BeFileSharing::None))
-                assert(!"Problem reading the old Master Header File... does it exist?");
-            uint64_t fileSize;
-            oldMasterHeaderFile.GetSize(fileSize);
-            bvector<Byte> oldMasterHeaderBuffer(fileSize);
-            uint32_t bytes_read;
-            oldMasterHeaderFile.Read(oldMasterHeaderBuffer.data(), &bytes_read, fileSize);
-            assert(bytes_read == fileSize);
-
-            wstringstream ss;
-            ss << WString(pi_pOutputDirPath + L"\\MasterHeader.bin");
-            auto group_header_filename = ss.str();
-            BeFile file;
-            if (BeFileStatus::Success == OPEN_FILE(file, group_header_filename.c_str(), BeFileAccess::Write) ||//  file.Open(group_header_filename.c_str(), BeFileAccess::Write, BeFileSharing::None) ||
-                BeFileStatus::Success == file.Create(group_header_filename.c_str()))
+            if (this->IsLoading())
                 {
-                uint32_t NbChars = 0;
-
-                // Paste old Master Header file into new Master Header file
-                // NEEDS_WORK_SM : The old Master Header is saved in JSON format. Should be binary.
-                const auto sizeOldMasterHeaderFile = oldMasterHeaderBuffer.size();
-                file.Write(&NbChars, &sizeOldMasterHeaderFile, sizeof(sizeOldMasterHeaderFile));
-                assert(NbChars == sizeof(sizeOldMasterHeaderFile));
-
-                file.Write(&NbChars, oldMasterHeaderBuffer.data(), (uint32_t)oldMasterHeaderBuffer.size());
-                assert(NbChars == (uint32_t)oldMasterHeaderBuffer.size());
-
-                // Append group information
-                for (auto& groupInfo : *this)
-                    {
-                    // Group id
-                    auto const id = groupInfo.GetID();
-                    file.Write(&NbChars, &id, sizeof(id));
-                    assert(NbChars == sizeof(id));
-
-                    // Group size
-                    auto const size = groupInfo.GetSize();
-                    file.Write(&NbChars, &size, sizeof(size));
-                    assert(NbChars == sizeof(size));
-
-                    // Group node ids
-                    file.Write(&NbChars, groupInfo.GetData(), (uint32_t)size * sizeof(uint64_t));
-                    assert(NbChars == (uint32_t)size * sizeof(uint64_t));
-                    }
-                }
-            file.Close();
-            }
-    };
-
-class SMNodeGroup
-    {
-    public:
-        struct SMNodeHeader {
-            uint32_t blockid;
-            uint32_t position;
-            uint32_t offset;
-            };
-
-        SMNodeGroup()
-            {
-            // reserve space for total number of nodes for this group
-            m_pNodeIds.reserve(s_max_number_nodes_in_group);
-            m_pHeaders.reserve(3000 * s_max_number_nodes_in_group);
-            m_pTotalSize = sizeof(m_pID) + sizeof(size_t);
-            }
-
-        SMNodeGroup(const WString pi_pOutputDirPath, const size_t& pi_pGroupLevel, const size_t& pi_pGroupID)
-            : m_pOutputDirPath(pi_pOutputDirPath), m_pLevel(pi_pGroupLevel), m_pID(pi_pGroupID)
-            {
-            // reserve space for total number of nodes for this group
-            m_pNodeIds.reserve(s_max_number_nodes_in_group);
-            m_pHeaders.reserve(3000 * s_max_number_nodes_in_group);
-
-            m_pTotalSize = sizeof(m_pID) + sizeof(size_t);
-            }
-
-        size_t GetLevel() { return m_pLevel; }
-
-        void SetLevel(const size_t& pi_NewID) { m_pLevel = pi_NewID; }
-
-        size_t GetID() { return m_pID;  }
-        
-        void SetID(const size_t& pi_NewID) { m_pID = pi_NewID; }
-
-        void SetAncestor(const size_t& pi_pLevel) { m_pAncestor = pi_pLevel; }
-
-        size_t GetNumberNodes() { return m_pNodeIds.size(); }
-        
-        size_t GetSizeOfHeaders() { return m_pHeaders.size();  }
-        
-        std::vector<Byte>::pointer GetHeaderData() { return m_pHeaders.data(); }
-        
-        size_t GetTotalSize() { return m_pTotalSize; }
-
-        void IncreaseDepth() { ++m_pDepth; }
-
-        void DecreaseDepth() 
-            {
-            assert(m_pDepth > 0);
-            --m_pDepth; 
-            }
-
-        WString GetFilePath() { return m_pOutputDirPath; }
-
-        void Open(const size_t& pi_pGroupID) { SetID(pi_pGroupID); }
-
-        void Close()
-            {
-            Save();
-            Clear();
-            }
-        
-        void Clear()
-            {
-            m_pNodeIds.clear();
-            m_pHeaders.clear();
-            m_pTotalSize = sizeof(m_pID) + sizeof(size_t);
-            m_pAncestor = -1;
-            }
-        
-        void AddNode(uint32_t pi_NodeID, const std::unique_ptr<Byte>& pi_Data, uint32_t pi_Size)
-            {
-            m_pNodeIds.push_back(SMNodeHeader{ pi_NodeID, (uint32_t)m_pHeaders.size(), pi_Size });
-            const auto oldSize = m_pHeaders.size();
-            m_pHeaders.resize(oldSize + pi_Size);
-            memmove(&m_pHeaders[oldSize], pi_Data.get(), pi_Size);
-            m_pTotalSize += pi_Size + sizeof(SMNodeHeader);
-            }
-
-        bool IsEmpty()
-            {
-            return GetNumberNodes() == 0;
-            }
-
-        bool IsFull()
-            {
-            //return GetNumberNodes() >= s_max_number_nodes_in_group;
-            return GetTotalSize() >= s_max_group_size;
-            }
-
-        bool IsMaxDepthAchieved()
-            {
-            return m_pDepth >= s_max_group_depth;
-            }
-
-        bool IsCommonAncestorTooFar(const size_t& pi_pLevelRequested)
-            {
-            return (m_pAncestor == -1 ? false : pi_pLevelRequested >= s_max_group_common_ancestor + m_pAncestor);
-            }
-
-        void Save()
-            {
-            WString path(m_pOutputDirPath + L"\\g_");
-            wstringstream ss;
-            ss << path << m_pID << L".bin";
-            auto group_filename = ss.str();
-            BeFile file;
-            if (BeFileStatus::Success == OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Write) ||//file.Open(group_filename.c_str(), BeFileAccess::Write, BeFileSharing::None) ||
-                BeFileStatus::Success == file.Create(group_filename.c_str()))
-                {
-                uint32_t NbChars = 0;
-                file.Write(&NbChars, &m_pID, sizeof(m_pID));
-                HASSERT(NbChars == sizeof(m_pID));
-
-                const auto numNodes = m_pNodeIds.size();
-                file.Write(&NbChars, &numNodes, sizeof(numNodes));
-                HASSERT(NbChars == sizeof(numNodes));
-
-                file.Write(&NbChars, m_pNodeIds.data(), (uint32_t)numNodes * sizeof(SMNodeHeader));
-                HASSERT(NbChars == numNodes * sizeof(SMNodeHeader));
-
-                auto sizeHeaders = (uint32_t)GetSizeOfHeaders();
-                file.Write(&NbChars, GetHeaderData(), sizeHeaders * sizeof(Byte));
-                HASSERT(NbChars == sizeHeaders * sizeof(Byte));
+                this->LockAndWait();
                 }
             else
                 {
-                HASSERT(!"Problem creating new group file");
+                wstringstream ss;
+                ss << m_pDataSource + L"p_" << m_pID << L".bin";
+                auto filename = ss.str().c_str();
+
+                if (s_stream_from_disk)
+                    {
+                    this->LoadFromLocal(filename);
+                    }
+                else if (s_stream_from_file_server)
+                    {
+                    this->LoadFromFileSystem(filename);
+                    }
+                else {
+                    this->LoadFromAzure(filename);
+                    }
+                m_pIsLoaded = true;
                 }
+            }
+        assert(this->IsLoaded());
+        }
+    void UnLoad()
+        {
+        m_pIsLoaded = false;
+        m_pIsLoading = false;
+        this->clear();
+        }
+    void SetLoaded()
+        {
+        m_pIsLoaded = true;
+        m_pIsLoading = false;
+        m_pPointBlockCV.notify_all();
+        }
+    void SetID(const uint64_t& pi_ID)
+        {
+        m_pID = pi_ID;
+        }
+    uint64_t GetID() { return m_pID; }
+    void SetDataSource(const WString& pi_DataSource)
+        {
+        m_pDataSource = pi_DataSource;
+        }
+    void SetStore(const scalable_mesh::azure::Storage& pi_Store)
+        {
+        m_stream_store = &pi_Store;
+        }
+    void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize)
+        {
+        HPRECONDITION(pi_CompressedDataSize <= (numeric_limits<uint32_t>::max) ());
 
+        this->resize(pi_UncompressedDataSize);
+
+        // initialize codec
+        HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(pi_CompressedDataSize);
+        const size_t unCompressedDataSize = pCodec->DecompressSubset(pi_CompressedData,
+                                                                     pi_CompressedDataSize,
+                                                                     this->data(),
+                                                                     pi_UncompressedDataSize);
+        assert(unCompressedDataSize != 0 && pi_UncompressedDataSize == unCompressedDataSize);
+        }
+
+private:
+    struct MemoryStruct {
+        bvector<Byte>* memory;
+        size_t         size;
+        };
+    static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
+        {
+        size_t realsize = size * nmemb;
+        struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+
+        assert(mem->memory->capacity() >= mem->memory->size() + realsize);
+
+        //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
+        mem->memory->insert(mem->memory->end(), (Byte*)contents, (Byte*)contents + realsize);
+
+        return realsize;
+        }
+    StatusInt LoadFromLocal(const WString& m_pFilename)
+        {
+        uint32_t uncompressedSize = 0;
+        BeFile file;
+        if (BeFileStatus::Success == OPEN_FILE_SHARE(file, m_pFilename.c_str(), BeFileAccess::Read))
+            {
+
+            size_t fileSize = 0;
+            file.GetSize(fileSize);
+
+            // Read uncompressed size
+            uint32_t bytesRead = 0;
+            auto read_result = file.Read(&uncompressedSize, &bytesRead, sizeof(uint32_t));
+            assert(BeFileStatus::Success == read_result);
+            assert(bytesRead == sizeof(uint32_t));
+
+            // Read compressed points
+            auto compressedSize = fileSize - sizeof(uint32_t);
+            bvector<uint8_t> ptData(compressedSize);
+            read_result = file.Read(&ptData[0], &bytesRead, (uint32_t)compressedSize);
+            assert(bytesRead == compressedSize);
+            assert(BeFileStatus::Success == read_result);
             file.Close();
-            }
 
-        void Load(Byte* pi_pBuffer, const uint32_t& pi_pBufferSize)
+            this->DecompressPoints(&ptData[0], (uint32_t)compressedSize, uncompressedSize);
+            }
+        else
             {
-            uint32_t position = 0;
-            memcpy(&m_pID, pi_pBuffer, sizeof(size_t));
-            position += sizeof(size_t);
-
-            size_t numNodes;
-            memcpy(&numNodes, pi_pBuffer + position, sizeof(numNodes));
-            position += sizeof(numNodes);
-
-            m_pNodeIds.resize(numNodes);
-            memcpy(m_pNodeIds.data(), pi_pBuffer + position, numNodes * sizeof(SMNodeHeader));
-            position += (uint32_t)numNodes * sizeof(SMNodeHeader);
-
-            const auto headerSectionSize = pi_pBufferSize - position;
-            m_pHeaders.resize(headerSectionSize);
-            memcpy(m_pHeaders.data(), pi_pBuffer + position, headerSectionSize);
+            //assert(!"Problem opening block of points for reading");
+            file.Close();
+            return ERROR_FILE_NOT_FOUND;
             }
-
-        SMNodeHeader& GetNodeHeader(const uint32_t& pi_pNodeHeaderID)
+        return SUCCESS;
+        }
+    StatusInt LoadFromAzure(const WString& m_pFilename)
+        {
+        bool blobDownloaded = false;
+        m_stream_store->DownloadBlob(m_pFilename.c_str(), [this, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
             {
-            return *(std::find_if(begin(m_pNodeIds), end(m_pNodeIds), [&](SMNodeHeader& nodeId)
-                {
-                return pi_pNodeHeaderID == nodeId.blockid;
-                }));
+            assert(!buffer.empty());
+
+            uint32_t uncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
+            uint32_t sizeData = (uint32_t)buffer.size() - sizeof(uint32_t);
+            this->DecompressPoints(buffer.data() + sizeof(uint32_t), sizeData, uncompressedSize);
+
+            blobDownloaded = true;
+            });
+        return blobDownloaded ? SUCCESS : ERROR;
+        }
+    void LoadFromFileSystem(const WString& m_pFilename)
+        {
+        CURL *curl_handle;
+        bool retCode = true;
+        struct MemoryStruct chunk;
+        const int maxCountData = 100000;
+        Utf8String blockUrl = "http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/";
+        Utf8String name;
+        BeStringUtilities::WCharToUtf8(name, m_pFilename.c_str());
+        blockUrl += name;
+
+        chunk.memory = this;
+        chunk.memory->reserve(maxCountData);
+        chunk.size = 0;
+        curl_global_init(CURL_GLOBAL_ALL);
+        curl_handle = curl_easy_init();
+
+        // NEEDS_WORK_SM_STREAMING: Remove this when streaming works reasonably well
+        //std::lock_guard<std::mutex> lock(fileMutex);
+        //BeFile file;
+        //if (BeFileStatus::Success == OPEN_FILE(file, L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node", BeFileAccess::ReadWrite) ||
+        //    BeFileStatus::Success == file.Create(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node"))
+        //    {
+        //    file.SetPointer(0, BeFileSeekOrigin::End);
+        //    auto node_location = L"http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/" + block_name + L"\n";
+        //    Utf8String utf8_node_location;
+        //    BeStringUtilities::WCharToUtf8(utf8_node_location, node_location.c_str());
+        //    file.Write(NULL, utf8_node_location.c_str(), (uint32_t)utf8_node_location.length());
+        //    }
+        //else
+        //    {
+        //    assert(!"Problem creating nodes file");
+        //    }
+        //
+        //file.Close();
+
+        curl_easy_setopt(curl_handle, CURLOPT_URL, blockUrl.c_str());
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+        //    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+        /* get it! */
+        CURLcode res = curl_easy_perform(curl_handle);
+        /* check for errors */
+        if (CURLE_OK != res)
+            {
+            retCode = false;
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+            assert(false);
             }
 
-    private:
-        size_t m_pLevel = 0;
-        size_t m_pID = 0;
-        size_t m_pTotalSize;
-        size_t m_pNumLevels = 0;
-        size_t m_pDepth = 0;
-        size_t m_pAncestor = -1;
-        std::vector<SMNodeHeader> m_pNodeIds;
-        std::vector<Byte> m_pHeaders;
-        WString m_pOutputDirPath;
+        curl_easy_cleanup(curl_handle);
+        curl_global_cleanup();
+
+        assert(!chunk.memory->empty() && chunk.memory->size() <= 1000000);
+
+        uint32_t uncompressedSize = reinterpret_cast<uint32_t&>((*chunk.memory)[0]);
+        uint32_t sizeData = (uint32_t)chunk.memory->size() - sizeof(uint32_t);
+
+        this->DecompressPoints(&(*chunk.memory)[0] + sizeof(uint32_t), sizeData, uncompressedSize);
+        }
+
+private:
+    bool m_pIsLoading = false;
+    bool m_pIsLoaded = false;
+    uint64_t m_pID = -1;
+    WString m_pDataSource;
+    const scalable_mesh::azure::Storage* m_stream_store;
+    condition_variable m_pPointBlockCV;
+    mutex m_pPointBlockMutex;
     };
-
 
 
 template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore : public SMPointTileStore<POINT, EXTENT>// , public HFCShareableObject<SMPointTileStore<POINT, EXTENT> >
     {
 
     private:
-        struct MemoryStruct {
-            bvector<Byte>* memory;
-            size_t         size;
-            };
-
         static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
             return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
@@ -321,8 +273,13 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             return static_cast<IDTMFile::NodeID>(neighborID.m_integerID);
             }
 
+        static bool IsValidID(const HPMBlockID& blockID)
+            {
+            return blockID.IsValid() && blockID.m_integerID != IDTMFile::GetNullNodeID();
+            }
+
         bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket,
-                                   HCDPacket& pi_compressedPacket)
+                                   HCDPacket& pi_compressedPacket) const
             {
             HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
 
@@ -337,35 +294,32 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             return true;
             }
 
-        bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket,
-                                  HCDPacket& pi_uncompressedPacket)
+        HFCPtr<SMNodeGroup> FindGroup(HPMBlockID blockID)
             {
-            HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
+            auto nodeIDToFind = this->ConvertBlockID(blockID);
+            for (auto& group : m_nodeHeaderGroups)
+                {
+                if (group->ContainsNode(nodeIDToFind))
+                    {
+                    return group;
+                    }
+                }
 
-            // initialize codec
-            HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(pi_compressedPacket.GetDataSize());
-            pi_uncompressedPacket.SetBufferOwnership(true);
-            pi_uncompressedPacket.SetBuffer(new Byte[pi_uncompressedPacket.GetDataSize()], pi_uncompressedPacket.GetDataSize() * sizeof(Byte));
-            const size_t compressedDataSize = pCodec->DecompressSubset(pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize() * sizeof(Byte), pi_uncompressedPacket.GetBufferAddress(), pi_uncompressedPacket.GetBufferSize() * sizeof(Byte));
-            pi_uncompressedPacket.SetDataSize(compressedDataSize);
-
-            return true;
-            }
-        
-        static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
-            {
-            size_t realsize = size * nmemb;
-            struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-
-            assert(mem->memory->capacity() >= mem->memory->size() + realsize);
-
-            //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
-            mem->memory->insert(mem->memory->end(), (Byte*)contents, (Byte*)contents + realsize);
-
-            return realsize;
+            return nullptr;
             }
 
-        void ReadNodeHeaderFromBinary(SMPointNodeHeader<EXTENT>* header, Byte* headerData, size_t maxCountData) const
+        HFCPtr<SMNodeGroup> GetGroup(HPMBlockID blockID)
+            {
+            auto group = this->FindGroup(blockID);
+            assert(group != nullptr);
+            if (!group->IsLoaded())
+                {
+                group->Load(blockID.m_integerID);
+                }
+            return group;
+            }
+
+        void ReadNodeHeaderFromBinary(SMPointNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const
             {
             size_t dataIndex = 0;
 
@@ -393,6 +347,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             dataIndex += sizeof(header->m_nodeCount);
             memcpy(&header->m_arePoints3d, headerData + dataIndex, sizeof(header->m_arePoints3d));
             dataIndex += sizeof(header->m_arePoints3d);
+            memcpy(&header->m_isTextured, headerData + dataIndex, sizeof(header->m_isTextured));
+            dataIndex += sizeof(header->m_isTextured);
             memcpy(&header->m_nbFaceIndexes, headerData + dataIndex, sizeof(header->m_nbFaceIndexes));
             dataIndex += sizeof(header->m_nbFaceIndexes);
             uint32_t graphID;
@@ -400,108 +356,36 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             header->m_graphID = graphID != IDTMFile::GetNullNodeID() ? HPMBlockID(graphID) : IDTMFile::GetNullNodeID();
             dataIndex += sizeof(graphID);
 
-            double xMin;
-            memcpy(&xMin, headerData + dataIndex, sizeof(double));
-            ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, xMin);
-            dataIndex += sizeof(double);
-            double yMin;
-            memcpy(&yMin, headerData + dataIndex, sizeof(double));
-            ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, yMin);
-            dataIndex += sizeof(double);
-            double zMin;
-            memcpy(&zMin, headerData + dataIndex, sizeof(double));
-            ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, zMin);
-            dataIndex += sizeof(double);
-            double xMax;
-            memcpy(&xMax, headerData + dataIndex, sizeof(double));
-            ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, xMax);
-            dataIndex += sizeof(double);
-            double yMax;
-            memcpy(&yMax, headerData + dataIndex, sizeof(double));
-            ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, yMax);
-            dataIndex += sizeof(double);
-            double zMax;
-            memcpy(&zMax, headerData + dataIndex, sizeof(double));
-            ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, zMax);
-            dataIndex += sizeof(double);
+            memcpy(&header->m_nodeExtent, headerData + dataIndex, 6 * sizeof(double));
+            dataIndex += 6 * sizeof(double);
 
             memcpy(&header->m_contentExtentDefined, headerData + dataIndex, sizeof(header->m_contentExtentDefined));
             dataIndex += sizeof(header->m_contentExtentDefined);
             if (header->m_contentExtentDefined)
                 {
-                double xMin;
-                memcpy(&xMin, headerData + dataIndex, sizeof(double));
-                ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, xMin);
-                dataIndex += sizeof(double);
-                double yMin;
-                memcpy(&yMin, headerData + dataIndex, sizeof(double));
-                ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, yMin);
-                dataIndex += sizeof(double);
-                double zMin;
-                memcpy(&zMin, headerData + dataIndex, sizeof(double));
-                ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, zMin);
-                dataIndex += sizeof(double);
-                double xMax;
-                memcpy(&xMax, headerData + dataIndex, sizeof(double));
-                ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, xMax);
-                dataIndex += sizeof(double);
-                double yMax;
-                memcpy(&yMax, headerData + dataIndex, sizeof(double));
-                ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, yMax);
-                dataIndex += sizeof(double);
-                double zMax;
-                memcpy(&zMax, headerData + dataIndex, sizeof(double));
-                ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, zMax);
-                dataIndex += sizeof(double);
+                memcpy(&header->m_contentExtent, headerData + dataIndex, 6 * sizeof(double));
+                dataIndex += 6 * sizeof(double);
                 }
 
             /* Indices */
-            uint32_t nbIndiceIds;
-            memcpy(&nbIndiceIds, headerData + dataIndex, sizeof(nbIndiceIds));
-            dataIndex += sizeof(nbIndiceIds);
-            header->m_ptsIndiceID.clear();
-            header->m_ptsIndiceID.reserve(nbIndiceIds);
-            for (size_t i = 0; i < nbIndiceIds; i++)
-                {
-                uint32_t indiceId;
-                memcpy(&indiceId, headerData + dataIndex, sizeof(indiceId));
-                dataIndex += sizeof(indiceId);
-                header->m_ptsIndiceID.push_back(indiceId != IDTMFile::GetNullNodeID() ? HPMBlockID(indiceId) : IDTMFile::GetNullNodeID());
-                }
-            
-            /* UVs */
-            uint32_t uvID;
-            memcpy(&uvID, headerData + dataIndex, sizeof(uvID));
-            dataIndex += sizeof(uvID);
-            header->m_uvID = uvID != IDTMFile::GetNullNodeID() ? HPMBlockID(uvID) : 0;
+            uint32_t idx;
+            memcpy(&idx, headerData + dataIndex, sizeof(idx));
+            dataIndex += sizeof(idx);
+            header->m_ptsIndiceID.resize(1);
+            header->m_ptsIndiceID[0] = idx;
 
-            uint32_t nbUVIDs;
-            memcpy(&nbUVIDs, headerData + dataIndex, sizeof(nbUVIDs));
-            dataIndex += sizeof(nbUVIDs);
-            header->m_uvsIndicesID.clear();
-            header->m_uvsIndicesID.reserve(nbUVIDs);
-            for (size_t i = 0; i < nbUVIDs; i++)
+            if (header->m_isTextured)
                 {
-                uint32_t uvIndice;
-                memcpy(&uvIndice, headerData + dataIndex, sizeof(uvIndice));
-                dataIndex += sizeof(uvIndice);
-                header->m_uvsIndicesID.push_back(uvIndice != IDTMFile::GetNullNodeID() ? HPMBlockID(uvIndice) : IDTMFile::GetNullNodeID());
+                header->m_textureID.resize(1);
+                header->m_textureID[0] = IDTMFile::GetNullNodeID();
+                header->m_ptsIndiceID.resize(2);
+                header->m_ptsIndiceID[1] = (int)idx;
+                header->m_ptsIndiceID[0] = SQLiteNodeHeader::NO_NODEID;
+                header->m_nbTextures = 1;
+                header->m_uvsIndicesID.resize(1);
+                header->m_uvsIndicesID[0] = idx;
                 }
-            
-            /* Textures */
-            uint32_t nbTextureIDs;
-            memcpy(&nbTextureIDs, headerData + dataIndex, sizeof(nbTextureIDs));
-            dataIndex += sizeof(nbTextureIDs);
-            header->m_textureID.clear();
-            header->m_textureID.reserve(nbTextureIDs);
-            for (size_t i = 0; i < nbTextureIDs; i++)
-                {
-                uint32_t textureID;
-                memcpy(&textureID, headerData + dataIndex, sizeof(textureID));
-                dataIndex += sizeof(textureID);
-                header->m_textureID.push_back(textureID != IDTMFile::GetNullNodeID() ? HPMBlockID(textureID) : IDTMFile::GetNullNodeID());
-                }
-            
+
             /* Mesh components */
             size_t numberOfMeshComponents;
             memcpy(&numberOfMeshComponents, headerData + dataIndex, sizeof(numberOfMeshComponents));
@@ -515,7 +399,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 dataIndex += sizeof(component);
                 header->m_meshComponents[componentIdx] = component;
                 }
-            
+
             /* Clips */
             uint32_t nbClipSetsIDs;
             memcpy(&nbClipSetsIDs, headerData + dataIndex, sizeof(nbClipSetsIDs));
@@ -529,7 +413,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 dataIndex += sizeof(clip);
                 header->m_clipSetsID.push_back(clip != IDTMFile::GetNullNodeID() ? HPMBlockID(clip) : IDTMFile::GetNullNodeID());
                 }
-            
+
             /* Children */
             size_t nbChildren;
             memcpy(&nbChildren, headerData + dataIndex, sizeof(nbChildren));
@@ -544,7 +428,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 dataIndex += sizeof(childID);
                 header->m_apSubNodeID.push_back(childID != IDTMFile::GetNullNodeID() ? HPMBlockID(childID) : IDTMFile::GetNullNodeID());
                 }
-            
+
             /* Neighbors */
             for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
                 {
@@ -561,7 +445,55 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     header->m_apNeighborNodeID[neighborPosInd].push_back(neighborId != IDTMFile::GetNullNodeID() ? HPMBlockID(neighborId) : IDTMFile::GetNullNodeID());
                     }
                 }
+            assert(dataIndex == maxCountData);
+            }
 
+        void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
+            {
+            wstringstream ss;
+            ss << m_pathToHeaders + L"n_" << ConvertBlockID(blockID) << L".bin";
+            auto filename = ss.str();
+
+            if (s_stream_from_disk)
+                {
+                BeFile file;
+                if (BeFileStatus::Success != OPEN_FILE(file, filename.c_str(), BeFileAccess::Read))
+                    {
+                    assert(false); // node header file must exist
+                    return;
+                    }
+
+                file.GetSize(po_pDataSize);
+                po_pBinaryData.reset(new uint8_t[po_pDataSize]);
+
+                uint32_t bytes_read = 0;
+                file.Read(po_pBinaryData.get(), &bytes_read, po_pDataSize);
+                assert(po_pDataSize == bytes_read);
+                }
+            else if (s_stream_from_file_server)
+                {
+                // NEEDS_WORK_SM_STREAMING: deactivate streaming from file server for now.
+                assert(!"Streaming from file server is deactivated for the moment...");
+                //ss << L".bin";
+                //auto blob_name = ss.str();
+                //bvector<Byte> buffer;
+                //DownloadBlockFromFileServer(blob_name.c_str(), &buffer, 100000);
+                //assert(!buffer.empty() && buffer.size() <= 100000);
+                //Json::Reader reader;
+                //reader.parse(reinterpret_cast<char*>(&buffer.front()), reinterpret_cast<char*>(&buffer.back()), result);
+                }
+            else {
+                auto blob_name = filename.c_str();
+                m_stream_store.DownloadBlob(blob_name, [&po_pBinaryData, &po_pDataSize](scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                    {
+                    assert(!buffer.empty());
+                    po_pDataSize = buffer.size();
+                    po_pBinaryData.reset(new uint8_t[po_pDataSize]);
+                    memmove(po_pBinaryData.get(), buffer.data(), po_pDataSize);
+                    //Json::Reader reader;
+                    //reader.parse(reinterpret_cast<char*>(&buffer.front()), reinterpret_cast<char*>(&buffer.back()), result);
+                    });
+                }
             }
 
         void ReadNodeHeaderFromJSON(SMPointNodeHeader<EXTENT>* header, const Json::Value& nodeHeader) const
@@ -594,19 +526,21 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             header->m_parentNodeID = parentNodeID != IDTMFile::GetNullNodeID() ? HPMBlockID(parentNodeID) : IDTMFile::GetNullNodeID();
             header->m_numberOfSubNodesOnSplit = nodeHeader["nbChildren"].asUInt();
             header->m_apSubNodeID.resize(header->m_numberOfSubNodesOnSplit);
-            header->m_IsLeaf = nodeHeader["isLeaf"].asBool();
+            //header->m_IsLeaf = nodeHeader["isLeaf"].asBool();
             auto& children = nodeHeader["children"];
             assert(children.isArray());
-            if (!header->m_IsLeaf && children.size() > 0)
+            if (/*!header->m_IsLeaf &&*/ children.size() > 0)
                 {
                 for (auto& child : children)
                     {
                     auto childInd = child["index"].asUInt();
                     auto nodeId = child["id"].asUInt();
-                    header->m_apSubNodeID[childInd] = HPMBlockID(nodeId);
+                    if (nodeId != IDTMFile::GetNullNodeID()) header->m_apSubNodeID[childInd] = HPMBlockID(nodeId);
                     }
-                header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
                 }
+            header->m_IsLeaf = header->m_apSubNodeID.size() == 0 || (!header->m_apSubNodeID[0].IsValid());
+            header->m_IsBranched = !header->m_IsLeaf && (header->m_apSubNodeID.size() > 1 && header->m_apSubNodeID[1].IsValid());
+            if (!header->m_IsLeaf && !header->m_IsBranched) header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
 
             auto& neighbors = nodeHeader["neighbors"];
             assert(neighbors.isArray());
@@ -621,7 +555,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     }
                 }
 
-            header->m_IsBranched = nodeHeader["isBranched"].asBool();
+            //header->m_IsBranched = nodeHeader["isBranched"].asBool();
             header->m_balanced = nodeHeader["isBalanced"].asBool();
             header->m_SplitTreshold = nodeHeader["splitThreshold"].asUInt();
             header->m_totalCountDefined = true;
@@ -631,56 +565,41 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
             header->m_graphID = nodeHeader["graphID"].asUInt();
             header->m_uvID = nodeHeader["uvID"].asUInt();
+            header->m_isTextured = nodeHeader["areTextured"].asBool();
 
-            auto& textures = nodeHeader["textureIDs"];
-            assert(textures.isArray());
-            header->m_textureID.resize(textures.size());
-            if (textures.size() > 0)
-                {
-                for (size_t indiceID = 0; indiceID < (size_t)textures.size(); indiceID++)
-                    {
-                    auto textureID = textures[(Json::ArrayIndex)indiceID].asUInt();
-                    header->m_textureID[indiceID] = textureID != IDTMFile::GetNullNodeID() ? HPMBlockID(textureID) : IDTMFile::GetNullNodeID();
-                    }
-                }
-            else
+            if (header->m_isTextured)
                 {
                 header->m_textureID.resize(1);
-                header->m_textureID[0] = HPMBlockID();
-                }
+                header->m_textureID[0] = HPMBlockID(header->m_uvID);
 
-            auto& indices = nodeHeader["indiceID"];
-            assert(indices.isArray());
-            header->m_ptsIndiceID.resize(indices.size());
-            if (indices.size() > 0)
-                {
-                for (size_t indiceID = 0; indiceID < (size_t)indices.size(); indiceID++)
+                auto& indices = nodeHeader["indiceID"];
+                assert(indices.isArray());
+                header->m_ptsIndiceID.resize(indices.size());
+                if (indices.size() > 0)
                     {
-                    auto id = indices[(Json::ArrayIndex)indiceID].asUInt();
-                    header->m_ptsIndiceID[indiceID] = id != IDTMFile::GetNullNodeID() ? HPMBlockID(id) : IDTMFile::GetNullNodeID();
+                    for (size_t indiceID = 0; indiceID < (size_t)indices.size(); indiceID++)
+                        {
+                        auto id = indices[(Json::ArrayIndex)indiceID].asUInt();
+                        header->m_ptsIndiceID[indiceID] = id != IDTMFile::GetNullNodeID() ? HPMBlockID(id) : IDTMFile::GetNullNodeID();
+                        }
                     }
-                }
-            else
-                {
-                header->m_ptsIndiceID.resize(1);
-                header->m_ptsIndiceID[0] = HPMBlockID();
-                }
 
-            auto& uvIndiceIDs = nodeHeader["uvIndiceIDs"];
-            assert(uvIndiceIDs.isArray());
-            header->m_uvsIndicesID.resize(uvIndiceIDs.size());
-            if (uvIndiceIDs.size() > 0)
-                {
-                for (size_t indiceID = 0; indiceID < (size_t)uvIndiceIDs.size(); indiceID++)
+                auto& uvIndiceIDs = nodeHeader["uvIndiceIDs"];
+                assert(uvIndiceIDs.isArray());
+                header->m_uvsIndicesID.resize(uvIndiceIDs.size());
+                if (uvIndiceIDs.size() > 0)
                     {
-                    auto uvIndiceID = uvIndiceIDs[(Json::ArrayIndex)indiceID].asUInt();
-                    header->m_uvsIndicesID[indiceID] = uvIndiceID != IDTMFile::GetNullNodeID() ? HPMBlockID(uvIndiceID) : IDTMFile::GetNullNodeID();
+                    for (size_t indiceID = 0; indiceID < (size_t)uvIndiceIDs.size(); indiceID++)
+                        {
+                        auto uvIndiceID = uvIndiceIDs[(Json::ArrayIndex)indiceID].asUInt();
+                        header->m_uvsIndicesID[indiceID] = uvIndiceID != IDTMFile::GetNullNodeID() ? HPMBlockID(uvIndiceID) : IDTMFile::GetNullNodeID();
+                        }
                     }
-                }
-            else
-                {
-                header->m_uvsIndicesID.resize(1);
-                header->m_uvsIndicesID[0] = HPMBlockID();
+                else
+                    {
+                    header->m_uvsIndicesID.resize(1);
+                    header->m_uvsIndicesID[0] = HPMBlockID();
+                    }
                 }
 
 
@@ -705,104 +624,104 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 {
                 for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = clipSets[(Json::ArrayIndex)i].asInt();
                 }
+
             }
-        bool DownloadBlockFromFileServer(const std::wstring& block_name, bvector<Byte>* pointData, size_t maxCountData) const
+
+        Json::Value GetNodeHeaderJSON(HPMBlockID blockID)
             {
-            CURL *curl_handle;
-            CURLcode res;
-            bool retCode = true;
-
-            struct MemoryStruct chunk;
-
-            pointData->reserve(maxCountData);
-            chunk.memory = pointData;
-            chunk.size = 0;
-
-            curl_global_init(CURL_GLOBAL_ALL);
-
-            curl_handle = curl_easy_init();
-
-            Utf8String blockUrl = "http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/";
-            Utf8String name;
-            BeStringUtilities::WCharToUtf8(name, block_name.c_str());
-            blockUrl += name;
-
-            
-            // NEEDS_WORK_SM_STREAMING: Remove this when streaming works reasonably well
-            //std::lock_guard<std::mutex> lock(fileMutex);
-            //BeFile file;
-            //if (BeFileStatus::Success == file.Open(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node", BeFileAccess::ReadWrite, BeFileSharing::None) ||
-            //    BeFileStatus::Success == file.Create(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node"))
-            //    {
-            //    file.SetPointer(0, BeFileSeekOrigin::End);
-            //    auto node_location = L"http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/" + block_name + L"\n";
-            //    Utf8String utf8_node_location;
-            //    BeStringUtilities::WCharToUtf8(utf8_node_location, node_location.c_str());
-            //    file.Write(NULL, utf8_node_location.c_str(), (uint32_t)utf8_node_location.length());
-            //    }
-            //else
-            //    {
-            //    assert(!"Problem creating nodes file");
-            //    }
-            //
-            //file.Close();
-            
-            curl_easy_setopt(curl_handle, CURLOPT_URL, blockUrl.c_str());
-
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-
-            curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-
-            //    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-
-            /* get it! */
-            res = curl_easy_perform(curl_handle);
-
-            /* check for errors */
-            if (res != CURLE_OK)
-                {
-                retCode = false;
-                fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-                }
-
-            /* cleanup curl stuff */
-            curl_easy_cleanup(curl_handle);
-
-            /* we're done with libcurl, so clean it up */
-            curl_global_cleanup();
-            return retCode;
+            uint64_t headerSize = 0;
+            std::unique_ptr<Byte> headerData = nullptr;
+            this->GetNodeHeaderBinary(blockID, headerData, headerSize);
+            Json::Value result;
+            Json::Reader().parse(reinterpret_cast<char*>(headerData.get()), reinterpret_cast<char*>(headerData.get() + headerSize), result);
+            return result;
             }
 
+        PointBlock& GetBlock(HPMBlockID blockID) const
+            {
+            // std::map [] operator is not thread safe while inserting new elements
+            m_pointCacheLock.lock();
+            PointBlock& block = m_pointCache[blockID.m_integerID];
+            m_pointCacheLock.unlock();
+            assert((block.GetID() != uint64_t(-1) ? block.GetID() == blockID.m_integerID : true));
+            if (!block.IsLoaded())
+                {
+                block.SetID(blockID.m_integerID);
+                block.SetDataSource(m_pathToPoints);
+                block.SetStore(m_stream_store);
+                block.Load();
+                }
+            assert(block.GetID() == blockID.m_integerID);
+            assert(block.IsLoaded() && !block.empty());
+            return block;
+            }
 
     public:
-        // Constructor / Destroyer
-
-        SMStreamingPointTaggedTileStore(WString& path, WString grouped_headers_path, bool compress)
-            :m_path(path),
-            m_path_to_grouped_headers(grouped_headers_path),
-            m_node_id(0),
-            m_pCodec(new HCDCodecZlib()),
-            m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==")//,
-           // m_stream_store(m_storage_connection_string, L"scalablemeshtest")
+        enum SMStreamingDataType
             {
+            POINTS,
+            INDICES,
+            UVS,
+            UVINDICES
+            };
+
+        // Constructor / Destructor
+
+        SMStreamingPointTaggedTileStore(const WString& path, SMStreamingDataType type, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
+            :m_rootDirectory(path),
+            m_pathToPoints(path),
+            m_pathToHeaders(headers_path),
+            m_use_node_header_grouping(areNodeHeadersGrouped),
+            //m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;BlobEndpoint=https://scalablemesh.azureedge.net;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
+            m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
+            m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")
+            {
+            bool haveHeaders = false;
+            switch (type)
+                {
+                case SMStreamingDataType::POINTS:
+                    m_pathToPoints += L"points/";
+                    haveHeaders = true; // only points can carry node header information
+                    break;
+                case SMStreamingDataType::INDICES:
+                    m_pathToPoints += L"indices/";
+                    break;
+                case SMStreamingDataType::UVS:
+                    m_pathToPoints += L"uvs/";
+                    break;
+                case SMStreamingDataType::UVINDICES:
+                    m_pathToPoints += L"uvindices/";
+                    break;
+                default:
+                    assert(!"Unkown data type for streaming");
+                }
+            if (haveHeaders && m_pathToHeaders.empty())
+                {
+                // Set default path to headers relative to root directory
+                m_pathToHeaders = m_rootDirectory + L"headers/";
+                }
+
+            // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
             if (s_stream_from_disk)
                 {
                 // Create base directory structure to store information if not already done
                 // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-                if (0 == CreateDirectoryW(m_path.c_str(), NULL))
+                if (0 == CreateDirectoryW(m_rootDirectory.c_str(), NULL))
                     {
                     assert(ERROR_PATH_NOT_FOUND != GetLastError());
                     }
 
-                WString pathToNodes(m_path + L"nodes/");
-                if (0 == CreateDirectoryW(pathToNodes.c_str(), NULL))
+                if (0 == CreateDirectoryW(m_pathToPoints.c_str(), NULL))
                     {
                     assert(ERROR_PATH_NOT_FOUND != GetLastError());
                     }
-                WString pathToPoints(m_path + L"points/");
-                if (0 == CreateDirectoryW(pathToPoints.c_str(), NULL))
+
+                if (haveHeaders)
                     {
-                    assert(ERROR_PATH_NOT_FOUND != GetLastError());
+                    if (0 == CreateDirectoryW(m_pathToHeaders.c_str(), NULL))
+                        {
+                        assert(ERROR_PATH_NOT_FOUND != GetLastError());
+                        }
                     }
                 }
             else
@@ -816,41 +735,40 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             }
 
         virtual bool HasSpatialReferenceSystem()
-        {
-        // NEEDS_WORK_SM_STREAMING : Add check to spatial reference system
-        HASSERT(!"TODO!");
-        return false;
-        }
+            {
+            // NEEDS_WORK_SM_STREAMING : Add check to spatial reference system
+            assert(!"TODO!");
+            return false;
+            }
 
 
         // New function
         virtual std::string GetSpatialReferenceSystem()
-        {
-        // NEEDS_WORK_SM_STREAMING : Add check to spatial reference system
-        HASSERT(!"TODO!");
-        return string("");
-        }
+            {
+            // NEEDS_WORK_SM_STREAMING : Add check to spatial reference system
+            assert(!"TODO!");
+            return string("");
+            }
 
         // ITileStore interface
         virtual void Close()
-        {
-        }
+            {
+            }
 
         virtual bool StoreMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
             {
-            //SMPointTaggedTileStore::StoreMasterHeader(indexHeader, headerSize);
             if (indexHeader != NULL && indexHeader->m_rootNodeBlockID.IsValid())
                 {
-                m_masterHeader["balanced"] = indexHeader->m_balanced;
-                m_masterHeader["depth"] = (uint32_t)indexHeader->m_depth;
-                m_masterHeader["rootNodeBlockID"] = ConvertBlockID(indexHeader->m_rootNodeBlockID);
-                m_masterHeader["splitThreshold"] = indexHeader->m_SplitTreshold;
-                //HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
-                //m_masterHeader["singleFile"] = indexHeader->m_singleFile;
-                m_masterHeader["singleFile"] = false;
+                Json::Value masterHeader;
+                masterHeader["balanced"] = indexHeader->m_balanced;
+                masterHeader["depth"] = (uint32_t)indexHeader->m_depth;
+                masterHeader["rootNodeBlockID"] = ConvertBlockID(indexHeader->m_rootNodeBlockID);
+                masterHeader["splitThreshold"] = indexHeader->m_SplitTreshold;
+                masterHeader["singleFile"] = false;
+                masterHeader["isTerrain"] = true;
 
                 // Write to file
-                auto filename = (m_path + L"MasterHeader.sscm").c_str();
+                auto filename = (m_rootDirectory + L"MasterHeader.sscm").c_str();
                 BeFile file;
                 uint64_t buffer_size;
                 auto jsonWriter = [&file, &indexHeader, &buffer_size](BeFile& file, Json::Value& object) {
@@ -860,17 +778,17 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     buffer_size = buffer.size();
                     file.Write(NULL, buffer.c_str(), buffer_size);
                     };
-                if (BeFileStatus::Success == OPEN_FILE(file, filename, BeFileAccess::Write) )//file.Open(filename, BeFileAccess::Write, BeFileSharing::None))
+                if (BeFileStatus::Success == OPEN_FILE(file, filename, BeFileAccess::Write))//file.Open(filename, BeFileAccess::Write, BeFileSharing::None))
                     {
-                    jsonWriter(file, m_masterHeader);
+                    jsonWriter(file, masterHeader);
                     }
                 else if (BeFileStatus::Success == file.Create(filename))
                     {
-                    jsonWriter(file, m_masterHeader);
+                    jsonWriter(file, masterHeader);
                     }
                 else
                     {
-                    HASSERT(!"Problem creating master header file");
+                    assert(!"Problem creating master header file");
                     }
                 file.Close();
                 }
@@ -884,12 +802,12 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (indexHeader != NULL)
                 {
 
-                if (s_stream_from_grouped_store)
+                if (m_use_node_header_grouping || s_stream_from_grouped_store)
                     {
                     wstringstream ss;
-                    ss << m_path_to_grouped_headers << L"MasterHeader.bin";
+                    ss << m_rootDirectory + L"MasterHeaderWithGroups.bin";
                     auto filename = ss.str();
-                    if (m_groupMasterHeader.empty())
+                    if (m_nodeHeaderGroups.empty())
                         {
                         char* masterHeaderBuffer = nullptr;
                         if (s_stream_from_disk)
@@ -908,9 +826,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
                             file.Close();
                             }
-                        else 
+                        else
                             {
-                           /* m_stream_store.DownloadBlob(filename.c_str(), [indexHeader, &headerSize, &masterHeaderBuffer](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                            m_stream_store.DownloadBlob(filename.c_str(), [indexHeader, &headerSize, &masterHeaderBuffer](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
                                 {
                                 if (buffer.empty())
                                     {
@@ -921,48 +839,65 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
                                 masterHeaderBuffer = new char[headerSize];
                                 memcpy(masterHeaderBuffer, buffer.data(), headerSize);
-                                });*/
+                                });
                             }
 
                         uint64_t position = 0;
 
-                        uint64_t sizeOfOldMasterHeaderPart;
+                        uint32_t sizeOfOldMasterHeaderPart;
                         memcpy(&sizeOfOldMasterHeaderPart, masterHeaderBuffer + position, sizeof(sizeOfOldMasterHeaderPart));
                         position += sizeof(sizeOfOldMasterHeaderPart);
+                        assert(sizeOfOldMasterHeaderPart == sizeof(SQLiteIndexHeader));
 
-                        { // NEEDS_WORK_SM : The old Master Header is saved in JSON format. Should be binary.
-                        Json::Reader reader;
-                        Json::Value masterHeader;
-                        reader.parse(masterHeaderBuffer + position, masterHeaderBuffer + sizeOfOldMasterHeaderPart, masterHeader);
-                        position += sizeOfOldMasterHeaderPart;
+                        SQLiteIndexHeader oldMasterHeader;
+                        memcpy(&oldMasterHeader, masterHeaderBuffer + position, sizeof(SQLiteIndexHeader));
+                        position += sizeof(SQLiteIndexHeader);
+                        indexHeader->m_SplitTreshold = oldMasterHeader.m_SplitTreshold;
+                        indexHeader->m_balanced = oldMasterHeader.m_balanced;
+                        indexHeader->m_depth = oldMasterHeader.m_depth;
+                        indexHeader->m_isTerrain = oldMasterHeader.m_isTerrain;
+                        indexHeader->m_singleFile = oldMasterHeader.m_singleFile;
+                        assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
 
-                        indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
-                        indexHeader->m_balanced = masterHeader["balanced"].asBool();
-                        indexHeader->m_depth = masterHeader["depth"].asUInt();
-                        indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
-                        HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
-
-                        auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
+                        auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
                         indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
-                        }
+
+                        memcpy(&s_is_virtual_grouping, masterHeaderBuffer + position, sizeof(s_is_virtual_grouping));
+                        position += sizeof(s_is_virtual_grouping);
 
                         // Parse rest of file -- group information
                         while (position < headerSize)
                             {
-                            uint64_t group_id;
+                            size_t group_id;
                             memcpy(&group_id, masterHeaderBuffer + position, sizeof(group_id));
                             position += sizeof(group_id);
 
-                            size_t group_size;
-                            memcpy(&group_size, masterHeaderBuffer + position, sizeof(size_t));
+                            uint64_t group_totalSizeOfHeaders(0);
+                            if (s_is_virtual_grouping)
+                                {
+                                memcpy(&group_totalSizeOfHeaders, masterHeaderBuffer + position, sizeof(group_totalSizeOfHeaders));
+                                position += sizeof(group_totalSizeOfHeaders);
+                                }
+
+                            size_t group_numNodes;
+                            memcpy(&group_numNodes, masterHeaderBuffer + position, sizeof(size_t));
                             position += sizeof(size_t);
                             //assert(group_size <= s_max_number_nodes_in_group);
 
-                            m_groupMasterHeader.push_back(SMGroupInfo{ group_id, std::vector<uint64_t>(group_size) });
+                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(group_id, group_numNodes, group_totalSizeOfHeaders));
+                            // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
+                            group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_", m_stream_store);
+                            m_nodeHeaderGroups.push_back(group);
 
-                            auto& group = m_groupMasterHeader.back();
-                            memcpy(group.GetData(), masterHeaderBuffer + position, group_size*sizeof(uint64_t));
-                            position += group_size*sizeof(uint64_t);
+                            vector<uint64_t> nodeIds(group_numNodes);
+                            memcpy(nodeIds.data(), masterHeaderBuffer + position, group_numNodes*sizeof(uint64_t));
+                            position += group_numNodes*sizeof(uint64_t);
+
+                            group->GetHeader()->resize(group_numNodes);
+                            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
+                                {
+                                return SMNodeHeader{ nodeId, 0, 0 };
+                                });
                             }
 
                         delete[] masterHeaderBuffer;
@@ -973,9 +908,12 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     {
                     // For this particular implementation the header size is unused ... The indexHeader is unique and of known size
                     BeFile file;
-                    auto filename = (m_path + L"MasterHeader.sscm").c_str();
+                    auto filename = (m_rootDirectory + L"MasterHeader.sscm").c_str();
                     if (BeFileStatus::Success != OPEN_FILE(file, filename, BeFileAccess::Read))//file.Open(filename, BeFileAccess::Read, BeFileSharing::None))
+                        {
+                        //assert(!"Local master header could not be found"); // possible during SM generation
                         return 0;
+                        }
                     char inBuffer[100000];
                     uint32_t bytes_read = 0;
                     file.Read(inBuffer, &bytes_read, (uint32_t)headerSize);
@@ -987,22 +925,19 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
                     indexHeader->m_balanced = masterHeader["balanced"].asBool();
                     indexHeader->m_depth = masterHeader["depth"].asUInt();
-                indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
-                HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
+                    indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
+                    indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
+                    assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
 
                     auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
                     indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
                     file.Close();
-
-                    // Save in local stm file
-                    //if (m_DTMFile != NULL)
-                    //	return SMPointTaggedTileStore::StoreMasterHeader(indexHeader, headerSize);
                     }
                 else {
-                    auto blob_name = m_path + L"MasterHeader.sscm";
-                   /* m_stream_store.DownloadBlob(blob_name.c_str(), [indexHeader, &headerSize](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                    auto blob_name = m_rootDirectory + L"MasterHeader.sscm";
+                    m_stream_store.DownloadBlob(blob_name.c_str(), [indexHeader, &headerSize](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
                         {
-                        if (buffer.empty()) 
+                        if (buffer.empty())
                             {
                             headerSize = 0;
                             return;
@@ -1015,11 +950,12 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
                         indexHeader->m_balanced = masterHeader["balanced"].asBool();
                         indexHeader->m_depth = masterHeader["depth"].asUInt();
+                        indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
 
                         auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
                         indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
-                        });*/
+                        });
 
                     }
                 return headerSize;
@@ -1041,12 +977,11 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             auto blockIDConvert = ConvertBlockID(blockID);
             if (NULL != DataTypeArray && countData > 0)
                 {
-                WString pathToPoints(m_path + L"points/");
                 wstringstream ss;
-                ss << pathToPoints << L"p_" << blockIDConvert << L".bin";
+                ss << m_pathToPoints + L"p_" << blockIDConvert << L".bin";
                 auto filename = ss.str();
                 BeFile file;
-                auto fileOpened = OPEN_FILE(file, filename.c_str(), BeFileAccess::Write);//file.Open(filename.c_str(), BeFileAccess::Write, BeFileSharing::None);
+                auto fileOpened = OPEN_FILE(file, filename.c_str(), BeFileAccess::Write);
                 if (BeFileStatus::Success != fileOpened)
                     {
                     auto fileCreated = file.Create(filename.c_str());
@@ -1066,12 +1001,12 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 Byte* data = new Byte[compressedPacket.GetDataSize() + sizeof(uint32_t)];
                 auto UncompressedSize = (uint32_t)uncompressedPacket.GetDataSize();
                 reinterpret_cast<uint32_t&>(*data) = UncompressedSize;
-                if (m_countInfo.count(blockIDConvert) > 0)
+                if (m_pointCache.count(blockIDConvert) > 0)
                     {
                     // must update data count
-                    auto& points = this->m_countInfo[blockIDConvert];
+                    auto& points = this->m_pointCache[blockIDConvert];
                     points.resize(UncompressedSize);
-                    memcpy(points.data(), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
+                    memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
                     }
 
                 memcpy(data + sizeof(uint32_t), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
@@ -1083,90 +1018,125 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             return blockID;
             }
 
-     virtual size_t GetBlockDataCount(HPMBlockID blockID) const
+        virtual size_t GetBlockDataCount(HPMBlockID blockID) const
             {
-            //if (m_DTMFile != NULL) return SMPointTaggedTileStore::GetBlockDataCount(blockID);
-            auto blockIDConvert = ConvertBlockID(blockID);
-            if (m_countInfo.count(blockIDConvert) > 0)
-                {
-                // Already have data count...
-                return m_countInfo[blockIDConvert].size() / sizeof(POINT);
-                }
+            if (IsValidID(blockID))
+                return this->GetBlock(blockID).size() / sizeof(POINT);
+            return 0;
+            }
 
-            WString pathToPoints((s_stream_from_disk ? m_path + L"points\\" : m_path));
-            wstringstream ss;
-            ss << pathToPoints << L"p_" << blockIDConvert << L".bin";
-            uint32_t UncompressedSize = 0;
-            auto filename = ss.str();
-            if (s_stream_from_disk)
-                {
-
-                BeFile file;
-                if (BeFileStatus::Success == OPEN_FILE_SHARE(file, filename.c_str(), BeFileAccess::Read))//file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::Read))
-                    {
-                    auto DataTypeArray = new Byte[sizeof(uint32_t)];
-                    uint32_t bytesRead = 0;
-                    auto read_result = file.Read((Byte*)DataTypeArray, &bytesRead, sizeof(uint32_t));
-                    HASSERT(BeFileStatus::Success == read_result);
-                    HASSERT(bytesRead <= sizeof(uint32_t));
-                    UncompressedSize = reinterpret_cast<uint32_t&>(*DataTypeArray);
-                    delete[] DataTypeArray;
-
-                    DataTypeArray = new Byte[UncompressedSize];
-                    read_result = file.Read((Byte*)DataTypeArray, &bytesRead, UncompressedSize);
-                    HASSERT(BeFileStatus::Success == read_result);
-                    HASSERT(bytesRead <= UncompressedSize);
-                    auto& points = this->m_countInfo[blockIDConvert];
-                    points.resize(UncompressedSize);
-                    memcpy(points.data(), DataTypeArray, UncompressedSize);
-                    file.Close();
-                    delete[] DataTypeArray;
-                    }
-               }
-            else if (s_stream_from_file_server)
-                {
-                bvector<Byte> buffer;
-                DownloadBlockFromFileServer(filename.c_str(), &buffer, 1000000);
-                if (!buffer.empty())
-                    {
-                    UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-                    }
-                }
-            else {
-                /*bool blobDownloaded = false;
-                m_stream_store.DownloadBlobRange(filename.c_str(), 0, sizeof(uint32_t), [&UncompressedSize, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
-                    {
-                    if (!buffer.empty())
-                        {
-                        UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-                        blobDownloaded = true;
-                        }
-                    });
-                //assert(fileRead == blobDownloaded);
-                //assert(UncompressedSize == localUncompressedSize);*/
-                bool blobDownloaded = false;
-                /*m_stream_store.DownloadBlob(filename.c_str(), [this, &blobDownloaded, &UncompressedSize, &blockIDConvert](scalable_mesh::azure::Storage::point_buffer_type& buffer)
-                    {
-                    UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-
-                    auto& points = this->m_countInfo[blockIDConvert];
-                    points.resize(UncompressedSize);
-                    memcpy(points.data(), buffer.data() + sizeof(uint32_t), buffer.size() - sizeof(uint32_t));
-                    blobDownloaded = true;
-                    });*/
-                assert(blobDownloaded);
-                //delete[] dataArrayTmp;
-                }
-            return UncompressedSize / sizeof(POINT);
-            //assert(false);
-            //return 0;
-         }
-
-
-        virtual size_t StoreHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+        void SerializeHeaderToBinary(const SMPointNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const
             {
-            Json::Value block;
+            assert(po_pBinaryData == nullptr && po_pDataSize == 0);
 
+            po_pBinaryData.reset(new Byte[3000]);
+
+            const auto filtered = pi_pHeader->m_filtered;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &filtered, sizeof(filtered));
+            po_pDataSize += sizeof(filtered);
+            const auto parentBlockID = pi_pHeader->m_parentNodeID.IsValid() ? ConvertBlockID(pi_pHeader->m_parentNodeID) : IDTMFile::GetNullNodeID();
+            memcpy(po_pBinaryData.get() + po_pDataSize, &parentBlockID, sizeof(parentBlockID));
+            po_pDataSize += sizeof(parentBlockID);
+            const auto subNodeNoSplitID = pi_pHeader->m_SubNodeNoSplitID.IsValid() ? ConvertBlockID(pi_pHeader->m_SubNodeNoSplitID) : IDTMFile::GetNullNodeID();
+            memcpy(po_pBinaryData.get() + po_pDataSize, &subNodeNoSplitID, sizeof(subNodeNoSplitID));
+            po_pDataSize += sizeof(subNodeNoSplitID);
+            const auto level = pi_pHeader->m_level;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &level, sizeof(level));
+            po_pDataSize += sizeof(level);
+            const auto isBranched = pi_pHeader->m_IsBranched;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &isBranched, sizeof(isBranched));
+            po_pDataSize += sizeof(isBranched);
+            const auto isLeaf = pi_pHeader->m_IsLeaf;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &isLeaf, sizeof(isLeaf));
+            po_pDataSize += sizeof(isLeaf);
+            const auto splitThreshold = pi_pHeader->m_SplitTreshold;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &splitThreshold, sizeof(splitThreshold));
+            po_pDataSize += sizeof(splitThreshold);
+            const auto totalCount = pi_pHeader->m_totalCount;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &totalCount, sizeof(totalCount));
+            po_pDataSize += sizeof(totalCount);
+            const auto nodeCount = pi_pHeader->m_nodeCount;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &nodeCount, sizeof(nodeCount));
+            po_pDataSize += sizeof(nodeCount);
+            const auto arePoints3d = pi_pHeader->m_arePoints3d;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &arePoints3d, sizeof(arePoints3d));
+            po_pDataSize += sizeof(arePoints3d);
+            const auto isTextured = pi_pHeader->m_isTextured;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &isTextured, sizeof(isTextured));
+            po_pDataSize += sizeof(isTextured);
+            const auto nbFaceIndexes = pi_pHeader->m_nbFaceIndexes;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &nbFaceIndexes, sizeof(nbFaceIndexes));
+            po_pDataSize += sizeof(nbFaceIndexes);
+            const auto graphID = pi_pHeader->m_graphID.IsValid() ? ConvertBlockID(pi_pHeader->m_graphID) : IDTMFile::GetNullNodeID();
+            memcpy(po_pBinaryData.get() + po_pDataSize, &graphID, sizeof(graphID));
+            po_pDataSize += sizeof(graphID);
+
+            memcpy(po_pBinaryData.get() + po_pDataSize, &pi_pHeader->m_nodeExtent, 6 * sizeof(double));
+            po_pDataSize += 6 * sizeof(double);
+
+            const auto contentExtentDefined = pi_pHeader->m_contentExtentDefined;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &contentExtentDefined, sizeof(contentExtentDefined));
+            po_pDataSize += sizeof(contentExtentDefined);
+            if (contentExtentDefined)
+                {
+                memcpy(po_pBinaryData.get() + po_pDataSize, &pi_pHeader->m_contentExtent, 6 * sizeof(double));
+                po_pDataSize += 6 * sizeof(double);
+                }
+
+            /* Indice IDs */
+            const auto idx = pi_pHeader->m_ptsIndiceID[0].IsValid() ? ConvertBlockID(pi_pHeader->m_ptsIndiceID[0]) : IDTMFile::GetNullNodeID();
+            memcpy(po_pBinaryData.get() + po_pDataSize, &idx, sizeof(idx));
+            po_pDataSize += sizeof(idx);
+
+
+            /* Mesh components and clips */
+            const auto numberOfMeshComponents = pi_pHeader->m_numberOfMeshComponents;
+            memcpy(po_pBinaryData.get() + po_pDataSize, &numberOfMeshComponents, sizeof(numberOfMeshComponents));
+            po_pDataSize += sizeof(numberOfMeshComponents);
+            for (size_t componentIdx = 0; componentIdx < pi_pHeader->m_numberOfMeshComponents; componentIdx++)
+                {
+                const auto component = pi_pHeader->m_meshComponents[componentIdx];
+                memcpy(po_pBinaryData.get() + po_pDataSize, &component, sizeof(component));
+                po_pDataSize += sizeof(component);
+                }
+
+            const auto nbClipSetsIDs = (uint32_t)pi_pHeader->m_clipSetsID.size();
+            memcpy(po_pBinaryData.get() + po_pDataSize, &nbClipSetsIDs, sizeof(nbClipSetsIDs));
+            po_pDataSize += sizeof(nbClipSetsIDs);
+            for (size_t i = 0; i < nbClipSetsIDs; ++i)
+                {
+                const auto clip = ConvertNeighborID(pi_pHeader->m_clipSetsID[i]);
+                memcpy(po_pBinaryData.get() + po_pDataSize, &clip, sizeof(clip));
+                po_pDataSize += sizeof(clip);
+                }
+
+            /* Children and Neighbors */
+            const auto nbChildren = isLeaf || (!isBranched  && !pi_pHeader->m_SubNodeNoSplitID.IsValid()) ? 0 : (!isBranched ? 1 : pi_pHeader->m_numberOfSubNodesOnSplit);
+            memcpy(po_pBinaryData.get() + po_pDataSize, &nbChildren, sizeof(nbChildren));
+            po_pDataSize += sizeof(nbChildren);
+            for (size_t childInd = 0; childInd < nbChildren; childInd++)
+                {
+                const auto id = ConvertChildID(pi_pHeader->m_apSubNodeID[childInd]);
+                memcpy(po_pBinaryData.get() + po_pDataSize, &id, sizeof(id));
+                po_pDataSize += sizeof(id);
+                }
+
+            for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
+                {
+                const auto numNeighbors = pi_pHeader->m_apNeighborNodeID[neighborPosInd].size();
+                memcpy(po_pBinaryData.get() + po_pDataSize, &numNeighbors, sizeof(numNeighbors));
+                po_pDataSize += sizeof(numNeighbors);
+                for (size_t neighborInd = 0; neighborInd < numNeighbors; neighborInd++)
+                    {
+                    const auto nodeId = ConvertNeighborID(pi_pHeader->m_apNeighborNodeID[neighborPosInd][neighborInd]);
+                    memcpy(po_pBinaryData.get() + po_pDataSize, &nodeId, sizeof(nodeId));
+                    po_pDataSize += sizeof(nodeId);
+                    }
+                }
+            }
+
+        void SerializeHeaderToJSON(const SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)
+            {
             block["id"] = ConvertBlockID(blockID);
             block["resolution"] = (IDTMFile::NodeID)header->m_level;
             block["filtered"] = header->m_filtered;
@@ -1187,7 +1157,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     {
                     Json::Value& child = childInd >= children.size() ? children.append(Json::Value()) : children[(int)childInd];
                     child["index"] = (uint8_t)childInd;
-                    child["id"] = ConvertChildID(header->m_apSubNodeID[childInd]);
+                    child["id"] = header->m_apSubNodeID[childInd].IsValid() ? ConvertChildID(header->m_apSubNodeID[childInd]) : IDTMFile::GetNullNodeID();
                     }
                 }
             else if (nbChildren == 1)
@@ -1259,22 +1229,32 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 indice = header->m_ptsIndiceID[i].IsValid() ? ConvertBlockID(header->m_ptsIndiceID[i]) : IDTMFile::GetNullNodeID();
                 }
 
-            block["uvID"] = header->m_uvID.IsValid() ? ConvertBlockID(header->m_uvID) : IDTMFile::GetNullNodeID();
-
-            block["nbUVIDs"] = (int)header->m_uvsIndicesID.size();
-            auto& uvIndiceIDs = block["uvIndiceIDs"];
-            for (size_t i = 0; i < header->m_uvsIndicesID.size(); i++)
+            if (header->m_isTextured /*&& !header->m_textureID.empty() && IsValidID(header->m_textureID[0])*/)
                 {
-                Json::Value& uvIndice = (uint32_t)i >= uvIndiceIDs.size() ? uvIndiceIDs.append(Json::Value()) : uvIndiceIDs[(uint32_t)i];
-                uvIndice = header->m_uvsIndicesID[i].IsValid() ? ConvertBlockID(header->m_uvsIndicesID[i]) : IDTMFile::GetNullNodeID();
+                block["areTextured"] = true;
+                /*block["nbTextureIDs"] = (int)header->m_textureID.size();
+                auto& textureIDs = block["textureIDs"];
+                for (size_t i = 0; i < header->m_textureID.size(); i++)
+                    {
+                    auto convertedID = ConvertBlockID(header->m_textureID[i]);
+                    if (convertedID != IDTMFile::GetNullNodeID())
+                        {
+                        Json::Value& textureID = (uint32_t)i >= textureIDs.size() ? textureIDs.append(Json::Value()) : textureIDs[(uint32_t)i];
+                        textureID = header->m_textureID[i].IsValid() ? convertedID : IDTMFile::GetNullNodeID();
+                        }
+                    }*/
+                block["uvID"] = header->m_uvID.IsValid() ? ConvertBlockID(header->m_uvID) : IDTMFile::GetNullNodeID();
+
+                block["nbUVIDs"] = (int)header->m_uvsIndicesID.size();
+                auto& uvIndiceIDs = block["uvIndiceIDs"];
+                for (size_t i = 0; i < header->m_uvsIndicesID.size(); i++)
+                    {
+                    Json::Value& uvIndice = (uint32_t)i >= uvIndiceIDs.size() ? uvIndiceIDs.append(Json::Value()) : uvIndiceIDs[(uint32_t)i];
+                    uvIndice = header->m_uvsIndicesID[i].IsValid() ? ConvertBlockID(header->m_uvsIndicesID[i]) : IDTMFile::GetNullNodeID();
+                    }
                 }
-
-            block["nbTextureIDs"] = (int)header->m_textureID.size();
-            auto& textureIDs = block["textureIDs"];
-            for (size_t i = 0; i < header->m_textureID.size(); i++)
-                {
-                Json::Value& textureID = (uint32_t)i >= textureIDs.size() ? textureIDs.append(Json::Value()) : textureIDs[(uint32_t)i];
-                textureID = header->m_textureID[i].IsValid() ? ConvertBlockID(header->m_textureID[i]) : IDTMFile::GetNullNodeID();
+            else {
+                block["areTextured"] = false;
                 }
 
             block["numberOfMeshComponents"] = header->m_numberOfMeshComponents;
@@ -1296,34 +1276,31 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 }
             //  else
             block["nbClipSets"] = (uint32_t)header->m_clipSetsID.size();
+            }
 
-            // Save node to disk
-            WString pathToNodes(m_path + L"nodes/");
+        virtual size_t StoreHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+            {
+            uint32_t headerSize = 0;
+            std::unique_ptr<Byte> headerData = nullptr;
+            SerializeHeaderToBinary(header, headerData, headerSize);
+            //SerializeHeaderToJSON(header, blockID, block);
 
             wstringstream ss;
-            ss << pathToNodes << L"n_" << ConvertBlockID(blockID) << L".bin";
+            ss << m_pathToHeaders + L"n_" << ConvertBlockID(blockID) << L".bin";
 
             auto filename = ss.str();
             BeFile file;
-            uint64_t buffer_size;
-            auto jsonWriter = [&buffer_size](BeFile& file, Json::Value& object) {
-
-                Json::StyledWriter writer;
-                auto buffer = writer.write(object);
-                buffer_size = buffer.size();
-                file.Write(NULL, buffer.c_str(), buffer_size);
-                };
-            if (BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Write))//file.Open(filename.c_str(), BeFileAccess::Write, BeFileSharing::None))
+            if (BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Write) || BeFileStatus::Success == file.Create(filename.c_str()))
                 {
-                jsonWriter(file, block);
-                }
-            else if (BeFileStatus::Success == file.Create(filename.c_str()))
-                {
-                jsonWriter(file, block);
+                //    Json::StyledWriter writer;
+                //    auto buffer = writer.write(object);
+                //    buffer_size = buffer.size();
+                //    file.Write(NULL, buffer.c_str(), buffer_size);
+                file.Write(NULL, headerData.get(), headerSize);
                 }
             else
                 {
-                HASSERT(!"Problem creating master header file");
+                assert(!"Problem opening/creating header file");
                 }
             file.Close();
 
@@ -1332,261 +1309,50 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         virtual size_t LoadHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
-
             if (s_stream_from_grouped_store)
                 {
-                size_t groupFound = -1;
-                for (auto& group : m_groupMasterHeader)
-                    {
-                    auto nodeIdIter = std::find_if(begin(group), end(group), [this, &blockID](uint64_t& nodeId)
-                        {
-                        return nodeId == this->ConvertBlockID(blockID);
-                        });
-
-                    if (nodeIdIter != group.end())
-                        {
-                        groupFound = group.GetID();
-                        break;
-                        }
-                    }
-                assert(-1 != groupFound);
-                auto header_group = std::find_if(begin(m_cached_node_header_groups), end(m_cached_node_header_groups), [groupFound](SMNodeGroup& node)
-                    {
-                    return groupFound == node.GetID();
-                    });
-                
-                bool group_is_cached = header_group != m_cached_node_header_groups.end();
-
-                if (!group_is_cached)
-                    {
-                    WString path(m_path_to_grouped_headers + L"g_");
-                    wstringstream ss;
-                    ss << path << groupFound << L".bin";
-                    auto group_filename = ss.str();
-                    Byte* inBuffer = nullptr;
-                    uint32_t bytes_read = 0;
-                    if (s_stream_from_disk)
-                        {
-                        BeFile file;
-                        if (BeFileStatus::Success == OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Write))//file.Open(group_filename.c_str(), BeFileAccess::Read, BeFileSharing::None) ||
-                            {
-                            uint64_t fileSize;
-                            file.GetSize(fileSize);
-                            inBuffer = new Byte[fileSize];
-                            file.Read(inBuffer, &bytes_read, (uint32_t)fileSize);
-                            assert(bytes_read == fileSize);
-                            }
-                        else
-                            {
-                            HASSERT(!"Problem reading gouped header file");
-                            }
-
-                        file.Close();
-                        }
-                    else
-                        {
-                        /*m_stream_store.DownloadBlob(group_filename.c_str(), [&inBuffer, &bytes_read](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
-                            {
-                            if (buffer.empty())
-                                {
-                                bytes_read = 0;
-                                return;
-                                }
-                            bytes_read = (uint32_t)buffer.size();
-
-                            inBuffer = new Byte[bytes_read];
-                            memcpy(inBuffer, buffer.data(), bytes_read);
-                            });*/
-                        }
-                    SMNodeGroup node_group;
-
-                    node_group.Load(inBuffer, bytes_read);
-
-                    m_cached_node_header_groups.push_back(node_group);
-                    header_group = std::prev(m_cached_node_header_groups.end());
-                    delete[] inBuffer;
-                    }
-                assert(header_group != m_cached_node_header_groups.end());
-                auto node_header = header_group->GetNodeHeader(ConvertBlockID(blockID));
-                ReadNodeHeaderFromBinary(header, header_group->GetHeaderData() + node_header.position, node_header.offset);
-
-                return 1;
-                }
-
-            Json::Value nodeHeader;
-            WString pathToNodes(m_path + L"nodes/");
-            wstringstream ss;
-            ss << pathToNodes << L"n_" << ConvertBlockID(blockID) << L".bin";
-
-            auto filename = ss.str();
-
-            if (s_stream_from_disk)
-                {
-                BeFile file;
-                if (BeFileStatus::Success != OPEN_FILE(file, filename.c_str(), BeFileAccess::Read))//file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
-                    {
-                    return 1;
-                    }
-                char inBuffer[100000];
-                uint32_t bytes_read = 0;
-                file.Read(inBuffer, &bytes_read, 100000);
-
-                Json::Reader reader;
-                reader.parse(&inBuffer[0], &inBuffer[bytes_read], nodeHeader);
-                }
-            else if (s_stream_from_file_server)
-                {
-                ss << L".bin";
-                auto blob_name = ss.str();
-                bvector<Byte> buffer;
-                DownloadBlockFromFileServer(blob_name.c_str(), &buffer, 100000);
-                assert(!buffer.empty() && buffer.size() <= 100000);
-                Json::Reader reader;
-                reader.parse(reinterpret_cast<char*>(&buffer.front()), reinterpret_cast<char*>(&buffer.back()), nodeHeader);
+                auto group = this->GetGroup(blockID);
+                auto node_header = group->GetNodeHeader(blockID.m_integerID);
+                ReadNodeHeaderFromBinary(header, group->GetRawHeaders(node_header.offset), node_header.size);
+                //group->removeNodeData(blockID.m_integerID);
                 }
             else {
-                //auto blob_name = filename.c_str();
-                /*m_stream_store.DownloadBlob(blob_name, [&nodeHeader](scalable_mesh::azure::Storage::point_buffer_type& buffer)
-                    {
-                    assert(!buffer.empty());
-                    Json::Reader reader;
-                    reader.parse(reinterpret_cast<char*>(&buffer.front()), reinterpret_cast<char*>(&buffer.back()), nodeHeader);
-                    });*/
+                //auto nodeHeader = this->GetNodeHeaderJSON(blockID);
+                //ReadNodeHeaderFromJSON(header, nodeHeader);
+                uint64_t headerSize = 0;
+                std::unique_ptr<Byte> headerData = nullptr;
+                this->GetNodeHeaderBinary(blockID, headerData, headerSize);
+                ReadNodeHeaderFromBinary(header, headerData.get(), headerSize);
                 }
-
-            ReadNodeHeaderFromJSON(header, nodeHeader);
-            //auto val = GetBlockDataCount(blockID);
-            //assert(val == header->m_nodeCount);
-
-            //if (m_DTMFile != NULL)
-            //	SMPointTaggedTileStore::StoreHeader(header, blockID);
-
             return 1;
             }
 
-
         virtual size_t LoadBlock(POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
-            auto blockIDConvert = ConvertBlockID(blockID);
-            if (m_countInfo.count(blockIDConvert) > 0)
-                {
-                // Already have block data...
-                auto& buffer = m_countInfo[blockIDConvert];
-                auto UncompressedSize = buffer.size();
+            auto& block = this->GetBlock(blockID);
+            auto blockSize = block.size();
+            assert(block.size() <= maxCountData * sizeof(POINT));
+            memmove(DataTypeArray, block.data(), block.size());
+            block.UnLoad();
 
-                HCDPacket uncompressedPacket, compressedPacket;
-                compressedPacket.SetBuffer(buffer.data(), buffer.size());
-                compressedPacket.SetDataSize(buffer.size());
-                uncompressedPacket.SetDataSize((uint32_t)maxCountData * sizeof(POINT));
-                LoadCompressedPacket(compressedPacket, uncompressedPacket);
-                assert(UncompressedSize == uncompressedPacket.GetDataSize());
-                memcpy(DataTypeArray, uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
-                return 1;
-                }
-            WString pathToPoints((s_stream_from_disk ? m_path + L"points\\" : m_path));
-            wstringstream ss;
-            ss << pathToPoints << L"p_" << ConvertBlockID(blockID) << L".bin";
-            auto filename = ss.str();
-            uint32_t maxDataSize = (uint32_t)maxCountData * sizeof(POINT) + sizeof(uint32_t);
-            if (s_stream_from_disk)
-                {
-                Byte* dataArrayTmp = new Byte[maxDataSize];
-                uint32_t sizeData;
-                BeFile file;
-                if (BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Read))//file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
-                    {
-                    auto read_result = file.Read(dataArrayTmp, &sizeData, maxDataSize);
-                    HASSERT(BeFileStatus::Success == read_result);
-                    HASSERT(sizeData <= maxDataSize);
-
-                    uint32_t UncompressedSize = reinterpret_cast<uint32_t&>(*dataArrayTmp);
-
-                    HCDPacket uncompressedPacket, compressedPacket;
-                    compressedPacket.SetBuffer(dataArrayTmp + sizeof(uint32_t), sizeData - sizeof(uint32_t));
-                    compressedPacket.SetDataSize(sizeData - sizeof(uint32_t));
-                    uncompressedPacket.SetDataSize(UncompressedSize);
-                    LoadCompressedPacket(compressedPacket, uncompressedPacket);
-
-                    memcpy(DataTypeArray, uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
-                    }
-                else
-                    {
-                    HASSERT(!"Problem opening block of points for reading");
-                    }
-                file.Close();
-                delete[] dataArrayTmp;
-                }
-            else if (s_stream_from_file_server)
-                {
-                bvector<Byte> buffer;
-                DownloadBlockFromFileServer(filename, &buffer, maxDataSize);
-                assert(!buffer.empty() && buffer.size() <= maxDataSize);
-
-                uint32_t UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-                uint32_t sizeData = (uint32_t)buffer.size();
-
-                HCDPacket uncompressedPacket, compressedPacket;
-                compressedPacket.SetBuffer(&buffer[0] + sizeof(uint32_t), sizeData - sizeof(uint32_t));
-                compressedPacket.SetDataSize(sizeData - sizeof(uint32_t));
-                uncompressedPacket.SetDataSize(UncompressedSize);
-                LoadCompressedPacket(compressedPacket, uncompressedPacket);
-                assert(UncompressedSize == uncompressedPacket.GetDataSize());
-                memcpy(DataTypeArray, uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
-                }
-            else {
-                // stream from azure
-                bool blobDownloaded = false;
-                /*m_stream_store.DownloadBlob(filename.c_str(), [this, DataTypeArray, &maxDataSize, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
-                    {
-                    assert(!buffer.empty() && buffer.size() <= maxDataSize);
-                    //assert(buffer.size() == sizeDataLocal);
-                    //assert(0 == memcmp(&buffer[0], dataArrayTmp, sizeDataLocal));
-                    uint32_t UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-                    uint32_t sizeData = (uint32_t)buffer.size() - sizeof(uint32_t);
-
-                    HCDPacket uncompressedPacket, compressedPacket;
-                    compressedPacket.SetBuffer(&buffer[0] + sizeof(uint32_t), sizeData );
-                    compressedPacket.SetDataSize(sizeData);
-                    uncompressedPacket.SetDataSize(UncompressedSize);
-                    LoadCompressedPacket(compressedPacket, uncompressedPacket);
-                    assert(UncompressedSize == uncompressedPacket.GetDataSize());
-                    memcpy(DataTypeArray, uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
-                    blobDownloaded = true;
-                    });*/
-                assert(blobDownloaded);
-                }
-            return 1;
+            return blockSize;
             }
 
         virtual bool DestroyBlock(HPMBlockID blockID)
             {
-            //if (m_DTMFile != NULL) return SMPointTaggedTileStore::DestroyBlock(blockID);
-
             return true;
             }
-        /*
-        static const IDTMFile::FeatureType MASS_POINT_FEATURE_TYPE = 0;
-        */
-
-    protected:
-        /*const IDTMFile::File::Ptr& GetFileP() const
-        {
-        return m_DTMFile;
-        }
-        */
 
     private:
-
-        WString m_path;
-        Json::Value m_masterHeader;
-        Json::Value m_header;
-        uint32_t m_node_id;
-        bool m_stream_from_disk;
-        HFCPtr<HCDCodec>        m_pCodec;
-        std::wstring m_storage_connection_string;
-        //scalable_mesh::azure::Storage m_stream_store;
-        WString m_path_to_grouped_headers;
-        SMNodeGroupMasterHeader m_groupMasterHeader;
-        std::vector<SMNodeGroup> m_cached_node_header_groups;
-        mutable std::map<IDTMFile::NodeID, std::vector<Byte>> m_countInfo;
+        WString m_rootDirectory;
+        WString m_pathToPoints;
+        WString m_pathToHeaders;
+        bool m_use_node_header_grouping;
+        // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
+        WString m_storage_connection_string;
+        scalable_mesh::azure::Storage m_stream_store;
+        bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
+        // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
+        mutable std::map<IDTMFile::NodeID, PointBlock> m_pointCache;
+        mutable std::mutex m_pointCacheLock;
     };

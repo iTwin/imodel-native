@@ -19,6 +19,7 @@
 //#include <TerrainModel/ElementHandler/IMrDTMDataRef.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include <DgnPlatform/DgnPlatform.r.h>
+#undef static_assert
 #include <DgnPlatform/DgnModel.h>
 
 #include    <DgnPlatform/DgnCoreAPI.h>

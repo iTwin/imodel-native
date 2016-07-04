@@ -27,9 +27,9 @@
 #endif //!BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 
 #ifdef __BENTLEYSTM_BUILD__ 
-    #define BENTLEYSTM_EXPORT __declspec(dllexport)
+    #define BENTLEY_SM_EXPORT __declspec(dllexport)
 #else
-    #define BENTLEYSTM_EXPORT __declspec(dllimport)
+    #define BENTLEY_SM_EXPORT __declspec(dllimport)
 #endif
     
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -52,8 +52,7 @@ enum ScalableMeshFilterType
 
 enum ScalableMeshMesherType
     {
-    SCM_MESHER_2D_DELAUNAY = 0, //Suitable only for 2.5D data   
-    SCM_MESHER_LMS_MARCHING_CUBE = 1,
+    SCM_MESHER_2D_DELAUNAY = 0, //Suitable only for 2.5D data       
     SCM_MESHER_3D_DELAUNAY = 2,
     SCM_MESHER_TETGEN = 3,
     SCM_MESHER_QTY,
@@ -133,17 +132,6 @@ enum DTMStatus
     
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 
-/*
-struct IDTMVolume abstract
-{
-protected:
-virtual DTMStatusInt _ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector) = 0;
-virtual DTMStatusInt _ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector) = 0;
-
-public:
-BENTLEYSTM_EXPORT DTMStatusInt ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
-BENTLEYSTM_EXPORT DTMStatusInt ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
-};*/
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

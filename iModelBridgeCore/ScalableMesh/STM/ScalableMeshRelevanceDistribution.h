@@ -49,9 +49,9 @@ template<class DATATYPE = double> class ScalableMeshRelevanceDistribution
             m_nbRelevanceValues++;
             }
 
-        BENTLEYSTM_EXPORT DataType_T   GetRelevanceMean() const;
+        BENTLEY_SM_EXPORT DataType_T   GetRelevanceMean() const;
 
-        BENTLEYSTM_EXPORT DataType_T   GetRelevanceStdDev() const;
+        BENTLEY_SM_EXPORT DataType_T   GetRelevanceStdDev() const;
 
 
         DataType_T   GetRelevancePercentileValue(double pi_percentage);

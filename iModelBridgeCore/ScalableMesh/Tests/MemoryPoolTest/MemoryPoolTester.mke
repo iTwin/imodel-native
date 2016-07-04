@@ -1,0 +1,57 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Tests/MemoryPoolTest/MemoryPoolTester.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+baseDir         = $(_MakeFilePath)
+
+%include  mdl.mki
+#%include $(baseDir)ScalableMeshATPexePolicy.mki
+#%include $(SrcRoot)scalablemesh/ScalableMesh.mki
+
+consoleAppUnicode = 1
+
+#----------------------------------------------------------------------
+#   Build precompiled header
+#----------------------------------------------------------------------
+appName = MemoryPoolTester
+o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
+always:
+    ~mkdir $(o)
+
+MultiCompileDepends=$(_MakeFileSpec) 
+%include MultiCppCompileRule.mki
+
+
+
+SrcDir = $(SrcRoot)ScalableMesh/Tests/MemoryPoolTest/
+
+CCompOpts + -DUNICODE
+
+
+$(o)MemoryPoolTester$(oext) : $(SrcDir)MemoryPoolTester.cpp ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+LINKER_LIBRARIES  = $(ContextSubpartsLibs)Bentley.lib \
+                    $(ContextSubpartsLibs)BentleyAllocator.lib \
+                    $(ContextSubpartsLibs)BentleyGeom.lib
+
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(MultiCompileObjectList)
+EXE_LOPT1 = -ENTRY:wmainCRTStartup
+
+EXE_TMP_DIR  = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+

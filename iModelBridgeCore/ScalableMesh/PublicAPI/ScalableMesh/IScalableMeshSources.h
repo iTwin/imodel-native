@@ -33,8 +33,8 @@ struct IDTMLocalFileSource;
 struct IDTMDgnLevelSource;
 struct IDTMDgnReferenceLevelSource;
 
-struct BinaryIStream;
-struct BinaryOStream;
+//struct BinaryIStream;
+//struct BinaryOStream;
 
 
 typedef RefCountedPtr<IDTMSource>           IDTMSourcePtr;
@@ -124,6 +124,9 @@ struct IDTMSource : public RefCountedBase
 
 /*__PUBLISH_SECTION_END__*/
     public:
+
+
+
         struct                              Impl;
 
         void                                RegisterEditListener       (EditListener&               listener);
@@ -138,38 +141,39 @@ struct IDTMSource : public RefCountedBase
         
         virtual void                        _Accept                    (IDTMSourceVisitor&          visitor) const = 0;
         virtual IDTMSource*                 _Clone                     () const = 0;
+
     protected:
         explicit                            IDTMSource                 (Impl*                       implP);
 
 /*__PUBLISH_SECTION_START__*/
 
     public: 
-        BENTLEYSTM_EXPORT virtual                 ~IDTMSource                () = 0;
+        BENTLEY_SM_EXPORT virtual                 ~IDTMSource                () = 0;
        
-        BENTLEYSTM_EXPORT bool                    IsReachable                () const;
+        BENTLEY_SM_EXPORT bool                    IsReachable                () const;
 
-//        BENTLEYSTM_EXPORT const IMoniker&         GetMoniker                 () const;
+//        BENTLEY_SM_EXPORT const IMoniker&         GetMoniker                 () const;
 
-        BENTLEYSTM_EXPORT WString                 GetPath                    () const;
+        BENTLEY_SM_EXPORT WString                 GetPath                    () const;
 
-        BENTLEYSTM_EXPORT DTMSourceDataType       GetSourceType              () const;
+        BENTLEY_SM_EXPORT DTMSourceDataType       GetSourceType              () const;
 
-        BENTLEYSTM_EXPORT Time                    GetLastModified            () const;
-        BENTLEYSTM_EXPORT Time                    GetLastModifiedCheckTime   () const;
+        BENTLEY_SM_EXPORT Time                    GetLastModified            () const;
+        BENTLEY_SM_EXPORT Time                    GetLastModifiedCheckTime   () const;
 
-        BENTLEYSTM_EXPORT void                    SetLastModified            (const Time&                 time);
+        BENTLEY_SM_EXPORT void                    SetLastModified            (const Time&                 time);
 
-        BENTLEYSTM_EXPORT void                    ResetLastModified          ();
-        BENTLEYSTM_EXPORT StatusInt               UpdateLastModified         ();
+        BENTLEY_SM_EXPORT void                    ResetLastModified          ();
+        BENTLEY_SM_EXPORT StatusInt               UpdateLastModified         ();
         // TDORAY: Consider adding a versions that takes as argument the minimum last time checked for
         // which it is not worth updating.
         
 
-        BENTLEYSTM_EXPORT SourceImportConfig&     EditConfig                 ();
-        BENTLEYSTM_EXPORT const SourceImportConfig&   
+        BENTLEY_SM_EXPORT SourceImportConfig&     EditConfig                 ();
+        BENTLEY_SM_EXPORT const SourceImportConfig&   
                                             GetConfig                  () const;
 
-        BENTLEYSTM_EXPORT IDTMSourcePtr           Clone                      () const;
+        BENTLEY_SM_EXPORT IDTMSourcePtr           Clone                      () const;
 
 
         
@@ -204,18 +208,18 @@ struct IDTMLocalFileSource : public IDTMSource
 /*__PUBLISH_SECTION_START__*/
 
     public : 
-        BENTLEYSTM_EXPORT virtual                 ~IDTMLocalFileSource   ();
+        BENTLEY_SM_EXPORT virtual                 ~IDTMLocalFileSource   ();
 
-        BENTLEYSTM_EXPORT LocalFileURL            GetURL                     () const;
-        BENTLEYSTM_EXPORT LocalFileURL            GetURL                     (StatusInt&                  status) const;
+        BENTLEY_SM_EXPORT LocalFileURL            GetURL                     () const;
+        BENTLEY_SM_EXPORT LocalFileURL            GetURL                     (StatusInt&                  status) const;
 
-        BENTLEYSTM_EXPORT const WChar*          GetPath                    () const;
-        BENTLEYSTM_EXPORT const WChar*          GetPath                    (StatusInt&                  status) const;
+        BENTLEY_SM_EXPORT const WChar*          GetPath                    () const;
+        BENTLEY_SM_EXPORT const WChar*          GetPath                    (StatusInt&                  status) const;
  
-        BENTLEYSTM_EXPORT static IDTMLocalFileSourcePtr 
+        BENTLEY_SM_EXPORT static IDTMLocalFileSourcePtr 
                                             Create                     (DTMSourceDataType           sourceDataType, 
                                                                         const ILocalFileMonikerPtr& localFileMonikerPtr);   
-        BENTLEYSTM_EXPORT static IDTMLocalFileSourcePtr
+        BENTLEY_SM_EXPORT static IDTMLocalFileSourcePtr
                                             Create(DTMSourceDataType           sourceDataType,
                                                     const WCharCP fullPath);
     };
@@ -242,12 +246,12 @@ struct IDTMDgnModelSource : public IDTMLocalFileSource
 /*__PUBLISH_SECTION_START__*/
 
     public :                                        
-        BENTLEYSTM_EXPORT virtual                 ~IDTMDgnModelSource    ();
+        BENTLEY_SM_EXPORT virtual                 ~IDTMDgnModelSource    ();
         
-        BENTLEYSTM_EXPORT uint32_t                  GetModelID                 () const;
-        BENTLEYSTM_EXPORT const WChar*          GetModelName               () const;
+        BENTLEY_SM_EXPORT uint32_t                  GetModelID                 () const;
+        BENTLEY_SM_EXPORT const WChar*          GetModelName               () const;
 
-        BENTLEYSTM_EXPORT void                    UpdateModelName            (const WChar*              name) const;
+        BENTLEY_SM_EXPORT void                    UpdateModelName            (const WChar*              name) const;
     };
 
 
@@ -274,15 +278,15 @@ struct IDTMDgnReferenceSource : public IDTMDgnModelSource
 /*__PUBLISH_SECTION_START__*/
 
     public :                                        
-        BENTLEYSTM_EXPORT virtual                 ~IDTMDgnReferenceSource    ();
+        BENTLEY_SM_EXPORT virtual                 ~IDTMDgnReferenceSource    ();
 
-        BENTLEYSTM_EXPORT WCharCP             GetRootToRefPersistentPath () const;
+        BENTLEY_SM_EXPORT WCharCP             GetRootToRefPersistentPath () const;
 
-        BENTLEYSTM_EXPORT const WChar*          GetReferenceName           () const;
-        BENTLEYSTM_EXPORT void                    UpdateReferenceName        (const WChar*              name) const;
+        BENTLEY_SM_EXPORT const WChar*          GetReferenceName           () const;
+        BENTLEY_SM_EXPORT void                    UpdateReferenceName        (const WChar*              name) const;
 
-        BENTLEYSTM_EXPORT const WChar*          GetReferenceModelName      () const;
-        BENTLEYSTM_EXPORT void                    UpdateReferenceModelName   (const WChar*              name) const;
+        BENTLEY_SM_EXPORT const WChar*          GetReferenceModelName      () const;
+        BENTLEY_SM_EXPORT void                    UpdateReferenceModelName   (const WChar*              name) const;
     };
 
 
@@ -308,17 +312,25 @@ struct IDTMDgnLevelSource : public IDTMDgnModelSource
 /*__PUBLISH_SECTION_START__*/
 
     public :          
-        BENTLEYSTM_EXPORT virtual                 ~IDTMDgnLevelSource        ();
+        BENTLEY_SM_EXPORT virtual                 ~IDTMDgnLevelSource        ();
 
-        BENTLEYSTM_EXPORT uint32_t                  GetLevelID                 () const;
-        BENTLEYSTM_EXPORT const WChar*          GetLevelName               () const;
+        BENTLEY_SM_EXPORT uint32_t                  GetLevelID                 () const;
+        BENTLEY_SM_EXPORT const WChar*          GetLevelName               () const;
 
 
-        BENTLEYSTM_EXPORT void                    UpdateLevelName            (const WChar*              name) const;
+        BENTLEY_SM_EXPORT void                    UpdateLevelName            (const WChar*              name) const;
 
-        BENTLEYSTM_EXPORT static IDTMDgnLevelSourcePtr 
+        BENTLEY_SM_EXPORT static IDTMDgnLevelSourcePtr 
                                             Create                     (DTMSourceDataType           sourceDataType, 
                                                                         const ILocalFileMonikerPtr& dgnFileMonikerPtr,
+                                                                        uint32_t                      modelID, 
+                                                                        const WChar*              modelName,
+                                                                        uint32_t                      levelID,
+                                                                        const WChar*              levelName);
+
+                BENTLEY_SM_EXPORT static IDTMDgnLevelSourcePtr 
+                                            Create                     (DTMSourceDataType           sourceDataType, 
+                                                                        const wchar_t* dgnFileMonikerPtr,
                                                                         uint32_t                      modelID, 
                                                                         const WChar*              modelName,
                                                                         uint32_t                      levelID,
@@ -349,17 +361,17 @@ struct IDTMDgnReferenceLevelSource : public IDTMDgnReferenceSource
 /*__PUBLISH_SECTION_START__*/
 
     public :          
-        BENTLEYSTM_EXPORT virtual                 ~IDTMDgnReferenceLevelSource
+        BENTLEY_SM_EXPORT virtual                 ~IDTMDgnReferenceLevelSource
                                                                        ();
 
-        BENTLEYSTM_EXPORT uint32_t                  GetLevelID                 () const;
-        BENTLEYSTM_EXPORT const WChar*          GetLevelName               () const;
+        BENTLEY_SM_EXPORT uint32_t                  GetLevelID                 () const;
+        BENTLEY_SM_EXPORT const WChar*          GetLevelName               () const;
 
 
-        BENTLEYSTM_EXPORT void                    UpdateLevelName            (const WChar*              name) const;
+        BENTLEY_SM_EXPORT void                    UpdateLevelName            (const WChar*              name) const;
 
 
-        BENTLEYSTM_EXPORT static IDTMDgnReferenceLevelSourcePtr 
+        BENTLEY_SM_EXPORT static IDTMDgnReferenceLevelSourcePtr 
                                             Create                     (DTMSourceDataType           sourceDataType, 
                                                                         const ILocalFileMonikerPtr& rootDgnFileMonikerPtr,
                                                                         uint32_t                      rootModelID, 
@@ -398,14 +410,14 @@ struct IDTMSourceGroup : public IDTMSource
 /*__PUBLISH_SECTION_START__*/
 
     public : 
-        BENTLEYSTM_EXPORT virtual                 ~IDTMSourceGroup       ();
+        BENTLEY_SM_EXPORT virtual                 ~IDTMSourceGroup       ();
 
-        BENTLEYSTM_EXPORT static IDTMSourceGroupPtr 
+        BENTLEY_SM_EXPORT static IDTMSourceGroupPtr 
                                             Create                     ();   
 
-        BENTLEYSTM_EXPORT const IDTMSourceCollection&
+        BENTLEY_SM_EXPORT const IDTMSourceCollection&
                                             GetSources                 () const;
-        BENTLEYSTM_EXPORT IDTMSourceCollection&   EditSources                ();
+        BENTLEY_SM_EXPORT IDTMSourceCollection&   EditSources                ();
     };
 
 

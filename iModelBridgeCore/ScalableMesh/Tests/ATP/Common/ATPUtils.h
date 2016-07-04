@@ -14,6 +14,14 @@
 #include <sstream>
 #include <TerrainModel/TerrainModel.h>
 
+#ifdef VANCOUVER_API
+#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
+#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
+#else
+#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
+#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
+#endif
+
 using namespace std;
 
 typedef enum
@@ -34,7 +42,14 @@ typedef enum
     TEST_CONSTRAINTS,
     TEST_SDK_MESH,
     TEST_STREAMING,
-    TEST_RANDOM_DRAPE
+    TEST_SCM_TO_CLOUD,
+    TEST_RANDOM_DRAPE,
+    EXPORT_LINE,
+    EXPORT_VOLUME,
+    IMPORT_VOLUME,
+    TEST_GROUP_NODE_HEADERS,
+    ADD_TEXTURES_TO_MESH,
+	EXPORT_TO_UNITY,
     } TestType;
 
 

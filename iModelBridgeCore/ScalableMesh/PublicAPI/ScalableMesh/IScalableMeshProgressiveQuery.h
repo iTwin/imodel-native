@@ -15,6 +15,7 @@
 
 #include "IScalableMesh.h"
 #include "IScalableMeshQuery.h"
+#include <Bentley\bset.h>
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -79,21 +80,23 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                 int                                                                queryId) const = 0;
 
-        virtual BentleyStatus _GetQueriedNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        virtual BentleyStatus _GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                int                                                                queryId) const = 0;
 
         virtual BentleyStatus _StopQuery(int queryId) = 0; 
+
+        virtual void          _SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr) = 0;
 
         virtual bool          _IsQueryComplete(int queryId) = 0; 
         
     /*__PUBLISH_SECTION_START__*/
     public:
 
-        BENTLEYSTM_EXPORT BentleyStatus ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr);
+        BENTLEY_SM_EXPORT BentleyStatus ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr);
 
-        BENTLEYSTM_EXPORT BentleyStatus ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr);
+        BENTLEY_SM_EXPORT BentleyStatus ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr);
                                 
-        BENTLEYSTM_EXPORT BentleyStatus StartQuery(int                                                                      queryId, 
+        BENTLEY_SM_EXPORT BentleyStatus StartQuery(int                                                                      queryId, 
                                                    IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
                                                    const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
                                                    bool                                                                     loadTexture, 
@@ -101,19 +104,25 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
                                                    const DMatrix4d*                                                         prevLocalToView,
                                                    const DMatrix4d*                                                         newLocalToView); 
 
-        BENTLEYSTM_EXPORT BentleyStatus GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        BENTLEY_SM_EXPORT BentleyStatus GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                          int                                                   queryId);
 
-        BENTLEYSTM_EXPORT BentleyStatus GetQueriedNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        BENTLEY_SM_EXPORT BentleyStatus GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                         int                                                   queryId);
 
-        BENTLEYSTM_EXPORT BentleyStatus StopQuery(int queryId); 
+        BENTLEY_SM_EXPORT BentleyStatus StopQuery(int queryId); 
 
-        BENTLEYSTM_EXPORT bool IsQueryComplete(int queryId); 
+        BENTLEY_SM_EXPORT bool IsQueryComplete(int queryId); 
 
-        BENTLEYSTM_EXPORT static IScalableMeshProgressiveQueryEnginePtr Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
+        BENTLEY_SM_EXPORT void SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
+
+        BENTLEY_SM_EXPORT static IScalableMeshProgressiveQueryEnginePtr Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
     };
 
 
+void BENTLEY_SM_EXPORT InitializeProgressiveQueries();
+void BENTLEY_SM_EXPORT ClearProgressiveQueriesInfo();
+
+void TerminateProgressiveQueries();
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

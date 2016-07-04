@@ -5,7 +5,6 @@
 #include <ImagePP/h/HIterators.h>
 #include <ImagePP/h/HNumeric.h>
 
-
 #include <ImagePP/all/h/HVEShape.h>
 #include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
 #include <ImagePP/all/h/HVE2DShape.h>
@@ -51,6 +50,7 @@
 #endif
 
 #include "SMPointTileStore.h"
+
 #include "SMSQLitePointTileStore.h"
 #include "SMSQLiteTextureTileStore.h"
 

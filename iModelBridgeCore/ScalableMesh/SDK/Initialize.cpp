@@ -50,9 +50,7 @@ namespace ScalableMeshSDKexe
             virtual HUDManagerP     _GetHUDManager () {return NULL;}
 
         public:
-    
-            //void SetActiveDgn (AppViewSet* newDgn) {m_activeViewSet = newDgn;}
-            //void SetActiveDgn (DemoViewSet* newDgn) {m_activeViewSet = newDgn;}
+
             AppViewManager() {m_activeViewSet = NULL; m_topWindow = NULL;}
         };
 
@@ -65,27 +63,18 @@ namespace ScalableMeshSDKexe
 
         protected:
 
-            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&  _SupplyNotificationAdmin() override;        
-            virtual void                                                            _SupplyProductName(WStringR name) override;     
-            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager& _SupplyDigitalRightsManager() override;     
-            //virtual GraphicsAdmin&                                                 _SupplyGraphicsAdmin() override;            
-            //virtual ViewStateAdmin&                                                _SupplyViewStateAdmin() override;           
-            //virtual ToolAdmin&                                                     _SupplyToolAdmin() override;                
-            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager&                             _SupplyViewManager() override;              
-            //virtual SolidsKernelAdmin&                                             _SupplySolidsKernelAdmin() override;        
-            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&      _SupplyRasterAttachmentAdmin() override;    
-            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&            _SupplyPointCloudAdmin() override;          
-            //virtual FontAdmin&                                                     _SupplyFontAdmin() override;                
-            //virtual MaterialAdmin&                                                 _SupplyMaterialAdmin();                     
-            //virtual ProgressiveDisplayManager&                                     _SupplyProgressiveDisplayManager() override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&  _SupplyNotificationAdmin() override;
+            virtual void                                                            _SupplyProductName(WStringR name) override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager& _SupplyDigitalRightsManager() override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager&                             _SupplyViewManager() override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&      _SupplyRasterAttachmentAdmin() override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&            _SupplyPointCloudAdmin() override;
             virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
 
         public:
-            void Startup (/*HWND*/);
+            void Startup ();
         
             void Terminate ();
-
-            //DemoViewManager& GetDemoViewManager(){return m_viewManager;}
         };
 
         //=======================================================================================
@@ -126,12 +115,8 @@ struct AppRasterCoreLibHost : BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::Raste
 virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreAdmin& _SupplyRasterCoreAdmin() override {return *new AppRasterCoreAdmin();}
 }; // RasterCoreLib::Host
 
-void AppHost::Startup (/*HWND*/)
-    {       
-    //InitMonikerFactories();
-
-    //IScalableMeshAdmin::SetCanImportPODFile(true);    
-
+void AppHost::Startup ()
+    {
     //Init GDAL path.    
     WString gdalDataPath(L".\\Gdal_Data\\");        
     ConfigurationManager::DefineVariable (L"_USTN_RASTERGDALDATA", gdalDataPath.c_str());
@@ -141,51 +126,27 @@ void AppHost::Startup (/*HWND*/)
     DgnViewLib::Initialize (*this, true);
 
     //Application needs to initialize PdfLibInitializer dll if it wants support for PDF raster attachment.
-    //BENTLEY_NAMESPACE_NAME::PdfLibInitializer::Initialize(*new ViewDemoPdfLibInitializerHost());
 
     BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::Initialize (*new AppRasterCoreLibHost());
     BeAssert (BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::IsInitialized());
 
     //Ensure basegeocoord is initialized.
     _SupplyGeoCoordinationAdmin()._GetServices();
-    
-    //Required for reading TM element
-    //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeForOfflineTmImport();
-
-    //m_viewManager.SetTopWindow(topWindow);
-
-    // Setup location to find parasolid schema files (schema directory was created under exe location)...
-    /*
-    WString baseDir;
-    getBaseDirOfExecutingModule (baseDir);
-    
-    ConfigurationManager::DefineVariable (L"MS_SMARTSOLID", baseDir.c_str ());
-    */
     }
 
 void AppHost::Terminate ()
     {
     //call rasterCore cleanup code
     BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::GetHost().Terminate(true);
-
-    //call PdfLibInitializer dll cleanup code.
-    //BENTLEY_NAMESPACE_NAME::PdfLibInitializer::GetHost().Terminate(true);
     }
 
 void                                                                   AppHost::_SupplyProductName(WStringR name)   {name.assign(L"DgnView Demo");}
 BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&         AppHost::_SupplyNotificationAdmin()          {return *new AppNotificationAdmin();}
 BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager&        AppHost::_SupplyDigitalRightsManager()       {return *new ReadOnlyDigitalRightsManager;}
-//GraphicsAdmin&             AppHost::_SupplyGraphicsAdmin()              {return *new DgnViewGraphicsAdmin();}
-//ViewStateAdmin&            AppHost::_SupplyViewStateAdmin()             {return *new DemoViewStateAdmin();}
-//ToolAdmin&                 AppHost::_SupplyToolAdmin()                  {return *new DemoToolAdmin();}
 BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager&                                    AppHost::_SupplyViewManager()                {return m_viewManager; }
-//SolidsKernelAdmin&         AppHost::_SupplySolidsKernelAdmin()          {return *new AppSolidKernelAdmin();}
 BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&     AppHost::_SupplyRasterAttachmentAdmin()      {return BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin();}
 BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&           AppHost::_SupplyPointCloudAdmin()            {return *new BENTLEY_NAMESPACE_NAME::DgnPlatform::PointCloudDisplayAdmin();}
-//FontAdmin&                 AppHost::_SupplyFontAdmin()                  {return *new DemoFontAdmin();}
-//MaterialAdmin&             AppHost::_SupplyMaterialAdmin()              {return *new DemoMaterialAdmin(); }
-//ProgressiveDisplayManager& AppHost::_SupplyProgressiveDisplayManager()  {return *new DemoProgressiveDisplayManager(); }
-BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()       
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()
     {        
     
     WString geocoordinateDataPath(L".\\GeoCoordinateData\\");    

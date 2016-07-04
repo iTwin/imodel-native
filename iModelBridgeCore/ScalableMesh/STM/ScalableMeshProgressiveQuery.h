@@ -72,7 +72,7 @@ struct RequestedQuery
 
     int                                                          m_queryId;
     bvector<IScalableMeshCachedDisplayNodePtr>                                m_overviewMeshNodes;
-    bvector<IScalableMeshCachedDisplayNodePtr>                                m_queriedMeshNodes;
+    bvector<IScalableMeshCachedDisplayNodePtr>                                m_requiredMeshNodes;
     //ISMPointIndexQuery<IDTMFile::Point3d64f, YProtPtExtentType>* m_queryObjectP;    
     bool                                                         m_isQueryCompleted;
     bool                                                         m_fetchLastCompletedNodes;
@@ -87,6 +87,7 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
         mutable std::vector<RequestedQuery> m_requestedQueries;        
         IScalableMeshPtr                    m_scalableMeshPtr;
         IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
+        bset<uint64_t> m_activeClips;
 
         void StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, YProtPtExtentType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes);
 
@@ -99,6 +100,8 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
 
         virtual BentleyStatus _ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr);
 
+        virtual void          _SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
+
         virtual BentleyStatus _StartQuery(int                                                                      queryId, 
                                           IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
                                           const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,                                           
@@ -110,7 +113,7 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
         virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                 int                                                                queryId) const override;        
 
-        virtual BentleyStatus _GetQueriedNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
+        virtual BentleyStatus _GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                int                                                                queryId) const override;
 
         virtual BentleyStatus _StopQuery(int queryId) override; 
@@ -122,7 +125,10 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
 
         ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
 
+        virtual ~ScalableMeshProgressiveQueryEngine();
+
     };
+
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

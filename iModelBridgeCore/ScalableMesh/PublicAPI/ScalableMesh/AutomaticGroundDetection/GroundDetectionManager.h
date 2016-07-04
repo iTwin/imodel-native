@@ -10,15 +10,16 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <Logging/bentleylogging.h>
-#include <DgnPlatform\ElementHandle.h>
+//#include <DgnPlatform\ElementHandle.h>
 
 #include <DgnPlatform\DgnPlatform.r.h>
-#include <DgnPlatform\ElementHandle.h>
-#include <RmgrTools\Tools\DataExternalizer.h>
-#include <DgnPlatform\IPointCloud.h>
+//#include <DgnPlatform\ElementHandle.h>
+//#include <RmgrTools\Tools\DataExternalizer.h>
+#include <BePointCloud\BePointCloudApi.h>
+/*#include <DgnPlatform\IPointCloud.h>
 #include <DgnPlatform\PointCloudClipHandler.h>
 #include <PointCloud\PointCloudDataQuery.h>
-#include <PointCloud\PointCloudChannel.h>
+#include <PointCloud\PointCloudChannel.h>*/
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -45,8 +46,8 @@ typedef struct GroundDetectionParameters const& GroundDetectionParametersCR;
 /*struct GroundDetectionLogger
     {
     public:
-        BENTLEYSTM_EXPORT static void GroundDetectionLogger::OutputTimerToLogger(StopWatch& timer);
-        BENTLEYSTM_EXPORT static  BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger* Get();
+        BENTLEY_SM_EXPORT static void GroundDetectionLogger::OutputTimerToLogger(StopWatch& timer);
+        BENTLEY_SM_EXPORT static  BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger* Get();
     };
 
 #define GROUNDDLOG GroundDetectionLogger::Get()*/
@@ -103,17 +104,17 @@ public:
     ProgressReport();
     ~ProgressReport();
 
-    BENTLEYSTM_EXPORT void                SetCurrentPhase(int phaseNumber);
-    BENTLEYSTM_EXPORT int                 GetCurrentPhase() const;
-    BENTLEYSTM_EXPORT void                SetTotalNumberOfPhases(int totalNumberOfPhases);
-    BENTLEYSTM_EXPORT int                 GetTotalNumberOfPhases() const;
-    BENTLEYSTM_EXPORT void                SetCurrentStep(ProgressStateId step);
-    BENTLEYSTM_EXPORT ProgressStateId     GetCurrentStep() const;
-    BENTLEYSTM_EXPORT void                SetWorkDone(double workDone);
-    BENTLEYSTM_EXPORT double              GetWorkDone() const;
-    BENTLEYSTM_EXPORT void                SetEstimatedRemainingTime(bool hasEstimatedTime, double estimatedTime);
-    BENTLEYSTM_EXPORT double              GetEstimatedRemainingTime() const;
-    BENTLEYSTM_EXPORT bool                HasEstimatedRemainingTime() const;
+    BENTLEY_SM_EXPORT void                SetCurrentPhase(int phaseNumber);
+    BENTLEY_SM_EXPORT int                 GetCurrentPhase() const;
+    BENTLEY_SM_EXPORT void                SetTotalNumberOfPhases(int totalNumberOfPhases);
+    BENTLEY_SM_EXPORT int                 GetTotalNumberOfPhases() const;
+    BENTLEY_SM_EXPORT void                SetCurrentStep(ProgressStateId step);
+    BENTLEY_SM_EXPORT ProgressStateId     GetCurrentStep() const;
+    BENTLEY_SM_EXPORT void                SetWorkDone(double workDone);
+    BENTLEY_SM_EXPORT double              GetWorkDone() const;
+    BENTLEY_SM_EXPORT void                SetEstimatedRemainingTime(bool hasEstimatedTime, double estimatedTime);
+    BENTLEY_SM_EXPORT double              GetEstimatedRemainingTime() const;
+    BENTLEY_SM_EXPORT bool                HasEstimatedRemainingTime() const;
 
     bool    CheckContinueOnProgress();
     bool    CheckContinueOnLifeSignal();
@@ -149,25 +150,25 @@ public:
         USE_CPU_ONLY
         } ProcessingStrategy;
 
-    BENTLEYSTM_EXPORT static GroundDetectionParametersPtr Create();
-    BENTLEYSTM_EXPORT static GroundDetectionParametersPtr Clone(GroundDetectionParametersCR input);
+    BENTLEY_SM_EXPORT static GroundDetectionParametersPtr Create();
+    BENTLEY_SM_EXPORT static GroundDetectionParametersPtr Clone(GroundDetectionParametersCR input);
 
-    BENTLEYSTM_EXPORT double    GetSlopeThreshold() const;
-    BENTLEYSTM_EXPORT void      SetSlopeThreshold(double value);
-    BENTLEYSTM_EXPORT double    GetHeightThreshold() const;
-    BENTLEYSTM_EXPORT void      SetHeightThreshold(double value);
-    BENTLEYSTM_EXPORT double    GetLargestStructureSize() const;
-    BENTLEYSTM_EXPORT void      SetLargestStructureSize(double value);
-    BENTLEYSTM_EXPORT float     GetDensity() const;
-    BENTLEYSTM_EXPORT void      SetDensity(float value);
-    BENTLEYSTM_EXPORT double    GetSensitivityFactor() const;
-    BENTLEYSTM_EXPORT void      SetSensitivityFactor(double value);
+    BENTLEY_SM_EXPORT double    GetSlopeThreshold() const;
+    BENTLEY_SM_EXPORT void      SetSlopeThreshold(double value);
+    BENTLEY_SM_EXPORT double    GetHeightThreshold() const;
+    BENTLEY_SM_EXPORT void      SetHeightThreshold(double value);
+    BENTLEY_SM_EXPORT double    GetLargestStructureSize() const;
+    BENTLEY_SM_EXPORT void      SetLargestStructureSize(double value);
+    BENTLEY_SM_EXPORT float     GetDensity() const;
+    BENTLEY_SM_EXPORT void      SetDensity(float value);
+    BENTLEY_SM_EXPORT double    GetSensitivityFactor() const;
+    BENTLEY_SM_EXPORT void      SetSensitivityFactor(double value);
 
-    BENTLEYSTM_EXPORT ProcessingStrategy GetProcessingStrategy() const;
-    BENTLEYSTM_EXPORT void               SetProcessingStrategy(ProcessingStrategy value);
+    BENTLEY_SM_EXPORT ProcessingStrategy GetProcessingStrategy() const;
+    BENTLEY_SM_EXPORT void               SetProcessingStrategy(ProcessingStrategy value);
 
-    BENTLEYSTM_EXPORT bool      GetUseMultiThread() const;
-    BENTLEYSTM_EXPORT void      SetUseMultiThread(bool value);
+    BENTLEY_SM_EXPORT bool      GetUseMultiThread() const;
+    BENTLEY_SM_EXPORT void      SetUseMultiThread(bool value);
 
     static            bool      IsAutoDetect(double value);
 
@@ -193,10 +194,10 @@ private:
 
 struct GroundDetectionManager
     {
-    BENTLEYSTM_EXPORT static StatusInt DoGroundDetection(BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener = NULL);
-    BENTLEYSTM_EXPORT static StatusInt DoGroundDetectionFromDTM(BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& terrainModel, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener = NULL);
-    BENTLEYSTM_EXPORT static IPointCloudChannelP GetChannelFromPODElement(BENTLEY_NAMESPACE_NAME::DgnPlatform::ElementHandle& elHandle);
-    BENTLEYSTM_EXPORT static void SetConfigFromString(const char* allParameters);
+    BENTLEY_SM_EXPORT static StatusInt DoGroundDetection(BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener = NULL);
+    BENTLEY_SM_EXPORT static StatusInt DoGroundDetectionFromDTM(BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& terrainModel, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener = NULL);
+    BENTLEY_SM_EXPORT static IPointCloudChannelP GetChannelFromPODElement(BENTLEY_NAMESPACE_NAME::DgnPlatform::ElementHandle& elHandle);
+    BENTLEY_SM_EXPORT static void SetConfigFromString(const char* allParameters);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

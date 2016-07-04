@@ -282,6 +282,11 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
 /*
 *   Query for retrieving nodes that intersect a given ray. Will only return nodes at chosen level that have points in them.
 *   The optional parameter intersectType decides if using first or last node hit in direction of ray.
+*
+*   There are 2 kinds of intersect queries. The 2D queries return nodes if, when projected on the XY plane, their extent intersects the
+*   ray also projected on the XY plane. The 3D queries are a full ray intersect against the node's box. Both kinds of queries can be constrained using 
+*   a depth parameter corresponding to maximum length along the ray (allowing bounded queries, default is unbounded) and both can return the first, last or 
+*   all intersects along the ray. "ALL_INTERSECT" queries will return nodes sorted along the ray direction.
 */
 template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelIntersectIndexQuery : public  HGFLevelPointIndexQuery<POINT, EXTENT>
 {
@@ -300,17 +305,19 @@ public:
         double m_bestHitScore;
         double m_depth;
         bool m_is2d;
+        bool m_useUnboundedRay;
         bvector<double> m_fractions;
    
     public:
 
-                            ScalableMeshQuadTreeLevelIntersectIndexQuery(const EXTENT   extent, 
-                                                              size_t         level,                                                    
-                                                               DRay3d ray,
-                                                               bool is2d = false,
-                                                               double depth = -1,
+        ScalableMeshQuadTreeLevelIntersectIndexQuery(const EXTENT   extent,
+                                                     size_t         level,
+                                                     DRay3d ray,
+                                                     bool is2d = false,
+                                                     double depth = -1,
+                                                     bool useUnboundedRay = true,
                                                                RaycastOptions intersectType = RaycastOptions::LAST_INTERSECT)
-                                                               : HGFLevelPointIndexQuery(extent, level), m_intersect(intersectType), m_target(ray), m_bestHitScore(numeric_limits<double>::quiet_NaN()), m_is2d(is2d), m_depth(depth)
+                                                               : HGFLevelPointIndexQuery(extent, level), m_intersect(intersectType), m_target(ray), m_bestHitScore(numeric_limits<double>::quiet_NaN()), m_is2d(is2d), m_depth(depth), m_useUnboundedRay(useUnboundedRay)
                                 {                                                             
                                 }                            
 

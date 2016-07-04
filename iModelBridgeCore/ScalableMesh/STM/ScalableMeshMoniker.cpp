@@ -12,7 +12,7 @@
 
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
-#include <ScalableMesh/IScalableMeshStream.h>
+
 
 
 #include <ScalableMesh/IScalableMeshMoniker.h>

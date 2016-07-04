@@ -1,4 +1,3 @@
-//#include "ScalableMeshATPPch.h"
 #include "ATPUtils.h"
 
 #include <time.h>
@@ -62,9 +61,24 @@ WString GetHeaderForTestType(TestType t)
         case TEST_STREAMING:
             return L"File Name Original, File Name Streaming, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time streaming load all node headers, points Node Pass\n";
             break;
+        case TEST_SCM_TO_CLOUD:
+            return L"File Name Original, Directory Name Cloud, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time load all node headers, points Node Pass\n";
+            break;
         case TEST_RANDOM_DRAPE:
             return L"Test Case, Line Number, N Of Points Draped (SM), N Of Points Draped (Civil), Length (SM), Length (Civil), N Of Points Difference (%%), Length Difference (%%), NDifferentLines Total, Time total(SM) (s), Time total(Civil) (s)\n";
             break;
+        //case EXPORT_LINE:
+        //    return L"\n";
+        //    break;
+        //case EXPORT_VOLUME:
+        //    return L"\n";
+        //    break;
+        //case IMPORT_VOLUME:
+        //    return L"\n";
+        //    break;
+		case EXPORT_TO_UNITY:
+			return L"File name, Nb points, Nb params, Level, Duration (seconds)\n";
+			break;
         default: break;
         }
     return L"";
@@ -124,8 +138,24 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_SDK_MESH;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"streaming"))
             t = TEST_STREAMING;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"scmToCloud"))
+            t = TEST_SCM_TO_CLOUD;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeRandom"))
             t = TEST_RANDOM_DRAPE;
+        //else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportLine"))
+        //    t = EXPORT_LINE;
+        //else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportVolume"))
+        //    t = EXPORT_VOLUME;
+        //else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"importVolume"))
+        //    t = IMPORT_VOLUME;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"loadNodes"))
+            t = TEST_LOADING;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"groupNodeHeaders"))
+            t = TEST_GROUP_NODE_HEADERS;
+		else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
+			t = ADD_TEXTURES_TO_MESH;
+		else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportToUnity"))
+			t = EXPORT_TO_UNITY;
         else return false;
         }
     else return false;
@@ -264,15 +294,33 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case TEST_CONSTRAINTS:
                 PerformConstraintTest(pTestNode, pResultFile);
                 break;
-            case TEST_SDK_MESH:
-                PerformSDKCreationTexturedMeshNode(pTestNode, pResultFile);
-                break;
             case TEST_STREAMING:
                 PerformStreaming(pTestNode, pResultFile);
+                break;
+            case TEST_SCM_TO_CLOUD:
+                PerformSCMToCloud(pTestNode, pResultFile);
                 break;
             case TEST_RANDOM_DRAPE:
                 PerformTestDrapeRandomLines(pTestNode, pResultFile);
                 break;
+            //case EXPORT_LINE:
+            //    ExportDrapeLine(pTestNode, pResultFile);
+            //    break;
+            //case EXPORT_VOLUME:
+            //    ExportVolume(pTestNode, pResultFile);
+            //    break;
+            //case IMPORT_VOLUME:
+            //    ImportVolume(pTestNode, pResultFile);
+            //    break;
+            case TEST_GROUP_NODE_HEADERS:
+                PerformGroupNodeHeaders(pTestNode, pResultFile);
+                break;
+            case ADD_TEXTURES_TO_MESH:
+                AddTexturesToMesh(pTestNode, pResultFile);
+                break;
+			case EXPORT_TO_UNITY:
+				PerformExportToUnityTest(pTestNode, pResultFile);
+				break;
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();
@@ -318,14 +366,14 @@ void ReadLinesFile(std::ifstream& file, bvector<bvector<DPoint3d>>& lineDefs)
                 }
             linePts.push_back(pt);
             }
-        if (linePts.size()>0)lineDefs.push_back(linePts);
+        if (linePts.size() > 0)lineDefs.push_back(linePts);
         }
     }
 
 
 bool DPoint3dEqualityTest(const DPoint3d& point1, const DPoint3d& point2)
     {
-    return point1.x== point2.x && point1.y == point2.y;
+    return point1.x == point2.x && point1.y == point2.y;
     }
 
 DTMFeatureType ParseFeatureType(std::string& line)

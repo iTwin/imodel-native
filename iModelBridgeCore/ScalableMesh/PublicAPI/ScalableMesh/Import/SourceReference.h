@@ -32,7 +32,7 @@ struct DGNElementSourceRefBase;
 END_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
-struct ISourceRefVisitor;
+
 struct SourceRefBase;
 struct ContentDescriptor;
 
@@ -50,12 +50,13 @@ private:
     typedef SharedPtrTypeTrait<SourceRefBase>::type
                                             BasePtr;   
 
-    BasePtr                                 m_basePtr;
     ClassID                                 m_classID;
     
     // Source reference should always be created via the Create method of a specialized SourceRef.
     explicit                                SourceRef                              (const SourceRefBase*        sourceRefP);
 public:
+    BasePtr                                 m_basePtr;
+
     // Implicitly constructed from a base
     IMPORT_DLLE                             SourceRef                              (const SourceRefBase&        sourceRef);
 
@@ -66,7 +67,6 @@ public:
 
     ClassID                                 GetClassID                             () const { return m_classID; } 
 
-    IMPORT_DLLE void                        Accept                                 (ISourceRefVisitor&          visitor) const;
 
     IMPORT_DLLE void                        SetDtmSource(const IDTMSourcePtr&        dtmSourcePtr);
 
@@ -91,7 +91,6 @@ private:
     std::auto_ptr<Impl>                     m_pImpl;
 
     virtual ClassID                         _GetClassID                            () const = 0;
-    virtual void                            _Accept                                (ISourceRefVisitor&      visitor) const = 0;
 
     virtual SourceRefBase*                  _Clone                                 () const = 0;
 
@@ -121,7 +120,7 @@ private:
     struct UniqueTokenType {};
 
     virtual ClassID                         _GetClassID                            () const override;
-    virtual void                            _Accept                                (ISourceRefVisitor&      visitor) const override;
+
     virtual SourceRefBase*                  _Clone                                 () const override;
 protected:
     typedef SourceRefMixinBase<BaseT>       super_class;

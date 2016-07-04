@@ -195,9 +195,9 @@ private:
 
         struct SurfaceToLayerDesc
             {
-            LayerDescriptor operator() (const Surface& surface) const
+            RefCountedPtr<ILayerDescriptor> operator() (const Surface& surface) const
                 {
-                return LayerDescriptor(surface.GetName().c_str(),
+                return ILayerDescriptor::CreateLayerDescriptor(surface.GetName().c_str(),
                                        DataTypeSet
                                             (
                                             LinearTypeTi32Pi32Pq32Gi32_3d64fCreator().Create(), 

@@ -6,7 +6,7 @@
 |       $Date: 2011/08/30 19:04:08 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,7 +56,7 @@ class LinearTypeFamilyCreator : public Import::Plugin::V0::StaticDataTypeFamilyC
     {
     virtual const Import::DataTypeFamily&           _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    LinearTypeFamilyCreator                        ();
+    BENTLEY_SM_EXPORT explicit                    LinearTypeFamilyCreator                        ();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -67,7 +67,7 @@ class LinearTypeTi32Pi32Pq32Gi32_3d64fCreator : public Import::Plugin::V0::Stati
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    LinearTypeTi32Pi32Pq32Gi32_3d64fCreator        ();
+    BENTLEY_SM_EXPORT explicit                    LinearTypeTi32Pi32Pq32Gi32_3d64fCreator        ();
     };
 
 
@@ -79,7 +79,7 @@ class LinearTypeTi32Pi32Pq32Gi32_3d64fM64fCreator : public Import::Plugin::V0::S
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    LinearTypeTi32Pi32Pq32Gi32_3d64fM64fCreator    ();
+    BENTLEY_SM_EXPORT explicit                    LinearTypeTi32Pi32Pq32Gi32_3d64fM64fCreator    ();
     };
 
 

@@ -54,7 +54,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include "ScalableMeshMemoryPools.h"
 
-
+#include "ScalableMeshVolume.h"
 /*__PUBLISH_SECTION_START__*/
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
@@ -82,6 +82,8 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
 
     GeoCoords::GCS                      m_sourceGCS;
     DRange3d                            m_contentExtent;
+
+    WString                             m_baseExtraFilesPath;
 
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
@@ -113,6 +115,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     ScalableMeshDraping* m_draping;
     IScalableMesh* m_scMesh;
     Transform m_transformToUors;
+    IDTMVolume* m_dtmVolume;
     protected:
 
     virtual IDTMDrapingP     _GetDTMDraping() override;
@@ -123,20 +126,25 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     virtual BcDTMP _GetBcDTM() override;
     virtual DTMStatusInt _GetBoundary(DTMPointArray& ret) override;
     virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) override;
+    virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) override;
     virtual DTMStatusInt _GetTransformDTM(DTMPtr& transformedDTM, TransformCR transformation) override;
     virtual bool _GetTransformation(TransformR transformation) override;
     virtual IDTMVolumeP _GetDTMVolume() override;
+
+    virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP) override { return DTM_ERROR; }
 
     public:
         ScalableMeshDTM(IScalableMeshPtr scMesh)
             {
             m_draping = new ScalableMeshDraping(scMesh);
+            m_dtmVolume = new ScalableMeshVolume(scMesh);
             m_scMesh = scMesh.get();
             }
 
         virtual ~ScalableMeshDTM()
             {
             delete m_draping;
+            delete m_dtmVolume;
             }
 
         static RefCountedPtr<ScalableMeshDTM> Create(IScalableMeshPtr scMesh)
@@ -148,6 +156,12 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
             {
             m_transformToUors.InitFrom(storageToUors);
             m_draping->SetTransform(m_transformToUors);
+            ((ScalableMeshVolume*)m_dtmVolume)->SetTransform(m_transformToUors);
+            }
+
+        void SetAnalysisType(DTMAnalysisType type)
+            {
+            m_draping->SetAnalysisType(type);
             }
     };
 /*----------------------------------------------------------------------------+
@@ -174,18 +188,26 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         typedef SMStreamingPointTaggedTileStore<
             INDEXPOINT,
-            YProtPtExtentType >        StreamingStoreType;
+            YProtPtExtentType >        StreamingPointStoreType;
+        typedef SMStreamingPointTaggedTileStore<
+            int32_t,
+            YProtPtExtentType >        StreamingIndiceStoreType;
+        typedef SMStreamingPointTaggedTileStore<
+            DPoint2d,
+            YProtPtExtentType >        StreamingUVStoreType;
 
         typedef SMMeshIndex<INDEXPOINT, YProtPtExtentType>
-                                        PointIndexType;
+                                        MeshIndexType;
 
 
         bool                            m_areDataCompressed; 
         bool                            m_computeTileBoundary;
         double                          m_minScreenPixelsPerPoint;            
 
-        HFCPtr<PointIndexType>          m_scmIndexPtr;                                                    
-        RefCountedPtr<ScalableMeshDTM>                m_scalableMeshDTM;
+        HFCPtr<MeshIndexType>          m_scmIndexPtr;                                                    
+        RefCountedPtr<ScalableMeshDTM>  m_scalableMeshDTM[DTMAnalysisType::Qty];
+
+        bvector<IScalableMeshNodePtr> m_viewedNodes;
 
 
         explicit                        ScalableMesh(SMSQLiteFilePtr& smSQLiteFile,const WString&             path);
@@ -196,6 +218,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         static IScalableMeshPtr       Open                           (SMSQLiteFilePtr& smSQLiteFile,
                                                                         const WString&             filePath,
+                                                                        const Utf8String&     baseEditsFilePath,
                                                                         StatusInt&                      status);
 
 
@@ -211,7 +234,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         unsigned __int64                CountLinearsInExtent(YProtFeatureExtentType& extent, unsigned __int64 maxFeatures) const;
 
 
-        static DRange3d                 ComputeTotalExtentFor          (const PointIndexType*           pointIndexP);
+        static DRange3d                 ComputeTotalExtentFor          (const MeshIndexType*           pointIndexP);
 
         bool                            AreDataCompressed              ();
 #if 0
@@ -230,16 +253,20 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
     protected : 
 
         HFCPtr<SMPointIndexNode<INDEXPOINT, YProtPtExtentType>> GetRootNode();                    
-            
+        virtual void                               _TextureFromRaster(HIMMosaic* mosaicP) override;
  
         virtual __int64          _GetPointCount() override;
+
+        virtual bool          _IsTerrain() override;
         
 
-        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
-        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors) override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
+
+        virtual StatusInt         _GetBoundary(bvector<DPoint3d>& boundary) override;
 
 
     // Inherited from IMRDTM                   
@@ -272,10 +299,24 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
+        virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
+        virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
+
+        virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
+        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
+        virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
+        virtual int                                _ConvertToCloud(const WString& pi_pOutputDirPath) const override;
+
+
+        virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
+        virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
         
 #ifdef SCALABLE_MESH_ATP
-        virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override; 
+        virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override;
+        virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override;
 #endif
+
+        virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
 
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
@@ -318,15 +359,20 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual ~ScalableMeshSingleResolutionPointIndexView();
 
+        virtual void                               _TextureFromRaster(HIMMosaic* mosaicP) override;
+
         // Inherited from IDTM   
         virtual __int64          _GetPointCount() override;
 
-        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
+        virtual bool          _IsTerrain() override;
 
-        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors) override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
+
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
+        virtual StatusInt         _GetBoundary(bvector<DPoint3d>& boundary) override;
 
         // Inherited from IMRDTM             
         virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const override;
@@ -357,16 +403,28 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
+        virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
+        virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
+
+        virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
+        virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
+        virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
         
+        virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
+        virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
         virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
         virtual int                    _SynchWithSources() override;
 
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
+        virtual int                    _ConvertToCloud(const WString& pi_pOutputDirPath) const override { return ERROR; }
+
+        virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
 
 #ifdef SCALABLE_MESH_ATP
-        virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override {return ERROR;}
+        virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}
+        virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override { return ERROR; }
 #endif
            
     };

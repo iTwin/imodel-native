@@ -266,7 +266,7 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
         return ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
+           ILayerDescriptor::CreateLayerDescriptor(L"",
                             PointType3d64fCreator().Create(),
                             gcs,
                             &range,

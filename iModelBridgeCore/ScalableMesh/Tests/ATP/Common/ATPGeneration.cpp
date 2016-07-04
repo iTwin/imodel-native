@@ -1,4 +1,3 @@
-//#include "ScalableMeshATPPch.h"
 #include "ATPUtils.h"
 
 #include <time.h>
@@ -12,106 +11,12 @@
 #include "ATPDefinitions.h"
 #include "ATPGeneration.h"
 #include "ATPFileFinder.h"
-//#include <DgnPlatform/DgnFile.h>
-//#include <ScalableMesh/Import/ScalableMeshData.h>
-//#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
-//#include <DgnPlatform\DgnDocumentManager.h>
-//#include <DgnPlatform\LevelCache.h>
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <DgnPlatform\DgnPlatformErrors.r.h>
 #include <DgnPlatform\DgnPlatformBaseType.r.h>
 
-
-//#include    <DgnGeoCoord\DgnGeoCoordApi.h>
-
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
-//USING_NAMESPACE_SCALABLEMESH
-
-/*typedef uint32_t  LevelId;
-
-StatusInt    mdlLevel_getIdFromName
-(
-    LevelId*        levelIdOut,
-    DgnModelP    modelRefIn,
-    LevelId,
-    WCharCP         levelNameIn
-    )
-    {
-    // Does not look in level libraries!
-    if (NULL == modelRefIn)
-        return ERROR;
-
-    LevelHandle level = modelRefIn->GetLevelCacheR().GetLevelByName(levelNameIn, false);
-    if (!level.IsValid())
-        {
-        if (NULL != levelIdOut)
-            *levelIdOut = LEVEL_NULL_ID;
-
-        return static_cast<StatusInt>(level.GetStatus());
-        }
-
-    if (NULL != levelIdOut)
-        *levelIdOut = level.GetLevelId();
-
-    return SUCCESS;
-    }*/
-
-/*IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
-                                    DTMSourceDataType importedType, 
-                                    BeXmlNodeP        pTestChildNode)
-    {
-    ILocalFileMonikerPtr monikerPtr(ILocalFileMonikerFactory::GetInstance().Create(sourcePath.c_str()));
-            
-    if(0 == _wcsicmp(L"dgn", BeFileName::GetExtension(sourcePath.c_str()).c_str()))
-        {
-        assert(pTestChildNode != 0);        
-
-        WString model = L"Default";
-        WString level = L"Default";
-
-        DgnFileOpenParams fileOpenParams(sourcePath.c_str(), false, DgnFilePurpose::MasterFile);
-
-        DgnFilePtr dgnFilePtr(fileOpenParams.CreateFileAndLoad ());
-
-        assert(dgnFilePtr != 0);
-
-        StatusInt errorDetails;
-        //Only supporting DGN with one model with ID 0.
-        ModelId modelID = 0;
-
-        DgnModelP modelRef = dgnFilePtr->LoadRootModelById (&errorDetails, modelID);   
-                
-        assert(modelRef != 0);
-
-        StatusInt status = pTestChildNode->GetAttributeStringValue(model, "model"); 
-
-        assert(status == SUCCESS);        
-
-#ifndef NDEBUG
-        WCharCP modelName;// [3000];
-        //mdlModelRef_getModelName(modelRef, modelName);
-        modelName = modelRef->GetModelName();
-        
-        assert(0 == wcscmp(modelName, model.c_str()));            
-#endif
-                           
-        status = pTestChildNode->GetAttributeStringValue(level, "level"); 
-
-        assert(status == SUCCESS);
-
-        LevelId levelId;
-
-        status = mdlLevel_getIdFromName(&levelId, modelRef, 0, level.c_str());
-        //modelRef->GetLevelID;
-
-        assert(status == SUCCESS);
-        
-        return IDTMDgnLevelSource::Create(importedType, monikerPtr, modelID, model.c_str(), levelId, level.c_str()).get();
-        }
-            
-    return IDTMLocalFileSource::Create(importedType, monikerPtr).get();
-    }*/
 
 void ParseDTMFeatureType(WString& name, DTMFeatureType& type)
     {
@@ -259,6 +164,96 @@ enum
     ACCELERATOR_GPU
     };
 
+IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
+                              DTMSourceDataType importedType,
+                              BeXmlNodeP        pTestChildNode = 0)
+    {
+    if (0 == _wcsicmp(L"dgn", BeFileName::GetExtension(sourcePath.c_str()).c_str()))
+        {
+        assert(pTestChildNode != 0);
+
+        WString model = L"Default";
+        WString level = L"Default";
+
+
+
+
+
+        StatusInt status = pTestChildNode->GetAttributeStringValue(model, "model");
+
+        assert(status == SUCCESS);
+
+
+        status = pTestChildNode->GetAttributeStringValue(level, "level");
+
+        assert(status == SUCCESS);
+
+
+        return IDTMDgnLevelSource::Create(importedType, sourcePath.c_str(), 0, model.c_str(), 0, level.c_str()).get();
+        }
+
+    return IDTMLocalFileSource::Create(importedType, sourcePath.c_str()).get();
+    }
+
+bool ParseExportToUnityOptions(WString& outputDir, int& maxLevel, bool& exportTexture, BeXmlNodeP pTestNode)
+	{
+	bool isSuccess = true;
+
+	BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
+
+	while ((0 != pTestChildNode) && (isSuccess == true))
+		{
+		if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "Options"))
+			{
+			//Output Directory
+			WString outputDirAttr;
+			StatusInt status = pTestChildNode->GetAttributeStringValue(outputDirAttr, "outputDir");
+			if ( (status == BEXML_Success) && (!outputDirAttr.empty()) )
+				{
+				outputDir = outputDirAttr;
+				}
+			else
+				{
+				printf("ERROR : invalid outputDir attribute for Options node\r\n");
+				isSuccess = false;
+				}
+
+			//Max Level
+			int32_t maxLevelAttr;
+			status = pTestChildNode->GetAttributeInt32Value(maxLevelAttr, "maxLevel");
+			if ( (status == BEXML_Success) && (maxLevelAttr >= 0) && (maxLevelAttr < 10) )
+				{
+				maxLevel = maxLevelAttr;
+				}
+			else
+				{
+				printf("ERROR : invalid maxLevel attribute for Options node\r\n");
+				isSuccess = false;
+				}
+
+			//Export Texture
+			int32_t exportTextureAttr;
+			status = pTestChildNode->GetAttributeInt32Value(exportTextureAttr, "exportTexture");
+			if ((status == BEXML_Success) && (exportTextureAttr >= 0) )
+				{
+				if (exportTextureAttr == 0)
+					exportTexture = false;
+				else
+					exportTexture = true;
+				}
+			else
+				{
+				printf("ERROR : invalid exportTexture attribute for Options node\r\n");
+				isSuccess = false;
+				}
+			}
+
+		pTestChildNode = pTestChildNode->GetNextSibling();
+		}
+
+	return isSuccess;
+	}
+
 bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilterType* filterType, int* trimmingMethod, ScalableMeshSaveType* saveType, BeXmlNodeP pTestNode)
     {
     bool isSuccess = true;
@@ -382,8 +377,7 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
                 if ((datasetPath.c_str()[datasetPath.size() - 1] != L'\\') &&
                     (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
                     {
-                    //IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
-                    IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(dataType, datasetPath.c_str());
+                    IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath.c_str(), dataType, pTestChildNode);
                     AddOptionToSource(srcPtr, pTestChildNode);
                     if (BSISUCCESS != sourceCollection.Add(srcPtr))
                         {
@@ -413,7 +407,6 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
                         if (0 == BeStringUtilities::Wcsicmp(extension.c_str(), L"classif")) continue;
                         if (!ext.empty() && 0 != BeStringUtilities::Wcsicmp(extension.c_str(), ext.c_str())) continue;
                         if (!filter.empty() && !name.ContainsI(filter)) continue;
-                        //IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
                         IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(dataType, firstPath.c_str());
                         AddOptionToSource(srcPtr, pTestChildNode);
                         if (BSISUCCESS != sourceCollection.Add(srcPtr))
@@ -445,26 +438,26 @@ bool ParseBaselineSubNodes(WString& baselinePointFileName, WString& baselineFeat
     {
     bool baselineSubNodeFound = false;
 
-    BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();                    
+    BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
 
     while ((0 != pTestChildNode) && (baselineSubNodeFound == false))
         {
         if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "baseline"))
-            {                        
+            {
             StatusInt status = pTestChildNode->GetAttributeStringValue(baselinePointFileName, "pointFileName");
 
-            assert(status == BEXML_Success);            
+            assert(status == BEXML_Success);
 
             status = pTestChildNode->GetAttributeStringValue(baselineFeatureFileName, "featureFileName");
 
-            assert(status == BEXML_Success);            
+            assert(status == BEXML_Success);
 
-            baselineSubNodeFound = true;            
+            baselineSubNodeFound = true;
 
             break;
             }
 
-        pTestChildNode = pTestChildNode->GetNextSibling();                    
+        pTestChildNode = pTestChildNode->GetNextSibling();
         }
 
     return baselineSubNodeFound;
@@ -503,11 +496,7 @@ WString GetMesherTypeName(ScalableMeshMesherType mesherType)
         {
         case SCM_MESHER_2D_DELAUNAY:
             return WString(L"2.5D_DELAUNAY");
-            break;
-
-        case SCM_MESHER_LMS_MARCHING_CUBE:
-            return WString(L"LMS_MARCHING_CUBE (i.e. : Merry)");
-            break;
+            break;        
 
         case SCM_MESHER_3D_DELAUNAY:
             return WString(L"3D_DELAUNAY");

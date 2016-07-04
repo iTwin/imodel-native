@@ -23,16 +23,30 @@ struct ScalableMeshDraping : IDTMDraping
         IScalableMesh* m_scmPtr;
         Transform m_transform;
         Transform m_UorsToStorage;
+        DTMAnalysisType m_type = DTMAnalysisType::Precise;
+
+        size_t m_levelForDrapeLinear;
+
+        bvector<IScalableMeshNodePtr> m_nodeSelection;
 
         DTMStatusInt DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap);
 
         size_t ComputeLevelForTransform(const DMatrix4d& w2vMap);
 
+        void QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>& nodes, const DPoint3d& testPt, const IScalableMeshNodeQueryParamsPtr& params);
+
     protected:
         virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point) override;
+
         virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
+        //virtual DTMStatusInt _FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
+
         virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
+        //virtual bool _FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
+        
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
+
+        virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
     public:
         ScalableMeshDraping(IScalableMeshPtr scMesh);
         void SetTransform(TransformR transform)
@@ -40,6 +54,17 @@ struct ScalableMeshDraping : IDTMDraping
             m_transform = transform;
             m_UorsToStorage.InverseOf(m_transform);
             }
+
+        void SetAnalysisType(DTMAnalysisType type)
+            {
+            m_type = type;
+            }
+            
+
+            void ClearNodes()
+                {
+                m_nodeSelection.clear();
+                }
     };
 
 struct MeshTraversalStep
@@ -59,6 +84,7 @@ typedef std::function<void(MeshTraversalStep)> NodeCallback;
 struct MeshTraversalQueue
     {
     private:
+        size_t m_levelForDrapeLinear;
         std::queue<MeshTraversalStep> m_nodesRemainingToDrape;
         std::map<double, MeshTraversalStep> m_collectedNodes;
         const DPoint3d* m_polylineToDrape;
@@ -74,7 +100,7 @@ struct MeshTraversalQueue
         void ComputeDirectionOfNextNode(MeshTraversalStep& start);
 
     public:
-        MeshTraversalQueue(const DPoint3d* line, int nPts) :m_polylineToDrape(line), m_numPointsOnPolyline((size_t)nPts)
+        MeshTraversalQueue(const DPoint3d* line, int nPts, size_t levelForDrapeLinear) :m_polylineToDrape(line), m_numPointsOnPolyline((size_t)nPts), m_levelForDrapeLinear(levelForDrapeLinear)
             {};
         void UseScalableMesh(IScalableMesh* ptr)
             {
@@ -84,6 +110,27 @@ struct MeshTraversalQueue
             {
             m_currentStep.lastEdge = edge;
             }
+
+        size_t GetNumberOfNodes()
+            {
+            return m_nodesRemainingToDrape.size();
+            }
+        static const size_t ALL_CHUNKS = (size_t)-1;
+        void GetNodes(bvector < MeshTraversalStep>& nodes, size_t numberOfChunks)
+            {
+            size_t n = 0;
+            while (n < numberOfChunks && !m_nodesRemainingToDrape.empty())
+                {
+                nodes.push_back(m_nodesRemainingToDrape.front());
+                m_nodesRemainingToDrape.pop();
+                ++n;
+                }
+            }
+
+        void CollectAll();
+
+        void CollectAll(const bvector<IScalableMeshNodePtr>& inputNodes);
+
         bool TryStartTraversal(bool& needProjectionToFindFirstTriangle, int segment);
         bool HasNodesToProcess();
         bool NextAlongElevation();

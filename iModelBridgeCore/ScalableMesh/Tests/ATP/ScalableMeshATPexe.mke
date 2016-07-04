@@ -8,45 +8,22 @@
 baseDir         = $(_MakeFilePath)
 
 %include  mdl.mki
-%include $(baseDir)ScalableMeshATPexePolicy.mki
-%include $(SrcRoot)scalablemesh/ScalableMesh.mki
-#SolutionPolicyMki=$(SrcRoot)scalablemesh/ScalableMesh.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshATPName.mki
+%include $(SrcRoot)ScalableMesh/ScalableMesh.mki
 
 consoleAppUnicode = 1
-
-#CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED
-
-#always:
-#        |  Compiler options: $(cDefs)$(cDefsPost) $(copt) $(cIncs) $(PublicApiIncludes) $(CCompOpts)
-#        |  -------- --------
-
-#CCompOpts + $(PublicApiIncludes) 
 
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
 appName = ScalableMeshATPexe
-#PchCompiland = $(baseDir)ScalableMeshATPPch.cpp
 o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
 always:
     ~mkdir $(o)
 
-#PchOutputDir = $(o)
-#PchExtraOptions    =  -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
-#CompileOptionsMki =  $(baseDir)ScalableMeshATPexePolicy.mki
-#%include $(SharedMki)PreCompileHeader.mki
-
-# UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-#CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
-
-
-#PCHHeaderDepends=$(o)ScalableMeshATPPch$(oext)
 MultiCompileDepends=$(_MakeFileSpec) 
-#DisableMultiCompile=1
 %include MultiCppCompileRule.mki
-
-#appName = ScalableMeshATPexe
-#baseDir = $(_MakeFilePath)
 
 
 
@@ -56,37 +33,19 @@ CCompOpts + -DUNICODE
 
 
 
-# Need to ignore this because it's in Vancouver's header files.
-# C4312: 'type cast': conversion from '...' to '...' of greater size
-CCompOpts + -wd4267
-
-# C4091: '... ': ignored on left of '...' when no variable is declared
-CCompOpts + -wd4244
 
 
-
-
-
-#MultiCompileDepends = $(_MakeFileSpec)
-#%include MultiCppCompileRule.mki
 
 #NEEDS_WORK_SM : TEMP_SM_ATP For ATP purpose
 nameToDefine=SCALABLE_MESH_ATP
 %include cdefapnd.mki
 
-#$(o)MrDTMUtil$(oext): $(baseDir)TiledTriangulation/MrDTMUtil.cpp $(baseDir)TiledTriangulation/MrDTMUtil.h ${MultiCompileDepends}
-
-#$(o)MrDTMFace$(oext): $(baseDir)TiledTriangulation/MrDTMFace.cpp $(baseDir)TiledTriangulation/MrDTMFace.h ${MultiCompileDepends}
-
-#$(o)TiledTriangulatorValidator$(oext): $(baseDir)TiledTriangulation/TiledTriangulatorValidator.cpp $(baseDir)TiledTriangulation/TiledTriangulatorValidator.h ${MultiCompileDepends}
-
-#$(o)TiledTriangulatorUtil$(oext): $(baseDir)TiledTriangulation/TiledTriangulatorUtil.cpp $(baseDir)TiledTriangulation/TiledTriangulatorUtil.h ${MultiCompileDepends}
 
 $(o)ATPFileFinder$(oext): $(baseDir)Common/ATPFileFinder.cpp ${MultiCompileDepends}
 
 #$(o)DrapeLineTool$(oext): $(baseDir)Tool/DrapeLineTool.cpp $(baseDir)Tool/DrapeLineTool.h ${MultiCompileDepends}
 
-#$(o)VolumeCalculationTool$(oext): $(baseDir)Tool/VolumeCalculationTool.cpp $(baseDir)Tool/VolumeCalculationTool.h ${MultiCompileDepends}
+$(o)VolumeCalculationTool$(oext): $(baseDir)Tool/VolumeCalculationTool.cpp $(baseDir)Tool/VolumeCalculationTool.h ${MultiCompileDepends}
 
 $(o)ATPUtils$(oext): $(baseDir)Common/ATPUtils.cpp ${MultiCompileDepends}
 
@@ -111,8 +70,6 @@ EXE_DEST     = $(o)
 EXE_NAME     = $(appname)
 EXE_OBJS     = $(MultiCompileObjectList)
 EXE_LOPT1 = -ENTRY:wmainCRTStartup
-#DLM_OBJECT_PCH      = $(o)ScalableMeshATPPch$(oext)
-#DLM_OBJECT_FILES = $(MultiCompileObjectList) 
 LINKER_LIBRARIES  = $(ContextSubpartsLibs)BentleyAllocator.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
@@ -122,7 +79,10 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Imagepp.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppImaging.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(BeJsonCppLib)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BePointCloud.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeLibJpegTurbo.lib
 
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib
@@ -130,8 +90,6 @@ LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib
 EXE_TMP_DIR  = $(o)
 
 %include $(sharedMki)linktool.mki
-
-#%include $(sharedMki)LinkLibrary.mki
 
 always:
     ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"

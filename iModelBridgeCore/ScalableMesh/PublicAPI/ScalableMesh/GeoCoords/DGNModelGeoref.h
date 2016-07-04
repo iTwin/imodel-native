@@ -36,14 +36,14 @@ inline const TransfoMatrix& FromBSITransform (const Transform& transform)
     return reinterpret_cast<const TransfoMatrix&>(transform);
     }
 
-BENTLEYSTM_EXPORT GCS                   GetBSIElementGCSFromRootPerspective    (DgnModelRefP            modelRef);
+BENTLEY_SM_EXPORT GCS                   GetBSIElementGCSFromRootPerspective    (DgnModelRefP            modelRef);
 
 GCS                                     ReinterpretModelGCSFromRootPerspective (const GCS&              elementAsSeenFromModelGCS,
                                                                                 DgnModelRefP            elementModelRefP);
 
-BENTLEYSTM_EXPORT GCS                   GetModelMasterGCS                      (DgnModelRefP            modelRef);
+BENTLEY_SM_EXPORT GCS                   GetModelMasterGCS                      (DgnModelRefP            modelRef);
 
-BENTLEYSTM_EXPORT GCS                   GetModelActiveGCS                      (DgnModelRefP            modelRef);
+BENTLEY_SM_EXPORT GCS                   GetModelActiveGCS                      (DgnModelRefP            modelRef);
 
 Unit                                    GetModelGlobalUnit                     (DgnModelRefP            modelRef);
 
@@ -51,9 +51,9 @@ Unit                                    GetModelMasterUnit                     (
 
 Unit                                    GetModelUOR                            (DgnModelRefP            modelRef);
 
-BENTLEYSTM_EXPORT bool                  IsModelAttachedReprojected             (DgnModelRefP            modelRef);
+BENTLEY_SM_EXPORT bool                  IsModelAttachedReprojected             (DgnModelRefP            modelRef);
 
-BENTLEYSTM_EXPORT bool                  IsModelGeoreferenced                   (DgnModelRefP            modelRef);
+BENTLEY_SM_EXPORT bool                  IsModelGeoreferenced                   (DgnModelRefP            modelRef);
 
 
 

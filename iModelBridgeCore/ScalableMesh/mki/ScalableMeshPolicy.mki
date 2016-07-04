@@ -17,7 +17,8 @@ __ScalableTerrainModelPolicy_mki__=1
 BUILD_USING_VS2013=1
 VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
-appName=ScalableMesh
+appName     = ScalableMesh
+DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
 # ------------------------------------
 # Source directories

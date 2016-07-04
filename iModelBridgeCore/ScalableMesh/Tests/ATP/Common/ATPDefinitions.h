@@ -1,6 +1,7 @@
 #pragma once
 #include "ATPUtils.h"
 
+void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformMeshQualityTest(BeXmlNodeP pTestNode, FILE* pResultFile);
@@ -15,6 +16,11 @@ void PerformNodeCreationTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformDrapeBaselineTest(BeXmlNodeP pTestNode, FILE* pResultFile, BeXmlNodeP pRootNode);
 void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile);
-void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile);
+void PerformSCMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile);
+//void ExportDrapeLine(BeXmlNodeP pTestNode, FILE* pResultFile);
+//void ExportVolume(BeXmlNodeP pTestNode, FILE* pResultFile);
+//void ImportVolume(BeXmlNodeP pTestNode, FILE* pResultFile);
+void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile);
+void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile);

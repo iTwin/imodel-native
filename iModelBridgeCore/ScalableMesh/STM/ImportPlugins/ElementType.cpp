@@ -13,8 +13,6 @@
 #include <DgnPlatform\MeshHeaderHandler.h>
 
 
-BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
-
 namespace {
 
 /*---------------------------------------------------------------------------------**//**

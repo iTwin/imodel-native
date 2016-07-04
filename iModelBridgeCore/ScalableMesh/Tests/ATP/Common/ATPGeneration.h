@@ -20,11 +20,10 @@
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
-/*IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
-                                    DTMSourceDataType importedType, 
-                                    BeXmlNodeP        pTestChildNode = 0);*/
-                                    
+
 void ParseDTMFeatureType(WString& name, DTMFeatureType& type);
+
+bool ParseExportToUnityOptions(WString& outputDir, int& maxLevel, bool& exportTexture, BeXmlNodeP pTestNode);
 
 bool AddOptionToSource(IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode);
 
