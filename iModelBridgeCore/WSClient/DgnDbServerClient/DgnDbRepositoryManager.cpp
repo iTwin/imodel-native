@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SetLockStates (IBriefcaseManager::Response& response, IBriefcaseManager::ResponseOptions options, JsonValueCR deniedLocks)
+void SetCodesLocksStates (IBriefcaseManager::Response& response, IBriefcaseManager::ResponseOptions options, JsonValueCR deniedLocks, JsonValueCR deniedCodes)
     {
     if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::LockState & options))
         {
@@ -27,6 +27,20 @@ void SetLockStates (IBriefcaseManager::Response& response, IBriefcaseManager::Re
                 continue;//NEEDSWORK: log an error
 
             AddLockInfoToList (response.LockStates (), lock, briefcaseId, repositoryId);
+            }
+        }
+    if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::CodeState & options))
+        {
+        for (auto const& codeJson : deniedCodes)
+            {
+            DgnCode                  code;
+            DgnCodeState             codeState;
+            BeSQLite::BeBriefcaseId  briefcaseId;
+            Utf8String               revisionId;
+            if (!GetCodeFromServerJson(codeJson, code, codeState, briefcaseId, revisionId))
+                continue;//NEEDSWORK: log an error
+
+            AddCodeInfoToList(response.CodeStates(), code, codeState, briefcaseId, revisionId);
             }
         }
     }
@@ -60,6 +74,49 @@ DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
         m_connection = nullptr;
         return DgnDbServerStatusResult::Error(connectionResult.GetError());
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Algirdas.Mikoliunas             07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IBriefcaseManager::Response DgnDbRepositoryManager::HandleError(Request const& request, DgnDbServerResult<void> result, IBriefcaseManager::RequestPurpose purpose)
+    {
+    Response           response(purpose, request.Options(), RepositoryStatus::ServerUnavailable);
+    DgnDbServerError&  error = result.GetError();
+
+    if (DgnDbServerError::Id::LockOwnedByAnotherBriefcase == error.GetId())
+        {
+        response.SetResult(RepositoryStatus::LockAlreadyHeld);
+        JsonValueCR errorData = error.GetExtendedData();
+        SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::ConflictingLocks], nullptr);
+        }
+    else if (DgnDbServerError::Id::PullIsRequired == error.GetId())
+        {
+        response.SetResult(RepositoryStatus::RevisionRequired);
+        JsonValueCR errorData = error.GetExtendedData();
+        SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::LocksRequiresPull], errorData[ServerSchema::Property::CodesRequiresPull]);
+        }
+    else if (DgnDbServerError::Id::RevisionDoesNotExist == error.GetId())
+        {
+        response.SetResult(RepositoryStatus::InvalidRequest);
+        }
+    else if (DgnDbServerError::Id::CodeStateInvalid == error.GetId() || DgnDbServerError::Id::CodeReservedByAnotherBriefcase == error.GetId())
+        {
+        response.SetResult(RepositoryStatus::CodeUnavailable);
+        JsonValueCR errorData = error.GetExtendedData();
+        auto errorPropertyName = DgnDbServerError::Id::CodeStateInvalid == error.GetId()
+            ? ServerSchema::Property::CodeStateInvalid
+            : ServerSchema::Property::ConflictingCodes;
+        SetCodesLocksStates(response, request.Options(), nullptr, errorData[errorPropertyName]);
+        }
+    else if (DgnDbServerError::Id::CodeDoesNotExist == error.GetId())
+        {
+        response.SetResult(RepositoryStatus::CodeNotReserved);
+        JsonValueCR errorData = error.GetExtendedData();
+        SetCodesLocksStates(response, request.Options(), nullptr, errorData[ServerSchema::Property::CodesNotFound]);
+        }
+
+    return response;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -110,30 +167,8 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
         {
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
         }
-    else
-        {
-        Response           response (purpose, req.Options(), RepositoryStatus::ServerUnavailable);
-        DgnDbServerError&  error = result.GetError ();
-
-        if (DgnDbServerError::Id::LockOwnedByAnotherBriefcase == error.GetId ())
-            {
-            response.SetResult (RepositoryStatus::LockAlreadyHeld);
-            JsonValueCR errorData = error.GetExtendedData ();
-            SetLockStates (response, req.Options (), errorData[ServerSchema::Property::ConflictingLocks]);
-            }
-        else if (DgnDbServerError::Id::PullIsRequired == error.GetId ())
-            {
-            response.SetResult (RepositoryStatus::RevisionRequired);
-            JsonValueCR errorData = error.GetExtendedData ();
-            SetLockStates (response, req.Options (), errorData[ServerSchema::Property::LocksRequiresPull]);
-            }
-        else if (DgnDbServerError::Id::RevisionDoesNotExist == error.GetId ())
-            {
-            response.SetResult (RepositoryStatus::InvalidRequest);
-            }
-            
-        return response;
-        }
+    
+    return HandleError(req, result, purpose);
     }
 
 /*---------------------------------------------------------------------------------**//**

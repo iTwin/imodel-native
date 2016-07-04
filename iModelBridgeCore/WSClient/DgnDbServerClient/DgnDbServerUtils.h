@@ -73,6 +73,7 @@ namespace ServerSchema
         static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
         static Utf8CP ConflictingLocks = "ConflictingLocks";
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
+        static Utf8CP CodesRequiresPull = "CodesRequiresPull";
         static Utf8CP IsReadOnly = "IsReadOnly";
         static Utf8CP AuthorityId = "AuthorityId";
         static Utf8CP Namespace = "Namespace";
@@ -80,6 +81,9 @@ namespace ServerSchema
         static Utf8CP Values = "Values";
         static Utf8CP StateRevision = "StateRevision";
         static Utf8CP State = "State";
+        static Utf8CP CodeStateInvalid = "CodeStateInvalid";
+        static Utf8CP ConflictingCodes = "ConflictingCodes";
+        static Utf8CP CodesNotFound = "CodesNotFound";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     static Utf8CP DeleteAllCodes = "DeleteAll";

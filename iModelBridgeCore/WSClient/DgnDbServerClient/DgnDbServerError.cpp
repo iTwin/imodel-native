@@ -43,6 +43,9 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         map["DgnDbServer.LockOwnedByAnotherBriefcase"]               = Id::LockOwnedByAnotherBriefcase;
         map["DgnDbServer.BriefcaseDoesNotBelongToUser"]              = Id::BriefcaseDoesNotBelongToUser;
         map["DgnDbServer.UserAlreadyExists"]                         = Id::UserAlreadyExists;
+        map["DgnDbServer.CodeStateInvalid"]                          = Id::CodeStateInvalid;
+        map["DgnDbServer.CodeReservedByAnotherBriefcase"]            = Id::CodeReservedByAnotherBriefcase;
+        map["DgnDbServer.CodeDoesNotExist"]                          = Id::CodeDoesNotExist;
         map["DgnDbServer.UserDoesNotExist"]                          = Id::UserDoesNotExist;
         }
 
