@@ -61,9 +61,15 @@ struct ECDbProfileUpgrader_3720 : ECDbProfileUpgrader
     {
     //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
     private:
+        static DbResult AddVirtualECClassIdToTableWhichDoesNotHaveIt(ECDbCR ecdb);
+        static DbResult AddECClassIdPropertyPath(PropertyPathId& ecclassIdPropertyPathId, ECDbCR ecdb);
+        static DbResult GetECClassIdByTable(std::map<DbTableId, DbColumnId>& tableByECClassId, ECDbCR ecdb);
+        static DbResult GetECClassMapByTableId(std::map<ClassMapId, DbTableId>& classMapByTable, ECDbCR ecdb);
+        static DbResult AddECClassIdPropertyMap(PropertyPathId ecclassIdPropertyPathId, std::map<ClassMapId, DbTableId>& classMapByTable, std::map<DbTableId, DbColumnId>& tableByECClassId, ECDbCR ecdb);
+
+
         virtual DbResult _Upgrade(ECDbCR) const override;
     };
-
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      06/2016
 //+===============+===============+===============+===============+===============+======
