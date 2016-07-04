@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeJsonCpp/BeJsonUtilities.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,12 +12,32 @@
 #include <Bentley/DateTime.h>
 #include <Bentley/WString.h>
 #include <Bentley/NonCopyableClass.h>
+#include <Bentley/LocalState.h>
 #include <json/json.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
 typedef Json::Value& JsonValueR;
 typedef Json::Value const& JsonValueCR;
+
+//=======================================================================================
+//! ILocalState wrapper that handles JSON - string conversion.
+//  @bsiclass                                           Grigas.Petraitis        12/14
+//=======================================================================================
+struct IJsonLocalState : ILocalState
+    {
+    //! Saves the supplied JSON value as string in the local state
+    void SaveJsonValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value) {SaveValue(nameSpace, key, Json::FastWriter().write(value)); }
+
+    //! Parses the stored serialized JSON value and returns it as JSON
+    Json::Value GetJsonValue(Utf8CP nameSpace, Utf8CP key) const 
+        {
+        Json::Value value;
+        if (Json::Reader().parse(_GetValue(nameSpace, key), value, false))
+            return value;
+        return Json::nullValue;
+        }
+    };
 
 //=======================================================================================
 // @bsiclass                                                    Shaun.Sewall     10/2012
