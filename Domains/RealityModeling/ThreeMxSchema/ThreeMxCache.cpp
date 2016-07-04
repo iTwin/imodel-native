@@ -6,11 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
-#include <DgnPlatform/HttpHandler.h>
+#include <BeHttp/HttpRequest.h>
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <folly/futures/Future.h>
 #endif
+
+USING_NAMESPACE_BENTLEY_HTTP
 
 #define TABLE_NAME_ThreeMx "ThreeMx"
 
@@ -153,32 +155,21 @@ StatusInt ThreeMxFileData::LoadFromHttp() const
     if (SUCCESS == LoadFromDb())
         return SUCCESS;
 
-    bmap<Utf8String, Utf8String> header;
-    Http::Response response;
-    Http::Request::Status requestStatus = Http::PerformRequest(response, Http::Request(m_fileName.c_str(), header), nullptr);
-    switch (requestStatus)
-        {
-        case Http::Request::Status::NoConnection:
-        case Http::Request::Status::CouldNotResolveHost:
-        case Http::Request::Status::CouldNotResolveProxy:
-        case Http::Request::Status::Aborted:
-            return ERROR;
+    HttpByteStreamBodyPtr responseBody = HttpByteStreamBody::Create();
+    HttpRequest request(m_fileName);
+    request.SetResponseBody(responseBody);
+    HttpResponse response = request.Perform();
 
-        case Http::Request::Status::UnknownError:
-            BeAssert(false && "All HTTP errors should be handled");
-            return ERROR;
-        }
-
-    if (response.m_status != Http::Response::Status::Success)
+    if (ConnectionStatus::OK != response.GetConnectionStatus() || HttpStatus::OK != response.GetHttpStatus())
         return ERROR;
 
     if (m_output)
         {
-        *m_output = std::move(response.m_body);
+        *m_output = std::move(responseBody->GetByteStream());
         return SUCCESS;
         }
 
-    m_nodeBytes = std::move(response.m_body);
+    m_nodeBytes = std::move(responseBody->GetByteStream());
 
     BeAssert(m_node->IsQueued());
     if (SUCCESS != m_node->Read3MXB(m_nodeBytes, m_scene))
