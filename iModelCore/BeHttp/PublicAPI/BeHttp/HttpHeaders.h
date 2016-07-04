@@ -10,6 +10,7 @@
 
 #include <Bentley/WString.h>
 #include <Bentley/bmap.h>
+#include <Bentley/DateTime.h>
 
 #include <BeHttp/Http.h>
 
@@ -76,6 +77,11 @@ struct HttpRequestHeaders : HttpHeaders
     BEHTTP_EXPORT void SetUserAgent (Utf8StringCR userAgent);
     BEHTTP_EXPORT Utf8CP GetUserAgent () const;
 
+    // If-Modified-Since header
+    BEHTTP_EXPORT void SetIfModifiedSince(Utf8StringCR dateTime);
+    BEHTTP_EXPORT void SetIfModifiedSince(DateTimeCR dateTime);
+    BEHTTP_EXPORT Utf8CP GetIfModifiedSince() const;
+
     // If-None-Match header
     BEHTTP_EXPORT void SetIfNoneMatch (Utf8StringCR etag);
     BEHTTP_EXPORT Utf8CP GetIfNoneMatch () const;
@@ -116,6 +122,10 @@ struct HttpResponseHeaders : HttpHeaders
     // Server header
     BEHTTP_EXPORT void SetServer (Utf8StringCR server);
     BEHTTP_EXPORT Utf8CP GetServer () const;
+    
+    // Cache-Control header
+    BEHTTP_EXPORT void SetCacheControl(Utf8StringCR cacheControl);
+    BEHTTP_EXPORT Utf8CP GetCacheControl() const;
     };
 
 typedef HttpResponseHeaders& HttpResponseHeadersR;

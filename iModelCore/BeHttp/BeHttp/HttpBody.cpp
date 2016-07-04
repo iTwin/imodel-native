@@ -390,6 +390,98 @@ Utf8String HttpStringBody::AsString () const
     return *m_string;
     }
 
+#pragma mark - HttpByteStreamBody
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpByteStreamBodyPtr HttpByteStreamBody::Create() {return new HttpByteStreamBody();}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpByteStreamBody::Open() {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpByteStreamBody::Close() {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpByteStreamBody::SetPosition (uint64_t position)
+    {
+    uint64_t currentLength = GetLength();
+    if (position > currentLength)
+        return ERROR;
+
+    m_position = position;
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpByteStreamBody::GetPosition (uint64_t& position)
+    {
+    position = m_position;
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpByteStreamBody::Reset ()
+    {
+    m_stream.Clear();
+    m_position = 0;
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t HttpByteStreamBody::Write (const char* buffer, size_t bufferSize)
+    {
+    m_stream.Append((uint8_t const*)buffer, (uint32_t)bufferSize);
+    m_position += bufferSize;
+    return bufferSize;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t HttpByteStreamBody::Read(char* bufferOut, size_t bufferSize)
+    {
+    size_t copyBytesCount = bufferSize;
+    if (m_stream.GetSize() < copyBytesCount)
+        copyBytesCount = (size_t)m_stream.GetSize();
+
+    memcpy(bufferOut, m_stream.GetData(), copyBytesCount);
+    return copyBytesCount;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t HttpByteStreamBody::GetLength() {return m_stream.GetSize();}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value HttpByteStreamBody::AsJson() const {return Json::Value::null;}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpByteStreamBody::AsRapidJson(rapidjson::Document& document) const {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String HttpByteStreamBody::AsString() const {return "";}
+
 #pragma mark - HttpMultipartBody
 
 const Utf8String HttpMultipartBody::DefaultBoundary = "----------------c74c9f339ca44dd48ee4b45a9dedd811";

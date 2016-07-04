@@ -219,6 +219,58 @@ Utf8CP HttpRequestHeaders::GetIfMatch () const
     return GetValue ("If-Match");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String GetAnsiCFormattedDateTime(DateTimeCR dateTime)
+    {
+    Utf8CP wkday = "";
+    switch (dateTime.GetDayOfWeek())
+        {
+        case DateTime::DayOfWeek::Sunday:   wkday = "Sun"; break;
+        case DateTime::DayOfWeek::Monday:   wkday = "Mon"; break;
+        case DateTime::DayOfWeek::Tuesday:  wkday = "Tue"; break;
+        case DateTime::DayOfWeek::Wednesday:wkday = "Wed"; break;
+        case DateTime::DayOfWeek::Thursday: wkday = "Thu"; break;
+        case DateTime::DayOfWeek::Friday:   wkday = "Fri"; break;
+        case DateTime::DayOfWeek::Saturday: wkday = "Sat"; break;
+        }
+
+    Utf8CP month = "";
+    switch (dateTime.GetMonth())
+        {
+        case 1:  month = "Jan"; break;
+        case 2:  month = "Feb"; break;
+        case 3:  month = "Mar"; break;
+        case 4:  month = "Apr"; break;
+        case 5:  month = "May"; break;
+        case 6:  month = "Jun"; break;
+        case 7:  month = "Jul"; break;
+        case 8:  month = "Aug"; break;
+        case 9:  month = "Sep"; break;
+        case 10: month = "Oct"; break;
+        case 11: month = "Nov"; break;
+        case 12: month = "Dec"; break;
+        }
+
+    return Utf8PrintfString("%s %s %02d %02d:%02d:%02d %d", wkday, month, dateTime.GetDay(), dateTime.GetHour(), dateTime.GetMinute(), dateTime.GetSecond(), dateTime.GetYear());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpRequestHeaders::SetIfModifiedSince(DateTimeCR dateTime) {SetIfModifiedSince(GetAnsiCFormattedDateTime(dateTime));}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpRequestHeaders::SetIfModifiedSince(Utf8StringCR dateTime) {SetValue("If-Modified-Since", dateTime);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP HttpRequestHeaders::GetIfModifiedSince() const {return GetValue("If-Modified-Since");}
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -314,6 +366,16 @@ Utf8CP HttpResponseHeaders::GetServer () const
     {
     return GetValue ("Server");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpResponseHeaders::SetCacheControl(Utf8StringCR cacheControl) {SetValue("Cache-Control", cacheControl);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP HttpResponseHeaders::GetCacheControl() const {return GetValue("Cache-Control");}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2013

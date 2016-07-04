@@ -11,6 +11,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/BeFile.h>
 #include <Bentley/RefCounted.h>
+#include <Bentley/ByteStream.h>
 #include <rapidjson/BeRapidJson.h>
 
 #include <BeHttp/Http.h>
@@ -129,6 +130,39 @@ struct EXPORT_VTABLE_ATTRIBUTE HttpStringBody : public HttpBody
         BEHTTP_EXPORT Json::Value AsJson () const;
         BEHTTP_EXPORT void AsRapidJson (rapidjson::Document& documentOut) const;
         BEHTTP_EXPORT Utf8String AsString () const;
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                     Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+typedef RefCountedPtr<struct HttpByteStreamBody> HttpByteStreamBodyPtr;
+
+struct EXPORT_VTABLE_ATTRIBUTE HttpByteStreamBody : public HttpBody
+    {
+    protected:
+        uint64_t m_position;
+        ByteStream m_stream;
+
+        HttpByteStreamBody() {}
+
+    public:
+        BEHTTP_EXPORT static HttpByteStreamBodyPtr Create();
+
+        ByteStream const& GetByteStream() const {return m_stream;}
+
+        BEHTTP_EXPORT void Open() override;
+        BEHTTP_EXPORT void Close() override;
+
+        BEHTTP_EXPORT BentleyStatus SetPosition(uint64_t position) override;
+        BEHTTP_EXPORT BentleyStatus GetPosition(uint64_t& position) override;
+        BEHTTP_EXPORT BentleyStatus Reset() override;
+        BEHTTP_EXPORT size_t Write(const char* buffer, size_t bufferSize) override;
+        BEHTTP_EXPORT size_t Read(char* bufferOut, size_t bufferSize) override;
+        BEHTTP_EXPORT uint64_t GetLength() override;
+
+        BEHTTP_EXPORT Json::Value AsJson() const override;
+        BEHTTP_EXPORT void AsRapidJson(rapidjson::Document& documentOut) const override;
+        BEHTTP_EXPORT Utf8String AsString() const override;
     };
 
 /*--------------------------------------------------------------------------------------+
