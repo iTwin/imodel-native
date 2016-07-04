@@ -39,6 +39,9 @@ struct DgnDbServerError : public Tasks::AsyncError
             LockOwnedByAnotherBriefcase,
             UserAlreadyExists,
             UserDoesNotExist,
+            CodeStateInvalid,
+            CodeReservedByAnotherBriefcase,
+            CodeDoesNotExist,
 
             //WebServices Errors
             LoginFailed,
