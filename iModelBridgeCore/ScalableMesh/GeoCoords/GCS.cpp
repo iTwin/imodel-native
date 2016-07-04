@@ -914,8 +914,14 @@ GCS GCSFactory::Impl::CreateFromBaseCS (const WChar*             wkt,
     {
     BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr gcsPtr(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS());
     WString w_wkt(wkt);
+    WString wktWithoutFlavor;
     StatusInt initWarningCode = BSISUCCESS;
-    const StatusInt initStatus = gcsPtr->InitFromWellKnownText(&initWarningCode, 0, wktFlavor, w_wkt.GetWCharCP());
+
+    IDTMFile::WktFlavor wktFlavorInternal = GetWKTFlavor(&wktWithoutFlavor, w_wkt);
+    bool result = MapWktFlavorEnum(wktFlavor, wktFlavorInternal);
+    assert(result == true);
+    
+    const StatusInt initStatus = gcsPtr->InitFromWellKnownText(&initWarningCode, 0, wktFlavor, wktWithoutFlavor.GetWCharCP());
     
     if (BSISUCCESS != initStatus)
         {

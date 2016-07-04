@@ -132,9 +132,7 @@ void AppHost::Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath)
     RscFileManager::StaticInitialize(L"en");
         
     DgnViewLib::Initialize (*this, true);
-
-    //Application needs to initialize PdfLibInitializer dll if it wants support for PDF raster attachment.
-
+    
     BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::Initialize (*new AppRasterCoreLibHost());
     BeAssert (BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::IsInitialized());
 
@@ -168,7 +166,7 @@ BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager&                              
 BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&     AppHost::_SupplyRasterAttachmentAdmin()      {return BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin();}
 BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&           AppHost::_SupplyPointCloudAdmin()            {return *new BENTLEY_NAMESPACE_NAME::DgnPlatform::PointCloudDisplayAdmin();}
 BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()
-    {        
+    {            
     WString geocoordinateDataPath;
 
     if (BeFileName::DoesPathExist(m_systemDtyPath.c_str()))
