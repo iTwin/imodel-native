@@ -9,6 +9,8 @@
 #include "stdafx.h"
 
 #include <atlimage.h>
+#include <ImagePP/all/h/HRFPageFileFactory.h>
+#include <ImagePP/all/h/HRFRasterFilePageDecorator.h>
 
 #include <RealityPlatform/RealityDataHandler.h>
 #include <RealityPlatform/RealityPlatformUtil.h>
@@ -78,6 +80,22 @@ static HFCPtr<HRFRasterFile> GetRasterFile(Utf8CP inFilename)
                             //pi_rpRasterFile = HRFSLOStripAdapter::CreateBestAdapterFor(pi_rpRasterFile);
                             CreateSLOAdapter = true;
                             }
+                        }
+
+                    // Add the Decoration HGR, TFW or ERS Page File
+                    if (HRFPageFileFactory::GetInstance()->HasFor(rasterFile, false))
+                        {
+                        const HRFPageFileCreator* pPageFileCreator(HRFPageFileFactory::GetInstance()->FindCreatorFor(rasterFile, false));
+
+                        HASSERT(pPageFileCreator != 0);
+
+                        HFCPtr<HRFPageFile> pPageFile(pPageFileCreator->CreateFor(rasterFile));
+
+                        pPageFile->SetDefaultRatioToMeter(1.0);
+
+                        HASSERT(pPageFile != 0);
+
+                        rasterFile = new HRFRasterFilePageDecorator(rasterFile, pPageFile);
                         }
         }
     catch (HFCException&)

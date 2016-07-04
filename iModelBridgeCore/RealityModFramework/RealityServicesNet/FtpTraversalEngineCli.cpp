@@ -29,12 +29,36 @@ FtpTraversalObserverWrapper::FtpTraversalObserverWrapper(gcroot<IFtpTraversalObs
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
+void FtpTraversalObserverWrapper::OnFileListed(bvector<Utf8String>& fileList, Utf8CP file)
+    {
+    marshal_context ctx;
+
+    // Process listed file.
+    if (m_managedFtpObserver->OnFileListed_AddToQueue(ctx.marshal_as<String^>(file)))
+        fileList.push_back(file);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+void FtpTraversalObserverWrapper::OnFileDownloaded(Utf8CP file)
+    {
+    marshal_context ctx;
+
+    // Native to managed.
+    m_managedFtpObserver->OnFileDownloaded(ctx.marshal_as<String^>(file));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
 void FtpTraversalObserverWrapper::OnDataExtracted(FtpDataCR data)
     {
     marshal_context ctx;
 
     // Native to managed.
     FtpDataWrapper^ dataWrapper = FtpDataWrapper::Create();
+    
     dataWrapper->SetName(ctx.marshal_as<String^>(data.GetName().c_str()));
     dataWrapper->SetUrl(ctx.marshal_as<String^>(data.GetUrl().c_str()));
     dataWrapper->SetCompoundType(ctx.marshal_as<String^>(data.GetCompoundType().c_str()));
@@ -197,6 +221,14 @@ FtpClientWrapper::FtpClientWrapper(String^ url)
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
 FtpClientWrapper::~FtpClientWrapper()
+    {
+    this->!FtpClientWrapper();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    4/2016
+//-------------------------------------------------------------------------------------
+FtpClientWrapper::!FtpClientWrapper()
     {
     if (0 != m_pClient)
         {
@@ -613,6 +645,14 @@ FtpDataWrapper::FtpDataWrapper()
 //-------------------------------------------------------------------------------------
 FtpDataWrapper::~FtpDataWrapper()
     {
+    this->!FtpDataWrapper();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+FtpDataWrapper::!FtpDataWrapper()
+    {
     if (0 != m_pData)
         {
         delete m_pData;
@@ -790,6 +830,14 @@ FtpThumbnailWrapper::FtpThumbnailWrapper()
 //-------------------------------------------------------------------------------------
 FtpThumbnailWrapper::~FtpThumbnailWrapper()
     {
+    this->!FtpThumbnailWrapper();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+FtpThumbnailWrapper::!FtpThumbnailWrapper()
+    {
     if (0 != m_pThumbnail)
         {
         delete m_pThumbnail;
@@ -938,6 +986,14 @@ FtpMetadataWrapper::FtpMetadataWrapper()
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 FtpMetadataWrapper::~FtpMetadataWrapper()
+    {
+    this->!FtpMetadataWrapper();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+FtpMetadataWrapper::!FtpMetadataWrapper()
     {
     if (0 != m_pMetadata)
         {
@@ -1186,9 +1242,18 @@ FtpServerWrapper::FtpServerWrapper()
 //-------------------------------------------------------------------------------------
 FtpServerWrapper::~FtpServerWrapper()
     {
+    this->!FtpServerWrapper();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+FtpServerWrapper::!FtpServerWrapper()
+    {
     if (0 != m_pServer)
         {
         delete m_pServer;
         m_pServer = 0;
         }
     }
+
