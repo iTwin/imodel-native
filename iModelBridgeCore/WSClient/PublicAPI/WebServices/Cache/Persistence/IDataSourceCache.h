@@ -255,8 +255,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         virtual DateTime ReadResponseAccessDate(CachedResponseKeyCR responseKey) = 0;
 
         //! Gets all CachedResponceKeys that contains instance in it's result
-        //! @param fileName[in] instance
-        //! @param fileSize[in] responceName to filter keys by.
+        //! @param instance instance
+        //! @param responseName responceName to filter keys by.
         virtual bset<CachedResponseKey> GetResponsesContainingInstance(ECInstanceKeyCR instance, Utf8StringCR responseName = "") = 0;
 
         //! Get cached object information
