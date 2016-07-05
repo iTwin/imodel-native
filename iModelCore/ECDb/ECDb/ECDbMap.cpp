@@ -192,7 +192,7 @@ bool ECDbMap::AssertIfIsNotImportingSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
+MappingStatus ECDbMap::MapSchemas(SchemaImportContext& ctx)
     {
     if (m_schemaImportContext != nullptr)
         {
@@ -200,10 +200,10 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
         return MappingStatus::Error;
         }
 
-    if (schemaImportContext.GetECSchemaCompareContext().HasNoSchemasToImport())
+    if (ctx.GetECSchemaCompareContext().HasNoSchemasToImport())
         return MappingStatus::Success;
 
-    m_schemaImportContext = &schemaImportContext;
+    m_schemaImportContext = &ctx;
 
     const MappingStatus stat = DoMapSchemas();
     if (MappingStatus::Success != stat)
@@ -442,7 +442,7 @@ MappingStatus ECDbMap::DoMapSchemas()
     ECDbMapStrategy const& mapStrategy = classMapInfo.GetMapStrategy();
     ClassMapPtr classMapTmp = nullptr;
     if (mapStrategy.IsNotMapped())
-        classMapTmp = UnmappedClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
+        classMapTmp = NotMappedClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
     else
         {
         ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
@@ -521,7 +521,7 @@ MappingStatus ECDbMap::MapClass(ECClassCR ecClass)
 
         ClassMapPtr classMap = nullptr;
         if (mapStrategy.IsNotMapped())
-            classMap = UnmappedClassMap::Create(ecClass, *this, mapStrategy, true);
+            classMap = NotMappedClassMap::Create(ecClass, *this, mapStrategy, true);
         else
             {
             auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
@@ -728,7 +728,7 @@ ECDbMap::ClassMapsByTable ECDbMap::GetClassMapsByTable() const
     for (auto const& entry : m_classMapDictionary)
         {
         if (entry.second->GetType() == ClassMap::Type::RelationshipEndTable ||
-            entry.second->GetType() == ClassMap::Type::Unmapped)
+            entry.second->GetType() == ClassMap::Type::NotMapped)
             continue;
 
         DbTable* primaryTable = &entry.second->GetPrimaryTable();
@@ -1225,35 +1225,24 @@ BentleyStatus ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMap::ClearCache()
-    {
-    BeMutexHolder lock(m_mutex);
-    m_classMapDictionary.clear();
-    m_dbSchema.Reset();
-    m_lightweightCache.Reset();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Affan.Khan                      12/2012
-//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbMap::SaveDbSchema() const
     {
+    if (m_schemaImportContext == nullptr)
+        {
+        BeAssert(false && "ECDbMap::SaveDbSchema must only be called during schema import");
+        return ERROR;
+        }
+
     BeMutexHolder lock(m_mutex);
     StopWatch stopWatch(true);
-    int i = 0;
-    std::set<ClassMap const*> doneList;
+
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMapR classMap = *kvPair.second;
-        ECClassCR ecClass = classMap.GetClass();
-        if (classMap.IsDirty())
+        if (SUCCESS != classMap.Save(*m_schemaImportContext))
             {
-            i++;
-            if (SUCCESS != classMap.Save(doneList))
-                {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to save mapping for ECClass %s: %s", ecClass.GetFullName(), m_ecdb.GetLastError().c_str());
-                return ERROR;
-                }
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
+            return ERROR;
             }
         }
 
@@ -1263,8 +1252,19 @@ BentleyStatus ECDbMap::SaveDbSchema() const
     m_lightweightCache.Reset();
     stopWatch.Stop();
 
-    LOG.debugv("Saving ECDbMap for %d ECClasses took %.4lf msecs.", i, stopWatch.GetElapsedSeconds() * 1000.0);
+    LOG.debugv("Saving EC-DB mapping took %.4lf msecs.", stopWatch.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMap::ClearCache()
+    {
+    BeMutexHolder lock(m_mutex);
+    m_classMapDictionary.clear();
+    m_dbSchema.Reset();
+    m_lightweightCache.Reset();
     }
 
 //---------------------------------------------------------------------------------------

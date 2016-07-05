@@ -485,8 +485,7 @@ BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::GatherRelation
         return ERROR;
         }
 
-    bvector<ECN::ECSchemaCP> allSchemas;
-    m_ecDb.Schemas().GetECSchemas(allSchemas, false);
+    bvector<ECN::ECSchemaCP> allSchemas = m_ecDb.Schemas().GetECSchemas(false);
     BeAssert(allSchemas.size() > 0);
 
     BentleyStatus status = SUCCESS;

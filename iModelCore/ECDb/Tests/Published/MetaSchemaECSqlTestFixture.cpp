@@ -57,8 +57,7 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDefs()
         actualSchemaCount++;
         }
 
-    bvector<ECSchemaCP> expectedSchemas;
-    ASSERT_EQ(SUCCESS, GetECDb().Schemas().GetECSchemas(expectedSchemas, false));
+    bvector<ECSchemaCP> expectedSchemas = GetECDb().Schemas().GetECSchemas(false);
     ASSERT_EQ((int) expectedSchemas.size(), actualSchemaCount);
     }
 

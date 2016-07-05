@@ -335,8 +335,6 @@ $(o)ECSchemaComparer$(oext):                                  $(baseDir)ECSchema
 
 $(o)ECDbMapDebugInfo$(oext):                                  $(baseDir)ECDbMapDebugInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DebugWriter$(oext):                                       $(baseDir)DebugWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
 $(o)LightweightCache$(oext):                                  $(baseDir)LightweightCache.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

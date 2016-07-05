@@ -112,50 +112,6 @@ PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMap const& ecdbMap, Prop
 
 //******************************** PropertyMap *****************************************
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan        04/2016
-//---------------------------------------------------------------------------------------
-void PropertyMap::_WriteDebugInfo(DebugWriter& writer) const
-    {
-
-    writer.AppendLine("ECProperty : %s, [Id=%" PRId64 "], [ECClass=%s], [Type=%s]",
-                      GetProperty().GetName().c_str(),
-                      GetProperty().GetId().GetValue(),
-                      GetProperty().GetClass().GetName().c_str(),
-                      GetProperty().GetTypeName().c_str()
-    );
-
-
-    if (!m_children.IsEmpty())
-        {
-        if (auto b0 = writer.CreateIndentBlock())
-            {
-            for (auto propertyMap : m_children)
-                {
-                propertyMap->WriteDebugInfo(writer);
-                }
-            }
-        }
-    else
-        {
-        if (auto b0 = writer.CreateIndentBlock())
-            {
-            std::vector<DbColumn const*> columns;
-            GetColumns(columns);
-            for (auto column : columns)
-                {
-                writer.AppendLine("Column : %s, [Id=%" PRId64 "], [Table=%s], [Type=%s], [Virtual=%s], [Kind=%s] ",
-                                  column->GetName().c_str(),
-                                  column->GetId().GetValue(),
-                                  column->GetTable().GetName().c_str(),
-                                  column->TypeToSql(column->GetType()),
-                                  column->GetPersistenceType() == PersistenceType::Persisted ? "false" : "true",
-                                  DbColumn::KindToString(column->GetKind())
-                );
-                }
-            }
-        }
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
 DbTable const* PropertyMap::GetTable() const
@@ -423,6 +379,40 @@ DbTable const* PropertyMap::GetSingleTable() const
         }
 
     return table;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle     07/2016
+//---------------------------------------------------------------------------------------
+Utf8CP PropertyMap::TypeToString(Type type)
+    {
+    switch (type)
+        {
+            case Type::ECClassId:
+                return "ECClassId";
+            case Type::ECInstanceId:
+                return "ECInstanceId";
+            case Type::Navigation:
+                return "Navigation";
+            case Type::Point:
+                return "Point";
+            case Type::Primitive:
+                return "Primitive";
+            case Type::PrimitiveArray:
+                return "PrimitiveArray";
+            case Type::RelConstraintECClassId:
+                return "RelConstraintECClassId";
+            case Type::RelConstraintECInstanceId:
+                return "RelConstraintECInstanceId";
+            case Type::Struct:
+                return "Struct";
+            case Type::StructArray:
+                return "StructArray";
+
+            default:
+                BeAssert(false && "Unhandled Type value in PropertyMap::TypeToString");
+                return "";
+        }
     }
 
 

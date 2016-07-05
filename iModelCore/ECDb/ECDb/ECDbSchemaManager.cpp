@@ -37,11 +37,11 @@ ECDbSchemaManager::~ECDbSchemaManager()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool loadSchemaEntities) const
+bvector<ECSchemaCP> ECDbSchemaManager::GetECSchemas(bool loadSchemaEntities) const
     {
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_Schema");
     if (stmt == nullptr)
-        return ERROR;
+        return bvector<ECSchemaCP>();
 
     std::vector<ECSchemaId> schemaIds;
     while (BE_SQLITE_ROW == stmt->Step())
@@ -51,17 +51,17 @@ BentleyStatus ECDbSchemaManager::GetECSchemas(bvector<ECN::ECSchemaCP>& schemas,
 
     stmt = nullptr; // in case the child call needs to reuse this statement
 
-    schemas.clear();
-    for (ECSchemaId schemaId : schemaIds)
+    bvector<ECSchemaCP> schemas;
+    for (ECSchemaId const& schemaId : schemaIds)
         {
         ECSchemaCP out = GetECSchema(schemaId, loadSchemaEntities);
         if (out == nullptr)
-            return ERROR;
+            return bvector<ECSchemaCP>();
 
         schemas.push_back(out);
         }
 
-    return SUCCESS;
+    return schemas;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -14,121 +14,157 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      03/2013
 //---------------------------------------------------------------------------------------
-ECDbMapDebugInfo::ECDbMapDebugInfo()
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      03/2013
-//---------------------------------------------------------------------------------------
-ECDbMapDebugInfo::~ECDbMapDebugInfo()
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      03/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbMapDebugInfo::GetMapInfoForSchema(Utf8StringR info, ECDbCR ecdb, Utf8CP ecSchemaName, bool skipUnmappedClasses)
+void PropertyMapToString(Json::Value& propMapsJson, PropertyMap const& propMap)
     {
-    ECDbMap const& map = ecdb.GetECDbImplR().GetECDbMap();
-    ECDbSchemaManagerCR sm = ecdb.Schemas();
-    ECSchemaCP schema = sm.GetECSchema(ecSchemaName);
+    Json::Value& json = propMapsJson.append(Json::Value(Json::objectValue));
+    json["PropertyAccessString"] = propMap.GetPropertyAccessString();
+    json["Type"] = PropertyMap::TypeToString(propMap.GetType());
+    json["ECPropertyId"] = propMap.GetProperty().GetId().ToString().c_str();
+
+    if (!propMap.GetChildren().IsEmpty())
+        {
+        Json::Value& childPropMaps = json["Children"];
+        for (PropertyMapCP childPropertyMap : propMap.GetChildren())
+            {
+            PropertyMapToString(childPropMaps, *childPropertyMap);
+            }
+
+        return;
+        }
+
+    std::vector<DbColumn const*> columns;
+    propMap.GetColumns(columns);
+    if (columns.empty())
+        return;
+
+    Json::Value& columnsJson = json["Columns"];
+
+    for (DbColumn const* column : columns)
+        {
+        Json::Value& columnJson = columnsJson.append(Json::Value(Json::objectValue));
+        columnJson["Name"] = column->GetName().c_str();
+        columnJson["Id"] = column->GetId().ToString().c_str();
+        columnJson["Table"] = column->GetTable().GetName().c_str();
+        columnJson["IsVirtual"] = column->GetPersistenceType() == PersistenceType::Virtual;
+        columnJson["SqlType"] = DbColumn::TypeToSql(column->GetType());
+        columnJson["Kind"] = DbColumn::KindToString(column->GetKind());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan      03/2013
+//---------------------------------------------------------------------------------------
+void ClassMapToString(Json::Value& classMapJson, ClassMap const& classMap)
+    {
+    classMapJson["Name"] = classMap.GetClass().GetName().c_str();
+    classMapJson["Id"] = classMap.GetId().ToString().c_str();
+    classMapJson["Type"] = ClassMap::TypeToString(classMap.GetType());
+    classMapJson["ECClassId"] = classMap.GetClass().GetId().ToString().c_str();
+    classMapJson["MapStrategy"] = classMap.GetMapStrategy().ToString().c_str();
+
+    Json::Value& tablesJson = classMapJson["Tables"];
+    for (DbTable const* table : classMap.GetTables())
+        {
+        Json::Value tableJson = tablesJson.append(Json::objectValue);
+        tableJson["Name"] = table->GetName().c_str();
+        tableJson["Id"] = table->GetId().ToString().c_str();
+        tableJson["IsVirtual"] = table->GetPersistenceType() == PersistenceType::Virtual;
+        }
+
+    Json::Value& propMapsJson = classMapJson["PropertyMaps"];
+    for (PropertyMap const* propMap : classMap.GetPropertyMaps())
+        {
+        PropertyMapToString(propMapsJson, *propMap);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan      03/2013
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ClassMappingInfoHelper::GetInfos(Json::Value& json, ECDbCR ecdb, bool skipUnmappedClasses)
+    {
+    bvector<ECSchemaCP> schemas = ecdb.Schemas().GetECSchemas();
+
+    json = Json::Value(Json::objectValue);
+    json["Schema Count"] = (int) schemas.size();
+
+    if (schemas.empty())
+        return SUCCESS;
+
+    ECDbMap const& ecdbMap = ecdb.GetECDbImplR().GetECDbMap();
+
+    Json::Value& schemasJson = json["ECSchemas"];
+    for (ECSchemaCP schema : schemas)
+        {
+        Json::Value& schemaJson = schemasJson.append(Json::Value(Json::objectValue));
+        schemaJson["Name"] = schema->GetFullSchemaName().c_str();
+        Json::Value& classMapsJson = json["ClassMaps"];
+
+        for (ECClassCP ecclass : schema->GetClasses())
+            {
+            ClassMapCP classMap = ecdbMap.GetClassMap(*ecclass);
+            if (classMap == nullptr)
+                continue;
+
+            if (classMap->GetMapStrategy().IsNotMapped() && skipUnmappedClasses)
+                continue;
+
+            Json::Value& classMapJson = classMapsJson.append(Json::Value(Json::objectValue));
+            ClassMapToString(classMapJson, *classMap);
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan      03/2013
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ClassMappingInfoHelper::GetInfos(Json::Value& json, ECDbCR ecdb, Utf8CP schemaName, bool skipUnmappedClasses)
+    {
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema(schemaName);
     if (schema == nullptr)
         return ERROR;
 
-    DebugWriter writer;
-    writer.AppendLine("ECSchema : %s", schema->GetFullSchemaName().c_str());
-    if (auto s0 = writer.CreateIndentBlock())
+    ECDbMap const& ecdbMap = ecdb.GetECDbImplR().GetECDbMap();
+
+    json = Json::Value(Json::objectValue);
+    json["FullName"] = schema->GetFullSchemaName().c_str();
+    Json::Value& classesJson = json["ClassMaps"];
+    for (ECClassCP ecClass : schema->GetClasses())
         {
-        for (auto ecClass : schema->GetClasses())
-            {
-            auto classMap = map.GetClassMap(*ecClass);
-            if (classMap == nullptr)
-                continue;
+        ClassMap const* classMap = ecdbMap.GetClassMap(*ecClass);
+        if (classMap == nullptr)
+            continue;
 
-            if (classMap->GetMapStrategy().IsNotMapped() && skipUnmappedClasses)
-                continue;
+        if (classMap->GetMapStrategy().IsNotMapped() && skipUnmappedClasses)
+            continue;
 
-            classMap->WriteDebugInfo(writer);
-            }
+        Json::Value& classMapJson = classesJson.append(Json::Value(Json::objectValue));
+        ClassMapToString(classMapJson, *classMap);
         }
-
-    info = writer.ToString();
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      03/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbMapDebugInfo::GetMapInfoForClass(Utf8StringR info, ECDbCR ecdb, Utf8CP qualifiedClassName)
+//static
+BentleyStatus ClassMappingInfoHelper::GetInfo(Json::Value& json, ECDbCR ecdb, Utf8CP schemaName, Utf8CP className)
     {
-    ECDbMap const& map = ecdb.GetECDbImplR().GetECDbMap();
-    //ECDbSchemaManagerCR sm = ecdb.Schemas();
-    Utf8String qClassName = qualifiedClassName;
-    auto n = qClassName.find('.');
-    BeAssert(n != Utf8String::npos);
-    if (n == Utf8String::npos)
-        {
-        return ERROR;
-        }
-
-    Utf8String schemaName = qClassName.substr(0, n);
-    Utf8String className = qClassName.substr(n + 1);
-    ECClassId classId = ECDbSchemaPersistenceHelper::GetECClassId(ecdb, schemaName.c_str(), className.c_str(), ResolveSchema::AutoDetect);
-    if (!classId.IsValid())
+    ECClassCP ecClass = ecdb.Schemas().GetECClass(schemaName, className);
+    if (ecClass == nullptr)
         return ERROR;
 
-    DebugWriter writer;
-    writer.AppendLine("ECDb : [BriefcaseId=%s], [File=%s]",
-                      ecdb.GetBriefcaseId().GetValue(),
-                      ecdb.GetDbFileName());
-
-    auto classMap = map.GetClassMap(classId);
+    ClassMap const* classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(ecClass->GetId());
     if (classMap == nullptr)
         return ERROR;
 
-    classMap->WriteDebugInfo(writer);
-    info = writer.ToString();
+    json = Json::Value(Json::objectValue);
+    ClassMapToString(json, *classMap);
     return SUCCESS;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      03/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbMapDebugInfo::GetMapInfoForAllClasses(Utf8StringR info, ECDbCR ecdb, bool skipUnmappedClasses)
-    {
-    ECDbMap const& map = ecdb.GetECDbImplR().GetECDbMap();
-    ECDbSchemaManagerCR sm = ecdb.Schemas();
-
-    DebugWriter writer;
-    bvector<ECN::ECSchemaCP> schemas;
-    sm.GetECSchemas(schemas);
-    writer.AppendLine("ECDb : [BriefcaseId=%s], [File=%s]",
-                      ecdb.GetBriefcaseId().GetValue(),
-                      ecdb.GetDbFileName());
-
-
-    writer.AppendLine("ECSchemas [Count=%d]", schemas.size());
-    for (auto schema : schemas)
-        {
-        writer.AppendLine("ECSchema : %s", schema->GetFullSchemaName().c_str());
-        writer.Indent();
-        for (auto ecclass : schema->GetClasses())
-            {
-            ClassMapCP classMap = map.GetClassMap(*ecclass);
-            if (classMap == nullptr)
-                continue;
-
-            if (classMap->GetMapStrategy().IsNotMapped() && skipUnmappedClasses)
-                continue;
-
-            classMap->WriteDebugInfo(writer);
-            }
-
-        writer.UnIndent();
-        }
-
-    info = writer.ToString();
-    return SUCCESS;
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
