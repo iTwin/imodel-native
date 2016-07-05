@@ -90,7 +90,7 @@ Utf8String HelpCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    BeAssert(m_commandMap.size() == 27 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 28 && "Command was added or removed, please update the HelpCommand accordingly.");
     Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -109,7 +109,7 @@ void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".diff")->GetUsage().c_str());
     Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".classmappings")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".classmapping")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".set")->GetUsage().c_str());
     Console::WriteLine();
@@ -1667,8 +1667,8 @@ Utf8String ClassMappingCommand::_GetName() const
 //---------------------------------------------------------------------------------------
 Utf8String ClassMappingCommand::_GetUsage() const
     {
-    return " .classmapping, .cm [<ECSchemaName>|<ECSchemaName> <ECClassName>\r\n"
-           "                                Returns ECClass mapping informations.";
+    return " .classmapping, .cm [<ECSchemaName>|<ECSchemaName> <ECClassName>]\r\n"
+           "                                Returns ECClass mapping information";
     }
 
 //---------------------------------------------------------------------------------------
