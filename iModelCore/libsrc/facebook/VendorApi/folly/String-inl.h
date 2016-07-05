@@ -272,7 +272,10 @@ inline char delimFront(StringPiece s) {
  *
  * @param ignoreEmpty iff true, don't copy empty segments to output
  */
+
 #if BENTLEY_CHANGE
+// clang/iOS: indirect use of functions that use boost.
+
 template<class OutStringT, class DelimT, class OutputIterator>
 void internalSplit(DelimT delim, StringPiece sp, OutputIterator out,
     bool ignoreEmpty) {
@@ -314,6 +317,7 @@ void internalSplit(DelimT delim, StringPiece sp, OutputIterator out,
     *out++ = to<OutStringT>(sp.subpiece(tokenStartPos, tokenSize));
   }
 }
+
 #endif
 
 template<class String> StringPiece prepareDelim(const String& s) {
@@ -359,6 +363,7 @@ bool splitFixed(
 //////////////////////////////////////////////////////////////////////
 
 #if BENTLEY_CHANGE
+// clang/iOS: indirect use of functions that use boost.
 
 template<class Delim, class String, class OutputType>
 void split(const Delim& delimiter,

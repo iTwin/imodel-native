@@ -139,6 +139,7 @@ to(const Src & value) {
  ******************************************************************************/
 
 #ifdef BENTLEY_CHANGE
+// clang/iOS: Cannot use boost.
 
 template <class Tgt, class Src>
 typename std::enable_if<

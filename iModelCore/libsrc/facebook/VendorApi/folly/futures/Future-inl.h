@@ -39,6 +39,7 @@
 #endif
 
 // BENTLEY_CHANGE
+// clang/iOS: error: initialized lambda captures are a C++14 extension
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++14-extensions"
@@ -918,8 +919,12 @@ Future<T> Future<T>::within(Duration dur, E e, Timekeeper* tk) {
   std::shared_ptr<Timekeeper> tks;
   if (!tk) {
     tks = folly::detail::getTimekeeperSingleton();
-    // BENTLEY_CHANGE tk = DCHECK_NOTNULL(tks.get());
+
+    // BENTLEY_CHANGE
+    // clang/iOS: DCHECK_NOTNULL is not defined; assume it's some sort of assert guard on NULL, and just assign.
+    // Was tk = DCHECK_NOTNULL(tks.get());
     tk = tks.get();
+
   }
 
   auto ctx = std::make_shared<Context>(std::move(e));

@@ -24,6 +24,7 @@
 #include <type_traits>
 
 // BENTLEY_CHANGE
+// clang/iOS: incomplete types such as std::__1::ios_base and basic_ostream.
 #if defined(__clang__)
 #include <ios>
 #include <ostream>

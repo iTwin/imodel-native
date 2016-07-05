@@ -26,12 +26,6 @@ o = $(OutBuildDir)Folly/
 always:
     !~@mkdir $(o)
 
-# std pair resolution fix
-%if "CLANG" == $(BUILD_TOOLSET)
-    nameToDefine = FOLLY_USE_LIBCPP
-    %include cdefapnd.mki
-%endif
-
 CCPchOpts           =
 CPchOpts            =
 MultiCompileDepends =$(_MakeFileSpec)

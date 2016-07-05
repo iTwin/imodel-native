@@ -80,8 +80,12 @@ struct MemoryIdler {
   template <typename Clock = std::chrono::steady_clock>
   static typename Clock::duration getVariationTimeout(
       typename Clock::duration idleTimeout
-// BENTLEY_CHANGE = defaultIdleTimeout.load(std::memory_order_acquire),
+
+          // BENTLEY_CHANGE
+          // clang/iOS: error: base of member reference is a function
+          // Was defaultIdleTimeout.load(std::memory_order_acquire),
           = defaultIdleTimeout(),
+
       float timeoutVariationFrac = 0.5) {
     if (idleTimeout.count() > 0 && timeoutVariationFrac > 0) {
       // hash the pthread_t and the time to get the adjustment.

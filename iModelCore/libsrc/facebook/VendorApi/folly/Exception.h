@@ -30,8 +30,9 @@
 namespace folly {
 
 // BENTLEY_CHANGE
+// clang/iOS: no type named 'ssize_t'. Not sure why this doesn't resolve... Intention is to be a signed size_t; ptrdiff_t sounds like a nice cross-architecture alternative.
 #if defined(__clang__)
-    using ssize_t = long signed int;
+    using ssize_t = ptrdiff_t;
 #endif
 
 // Various helpers to throw appropriate std::system_error exceptions from C

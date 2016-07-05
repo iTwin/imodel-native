@@ -20,6 +20,9 @@
 
 #include <folly/Portability.h>
 
+// BENTLEY_CHANGE
+// clang/iOS: error: use of undeclared identifier 'xallocx'; I traced back to this file which seems to have a reasonable declaration that is otherwise used when compiling folly.
+// Was #if defined(__BE_FOLLY_DLL__)
 #if defined(__BE_FOLLY_DLL__) || defined(CREATE_STATIC_LIBRARIES)
 
 extern "C" {

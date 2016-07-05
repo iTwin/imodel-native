@@ -29,6 +29,7 @@ class SingletonThreadLocal {
   SingletonThreadLocal() : SingletonThreadLocal([]() { return new T(); }) {}
 
 // BENTLEY_CHANGE
+// clang/iOS: error: initialized lambda captures are a C++14 extension
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++14-extensions"
