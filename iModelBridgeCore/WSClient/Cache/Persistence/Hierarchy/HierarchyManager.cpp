@@ -66,6 +66,35 @@ bvector<ECInstanceKey>& targetsOut
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HierarchyManager::ReadSourceKeys
+(
+ECInstanceKeyCR target,
+ECRelationshipClassCP relationshipClass,
+bvector<ECInstanceKey>& sourcesOut
+)
+    {
+    if (nullptr == relationshipClass)
+        {
+        return ERROR;
+        }
+
+    ECInstanceKeyMultiMap sourcesMap;
+    if (SUCCESS != ReadSourceKeys(target, relationshipClass, sourcesMap))
+        {
+        return ERROR;
+        }
+
+    for (auto& pair : sourcesMap)
+        {
+        sourcesOut.push_back(ECInstanceKey(pair.first, pair.second));
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HierarchyManager::RelateCachedInstancesToHolder
@@ -347,9 +376,9 @@ ECInstanceKeyMultiMap& keysOut
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return 
-            "SELECT rel.TargetECClassId, rel.TargetECInstanceId "
-            "FROM ONLY " + relationshipClass->GetECSqlName() +  " rel "
-            "WHERE rel.SourceECClassId = ? AND rel.SourceECInstanceId = ? ";
+            "SELECT TargetECClassId, TargetECInstanceId "
+            "FROM ONLY " + relationshipClass->GetECSqlName() +  " "
+            "WHERE SourceECClassId = ? AND SourceECInstanceId = ? ";
         });
 
     statement->BindId(1, source.GetECClassId());
@@ -362,6 +391,45 @@ ECInstanceKeyMultiMap& keysOut
         ECInstanceId ecId = statement->GetValueId<ECInstanceId>(1);
 
         keysOut.insert({ecClassId, ecId});
+        }
+
+    return BE_SQLITE_DONE == status ? SUCCESS : ERROR;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HierarchyManager::ReadSourceKeys
+(
+ECInstanceKeyCR target,
+ECRelationshipClassCP relationshipClass,
+ECInstanceKeyMultiMap& keysOut
+)
+    {
+    if (!target.IsValid() || nullptr == relationshipClass)
+        {
+        return ERROR;
+        }
+
+    Utf8PrintfString key("HierarchyManager::ReadSourceKeys:%llu", relationshipClass->GetId());
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        return
+            "SELECT SourceECClassId, SourceECInstanceId "
+            "FROM ONLY " + relationshipClass->GetECSqlName() + 
+            "WHERE TargetECClassId = ? AND TargetECInstanceId = ?";
+        });
+
+    statement->BindId(1, target.GetECClassId());
+    statement->BindId(2, target.GetECInstanceId());
+
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
+        {
+        auto ecClassId = statement->GetValueId<ECClassId>(0);
+        auto ecId = statement->GetValueId<ECInstanceId>(1);
+
+        keysOut.Insert(ecClassId, ecId);
         }
 
     return BE_SQLITE_DONE == status ? SUCCESS : ERROR;

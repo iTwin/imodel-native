@@ -599,6 +599,18 @@ BentleyStatus ObjectInfoManager::RemoveAllCachedInstances()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceKey ObjectInfoManager::ConvertToInstanceKey(ECInstanceKeyCR instanceKey)
+    {
+    if (m_infoClass->GetId() != instanceKey.GetECClassId())
+        return instanceKey;
+
+    CacheNodeKey infoKey (instanceKey);
+    return ReadCachedInstanceKey(infoKey).GetInstanceKey();
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ObjectInfoManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut)

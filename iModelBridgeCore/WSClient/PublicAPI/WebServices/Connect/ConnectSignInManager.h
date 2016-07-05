@@ -136,6 +136,10 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         WSCLIENT_EXPORT bool IsSignedIn();
         //! Get user information stored in identity token
         WSCLIENT_EXPORT UserInfo GetUserInfo();
+        //! Get user information stored in token
+        WSCLIENT_EXPORT static UserInfo GetUserInfo(SamlTokenCR token);
+        //! Get last or current user that was signed in. Returns empty if no user was signed in
+        WSCLIENT_EXPORT Utf8String GetLastUsername();
 
         //! Will be called when token expiration is detected
         WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
