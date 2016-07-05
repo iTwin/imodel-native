@@ -8,7 +8,7 @@
 #include "ThreeMxInternal.h"
 #include <BeHttp/HttpRequest.h>
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS)
 #include <folly/futures/Future.h>
 #endif
 
@@ -283,7 +283,7 @@ BentleyStatus ThreeMxTileCache::_Cleanup() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RealityData::CacheResult Scene::RequestData(NodeP node, bool synchronous, MxStreamBuffer* output)
     {
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS)
     DgnDb::VerifyClientThread();
     BeAssert(output || node);
 
