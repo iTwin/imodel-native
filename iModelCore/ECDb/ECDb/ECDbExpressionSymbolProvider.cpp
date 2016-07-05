@@ -228,8 +228,8 @@ BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR 
         return SUCCESS;
     
     // search in all schemas
-    bvector<ECN::ECSchemaCP> schemas;
-    if (SUCCESS != db.Schemas().GetECSchemas(schemas))
+    bvector<ECN::ECSchemaCP> schemas = db.Schemas().GetECSchemas();
+    if (schemas.empty())
         return ERROR;
 
     for (ECSchemaCP schema : schemas)

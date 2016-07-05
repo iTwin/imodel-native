@@ -90,7 +90,7 @@ Utf8String HelpCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    BeAssert(m_commandMap.size() == 27 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 28 && "Command was added or removed, please update the HelpCommand accordingly.");
     Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -109,7 +109,7 @@ void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".diff")->GetUsage().c_str());
     Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".mapinfo")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".classmapping")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".set")->GetUsage().c_str());
     Console::WriteLine();
@@ -706,10 +706,8 @@ void ExportCommand::RunExportTables(ECSqlConsoleSession& session, Utf8CP jsonFil
 //---------------------------------------------------------------------------------------
 void ExportCommand::RunExportSchema(ECSqlConsoleSession& session, Utf8CP outFolderStr, bool useECXmlV2) const
     {
-    auto const& schemaManager = session.GetECDbR ().Schemas();
-    bvector<ECN::ECSchemaCP> schemas;
-    auto status = schemaManager.GetECSchemas(schemas, true);
-    if (status != SUCCESS)
+    bvector<ECN::ECSchemaCP> schemas = session.GetECDbR().Schemas().GetECSchemas(true);
+    if (schemas.empty())
         {
         Console::WriteErrorLine("Failed to load schemas from ECdb file.");
         return;
@@ -866,7 +864,8 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         }
     else
         {
-        if (SUCCESS != session.GetECDbR().Schemas().GetECSchemas(schemaList, true))
+        schemaList = session.GetECDbR().Schemas().GetECSchemas(true);
+        if (schemaList.empty())
             {
             Console::WriteErrorLine("Could not retrieve the ECSchemas from the ECDb file.");
             return;
@@ -1654,29 +1653,28 @@ void DbSchemaCommand::Search(ECDbCR ecdb, Utf8CP searchTerm) const
     }
 
 
-//******************************* MapInfoCommand ******************
+//******************************* ClassMappingCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     04/2016
 //---------------------------------------------------------------------------------------
-Utf8String MapInfoCommand::_GetName() const
+Utf8String ClassMappingCommand::_GetName() const
     {
-    return ".mapinfo";
+    return ".classmapping";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     04/2016
 //---------------------------------------------------------------------------------------
-Utf8String MapInfoCommand::_GetUsage() const
+Utf8String ClassMappingCommand::_GetUsage() const
     {
-    return " .mapinfo * | ecschema <schemaName> | ecclass <schemaNameOrPrefix>.<classname>\r\n"
-           "                                Return mapping info for the specified facet.";
-
+    return " .classmapping, .cm [<ECSchemaName>|<ECSchemaName> <ECClassName>]\r\n"
+           "                                Returns ECClass mapping information";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     04/2016
 //---------------------------------------------------------------------------------------
-void MapInfoCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const
+void ClassMappingCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const
     {
     if (args.size() < 2)
         {
@@ -1685,18 +1683,15 @@ void MapInfoCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> 
         }
 
     Utf8StringCR switchArg = args[1];
-    Utf8String info;
 
+    Json::Value json;
     if (switchArg.EqualsI("*"))
         {
-        if (ECDbMapDebugInfo::GetMapInfoForAllClasses(info, session.GetECDb(), false) == ERROR)
+        if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetECDb(), false))
             {
-            Console::WriteErrorLine("Failed to reterive mapinfo");
+            Console::WriteErrorLine("Retrieving ECClass mapping failed.");
+            return;
             }
-        else
-            Console::WriteLine("%s", info.c_str());
-
-        return;
         }
     else if (switchArg.EqualsI("ecschema"))
         {
@@ -1706,34 +1701,30 @@ void MapInfoCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> 
             return;
             }
 
-        if (ECDbMapDebugInfo::GetMapInfoForSchema(info, session.GetECDb(), args[2].c_str(), false) == ERROR)
+        if (SUCCESS != ClassMappingInfoHelper::GetInfos(json, session.GetECDb(), args[2].c_str(), false))
             {
-            Console::WriteErrorLine("Failed to reterive mapinfo");
+            Console::WriteErrorLine("Retrieving ECClass mapping failed.");
+            return;
             }
-        else
-            Console::WriteLine("%s", info.c_str());
-
-        return;
-
         }
     else if (switchArg.EqualsI("ecclass"))
         {
-        if (args.size() < 3)
+        if (args.size() < 4)
             {
             Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
             }
 
-        if (ECDbMapDebugInfo::GetMapInfoForClass(info, session.GetECDb(), args[2].c_str()) == ERROR)
+        if (SUCCESS != ClassMappingInfoHelper::GetInfo(json, session.GetECDb(), args[2].c_str(), args[3].c_str()))
             {
-            Console::WriteErrorLine("Failed to reterive mapinfo");
+            Console::WriteErrorLine("Retrieving ECClass mapping failed.");
+            return;
             }
-        else
-            Console::WriteLine("%s", info.c_str());
-
-        return;
-
         }
+    else
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
 
-    Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+    Json::FastWriter writer;
+    Utf8String infoStr = writer.write(json);
+    Console::WriteLine(infoStr.c_str());
     }

@@ -383,7 +383,6 @@
     <ClInclude Include="ClassMappingInfo.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="DebugWriter.h" />
     <ClInclude Include="IssueReporter.h">
       <Filter>ECDb</Filter>
     </ClInclude>
@@ -708,12 +707,13 @@
     <ClCompile Include="ECDbProfileUpgrader.cpp">
       <Filter>ECDbProfile</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbMapDebugInfo.cpp" />
-    <ClCompile Include="DebugWriter.cpp" />
     <ClCompile Include="IssueReporter.cpp">
       <Filter>ECDb</Filter>
     </ClCompile>
     <ClCompile Include="LightweightCache.cpp">
+      <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDbMapDebugInfo.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>

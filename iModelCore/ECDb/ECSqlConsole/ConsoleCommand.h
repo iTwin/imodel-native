@@ -449,7 +449,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                   Affan.Khan    10/2013
 //---------------------------------------------------------------------------------------
-struct MapInfoCommand : public ConsoleCommand, NonCopyableClass
+struct ClassMappingCommand : public ConsoleCommand, NonCopyableClass
     {
     private:
         virtual Utf8String _GetName() const override;
@@ -458,6 +458,6 @@ struct MapInfoCommand : public ConsoleCommand, NonCopyableClass
 
 
     public:
-        MapInfoCommand() : ConsoleCommand() {}
-        ~MapInfoCommand() {}
+        ClassMappingCommand() : ConsoleCommand() {}
+        ~ClassMappingCommand() {}
     };

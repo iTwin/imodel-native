@@ -112,11 +112,10 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDB_EXPORT ECN::ECSchemaCP GetECSchema(Utf8CP schemaName, bool loadSchemaEntities = true) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
-        //! @param[out] schemas The retrieved list of ECSchemas
         //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
         //!                                   if they are loaded on-demand.
-        //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR
-        ECDB_EXPORT BentleyStatus GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool loadSchemaEntities = true) const;
+        //! @return Vector of all ECSchemas stored in the file
+        ECDB_EXPORT bvector<ECN::ECSchemaCP> GetECSchemas(bool loadSchemaEntities = true) const;
 
         //! Gets the ECClass for the specified name.
         //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
@@ -187,18 +186,18 @@ typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
 
 #if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
-//! Helper that provide map information
+//! Helper that provides information about ECClass Mappings
 //=======================================================================================
-struct ECDbMapDebugInfo
+struct ClassMappingInfoHelper
     {
 private:
-    ECDbMapDebugInfo();
-    ~ECDbMapDebugInfo();
+    ClassMappingInfoHelper();
+    ~ClassMappingInfoHelper();
 
 public:
-    ECDB_EXPORT static BentleyStatus GetMapInfoForSchema(Utf8StringR info, ECDbCR, Utf8CP ecSchemaName, bool skipUnmappedClasses);
-    ECDB_EXPORT static BentleyStatus GetMapInfoForClass(Utf8StringR info, ECDbCR, Utf8CP ecClassName);
-    ECDB_EXPORT static BentleyStatus GetMapInfoForAllClasses (Utf8StringR info, ECDbCR, bool skipUnmappedClasses);
+    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDbCR, bool skipUnmappedClasses);
+    ECDB_EXPORT static BentleyStatus GetInfos(Json::Value&, ECDbCR, Utf8CP schemaName, bool skipUnmappedClasses);
+    ECDB_EXPORT static BentleyStatus GetInfo(Json::Value&, ECDbCR, Utf8CP schemaName, Utf8CP className);
     };
 
 #endif

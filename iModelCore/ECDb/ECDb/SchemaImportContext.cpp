@@ -81,6 +81,26 @@ void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::uniqu
     m_classMappingInfoCache[&classMap] = std::move(info);
     }
 
+//****************************************************************************************** 
+//SchemaImportContext::ClassMapSaveContext
+//****************************************************************************************** 
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    06/2016
+//------------------------------------------------------------------------------------------
+bool SchemaImportContext::ClassMapSaveContext::NeedsSaving(ClassMap const& classMap)
+    {
+    if (m_alreadySavedClassMaps.find(&classMap) != m_alreadySavedClassMaps.end())
+        return false;
+
+    m_alreadySavedClassMaps.insert(&classMap);
+    return true;
+    }
+
+//****************************************************************************************** 
+//ECSchemaCompareContext
+//****************************************************************************************** 
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

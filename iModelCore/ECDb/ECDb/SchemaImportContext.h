@@ -46,11 +46,27 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct SchemaImportContext
     {
+public:
+    struct ClassMapSaveContext : NonCopyableClass
+        {
+        private:
+            std::set<ClassMap const*> m_alreadySavedClassMaps;
+
+        public:
+            ClassMapSaveContext() {}
+
+            //!Checks whether the specified class map was already saved, i.e. whether
+            //!it is held by the context.
+            //!If not, true is returned and the class map is added to the context
+            bool NeedsSaving(ClassMap const&);
+        };
+
 private:
     mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
     std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
     bset<ECN::ECRelationshipClassCP> m_relationshipClassesWithSingleNavigationProperty;
     ClassMapLoadContext m_loadContext;
+    ClassMapSaveContext m_saveContext;
     ECSchemaCompareContext m_compareContext;
 
     UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
@@ -71,6 +87,7 @@ public:
     void AddNRelationshipRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) { m_relationshipClassesWithSingleNavigationProperty.insert(&relClass); }
     bool IsRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) const { return m_relationshipClassesWithSingleNavigationProperty.find(&relClass) != m_relationshipClassesWithSingleNavigationProperty.end(); }
     ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
+    ClassMapSaveContext& GetClassMapSaveContext() { return m_saveContext; }
     ECSchemaCompareContext& GetECSchemaCompareContext() { return m_compareContext; }
     };
 
