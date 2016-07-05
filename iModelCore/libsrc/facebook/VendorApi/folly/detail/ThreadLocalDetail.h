@@ -99,6 +99,12 @@ struct ElementWrapper {
     }
   }
 
+// BENTLEY_CHANGE
+#ifdef __clang__
+#pragma clang diagnostic push 
+#pragma clang diagnostic ignored "-Wc++14-extensions"
+#endif
+
   template <class Ptr, class Deleter>
   void set(Ptr p, const Deleter& d) {
     auto guard = makeGuard([&] {
@@ -118,6 +124,11 @@ struct ElementWrapper {
       guard.dismiss();
     }
   }
+
+// BENTLEY_CHANGE
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
   void cleanup() {
     if (ownsDeleter) {

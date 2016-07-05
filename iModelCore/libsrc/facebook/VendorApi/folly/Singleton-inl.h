@@ -66,8 +66,10 @@ void SingletonHolder<T>::registerSingleton(CreateFunc c, TeardownFunc t) {
 template <typename T>
 void SingletonHolder<T>::registerSingletonMock(CreateFunc c, TeardownFunc t) {
   if (state_ == SingletonHolderState::NotRegistered) {
+#ifdef BENTLEY_CHANGE
     LOG(FATAL)
         << "Registering mock before singleton was registered: " << type_.name();
+#endif
   }
   destroyInstance();
 

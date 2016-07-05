@@ -193,6 +193,12 @@ class ThreadLocalPtr {
     return get() != nullptr;
   }
 
+// BENTLEY_CHANGE
+#ifdef __clang__
+#pragma clang diagnostic push 
+#pragma clang diagnostic ignored "-Wc++14-extensions"
+#endif
+
   /**
    * reset() that transfers ownership from a smart pointer
    */
@@ -208,6 +214,11 @@ class ThreadLocalPtr {
     };
     reset(source.release(), deleter);
   }
+
+// BENTLEY_CHANGE
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
   /**
    * reset() that transfers ownership from a smart pointer with the default

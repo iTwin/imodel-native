@@ -29,6 +29,11 @@
 
 namespace folly {
 
+// BENTLEY_CHANGE
+#if defined(__clang__)
+    using ssize_t = long signed int;
+#endif
+
 // Various helpers to throw appropriate std::system_error exceptions from C
 // library errors (returned in errno, as positive return values (many POSIX
 // functions), or as negative return values (Linux syscalls))

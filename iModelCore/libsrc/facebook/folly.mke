@@ -5,6 +5,10 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
 %include mdl.mki
 
 FollyDir = $(SrcRoot)libsrc/facebook/folly/
@@ -21,6 +25,12 @@ o = $(OutBuildDir)Folly/
 
 always:
     !~@mkdir $(o)
+
+# std pair resolution fix
+%if "CLANG" == $(BUILD_TOOLSET)
+    nameToDefine = FOLLY_USE_LIBCPP
+    %include cdefapnd.mki
+%endif
 
 CCPchOpts           =
 CPchOpts            =

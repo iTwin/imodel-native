@@ -138,6 +138,8 @@ to(const Src & value) {
  * Floating point to floating point
  ******************************************************************************/
 
+#ifdef BENTLEY_CHANGE
+
 template <class Tgt, class Src>
 typename std::enable_if<
   std::is_floating_point<Tgt>::value
@@ -156,6 +158,8 @@ to(const Src & value) {
   }
   return boost::implicit_cast<Tgt>(value);
 }
+
+#endif
 
 /*******************************************************************************
  * Anything to string
@@ -667,7 +671,6 @@ toAppend(Src value, Tgt * result) {
   toAppend(
     value, result, double_conversion::DoubleToStringConverter::SHORTEST, 0);
 }
-#endif
 
 /**
  * Upper bound of the length of the output from
@@ -696,6 +699,8 @@ estimateSpaceNeeded(Src value) {
     });
   return kMaxPositiveSpace + (value < 0);  // +1 for minus sign, if negative
 }
+
+#endif
 
 /**
  * This can be specialized, together with adding specialization

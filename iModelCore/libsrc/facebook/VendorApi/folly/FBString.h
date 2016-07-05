@@ -23,6 +23,12 @@
 #include <limits>
 #include <type_traits>
 
+// BENTLEY_CHANGE
+#if defined(__clang__)
+#include <ios>
+#include <ostream>
+#endif
+
 // This file appears in two locations: inside fbcode and in the
 // libstdc++ source code (when embedding fbstring as std::string).
 // To aid in this schizophrenic use, _LIBSTDCXX_FBSTRING is defined in
