@@ -35,11 +35,16 @@
         <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/>
     </Part>
 
+    <!-- We need this shim part because folly doesn't build everywhere yet. -->
+    <Part Name="FollyShim" ExcludePlatforms="Android*,iOS*,MacOS*,Linux*">
+        <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 
+    </Part>
+
     <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
-        <SubPart PartName="folly"               PartFile="Facebook"     Repository="Libsrc-facebook"/> 
+        <SubPart PartName="BeHttp"              PartFile="BeHttp"       Repository="BeHttp"/>
+        <SubPart PartName="FollyShim"/> 
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />

@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/HttpHandler.h>
+#include <BeHttp/HttpRequest.h>
 
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <folly/futures/Future.h>
+#endif
 
 #ifndef BENTLEY_WINRT
     #include <curl/curl.h>
@@ -19,6 +21,8 @@
 
 DPILOG_DEFINE(RealityDataCache)
 #define RDCLOG(sev,...) {if (RealityDataCache_getLogger().isSeverityEnabled(sev)) {RealityDataCache_getLogger().messagev(sev, __VA_ARGS__);}}
+
+USING_NAMESPACE_BENTLEY_HTTP
 
 BEGIN_BENTLEY_REALITYDATA_NAMESPACE
 //=======================================================================================
@@ -535,11 +539,6 @@ RefCountedPtr<SourceResponse> AsyncSourceRequest::Handle(BeMutex& cs) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool AsyncSourceRequest::ShouldCancelRequest() const {return nullptr != m_cancellationToken && m_cancellationToken->_ShouldCancel();}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncSource::SetIgnoreRequests(uint32_t ignoreTime)
@@ -586,8 +585,9 @@ SourceResult AsyncSource::QueueRequest(AsyncSourceRequest& request, Cache& respo
         m_activeRequests.insert(request.GetPayload().GetPayloadId());
         }
     
+    request.SetCancellationToken(m_cancellationToken);
+
     RefCountedPtr<RequestHandler> handler = new RequestHandler(*this, request, responseReceiver);
-    request.SetCancellationToken(*handler);
     m_threadPool->QueueWork(*handler);
 
     if (!request.GetRequestOptions().m_forceSynchronous)
@@ -617,7 +617,7 @@ void AsyncSource::RequestHandler::_DoWork()
             break;
         }
 
-    if (!m_source->m_terminateRequested)
+    if (!m_source->m_cancellationToken->IsCanceled())
         SendResponse(*response, m_request->GetRequestOptions());
 
     if (!m_request->GetRequestOptions().m_forceSynchronous)
@@ -629,14 +629,6 @@ void AsyncSource::RequestHandler::_DoWork()
         }
 
     m_source->m_synchronizationCV.notify_all();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool AsyncSource::RequestHandler::_ShouldCancel() const
-    {
-    return m_source->m_terminateRequested;
     }
 
 //===================================================================================
@@ -666,7 +658,7 @@ protected:
             return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
 
-        if (ShouldCancelRequest())
+        if (m_cancellationToken->IsCanceled())
             return new SourceResponse(SourceResult::Cancelled, *m_payload);
         
         if (SUCCESS != m_payload->_LoadFromFile(data))
@@ -732,43 +724,6 @@ static DateTime GetExpirationDateFromCacheControlStr(Utf8CP str)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetAnsiCFormattedDateTime(DateTime const& dateTime)
-    {
-    Utf8CP wkday = "";
-    switch (dateTime.GetDayOfWeek())
-        {
-        case DateTime::DayOfWeek::Sunday:   wkday = "Sun"; break;
-        case DateTime::DayOfWeek::Monday:   wkday = "Mon"; break;
-        case DateTime::DayOfWeek::Tuesday:  wkday = "Tue"; break;
-        case DateTime::DayOfWeek::Wednesday:wkday = "Wed"; break;
-        case DateTime::DayOfWeek::Thursday: wkday = "Thu"; break;
-        case DateTime::DayOfWeek::Friday:   wkday = "Fri"; break;
-        case DateTime::DayOfWeek::Saturday: wkday = "Sat"; break;
-        }
-
-    Utf8CP month = "";
-    switch (dateTime.GetMonth())
-        {
-        case 1:  month = "Jan"; break;
-        case 2:  month = "Feb"; break;
-        case 3:  month = "Mar"; break;
-        case 4:  month = "Apr"; break;
-        case 5:  month = "May"; break;
-        case 6:  month = "Jun"; break;
-        case 7:  month = "Jul"; break;
-        case 8:  month = "Aug"; break;
-        case 9:  month = "Sep"; break;
-        case 10: month = "Oct"; break;
-        case 11: month = "Nov"; break;
-        case 12: month = "Dec"; break;
-        }
-
-    return Utf8PrintfString("%s %s %02d %02d:%02d:%02d %d", wkday, month, dateTime.GetDay(), dateTime.GetHour(), dateTime.GetMinute(), dateTime.GetSecond(), dateTime.GetYear());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DateTime GetDefaultExpirationDate()
@@ -780,63 +735,74 @@ static DateTime GetDefaultExpirationDate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Payload::ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header)
+static void ParseExpirationDateAndETag(PayloadR payload, HttpResponseHeadersCR headers)
     {
-    auto cacheControlIter = header.find("Cache-Control");
-    SetExpirationDate((cacheControlIter != header.end()) ? GetExpirationDateFromCacheControlStr(cacheControlIter->second.c_str()) : GetDefaultExpirationDate());
+    if (nullptr != headers.GetCacheControl())
+        payload.SetExpirationDate(GetExpirationDateFromCacheControlStr(headers.GetCacheControl()));
+    else
+        payload.SetExpirationDate(GetDefaultExpirationDate());
 
-    auto etagIter = header.find("ETag");
-    if (header.end() != etagIter)
-        SetEntityTag(etagIter->second.c_str());
+    if (nullptr != headers.GetETag())
+        payload.SetEntityTag(headers.GetETag());
     }
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct HttpSourceRequest : AsyncSourceRequest, Http::CancellationToken
+struct HttpSourceRequest : AsyncSourceRequest
 {
-    virtual bool _ShouldCancelHttpRequest() const override {return ShouldCancelRequest();}
-
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis               03/2015
     +---------------+---------------+---------------+---------------+-----------+------*/
     virtual RefCountedPtr<SourceResponse> _Handle() const override 
         {
-        bmap<Utf8String, Utf8String> header;
+        HttpRequest request(m_payload->GetPayloadId());
+        request.SetCancellationToken(m_cancellationToken);
+
+        HttpByteStreamBodyPtr responseBody = HttpByteStreamBody::Create();
+        request.SetResponseBody(responseBody);
+
         if (m_payload->GetExpirationDate().IsValid())
             {
             BeAssert(DateTime::Kind::Utc == m_payload->GetExpirationDate().GetInfo().GetKind());
-            header["If-Modified-Since"] = GetAnsiCFormattedDateTime(m_payload->GetExpirationDate());
+            request.GetHeaders().SetIfModifiedSince(m_payload->GetExpirationDate());
             }
         if (!Utf8String::IsNullOrEmpty(m_payload->GetEntityTag()))
-            header["If-None-Match"] = m_payload->GetEntityTag();
-
-        Utf8StringCR url = m_payload->GetPayloadId();
-        Http::Response response;
-        Http::Request::Status requestStatus = Http::PerformRequest(response, Http::Request(url.c_str(), header), this);
-        switch (requestStatus)
+            request.GetHeaders().SetIfNoneMatch(m_payload->GetEntityTag());
+        
+        HttpResponse response = request.Perform();
+        switch (response.GetConnectionStatus())
             {
-            case Http::Request::Status::NoConnection:
+            case ConnectionStatus::CouldNotConnect:
+            case ConnectionStatus::ConnectionLost:
                 return new SourceResponse(SourceResult::Error_NoConnection, *m_payload);
+                
+            case ConnectionStatus::Timeout:
+                return new SourceResponse(SourceResult::Error_GatewayTimeout, *m_payload);
 
-            case Http::Request::Status::CouldNotResolveHost:
-            case Http::Request::Status::CouldNotResolveProxy:
-                return new SourceResponse(SourceResult::Error_CouldNotResolveHost,  *m_payload);
+            case ConnectionStatus::CertificateError:
+            case ConnectionStatus::UnknownError:
+                return new SourceResponse(SourceResult::Error_Unknown,  *m_payload);
 
-            case Http::Request::Status::UnknownError:
+            case ConnectionStatus::None:     // not an error
+            case ConnectionStatus::OK:       // not an error
+            case ConnectionStatus::Canceled: // handled below
+                break;
+
+            default:
                 BeAssert(false && "All HTTP errors should be handled");
                 return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
 
-        if (requestStatus == Http::Request::Status::Aborted || ShouldCancelRequest())
+        if (response.GetConnectionStatus() == ConnectionStatus::Canceled || m_cancellationToken->IsCanceled())
             return new SourceResponse(SourceResult::Cancelled, *m_payload);
 
-        switch (response.m_status)
+        switch (response.GetHttpStatus())
             {
-            case Http::Response::Status::Success:
+            case HttpStatus::OK:
                 {
-                m_payload->ParseExpirationDateAndETag(response.m_header);
-                if (SUCCESS != m_payload->_LoadFromHttp(response.m_header, response.m_body))
+                ParseExpirationDateAndETag(*m_payload, response.GetHeaders());
+                if (SUCCESS != m_payload->_LoadFromHttp(response.GetHeaders().GetMap(), responseBody->GetByteStream()))
                     {
                     RDCLOG(LOG_INFO, "[%lld] response 200 but unable to initialize reality data",(uint64_t)BeThreadUtilities::GetCurrentThreadId());
                     return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
@@ -844,19 +810,19 @@ struct HttpSourceRequest : AsyncSourceRequest, Http::CancellationToken
                 return new SourceResponse(SourceResult::Success, *m_payload);
                 }
 
-            case Http::Response::Status::NotModified:
+            case HttpStatus::NotModified:
                 {
-                m_payload->ParseExpirationDateAndETag(header);
+                ParseExpirationDateAndETag(*m_payload, response.GetHeaders());
                 return new SourceResponse(SourceResult::NotModified, *m_payload);
                 }
 
-            case Http::Response::Status::NotFound:
+            case HttpStatus::NotFound:
                 return new SourceResponse(SourceResult::Error_NotFound, *m_payload);
 
-            case Http::Response::Status::Forbidden:
+            case HttpStatus::Forbidden:
                 return new SourceResponse(SourceResult::Error_AccessDenied, *m_payload);
 
-            case Http::Response::Status::GatewayTimeout:
+            case HttpStatus::GatewayTimeout:
                 return new SourceResponse(SourceResult::Error_GatewayTimeout, *m_payload);
 
             default:

@@ -11,6 +11,7 @@
 #ifndef _M_CEE // can't include this file in managed compilands
 
 #include <DgnPlatform/DgnPlatform.h>
+#include <Bentley/Tasks/CancellationToken.h>
 #include <queue>
 #include <chrono>
 
@@ -66,7 +67,6 @@ protected:
     Utf8String m_payloadId;
 
 public:
-    void ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header);
     void SetExpirationDate(DateTime const& date) {m_expirationDate = date;}
     void SetEntityTag(Utf8CP eTag) {m_entityTag = eTag;}
     DateTime const& GetExpirationDate() const {return m_expirationDate;}
@@ -540,15 +540,6 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            05/2015
-//=======================================================================================
-struct IAsyncRequestCancellationToken
-{
-    virtual ~IAsyncRequestCancellationToken() {}
-    virtual bool _ShouldCancel() const = 0;
-};
-
-//=======================================================================================
 //! A request interface for @ref AsyncSource.
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
@@ -557,23 +548,23 @@ struct AsyncSourceRequest : RefCountedBase
     struct SynchronousRequestPredicate;
 
 protected:
-    IAsyncRequestCancellationToken* m_cancellationToken;
+    Tasks::ICancellationTokenPtr m_cancellationToken;
     Options m_options;
     PayloadPtr m_payload;
 
     mutable RefCountedPtr<SourceResponse> m_response; // set only for sync requests
 
-    AsyncSourceRequest(IAsyncRequestCancellationToken* cancellationToken, Options options, Payload& payload) : m_cancellationToken(cancellationToken), m_options(options), m_payload(&payload) {}
+    AsyncSourceRequest(Tasks::ICancellationToken* cancellationToken, Options options, Payload& payload) : m_cancellationToken(cancellationToken), m_options(options), m_payload(&payload) {}
               
     //! Returns true if the request was cancelled.
-    DGNPLATFORM_EXPORT bool ShouldCancelRequest() const;
+    Tasks::ICancellationTokenPtr GetCancellationToken() const {return m_cancellationToken;}
 
     //! Handle the request (e.g. read file content and initialize reality data from it).
     virtual RefCountedPtr<SourceResponse> _Handle() const = 0;
 
 public:
     RefCountedPtr<SourceResponse> Handle(BeMutex& cs) const;
-    void SetCancellationToken(IAsyncRequestCancellationToken& token) {m_cancellationToken = &token;}
+    void SetCancellationToken(Tasks::ICancellationTokenPtr token) {m_cancellationToken = token;}
     Payload& GetPayload() const {return *m_payload;}
     Options GetRequestOptions() const {return m_options;}
 };
@@ -587,7 +578,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncSource : Source
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        10/2014
     //===================================================================================
-    struct RequestHandler : RefCounted<Work>, IAsyncRequestCancellationToken
+    struct RequestHandler : RefCounted<Work>
     {
     private:
         RefCountedPtr<AsyncSource> m_source;
@@ -598,7 +589,6 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncSource : Source
 
     protected:
         virtual void _DoWork() override;
-        virtual bool _ShouldCancel() const override;
 
     public:
         RequestHandler(AsyncSource& source, AsyncSourceRequest const& request, Cache& responseReceiver)
@@ -612,7 +602,7 @@ private:
     bset<Utf8String>         m_activeRequests;
     BeAtomic<uint64_t>       m_ignoreRequestsUntil;
     BeConditionVariable      m_synchronizationCV;
-    bool                     m_terminateRequested;
+    Tasks::SimpleCancellationTokenPtr m_cancellationToken;
 
 private:
     void SetIgnoreRequests(uint32_t ignoreTime);
@@ -621,12 +611,12 @@ private:
 protected:
     virtual ~AsyncSource()
         {
-        m_terminateRequested = true;
+        m_cancellationToken->SetCanceled();
         m_threadPool->Terminate();
         m_threadPool->WaitUntilAllThreadsIdle();
         }
     AsyncSource(int numThreads, SchedulingMethod schedulingMethod)
-        : m_threadPool(ThreadPool::Create(numThreads, numThreads, schedulingMethod)), m_ignoreRequestsUntil(0), m_terminateRequested(false)
+        : m_threadPool(ThreadPool::Create(numThreads, numThreads, schedulingMethod)), m_ignoreRequestsUntil(0), m_cancellationToken(Tasks::SimpleCancellationToken::Create())
         {
         }
 
