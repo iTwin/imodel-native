@@ -94,6 +94,9 @@ extern "C" int clock_getres(clockid_t clock_id, struct timespec* res) {
     case CLOCK_THREAD_CPUTIME_ID: {
       DWORD adj, timeIncrement;
       BOOL adjDisabled;
+
+// BENTLEY_CHANGE
+#if !defined(BENTLEY_WINRT)
       if (!GetSystemTimeAdjustment(&adj, &timeIncrement, &adjDisabled)) {
         errno = EINVAL;
         return -1;
@@ -102,6 +105,12 @@ extern "C" int clock_getres(clockid_t clock_id, struct timespec* res) {
       res->tv_sec = 0;
       res->tv_nsec = timeIncrement * 100;
       return 0;
+#else
+      // UWP doesn't provide GetSystemTimeAdjustment
+      // I can't find any real code calling this to determine what an equivalent needs to be, so just side-stepping.
+      errno = EINVAL;
+      return -1;
+#endif
     }
 
     default:
@@ -142,6 +151,8 @@ extern "C" int clock_gettime(clockid_t clock_id, struct timespec* tp) {
       return timeToTimespec(tp, ftToUint(createTime) - kDeltaEpochIn100NS);
     }
     case CLOCK_PROCESS_CPUTIME_ID: {
+// BENTLEY_CHANGE
+#if !defined(BENTLEY_WINRT)
       if (!GetProcessTimes(
               GetCurrentProcess(),
               &createTime,
@@ -153,8 +164,16 @@ extern "C" int clock_gettime(clockid_t clock_id, struct timespec* tp) {
       }
 
       return timeToTimespec(tp, ftToUint(kernalTime) + ftToUint(userTime));
+#else
+      // UWP doesn't provide GetSystemTimeAdjustment
+      // I can't find any real code calling this to determine what an equivalent needs to be, so just side-stepping.
+      errno = EINVAL;
+      return -1;
+#endif
     }
     case CLOCK_THREAD_CPUTIME_ID: {
+// BENTLEY_CHANGE
+#if !defined(BENTLEY_WINRT)
       if (!GetThreadTimes(
               GetCurrentThread(),
               &createTime,
@@ -166,6 +185,12 @@ extern "C" int clock_gettime(clockid_t clock_id, struct timespec* tp) {
       }
 
       return timeToTimespec(tp, ftToUint(kernalTime) + ftToUint(userTime));
+#else
+      // UWP doesn't provide GetSystemTimeAdjustment
+      // I can't find any real code calling this to determine what an equivalent needs to be, so just side-stepping.
+      errno = EINVAL;
+      return -1;
+#endif
     }
     case CLOCK_MONOTONIC: {
       LARGE_INTEGER fl, cl;
