@@ -125,7 +125,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64   </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64    </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -218,7 +218,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64  </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64  -s</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -442,9 +442,41 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\CGAL_BentleyKernel.h" />
     <ClInclude Include="stm\ComputeMemoryUseTraits.h" />
     <ClInclude Include="STM\Edits\Skirts.h" />
+    <ClInclude Include="STM\ISMDataStore.h" />
+    <ClInclude Include="STM\ISMDataStore.hpp" />
     <ClInclude Include="stm\ScalableMeshDb.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\ActivitySemaphore.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSource.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccount.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccountAzure.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccountCached.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccountFile.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAzure.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceBuffer.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceBuffered.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceCached.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceCloud.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceFile.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceLocator.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceManager.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceManagerPCH.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceManagerTest.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceMode.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceService.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceServiceAzure.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceServiceFile.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceServiceManager.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceStatus.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceStoreConfig.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceTransferScheduler.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceURL.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\Manager.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\PerformanceTimer.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\Status.h" />
+    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\stdafx.h" />
+    <ClInclude Include="STM\SMDataSourceParams.h" />
     <ClInclude Include="STM\SMMemoryPool.h" />
     <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
     <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
@@ -615,6 +647,29 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Edits\Skirts.cpp" />
     <ClCompile Include="stm\ScalableMeshDb.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\ActivitySemaphore.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSource.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccount.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccountAzure.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccountCached.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccountFile.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAzure.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceBuffer.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceBuffered.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceCached.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceCloud.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceFile.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceLocator.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceManager.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceManagerPCH.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceManagerTest.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceService.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceServiceAzure.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceServiceFile.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceServiceManager.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceTransferScheduler.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceURL.cpp" />
+    <ClCompile Include="STM\ScalableMesh\CloudDataSource\PerformanceTimer.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp" />
     <ClCompile Include="STM\DrapeOnGraph.cpp" />
     <ClCompile Include="STM\SMMemoryPool.cpp" />
@@ -691,6 +746,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="Import\Import.mke.realOrig" />
     <None Include="mki\AssertScalableTerrainModelPolicy.mki" />
     <None Include="PrivateAPI\STMInternal\Foundations\_Description.mki" />
@@ -702,6 +758,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <None Include="PublicAPI\ScalableMesh\__BENTLEY_INTERNAL_ONLY__" />
     <None Include="ScalableMesh.mke" />
     <None Include="ScalableMesh.mki" />
+    <None Include="STM\ScalableMesh\CloudDataSource\CloudDataSourcePolicy.mki" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
