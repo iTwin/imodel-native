@@ -48,8 +48,14 @@ public:
             m_shortName = node->GetChildFile(); // Note: we must save this in the ctor, since it is not safe to call this on other threads.
         }
 
-    MxStreamBuffer& GetOutput() const {return m_nodeBytes;}
-    StatusInt DoRead() const {return m_scene.IsHttp() ? LoadFromHttp() : ReadFromFile();}
+    StatusInt DoRead() const 
+        {
+        if (m_node.IsValid() && !m_node->IsQueued())
+            return SUCCESS; // this node was abandoned.
+
+        return m_scene.IsHttp() ? LoadFromHttp() : ReadFromFile();
+        }
+
     StatusInt ReadFromFile() const;
     StatusInt LoadFromHttp() const;
     StatusInt LoadFromDb() const;
@@ -66,9 +72,6 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ThreeMxFileData::ReadFromFile() const
     {
-    if (m_node.IsValid() && !m_node->IsQueued())
-        return 0; // this node was abandoned.
-
     BeFile dataFile;
     if (BeFileStatus::Success != dataFile.Open(m_fileName.c_str(), BeFileAccess::Read))
         {
@@ -147,9 +150,6 @@ StatusInt ThreeMxFileData::LoadFromDb() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ThreeMxFileData::LoadFromHttp() const
     {
-    if (m_node.IsValid() && !m_node->IsQueued())
-        return SUCCESS; // this node was abandoned.
-    
     if (SUCCESS == LoadFromDb())
         return SUCCESS;
 
