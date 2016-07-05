@@ -203,6 +203,113 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithTokenAndSignedOut_Retu
     EXPECT_EQ("", info.username);
     }
 
+TEST_F(ConnectSignInManagerTests, GetUserInfo_InvalidToken_ReturnsEmpty)
+    {
+    auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
+
+    SamlToken token = "InvalidToken";
+    auto info = manager->GetUserInfo(token);
+
+    EXPECT_EQ("", info.firstName);
+    EXPECT_EQ("", info.lastName);
+    EXPECT_EQ("", info.userId);
+    EXPECT_EQ("", info.username);
+    }
+
+TEST_F(ConnectSignInManagerTests, GetUserInfo_ValidToken_ReturnsValuesFromToken)
+    {
+    auto tokenStr =
+        R"(<saml:Assertion MajorVersion="1" MinorVersion="1" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+            <saml:Conditions 
+                NotBefore   ="2016-02-24T10:48:17.584Z"
+                NotOnOrAfter="2016-02-24T10:48:17.584Z">
+            </saml:Conditions>
+            <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+                    <X509Data>
+                        <X509Certificate>TestCert</X509Certificate>
+                    </X509Data>
+                </KeyInfo>
+            </ds:Signature>
+            <saml:AttributeStatement>
+                <saml:Attribute AttributeName="givenname">
+                    <saml:AttributeValue>ValueA</saml:AttributeValue>
+                </saml:Attribute>
+                <saml:Attribute AttributeName="surname">
+                    <saml:AttributeValue>ValueB</saml:AttributeValue>
+                </saml:Attribute>
+                <saml:Attribute AttributeName="userid">
+                    <saml:AttributeValue>ValueC</saml:AttributeValue>
+                </saml:Attribute>
+                <saml:Attribute AttributeName="name">
+                    <saml:AttributeValue>ValueD</saml:AttributeValue>
+                </saml:Attribute>
+            </saml:AttributeStatement>
+        </saml:Assertion>)";
+
+    SamlTokenPtr tokenPtr = std::make_shared<SamlToken>(tokenStr);
+    auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
+
+    auto info = manager->GetUserInfo(*tokenPtr);
+
+    EXPECT_EQ("ValueA", info.firstName);
+    EXPECT_EQ("ValueB", info.lastName);
+    EXPECT_EQ("ValueC", info.userId);
+    EXPECT_EQ("ValueD", info.username);
+    }
+
+TEST_F(ConnectSignInManagerTests, GetLastUsername_NoPreviousUsers_ReturnEmpty)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    EXPECT_EQ("", manager->GetLastUsername());
+    }
+
+TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedIn_ReturnsCurrentUser)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    SamlTokenPtr token = StubSamlTokenWithUser("TestUser");
+    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
+    ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
+
+    EXPECT_EQ("TestUser", manager->GetLastUsername());
+    }
+
+TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedInSecondTime_ReturnsCurrentUser)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    SamlTokenPtr token = StubSamlTokenWithUser("TestUserA");
+    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
+    ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
+
+    manager->SignOut();
+
+    token = StubSamlTokenWithUser("TestUserB");
+    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
+    ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
+
+    EXPECT_EQ("TestUserB", manager->GetLastUsername());
+    }
+
+TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedOut_ReturnsPreviousUser)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    SamlTokenPtr token = StubSamlTokenWithUser("TestUser");
+    EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
+    ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
+
+    manager->SignOut();
+
+    EXPECT_EQ("TestUser", manager->GetLastUsername());
+    }
+
 TEST_F(ConnectSignInManagerTests, GetTokenProvider_NotSignedIn_TokenProviderDoesNotReturnAnyTokens)
     {
     auto imsClient = std::make_shared<MockImsClient>();

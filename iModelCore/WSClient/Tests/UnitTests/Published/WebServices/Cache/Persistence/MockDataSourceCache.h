@@ -129,6 +129,8 @@ struct MockDataSourceCache : public IDataSourceCache
             BentleyStatus (CachedResponseKeyCR, DateTimeCR));
         MOCK_METHOD1 (ReadResponseAccessDate,
             DateTime (CachedResponseKeyCR));
+        MOCK_METHOD2(GetResponsesContainingInstance,
+                     bset<CachedResponseKey>(ECInstanceKeyCR, Utf8StringCR));
         MOCK_METHOD1 (GetCachedObjectInfo,
             CachedObjectInfo (ECInstanceKeyCR instance));
         MOCK_METHOD1 (GetCachedObjectInfo,
