@@ -170,17 +170,18 @@ public:
 struct AnnotationTableTest : ::testing::Test
 {
 private:
-    Dgn::ScopedDgnHost m_testHost;
 
-    DgnDbPtr                m_dgnDb;
-
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+Dgn::ScopedDgnHost m_testHost;
+DgnDbPtr m_dgnDb;
 
 public:
+
+static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+
 AnnotationTableTest() { }
 
-    BETEST_DECLARE_TC_SETUP
-    BETEST_DECLARE_TC_TEARDOWN
+BETEST_DECLARE_TC_SETUP
+BETEST_DECLARE_TC_TEARDOWN
 
 DgnDbR                  GetDgnDb()
     {
