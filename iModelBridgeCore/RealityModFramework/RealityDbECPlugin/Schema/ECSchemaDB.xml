@@ -165,7 +165,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>ProcessingDescription</OverrideColumnName>
                     <CacheColumnName>ProcessingDescription</CacheColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -177,7 +177,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>DataSourceTypesAvailable</OverrideColumnName>
                     <CacheColumnName>DataSourceTypesAvailable</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -189,12 +189,46 @@
                 <MimicDBColumn>
                     <OverrideColumnName>AccuracyResolutionDensity</OverrideColumnName>
                     <CacheColumnName>AccuracyResolutionDensity</CacheColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
-        <ECProperty propertyName="DataProvider" typeName="string" />
-        <ECProperty propertyName="DataProviderName" typeName="string" />
+        <ECProperty propertyName="ResolutionInMeters" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ResolutionInMeters</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>ResolutionInMeters</OverrideColumnName>
+                    <CacheColumnName>ResolutionInMeters</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="DataProvider" typeName="string"> 
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>DataProvider</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>DataProvider</OverrideColumnName>
+                    <CacheColumnName>DataProvider</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="DataProviderName" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>DataProviderName</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>DataProviderName</OverrideColumnName>
+                    <CacheColumnName>DataProviderName</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
         
         <ECProperty propertyName="Date" typeName="dateTime">
             <ECCustomAttributes>
@@ -204,7 +238,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Date</OverrideColumnName>
                     <CacheColumnName>Date</CacheColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -216,7 +250,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Classification</OverrideColumnName>
                     <CacheColumnName>Classification</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>        
         
@@ -242,7 +276,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>IdStr</OverrideColumnName>
-                </MimicDBColumn>                    
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
@@ -267,7 +301,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>IdStr</OverrideColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -278,7 +312,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Processable</OverrideColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>    
 
@@ -322,7 +356,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>IdStr</OverrideColumnName>
                     <CacheColumnName>IdStr</CacheColumnName>
-                </MimicDBColumn>                    
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>    
         
@@ -334,7 +368,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>ThumbnailProvenance</OverrideColumnName>
                     <CacheColumnName>ThumbnailProvenance</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -346,7 +380,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>ThumbnailFormat</OverrideColumnName>
                     <CacheColumnName>ThumbnailFormat</CacheColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -358,7 +392,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>ThumbnailWidth</OverrideColumnName>
                     <CacheColumnName>ThumbnailWidth</CacheColumnName>
-                </MimicDBColumn>                      
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -370,7 +404,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>ThumbnailHeight</OverrideColumnName>
                     <CacheColumnName>ThumbnailHeight</CacheColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -382,7 +416,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>ThumbnailStamp</OverrideColumnName>
                     <CacheColumnName>ThumbnailStamp</CacheColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -402,7 +436,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>ThumbnailGenerationDetails</OverrideColumnName>
                     <CacheColumnName>ThumbnailGenerationDetails</CacheColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
@@ -430,7 +464,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>IdStr</OverrideColumnName>
                     <CacheColumnName>IdStr</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>   
         
@@ -442,7 +476,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>RawMetadata</OverrideColumnName>
                     <CacheColumnName>RawMetadata</CacheColumnName>
-                </MimicDBColumn>                    
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -454,7 +488,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>RawMetadataFormat</OverrideColumnName>
                     <CacheColumnName>RawMetadataFormat</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -466,7 +500,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>DisplayStyle</OverrideColumnName>
                     <CacheColumnName>DisplayStyle</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -478,7 +512,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Description</OverrideColumnName>
                     <CacheColumnName>Description</CacheColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -490,7 +524,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>ContactInformation</OverrideColumnName>
                     <CacheColumnName>ContactInformation</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -502,7 +536,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Keywords</OverrideColumnName>
                     <CacheColumnName>Keywords</CacheColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -514,7 +548,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Legal</OverrideColumnName>
                     <CacheColumnName>Legal</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -526,7 +560,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Lineage</OverrideColumnName>
                     <CacheColumnName>Lineage</CacheColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -538,7 +572,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Provenance</OverrideColumnName>
                     <CacheColumnName>Provenance</CacheColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -570,7 +604,7 @@
                     <OverrideColumnName>IdStr</OverrideColumnName>
                     <ComplementColumnName>IdStr</ComplementColumnName>
                     <CacheColumnName>IdStr</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>   
 
@@ -583,7 +617,7 @@
                     <OverrideColumnName>MainURL</OverrideColumnName>
                     <ComplementColumnName>MainURL</ComplementColumnName>
                     <CacheColumnName>MainURL</CacheColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -595,7 +629,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>CompoundType</OverrideColumnName>
                     <CacheColumnName>CompoundType</CacheColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -607,7 +641,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>LocationInCompound</OverrideColumnName>
                     <CacheColumnName>LocationInCompound</CacheColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -619,7 +653,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>DataSourceType</OverrideColumnName>
                     <CacheColumnName>DataSourceType</CacheColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -634,7 +668,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>SisterFiles</OverrideColumnName>
                     <CacheColumnName>SisterFiles</CacheColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -646,7 +680,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>FileSize</OverrideColumnName>
                     <CacheColumnName>FileSize</CacheColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -654,7 +688,7 @@
             <ECCustomAttributes>
                 <MimicDBColumn>
                     <CacheColumnName>Metadata</CacheColumnName>
-                </MimicDBColumn> 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -692,7 +726,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>IdStr</OverrideColumnName>
                     <ComplementColumnName>IdStr</ComplementColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>   
 
@@ -703,7 +737,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Layers</OverrideColumnName>
-                </MimicDBColumn>                     
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -714,7 +748,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Styles</OverrideColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -725,7 +759,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Formats</OverrideColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -775,7 +809,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>IdStr</OverrideColumnName>
                     <ComplementColumnName>IdStr</ComplementColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>   
         
@@ -786,7 +820,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>AlternateURL1</OverrideColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -797,7 +831,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>AlternateURL2</OverrideColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>   
@@ -825,7 +859,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>IdStr</OverrideColumnName>
                     <CacheColumnName>IdStr</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
 
@@ -837,7 +871,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>CommunicationProtocol</OverrideColumnName>
                     <CacheColumnName>CommunicationProtocol</CacheColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -849,7 +883,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Name</OverrideColumnName>
                     <CacheColumnName>Name</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -861,7 +895,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>URL</OverrideColumnName>
                     <CacheColumnName>URL</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -873,7 +907,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>ServerContactInformation</OverrideColumnName>
                     <CacheColumnName>ServerContactInformation</CacheColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -885,7 +919,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Fees</OverrideColumnName>
                     <CacheColumnName>Fees</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -897,7 +931,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Legal</OverrideColumnName>
                     <CacheColumnName>Legal</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -909,7 +943,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>AccessConstraints</OverrideColumnName>
                     <CacheColumnName>AccessConstraints</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -921,7 +955,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Online</OverrideColumnName>
                     <CacheColumnName>Online</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -933,7 +967,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>LastCheck</OverrideColumnName>
                     <CacheColumnName>LastCheck</CacheColumnName>
-                </MimicDBColumn>                     
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -945,7 +979,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>LastTimeOnline</OverrideColumnName>
                     <CacheColumnName>LastTimeOnline</CacheColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -957,7 +991,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Latency</OverrideColumnName>
                     <CacheColumnName>Latency</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -969,7 +1003,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>MeanReachabilityStats</OverrideColumnName>
                     <CacheColumnName>MeanReachabilityStats</CacheColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -981,7 +1015,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>State</OverrideColumnName>
                     <CacheColumnName>State</CacheColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -993,7 +1027,7 @@
                 <MimicDBColumn>
                     <OverrideColumnName>Type</OverrideColumnName>
                     <CacheColumnName>Type</CacheColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1019,7 +1053,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>IdStr</OverrideColumnName>
-                </MimicDBColumn>                  
+                </MimicDBColumn>
             </ECCustomAttributes>    
         </ECProperty>
         
@@ -1030,7 +1064,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Title</OverrideColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1041,7 +1075,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Description</OverrideColumnName>
-                </MimicDBColumn>                   
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1052,7 +1086,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>NumLayers</OverrideColumnName>
-                </MimicDBColumn>                 
+                </MimicDBColumn>
             </ECCustomAttributes>    
         </ECProperty>
         
@@ -1063,7 +1097,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Version</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1074,7 +1108,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>GetCapabilitiesURL</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1085,7 +1119,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>SupportedFormats</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1096,7 +1130,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>GetMapURL</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1107,7 +1141,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>GetMapURLQuery</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
@@ -1132,7 +1166,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>IdStr</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1143,7 +1177,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Name</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1154,7 +1188,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Title</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1165,7 +1199,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Description</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1177,7 +1211,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>BoundingBox</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1188,7 +1222,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>CoordinateSystems</OverrideColumnName>
-                </MimicDBColumn>                
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1204,8 +1238,8 @@
                 <InstanceIDProperty>Id</InstanceIDProperty>
                 <OverrideTableName>dbo.OverrideSpatialEntityWithDetailsView</OverrideTableName>
                 <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
-				<CacheTableName>dbo.CacheSpatialEntityWithDetailsView</CacheTableName>
-				<!-- <CacheTableUniqueIdColumn>UniqueId</CacheTableUniqueIdColumn> -->
+                <CacheTableName>dbo.CacheSpatialEntityWithDetailsView</CacheTableName>
+                <!-- <CacheTableUniqueIdColumn>UniqueId</CacheTableUniqueIdColumn> -->
             </SQLEntity>
         </ECCustomAttributes>  
         
@@ -1216,8 +1250,8 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>IdStr</OverrideColumnName>
-					<CacheColumnName>IdStr</CacheColumnName>
-                </MimicDBColumn>                  
+                    <CacheColumnName>IdStr</CacheColumnName>
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1229,8 +1263,8 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Footprint</OverrideColumnName>
-					<CacheColumnName>Footprint</CacheColumnName>
-                </MimicDBColumn>                
+                    <CacheColumnName>Footprint</CacheColumnName>
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1241,8 +1275,8 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Name</OverrideColumnName>
-					<CacheColumnName>Name</CacheColumnName>
-                </MimicDBColumn>                
+                    <CacheColumnName>Name</CacheColumnName>
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1253,8 +1287,8 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Description</OverrideColumnName>
-					<CacheColumnName>Description</CacheColumnName>
-                </MimicDBColumn>                
+                    <CacheColumnName>Description</CacheColumnName>
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1265,8 +1299,8 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>ContactInformation</OverrideColumnName>
-					<CacheColumnName>ContactInformation</CacheColumnName>
-                </MimicDBColumn>                
+                    <CacheColumnName>ContactInformation</CacheColumnName>
+                </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
         
@@ -1277,7 +1311,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Keywords</OverrideColumnName>
-					<CacheColumnName>Keywords</CacheColumnName>
+                    <CacheColumnName>Keywords</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -1289,7 +1323,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Legal</OverrideColumnName>
-					<CacheColumnName>Legal</CacheColumnName>
+                    <CacheColumnName>Legal</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>        
@@ -1301,7 +1335,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>ProcessingDescription</OverrideColumnName>
-					<CacheColumnName>ProcessingDescription</CacheColumnName>
+                    <CacheColumnName>ProcessingDescription</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -1313,7 +1347,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>DataSourceType</OverrideColumnName>
-					<CacheColumnName>DataSourceType</CacheColumnName>
+                    <CacheColumnName>DataSourceType</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -1325,7 +1359,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>AccuracyResolutionDensity</OverrideColumnName>
-					<CacheColumnName>AccuracyResolutionDensity</CacheColumnName>
+                    <CacheColumnName>AccuracyResolutionDensity</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -1337,7 +1371,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Date</OverrideColumnName>
-					<CacheColumnName>Date</CacheColumnName>
+                    <CacheColumnName>Date</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -1349,7 +1383,7 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Classification</OverrideColumnName>
-					<CacheColumnName>Classification</CacheColumnName>
+                    <CacheColumnName>Classification</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -1361,11 +1395,11 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>FileSize</OverrideColumnName>
-					<CacheColumnName>FileSize</CacheColumnName>
+                    <CacheColumnName>FileSize</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-        
+
         <ECProperty propertyName="SpatialDataSourceId" typeName="string" >
             <ECCustomAttributes>
                 <DBColumn>
@@ -1373,15 +1407,48 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>SpatialDataSourceId</OverrideColumnName>
-					<CacheColumnName>SpatialDataSourceId</CacheColumnName>
+                    <CacheColumnName>SpatialDataSourceId</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-        
-        <ECProperty propertyName="ResolutionInMeters" typeName="string" />
+
+        <ECProperty propertyName="ResolutionInMeters" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ResolutionInMeters</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>ResolutionInMeters</OverrideColumnName>
+                    <CacheColumnName>ResolutionInMeters</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+
         <!--ECProperty propertyName="ParentDatasetIdStr" typeName="string" /-->
-        <ECProperty propertyName="DataProvider" typeName="string" />
-        <ECProperty propertyName="DataProviderName" typeName="string" />
+        <ECProperty propertyName="DataProvider" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>DataProvider</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>DataProvider</OverrideColumnName>
+                    <CacheColumnName>DataProvider</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+
+        <ECProperty propertyName="DataProviderName" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>DataProviderName</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>DataProviderName</OverrideColumnName>
+                    <CacheColumnName>DataProviderName</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+            
         <ECProperty propertyName="ThumbnailURL" typeName="string" />
         <ECProperty propertyName="MetadataURL" typeName="string" />
         <ECProperty propertyName="RawMetadataURL" typeName="string" />
@@ -1458,7 +1525,7 @@
         </Target>
     </ECRelationshipClass>
     
-<!-- 	<ECRelationshipClass 
+<!--    <ECRelationshipClass 
       typeName="SpatialEntityDatasetToChildrenView" 
       description="Link between SpatialEntityDataset and the SpatialEntityBases (view version) it contains." 
       strength="embedding" 
@@ -1478,7 +1545,7 @@
             <Class class="SpatialEntityWithDetailsView" />
         </Target>
     </ECRelationshipClass> -->
-	
+    
     <ECRelationshipClass 
       typeName="SpatialEntityDatasetToAlternateDataset" 
       description="Link between SpatialEntityDataset and an alternate dataset." 
@@ -1564,7 +1631,7 @@
         <Target cardinality="(1,n)" roleLabel="referenced" polymorphic="True">
             <Class class="SpatialDataSource" />
         </Target>
-    </ECRelationshipClass>        
+    </ECRelationshipClass>
         
     <ECRelationshipClass
       typeName="ServerToSpatialDataSource"

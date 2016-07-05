@@ -120,18 +120,19 @@ ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/DataReadingHelper.cs \
-			$(baseDir)Source/Helpers/DbConnectionHelper.cs \
+            $(baseDir)Source/Helpers/DbConnectionHelper.cs \
             $(baseDir)Source/Helpers/DBGeometryhelpers.cs \
             $(baseDir)Source/Helpers/ECQueryConverter.cs \
             $(baseDir)Source/Helpers/ECToSQLMap.cs \
+            $(baseDir)Source/Helpers/IDbQuerier.cs \
             $(baseDir)Source/Helpers/InstanceCacheManager.cs \
-			$(baseDir)Source/Helpers/InstanceComplement.cs \
+            $(baseDir)Source/Helpers/InstanceComplement.cs \
             $(baseDir)Source/Helpers/InstanceModifier.cs \
             $(baseDir)Source/Helpers/InstanceOverrider.cs \
             $(baseDir)Source/Helpers/IUSGSDataExtractor.cs \
             $(baseDir)Source/Helpers/IUSGSDataFetcher.cs \
-			$(baseDir)Source/Helpers/MimicTableAccessor.cs \
-			$(baseDir)Source/Helpers/MimicTableWriter.cs \
+            $(baseDir)Source/Helpers/MimicTableAccessor.cs \
+            $(baseDir)Source/Helpers/MimicTableWriter.cs \
             $(baseDir)Source/Helpers/SourceStringMap.cs \
             $(baseDir)Source/Helpers/SqlQueryHelpers.cs \
             $(baseDir)Source/Helpers/TableAliasCreator.cs \
@@ -143,11 +144,11 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/QueryProviders/IECQueryProvider.cs \
             $(baseDir)Source/QueryProviders/SqlQueryProvider.cs \
             $(baseDir)Source/QueryProviders/UsgsAPIQueryProvider.cs \
-			$(baseDir)Source/SQLQueryBuilder/IParamNameValueMap.cs \
-			$(baseDir)Source/SQLQueryBuilder/ISQLInsertStatementBuilder.cs \
+            $(baseDir)Source/SQLQueryBuilder/IParamNameValueMap.cs \
+            $(baseDir)Source/SQLQueryBuilder/ISQLInsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/PagedSQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/SQLQueryBuilder.cs \
-			$(baseDir)Source/SQLQueryBuilder/SQLServerInsertStatementBuilder.cs \
+            $(baseDir)Source/SQLQueryBuilder/SQLServerInsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/StandardSQLQueryBuilder.cs \
             $(baseDir)Source/IndexConstants.cs \
             $(baseDir)Source/IndexECPlugin.cs \

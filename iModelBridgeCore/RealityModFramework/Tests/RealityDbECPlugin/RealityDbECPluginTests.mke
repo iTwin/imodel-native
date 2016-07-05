@@ -77,11 +77,14 @@ ASSEMBLY_VERSION = 1.0.0.0
 ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
+            $(baseDir)Common/SetupHelpers.cs \
             $(baseDir)Tests/IndexECPluginUSGSTests.cs \
+            $(baseDir)Tests/InstanceComplementTests.cs \
+            $(baseDir)Tests/InstanceOverriderTests.cs \
             $(baseDir)Tests/USGSDataExtractorsTests.cs \
             $(baseDir)Tests/ECQueryConverterTests.cs \
-			$(baseDir)Tests/MimicTableWriterTests.cs \
-			$(baseDir)Tests/MimicTableAccessorTests.cs
+            $(baseDir)Tests/MimicTableWriterTests.cs \
+            $(baseDir)Tests/MimicTableAccessorTests.cs
             
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx

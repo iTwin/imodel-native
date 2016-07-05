@@ -214,8 +214,8 @@ namespace IndexECPlugin.Source
                         source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
                         }
 
-                    InstanceOverrider instanceOverrider = new InstanceOverrider();
-                    InstanceComplement instanceComplement = new InstanceComplement();
+                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
                     using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
                         {
                         switch ( source.ToLower() )

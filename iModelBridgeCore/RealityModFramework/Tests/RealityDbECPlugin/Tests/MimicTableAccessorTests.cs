@@ -10,6 +10,7 @@ using Bentley.ECObjects.Schema;
 using Bentley.ECObjects.XML;
 using IndexECPlugin.Source;
 using IndexECPlugin.Source.Helpers;
+using IndexECPlugin.Tests.Common;
 using NUnit.Framework;
 
 namespace IndexECPlugin.Tests
@@ -23,8 +24,7 @@ namespace IndexECPlugin.Tests
         [SetUp]
         public void SetUp ()
             {
-            ECSchemaXmlStreamReader schemaReader = new ECSchemaXmlStreamReader(Assembly.GetAssembly(typeof(IndexECPlugin.Source.IndexECPlugin)).GetManifestResourceStream("ECSchemaDB.xml"));
-            m_schema = schemaReader.Deserialize();
+            m_schema = SetupHelpers.PrepareSchema();
 
             m_mimicTableAccessor = new MimicTableWriter(true, "CacheTableName", "CacheColumnName", "CacheJoinTableName", null);
             }

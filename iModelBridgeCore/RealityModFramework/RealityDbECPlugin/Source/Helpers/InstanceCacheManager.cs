@@ -66,6 +66,7 @@ namespace IndexECPlugin.Source.Helpers
         uint m_daysBeforeCacheReplaced;
         IDbConnection m_dbConnection;
         ECQuerySettings m_querySettings;
+        IDbQuerier m_dbQuerier;
 
         MimicTableWriter m_mimicTableWriter;
         /// <summary>
@@ -75,7 +76,8 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="daysCacheIsValid">The maximum age allowed for the cached information (in days)</param>
         /// <param name="dbConnection">The dbConnection used to communicate to the appropriate database</param>
         /// <param name="querySettings">The ecquery settings of the present query</param>
-        public InstanceCacheManager(DataSource source, uint daysCacheIsValid, IDbConnection dbConnection, ECQuerySettings querySettings)
+        /// <param name="dbQuerier">The IDbQuerier object that will communicate with the database</param>
+        public InstanceCacheManager(DataSource source, uint daysCacheIsValid, IDbConnection dbConnection, ECQuerySettings querySettings, IDbQuerier dbQuerier)
             //: base(true, "CacheTableName", "CacheColumnName", "CacheJoinTableName", null)
             {
             m_source = source;
@@ -83,6 +85,7 @@ namespace IndexECPlugin.Source.Helpers
             m_daysBeforeCacheReplaced = ((m_daysCacheIsValid + 1) / 2);
             m_dbConnection = dbConnection;
             m_querySettings = querySettings;
+            m_dbQuerier = dbQuerier;
 
             m_mimicTableWriter = new MimicTableWriter(true, "CacheTableName", "CacheColumnName", "CacheJoinTableName", null);
             }
@@ -155,7 +158,7 @@ namespace IndexECPlugin.Source.Helpers
 
             string sqlQueryString = m_mimicTableWriter.CreateMimicSQLQuery(m_source, instanceIdsList, baseECClass, basePropertiesSelected, out drh, out paramNameValueMap, additionalColumns);
 
-            List<IECInstance> cachedInstances = SqlQueryHelpers.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
+            List<IECInstance> cachedInstances = m_dbQuerier.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
             //List<string> instancesToDelete;
             foreach (IECInstance oldInstance in cachedInstances.Where(inst => (DateTime.UtcNow - (DateTime)inst.ExtendedData["DateCacheCreated"]).Days > m_daysCacheIsValid).ToList())
                 {
@@ -260,7 +263,7 @@ namespace IndexECPlugin.Source.Helpers
 
             string sqlQueryString = m_mimicTableWriter.CreateMimicSQLSpatialQuery(m_source, polygonDescriptor, baseECClass, basePropertiesSelected, out drh, out paramNameValueMap, additionalColumns, whereCriteria);
 
-            List<IECInstance> cachedInstances = SqlQueryHelpers.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
+            List<IECInstance> cachedInstances = m_dbQuerier.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
             //List<string> instancesToDelete;
             foreach ( IECInstance oldInstance in cachedInstances.Where(inst => (DateTime.UtcNow - (DateTime) inst.ExtendedData["DateCacheCreated"]).Days > m_daysCacheIsValid).ToList() )
                     {
@@ -302,7 +305,7 @@ namespace IndexECPlugin.Source.Helpers
 
             string sqlInsertQueryString = CreateCacheSQLStatement(instanceList, ecClass, sqlQueryBuilder, out paramNameValueMap, additionalColumns);
 
-            SqlQueryHelpers.ExecuteNonQueryInDb(sqlInsertQueryString, paramNameValueMap, m_dbConnection);
+            m_dbQuerier.ExecuteNonQueryInDb(sqlInsertQueryString, paramNameValueMap, m_dbConnection);
             }
 
         /// <summary>

@@ -40,6 +40,8 @@ namespace IndexECPlugin.Source.Helpers
                 }
             }
 
+        IDbQuerier m_dbQuerier;
+
         /// <summary>
         /// Constructor for instance modifier. Sets the names of the properties of custom attributes used to query the database.
         /// </summary>
@@ -48,9 +50,11 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="modifierColumnNameProp">Sets the ModifierColumnNameProp</param>
         /// <param name="modifierJoinTableNameProp">Sets the ModifierJoinTableNameProp</param>
         /// <param name="modifierUniqueIdColumn">Sets the ModifierUniqueIdColumn</param>
-        protected InstanceModifier (bool canModifyStreamData, string modifierTableNameProp, string modifierColumnNameProp, string modifierJoinTableNameProp, string modifierUniqueIdColumn)
+        /// <param name="dbQuerier">Sets the database querier object.</param>
+        protected InstanceModifier (bool canModifyStreamData, string modifierTableNameProp, string modifierColumnNameProp, string modifierJoinTableNameProp, string modifierUniqueIdColumn, IDbQuerier dbQuerier)
             {
             m_mimicTableAccessor = new MimicTableAccessor(canModifyStreamData, modifierTableNameProp, modifierColumnNameProp, modifierJoinTableNameProp, modifierUniqueIdColumn);
+            m_dbQuerier = dbQuerier;
             }
 
         /// <summary>
@@ -84,7 +88,7 @@ namespace IndexECPlugin.Source.Helpers
                 List<IECInstance> instanceList = classIdMap[ecClass];
                 string query = m_mimicTableAccessor.CreateMimicSQLQuery(source, instanceList.Select(instance => instance.InstanceId), ecClass, ecClass, out drh, out paramNameValueMap, null);
 
-                List<IECInstance> modifyInstances = SqlQueryHelpers.QueryDbForInstances(query, drh, paramNameValueMap, ecClass, drh.GetProperties(), sqlConnection, null, false);
+                List<IECInstance> modifyInstances = m_dbQuerier.QueryDbForInstances(query, drh, paramNameValueMap, ecClass, drh.GetProperties(), sqlConnection, null, false);
 
                 //For each instance in the 
                 //If there is data and stream data (such as thumbnail data) set in instances, replace it if there is an override
