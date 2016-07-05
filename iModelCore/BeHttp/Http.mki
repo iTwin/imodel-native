@@ -5,6 +5,9 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
+
+%include MultiCppCompileRule.mki
+
 HttpHeaders =
 HttpHeaders + $(BeHttpPublicApiDir)AuthenticationHandler.h
 HttpHeaders + $(BeHttpPublicApiDir)Credentials.h
@@ -95,16 +98,29 @@ $(o)ProxyHttpHandler$(oext)                 : $(BeHttpSourceDir)ProxyHttpHandler
 
     $(o)ThreadCurlHttpHandler$(oext)        : $(BeHttpSourceDir)Curl/ThreadCurlHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
 
-    %if $(TARGET_PLATFORM)=="iOS"
-        $(o)ApplicationEvents$(oext)        : $(BeHttpSourceDir)Curl/ApplicationEvents.mm $(HttpHeaders) ${MultiCompileDepends}
-    %endif
-
 %endif
 
-%if $(TARGET_PLATFORM)=="iOS"
-    $(o)NetworkIndicator$(oext)             : $(BeHttpSourceDir)NetworkIndicator.mm $(HttpHeaders) ${MultiCompileDepends}
-%else
+%if "iOS" != $(TARGET_PLATFORM)
 	$(o)NetworkIndicator$(oext)				: $(BeHttpSourceDir)NetworkIndicator.cpp $(HttpHeaders) ${MultiCompileDepends}
+%endif
+
+%include MultiCppCompileGo.mki
+
+%if "iOS" == $(TARGET_PLATFORM)
+
+    CCPchOpts = 
+    CPchOpts =
+
+    %if $(HTTP_LIB) == "CURL"
+        $(o)ApplicationEvents$(oext) : $(BeHttpSourceDir)Curl/ApplicationEvents.mm $(HttpHeaders) ${MultiCompileDepends}
+    %endif
+    
+    $(o)NetworkIndicator$(oext) : $(BeHttpSourceDir)NetworkIndicator.mm $(HttpHeaders) ${MultiCompileDepends}
+
+    # Recipes for .m and .mm don't put the objs to MultiCompileObjectList so do that manually 
+    MultiCompileObjectList + $(o)ApplicationEvents$(oext) 
+    MultiCompileObjectList + $(o)NetworkIndicator$(oext) 
+                              
 %endif
 
 #---------------------------------------------------------------------------------------+

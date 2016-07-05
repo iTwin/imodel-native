@@ -18,6 +18,8 @@
 
 USING_NAMESPACE_BENTLEY_HTTP
 
+ApplicationEventsManager* ApplicationEventsManager::s_instance;
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/

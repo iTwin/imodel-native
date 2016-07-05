@@ -26,9 +26,7 @@ always:
 #----------------------------------------------------------------------
 # Use multi-compile
 #----------------------------------------------------------------------
-%include MultiCppCompileRule.mki
 %include $(baseDir)Http.mki
-%include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)
 
 #----------------------------------------------------------------------
