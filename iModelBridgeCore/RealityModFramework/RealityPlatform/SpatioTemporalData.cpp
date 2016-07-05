@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/SpatioTemporalData.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -51,16 +51,16 @@ SpatioTemporalDatasetPtr SpatioTemporalDataset::CreateFromJson(Utf8CP data)
         const Json::Value properties = instance["properties"];
 
         // Id
-        properties.isMember("Id") ? identifier = properties["Id"].asString() : identifier = "";
+        (properties.isMember("Id") && !properties["Id"].isNull()) ? identifier = properties["Id"].asString() : identifier = "";
             
         // Date
         date = DateTime();
-        if (properties.isMember("Date"))
+        if (properties.isMember("Date") && !properties["Date"].isNull())
             DateTime::FromString(date, properties["Date"].asCString());            
 
         // Resolution
-        resolution = 0.0;
-        if (properties.isMember("ResolutionInMeters"))
+        resolution = DBL_MAX/1000.0;
+        if (properties.isMember("ResolutionInMeters") && !properties["ResolutionInMeters"].isNull())
             {
             resolutionStr = properties["ResolutionInMeters"].asString();
             bvector<Utf8String> tokens;
@@ -76,7 +76,7 @@ SpatioTemporalDatasetPtr SpatioTemporalDataset::CreateFromJson(Utf8CP data)
 
         // Footprint
         footprint = bvector<GeoPoint2d>();
-        if (properties.isMember("Footprint"))
+        if (properties.isMember("Footprint") && !properties["Footprint"].isNull())
             {
             // Convert Utf8String to GeoPoint2d vector. 
             // The string should look like this:
@@ -106,7 +106,7 @@ SpatioTemporalDatasetPtr SpatioTemporalDataset::CreateFromJson(Utf8CP data)
             }
 
         // Classification
-        properties.isMember("Classification") ? classification = properties["Classification"].asString() : classification = "";
+        (properties.isMember("Classification") && !properties["Classification"].isNull()) ? classification = properties["Classification"].asString() : classification = "";
 
 
         // Add data to corresponding group.
