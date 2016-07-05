@@ -21,8 +21,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelationshipClassMap::RelationshipClassMap(Type type, ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty)
     : ClassMap(type, ecRelClass, ecDbMap, mapStrategy, setIsDirty),
-    m_sourceConstraintMap(ecDbMap.GetECDb().Schemas(), ecRelClass.GetSource()),
-    m_targetConstraintMap(ecDbMap.GetECDb().Schemas(), ecRelClass.GetTarget())
+    m_sourceConstraintMap(ecDbMap, ecRelClass.GetId(), ECRelationshipEnd_Source, ecRelClass.GetSource()),
+    m_targetConstraintMap(ecDbMap, ecRelClass.GetId(), ECRelationshipEnd_Target, ecRelClass.GetTarget())
     {}
 
 //---------------------------------------------------------------------------------------
@@ -172,79 +172,56 @@ bool RelationshipClassMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2014
 //---------------------------------------------------------------------------------------
-bool RelationshipConstraintMap::ClassIdMatchesConstraint(ECN::ECClassId const& candidateClassId) const
+RelationshipConstraintMap::RelationshipConstraintMap(ECDbMap const& ecdbMap, ECN::ECClassId const& relClassId, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint) : m_ecdbMap(ecdbMap), m_relClassId(relClassId), m_constraintEnd(constraintEnd), m_constraint(constraint), m_ecInstanceIdPropMap(nullptr), m_ecClassIdPropMap(nullptr)
     {
-    CacheClassIds();
-
-    if (m_anyClassMatches)
-        return true;
-
-    return m_ecClassIdCache.find(candidateClassId) != m_ecClassIdCache.end();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                       12/13
-//---------------------------------------------------------------------------------------
-bool RelationshipConstraintMap::TryGetSingleClassIdFromConstraint(ECClassId& constraintClassId) const
-    {
-    CacheClassIds();
-
-    if (m_anyClassMatches || m_ecClassIdCache.size() != 1)
-        return false;
-
-    BeAssert(m_ecClassIdCache.size() == 1);
-    constraintClassId = *m_ecClassIdCache.begin();
-    return true;
+    m_anyClassMatches = RelationshipClassMap::ConstraintIncludesAnyClass(m_constraint.GetConstraintClasses());
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2014
 //---------------------------------------------------------------------------------------
-void RelationshipConstraintMap::CacheClassIds() const
+bool RelationshipConstraintMap::ClassIdMatchesConstraint(ECN::ECClassId candidateClassId) const
     {
-    if (!m_isCacheSetup)
-        {
-        for (ECRelationshipConstraintClassCP constraintClass : m_constraint.GetConstraintClasses())
-            {
-            CacheClassId(constraintClass->GetClass(), m_constraint.GetIsPolymorphic());
-            }
+    if (m_anyClassMatches)
+        return true;
 
-        m_isCacheSetup = true;
-        }
+    bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& constraintClassIds = m_ecdbMap.GetLightweightCache().GetConstraintClassesForRelationshipClass(m_relClassId);
+    auto it = constraintClassIds.find(candidateClassId);
+    if (it == constraintClassIds.end())
+        return false;
+
+    const LightweightCache::RelationshipEnd requiredEnd = m_constraintEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
+    const LightweightCache::RelationshipEnd actualEnd = it->second;
+    return actualEnd == LightweightCache::RelationshipEnd::Both || actualEnd == requiredEnd;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2016
 //---------------------------------------------------------------------------------------
-void RelationshipConstraintMap::CacheClassId(ECClassCR ecClass, bool constraintIsPolymorphic) const
+bool RelationshipConstraintMap::TryGetSingleClassIdFromConstraint(ECClassId& constraintClassId) const
     {
-    if (ClassMap::IsAnyClass(ecClass))
-        {
-        SetAnyClassMatches();
-        return;
-        }
+    if (m_anyClassMatches)
+        return false;
 
-    m_ecClassIdCache.insert(ecClass.GetId());
+    bmap<ECClassId, LightweightCache::RelationshipEnd> const& constraintClassIds = m_ecdbMap.GetLightweightCache().GetConstraintClassesForRelationshipClass(m_relClassId);
 
-    if (constraintIsPolymorphic)
+    const LightweightCache::RelationshipEnd requiredEnd = m_constraintEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
+    ECClassId singleConstraintClassId;
+    for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvPair : constraintClassIds)
         {
-        //call into schema manager to ensure that the derived classes are loaded if needed
-        for (ECClassCP derivedClass : m_schemaManager.GetDerivedECClasses(ecClass))
+        const LightweightCache::RelationshipEnd actualEnd = kvPair.second;
+        if (LightweightCache::RelationshipEnd::Both == actualEnd || requiredEnd == actualEnd)
             {
-            CacheClassId(*derivedClass, constraintIsPolymorphic);
+            //If IsValid, then single constraint class id is already set, and therefore the constraint has more than one constraint classes
+            if (singleConstraintClassId.IsValid())
+                return false;
+
+            singleConstraintClassId = kvPair.first;
             }
         }
-    }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2014
-//---------------------------------------------------------------------------------------
-void RelationshipConstraintMap::SetAnyClassMatches() const
-    {
-    m_anyClassMatches = true;
-    //class id cache not needed if any class matches
-    m_ecClassIdCache.clear();
+    return true;
     }
 
 //************************ RelationshipClassEndTableMap **********************************
