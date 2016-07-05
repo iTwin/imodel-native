@@ -124,7 +124,7 @@ DbResult DgnDb::CreateDgnDbTables()
     CreateGroupInformationModel();
 
     // The Generic domain is used when a conversion process doesn't have enough information to pick something better
-    if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this, DgnDomain::ImportSchemaOptions::ImportOnly)) // Let an upper layer decide whether or not to create ECClassViews
+    if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this))
         {
         BeAssert(false);
         return BE_SQLITE_NOTFOUND;

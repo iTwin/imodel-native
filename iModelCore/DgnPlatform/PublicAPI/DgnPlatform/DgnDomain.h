@@ -111,14 +111,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     //! The current version of the HandlerAPI
     enum {API_VERSION = 1};
 
-    //! Options for ImportSchema
-    //! @see ImportSchema
-    enum class ImportSchemaOptions
-        {
-        ImportOnly = 0,                 //!< No additional processing, only import. For example, don't create ECClassViews. Used when known that ImportSchema will be called multiple times
-        CreateECClassViews = 1 << 0,    //!< Create ECClassViews after importing schema
-        };
-
     struct Handler;
 
     //! A template used to create a proxy handler of a superclass when the handler subclass cannot be found at run-time.
@@ -386,17 +378,14 @@ public:
     //! Import an ECSchema for this DgnDomain.
     //! @param[in] db Import the domain schema into this DgnDb
     //! @param[in] schemaFileName The domain ECSchema file to import
-    //! @param[in] options Optional parameter for controlling additional processing
     //! @see ECDbSchemaManager::CreateECClassViewsInDb
-    DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName, ImportSchemaOptions options=ImportSchemaOptions::CreateECClassViews) const;
+    DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
 
     //! Import an ECSchema for this DgnDomain.
     //! @param[in] db Import the domain schema into this DgnDb
     //! @param[in] schemaCache The ECSchemaCache containing the schema to import
     DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, ECN::ECSchemaCacheR schemaCache) const;
 };
-
-ENUM_IS_FLAGS(DgnDomain::ImportSchemaOptions);
 
 //=======================================================================================
 //! The set of DgnDomains used by this DgnDb. This class also caches the DgnDomain::Handler to DgnDb-specific

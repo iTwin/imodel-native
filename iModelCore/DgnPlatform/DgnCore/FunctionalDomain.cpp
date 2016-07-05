@@ -47,7 +47,7 @@ DgnDbStatus FunctionalDomain::ImportSchema(DgnDbR db)
     BeAssert(domainSchemaFile.DoesPathExist());
 
     DgnDomainR domain = FunctionalDomain::GetDomain();
-    DgnDbStatus importSchemaStatus = domain.ImportSchema(db, domainSchemaFile, ImportSchemaOptions::ImportOnly);
+    DgnDbStatus importSchemaStatus = domain.ImportSchema(db, domainSchemaFile);
     BeAssert(DgnDbStatus::Success == importSchemaStatus);
     return importSchemaStatus;
     }

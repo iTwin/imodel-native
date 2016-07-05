@@ -50,7 +50,7 @@ public:
     ~GenericDomain();
     
     //! Import the ECSchema for the GenericDomain into the specified DgnDb
-    DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR, ImportSchemaOptions);
+    DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR);
 };
 
 //=======================================================================================

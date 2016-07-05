@@ -238,7 +238,7 @@ void DgnDomains::OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile, ImportSchemaOptions options) const
+DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     {
     if (!schemaFile.DoesPathExist())
         {
@@ -271,9 +271,6 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile, ImportSc
 
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
         return DgnDbStatus::BadSchema;
-
-    if ((ImportSchemaOptions::CreateECClassViews == (options & ImportSchemaOptions::CreateECClassViews)) && (BentleyStatus::SUCCESS != db.Schemas().CreateECClassViewsInDb()))
-        return DgnDbStatus::WriteError;
 
     db.Domains().SyncWithSchemas();
     _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
