@@ -148,9 +148,9 @@ namespace pointsengine
 		bool			m_geomShaderShowScale;
 		int				m_geomShaderGradient;
 		double			m_geomShaderParams[16];
-		GeomShaderMode	m_geomShaderMode;
+		// unused - GeomShaderMode	m_geomShaderMode;
 		ShaderEdgeMode	m_geomShaderEdge;
-		PointDensity	m_pointDensity;
+		// unused - PointDensity	m_pointDensity;
 
 		bool			m_lightEnabled;
 		LightingMode	m_lightMode;
@@ -165,7 +165,7 @@ namespace pointsengine
 		bool			m_allowInterrupt;
 		bool			m_cancelRender;
 
-		bool			m_useVertexArray;
+		// unused - bool			m_useVertexArray;
 		bool			m_userChannelRender;
 
 		static ubyte	m_selectionColour[4];

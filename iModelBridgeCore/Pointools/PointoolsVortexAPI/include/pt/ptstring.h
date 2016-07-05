@@ -68,8 +68,8 @@ namespace pt
 		char	*_abuffer;
 		unsigned short _wbuffsize;
 		bool _abufferDirty;
-		bool _wbufferDirty;
+		// unused - bool _wbufferDirty;
 		unsigned char _encoding;
-		unsigned char _res;
+		// unused - unsigned char _res;
 	};
 }
