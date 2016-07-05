@@ -248,10 +248,11 @@ public:
     //! Set the end class of the relationship path
     ECOBJECTS_EXPORT void SetEndClass(ECClassCR, End);
 
+    //! Get the number of related class specifiers in the path
+    size_t GetRelatedClassSpecifierCount() const { return m_relatedClassSpecifiers.size(); }
+
     //! Validates the specified relationship path
     ECOBJECTS_EXPORT bool Validate() const;
-
-
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

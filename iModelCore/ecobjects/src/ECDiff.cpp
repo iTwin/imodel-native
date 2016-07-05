@@ -851,7 +851,7 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
 
     DiffReferences (*diff, left, right);
     DiffCustomAttributes (*diff, left, right);
-    set<Utf8CP, DiffNameComparer> classes;
+    set<Utf8CP, DiffNameComparerI> classes;
     ECClassContainerCR classesLeft = left.GetClasses();
     for (ECClassContainer::const_iterator itor = classesLeft.begin(); itor != classesLeft.end(); ++itor)
         if (classes.find ((*itor)->GetName().c_str()) == classes.end())
@@ -863,7 +863,7 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
             classes.insert ((*itor)->GetName().c_str());
 
     ECDiffNodeP diffClasses = diff->Add (DiffNodeId::Classes);
-    for (std::set<Utf8CP,  DiffNameComparer>::const_iterator itor = classes.begin(); itor != classes.end(); ++itor)
+    for (std::set<Utf8CP,  DiffNameComparerI>::const_iterator itor = classes.begin(); itor != classes.end(); ++itor)
         DiffClass ((*itor), left, right, *diffClasses);
 
     if (diffClasses->IsEmpty())
@@ -963,7 +963,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffClass (Utf8CP className, ECSchemaCR schemaLeft
     classes.push_back(right);
     DiffBaseClasses(*diff, classes);
 
-    std::set<Utf8CP, DiffNameComparer> properties;
+    std::set<Utf8CP, DiffNameComparerI> properties;
     ECPropertyIterableCR propertiesLeft = left->GetProperties(false);
     for (ECPropertyIterable::const_iterator itor = propertiesLeft.begin(); itor != propertiesLeft.end(); ++itor)
         if (properties.find ((*itor)->GetName().c_str()) == properties.end())
@@ -975,7 +975,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffClass (Utf8CP className, ECSchemaCR schemaLeft
             properties.insert ((*itor)->GetName().c_str());
 
     ECDiffNodeP diffProperties = diff->Add (DiffNodeId::Properties);
-    for (std::set<Utf8CP,  DiffNameComparer>::const_iterator itor = properties.begin(); itor != properties.end(); ++itor)
+    for (std::set<Utf8CP,  DiffNameComparerI>::const_iterator itor = properties.begin(); itor != properties.end(); ++itor)
         DiffProperty ((*itor), *left, *right, *diffProperties);
     diff->RemoveIfEmpty (diffProperties);
 
@@ -1388,7 +1388,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffCustomAttributes
     IECCustomAttributeContainerCR rightContainer
     )
     {
-    bmap<Utf8CP, ECClassCP, DiffNameComparer> classes;
+    bmap<Utf8CP, ECClassCP, DiffNameComparerI> classes;
     ECCustomAttributeInstanceIterable leftCustomAttributes =  leftContainer.GetPrimaryCustomAttributes(false);
     for (ECCustomAttributeInstanceIterable::const_iterator itor = leftCustomAttributes.begin(); itor != leftCustomAttributes.end(); ++itor)
         {
@@ -1407,7 +1407,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffCustomAttributes
         return NULL;
 
     ECDiffNodeP diff = parentDiff.Add (DiffNodeId::CustomAttributes);
-    for (bmap<Utf8CP, ECClassCP, DiffNameComparer>::iterator itor = classes.begin(); itor != classes.end(); ++itor)
+    for (bmap<Utf8CP, ECClassCP, DiffNameComparerI>::iterator itor = classes.begin(); itor != classes.end(); ++itor)
         DiffInstance(*diff, *(itor->second), leftContainer, rightContainer);
 
     return parentDiff.RemoveIfEmpty (diff);

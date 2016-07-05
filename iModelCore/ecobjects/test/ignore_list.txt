@@ -44,12 +44,6 @@ ClassTests.CheckClassTypeForStandAloneInstances # Not yet implemented
 
 ClassTests.DerivedClassTypesOfAbstractClass # Not yet implemented
 
-# Fail on iOS - somehow related to UTF encoding mistakes - notified Carole and Jeff
-ExtendedTypeTests.WriteSchemaWithExtendedTypes
-SchemaDeserializationTest.TestDefaultElementOrder
-SchemaDeserializationTest.TestDefaultElementOrderWithBaseClassAndRelationships
-SchemaDeserializationTest.TestPreserveElementOrderWithBaseClassAndRelationships
-ValueValidationTests.ECPropertyHasMinAndMaxValues
 # Temp Disabled until we're ready to enable unit conversion on this branch.
 SchemaVersionConversionTests.SchemaWithOldUnitSpecifications
 UnitsTest.TestConvertingUnitSpecifications

@@ -280,8 +280,6 @@ cppObjects +$(o)FileUtilities$(oext)
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
-DLM_NO_DLS                  = 1
-DLM_NO_DEF                  = 1
 DLM_NAME                    = $(appName)
 DLM_DEST                    = $(o)
 DLM_OBJECT_DEST             = $(o)
@@ -290,7 +288,6 @@ DLM_OBJECT_PCH              = $(o)ECObjectsPch$(oext)
 DLM_EXPORT_OBJS             = $(cppObjects)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOINITFUNC              = 1
-DLM_NOMSBUILTINS            = 1
 DLM_NOENTRY                 = 1
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
 LINKER_LIBRARIES           = xmllite$(libext)

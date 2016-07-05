@@ -648,7 +648,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
                 }
             if (customAttributeInstance.IsValid())
                 {
-                ECObjectsStatus caSetStatus = SetCustomAttribute(*customAttributeInstance);
+                ECObjectsStatus caSetStatus = SetPrimaryCustomAttribute(*customAttributeInstance);
                 if (ECObjectsStatus::Success != caSetStatus)
                     {
                     // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
