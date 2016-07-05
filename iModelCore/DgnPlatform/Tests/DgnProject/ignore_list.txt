@@ -56,3 +56,5 @@ DgnDb.GetCoordinateSystemProperties
     # azimuth 178.29128105659069
     # eps 0.00010000000000000000
 
+#Monitor doesn't see deletion of relationship
+TransactionManagerTests.TestRelationshipLinkTableTracking
