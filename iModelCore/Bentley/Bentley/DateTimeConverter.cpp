@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/DateTimeConverter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DateTimeConverter.h"
@@ -11,6 +11,7 @@
 #include <Bentley/ScopedArray.h>
 #include <Logging/bentleylogging.h>
 #include <limits.h>
+#include <stdlib.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DateTime"))
 

@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/bsilogprivate.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -57,7 +57,7 @@ public:
     WStringCR  getNamespace ( void ) const { return m_namespace; };
     void  setNamespace ( WStringCR ns ) { m_namespace = ns; };
 
-    virtual bool isSeverityEnabled ( SEVERITY sev ) const;
+    virtual bool isSeverityEnabled ( SEVERITY sev ) const override;
     virtual void message ( SEVERITY sev, WCharCP msg ) override;
     virtual void message ( SEVERITY sev, Utf8CP msg ) override;
     virtual void messagev ( SEVERITY sev, WCharCP msg, ... ) override;

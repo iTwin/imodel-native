@@ -724,7 +724,7 @@ BeTest::ExpectedResult& BeTest::ExpectedResult::operator<< (uint32_t val)
     return *this;
     }
 
-#ifdef __clang__
+#if defined(__clang__) && defined(__APPLE__)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011

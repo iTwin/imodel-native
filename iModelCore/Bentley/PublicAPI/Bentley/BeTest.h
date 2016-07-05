@@ -382,7 +382,7 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
         BENTLEYDLL_EXPORT ExpectedResult (bool isAsExpected, CharCP actualValue, CharCP expectedValue, bool expectedEq, CharCP actualExpression, CharCP expectedExpression, CharCP fileName, size_t  lineNum, bool abortImmediately);
         BENTLEYDLL_EXPORT ~ExpectedResult() THROW_SPECIFIER(CharCP);
         BENTLEYDLL_EXPORT ExpectedResult& operator<< (WCharCP msg);
-#ifdef __clang__
+#if defined(__clang__) && defined(__APPLE__)
         BENTLEYDLL_EXPORT ExpectedResult& operator<< (size_t val);
 #endif
         BENTLEYDLL_EXPORT ExpectedResult& operator<< (int32_t val);

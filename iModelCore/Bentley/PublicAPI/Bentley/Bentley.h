@@ -23,7 +23,7 @@
         #define BENTLEY_CPLUSPLUS 201103L
     #elif defined (__clang__)
         #define CLANG_VERSION (__clang_major__ * 1000 + __clang_minor__ * 10)
-        #if (CLANG_VERSION < 4010 && !defined (__EMSCRIPTEN__))
+        #if (CLANG_VERSION < 4010 && !defined (__EMSCRIPTEN__) && !defined(ANDROID))
             #error upgrade to XCode version 4.5
         #endif
         #define BENTLEY_CPLUSPLUS 201103L

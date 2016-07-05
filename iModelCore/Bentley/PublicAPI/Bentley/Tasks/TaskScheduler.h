@@ -91,7 +91,7 @@ struct TaskScheduler : ITaskScheduler, public std::enable_shared_from_this<TaskS
         bset<std::shared_ptr<AsyncTask>>             m_startedTasks;
 
     protected:
-        void _OnAsyncTaskCompleted (std::shared_ptr<struct AsyncTask> task);
+        void _OnAsyncTaskCompleted (std::shared_ptr<struct AsyncTask> task) override;
         void virtual _OnEmpty () {} ;
 
     public:
