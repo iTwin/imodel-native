@@ -79,40 +79,45 @@ void ClassMapToString(Json::Value& classMapJson, ClassMap const& classMap)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      07/2016
+//---------------------------------------------------------------------------------------
+void SchemaToJson(Json::Value& schemaJson, ECDbMap const& ecdbMap, ECSchemaCR schema, bool skipUnmappedClasses)
+    {
+    schemaJson["FullName"] = schema.GetFullSchemaName().c_str();
+    Json::Value& classMapsJson = schemaJson["ClassMaps"];
+
+    for (ECClassCP ecclass : schema.GetClasses())
+        {
+        ClassMapCP classMap = ecdbMap.GetClassMap(*ecclass);
+        if (classMap == nullptr)
+            continue;
+
+        if (classMap->GetMapStrategy().IsNotMapped() && skipUnmappedClasses)
+            continue;
+
+        Json::Value& classMapJson = classMapsJson.append(Json::Value(Json::objectValue));
+        ClassMapToString(classMapJson, *classMap);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      03/2013
 //---------------------------------------------------------------------------------------
 //static
 BentleyStatus ClassMappingInfoHelper::GetInfos(Json::Value& json, ECDbCR ecdb, bool skipUnmappedClasses)
     {
     bvector<ECSchemaCP> schemas = ecdb.Schemas().GetECSchemas();
-
-    json = Json::Value(Json::objectValue);
-    json["Schema Count"] = (int) schemas.size();
-
     if (schemas.empty())
-        return SUCCESS;
+        return ERROR;
 
     ECDbMap const& ecdbMap = ecdb.GetECDbImplR().GetECDbMap();
 
+    json = Json::Value(Json::objectValue);
     Json::Value& schemasJson = json["ECSchemas"];
     for (ECSchemaCP schema : schemas)
         {
         Json::Value& schemaJson = schemasJson.append(Json::Value(Json::objectValue));
-        schemaJson["Name"] = schema->GetFullSchemaName().c_str();
-        Json::Value& classMapsJson = json["ClassMaps"];
-
-        for (ECClassCP ecclass : schema->GetClasses())
-            {
-            ClassMapCP classMap = ecdbMap.GetClassMap(*ecclass);
-            if (classMap == nullptr)
-                continue;
-
-            if (classMap->GetMapStrategy().IsNotMapped() && skipUnmappedClasses)
-                continue;
-
-            Json::Value& classMapJson = classMapsJson.append(Json::Value(Json::objectValue));
-            ClassMapToString(classMapJson, *classMap);
-            }
+        SchemaToJson(schemaJson, ecdbMap, *schema, skipUnmappedClasses);
         }
 
     return SUCCESS;
@@ -128,23 +133,9 @@ BentleyStatus ClassMappingInfoHelper::GetInfos(Json::Value& json, ECDbCR ecdb, U
     if (schema == nullptr)
         return ERROR;
 
-    ECDbMap const& ecdbMap = ecdb.GetECDbImplR().GetECDbMap();
-
     json = Json::Value(Json::objectValue);
-    json["FullName"] = schema->GetFullSchemaName().c_str();
-    Json::Value& classesJson = json["ClassMaps"];
-    for (ECClassCP ecClass : schema->GetClasses())
-        {
-        ClassMap const* classMap = ecdbMap.GetClassMap(*ecClass);
-        if (classMap == nullptr)
-            continue;
-
-        if (classMap->GetMapStrategy().IsNotMapped() && skipUnmappedClasses)
-            continue;
-
-        Json::Value& classMapJson = classesJson.append(Json::Value(Json::objectValue));
-        ClassMapToString(classMapJson, *classMap);
-        }
+    Json::Value& schemaJson = json["ECSchema"];
+    SchemaToJson(schemaJson, ecdb.GetECDbImplR().GetECDbMap(), *schema, skipUnmappedClasses);
     return SUCCESS;
     }
 
@@ -163,7 +154,8 @@ BentleyStatus ClassMappingInfoHelper::GetInfo(Json::Value& json, ECDbCR ecdb, Ut
         return ERROR;
 
     json = Json::Value(Json::objectValue);
-    ClassMapToString(json, *classMap);
+    Json::Value& classJson = json["ECClass"];
+    ClassMapToString(classJson, *classMap);
     return SUCCESS;
     }
 
