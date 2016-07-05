@@ -45,6 +45,12 @@ namespace FtpTraversalEngineNet
             m_extractedData = extractedData;
             }
 
+        //! Destructor
+        ~FtpData()
+            {
+            Console.WriteLine("FTP DATA DESTROYED");
+            }
+
         //! Get
         public FtpDataWrapper GetExtractedData() { return m_extractedData; }
 
@@ -79,7 +85,9 @@ namespace FtpTraversalEngineNet
             metadata.ContactInformation = m_extractedData.GetMetadata().GetContactInfo();
             metadata.Legal = m_extractedData.GetMetadata().GetLegal();
             metadata.RawMetadataFormat = m_extractedData.GetMetadata().GetFormat();
-            metadata.RawMetadata = m_extractedData.GetMetadata().GetData();
+            // &&JFC Patch: rawMetadata is too huge to save, keep this field empty for now.
+            // metadata.RawMetadata = m_extractedData.GetMetadata().GetData();
+            metadata.RawMetadata = "";
 
             context.Metadatas.Add(metadata);
 
@@ -211,6 +219,35 @@ namespace FtpTraversalEngineNet
     //=====================================================================================
     class FtpExplorerObserver : RealityServicesCli.IFtpTraversalObserverWrapper
         {
+        public bool OnFileListed_AddToQueue(string file)
+            {
+            // File is null, don't add.
+            if (null == file)
+                {
+                Console.WriteLine("Status: Failed, file is null.");
+                return false;
+                }                
+                
+            // Look for duplicates. If file already exists, don't add.
+            if(IsDuplicate(file))
+                {
+                Console.WriteLine("Status: Skipped " + file);
+                return false;
+                }
+                
+            Console.WriteLine("Status: Added " + file + " to queue.");
+            return true;
+            }
+
+        public void OnFileDownloaded(string file)
+            {
+            if (null == file)
+                return;
+
+            // Show status in console.
+            Console.WriteLine("Downloading: " + file);
+            }
+
         public void OnDataExtracted(RealityServicesCli.FtpDataWrapper extractedData)
             {
             if (null == extractedData)
@@ -222,6 +259,32 @@ namespace FtpTraversalEngineNet
             FtpData data = new FtpData(extractedData);
             data.Save();
             }
+
+        private bool IsDuplicate(string file)
+            {
+            // Look for duplicates. Compare full url.
+            using (RealityDB context = new RealityDB())
+                {
+                SpatialDataSource source = context.SpatialDataSources.FirstOrDefault(SpatialDataSource => SpatialDataSource.MainURL.Contains(file));
+                return (null != source);
+                }
+            }
+
+        //private bool IsMirror(string file)
+        //    {
+        //    // Get filename.
+        //    string filename = file;
+        //    int pos = file.LastIndexOf("/");
+        //    if (-1 != pos)
+        //        filename = file.Substring(pos + 1);
+        //
+        //    // Look for duplicates. Compare filename and size.
+        //    using (RealityDB context = new RealityDB())
+        //        {
+        //        SpatialDataSource source = context.SpatialDataSources.FirstOrDefault(SpatialDataSource => SpatialDataSource.MainURL.Contains(file));
+        //        return (null != source);
+        //        }
+        //    }
         }
 
 
@@ -235,61 +298,56 @@ namespace FtpTraversalEngineNet
             Console.Title = "FTP Traversal Engine";
 
             // Validate parameters.
-            if (args.Length != 1)
+            if (args.Length < 1)
                 {
-                Console.WriteLine("Invalid parameters.");
+                Console.WriteLine("Invalid parameters. At least one FTP url is required.");
                 Console.ReadKey();
 
                 return;
                 }
 
+            // FTP traversal.
             FtpStatusWrapper status = FtpStatusWrapper.UnknownError;
-
-            // Connect.
             FtpClientWrapper client = null;
-            try
-                {
-                client = FtpClientWrapper.ConnectTo(args[0]);
-                }
-            catch (System.Exception ex)
-                {
-                Console.WriteLine("Could not connect to" + args[0] + " : " + ex.Message);
-                Console.WriteLine("Press any key to exit.");
-                Console.ReadKey();
+            for (int i = 0; i < args.Length; ++i)
+                {                
+                try
+                    {
+                    // Connect to FTP.
+                    Console.WriteLine();
+                    Console.WriteLine("*****************");
+                    Console.WriteLine("Connecting to FTP");
+                    Console.WriteLine("*****************");
+                    Console.WriteLine();
 
-                return;
-                }
-            
-            if(client == null)            
-                {
-                Console.WriteLine("Could not connect to" + args[0] + " : Client is null.");
-                Console.WriteLine("Press any key to exit.");
-                Console.ReadKey();                
-                }
-            Console.WriteLine("Connected to " + args[0] + ". Retrieving data...");
-              
-            // Get data.            
-            try
-                {
-                client.SetObserver(new FtpExplorerObserver());
-                status = client.GetData();
-                }
-            catch (System.Exception ex)
-                {
-                Console.WriteLine("FAILED: " + ex.Message);
-                Console.WriteLine("Press any key to exit.");
-                Console.ReadKey();
+                    client = FtpClientWrapper.ConnectTo(args[i]);
+                    if (null == client)
+                        {
+                        Console.WriteLine("Status: Could not connect to " + args[i]);
+                        continue;
+                        }
+                    Console.WriteLine("Status: Connected to " + args[i]);
 
-                return;
-                }
-            
-            if (status != FtpStatusWrapper.Success)
-                {
-                Console.WriteLine("FAILED: " + status);
-                Console.WriteLine("Press any key to exit.");
-                Console.ReadKey();
-            
-                return;
+                    // Retrieve data.
+                    Console.WriteLine();
+                    Console.WriteLine("***************");
+                    Console.WriteLine("Retrieving data");
+                    Console.WriteLine("***************");
+                    Console.WriteLine();
+
+                    client.SetObserver(new FtpExplorerObserver());
+                    status = client.GetData();
+                    if (FtpStatusWrapper.Success != status)
+                        {
+                        Console.WriteLine("Status: Failed, " + status);
+                        continue;
+                        }
+                    }
+                catch (System.Exception ex)
+                    {
+                    Console.WriteLine("Status: Exception occurred, " + ex.Message);
+                    continue;
+                    }            
                 }
 
             // Terminate.

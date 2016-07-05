@@ -37,6 +37,8 @@ namespace RealityServicesCli
     //=====================================================================================
     public interface class IFtpTraversalObserverWrapper
         {
+        bool OnFileListed_AddToQueue(System::String^ file);
+        void OnFileDownloaded(System::String^ file);
         void OnDataExtracted(FtpDataWrapper^ data);
         };
 
@@ -49,6 +51,8 @@ namespace RealityServicesCli
         public:
             FtpTraversalObserverWrapper(gcroot<IFtpTraversalObserverWrapper^> managedFtpObserver);
 
+            virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file);
+            virtual void OnFileDownloaded(Utf8CP file);
             virtual void OnDataExtracted(RealityPlatform::FtpDataCR data);
 
         private:
@@ -86,6 +90,7 @@ namespace RealityServicesCli
         private:
             FtpClientWrapper(System::String^ url);
             ~FtpClientWrapper();
+            !FtpClientWrapper();
 
             RealityPlatform::FtpClientPtr* m_pClient;
         };
@@ -147,6 +152,7 @@ namespace RealityServicesCli
         private: 
             FtpDataWrapper();
             ~FtpDataWrapper();
+            !FtpDataWrapper();
 
             RealityPlatform::FtpDataPtr* m_pData;
         };
@@ -191,6 +197,7 @@ namespace RealityServicesCli
         private:
             FtpThumbnailWrapper();
             ~FtpThumbnailWrapper();
+            !FtpThumbnailWrapper();
 
             RealityPlatform::FtpThumbnailPtr* m_pThumbnail;
         };
@@ -231,6 +238,7 @@ namespace RealityServicesCli
         private:
             FtpMetadataWrapper();
             ~FtpMetadataWrapper();
+            !FtpMetadataWrapper();
 
             RealityPlatform::FtpMetadataPtr* m_pMetadata;
         };
@@ -291,6 +299,7 @@ namespace RealityServicesCli
         private:
             FtpServerWrapper();
             ~FtpServerWrapper();
+            !FtpServerWrapper();
 
             RealityPlatform::FtpServerPtr* m_pServer;
         };

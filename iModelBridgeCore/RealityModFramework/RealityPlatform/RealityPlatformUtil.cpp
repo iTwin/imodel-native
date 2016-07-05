@@ -10,6 +10,9 @@
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
 #include "stdafx.h"
+
+#include <ImagePP/all/h/HRFPageFileFactory.h>
+#include <ImagePP/all/h/HRFRasterFilePageDecorator.h>
 #include <RealityPlatform/RealityPlatformUtil.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -260,6 +263,22 @@ HFCPtr<HRFRasterFile> RasterFacility::GetRasterFile(Utf8CP inFilename)
                 CreateSLOAdapter = true;
                 }
             }
+
+            // Add the Decoration HGR, TFW or ERS Page File
+            if (HRFPageFileFactory::GetInstance()->HasFor(rasterFile, false))
+                {
+                const HRFPageFileCreator* pPageFileCreator(HRFPageFileFactory::GetInstance()->FindCreatorFor(rasterFile, false));
+
+                HASSERT(pPageFileCreator != 0);
+
+                HFCPtr<HRFPageFile> pPageFile(pPageFileCreator->CreateFor(rasterFile));
+
+                pPageFile->SetDefaultRatioToMeter(1.0);
+
+                HASSERT(pPageFile != 0);
+
+                rasterFile = new HRFRasterFilePageDecorator(rasterFile, pPageFile);
+                }
         }
     catch (HFCException&)
         {
@@ -305,18 +324,31 @@ bool RasterFacility::CreateSisterFile(Utf8CP fileName, Utf8CP coordinateSystemKe
     BeStringUtilities::Utf8ToWChar(csKeyNameW, coordinateSystemKeyName);
     GeoCoordinates::BaseGCSPtr pDestGeoCoding = GeoCoordinates::BaseGCS::CreateGCS(csKeyNameW.c_str());
     if (pDestGeoCoding == nullptr || !pDestGeoCoding->IsValid())
-        return false;
+        {
+        // Failed to create GCS from keyname, try with epsg code.
+        int epsgCode;
+        WString csKeyNameW(coordinateSystemKeyName, BentleyCharEncoding::Utf8);
+        size_t pos = csKeyNameW.rfind(L"EPSG:");
+        if (Utf8String::npos != pos)
+            epsgCode = BeStringUtilities::Wtoi(csKeyNameW.substr(pos + 5).c_str());
+        else
+            epsgCode = BeStringUtilities::Wtoi(csKeyNameW.c_str());
+        
+        if (SUCCESS != pDestGeoCoding->InitFromEPSGCode(NULL, NULL, epsgCode))
+            return false;
+        }        
 
     // Check if a sister file already exists, if not create one and assign geocoding.
     BeFile sisterFile;
-    BeFileName sisterFileName(fileName);
-    sisterFileName.ReplaceI(sisterFileName.GetExtension().c_str(), L"prj");
+    BeFileName rasterFileName(fileName);
+    BeFileName sisterFileName(rasterFileName.GetDevice().c_str(), rasterFileName.GetDirectoryWithoutDevice().c_str(), rasterFileName.GetFileNameWithoutExtension().c_str(), L"prj");
     BeFileStatus status = sisterFile.Create(sisterFileName, false);
     if (BeFileStatus::Success != status)
         return true;
 
     WString wellKnownText;
-    pDestGeoCoding->GetWellKnownText(wellKnownText, GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, false);
+    if (SUCCESS != pDestGeoCoding->GetWellKnownText(wellKnownText, GeoCoordinates::BaseGCS::WktFlavor::wktFlavorOGC, false))
+        return false;
 
     Utf8String wellKnownTextUtf8;
     BeStringUtilities::WCharToUtf8(wellKnownTextUtf8, wellKnownText.c_str());

@@ -12,6 +12,7 @@
 #include <RealityPlatform/FtpTraversalEngine.h>
 #include <RealityPlatform/RealityDataDownload.h>
 #include <RealityPlatform/RealityDataHandler.h>
+#include <RealityPlatform/RealityPlatformUtil.h>
 
 #define THUMBNAIL_WIDTH     512
 #define THUMBNAIL_HEIGHT    512
@@ -47,6 +48,7 @@ static size_t WriteData(void* buffer, size_t size, size_t nmemb, void* stream)
 
 
 // Static FtpClient members initialization.
+IFtpTraversalObserver* FtpClient::m_pObserver = NULL;
 FtpClient::RepositoryMapping FtpClient::m_dataRepositories = FtpClient::RepositoryMapping();
 int FtpClient::m_retryCount = 0;
 
@@ -128,7 +130,7 @@ FtpStatus FtpClient::GetData() const
         return status;
 
     // Data extraction.
-    FtpDataPtr pExtractedData;
+    FtpDataPtr pExtractedData = FtpData::Create();
     for (size_t i = 0; i < m_dataRepositories.size(); ++i)
         {
         //&&JFC TODO: Can do better ?
@@ -137,20 +139,26 @@ FtpStatus FtpClient::GetData() const
         outputPath.erase(outputPath.find_last_of('.'));
         WString outputPathW(outputPath.c_str(), BentleyCharEncoding::Utf8);
         BeFileName::CreateNewDirectory(outputPathW.c_str());
-
+    
         // Extract data.
         pExtractedData = FtpDataHandler::ExtractDataFromPath(m_dataRepositories[i].second.c_str(), outputPath.c_str());
-
+        if (pExtractedData == NULL)
+            {
+            // Could not extract data, ignore and continue.
+            BeFileName::EmptyAndRemoveDirectory(outputPathW.c_str());
+            continue;
+            }
+    
         // Override source url so that it points to the ftp repository and not the local one.
         pExtractedData->SetUrl(m_dataRepositories[i].first.c_str());
-
+    
         // Set server.
         pExtractedData->SetServer(*m_pServer);
-
+    
         // Process created data.
         if (m_pObserver != NULL && pExtractedData != NULL)
             m_pObserver->OnDataExtracted(*pExtractedData);
-
+    
         // Delete working dir and its content.
         BeFileName::EmptyAndRemoveDirectory(outputPathW.c_str());
         }    
@@ -240,7 +248,11 @@ FtpStatus FtpClient::GetFileList(Utf8CP url, bvector<Utf8String>& fileList) cons
             fileFullPath = url;
             fileFullPath.append(content);
 
-            fileList.push_back(fileFullPath);
+            // Process listed data.
+            if (m_pObserver != NULL)
+                m_pObserver->OnFileListed(fileList, fileFullPath.c_str());
+            else
+                fileList.push_back(fileFullPath);
             }
         }
 
@@ -262,6 +274,10 @@ void FtpClient::ConstructRepositoryMapping(int index, void *pClient, int ErrorCo
         m_dataRepositories.push_back(make_bpair(url.c_str(), filename.c_str()));
 
         m_retryCount = 0;
+
+        // Process downloaded data.
+        if (m_pObserver != NULL)
+            m_pObserver->OnFileDownloaded(url.c_str());
         }
     else
         {
@@ -678,20 +694,35 @@ FtpServer::FtpServer(Utf8CP url)
 //-------------------------------------------------------------------------------------
 FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath)
     { 
-    // Create empty data.
-    FtpDataPtr pExtractedData = FtpData::Create();
-
-    // Unzip file.
-    WString filenameW(inputDirPath, BentleyCharEncoding::Utf8);
-    WString outputDirPathW(outputDirPath, BentleyCharEncoding::Utf8);
-    RealityDataDownload::UnZipFile(filenameW, outputDirPathW);
-
-    // Search in zip folder for the tif file to process.
+    BeFileName inputName(inputDirPath);
     bvector<BeFileName> tifFileList;
-    BeFileName rootDir(outputDirPath);
-    BeDirectoryIterator::WalkDirsAndMatch(tifFileList, rootDir, L"*.tif", true);
-    if (tifFileList.empty())
-        return pExtractedData;
+
+    // Look up for data type.    
+    if (inputName.GetExtension() == L"zip")
+        {
+        // Unzip file.
+        WString filenameW(inputDirPath, BentleyCharEncoding::Utf8);
+        WString outputDirPathW(outputDirPath, BentleyCharEncoding::Utf8);
+        RealityDataDownload::UnZipFile(filenameW, outputDirPathW);
+
+        // Search in zip folder for the tif file to process.        
+        BeFileName rootDir(outputDirPath);
+        BeDirectoryIterator::WalkDirsAndMatch(tifFileList, rootDir, L"*.tif", true);
+        if (tifFileList.empty())
+            return NULL;
+        }
+    else if (inputName.GetExtension() == L"tif")
+        {
+        tifFileList.push_back(inputName);
+        if (tifFileList.empty())
+            return NULL;
+        }
+    else
+        // Format not supported.
+        return NULL;
+
+    // Create empty data.
+    FtpDataPtr pExtractedData = FtpData::Create();    
 
     // Data extraction.
     RealityDataPtr pRasterData = RasterData::Create(tifFileList[0].GetNameUtf8().c_str());
@@ -712,6 +743,7 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
     // Size.
     uint64_t size;
     compoundFilePath.GetFileSize(size);
+    size /= 1024; // GetFileSize returns a size in bytes. Convert to kilobytes.
     pExtractedData->SetSize(size);
 
     // Type.
@@ -733,21 +765,34 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
 
     pExtractedData->SetDate(date);
 
+    // Metadata.    
+    BeFileName metadataFilename = FtpDataHandler::BuildMetadataFilename(tifFileList[0].GetDirectoryName().GetNameUtf8().c_str());
+    FtpMetadataPtr pMetadata = FtpMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
+    if (pMetadata != NULL)
+        pExtractedData->SetMetadata(*pMetadata);
+
     // Footprint.
-    DRange2d shape;    
-    pRasterData->GetFootprint(&shape);
+    DRange2d shape = DRange2d::NullRange();
+    if (SUCCESS != pRasterData->GetFootprint(&shape))
+        {
+        // File has no geocoding, try to parse metadata and create sister file.
+        Utf8String geocoding = FtpDataHandler::RetrieveGeocodingFromMetadata(metadataFilename);
+        if (!geocoding.empty())
+            {
+            // Make sure geocoding is well formatted.
+            geocoding.ReplaceAll("::", ":");
+            RasterFacility::CreateSisterFile(tifFileList[0].GetNameUtf8().c_str(), geocoding.c_str());
+            pRasterData->GetFootprint(&shape);
+            //pRasterData->GetFootprint(&shape, geocoding.c_str());
+            }
+    
+        }
     pExtractedData->SetFootprint(shape);
 
     // Thumbnail.
     FtpThumbnailPtr pThumbnail = FtpThumbnail::Create(*pRasterData);
     if (pThumbnail != NULL)
         pExtractedData->SetThumbnail(*pThumbnail);
-
-    // Metadata.    
-    BeFileName metadataFilename = FtpDataHandler::BuildMetadataFilename(tifFileList[0].GetDirectoryName().GetNameUtf8().c_str());
-    FtpMetadataPtr pMetadata = FtpMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
-    if (pMetadata != NULL)
-        pExtractedData->SetMetadata(*pMetadata);
 
     // Server.
     FtpServerPtr pServer = FtpServer::Create();
@@ -801,3 +846,58 @@ BeFileName FtpDataHandler::BuildMetadataFilename(Utf8CP dirPath)
 
     return BeFileName();
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    6/2016
+//-------------------------------------------------------------------------------------
+Utf8String FtpDataHandler::RetrieveGeocodingFromMetadata(BeFileNameCR filename)
+    {
+    Utf8String geocoding;
+
+    // Create xmlDom from metadata file.
+    BeXmlStatus xmlStatus = BEXML_Success;
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filename.GetNameUtf8().c_str());
+    if (BEXML_Success != xmlStatus)
+        {
+        return NULL;
+        }
+
+    pXmlDom->RegisterNamespace("gmd", "http://www.isotc211.org/2005/gmd");
+
+    // Get root node.
+    BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
+    if (NULL == pRootNode)
+        return NULL;
+
+    // Get reference system info node.
+    BeXmlNodeP pRefSysNode = pRootNode->SelectSingleNode("gmd:referenceSystemInfo");
+    if (NULL == pRefSysNode)
+        return NULL;
+
+    // Get md reference system node.
+    BeXmlNodeP pMdRefNode = pRefSysNode->SelectSingleNode("gmd:MD_ReferenceSystem");
+    if (NULL == pMdRefNode)
+        return NULL;
+
+    // Get reference system identifier node.
+    BeXmlNodeP pRefSysIdNode = pMdRefNode->SelectSingleNode("gmd:referenceSystemIdentifier");
+    if (NULL == pRefSysIdNode)
+        return NULL;
+
+    // Get rs identifier node.
+    BeXmlNodeP pRsIdNode = pRefSysIdNode->SelectSingleNode("gmd:RS_Identifier");
+    if (NULL == pRsIdNode)
+        return NULL;
+
+    // Get code.
+    BeXmlNodeP pCodeNode = pRsIdNode->SelectSingleNode("gmd:code");
+    if (NULL == pCodeNode)
+        return NULL;
+
+    xmlStatus = pCodeNode->GetContent(geocoding);
+    if (BEXML_Success != xmlStatus)
+        return NULL;
+
+    return geocoding.Trim();
+    }
+
