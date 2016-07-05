@@ -490,6 +490,23 @@ DateTime DataSourceCache::ReadResponseAccessDate(CachedResponseKeyCR key)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<CachedResponseKey> DataSourceCache::GetResponsesContainingInstance(ECInstanceKeyCR instance, Utf8StringCR responseName)
+    {
+    bset<CachedResponseKey> keys;
+
+    auto cachedInfoKey = m_state->GetObjectInfoManager().ReadInfoKey(instance);
+    if (!cachedInfoKey.IsValid())
+        return keys;
+
+    if (SUCCESS != m_state->GetCachedResponseManager().GetResponsesContainingInstance(cachedInfoKey, keys, responseName))
+        BeAssert(false);
+
+    return keys;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 DateTime DataSourceCache::ReadFileCachedDate(ObjectIdCR objectId)

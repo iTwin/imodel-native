@@ -27,6 +27,7 @@ std::vector<RepositoryDef> s_repositories =
     {
         {UrlProvider::Urls::ConnectWsgGlobal, "BentleyCONNECT.Global--CONNECT.GLOBAL"},
         {UrlProvider::Urls::ConnectWsgSharedContent, "BentleyCONNECT.SharedContent--CONNECT.SharedContent"},
+        //{UrlProvider::Urls::ConnectWsgProjectContent, "BentleyCONNECT.ProjectContent--e577dbb3-07d4-413d-af06-4b0d6abf5a55"}, // PROD only
         {UrlProvider::Urls::ConnectWsgProjectContent, "BentleyCONNECT.ProjectContent--b89f0fe5-5313-4995-84c0-731723fb1590"}, // QA only
         {UrlProvider::Urls::ConnectWsgPersonalPublishing, "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing"},
         {UrlProvider::Urls::ConnectWsgPunchList, "IssuePlugin--default"},
@@ -182,6 +183,14 @@ TEST_P(RepositorySchemaUpgradeTests, Upgrade)
     auto createResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
     ASSERT_TRUE(createResult.IsSuccess());
 
+    // Pull new schemas if any
     auto updateResult = createResult.GetValue()->UpdateSchemas(nullptr)->GetResult();
     ASSERT_TRUE(updateResult.IsSuccess());
+
+    // Latest schemas pulled, second updates should do nothing and succeed
+    for (int i = 0; i < 2; i++)
+        {
+        updateResult = createResult.GetValue()->UpdateSchemas(nullptr)->GetResult();
+        ASSERT_TRUE(updateResult.IsSuccess());
+        }
     }

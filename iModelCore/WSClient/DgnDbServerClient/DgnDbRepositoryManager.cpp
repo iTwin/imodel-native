@@ -224,12 +224,18 @@ RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks,
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    // NEEDSWORK_LOCKS: Handle unavailable locks + codes
-    auto result = m_connection->QueryCodesLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
-    if (result.IsSuccess ())
+    auto availableTask = m_connection->QueryCodesLocks(db.GetBriefcaseId(), m_cancellationToken);
+    auto unavailableTask = m_connection->QueryUnavailableCodesLocks(db.GetBriefcaseId(), db.Revisions().GetParentRevisionId(), m_cancellationToken);
+    bset<std::shared_ptr<AsyncTask>> tasks;
+    tasks.insert(availableTask);
+    tasks.insert(unavailableTask);
+    AsyncTask::WhenAll(tasks)->Wait();
+    if (availableTask->GetResult().IsSuccess() && unavailableTask->GetResult().IsSuccess())
         {
-        locks = result.GetValue ().GetLocks ();
-        codes = result.GetValue ().GetCodes ();
+        locks = availableTask->GetResult().GetValue ().GetLocks ();
+        codes = availableTask->GetResult().GetValue ().GetCodes ();
+        unavailableLocks = unavailableTask->GetResult().GetValue().GetLocks();
+        unavailableCodes = unavailableTask->GetResult().GetValue().GetCodes();
         return RepositoryStatus::Success;
         }
     else

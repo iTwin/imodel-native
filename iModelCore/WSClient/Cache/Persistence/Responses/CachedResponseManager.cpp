@@ -203,6 +203,31 @@ CacheNodeKey CachedResponseManager::FindInfo(ResponseKeyCR key)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ECInstanceKeyMultiMap CachedResponseManager::FindInfosContainingInstance(CachedObjectInfoKeyCR instanceInfoKey)
+    {
+    ECInstanceKeyMultiMap instances;
+
+    for (auto page : FindPagesContainingInstance(instanceInfoKey))
+        {
+        if (SUCCESS != m_hierarchyManager.ReadSourceKeys(page, m_responseToResponsePageClass, instances))
+            {
+            BeAssert(false);
+            return ECInstanceKeyMultiMap();
+            }
+        }
+
+    if (SUCCESS != m_hierarchyManager.ReadSourceKeys(instanceInfoKey, m_responseToAdditionalInstanceClass, instances))
+        {
+        BeAssert(false);
+        return ECInstanceKeyMultiMap();
+        }
+
+    return instances;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::DeleteInfo(ResponseKeyCR responseKey)
@@ -336,6 +361,22 @@ bvector<CacheNodeKey> CachedResponseManager::FindPages(CacheNodeKeyCR responseKe
     while (BE_SQLITE_ROW == statement->Step())
         {
         pages.push_back(CacheNodeKey(m_responsePageClass->GetId(), statement->GetValueId<ECInstanceId>(0)));
+        }
+
+    return pages;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bvector<ECInstanceKey> CachedResponseManager::FindPagesContainingInstance(CachedObjectInfoKeyCR instanceInfoKey)
+    {
+    bvector<ECInstanceKey> pages;
+
+    if (SUCCESS != m_hierarchyManager.ReadSourceKeys(instanceInfoKey, m_responsePageToResultClass, pages) ||
+        SUCCESS != m_hierarchyManager.ReadSourceKeys(instanceInfoKey, m_responsePageToResultWeakClass, pages))
+        {
+        BeAssert(false);
         }
 
     return pages;
@@ -667,6 +708,66 @@ BentleyStatus CachedResponseManager::ReadResponseInstanceKeys(CacheNodeKeyCR res
     if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(responseKey, *m_responseToAdditionalInstanceClass, keysOut))
         return ERROR;
 
+    return SUCCESS;
+    }
+
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::GetResponsesContainingInstance
+(
+CachedObjectInfoKeyCR instanceInfoKey,
+bset<CachedResponseKey>& keysOut,
+Utf8StringCR responseName
+)
+    {
+    ECInstanceKeyMultiMap infos = FindInfosContainingInstance(instanceInfoKey);
+    if (infos.empty())
+        return SUCCESS;
+
+    Utf8PrintfString statementKey("CachedResponseManager::GetResponsesContainingInstance:%d", responseName.empty());
+    auto statement = m_statementCache.GetPreparedStatement(statementKey, [=]
+        {
+        Utf8String sql("SELECT ECInstanceId, " CLASS_CachedResponseInfo_PROPERTY_Name " "
+                       "FROM " ECSql_CachedResponseInfo " "
+                       "WHERE InVirtualSet(?, ECInstanceId) ");
+
+        if (!responseName.empty())
+            sql += "AND " CLASS_CachedResponseInfo_PROPERTY_Name " = ? ";
+
+        return sql;
+        });
+
+    ECInstanceIdSet idSet;
+    for (auto pair : infos)
+        idSet.insert(pair.second);
+
+    statement->BindVirtualSet(1, idSet);
+
+    if (!responseName.empty())
+        statement->BindText(2, responseName.c_str(), IECSqlBinder::MakeCopy::No);
+
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
+        {
+        ECInstanceKey infoInstance(m_responseClass->GetId(), statement->GetValueId<ECInstanceId>(0));
+        Utf8String name(statement->GetValueText(1));
+
+        bvector<ECInstanceKey> parents;
+        if (SUCCESS != m_hierarchyManager.ReadTargetKeys(infoInstance, m_responseToParentClass, parents) || parents.size() != 1)
+            return ERROR;
+
+        bvector<ECInstanceKey> holders;
+        if (SUCCESS != m_hierarchyManager.ReadTargetKeys(infoInstance, m_responseToHolderClass, holders) || holders.size() != 1)
+            return ERROR;
+
+        auto parent = m_objectInfoManager.ConvertToInstanceKey(*parents.begin());
+        auto holder = m_objectInfoManager.ConvertToInstanceKey(*holders.begin());
+
+        keysOut.insert({parent, name, holder});
+        }
+       
     return SUCCESS;
     }
 

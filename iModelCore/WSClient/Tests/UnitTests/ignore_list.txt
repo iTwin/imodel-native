@@ -1,35 +1,3 @@
-#----------------------------------------------------------------------------------------
-# Known issues
-#----------------------------------------------------------------------------------------
-
-# AsyncTask::GetResult() makes test fail randomly. Low priority
-CachingDataSourceTests.OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds
-
-# Fails on WinX86. (onProgressCalled actual 0; expected 1). Low priority
-# Commenting out to see if GTEST/GMOCK update fixed this issue
-# CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
-
-# Pending fix on UniqueTaskHolder. Low priority
-ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
-
-# Fails on Android. Medium priority - disables important tests
-FileUtilTests.TruncateFilePath_FileWithNoExtension_TruncatesFileName
-FileUtilTests.TruncateFilePath_MaxPathLessThanPath_TruncatesFileName
-FileUtilTests.TruncateFilePath_MaxPathMoreThanPath_DoesNothing
-FileUtilTests.TruncateFilePath_MaxPathSmallerThanDirectory_Error
-FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
-FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
-FileUtilTests.TruncateFilePath_PathIsFolder_Error
-
-# Fails on Android due to DgnClientFx::Device not being initialized. Medium priority - disables important tests
-ClientInfoTests.Create_PassedMandatoryValues_SetsValues
-
-# Fails on iOS; Need to investigate why. High priority - disables many tests
-ECDbAdapterTests.*
-
-#----------------------------------------------------------------------------------------
-# Fails due to DgnDb06xx changes
-#----------------------------------------------------------------------------------------
 
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
 DataSourceCacheUpgradeTests.CachingDataSource_OpenOrCreate_V5*
@@ -42,9 +10,3 @@ DataSourceCacheUpgradeTests.Open_V1*
 # ECSchema update in ECDb does not support deletions yet
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
 
-#----------------------------------------------------------------------------------------
-# All new unknown/issues here
-#----------------------------------------------------------------------------------------
-
- # Crashed 61-16q2, winx64, optimized
-CachingDataSourceTests.SyncCachedData_WSG1AndInitialInstancesReturnsNotFound_RemovesInstancesFromCache

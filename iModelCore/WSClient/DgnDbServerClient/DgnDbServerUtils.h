@@ -71,6 +71,7 @@ namespace ServerSchema
         static Utf8CP URL = "URL";
         static Utf8CP IsUploaded = "IsUploaded";
         static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
+        static Utf8CP ReleasedWithRevisionIndex = "ReleasedWithRevisionIndex";
         static Utf8CP ConflictingLocks = "ConflictingLocks";
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
         static Utf8CP CodesRequiresPull = "CodesRequiresPull";
@@ -80,6 +81,7 @@ namespace ServerSchema
         static Utf8CP Value = "Value";
         static Utf8CP Values = "Values";
         static Utf8CP StateRevision = "StateRevision";
+        static Utf8CP StateRevisionIndex = "StateRevisionIndex";
         static Utf8CP State = "State";
         static Utf8CP CodeStateInvalid = "CodeStateInvalid";
         static Utf8CP ConflictingCodes = "ConflictingCodes";

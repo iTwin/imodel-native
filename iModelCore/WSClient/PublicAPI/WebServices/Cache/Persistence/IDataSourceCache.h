@@ -255,6 +255,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         virtual BentleyStatus SetResponseAccessDate(CachedResponseKeyCR responseKey, DateTimeCR utcDateTime = DateTime::GetCurrentTimeUtc()) = 0;
         virtual DateTime ReadResponseAccessDate(CachedResponseKeyCR responseKey) = 0;
 
+        //! Gets all CachedResponceKeys that contains instance in it's result
+        //! @param instance instance
+        //! @param responseName responceName to filter keys by.
+        virtual bset<CachedResponseKey> GetResponsesContainingInstance(ECInstanceKeyCR instance, Utf8StringCR responseName = "") = 0;
+
         //! Get cached object information
         virtual CachedObjectInfo GetCachedObjectInfo(ECInstanceKeyCR instance) = 0;
         //! Get cached object information
