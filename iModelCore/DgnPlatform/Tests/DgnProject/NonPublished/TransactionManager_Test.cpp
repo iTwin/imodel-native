@@ -1493,9 +1493,12 @@ static BeSQLite::EC::ECInstanceId insertRelationship(DgnDbR db, ECN::ECClassCR r
     ecsql.append(relcls.GetECSqlName()).append("(SourceECInstanceId,TargetECInstanceId) VALUES(?,?)");
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+    if (stmt == nullptr)
+        return BeSQLite::EC::ECInstanceId();
 
-    stmt->BindId(1, root);
-    stmt->BindId(2, dependent);
+    if (ECSqlStatus::Success != stmt->BindId(1, root) || 
+        ECSqlStatus::Success != stmt->BindId(2, dependent))
+        return BeSQLite::EC::ECInstanceId();
 
     ECInstanceKey rkey;
     if (BE_SQLITE_DONE != stmt->Step(rkey))
