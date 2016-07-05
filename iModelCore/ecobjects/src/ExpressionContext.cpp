@@ -33,6 +33,7 @@ InternalECSymbolProviderManager::InternalECSymbolProviderManager ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 InternalECSymbolProviderManager& InternalECSymbolProviderManager::GetManager ()
     {
+    BeSystemMutexHolder lock;
     static ECN::InternalECSymbolProviderManager* s_manager = nullptr;
 
     if (nullptr == s_manager)
@@ -46,6 +47,7 @@ InternalECSymbolProviderManager& InternalECSymbolProviderManager::GetManager ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InternalECSymbolProviderManager::RegisterSymbolProvider (IECSymbolProviderCR provider)
     {
+    BeMutexHolder lock(m_mutex);
     if (m_symbolProviders.end() == std::find_if (m_symbolProviders.begin(), m_symbolProviders.end(), [&](IECSymbolProviderCP existing) { return existing == &provider; }))
         m_symbolProviders.push_back (&provider);
     }
@@ -55,6 +57,7 @@ void InternalECSymbolProviderManager::RegisterSymbolProvider (IECSymbolProviderC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InternalECSymbolProviderManager::UnregisterSymbolProvider (IECSymbolProviderCR provider)
     {
+    BeMutexHolder lock(m_mutex);
     auto found = std::find_if (m_symbolProviders.begin(), m_symbolProviders.end(), [&](IECSymbolProviderCP existing) { return existing == &provider; });
     if (found != m_symbolProviders.end())
         m_symbolProviders.erase (found);
@@ -65,10 +68,9 @@ void InternalECSymbolProviderManager::UnregisterSymbolProvider (IECSymbolProvide
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InternalECSymbolProviderManager::PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets)
     {
+    BeMutexHolder lock(m_mutex);
     for (IECSymbolProviderCP const& provider: m_symbolProviders)
-        {
         provider->PublishSymbols (context, requestedSymbolSets);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
