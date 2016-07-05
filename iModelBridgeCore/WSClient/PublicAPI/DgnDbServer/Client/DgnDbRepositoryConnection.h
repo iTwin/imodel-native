@@ -211,5 +211,11 @@ public:
     //! @param[in] briefcaseId
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all codes and locks held by other briefcases.
+    //! @param[in] briefcaseId
+    //! @param[in] lastRevisionId
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryUnavailableCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

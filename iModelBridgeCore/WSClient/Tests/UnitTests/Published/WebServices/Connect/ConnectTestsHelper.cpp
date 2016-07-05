@@ -89,3 +89,10 @@ HttpResponse StubImsTokenHttpResponse(SamlTokenCR token)
     authBody["RequestedSecurityToken"] = token.AsString();
     return StubHttpResponse(HttpStatus::OK, authBody.toStyledString());
     }
+
+SamlTokenPtr StubSamlTokenWithUser(Utf8StringCR username)
+    {
+    auto token = std::make_shared<SamlToken>(StubSamlTokenXML(100000, "TestCert", {{"name", username}}));
+    EXPECT_FALSE(token->AsString().empty());
+    return token;
+    }

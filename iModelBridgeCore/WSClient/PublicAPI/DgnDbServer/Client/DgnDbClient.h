@@ -19,6 +19,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 typedef std::shared_ptr<struct DgnDbClient> DgnDbClientPtr;
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbClient);
 struct DgnDbServerBriefcaseInfo;
 DEFINE_TASK_TYPEDEFS(RepositoryInfoPtr, DgnDbServerRepository);
 DEFINE_TASK_TYPEDEFS(bvector<RepositoryInfoPtr>, DgnDbServerRepositories);
