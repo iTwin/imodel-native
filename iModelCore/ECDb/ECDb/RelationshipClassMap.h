@@ -154,8 +154,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
 
         void AddIndexToRelationshipEnd(SchemaImportContext&, ClassMappingInfo const&);
 
-        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&) override;
-        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&) override;
+        virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&) override;
 
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
         Utf8String DetermineFkColumnName(RelationshipMappingInfo const&, ForeignKeyColumnInfo const&) const;
@@ -208,8 +207,7 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
     private:
         RelationshipClassLinkTableMap(ECN::ECRelationshipClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
 
-        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&) override;
-        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&) override;
+        virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&) override;
 
         MappingStatus CreateConstraintPropMaps(RelationshipMappingInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 

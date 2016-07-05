@@ -109,14 +109,11 @@ struct ClassMap : RefCountedBase
     private:
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::ECPropertyCR);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
-        virtual MappingStatus _OnInitialized() { return MappingStatus::Success; }
 
     protected:
         ClassMap(Type, ECN::ECClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
 
-        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&);
-        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&);
+        virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&);
         virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* baseClassMap);
         virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph);
         virtual void _WriteDebugInfo(DebugWriter&) const;
@@ -205,8 +202,7 @@ struct UnmappedClassMap : public ClassMap
 private:
     UnmappedClassMap(ECN::ECClassCR ecClass, ECDbMap const& ecdbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty) : ClassMap(Type::Unmapped, ecClass, ecdbMap, mapStrategy, setIsDirty) {}
 
-    virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&) override;
-    virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&) override { return MappingStatus::Success; }
+    virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&) override;
     virtual BentleyStatus _Load(std::set<ClassMap const*>&, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* baseClassMap) override;
 
 public:

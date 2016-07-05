@@ -83,29 +83,20 @@ void ClassMap::_WriteDebugInfo(DebugWriter& writer) const
 MappingStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
     {
     ECDbMapStrategy const& mapStrategy = GetMapStrategy();
-    //ClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses()) ? mapInfo.GetBaseClassMap() : nullptr;
 
     BeAssert(mapInfo.GetBaseClassMap() == nullptr ||
         mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable ||
          mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable ||
          mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable);
 
-    auto stat = _MapPart1(schemaImportContext, mapInfo);
-    if (stat != MappingStatus::Success)
-        return stat;
-    
-    stat = _MapPart2(schemaImportContext, mapInfo);
-    if (stat != MappingStatus::Success)
-        return stat;
-
-    return _OnInitialized();
+    return _Map(schemaImportContext, mapInfo);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
+MappingStatus ClassMap::_Map(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
     {
     ClassMap const* baseClassMap = mapInfo.GetBaseClassMap();
     DbTable const* primaryTable = nullptr;
@@ -187,15 +178,6 @@ MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, Clas
     if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap) != SUCCESS)
         return MappingStatus::Error;
 
-    return MappingStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      06/2013
-//---------------------------------------------------------------------------------------
-MappingStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
-    {
-    ClassMap const* baseClassMap = mapInfo.GetBaseClassMap();
     MappingStatus stat = AddPropertyMaps(schemaImportContext.GetClassMapLoadContext(), baseClassMap, nullptr, &mapInfo);
     if (stat != MappingStatus::Success)
         return stat;
@@ -1234,7 +1216,7 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MappingStatus UnmappedClassMap::_MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo)
+MappingStatus UnmappedClassMap::_Map(SchemaImportContext&, ClassMappingInfo const& classMapInfo)
     {
     if (classMapInfo.GetBaseClassMap() != nullptr)
         m_baseClassId = classMapInfo.GetBaseClassMap()->GetBaseClassId();
