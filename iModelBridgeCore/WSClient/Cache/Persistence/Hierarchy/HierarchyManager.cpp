@@ -411,7 +411,7 @@ ECInstanceKeyMultiMap& keysOut
         return ERROR;
         }
 
-    Utf8PrintfString key("HierarchyManager::ReadSourceKeys:%llu", relationshipClass->GetId());
+    Utf8PrintfString key("HierarchyManager::ReadSourceKeys:%llu", relationshipClass->GetId().GetValue());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return
