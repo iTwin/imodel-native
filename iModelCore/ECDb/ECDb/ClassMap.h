@@ -114,6 +114,8 @@ struct ClassMap : RefCountedBase
         ClassMap(Type, ECN::ECClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
 
         virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&);
+        MappingStatus DoMapPart1(SchemaImportContext&, ClassMappingInfo const&);
+        MappingStatus DoMapPart2(SchemaImportContext&, ClassMappingInfo const&);
         virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* baseClassMap);
         MappingStatus AddPropertyMaps(ClassMapLoadContext&, ClassMap const* baseClassMap, ClassDbMapping const*, ClassMappingInfo const*);
         void SetTable(DbTable& newTable, bool append = false);

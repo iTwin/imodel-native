@@ -48,6 +48,18 @@ MappingStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMappi
 //---------------------------------------------------------------------------------------
 MappingStatus ClassMap::_Map(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
     {
+    MappingStatus stat = DoMapPart1(schemaImportContext, mapInfo);
+    if (stat != MappingStatus::Success)
+        return stat;
+
+    return DoMapPart2(schemaImportContext, mapInfo);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      06/2013
+//---------------------------------------------------------------------------------------
+MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
+    {
     ClassMap const* baseClassMap = mapInfo.GetBaseClassMap();
     DbTable const* primaryTable = nullptr;
     DbTable::Type tableType = DbTable::Type::Primary;
@@ -73,7 +85,7 @@ MappingStatus ClassMap::_Map(SchemaImportContext& schemaImportContext, ClassMapp
             }
 
         DbTable* table = const_cast<ECDbMap&>(m_ecDbMap).FindOrCreateTable(&schemaImportContext, mapInfo.GetTableName(), tableType,
-            mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName(), primaryTable);
+                                                                           mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName(), primaryTable);
 
         if (table == nullptr)
             return MappingStatus::Error;
@@ -108,8 +120,8 @@ MappingStatus ClassMap::_Map(SchemaImportContext& schemaImportContext, ClassMapp
         if (SUCCESS != GetJoinedTable().SetMinimumSharedColumnCount(mapInfo.GetMapStrategy().GetMinimumSharedColumnCount()))
             {
             Issues().Report(ECDbIssueSeverity::Error,
-                     "Only one ECClass per table can specify a minimum shared column count. Found duplicate definition on ECClass '%s'.",
-                      m_ecClass.GetFullName());
+                            "Only one ECClass per table can specify a minimum shared column count. Found duplicate definition on ECClass '%s'.",
+                            m_ecClass.GetFullName());
             return MappingStatus::Error;
             }
         }
@@ -127,6 +139,16 @@ MappingStatus ClassMap::_Map(SchemaImportContext& schemaImportContext, ClassMapp
 
     if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap) != SUCCESS)
         return MappingStatus::Error;
+
+    return MappingStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      06/2013
+//---------------------------------------------------------------------------------------
+MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
+    {
+    ClassMap const* baseClassMap = mapInfo.GetBaseClassMap();
 
     MappingStatus stat = AddPropertyMaps(schemaImportContext.GetClassMapLoadContext(), baseClassMap, nullptr, &mapInfo);
     if (stat != MappingStatus::Success)

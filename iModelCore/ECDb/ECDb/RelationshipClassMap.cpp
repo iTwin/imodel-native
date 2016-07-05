@@ -1298,7 +1298,7 @@ MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, 
              "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
     BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have been caught already in ClassMapInfo");
 
-    MappingStatus stat = RelationshipClassMap::_Map(context, classMapInfo);
+    MappingStatus stat = DoMapPart1(context, classMapInfo);
     if (stat != MappingStatus::Success)
         return stat;
 
@@ -1320,7 +1320,11 @@ MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, 
     stat = CreateConstraintPropMaps(relationClassMapInfo, addSourceECClassIdColumnToTable, defaultSourceECClassId, addTargetECClassIdColumnToTable, defaultTargetECClassId);
     if (stat != MappingStatus::Success)
         return stat;
-    
+
+    stat = DoMapPart2(context, classMapInfo);
+    if (stat != MappingStatus::Success)
+        return stat;
+
     if (GetPrimaryTable().GetType() != DbTable::Type::Existing &&
         classMapInfo.GetBaseClassMap() == nullptr) //if subclass we must not create any FK anymore, as the base class mapping did that already
         {
@@ -1338,6 +1342,7 @@ MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, 
         referencedColumn = targetTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
         GetPrimaryTable().CreateForeignKeyConstraint(*fkColumn, *referencedColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified);
         }
+
 
     AddIndices(context, classMapInfo);
     return MappingStatus::Success;
