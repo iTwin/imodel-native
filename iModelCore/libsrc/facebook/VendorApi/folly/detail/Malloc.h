@@ -20,7 +20,7 @@
 
 #include <folly/Portability.h>
 
-#ifdef __BE_FOLLY_DLL__
+#if defined(__BE_FOLLY_DLL__) || defined(CREATE_STATIC_LIBRARIES)
 
 extern "C" {
 extern void* (*mallocx)(size_t, int) ;

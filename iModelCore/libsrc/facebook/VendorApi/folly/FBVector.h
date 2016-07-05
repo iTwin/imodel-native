@@ -326,6 +326,7 @@ private:
   //---------------------------------------------------------------------------
   // destroy
 
+#if BENTLEY_CHANGE
   void M_destroy(T* p) noexcept {
     if (usingStdAllocator::value) {
       if (!boost::has_trivial_destructor<T>::value) p->~T();
@@ -333,6 +334,7 @@ private:
       std::allocator_traits<Allocator>::destroy(impl_, p);
     }
   }
+#endif
 
   //===========================================================================
   //---------------------------------------------------------------------------
@@ -365,6 +367,7 @@ private:
   }
 
   // optimized
+#if BENTLEY_CHANGE
   static void S_destroy_range(T* first, T* last) noexcept {
     if (!boost::has_trivial_destructor<T>::value) {
       // EXPERIMENTAL DATA on fbvector<vector<int>> (where each vector<int> has
@@ -383,6 +386,7 @@ private:
       #undef FOLLY_FBV_OP
     }
   }
+#endif
 
   //---------------------------------------------------------------------------
   // uninitialized_fill_n
@@ -432,6 +436,7 @@ private:
   }
 
   // optimized
+#if BENTLEY_CHANGE
   static void S_uninitialized_fill_n(T* dest, size_type n) {
     if (folly::IsZeroInitializable<T>::value) {
       std::memset(dest, 0, sizeof(T) * n);
@@ -447,7 +452,8 @@ private:
       }
     }
   }
-
+#endif
+  
   static void S_uninitialized_fill_n(T* dest, size_type n, const T& value) {
     auto b = dest;
     auto e = dest + n;

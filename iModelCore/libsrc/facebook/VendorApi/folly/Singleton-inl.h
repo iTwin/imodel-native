@@ -196,8 +196,8 @@ void SingletonHolder<T>::createInstance() {
   }
   if (state_.load(std::memory_order_acquire) ==
         SingletonHolderState::NotRegistered) {
-    auto ptr = SingletonVault::stackTraceGetter().load();
 #if defined (BENTLEY_CHANGE)
+    auto ptr = SingletonVault::stackTraceGetter().load();
     LOG(FATAL) << "Creating instance for unregistered singleton: "
                << type_.name() << "\n"
                << "Stacktrace:"

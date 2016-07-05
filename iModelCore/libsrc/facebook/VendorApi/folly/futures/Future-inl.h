@@ -38,6 +38,12 @@
 #endif
 #endif
 
+// BENTLEY_CHANGE
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++14-extensions"
+#endif
+
 namespace folly {
 
 class Timekeeper;
@@ -912,7 +918,8 @@ Future<T> Future<T>::within(Duration dur, E e, Timekeeper* tk) {
   std::shared_ptr<Timekeeper> tks;
   if (!tk) {
     tks = folly::detail::getTimekeeperSingleton();
-    tk = DCHECK_NOTNULL(tks.get());
+    // BENTLEY_CHANGE tk = DCHECK_NOTNULL(tks.get());
+    tk = tks.get();
   }
 
   auto ctx = std::make_shared<Context>(std::move(e));
@@ -1377,3 +1384,8 @@ extern template class Future<double>;
 #endif
 
 } // namespace folly
+
+// BENTLEY_CHANGE
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

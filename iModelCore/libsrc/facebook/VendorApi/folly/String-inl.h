@@ -272,6 +272,7 @@ inline char delimFront(StringPiece s) {
  *
  * @param ignoreEmpty iff true, don't copy empty segments to output
  */
+#if BENTLEY_CHANGE
 template<class OutStringT, class DelimT, class OutputIterator>
 void internalSplit(DelimT delim, StringPiece sp, OutputIterator out,
     bool ignoreEmpty) {
@@ -313,6 +314,7 @@ void internalSplit(DelimT delim, StringPiece sp, OutputIterator out,
     *out++ = to<OutStringT>(sp.subpiece(tokenStartPos, tokenSize));
   }
 }
+#endif
 
 template<class String> StringPiece prepareDelim(const String& s) {
   return StringPiece(s);
@@ -356,6 +358,8 @@ bool splitFixed(
 
 //////////////////////////////////////////////////////////////////////
 
+#if BENTLEY_CHANGE
+
 template<class Delim, class String, class OutputType>
 void split(const Delim& delimiter,
            const String& input,
@@ -392,6 +396,8 @@ void splitTo(const Delim& delimiter,
     out,
     ignoreEmpty);
 }
+
+#endif
 
 template <bool exact, class Delim, class... OutputTypes>
 typename std::enable_if<
