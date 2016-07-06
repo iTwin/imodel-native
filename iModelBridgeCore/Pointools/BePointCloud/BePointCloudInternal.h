@@ -14,6 +14,7 @@
 #include <Bentley/bvector.h>
 #include <Geom/GeomApi.h>
 #include <Vortex/VortexAPI.h>
+#include <stdlib.h>
 
 #include <BePointCloud/BePointCloudApi.h>
 #include <BePointCloud/PointCloudTypes.h>
