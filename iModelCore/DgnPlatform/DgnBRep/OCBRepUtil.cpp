@@ -9,6 +9,32 @@
 #include <DgnPlatform/DgnBRep/OCBRep.h>
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TopAbs_ShapeEnum OCBRepUtil::GetShapeType(TopoDS_Shape const& shape)
+    {
+    TopAbs_ShapeEnum shapeType = shape.ShapeType();
+
+    if (TopAbs_COMPOUND != shapeType)
+        return shapeType;
+
+    TopoDS_Iterator shapeIter(shape);
+
+    if (!shapeIter.More() || TopAbs_COMPOUND == (shapeType = GetShapeType(shapeIter.Value())))
+        return shapeType;
+
+    shapeIter.Next();
+
+    for (; shapeIter.More(); shapeIter.Next())
+        {
+        if (shapeType != GetShapeType(shapeIter.Value()))
+            return TopAbs_COMPOUND;
+        }
+
+    return shapeType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void OCBRepUtil::GetOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteger*& occtMultiplicities, bvector<double> const& knots, int order)

@@ -19,6 +19,7 @@ static const double DEFAULT_CREASE_DEGREES = 45.0; // From SimplifyViewDrawGeom.
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void addIsoCurve(Render::GraphicBuilderR graphic, Adaptor3d_CurveOnSurface const& curveOnSurf)
     {
+    // NEEDSWORK: CurveTopologyId...
     double param1 = curveOnSurf.FirstParameter();
     double param2 = curveOnSurf.LastParameter();
 
@@ -94,9 +95,59 @@ static Standard_Real getAdjustedRadialStartParam(Standard_Real minParam, Standar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+static Standard_Integer numIsoFromAngle(Standard_Real angle, Standard_Integer numIso)
+    {
+    if (fabs(angle) < 0.1)
+        return 0;
+
+    Standard_Integer n = (Standard_Integer) floor(0.5 + (Standard_Real) numIso * (fabs(angle) - mgds_fc_epsilon) / msGeomConst_2pi);
+
+    return (n > 0 ? (n + 1) : 2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static Standard_Integer numIsoFromCurve(Handle(Geom_Curve) const& curve)
+    {
+    if (ShapeAnalysis_Curve::IsClosed(curve))
+        return 4;
+
+    TColgp_SequenceOfPnt pnts;
+
+    if (!ShapeAnalysis_Curve::GetSamplePoints(curve, curve->FirstParameter(), curve->LastParameter(), pnts) || pnts.Size() < 3)
+        return 0;
+
+    int         iPt = 0;
+    double      angle = 0.0;
+    DVec3d      lastDir;
+    DPoint3d    lastPt;
+
+    for (gp_Pnt gPt : pnts)
+        {
+        DVec3d   dir = DVec3d::From(0.0, 0.0, 0.0);
+        DPoint3d pt = OCBRep::ToDPoint3d(gPt);
+
+        if (iPt > 0)
+            dir.NormalizedDifference(lastPt, pt);
+
+        if (iPt > 1)
+            angle += fabs(dir.AngleTo(lastDir));
+
+        lastDir = dir;
+        lastPt  = pt;
+        iPt++;
+        }
+
+    return numIsoFromAngle(angle, 4);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher& hatcher, TopoDS_Face const& face)
     {
-    // NOTE: Adapted from DBRep_IsoBuilder ...
+    // NOTE: Adapted from DBRep_IsoBuilder...
     TopLoc_Location location;
     Handle(Geom_Surface) const& surface = BRep_Tool::Surface(face, location);
 
@@ -131,24 +182,40 @@ void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher&
         uParamStart = getAdjustedRadialStartParam(faceUMin, stepU);
         vParamStart = getAdjustedRadialStartParam(faceVMin, stepV);
         }
+    else if (STANDARD_TYPE(Geom_SurfaceOfRevolution) == kindOfSurface)
+        {
+        numUIsos = 4; // Trim will exclude iso if outside face bounds...
+        stepU = msGeomConst_piOver2;
+        uParamStart = getAdjustedRadialStartParam(faceUMin, stepU);
+
+        Handle(Geom_Curve) uCurve = surface->UIso(faceUMin);
+
+        if (!uCurve.IsNull())
+            {
+            numVIsos = numIsoFromCurve(uCurve);
+            stepV = (numVIsos > 0 ? (deltaV / (Standard_Real) numVIsos) : 0.0);
+            vParamStart = faceVMin + stepV;
+            }
+        }
     else
         {
-//        GeomLProp_SLProps props(surface, (faceUMax - faceUMin) * 0.5, (faceVMax - faceVMin) * 0.5, 1, Precision::Confusion()); // Need ? derivative for ?...
+        Handle(Geom_Curve) uCurve = surface->UIso(faceUMin);
 
-//        printf(">>> %d %lf %lf %lf\n", props.IsCurvatureDefined(), props.GaussianCurvature(), props.MeanCurvature(), props.MaxCurvature());
+        if (!uCurve.IsNull())
+            {
+            numVIsos = numIsoFromCurve(uCurve);
+            stepV = (numVIsos > 0 ? (deltaV / (Standard_Real) numVIsos) : 0.0);
+            vParamStart = faceVMin + stepV;
+            }
 
-//                STANDARD_TYPE(Geom_SurfaceOfLinearExtrusion) == kindOfSurface
-//                STANDARD_TYPE(Geom_SurfaceOfRevolution) == kindOfSurface
+        Handle(Geom_Curve) vCurve = surface->VIso(faceVMin);
 
-        return; // NEEDSWORK...
-
-//                numUIsos = numVIsos = 4;
-//
-//                stepU = (numUIsos > 0 ? (deltaU / (Standard_Real) numUIsos) : 0.0);
-//                stepV = (numVIsos > 0 ? (deltaV / (Standard_Real) numVIsos) : 0.0);
-//
-//                uParamStart = faceUMin + stepU;
-//                vParamStart = faceVMin + stepV;
+        if (!vCurve.IsNull())
+            {
+            numUIsos = numIsoFromCurve(vCurve);
+            stepU = (numUIsos > 0 ? (deltaU / (Standard_Real) numUIsos) : 0.0);
+            uParamStart = faceUMin + stepU;
+            }
         }
 
     if (0 == numUIsos && 0 == numVIsos)
@@ -304,6 +371,9 @@ void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher&
 	        Standard_Real v1 = dom.HasFirstPoint()  ? dom.FirstPoint().Parameter()  : faceVMin;
 	        Standard_Real v2 = dom.HasSecondPoint() ? dom.SecondPoint().Parameter() : faceVMax;
 
+            if (v2 == v1 && v1 == faceVMin)
+                v2 = faceVMax; // physical closure in v...
+
             Geom2dAdaptor_Curve const& curve2d = hatcher.HatchingCurve(uInd);
             Handle(Geom2dAdaptor_HCurve) hCurve2dAdaptor = new Geom2dAdaptor_HCurve(curve2d.Curve(), v1, v2);
             curveOnSurf.Load(hCurve2dAdaptor);
@@ -326,6 +396,9 @@ void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher&
 	        HatchGen_Domain const& dom = hatcher.Domain(vInd, iDom);
 	        Standard_Real u1 = dom.HasFirstPoint()  ? dom.FirstPoint().Parameter()  : faceUMin;
 	        Standard_Real u2 = dom.HasSecondPoint() ? dom.SecondPoint().Parameter() : faceUMax;
+
+            if (u2 == u1 && u1 == faceUMin)
+                u2 = faceUMax; // physical closure in u (ex. full sweep surface of revolution)...
 
             Geom2dAdaptor_Curve const& curve2d = hatcher.HatchingCurve(vInd);
             Handle(Geom2dAdaptor_HCurve) hCurve2dAdaptor = new Geom2dAdaptor_HCurve(curve2d.Curve(), u1, u2);

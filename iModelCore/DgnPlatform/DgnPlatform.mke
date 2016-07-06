@@ -663,6 +663,7 @@ LINKER_LIBRARIES_DELAYLOADED + \
     $(ContextSubPartsLibs)TKPrim.lib \
     $(ContextSubPartsLibs)TKMesh.lib \
     $(ContextSubPartsLibs)TKGeomAlgo.lib \
+    $(ContextSubPartsLibs)TKShHealing.lib \
     $(ContextSubPartsLibs)TKTopAlgo.lib
 %endif
 
