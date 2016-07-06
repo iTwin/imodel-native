@@ -79,19 +79,19 @@ BentleyStatus ECDbMap::PurgeOrphanColumns() const
 //---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ECDbMap::PurgeOrphanTables() const
     {
+    //skip ExistingTable and NotMapped
+    Utf8String sql;
+    sql.Sprintf("SELECT t.Name, t.IsVirtual FROM ec_Table t "
+                "WHERE t.Type<>%d AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
+                "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
+                "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+                "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
+                "INNER JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
+                "INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id)",
+                Enum::ToInt(DbTable::Type::Existing));
+
     Statement stmt;
-    if (stmt.Prepare(m_ecdb,
-                     SqlPrintfString(
-                     "SELECT ec_Table.Name, ec_Table.IsVirtual FROM ec_Table"
-                     "    WHERE ec_Table.[Type] != %" PRId32 " AND" //Skip Existing tables
-                     "    ec_Table.Id NOT IN ("                     //Skip Tables that is already Mapped
-                     "        SELECT DISTINCT ec_Table.Id"
-                     "        FROM ec_PropertyMap"
-                     "          INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.[PropertyPathId]"
-                     "          INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id"
-                     "          INNER JOIN ec_Column ON ec_PropertyMap.[ColumnId] = ec_Column.Id"
-                     "          INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id"
-                     "        ) AND Name != '" DBSCHEMA_NULLTABLENAME "'", Enum::ToInt(DbTable::Type::Existing)).GetUtf8CP()) != BE_SQLITE_OK)
+    if (stmt.Prepare(m_ecdb, sql.c_str()) != BE_SQLITE_OK)
         {
         BeAssert(false && "system sql schema changed");
         return ERROR;
@@ -121,7 +121,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
         stmt.BindText(1, name, Statement::MakeCopy::No);
         if (stmt.Step() != BE_SQLITE_DONE)
             {
-            BeAssert(false && "constraint voilation");
+            BeAssert(false && "constraint violation");
             return ERROR;
             }
         }
@@ -232,25 +232,16 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& ctx)
         m_schemaImportContext = nullptr;
         return MappingStatus::Error;
         }
-
-    if (GetSchemaImportContext()->GetECSchemaCompareContext().RequiresUpdate())
-        {
-        //Following step is simply done to process navigation properties for classMap loaded via above step where we sync index information.
-        //If we do not do following then we must clear cache in case of schema upgrade which we like to avoid.
-        if (SUCCESS != GetSchemaImportContext()->GetClassMapLoadContext().Postprocess(*this))
-            {
-            ClearCache();
-            m_schemaImportContext = nullptr;
-            return MappingStatus::Error;
-            }
-        }
     
     if (PurgeOrphanTables() != SUCCESS)
         {
         BeAssert(false);
+        ClearCache();
+        m_schemaImportContext = nullptr;
         return MappingStatus::Error;
         }
 
+    ClearCache();
     m_schemaImportContext = nullptr;
     return MappingStatus::Success;
     }
