@@ -299,13 +299,26 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="additionalColumns">Additional columns to insert and that are not represented by any property in the class</param>
         public void InsertInstancesInCache (IEnumerable<IECInstance> instanceList, IECClass ecClass, IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null)
             {
+            //We add a loop to divide this operation for large sets of instances. This is because the maximum number of parameters for SQL server is 2100,
+            //and for SpatialEntityBase, this means that around 100 instances will break that limit.
 
-            ISQLInsertStatementBuilder sqlQueryBuilder = DbConnectionHelper.GetSqlInsertStatementBuilder(m_dbConnection);
-            IParamNameValueMap paramNameValueMap;
+            int addedCount = 0;
+            int step = 50;
+            int totalCount = instanceList.Count();
+            while ( addedCount < totalCount )
+                {
 
-            string sqlInsertQueryString = CreateCacheSQLStatement(instanceList, ecClass, sqlQueryBuilder, out paramNameValueMap, additionalColumns);
+                IEnumerable<IECInstance> partialInstanceList = instanceList.Skip(addedCount).Take(step);
 
-            m_dbQuerier.ExecuteNonQueryInDb(sqlInsertQueryString, paramNameValueMap, m_dbConnection);
+                ISQLInsertStatementBuilder sqlQueryBuilder = DbConnectionHelper.GetSqlInsertStatementBuilder(m_dbConnection);
+                IParamNameValueMap paramNameValueMap;
+
+                string sqlInsertQueryString = CreateCacheSQLStatement(partialInstanceList, ecClass, sqlQueryBuilder, out paramNameValueMap, additionalColumns);
+
+                m_dbQuerier.ExecuteNonQueryInDb(sqlInsertQueryString, paramNameValueMap, m_dbConnection);
+
+                addedCount += step;
+                }
             }
 
         /// <summary>
