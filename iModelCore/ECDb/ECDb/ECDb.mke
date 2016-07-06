@@ -373,7 +373,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 # Prefer to disable warnings in third-party code vs. editing it.
 %if defined (BENTLEY_TOOL_CONTEXT_NAME)
-%if $(BENTLEY_TOOL_CONTEXT_NAME) == "LinuxGcc"
+%if $(BUILD_TOOLSET) == "GCC" || $(BUILD_TOOLSET) == "CLANG"
     OldLinuxGccCommonOptions =% $(LinuxGccCommonOptions)
     LinuxGccCommonOptions + -Wno-unknown-pragmas
     LinuxGccCommonOptions + -Wno-unused-function
