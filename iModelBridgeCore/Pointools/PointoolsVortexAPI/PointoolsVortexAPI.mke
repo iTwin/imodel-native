@@ -12,7 +12,6 @@ BUILD_NO_STACK_CHECK=1
 %if $(BUILD_TOOLSET) == "ANDROID_CLANG"
     # pt/boundsTree.h:295:4: error: delete called on non-final 'BoundsTreeNode<pt::OBBox<double> >' that has virtual functions but non-virtual destructor [-Werror,-Wdelete-non-virtual-dtor]
     ClangCommonCompOpts+ -Wno-delete-non-virtual-dtor
-    %warn ClangCommonCompOpts=$(ClangCommonCompOpts)
 %endif
 
 #----------------------------------------------------------
