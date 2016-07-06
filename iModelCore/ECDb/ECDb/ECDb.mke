@@ -387,6 +387,8 @@ MultiCompileDepends=$(_MakeFileSpec)
     ClangCommonCompOpts + -Wno-unknown-pragmas
     ClangCommonCompOpts + -Wno-unused-function
     ClangCommonCompOpts + -Wno-address
+    ClangCommonCompOpts + -Wno-deprecated-register
+    ClangCommonCompOpts + -Wno-unused-const-variable
 %endif
 
 $(o)SqlNode$(oext): $(baseDir)ECSql/Parser/SqlNode.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
