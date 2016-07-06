@@ -198,9 +198,9 @@ DTMStatusInt IDTM::GetRange (DRange3dR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre 04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM::ExportToGeopakTinFile(WCharCP fileNameP)
+DTMStatusInt BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM::ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation)
     {
-    return _ExportToGeopakTinFile(fileNameP);
+    return _ExportToGeopakTinFile(fileNameP, transformation);
     }
 
 /*---------------------------------------------------------------------------------**//**
