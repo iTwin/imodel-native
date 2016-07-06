@@ -9,6 +9,12 @@ BUILD_NO_STACK_CHECK=1
 
 %include mdl.mki
 
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG"
+    # pt/boundsTree.h:295:4: error: delete called on non-final 'BoundsTreeNode<pt::OBBox<double> >' that has virtual functions but non-virtual destructor [-Werror,-Wdelete-non-virtual-dtor]
+    ClangCommonCompOpts+ -Wno-delete-non-virtual-dtor
+    %warn ClangCommonCompOpts=$(ClangCommonCompOpts)
+%endif
+
 #----------------------------------------------------------
 # Set and then include the CompileOptionsMki file.
 # It is needed and also %included by PreCompileHeader.mki
