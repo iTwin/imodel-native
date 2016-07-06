@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/MapDebugInfo_Tests.cpp $
+|  $Source: Tests/Published/ClassMappingInfoHelperTests.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -713,7 +713,7 @@
     <ClCompile Include="LightweightCache.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbMapDebugInfo.cpp">
+    <ClCompile Include="ClassMappingInfoHelper.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>
