@@ -57,7 +57,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
             return ERROR;
             }
 
-        BeAssert(classMap->GetClass().IsEntityClass() && classMap->GetType() != ClassMap::Type::Unmapped);
+        BeAssert(classMap->GetClass().IsEntityClass() && classMap->GetType() != ClassMap::Type::NotMapped);
         if (CreateUpdatableViewIfRequired(ecdb, *classMap) != SUCCESS)
             return ERROR;
         }
@@ -127,7 +127,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
             return ERROR;
             }
 
-        BeAssert((classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetType() != ClassMap::Type::Unmapped);
+        BeAssert((classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetType() != ClassMap::Type::NotMapped);
         if (CreateECClassView(*classMap) != SUCCESS)
             return ERROR;
         }
@@ -466,8 +466,8 @@ BentleyStatus ViewGenerator::CreateNullView(NativeSqlBuilder& viewSql, ClassMap 
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ViewGenerator::GetRootClasses(std::vector<ClassMap const*>& rootClasses, ECDbCR db)
     {
-    bvector<ECN::ECSchemaCP> schemas;
-    if (db.Schemas().GetECSchemas(schemas, true) != SUCCESS)
+    bvector<ECN::ECSchemaCP> schemas = db.Schemas().GetECSchemas(true);
+    if (schemas.empty())
         return ERROR;
 
     std::vector<ClassMap const*> rootClassMaps;
@@ -487,7 +487,7 @@ BentleyStatus ViewGenerator::GetRootClasses(std::vector<ClassMap const*>& rootCl
                     return ERROR;
                     }
 
-                if (classMap->GetType() == ClassMap::Type::Unmapped)
+                if (classMap->GetType() == ClassMap::Type::NotMapped)
                     continue;
 
                 rootClassMaps.push_back(classMap);
@@ -504,7 +504,7 @@ BentleyStatus ViewGenerator::GetRootClasses(std::vector<ClassMap const*>& rootCl
 BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, ECClassCR ecClass, bool ensureDerivedClassesAreLoaded)
     {
     ClassMap const* classMap = m_map.GetClassMap(ecClass);
-    if (classMap == nullptr || classMap->GetType() == ClassMap::Type::Unmapped)
+    if (classMap == nullptr || classMap->GetType() == ClassMap::Type::NotMapped)
         return SUCCESS;
 
     if (!classMap->GetMapStrategy().IsNotMapped())

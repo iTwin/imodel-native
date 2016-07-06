@@ -89,7 +89,7 @@ BentleyStatus JsonReader::AddInstancesFromRelatedItems(JsonValueR allInstances, 
                                                        ECRelationshipPath const& pathFromParent, ECInstanceId ecInstanceId, JsonECSqlSelectAdapter::FormatOptions const& formatOptions) const
     {
     bvector<ECRelationshipPath> appendPathsFromParent;
-    JsonReader::RelatedItemsDisplaySpecificationsCache* appData = JsonReader::RelatedItemsDisplaySpecificationsCache::Get(m_ecDb);
+    RelatedItemsDisplaySpecificationsCache* appData = RelatedItemsDisplaySpecificationsCache::Get(m_ecDb);
     if (appData == nullptr)
         return ERROR;
 
@@ -407,7 +407,7 @@ BentleyStatus JsonReader::AddInstancesFromPreparedStatement(JsonValueR allInstan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-ECClassCP JsonReader::RelatedItemsDisplaySpecificationsCache::ResolveClass(Utf8StringCR possiblyQualifiedClassName, ECSchemaCR defaultSchema) const
+ECClassCP RelatedItemsDisplaySpecificationsCache::ResolveClass(Utf8StringCR possiblyQualifiedClassName, ECSchemaCR defaultSchema) const
     {
     Utf8String schemaName, className;
     if (ECObjectsStatus::Success != ECClass::ParseClassName(schemaName, className, possiblyQualifiedClassName))
@@ -426,7 +426,7 @@ ECClassCP JsonReader::RelatedItemsDisplaySpecificationsCache::ResolveClass(Utf8S
 // @bsimethod                                    Ramanujam.Raman                 05 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-JsonReader::RelatedItemsDisplaySpecificationsCache* JsonReader::RelatedItemsDisplaySpecificationsCache::Get(ECDbCR ecdb)
+RelatedItemsDisplaySpecificationsCache* RelatedItemsDisplaySpecificationsCache::Get(ECDbCR ecdb)
     {
     RelatedItemsDisplaySpecificationsCache* appData = reinterpret_cast <RelatedItemsDisplaySpecificationsCache*> (ecdb.FindAppData(RelatedItemsDisplaySpecificationsCache::GetKey()));
     if (appData)
@@ -446,7 +446,7 @@ JsonReader::RelatedItemsDisplaySpecificationsCache* JsonReader::RelatedItemsDisp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 05 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::Initialize()
+BentleyStatus RelatedItemsDisplaySpecificationsCache::Initialize()
     {
     RelationshipPathInfosByClass pathInfosByClass;
     if (SUCCESS != GatherRelationshipPathInfos(pathInfosByClass))
@@ -469,7 +469,7 @@ BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::Initialize()
 // Gathers information on relationship paths from RelatedDisplayCustomAttributes in schemas in the Db.
 // @bsimethod                                Ramanujam.Raman                           05 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------------------
-BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass) const
+BentleyStatus RelatedItemsDisplaySpecificationsCache::GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass) const
     {
     ECClassCP ridsClass = m_ecDb.Schemas().GetECClass("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
     if (!ridsClass)
@@ -485,8 +485,7 @@ BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::GatherRelation
         return ERROR;
         }
 
-    bvector<ECN::ECSchemaCP> allSchemas;
-    m_ecDb.Schemas().GetECSchemas(allSchemas, false);
+    bvector<ECN::ECSchemaCP> allSchemas = m_ecDb.Schemas().GetECSchemas(false);
     BeAssert(allSchemas.size() > 0);
 
     BentleyStatus status = SUCCESS;
@@ -523,7 +522,7 @@ BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::GatherRelation
 //---------------------------------------------------------------------------------------
 // @bsimethod                              Ramanujam.Raman                 05 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass, ECSchemaCR defaultSchema, IECInstanceCR caSpec) const
+BentleyStatus RelatedItemsDisplaySpecificationsCache::GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass, ECSchemaCR defaultSchema, IECInstanceCR caSpec) const
     {
     ECValue parentClassECV;
     ECObjectsStatus ecStatus = caSpec.GetValue(parentClassECV, "ParentClass");
@@ -569,10 +568,10 @@ BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::GatherRelation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                 06 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonReader::RelationshipPathInfo& JsonReader::RelatedItemsDisplaySpecificationsCache::AddEntryToRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass, ECClassCR parentClass, Utf8CP path, ECSchemaCR defaultSchema) const
+RelatedItemsDisplaySpecificationsCache::RelationshipPathInfo& RelatedItemsDisplaySpecificationsCache::AddEntryToRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass, ECClassCR parentClass, Utf8CP path, ECSchemaCR defaultSchema) const
     {
     auto it = pathInfosByClass.find(&parentClass);
-    bvector<JsonReader::RelationshipPathInfo>& pathInfoVector = (it == pathInfosByClass.end()) ? pathInfosByClass[&parentClass] : it->second;
+    bvector<RelatedItemsDisplaySpecificationsCache::RelationshipPathInfo>& pathInfoVector = (it == pathInfosByClass.end()) ? pathInfosByClass[&parentClass] : it->second;
 
     RelationshipPathInfo pathInfo(path, defaultSchema);
     pathInfoVector.push_back(pathInfo);
@@ -583,7 +582,7 @@ JsonReader::RelationshipPathInfo& JsonReader::RelatedItemsDisplaySpecificationsC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                 06 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void JsonReader::RelatedItemsDisplaySpecificationsCache::SortRelationshipPaths()
+void RelatedItemsDisplaySpecificationsCache::SortRelationshipPaths()
     {
     for (RelationshipPathsByClassId::iterator iter = m_pathsByClass.begin(); iter != m_pathsByClass.end(); iter++)
         {
@@ -600,7 +599,7 @@ void JsonReader::RelatedItemsDisplaySpecificationsCache::SortRelationshipPaths()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                 06 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void JsonReader::RelatedItemsDisplaySpecificationsCache::RemoveDuplicates(RelationshipPathInfosByClass& pathInfosByClass) const
+void RelatedItemsDisplaySpecificationsCache::RemoveDuplicates(RelationshipPathInfosByClass& pathInfosByClass) const
     {
     /*
     * Note: There may be duplicate relationship paths specified starting from parent/root classes. This typically happens in IFC cases where the same paths
@@ -651,7 +650,7 @@ void JsonReader::RelatedItemsDisplaySpecificationsCache::RemoveDuplicates(Relati
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::ExtractRelationshipPaths(RelationshipPathInfosByClass const& pathInfosByClass)
+BentleyStatus RelatedItemsDisplaySpecificationsCache::ExtractRelationshipPaths(RelationshipPathInfosByClass const& pathInfosByClass)
     {
     BentleyStatus status = SUCCESS;
 
@@ -706,7 +705,7 @@ BentleyStatus JsonReader::RelatedItemsDisplaySpecificationsCache::ExtractRelatio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                 06 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void JsonReader::RelatedItemsDisplaySpecificationsCache::AddEntryToCache(ECN::ECClassCR parentClass, ECN::ECRelationshipPath const& path)
+void RelatedItemsDisplaySpecificationsCache::AddEntryToCache(ECN::ECClassCR parentClass, ECN::ECRelationshipPath const& path)
     {
     ECClassId parentClassId = parentClass.GetId();
 
@@ -719,7 +718,7 @@ void JsonReader::RelatedItemsDisplaySpecificationsCache::AddEntryToCache(ECN::EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                 06 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void JsonReader::RelatedItemsDisplaySpecificationsCache::DumpCache(ECClassCP ecClass /*=nullptr*/) const
+void RelatedItemsDisplaySpecificationsCache::DumpCache(ECClassCP ecClass /*=nullptr*/) const
     {
     if (ecClass)
         LOG.tracev("ECRelationshipPath Cache (Filtered By Class %s)", ecClass->GetECSqlName().c_str());
@@ -747,7 +746,7 @@ void JsonReader::RelatedItemsDisplaySpecificationsCache::DumpCache(ECClassCP ecC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 05 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-bool JsonReader::RelatedItemsDisplaySpecificationsCache::TryGetRelatedPaths(bvector<ECRelationshipPath>& relationshipPathVec, ECClassCR ecClass) const
+bool RelatedItemsDisplaySpecificationsCache::TryGetRelatedPaths(bvector<ECRelationshipPath>& relationshipPathVec, ECClassCR ecClass) const
     {
     for (RelationshipPathsByClassId::const_iterator iter = m_pathsByClass.begin(); iter != m_pathsByClass.end(); iter++)
         {

@@ -79,19 +79,19 @@ BentleyStatus ECDbMap::PurgeOrphanColumns() const
 //---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ECDbMap::PurgeOrphanTables() const
     {
+    //skip ExistingTable and NotMapped
+    Utf8String sql;
+    sql.Sprintf("SELECT t.Name, t.IsVirtual FROM ec_Table t "
+                "WHERE t.Type<>%d AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
+                "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
+                "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+                "INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id "
+                "INNER JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
+                "INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id)",
+                Enum::ToInt(DbTable::Type::Existing));
+
     Statement stmt;
-    if (stmt.Prepare(m_ecdb,
-                     SqlPrintfString(
-                     "SELECT ec_Table.Name, ec_Table.IsVirtual FROM ec_Table"
-                     "    WHERE ec_Table.[Type] != %" PRId32 " AND" //Skip Existing tables
-                     "    ec_Table.Id NOT IN ("                     //Skip Tables that is already Mapped
-                     "        SELECT DISTINCT ec_Table.Id"
-                     "        FROM ec_PropertyMap"
-                     "          INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.[PropertyPathId]"
-                     "          INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id"
-                     "          INNER JOIN ec_Column ON ec_PropertyMap.[ColumnId] = ec_Column.Id"
-                     "          INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id"
-                     "        ) AND Name != '" DBSCHEMA_NULLTABLENAME "'", Enum::ToInt(DbTable::Type::Existing)).GetUtf8CP()) != BE_SQLITE_OK)
+    if (stmt.Prepare(m_ecdb, sql.c_str()) != BE_SQLITE_OK)
         {
         BeAssert(false && "system sql schema changed");
         return ERROR;
@@ -121,7 +121,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
         stmt.BindText(1, name, Statement::MakeCopy::No);
         if (stmt.Step() != BE_SQLITE_DONE)
             {
-            BeAssert(false && "constraint voilation");
+            BeAssert(false && "constraint violation");
             return ERROR;
             }
         }
@@ -192,7 +192,7 @@ bool ECDbMap::AssertIfIsNotImportingSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
+MappingStatus ECDbMap::MapSchemas(SchemaImportContext& ctx)
     {
     if (m_schemaImportContext != nullptr)
         {
@@ -200,10 +200,10 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
         return MappingStatus::Error;
         }
 
-    if (schemaImportContext.GetECSchemaCompareContext().HasNoSchemasToImport())
+    if (ctx.GetECSchemaCompareContext().HasNoSchemasToImport())
         return MappingStatus::Success;
 
-    m_schemaImportContext = &schemaImportContext;
+    m_schemaImportContext = &ctx;
 
     const MappingStatus stat = DoMapSchemas();
     if (MappingStatus::Success != stat)
@@ -232,25 +232,16 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
         m_schemaImportContext = nullptr;
         return MappingStatus::Error;
         }
-
-    if (GetSchemaImportContext()->GetECSchemaCompareContext().RequiresUpdate())
-        {
-        //Following step is simply done to process navigation properties for classMap loaded via above step where we sync index information.
-        //If we do not do following then we must clear cache in case of schema upgrade which we like to avoid.
-        if (SUCCESS != GetSchemaImportContext()->GetClassMapLoadContext().Postprocess(*this))
-            {
-            ClearCache();
-            m_schemaImportContext = nullptr;
-            return MappingStatus::Error;
-            }
-        }
     
     if (PurgeOrphanTables() != SUCCESS)
         {
         BeAssert(false);
+        ClearCache();
+        m_schemaImportContext = nullptr;
         return MappingStatus::Error;
         }
 
+    ClearCache();
     m_schemaImportContext = nullptr;
     return MappingStatus::Success;
     }
@@ -442,7 +433,7 @@ MappingStatus ECDbMap::DoMapSchemas()
     ECDbMapStrategy const& mapStrategy = classMapInfo.GetMapStrategy();
     ClassMapPtr classMapTmp = nullptr;
     if (mapStrategy.IsNotMapped())
-        classMapTmp = UnmappedClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
+        classMapTmp = NotMappedClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
     else
         {
         ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
@@ -521,7 +512,7 @@ MappingStatus ECDbMap::MapClass(ECClassCR ecClass)
 
         ClassMapPtr classMap = nullptr;
         if (mapStrategy.IsNotMapped())
-            classMap = UnmappedClassMap::Create(ecClass, *this, mapStrategy, true);
+            classMap = NotMappedClassMap::Create(ecClass, *this, mapStrategy, true);
         else
             {
             auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
@@ -728,7 +719,7 @@ ECDbMap::ClassMapsByTable ECDbMap::GetClassMapsByTable() const
     for (auto const& entry : m_classMapDictionary)
         {
         if (entry.second->GetType() == ClassMap::Type::RelationshipEndTable ||
-            entry.second->GetType() == ClassMap::Type::Unmapped)
+            entry.second->GetType() == ClassMap::Type::NotMapped)
             continue;
 
         DbTable* primaryTable = &entry.second->GetPrimaryTable();
@@ -1225,35 +1216,24 @@ BentleyStatus ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMap::ClearCache()
-    {
-    BeMutexHolder lock(m_mutex);
-    m_classMapDictionary.clear();
-    m_dbSchema.Reset();
-    m_lightweightCache.Reset();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Affan.Khan                      12/2012
-//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbMap::SaveDbSchema() const
     {
+    if (m_schemaImportContext == nullptr)
+        {
+        BeAssert(false && "ECDbMap::SaveDbSchema must only be called during schema import");
+        return ERROR;
+        }
+
     BeMutexHolder lock(m_mutex);
     StopWatch stopWatch(true);
-    int i = 0;
-    std::set<ClassMap const*> doneList;
+
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMapR classMap = *kvPair.second;
-        ECClassCR ecClass = classMap.GetClass();
-        if (classMap.IsDirty())
+        if (SUCCESS != classMap.Save(*m_schemaImportContext))
             {
-            i++;
-            if (SUCCESS != classMap.Save(doneList))
-                {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to save mapping for ECClass %s: %s", ecClass.GetFullName(), m_ecdb.GetLastError().c_str());
-                return ERROR;
-                }
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
+            return ERROR;
             }
         }
 
@@ -1263,8 +1243,19 @@ BentleyStatus ECDbMap::SaveDbSchema() const
     m_lightweightCache.Reset();
     stopWatch.Stop();
 
-    LOG.debugv("Saving ECDbMap for %d ECClasses took %.4lf msecs.", i, stopWatch.GetElapsedSeconds() * 1000.0);
+    LOG.debugv("Saving EC-DB mapping took %.4lf msecs.", stopWatch.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMap::ClearCache()
+    {
+    BeMutexHolder lock(m_mutex);
+    m_classMapDictionary.clear();
+    m_dbSchema.Reset();
+    m_lightweightCache.Reset();
     }
 
 //---------------------------------------------------------------------------------------

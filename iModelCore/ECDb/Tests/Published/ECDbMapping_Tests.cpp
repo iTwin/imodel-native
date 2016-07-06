@@ -6110,17 +6110,12 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size()) << "Expected indices: class id index, user defined index, unique index to enforce cardinality of RelSub1";
+                ASSERT_EQ(2, (int) RetrieveIndicesForTable(ecdb, "ts_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
                 AssertIndex(ecdb, "ix_B_AId", false, "ts_B", {"AId"});
 
                 AssertIndexExists(ecdb, "ix_ts_B_fk_ts_RelBase_target", false);
-
-                ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
-                Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("([AId] IS NOT NULL) AND (ECClassId=%s)", b1ClassId.ToString().c_str());
-
-                AssertIndex(ecdb, "uix_ts_B_fk_ts_RelSub1_target", true, "ts_B", {"Aid"}, indexWhereClause.c_str());
+                AssertIndexExists(ecdb, "uix_ts_B_fk_ts_RelSub1_target", false);
                 }
 
                 {

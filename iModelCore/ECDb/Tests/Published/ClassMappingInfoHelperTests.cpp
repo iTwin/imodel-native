@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/MapDebugInfo_Tests.cpp $
+|  $Source: Tests/Published/ClassMappingInfoHelperTests.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,77 +16,72 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct MapDebugInfo_Tests : public ECDbTestFixture
+struct ClassMappingInfoHelperTests : public ECDbTestFixture
     {};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MapDebugInfo_Tests, SchemaMapDebugInfo)
+TEST_F(ClassMappingInfoHelperTests, GetInfosBySchema)
     {
     SetupECDb("schemamapdebuginfo.ecdb", BeFileName("ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    Utf8String schemaInfo;
-    ECDbMapDebugInfo::GetMapInfoForSchema(schemaInfo, GetECDb(), "ECSqlTest", false);
-    //printf("Schema Map Info: \n%s", schemaInfo.c_str());
-    ASSERT_FALSE(schemaInfo.empty());
+    Json::Value json;
+    ASSERT_EQ(SUCCESS, ClassMappingInfoHelper::GetInfos(json, GetECDb(), "ECSqlTest", false));
+    ASSERT_TRUE(json.isObject());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MapDebugInfo_Tests, SchemaMapDebugInfo_SkipUnmappedClasses)
+TEST_F(ClassMappingInfoHelperTests, GetInfosBySchema_SkipUnmappedClasses)
     {
     SetupECDb("schemamapdebuginfo.ecdb", BeFileName("ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    Utf8String schemaInfo;
-    ECDbMapDebugInfo::GetMapInfoForSchema(schemaInfo, GetECDb(), "ECSqlTest", true);
-    //printf("Schema Map Info: \n%s", schemaInfo.c_str());
-    ASSERT_FALSE(schemaInfo.empty());
+    Json::Value json;
+    ASSERT_EQ(SUCCESS, ClassMappingInfoHelper::GetInfos(json, GetECDb(), "ECSqlTest", true));
+    ASSERT_TRUE(json.isObject());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MapDebugInfo_Tests, ClassMapDebugInfo)
+TEST_F(ClassMappingInfoHelperTests, GetInfo)
     {
     SetupECDb("classmapdebuginfo.ecdb", BeFileName("ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    Utf8String classInfo;
-    ECDbMapDebugInfo::GetMapInfoForClass(classInfo, GetECDb(), "ecsql.PA");
-    //printf("Class Map Info: \n%s", classInfo.c_str());
-    ASSERT_FALSE(classInfo.empty());
+    Json::Value json;
+    ASSERT_EQ(SUCCESS, ClassMappingInfoHelper::GetInfos(json, GetECDb(), "ECSqlTest", "PA"));
+    ASSERT_TRUE(json.isObject());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MapDebugInfo_Tests, ClassesMapDebugInfo)
+TEST_F(ClassMappingInfoHelperTests, GetInfos)
     {
     SetupECDb("allclassesmapdebuginfo.ecdb", BeFileName("ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    Utf8String classesInfo;
-    ECDbMapDebugInfo::GetMapInfoForAllClasses(classesInfo, GetECDb(), false);
-    //printf("All Classes Map Info: \n%s", classesInfo.c_str());
-    ASSERT_FALSE(classesInfo.empty());
+    Json::Value json;
+    ASSERT_EQ(SUCCESS, ClassMappingInfoHelper::GetInfos(json, GetECDb(), false));
+    ASSERT_TRUE(json.isObject());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(MapDebugInfo_Tests, ClassesMapDebugInfo_SkipUnmappedClasses)
+TEST_F(ClassMappingInfoHelperTests, GetInfos_SkipUnmappedClasses)
     {
     SetupECDb("allclassesmapdebuginfo.ecdb", BeFileName("ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    Utf8String classesInfo;
-    ECDbMapDebugInfo::GetMapInfoForAllClasses(classesInfo, GetECDb(), true);
-    //printf("All Classes Map Info: \n%s", classesInfo.c_str());
-    ASSERT_FALSE(classesInfo.empty());
+    Json::Value json;
+    ASSERT_EQ(SUCCESS, ClassMappingInfoHelper::GetInfos(json, GetECDb(), true));
+    ASSERT_TRUE(json.isObject());
     }
 
 END_ECDBUNITTESTS_NAMESPACE

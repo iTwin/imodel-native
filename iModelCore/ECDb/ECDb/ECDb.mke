@@ -155,6 +155,8 @@ $(o)BeBriefcaseBasedIdSequence$(oext):                        $(baseDir)BeBriefc
 
 $(o)ECDbMap$(oext):                                           $(baseDir)ECDbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)LightweightCache$(oext):                                  $(baseDir)LightweightCache.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)MapStrategy$(oext):                                       $(baseDir)MapStrategy.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMappingInfo$(oext):                                  $(baseDir)ClassMappingInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -333,11 +335,8 @@ $(o)ECDbExpressionSymbolProvider$(oext):                      $(baseDir)ECDbExpr
 
 $(o)ECSchemaComparer$(oext):                                  $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbMapDebugInfo$(oext):                                  $(baseDir)ECDbMapDebugInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ClassMappingInfoHelper$(oext):                            $(baseDir)ClassMappingInfoHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DebugWriter$(oext):                                       $(baseDir)DebugWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)LightweightCache$(oext):                                  $(baseDir)LightweightCache.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList) 

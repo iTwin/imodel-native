@@ -205,10 +205,10 @@
     <ClCompile Include="Published\ECDbSchemaUpdate_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\MapDebugInfo_Tests.cpp">
+    <ClCompile Include="Published\ECRelationshipClassInheritanceTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECRelationshipClassInheritanceTests.cpp">
+    <ClCompile Include="Published\ClassMappingInfoHelperTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>

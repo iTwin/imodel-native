@@ -9,7 +9,6 @@
 #include "ECDbInternalTypes.h"
 #include "ClassMappingInfo.h"
 #include "DbSchema.h"
-#include "DebugWriter.h"
 #include "ECDbSystemSchemaHelper.h"
 #include "ECSql/NativeSqlBuilder.h"
 
@@ -196,7 +195,6 @@ private:
     virtual NavigationPropertyMap const* _GetAsNavigationPropertyMap() const { return nullptr; }
     virtual RelConstraintECClassIdPropertyMap const* _GetAsECClassIdRelationshipConstraintPropertyMapRelationship() const { return nullptr; }
 
-    virtual void _WriteDebugInfo(DebugWriter& writer) const;
 protected:
     //!@param[in] parent Parent property map in terms of a property map node hierarchy. Nothing to do with inheritance.
     //!E.g. a struct property map has a child property map for each of its members. The struct property map then is the parent
@@ -260,7 +258,8 @@ public:
     BentleyStatus FindOrCreateColumnsInTable(ClassMap const& classMap) { return _FindOrCreateColumnsInTable(classMap); }
 
     static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation&, ECDbCR, ECN::ECPropertyCR, Utf8CP propAccessString);
-    void WriteDebugInfo(DebugWriter& writer) const { _WriteDebugInfo(writer); }
+
+    static Utf8CP TypeToString(Type);
     };
 
 //=======================================================================================
