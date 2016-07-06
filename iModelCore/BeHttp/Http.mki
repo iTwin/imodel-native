@@ -138,8 +138,8 @@ $(o)ProxyHttpHandler$(oext)                 : $(BeHttpSourceDir)ProxyHttpHandler
     LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCasablanca$(libext)
 
 %elif $(HTTP_LIB) == "CURL"
-    LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCurl$(shlibext)
-    LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(shlibext)
+    LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCurl$(libext)
+    LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(libext)
 %endif
 
 #---------------------------------------------------------------------------------------+

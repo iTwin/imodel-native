@@ -47,5 +47,5 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
-LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(shlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(libext)
 %include $(sharedMki)linkLibrary.mki
