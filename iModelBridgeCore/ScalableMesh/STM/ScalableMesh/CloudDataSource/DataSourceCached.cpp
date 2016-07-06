@@ -7,6 +7,8 @@ DataSourceCached::DataSourceCached(DataSourceAccount * account) : Super(account)
 {
 															// Initially caching is disabled by default
 	setCachingEnabled(false);
+                                                            // NEEDS_WORK_SM - Write to cache by default even if caching is disabled?
+    setWriteToCache(false);
 															// Initially no cache DataSource
 	setCacheDataSource(nullptr);
 }

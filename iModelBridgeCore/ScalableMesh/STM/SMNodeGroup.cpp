@@ -89,12 +89,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
 				return ERROR;
 			}
 		}
-
-		m_pIsLoading = false;
-		m_pIsLoaded = true;
-		m_pGroupCV.notify_all();
 	}
-
 	assert(nodeHeader.size > 0);
 	return SUCCESS;
 }
@@ -176,6 +171,7 @@ void SMNodeGroup::LoadGroupParallel()
         std::cout << "[" << std::this_thread::get_id() << "," << group->GetID() << "] Distributing... " << std::endl;
         s_consoleMutex.unlock();
 #endif
+        assert(group->m_NodeDistributorPtr != nullptr);
         for (auto nodeHeader : *group->m_pGroupHeader)
             {
             group->m_NodeDistributorPtr->AddWorkItem(DistributeData(nodeHeader.blockid, group.GetPtr()));

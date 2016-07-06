@@ -31,6 +31,7 @@
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
 extern bool s_stream_from_grouped_store;
+extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;
 
 //extern std::mutex fileMutex;
@@ -57,7 +58,7 @@ public:
 		if (dataSource == nullptr)
 			return nullptr;
 															// Make sure caching is enabled for this DataSource
-		dataSource->setCachingEnabled(true);
+		dataSource->setCachingEnabled(s_stream_enable_caching);
 
 		dest.reset(new unsigned char[destSize]);
 															// Return the DataSource
@@ -746,7 +747,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 			if (dataSource == nullptr)
 				return nullptr;
 															// Make sure caching is enabled for this DataSource
-			dataSource->setCachingEnabled(true);
+			dataSource->setCachingEnabled(s_stream_enable_caching);
 
 			dest.reset(new unsigned char[destSize]);
 															// Return the DataSource
@@ -956,7 +957,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 			std::unique_ptr<DataSource::Buffer[]>			dest;
 			DataSource								*	dataSource;
 			DataSource::DataSize						readSize;
-			DataSourceBuffer::BufferSize				destSize = 5 * 1024 * 1024;
+			DataSourceBuffer::BufferSize				destSize = 20 * 1024 * 1024;
 
 			if (indexHeader != NULL)
 			{
@@ -981,6 +982,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
 						if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
 							return 0;
+
+                        assert(destSize >= readSize); 
 
 						dataSource->close();
 
@@ -1032,6 +1035,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(getDataSourceAccount(), group_id, group_numNodes, group_totalSizeOfHeaders));
                             // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
                             group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_", m_stream_store);
+                            group->SetDistributor(*m_NodeHeaderFetchDistributor);
                             m_nodeHeaderGroups.push_back(group);
 
                             vector<uint64_t> nodeIds(group_numNodes);

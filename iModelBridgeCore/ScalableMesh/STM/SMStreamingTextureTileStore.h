@@ -70,7 +70,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 					if (dataSource == nullptr)
 						return nullptr;
 															// Make sure caching is enabled for this DataSource
-					dataSource->setCachingEnabled(true);
+					dataSource->setCachingEnabled(s_stream_enable_caching);
 
 					dest.reset(new unsigned char[destSize]);
 															// Return the DataSource

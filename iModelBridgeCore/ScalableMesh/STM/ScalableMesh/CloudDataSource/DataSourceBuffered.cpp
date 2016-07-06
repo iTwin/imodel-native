@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "DataSourceBuffered.h"
 #include "DataSourceAccount.h"
+#include <assert.h>
 
 
 DataSourceBuffered::DataSourceBuffered(DataSourceAccount *sourceAccount) : Super(sourceAccount)
@@ -85,7 +86,9 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
 		status = account->downloadBlobSync(*this, dest, destSize, readSize);
 	}
 
-																// Return status
+    assert(destSize >= readSize); // Not enough memory was allocated to the buffer!
+
+                                  // Return status
 	return status;
 }
 

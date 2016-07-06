@@ -34,6 +34,7 @@
 
 extern bool s_is_virtual_grouping;
 extern bool s_stream_from_disk;
+extern bool s_stream_enable_caching;
 
 extern uint32_t s_max_number_nodes_in_group;
 extern size_t s_max_group_size;
@@ -477,7 +478,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             if (dataSource == nullptr)
                 return nullptr;
             // Make sure caching is enabled for this DataSource
-            dataSource->setCachingEnabled(true);
+            dataSource->setCachingEnabled(s_stream_enable_caching);
 
             dest.reset(new unsigned char[destSize]);
             // Return the DataSource
