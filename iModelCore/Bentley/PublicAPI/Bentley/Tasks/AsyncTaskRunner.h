@@ -18,7 +18,7 @@ BEGIN_BENTLEY_TASKS_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Benediktas.Lipnickas   04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct AsyncTaskRunner : public ITaskRunner
+struct EXPORT_VTABLE_ATTRIBUTE AsyncTaskRunner : public ITaskRunner
     {
     private:
         BeAtomic<bool>                  m_isRunning;
