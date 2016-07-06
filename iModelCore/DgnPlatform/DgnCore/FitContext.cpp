@@ -177,6 +177,8 @@ ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
 
     if (m_noQuery)
         {
+        AutoRestore<bool> saveElemRange(&context.m_params.m_useElementAlignedBox, true); // m_lastRange won't be initialized from scan callback...
+
         // we're only showing a fixed set of elements. Don't perform a query, just get the results (created in ctor of RangeQuery)
         for (auto const& curr : m_special.m_always)
             {

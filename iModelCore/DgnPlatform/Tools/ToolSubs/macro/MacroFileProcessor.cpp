@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/MacroFileProcessor.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -436,7 +436,11 @@ WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor, WStringP endF
                 charRead = LF;
                 goto done;
 
+#ifdef __clang__
+            case 0xffff:
+#else
             case WEOF:
+#endif
                 charRead = LF;
                 m_eofHit = true;
                 goto done;

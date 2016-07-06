@@ -5,6 +5,8 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/
+
 %ifdef BENTLEYCONFIG_NO_JAVASCRIPT
 
     $(BuildContext)Delivery/GeomJsApi.d.ts : $(_MakeFileSpec)
@@ -23,8 +25,6 @@
 %ifndef dgnScriptDir
     %error Caller must define dgnScriptDir
 %endif
-
-dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/
 
 %if defined(winNT)
     TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node.exe $(BuildContext)SubParts/TypeScript/tsc.js
@@ -100,7 +100,7 @@ $(dgnScriptGen)GeomJsApi.js : $(tsSourceFiles)
 
 $(dgnScriptGen)GeomJsApi_doc/GeomJsApi_doc.h: $(dgnScriptGen)GeomJsApi.d.ts
     $(msg)
-    $(_MakeFilePath)generateTypeScriptDoxygenInput.py --input=$< --output=$@ --extractionsPath=$(OutputRootDir)build/DgnPlatform/Extractions/
+    $(SrcRoot)bsicommon/build/generateTypeScriptDoxygenInput.py --input=$< --output=$@ --extractionsPath=$(OutputRootDir)build/DgnPlatform/Extractions/
     ~time
 
 $(dgnScriptGen)GeomJsApiBootstrap.cpp : $(dgnScriptGen)GeomJsApi.js $(geomJsApiTsDir)GeomJsApiBootstrap.cpp
