@@ -196,7 +196,11 @@ namespace std { typedef ::max_align_t max_align_t; }
 # error cannot define platform specific thread local storage
 #endif
 
-#if FOLLY_MOBILE
+// BENTLEY_CHANGE
+// clang/iOS does not currently support TLS
+// Define here so all consumers don't have to worry about it
+// Was: #if FOLLY_MOBILE
+#if defined (FOLLY_MOBILE) || defined (TARGET_OS_IPHONE) || defined (TARGET_IPHONE_SIMULATOR)
 #undef FOLLY_TLS
 #endif
 
