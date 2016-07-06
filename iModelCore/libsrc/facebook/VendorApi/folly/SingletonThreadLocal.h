@@ -28,13 +28,6 @@ class SingletonThreadLocal {
 
   SingletonThreadLocal() : SingletonThreadLocal([]() { return new T(); }) {}
 
-// BENTLEY_CHANGE
-// clang/iOS: error: initialized lambda captures are a C++14 extension
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++14-extensions"
-#endif
-
   explicit SingletonThreadLocal(CreateFunc createFunc)
       : singleton_([createFunc = std::move(createFunc)]() mutable {
           return new ThreadLocalT([createFunc =
@@ -42,11 +35,6 @@ class SingletonThreadLocal {
             return new Wrapper(std::unique_ptr<T>(createFunc()));
           });
         }) {}
-
-// BENTLEY_CHANGE
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
   static T& get() {
 #ifdef FOLLY_TLS

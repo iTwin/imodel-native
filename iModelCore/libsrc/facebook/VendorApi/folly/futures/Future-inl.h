@@ -38,13 +38,6 @@
 #endif
 #endif
 
-// BENTLEY_CHANGE
-// clang/iOS: error: initialized lambda captures are a C++14 extension
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++14-extensions"
-#endif
-
 namespace folly {
 
 class Timekeeper;
@@ -1389,8 +1382,3 @@ extern template class Future<double>;
 #endif
 
 } // namespace folly
-
-// BENTLEY_CHANGE
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
