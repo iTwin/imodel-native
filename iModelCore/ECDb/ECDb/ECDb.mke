@@ -373,12 +373,20 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 # Prefer to disable warnings in third-party code vs. editing it.
 %if defined (BENTLEY_TOOL_CONTEXT_NAME)
-%if $(BUILD_TOOLSET) == "GCC" || $(BUILD_TOOLSET) == "CLANG"
+%if $(BENTLEY_TOOL_CONTEXT_NAME) == "LinuxGcc"
     OldLinuxGccCommonOptions =% $(LinuxGccCommonOptions)
     LinuxGccCommonOptions + -Wno-unknown-pragmas
     LinuxGccCommonOptions + -Wno-unused-function
     LinuxGccCommonOptions + -Wno-address
 %endif
+%endif
+
+# Prefer to disable warnings in third-party code vs. editing it.
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG"
+    OldClangCommonCompOpts =% $(ClangCommonCompOpts)
+    ClangCommonCompOpts + -Wno-unknown-pragmas
+    ClangCommonCompOpts + -Wno-unused-function
+    ClangCommonCompOpts + -Wno-address
 %endif
 
 $(o)SqlNode$(oext): $(baseDir)ECSql/Parser/SqlNode.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -394,6 +402,10 @@ nonportObjs=%$(MultiCompileObjectList)
 %if $(BENTLEY_TOOL_CONTEXT_NAME) == "LinuxGcc"
     LinuxGccCommonOptions = $(OldLinuxGccCommonOptions)
 %endif
+%endif
+
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG"
+    ClangCommonCompOpts = $(OldClangCommonCompOpts)
 %endif
 
 %if $(BUILD_TOOLSET) == "CLANG"
