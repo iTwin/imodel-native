@@ -246,7 +246,10 @@ enum class Op { MOVE, NUKE, FULL, HEAP };
 
 union Data {
   void* big;
-  typename std::aligned_storage<6 * sizeof(void*)>::type small;
+  // BENTLEY_CHANGE
+  // VS 2015 RTM emits: error C2899: typename cannot be used outside a template declaration 
+  // Was typename std::aligned_storage<6 * sizeof(void*)>::type small;
+  std::aligned_storage<6 * sizeof(void*)>::type small;
 };
 
 template <typename Fun, typename FunT = typename std::decay<Fun>::type>
