@@ -9,6 +9,10 @@
 #include <Bentley/Base64Utilities.h>
 #include <vector>
 
+#if defined (BETHREAD_USE_PTHREAD)
+#include <pthread.h>
+#endif
+
 #if defined(ANDROID)
 #include <openssl/evp.h>
 #include <android/log.h>
