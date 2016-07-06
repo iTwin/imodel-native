@@ -11,6 +11,8 @@
 #ifdef HAVE_WILDMAGIC
 #include <wildmagic/math/Wm5ApprCylinderFit3.h>
 #include <wildmagic/math/Wm5ApprPlaneFit3.h>
+#else
+#include <pt/OBBox.h>
 #endif
 
 //#define ENABLE_CLUSTER_ANALYSIS	1
@@ -104,8 +106,13 @@ T	FitCylinderToPoints( PThandle query, Cylinder<T> &res_cylinder,
 				candidate_pnts, cen, axis, radius, height, 
 				(radius > 0 && !cylinder.axis.isZero()) || constrainToAxis);
 #else
-            // &&RB TODO: replace wilmagic function with geomlibs function
-            // &&RB TODO: the following geomlibs function call must be tested in this context
+            // &&RB TODO: temporary cylinder fit algorithm until a better one is provided by geomlibs
+            // &&RB TODO: check that the fitted box method actually works the way it is expected
+            pt::OBBoxd box = pt::createFittingOBBd(reinterpret_cast<const pt::vector3d*>(candidate_pnts), num_pnts);
+            cen = box.center();
+            axis = box.axis(0); // the first axis determines the direction of the cylinder (longest side of the box)
+            height = box.extents()[0]; // length of the longest side of the box
+            radius = box.extents()[1] * 0.5f; // half the length of the next longest side of the box 
 #endif
 		
 			cen2 = cen;
@@ -127,8 +134,14 @@ T	FitCylinderToPoints( PThandle query, Cylinder<T> &res_cylinder,
 				error1 = Wm5::CylinderFit3<T> (num_pnts, 
 					candidate_pnts, cen, axis, radius, height, true);
 #else
-            // &&RB TODO: replace wilmagic function with geomlibs function
-            // &&RB TODO: the following geomlibs function call must be tested in this context
+                // &&RB TODO: temporary cylinder fit algorithm until a better one is provided by geomlibs
+                // &&RB TODO: the fitted box version is not iterative... so break here
+                break;
+                //OBBoxd box = createFittingOBBd(*candidate_pnts);
+                //cen = box.center();
+                //axis = box.axis(0); // the first axis determines the direction of the cylinder (longest side of the box)
+                //height = box.extents()[0]; // length of the longest side of the box
+                //radius = box.extents()[1] * 0.5f; // half the length of the next longest side of the box 
 #endif
 
 				if (error1 < min_error)
@@ -261,11 +274,14 @@ T	FitPlaneToPoints( QueryBuffer<T> &pointsBuffer, Vector3<T> &planeNormal,
     DVec3d centroid, moments;
     RotMatrix axes;
     DPoint3dOps::PrincipalAxes(geomlibs_points, centroid, axes, moments);
-    // &&RB TODO: set plane object members to proper values from geomlibs centroid, axes and moment structures:
-    //! @param [out] axes principal axes.
-    //! @param [out] moments second moments wrt x,y,z -- sums of (yy+zz,xx+zz,xx+yy)
-    //! @remarks axes are orderd so x is largest moment, y next, z smallest.
+    // Set plane object members to proper values from geomlibs centroid, axes and moment structures:
     vortex::Plane<T> plane;
+    DVec3d n;
+    axes.GetColumn(n, 2); // &&RB TODO: should we take the row instead??
+    // Vector3<T> ptN(n);
+    // ptN.unitize();        
+    plane.normal(n);      // &&RB TODO: are the axes returned by geomlibs normalized??
+    plane.base(centroid);
 #endif
 
 	if (constrainToNormal)

@@ -26,6 +26,10 @@ nameToDefine = $(baseDir)
     %include cincapnd.mki
 %endif
 
+PointoolsVortexAPI=$(SrcRoot)Pointools/PointoolsVortexAPI/
+dirToSearch=$(PointoolsVortexAPI)include/
+%include cincapnd.mki
+
 dirToSearch=$(pointoolsVortexAPIVendorAPI)
 %include cincapnd.mki
 

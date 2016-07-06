@@ -129,17 +129,30 @@ OBBoxd	createFittingOBBd(const vector3d *pts, int numPoints)
     // &&RB TODO: the following geomlibs function call must be tested in this context
     bvector<DPoint3d> points(numPoints);
     memcpy(points.data(), pts, numPoints);
+
     BENTLEY_NAMESPACE_NAME::Transform transform;
     DPoint3dOps::PrincipalExtents(points, transform);
-    // &&RB TODO: set box object members to proper values from geomlibs transform structure:
-    //            originWithExtentVectors transform with axes in the direction of principal axes.
-    //                    origin at lower left of a tight (principal axes) bounding box.
-    //                    x,y,z column vectors are full extent along the bounding box.
-    //                    z column is the smallest column.
-    //                    z column has positive z if possible.
-    //                    x column has positive x if possible.
 
+    // Set box object members to proper values from geomlibs transform structure:
+    // PrincipalExtents transform with axes in the direction of principal axes.
+    //         origin at lower left of a tight (principal axes) bounding box.
+    //         x,y,z column vectors are full extent along the bounding box.
+    //         z column is the smallest column.
+    //         z column has positive z if possible.
+    //         x column has positive x if possible.
+    DVec3d origin, px, py, pz;
+    transform.GetOriginAndVectors(origin, px, py, pz);
+
+    DVec3d mx(origin + 0.5*px), my(origin + 0.5*py), mz(origin + 0.5*pz);
     OBBoxd box;
+    DVec3d cen(mx + my + mz);
+    box.center(vector3d(cen.x, cen.y, cen.z));
+    vector3d axis[] = { &px.x, &py.x, &pz.x };
+
+    box.extent(0, 0.5*bsiDVec3d_magnitude(&px));
+    box.extent(1, 0.5*bsiDVec3d_magnitude(&py));
+    box.extent(2, 0.5*bsiDVec3d_magnitude(&pz));
+
 #endif
 
 	return box;
