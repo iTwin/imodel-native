@@ -8,7 +8,7 @@
 #pragma once
 
 #include <Units/Units.h>
-
+#include <stdlib.h>
 
 UNITS_TYPEDEFS(ExpressionSymbol)
 UNITS_TYPEDEFS(Token)
