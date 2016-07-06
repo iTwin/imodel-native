@@ -55,4 +55,3 @@ DgnDb.GetCoordinateSystemProperties
     # azimuthExpected 178.29138626108181
     # azimuth 178.29128105659069
     # eps 0.00010000000000000000
-
