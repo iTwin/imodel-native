@@ -23,7 +23,11 @@
 
 // These aren't generic implementations, so we can only declare them on
 // platforms we support.
-#if !FOLLY_HAVE_CLOCK_GETTIME && (defined(__MACH__) || defined(_WIN32))
+// BENTLEY_CHANGE
+// Xcode 8.x emits: error: typedef redefinition with different types ('uint8_t' (aka 'unsigned char') vs 'enum clockid_t')
+//  .../iPhoneOS10.0.sdk/usr/include/time.h:171:3: note: previous definition is here
+// Was: #if !FOLLY_HAVE_CLOCK_GETTIME && (defined(__MACH__) || defined(_WIN32))
+#if !FOLLY_HAVE_CLOCK_GETTIME && ((defined(__MACH__) && __clang_major__ < 8) || defined(_WIN32))
 #define CLOCK_REALTIME 0
 // The Windows implementation supports a few other
 // clock types as well.
