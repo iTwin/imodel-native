@@ -35,7 +35,6 @@ pointCloudSchemaDepends         = $(_MakeFileSpec)                              
                                   $(PointCloudSchemaPublicApiSrc)PointCloudViewSettings.h          \
                                   $(SrcPointCloudSchema)PointCloudRenderer.h                       \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaCommon.h          \
-                                  $(PointCloudSchemaPublicApiSrc)IPointCloudViewSettings.h         \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaTypes.h           \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudDrawBuffer.h            \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudHandler.h               \
@@ -79,8 +78,6 @@ MultiCompileDepends=$(_MakeFileSpec)
 $(o)VisualizationManager$(oext)         : $(SrcPointCloudSchema)VisualizationManager.cpp           $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
 $(o)PointCloudViewport$(oext)           : $(SrcPointCloudSchema)PointCloudViewport.cpp             $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
-
-$(o)PointCloudViewSettings$(oext)       : $(SrcPointCloudSchema)PointCloudViewSettings.cpp         $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
 $(o)PointCloudRamps$(oext)              : $(SrcPointCloudSchema)PointCloudRamps.cpp                $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 

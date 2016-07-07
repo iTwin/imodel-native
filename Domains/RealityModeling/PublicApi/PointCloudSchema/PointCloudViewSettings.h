@@ -20,6 +20,8 @@ BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 #define CLASSIFCATION_BIT_MASK (0x1F)
 #define CLASSIFCATION_MAXDISPLAYCOUNT 13
 
+//&&ep get rid of LasClassificationInfo (use PointCloudClassificationSettings instead)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                    StephanePoulin  12/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -308,57 +310,6 @@ struct LasClassificationInfo
             BePointCloud::PointCloudColorDef  m_unclassColor;
 
             bool                m_unclassVisible;
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    StephanePoulin  12/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct PointCloudClassificationViewSettings : public RefCounted<IPointCloudClassificationViewSettings>
-    {
-    public:
-        static PointCloudClassificationViewSettingsPtr Create(int viewIndex) { return new PointCloudClassificationViewSettings(viewIndex); }
-        static PointCloudClassificationViewSettingsPtr Create(Dgn::ViewContextCR context) { return new PointCloudClassificationViewSettings(context); }
-
-        // from IPointCloudClassificationViewSettings
-        bool                        _GetState(unsigned char idx) const override;
-        void                        _SetState(unsigned char idx, bool state) override;
-        BePointCloud::PointCloudColorDef const&   _GetColor(unsigned char idx) const override;
-
-        void                        _SetColor(unsigned char idx, BePointCloud::PointCloudColorDef& color) override;
-        unsigned char               _GetLastIndex () const override {return CLASSIFCATION_MAXDISPLAYCOUNT-1;}
-
-        LasClassificationInfo*      GetLasClassificationInfo() { return &m_data; }
-
-        //Added for advanced display
-
-        bool                        _GetBlendColor() const override;
-        void                        _SetBlendColor(bool use) override;
-        bool                        _GetUseBaseColor() const override;
-        void                        _SetUseBaseColor(bool use) override;
-        BePointCloud::PointCloudColorDef          _GetUnclassColor() const override;
-        void                        _SetUnclassColor(BePointCloud::PointCloudColorDef& color) override;
-        bool                        _GetUnclassState() override;
-        void                        _SetUnclassState(bool state) override;
-
-        bool                        _GetClassActiveState(unsigned char idx) override;
-
-        void                        _SetClassActiveState(unsigned char idx, bool state) override;
-
-
-    private:
-        PointCloudClassificationViewSettings (int viewIndex);
-        PointCloudClassificationViewSettings (Dgn::ViewContextCR context);
-        ~PointCloudClassificationViewSettings ();
-
-        PointCloudClassificationViewSettings(); // disabled
-        PointCloudClassificationViewSettings(IPointCloudClassificationViewSettings const&); // disabled
-        IPointCloudClassificationViewSettings& operator=(IPointCloudClassificationViewSettings const&); // disabled
-        
-        void CreateFromView(int viewIndex);
-
-        // private members
-        LasClassificationInfo m_data;
-        int                   m_viewIndex;
     };
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE

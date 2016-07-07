@@ -30,7 +30,6 @@
 #include <PointCloudSchema/PointCloudSchemaTypes.h>
 #include <PointCloudSchema/PointCloudSchemaCommon.h>
 #include <PointCloudSchema/ExportMacros.h>
-#include <PointCloudSchema/IPointCloudViewSettings.h>
 #include <PointCloudSchema/PointCloudViewSettings.h>
 #include <PointCloudSchema/PointCloudDrawBuffer.h>
 #include <PointCloudSchema/PointCloudHandler.h>
