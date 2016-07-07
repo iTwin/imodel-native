@@ -59,13 +59,17 @@
 #include <Geom_Plane.hxx>
 #include <Geom_RectangularTrimmedSurface.hxx>
 #include <Geom_SphericalSurface.hxx>
+#include <Geom_SurfaceOfLinearExtrusion.hxx>
+#include <Geom_SurfaceOfRevolution.hxx>
 #include <Geom_ToroidalSurface.hxx>
 #include <Geom_TrimmedCurve.hxx>
 #include <GeomAdaptor_HCurve.hxx>
 #include <GeomConvert.hxx>
 #include <GeomConvert_ApproxCurve.hxx>
+#include <GeomLProp_CLProps.hxx>
 #include <GeomLProp_SLProps.hxx>
 #include <IntCurvesFace_ShapeIntersector.hxx>
+#include <ShapeAnalysis_Curve.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
 #include <BVH_LinearBuilder.hxx>
@@ -95,6 +99,7 @@
 #include <BRepPrimApi_MakeRevol.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <NCollection_Array1.hxx>
+#include <TColgp_SequenceOfPnt.hxx>
 #include <TColStd_Array1OfReal.hxx>
 #include <TColStd_Array1OfInteger.hxx>
 
@@ -112,6 +117,7 @@ struct OCBRepUtil
 {
 DGNPLATFORM_EXPORT static void GetOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteger*& occtMultiplicities, bvector<double> const& knots, int order);
 DGNPLATFORM_EXPORT static void HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher& hatcher, TopoDS_Face const& face);
+DGNPLATFORM_EXPORT static TopAbs_ShapeEnum GetShapeType(TopoDS_Shape const& shape); // Try to get uniform type from shape that is TopAbs_COMPOUND...
 
 }; // OCBRepUtil
 //__PUBLISH_SECTION_START__

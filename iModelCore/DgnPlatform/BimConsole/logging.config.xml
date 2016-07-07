@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--!DOCTYPE log4j:configuration SYSTEM "log4j.dtd"-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <appender name="General" class="org.apache.log4j.FileAppender">
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\bimconsole.log"/> <!-- Required -->
+        <param name="createpath" value="true"/> <!-- Optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{ISO8601} %-5p %c - %m%n"/>
+        </layout>
+        <param name="Append" value="false"/><!-- this should make it create a new file each time -->
+    </appender>
+    
+     <appender name="ECSqlStatementPrepareDiagnostics" class="org.apache.log4j.FileAppender">
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\ecsqlstatement_prepare_diagnostics.log"/> <!-- Required -->
+        <param name="createpath" value="true"/> <!-- Optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%m%n"/>
+        </layout>
+        <param name="Append" value="false"/><!-- this should make it create a new file each time -->
+    </appender>
+
+    <appender name="ECSqlStatementCacheDiagnostics" class="org.apache.log4j.FileAppender">
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\ecsqlstatement_cache_diagnostics.log"/> <!-- Required -->
+        <param name="createpath" value="true"/> <!-- Optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%m%n"/>
+        </layout>
+        <param name="Append" value="false"/><!-- this should make it create a new file each time -->
+    </appender>
+
+    <appender name="BeSQLiteDiagnosticsPrepare" class="org.apache.log4j.FileAppender">
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\besqlite_diagnostics_prepare.log"/> <!-- Required -->
+        <param name="createpath" value="true"/> <!-- Optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%m%n"/>
+        </layout>
+        <param name="Append" value="false"/><!-- this should make it create a new file each time -->
+    </appender>
+
+    <appender name="BeSQLiteDiagnosticsQueryPlan" class="org.apache.log4j.FileAppender">
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\besqlite_diagnostics_queryplan.log"/> <!-- Required -->
+        <param name="createpath" value="true"/> <!-- Optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%m%n"/>
+        </layout>
+        <param name="Append" value="false"/><!-- this should make it create a new file each time -->
+    </appender>
+
+    <appender name="BeSQLiteDiagnosticsTableScans" class="org.apache.log4j.FileAppender">
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\besqlite_diagnostics_tablescans.log"/> <!-- Required -->
+        <param name="createpath" value="true"/> <!-- Optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%m%n"/>
+        </layout>
+        <param name="Append" value="false"/><!-- this should make it create a new file each time -->
+    </appender>
+    
+    <logger name="Diagnostics.ECSqlStatement.Prepare" additivity="false">
+        <priority value="debug" />
+        <appender-ref ref="ECSqlStatementPrepareDiagnostics"/>
+    </logger>
+
+    <logger name="Diagnostics.ECSqlStatement.Cache" additivity="false">
+        <priority value="trace" />
+        <appender-ref ref="ECSqlStatementCacheDiagnostics"/>
+    </logger>
+
+    <logger name="Diagnostics.BeSQLite.QueryPlan" additivity="false">
+        <priority value="debug" />
+        <appender-ref ref="BeSQLiteDiagnosticsQueryPlan"/>
+    </logger>
+    
+    <logger name="Diagnostics.BeSQLite.QueryPlanWithTableScans" additivity="false">
+        <priority value="debug" />
+        <appender-ref ref="BeSQLiteDiagnosticsTableScans"/>
+    </logger>
+
+    <logger name="Diagnostics.BeSQLite.Prepare" additivity="false">
+        <priority value="debug" />
+        <appender-ref ref="BeSQLiteDiagnosticsPrepare"/>
+    </logger>
+    
+    <root>                            
+        <priority value="error" />
+        <appender-ref ref="General"/>
+    </root>
+
+</log4j:configuration>

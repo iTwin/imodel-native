@@ -677,4 +677,54 @@
         <Directories DirectoryListName="WinRTCppUnitTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // BimConsole                                                           // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Product Name="BimConsole" SaveProduct="true">
+        <SubPart PartName="BimConsoleExe" />
+        <Directories DirectoryListName="BimConsoleDirList" />
+    </Product>
+
+    <Part Name="BimConsoleExe" BentleyBuildMakeFile="BimConsole/BimConsole.mke" OnlyPlatforms="x64">
+        <SubPart PartName="DgnPlatformLib"/>
+        <SubPart PartName="DgnPlatformSqlang"/>
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/BimConsole$(exeext)
+                                                          Delivery/logging.config.xml</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="BimConsoleDirList" >
+        <ProductDirectory Name="ApplicationRoot"                Path=""/>
+        <ProductDirectory Name="ApplicationAssemblies"          RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="ApplicationLibs"                RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="ApplicationSchema"              RelativeTo="ApplicationRoot" Path="ECSchemas/Domain"/>
+        <ProductDirectory Name="BeCurlAssemblies"               RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="BeIcu4cData"                    RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="BeIcu4cData"                    RelativeTo="ApplicationRoot" LibType="static"/>
+        <ProductDirectory Name="BentleyNativeAssemblies"        RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="ChakraCoreAssemblies"           RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="LibV8Assemblies"                RelativeTo="applicationroot"/>
+        <ProductDirectory Name="LoggingNativeAssemblies"        RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BeOpenSSLAssemblies"            RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"    RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="DgnPlatformSqlang"              RelativeTo="ApplicationRoot" Path="sqlang"/>
+        <ProductDirectory Name="ECObjectsNativeAssemblies"      RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="UnitsNativeAssemblies"          RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies"       RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="GeomNativeAssemblies"           RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="ECSchemas"                      RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="BeHttpNativeAssemblies"         RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="BeHttpAssets"                   RelativeTo="ApplicationRoot" Path="http"/>
+        <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
+        <ProductDirectory Name="GeoCoordData"                   Deliver="false"/>
+        <ProductDirectory Name="Libs"                           Deliver="false"/>
+        <ProductDirectory Name="Libs"                           Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BeHttpLibs"                     Deliver="false"/>
+        <ProductDirectory Name="BeHttpLibs"                     Deliver="false" LibType="static"/>
+        <ProductDirectory Name="PublicAPI"                      Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                      Deliver="false"/>
+    </ProductDirectoryList>
+    
 </BuildContext>
