@@ -1,0 +1,70 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: BimConsole/BimConsole.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%if !defined (BuildContext)
+   %error This makefile must be launched from BentleyBuild
+%endif
+
+%include mdl.mki
+
+SrcDir              = $(_MakeFilePath)
+SubpartLibs         = $(BuildContext)SubParts/Libs/
+o                   = $(OutputRootDir)Build/BimConsole/
+ContextDeliveryDir  = $(BuildContext)Delivery/
+appName             = BimConsole
+
+always:
+    ~mkdir $(o)
+
+AllHeaders = \
+        $(SrcDir)BimConsole.h \
+        $(SrcDir)Command.h
+
+
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)BimConsole$(oext) : $(SrcDir)BimConsole.cpp ${AllHeaders}  ${MultiCompileDepends}
+
+$(o)Command$(oext) : $(SrcDir)Command.cpp ${AllHeaders}  ${MultiCompileDepends}
+
+$(o)ECSqlCommand$(oext) : $(SrcDir)ECSqlCommand.cpp ${AllHeaders}  ${MultiCompileDepends}
+
+$(o)main$(oext) : $(SrcDir)main.cpp ${AllHeaders}  ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+cppObjects=%$(MultiCompileObjectList) 
+
+EXE_NO_SIGN = 1
+EXE_DEST    = $(o)
+EXE_NAME    = $(appName)
+EXE_OBJS    = $(MultiCompileObjectList)
+EXE_LOPT1   = -entry:wmainCRTStartup
+
+LINKER_LIBRARIES               =    $(SubpartLibs)Bentley.lib \
+                                    $(SubpartLibs)BeSQLite.lib          \
+                                    $(SubpartLibs)BeSQLiteEC.lib        \
+                                    $(SubpartLibs)BeLibXml2.lib         \
+                                    $(SubpartLibs)BentleyGeom.lib       \
+                                    $(SubpartLibs)DgnPlatform.lib       \
+                                    $(SubpartLibs)ECObjects.lib         \
+                                    $(SubpartLibs)Units.lib             \
+                                    $(SubpartLibs)BeJsonCpp.lib         \
+                                    gdi32.lib                           \
+                                    user32.lib                          \
+
+
+LINKER_LIBRARIES_DELAYLOADED   =  
+
+%include $(SharedMki)linktool.mki
+
+
+$(BuildContext)Delivery/logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
