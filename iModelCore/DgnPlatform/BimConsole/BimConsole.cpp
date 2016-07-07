@@ -77,7 +77,6 @@ void BimConsole::Setup()
     AddCommand(make_shared<ImportCommand>());
     AddCommand(make_shared<ExportCommand>());
 
-    AddCommand(make_shared<SqlCommand>());
     AddCommand(make_shared<ParseCommand>());
     AddCommand(make_shared<CreateECClassViewsCommand>());
 

@@ -60,7 +60,7 @@ Utf8String Command::ConcatArgs(size_t startIndex, std::vector<Utf8String> const&
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, vector<Utf8String> const& args) const
     {
-    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 23 && "Command was added or removed, please update the HelpCommand accordingly.");
     Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -71,6 +71,8 @@ void HelpCommand::_Run(Session& session, vector<Utf8String> const& args) const
     Console::WriteLine(m_commandMap.at(".ecsql")->GetUsage().c_str());
     Console::WriteLine(m_commandMap.at(".metadata")->GetUsage().c_str());
     Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".createecclassviews")->GetUsage().c_str());
+    Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".commit")->GetUsage().c_str());
     Console::WriteLine(m_commandMap.at(".rollback")->GetUsage().c_str());
     Console::WriteLine();
@@ -79,16 +81,8 @@ void HelpCommand::_Run(Session& session, vector<Utf8String> const& args) const
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".classmapping")->GetUsage().c_str());
     Console::WriteLine();
-    auto& c = m_commandMap.at(".sql");
-    if (c == nullptr)
-        {
-        return;
-        }
-    Console::WriteLine(m_commandMap.at(".sql")->GetUsage().c_str());
     Console::WriteLine(m_commandMap.at(".parse")->GetUsage().c_str());
     Console::WriteLine(m_commandMap.at(".dbschema")->GetUsage().c_str());
-    Console::WriteLine();
-    Console::WriteLine(m_commandMap.at(".createecclassviews")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".sqlite")->GetUsage().c_str());
     Console::WriteLine();
@@ -109,8 +103,7 @@ Utf8CP const OpenCommand::READWRITE_SWITCH = "readwrite";
 Utf8String OpenCommand::_GetUsage() const
     {
     return " .open [readonly|readwrite] <BIM/ECDb file>\r\n"
-        "                                Opens a BIM or ECDb file. If no open mode is specified,\r\n"
-        "                                the file will be opened in read-only mode.";
+        COMMAND_USAGE_IDENT "Opens a BIM or ECDb file. Default open mode: read-only.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -202,7 +195,7 @@ void CloseCommand::_Run(Session& session, vector<Utf8String> const& args) const
 //---------------------------------------------------------------------------------------
 Utf8String CreateCommand::_GetUsage() const
     {
-    return  " .create [bim|ecdb] <file path>        Creates a new BIM (default) or ECDb file.";
+    return  " .create [bim|ecdb] <file path> Creates a new BIM (default) or ECDb file.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -398,13 +391,6 @@ void CommitCommand::_Run(Session& session, vector<Utf8String> const& args) const
     }
 
 //******************************* RollbackCommand ******************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     03/2014
-//---------------------------------------------------------------------------------------
-Utf8String RollbackCommand::_GetName() const
-    {
-    return ".rollback";
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     03/2014
@@ -461,9 +447,8 @@ Utf8CP const ImportCommand::ECSCHEMA_SWITCH = "ecschema";
 Utf8String ImportCommand::_GetUsage() const
     {
     return " .import ecschema <ecschema xml file|folder>\r\n"
-        "                                Imports the specified ECSchema XML file into the file.\r\n"
-        "                                If a folder was specified, all ECSchemas in the folder\r\n"
-        "                                are imported.\r\n";
+        COMMAND_USAGE_IDENT "Imports the specified ECSchema XML file into the file. If a folder was specified, all ECSchemas\r\n"
+        COMMAND_USAGE_IDENT "in the folder are imported.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -582,9 +567,9 @@ Utf8CP const ExportCommand::TABLES_SWITCH = "tables";
 //---------------------------------------------------------------------------------------
 Utf8String ExportCommand::_GetUsage() const
     {
-    return " .export ecschema [v2] <out folder>  Exports all ECSchemas of the file to disk. If 'v2' is specified,\r\n"
-        "                                ECXML v2 is used. Otherwise ECXML v3 is used.\r\n"
-        "         tables <JSON file>     Exports the data in all tables of the file into a JSON file";
+    return " .export ecschema [v2] <out folder>  Exports all ECSchemas of the file to disk. If 'v2' is specified, ECXML v2 is used.\r\n"
+           COMMAND_USAGE_IDENT "Otherwise ECXML v3 is used.\r\n"
+           "         tables <JSON file>     Exports the data in all tables of the file into a JSON file\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -747,18 +732,14 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
     }
 
 //******************************* CreateECClassViewsCommand ******************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     12/2015
-//---------------------------------------------------------------------------------------
-Utf8String CreateECClassViewsCommand::_GetName() const { return ".createecclassviews"; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     12/2015
 //---------------------------------------------------------------------------------------
 Utf8String CreateECClassViewsCommand::_GetUsage() const
     {
-    return " .createecclassviews            Creates or updates views in the file to visualize the EC content\r\n"
-        "                                as ECClasses and ECProperties rather than tables and columns.";
+    return " .createecclassviews            Creates or updates views in the file to visualize the EC content as ECClasses and\r\n"
+        COMMAND_USAGE_IDENT "ECProperties rather than tables and columns.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -783,13 +764,6 @@ void CreateECClassViewsCommand::_Run(Session& session, std::vector<Utf8String> c
 
 
 //******************************* MetadataCommand ******************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
-Utf8String MetadataCommand::_GetName() const
-    {
-    return ".metadata";
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
@@ -863,79 +837,16 @@ void MetadataCommand::_Run(Session& session, vector<Utf8String> const& args) con
     Console::WriteLine();
     }
 
-//******************************* SqlCommand ******************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
-Utf8String SqlCommand::_GetName() const
-    {
-    return ".sql";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
-Utf8String SqlCommand::_GetUsage() const
-    {
-    return " .sql <ecsql>                   Parses ECSQL and displays resulting SQLite SQL";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
-void SqlCommand::_Run(Session& session, vector<Utf8String> const& args) const
-    {
-    const size_t argSize = args.size();
-    if (argSize <= 1)
-        {
-        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
-        }
-
-    if (!session.IsFileLoaded(true))
-        return;
-
-    Utf8String ecsql = ConcatArgs(1, args);
-
-    ECSqlStatement stmt;
-    ECSqlStatus stat = stmt.Prepare(session.GetFile().GetHandle(), ecsql.c_str());
-    if (!stat.IsSuccess())
-        {
-        if (session.GetIssues().HasIssue())
-            Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
-        else
-            Console::WriteErrorLine("Failed to parse ECSQL.");
-
-        return;
-        }
-
-    Console::WriteLine("SQLite SQL: %s", stmt.GetNativeSql());
-    return;
-    }
-
 //******************************* ParseCommand ******************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
-//static
-Utf8CP const ParseCommand::RAW_SWITCH = "raw";
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
-Utf8String ParseCommand::_GetName() const
-    {
-    return ".parse";
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
 Utf8String ParseCommand::_GetUsage() const
     {
-    return " .parse [raw] <ecsql>           Parses ECSQL and displays parse tree. If 'raw' is specified \r\n"
-        "                                the raw parse tree before resolving / validating tokens\r\n"
-        "                                against the ECSchema is displayed.";
+    return " .parse [sql|exp|token] <ecsql> Parses ECSQL. Options: sql (default): the resulting SQL is displayed.\r\n"
+        COMMAND_USAGE_IDENT                "                       exp: the parsed expression tree is displayed.\r\n"
+        COMMAND_USAGE_IDENT                "                       token: the parsed raw token tree is displayed.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -953,7 +864,38 @@ void ParseCommand::_Run(Session& session, vector<Utf8String> const& args) const
     if (!session.IsFileLoaded(true))
         return;
 
-    if (args[1].EqualsI(RAW_SWITCH))
+    Utf8StringCR firstArg = args[1];
+    if (firstArg.EqualsIAscii("exp"))
+        {
+        if (argCount < 3)
+            {
+            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+
+        Utf8String ecsql = ConcatArgs(2, args);
+        Utf8String ecsqlFromExpTree;
+        Json::Value expTree;
+        if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, session.GetFile().GetHandle(), ecsql.c_str()))
+            {
+            if (session.GetIssues().HasIssue())
+                Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+            else
+                Console::WriteErrorLine("Failed to parse ECSQL.");
+            return;
+            }
+
+        Console::WriteLine("ECSQL from expression tree: %s", ecsqlFromExpTree.c_str());
+        Console::WriteLine();
+        Console::WriteLine("ECSQL expression tree:");
+
+        Utf8String expTreeStr;
+        ExpTreeToString(expTreeStr, expTree, 0);
+        Console::WriteLine("%s", expTreeStr.c_str());
+        return;
+        }
+
+    if (firstArg.EqualsIAscii("token"))
         {
         if (argCount < 3)
             {
@@ -976,29 +918,33 @@ void ParseCommand::_Run(Session& session, vector<Utf8String> const& args) const
 
         Console::WriteLine("Raw ECSQL parse tree:");
         Console::WriteLine("%s", parseTree.c_str());
+        return;
         }
-    else
+
+    Utf8String ecsql;
+    if (firstArg.EqualsIAscii("sql"))
         {
-        Utf8String ecsql = ConcatArgs(1, args);
-        Utf8String ecsqlFromExpTree;
-        Json::Value expTree;
-        if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, session.GetFile().GetHandle(), ecsql.c_str()))
+        if (argCount < 3)
             {
-            if (session.GetIssues().HasIssue())
-                Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
-            else
-                Console::WriteErrorLine("Failed to parse ECSQL.");
+            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
             return;
             }
 
-        Console::WriteLine("ECSQL from expression tree: %s", ecsqlFromExpTree.c_str());
-        Console::WriteLine();
-        Console::WriteLine("ECSQL expression tree:");
-
-        Utf8String expTreeStr;
-        ExpTreeToString(expTreeStr, expTree, 0);
-        Console::WriteLine("%s", expTreeStr.c_str());
+        ecsql = ConcatArgs(2, args);
         }
+
+    //default mode ('sql' was not specified)
+    ecsql = ConcatArgs(1, args);
+
+    ECSqlStatement stmt;
+    ECSqlStatus stat = stmt.Prepare(session.GetFile().GetHandle(), ecsql.c_str());
+    if (!stat.IsSuccess())
+        if (session.GetIssues().HasIssue())
+            Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+        else
+            Console::WriteErrorLine("Failed to parse ECSQL.");
+
+    Console::WriteLine("SQLite SQL: %s", stmt.GetNativeSql());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1026,14 +972,6 @@ void ParseCommand::ExpTreeToString(Utf8StringR expTreeStr, JsonValueCR expTree, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ExitCommand::_GetName() const
-    {
-    return ".exit";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
 Utf8String ExitCommand::_GetUsage() const
     {
     return " .exit, .quit, .q               Exits the BimConsole";
@@ -1048,13 +986,6 @@ void ExitCommand::_Run(Session& session, vector<Utf8String> const& args) const
     }
 
 //******************************* SqliteCommand ******************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     07/2015
-//---------------------------------------------------------------------------------------
-Utf8String SqliteCommand::_GetName() const
-    {
-    return ".sqlite";
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
@@ -1139,13 +1070,6 @@ void SqliteCommand::ExecuteNonSelect(Session& session, Statement& statement) con
     }
 
 //******************************* DbSchemaCommand ******************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     04/2016
-//---------------------------------------------------------------------------------------
-Utf8String DbSchemaCommand::_GetName() const
-    {
-    return ".dbschema";
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     04/2016
@@ -1153,9 +1077,8 @@ Utf8String DbSchemaCommand::_GetName() const
 Utf8String DbSchemaCommand::_GetUsage() const
     {
     return " .dbschema search <search term> [<folder> <file extension>]\r\n"
-        "                                Searches the DDL of all DB schema elements in the current file or\r\n"
-        "                                in all SQLite files in the specified folder for the specified\r\n"
-        "                                search term.";
+        COMMAND_USAGE_IDENT "Searches the DDL of all DB schema elements in the current file or in all SQLite files\r\n"
+        COMMAND_USAGE_IDENT "in the specified folder for the specified search term.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1281,13 +1204,6 @@ void DbSchemaCommand::Search(ECDbCR ecdb, Utf8CP searchTerm) const
 
 
 //******************************* ClassMappingCommand ******************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     04/2016
-//---------------------------------------------------------------------------------------
-Utf8String ClassMappingCommand::_GetName() const
-    {
-    return ".classmapping";
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     04/2016
@@ -1295,7 +1211,7 @@ Utf8String ClassMappingCommand::_GetName() const
 Utf8String ClassMappingCommand::_GetUsage() const
     {
     return " .classmapping, .cm [<ECSchemaName>|<ECSchemaName> <ECClassName>]\r\n"
-        "                                Returns ECClass mapping information";
+        COMMAND_USAGE_IDENT "Returns ECClass mapping information for the file, the specified ECSchema, or the specified ECClass.\r\n";
     }
 
 //---------------------------------------------------------------------------------------

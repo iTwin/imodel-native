@@ -15,6 +15,8 @@ USING_NAMESPACE_BENTLEY
 //forward declaration
 struct Session;
 
+#define COMMAND_USAGE_IDENT "                                "
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
@@ -181,7 +183,7 @@ struct ExportCommand : public Command
 struct CreateECClassViewsCommand : public Command
     {
     private:
-        virtual Utf8String _GetName() const override;
+        virtual Utf8String _GetName() const override { return ".createecclassviews"; }
         virtual Utf8String _GetUsage() const override;
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
     public:
@@ -195,7 +197,7 @@ struct CreateECClassViewsCommand : public Command
 struct ECSqlCommand : public Command
     {
     private:
-        virtual Utf8String _GetName() const override;
+        virtual Utf8String _GetName() const override { return ".ecsql"; }
         virtual Utf8String _GetUsage() const override;
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
 
@@ -219,7 +221,7 @@ struct ECSqlCommand : public Command
 struct SqliteCommand : public Command
     {
     private:
-        virtual Utf8String _GetName() const override;
+        virtual Utf8String _GetName() const override { return ".sqlite"; }
         virtual Utf8String _GetUsage() const override;
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
 
@@ -252,7 +254,7 @@ struct CommitCommand : public Command
 struct RollbackCommand : public Command
     {
     private:
-        virtual Utf8String _GetName() const override;
+        virtual Utf8String _GetName() const override { return ".rollback"; }
         virtual Utf8String _GetUsage() const override;
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
 
@@ -267,7 +269,7 @@ struct RollbackCommand : public Command
 struct MetadataCommand : public Command
     {
     private:
-        virtual Utf8String _GetName() const override;
+        virtual Utf8String _GetName() const override { return ".metadata"; }
         virtual Utf8String _GetUsage() const override;
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
 
@@ -279,27 +281,10 @@ struct MetadataCommand : public Command
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
-struct SqlCommand : public Command
-    {
-    private:
-        virtual Utf8String _GetName() const override;
-        virtual Utf8String _GetUsage() const override;
-        virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
-
-    public:
-        SqlCommand() : Command() {}
-        ~SqlCommand() {}
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                                   Krischan.Eberle    10/2013
-//---------------------------------------------------------------------------------------
 struct ParseCommand : public Command
     {
     private:
-        static Utf8CP const RAW_SWITCH;
-
-        virtual Utf8String _GetName() const override;
+        virtual Utf8String _GetName() const override { return ".parse"; }
         virtual Utf8String _GetUsage() const override;
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
 
@@ -316,7 +301,7 @@ struct ParseCommand : public Command
 struct ExitCommand : public Command
     {
     private:
-        virtual Utf8String _GetName() const override;
+        virtual Utf8String _GetName() const override { return ".exit"; }
         virtual Utf8String _GetUsage() const override;
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
 
@@ -331,7 +316,7 @@ struct ExitCommand : public Command
 struct DbSchemaCommand : public Command
     {
     private:
-        virtual Utf8String _GetName() const override;
+        virtual Utf8String _GetName() const override { return ".dbschema"; }
         virtual Utf8String _GetUsage() const override;
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
 
@@ -349,7 +334,7 @@ struct DbSchemaCommand : public Command
 struct ClassMappingCommand : public Command
     {
     private:
-        virtual Utf8String _GetName() const override;
+        virtual Utf8String _GetName() const override { return ".classmapping"; }
         virtual Utf8String _GetUsage() const override;
         virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
 

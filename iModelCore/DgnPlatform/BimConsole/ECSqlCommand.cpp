@@ -15,19 +15,10 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String ECSqlCommand::_GetName() const
-    {
-    return ".ecsql";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
 Utf8String ECSqlCommand::_GetUsage() const
     {
     return " <ecsql>;                       Executes ECSQL and displays the results.\r\n"
-        "                                The statement can span multiple lines.\r\n"
-        "                                A semicolon indicates the end of the statement";
+        COMMAND_USAGE_IDENT "The statement can span multiple lines. A semicolon indicates the end of the statement.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
