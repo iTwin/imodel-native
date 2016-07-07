@@ -72,7 +72,7 @@ public class __FIXTURE__ extends ActivityInstrumentationTestCase2<TestActivity>
             if (!libraryName.isEmpty())
                 {
                 libraryName = libraryName.replaceFirst ("^lib", "");
-                if (!libraryName.equals ("gnustl_shared"))
+                if (!libraryName.equals ("c++_shared"))
                     System.loadLibrary (libraryName);
                 }
             }
@@ -81,7 +81,7 @@ public class __FIXTURE__ extends ActivityInstrumentationTestCase2<TestActivity>
     static void loadNativeLibraries () 
         {
         // System libraries
-        System.loadLibrary ("gnustl_shared");
+        System.loadLibrary ("c++_shared");
         // Supporting Bentley libraries
         loadNativeLibraries ("__ANDROIDJUNITTEST_SHARED_LIBRARIES__");
         // The unit tests
