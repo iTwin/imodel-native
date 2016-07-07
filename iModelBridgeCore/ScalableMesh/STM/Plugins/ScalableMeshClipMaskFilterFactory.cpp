@@ -18,7 +18,7 @@
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
-using namespace IDTMFile;
+using namespace ISMStore;
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

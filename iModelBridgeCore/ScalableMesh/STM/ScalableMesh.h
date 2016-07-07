@@ -62,7 +62,7 @@ using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 extern bool s_useSQLFormat;
-//typedef IDTMFile::Extent3d64f        YProtPtExtentType;
+//typedef ISMStore::Extent3d64f        YProtPtExtentType;
 typedef DRange3d YProtPtExtentType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
@@ -241,7 +241,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         void                            AddBreaklineSet                (list<HFCPtr<HVEDTMLinearFeature> >& breaklineList, 
                                                                         BC_DTM_OBJ*                         po_ppBcDtmObj);
 
-        ISMPointIndexFilter<INDEXPOINT, YProtPtExtentType>* CreatePointIndexFilter(IDTMFile::UniformFeatureDir* pointDirPtr) const;
+        ISMPointIndexFilter<INDEXPOINT, YProtPtExtentType>* CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const;
 #endif
         void CreateSpatialIndexFromExtents(list<HVE2DSegment>& pi_rpBreaklineList, 
                                            BC_DTM_OBJ**        po_ppBcDtmObj);

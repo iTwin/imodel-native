@@ -120,7 +120,7 @@ bool ContentConfigSerializer::Serialize(const ContentConfig&    config,
             return false;
 
         WString extendedWktStr(gcsWKT.GetCStr());
-        wchar_t wktFlavor[2] = { (wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0' };
+        wchar_t wktFlavor[2] = { (wchar_t)ISMStore::WktFlavor_Autodesk, L'\0' };
 
         extendedWktStr += WString(wktFlavor);
 
@@ -157,7 +157,7 @@ bool ContentConfigSerializer::Deserialize(SourceDataSQLite&      sourceData,
     config.SetScalableMeshConfig(ScalableMeshConfig(sourceData.GetScalableMeshData()));
     WString gcsWKT = sourceData.GetGCS();
 
-    IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
+    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
 
     BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;
 

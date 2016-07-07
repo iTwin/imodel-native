@@ -261,7 +261,7 @@ int CutLinears(list<HFCPtr<HVEDTMLinearFeature>>& linearList, list<HFCPtr<HVEDTM
             unsigned __int64 lastIndexPtAdd = UINT64_MAX;
 
             HFCPtr<HVEDTMLinearFeature> cutFeatureP = new HVEDTMLinearFeature((*linearIter)->GetFeatureType(), 0);
-            IDTMFile::FeatureType type = (*linearIter)->GetFeatureType();
+            ISMStore::FeatureType type = (*linearIter)->GetFeatureType();
             
             switch (type)
                 {

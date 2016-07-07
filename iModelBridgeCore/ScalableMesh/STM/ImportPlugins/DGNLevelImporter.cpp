@@ -731,7 +731,7 @@ private:
     bool                                    m_hasNext;
     ElementIterator                         m_elementIt;
 
-    PODPacketProxy<IDTMFile::FeatureHeader> m_headerPacket;
+    PODPacketProxy<ISMStore::FeatureHeader> m_headerPacket;
     PODPacketProxy<DPoint3d>                m_pointPacket;
     IDTMFeatureArray<DPoint3d>              m_featureArray;
 
@@ -820,7 +820,7 @@ class DGNLevelLinearExtractorCreator : public InputExtractorCreatorMixinBase<DGN
                                                                                     const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
-        return RawCapacities(sourceBase.GetStats().m_linear.m_featureCount * sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities(sourceBase.GetStats().m_linear.m_featureCount * sizeof(ISMStore::FeatureHeader),
                              sourceBase.GetStats().m_linear.GetPointCapacity() * sizeof(DPoint3d));
         }
 
@@ -862,7 +862,7 @@ private:
     bool                                    m_hasNext;
     ElementIterator                         m_elementIt;
 
-    PODPacketProxy<IDTMFile::FeatureHeader> m_headerPacket;
+    PODPacketProxy<ISMStore::FeatureHeader> m_headerPacket;
     PODPacketProxy<DPoint3d>                m_pointPacket;
     IDTMFeatureArray<DPoint3d>              m_featureArray;
 
@@ -941,7 +941,7 @@ class DGNLevelMeshExtractorCreator : public InputExtractorCreatorMixinBase<DGNLe
                                                                                     const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
-        return RawCapacities(sourceBase.GetStats().m_mesh.m_featureCount * sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities(sourceBase.GetStats().m_mesh.m_featureCount * sizeof(ISMStore::FeatureHeader),
                              sourceBase.GetStats().m_mesh.GetPointCapacity() * sizeof(DPoint3d));
         }
 

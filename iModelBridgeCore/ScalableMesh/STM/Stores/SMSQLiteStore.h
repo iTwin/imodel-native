@@ -44,7 +44,7 @@ private:
     }
 
 public:
-    /*SMSQLitePointTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const IDTMFile::AccessMode& accessMode)
+    /*SMSQLitePointTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const ISMStore::AccessMode& accessMode)
     {
     m_smSQLiteFile = SMSQLiteFile::Create();
     Utf8String filenameA;

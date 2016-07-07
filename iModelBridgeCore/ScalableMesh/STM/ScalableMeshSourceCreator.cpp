@@ -52,7 +52,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
     #include <ImagePP\all\h\HRFMapboxFile.h>
 #endif
 
-using namespace IDTMFile;
+using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 extern bool s_inEditing;
 bool s_useThreadsInStitching = false;
@@ -73,7 +73,7 @@ StatusInt&      status)
     {
     RegisterDelayedImporters();
 
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     IScalableMeshSourceCreatorPtr pCreator = new IScalableMeshSourceCreator(new Impl(filePath));
 
@@ -88,7 +88,7 @@ StatusInt&      status)
 IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const IScalableMeshPtr&    scmPtr,
                                                      StatusInt&          status)
     {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     RegisterDelayedImporters();
 
@@ -243,7 +243,7 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile)
 
 void IScalableMeshSourceCreator::Impl::SetupFileForCreation()
 {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     //File::Ptr filePtr;
     bool bAllRemoved = true;
@@ -335,7 +335,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     )
     {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     HFCPtr<MeshIndexType>          pDataIndex;
 
@@ -364,7 +364,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
 
 
-   // std::list<IDTMFile::Extent3d64f> listRemoveExtent;
+   // std::list<ISMStore::Extent3d64f> listRemoveExtent;
     std::list<DRange3d> listRemoveExtent;
     IDTMSourceCollection::const_iterator it = m_sources.Begin();
 
@@ -380,7 +380,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         if (data.GetUpToDateState() == UpToDateState::REMOVE || data.GetUpToDateState() == UpToDateState::MODIFY)
             {
             DRange3d sourceRange = data.GetExtentByLayer(0);
-            /*IDTMFile::Extent3d64f removeExtent;
+            /*ISMStore::Extent3d64f removeExtent;
             removeExtent.xMin = sourceRange.low.x;
             removeExtent.xMax = sourceRange.high.x;
             removeExtent.yMin = sourceRange.low.y;
@@ -442,7 +442,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     WString name = m_scmFileName;
     WString featureFilePath = name.append(L"_feature"); //temporary file, deleted after generation
     _wremove(featureFilePath.c_str());
-    //IDTMFile::File::Ptr featureFilePtr = IDTMFile::File::Create(featureFilePath.c_str());
+    //ISMStore::File::Ptr featureFilePtr = ISMStore::File::Create(featureFilePath.c_str());
     SMSQLiteFilePtr sqliteFeatureFile = new SMSQLiteFile();
     sqliteFeatureFile->Create(featureFilePath);
     HFCPtr<GenericTileStoreType>  pFeatureTileStore = new SMSQLiteFeatureTileStore<PointIndexExtentType>(sqliteFeatureFile);//new TileStoreType(featureFilePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));

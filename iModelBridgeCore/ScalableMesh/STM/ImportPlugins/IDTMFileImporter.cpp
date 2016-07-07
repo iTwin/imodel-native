@@ -29,7 +29,7 @@
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-using namespace IDTMFile;
+using namespace ISMStore;
 
 namespace { //BEGIN UNAMED NAMESPACE
 
@@ -263,7 +263,7 @@ class IDTMFileCreator : public LocalFileSourceCreatorBase
                 
                 WString wktStr(layerDirP->GetWkt().GetCStr());
 
-                IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);                
+                ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);                
 
                 BaseGCS::WktFlavor baseGcsWktFlavor;
     

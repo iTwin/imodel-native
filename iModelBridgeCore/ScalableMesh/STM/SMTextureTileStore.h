@@ -2,7 +2,7 @@
 
 #include <ImagePP/all/h/HPMDataStore.h>
 #include <ImagePP/all/h/IDTMTypes.h>
-#include <ImagePP/all/h/IDTMFile.h>
+#include <ImagePP/all/h/ISMStore.h>
 //#include <Mtg/MtgStructs.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 #include <ImagePP/all/h/HRFBmpFile.h>
@@ -13,16 +13,16 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
     {
     public:
 
-        static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+        static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
-            return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
+            return static_cast<ISMStore::NodeID>(blockID.m_integerID);
             }
 
-        TextureTileStore(WCharCP filename, const IDTMFile::AccessMode& accessMode, size_t layerID)
+        TextureTileStore(WCharCP filename, const ISMStore::AccessMode& accessMode, size_t layerID)
             {
             m_receivedOpenedFile = false;
 
-            m_DTMFile = IDTMFile::File::Open(filename, accessMode);
+            m_DTMFile = ISMStore::File::Open(filename, accessMode);
 
             if (m_DTMFile == NULL)
                 throw;
@@ -32,7 +32,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
             }
 
 
-        TextureTileStore(IDTMFile::File::Ptr openedDTMFile, size_t layerID)
+        TextureTileStore(ISMStore::File::Ptr openedDTMFile, size_t layerID)
             :
             m_layerID(layerID),
             m_DTMFile(openedDTMFile),
@@ -70,7 +70,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
 
             if (NULL == m_tileHandler)
                 {
-                IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
+                ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
 
                 if (NULL == layerDir)
                     {
@@ -83,7 +83,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
                     //HASSERT(0 == m_layerID);
                     }
 
-                IDTMFile::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(TEXTURE_FEATURE_TYPE);
+                ISMStore::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(TEXTURE_FEATURE_TYPE);
                 if (NULL == featureDir)
                     {
 
@@ -91,7 +91,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
                     //NEEDS_WORK_SM: Why is this a feature dir (and is it necessary for storing packets at all?)
                     // Texture already compressed => arg 3 need to be changed
                     featureDir = layerDir->CreatePointsOnlyUniformFeatureDir(TEXTURE_FEATURE_TYPE,
-                                                                             IDTMFile::PointTypeIDTrait<Byte>::value,
+                                                                             ISMStore::PointTypeIDTrait<Byte>::value,
                                                                              HTGFF::Compression::Deflate::Create());
 
                     HASSERT(NULL != featureDir);
@@ -100,7 +100,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
                     }
 
 
-                m_tileHandler = IDTMFile::PointTileHandler<Byte>::CreateFrom(featureDir->GetPointDir());
+                m_tileHandler = ISMStore::PointTileHandler<Byte>::CreateFrom(featureDir->GetPointDir());
                 }
 
 
@@ -117,15 +117,15 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
 
             if (NULL == m_tileHandler)
                 {
-                IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
+                ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
                 if (NULL == layerDir)
                     return 0;
 
-                IDTMFile::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(TEXTURE_FEATURE_TYPE);
+                ISMStore::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(TEXTURE_FEATURE_TYPE);
                 if (NULL == featureDir)
                     return 0;
 
-                m_tileHandler = IDTMFile::PointTileHandler<Byte>::CreateFrom(featureDir->GetPointDir());
+                m_tileHandler = ISMStore::PointTileHandler<Byte>::CreateFrom(featureDir->GetPointDir());
                 }
             return 1;
 
@@ -212,10 +212,10 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
             ptArray[1] = (int32_t)offset;
             delete[] serializedTexture;
             delete[] ct;*/
-            //IDTMFile::PointTileHandler<Byte>::PointArray arrayOfPoints(ptArray, countAsPts);
-            IDTMFile::PointTileHandler<Byte>::PointArray arrayOfPoints(result, countAsPts);
+            //ISMStore::PointTileHandler<Byte>::PointArray arrayOfPoints(ptArray, countAsPts);
+            ISMStore::PointTileHandler<Byte>::PointArray arrayOfPoints(result, countAsPts);
             
-            IDTMFile::NodeID newNodeID;
+            ISMStore::NodeID newNodeID;
 
             std::lock_guard<std::recursive_mutex> lck(m_DTMFile->GetFileAccessMutex());
 
@@ -223,7 +223,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
                 {
                 HASSERT(!"Write failed!");
                 //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
-                throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
+                throw HFCWriteFaultException(L"Unable to obtain file name ... ISMStore::File API should be modified.");
                 }
 
 #ifdef ACTIVATE_TEXTURE_DUMP
@@ -260,7 +260,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
             //HPRECONDITION(m_tileHandler != NULL);
             //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
-            if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::SubNodesTable::GetNoSubNodeID())
+            if (!blockID.IsValid() || blockID.m_integerID == ISMStore::SubNodesTable::GetNoSubNodeID())
                 return StoreNewBlock(DataTypeArray, countData);
 
 
@@ -293,7 +293,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
             ptArray[1] = (int32_t) offset;
             delete[] serializedGraph;
             delete[] ct;*/
-            IDTMFile::PointTileHandler<Byte>::PointArray arrayOfPoints(ptArray, countAsPts);
+            ISMStore::PointTileHandler<Byte>::PointArray arrayOfPoints(ptArray, countAsPts);
            // PointArray arrayOfPoints(DataTypeArray, countData);
            
             std::lock_guard<std::recursive_mutex> lck(m_DTMFile->GetFileAccessMutex());
@@ -302,7 +302,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
                 {
                 HASSERT(!"Write failed!");
                 //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
-                throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
+                throw HFCWriteFaultException(L"Unable to obtain file name ... ISMStore::File API should be modified.");
                 }
             delete[] ptArray;
             return blockID;
@@ -316,7 +316,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
 
             size_t size;
 
-            IDTMFile::PointTileHandler<Byte>::PointArray arrayOfPoints;
+            ISMStore::PointTileHandler<Byte>::PointArray arrayOfPoints;
             size_t packetSize = m_tileHandler->GetDir().CountPoints(ConvertBlockID(blockID));
             //size_t packetSize = 2 * sizeof(int);
             Byte* results = new Byte[packetSize];
@@ -410,7 +410,7 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
 
             //m_tileHandler->GetPoints(ConvertBlockID(blockID), dataArrayTmp
             
-            IDTMFile::PointTileHandler<Byte>::PointArray arrayOfPoints;
+            ISMStore::PointTileHandler<Byte>::PointArray arrayOfPoints;
             //get size of packet in number of ints
 
             m_DTMFile->GetFileAccessMutex().lock();
@@ -508,17 +508,17 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
              return m_tileHandler->RemovePoints(ConvertBlockID(blockID));
             }
 
-        static const IDTMFile::FeatureType TEXTURE_FEATURE_TYPE = 1;
+        static const ISMStore::FeatureType TEXTURE_FEATURE_TYPE = 1;
 
     protected:
-        const IDTMFile::File::Ptr& GetFileP() const
+        const ISMStore::File::Ptr& GetFileP() const
             {
             return m_DTMFile;
             }
 
     private:
-        IDTMFile::File::Ptr m_DTMFile;
-        HFCPtr<IDTMFile::PointTileHandler<Byte>> m_tileHandler;
+        ISMStore::File::Ptr m_DTMFile;
+        HFCPtr<ISMStore::PointTileHandler<Byte>> m_tileHandler;
         bool m_receivedOpenedFile;
         size_t m_layerID;
     };

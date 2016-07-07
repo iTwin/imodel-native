@@ -16,7 +16,7 @@
 
 #include <ScalableMesh/IScalableMeshDataStore.h>
 #include <ImagePP/all/h/IDTMTypes.h>
-#include <ImagePP/all/h/IDTMFile.h>
+#include <ImagePP/all/h/ISMStore.h>
 #include <TerrainModel/TerrainModel.h>
 #include "../SMPointTileStore.h"
 #include "DifferenceSet.h"
@@ -26,13 +26,13 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, Byte >
     {
     public:
-        static const IDTMFile::FeatureType MASS_POINT_FEATURE_TYPE = 0;
-        static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+        static const ISMStore::FeatureType MASS_POINT_FEATURE_TYPE = 0;
+        static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
-            return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
+            return static_cast<ISMStore::NodeID>(blockID.m_integerID);
             }
 
-        DiffSetTileStore(IDTMFile::File::Ptr openedDTMFile, size_t layerID)
+        DiffSetTileStore(ISMStore::File::Ptr openedDTMFile, size_t layerID)
             :
             m_layerID(layerID),
             m_DTMFile(openedDTMFile),
@@ -72,8 +72,8 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
             }
         void Open()
             {
-            if (m_needsCreate) m_DTMFile = IDTMFile::File::Create(m_path.c_str());
-            else m_DTMFile = IDTMFile::File::Open(m_path.c_str());
+            if (m_needsCreate) m_DTMFile = ISMStore::File::Create(m_path.c_str());
+            else m_DTMFile = ISMStore::File::Open(m_path.c_str());
             if (m_DTMFile == NULL) m_needsCreate = true;
             }
 
@@ -86,7 +86,7 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
 
             if (NULL == m_tileHandler)
                 {
-                IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
+                ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
 
                 if (NULL == layerDir)
                     {
@@ -99,12 +99,12 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
                     HASSERT(0 == m_layerID);
                     }
 
-                IDTMFile::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
+                ISMStore::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
                 if (NULL == featureDir)
                     {
 
                     featureDir = layerDir->CreatePointsOnlyUniformFeatureDir(MASS_POINT_FEATURE_TYPE,
-                                                                             IDTMFile::PointTypeIDTrait<int32_t>::value,
+                                                                             ISMStore::PointTypeIDTrait<int32_t>::value,
                                                                              HTGFF::Compression::None::Create());
 
                     HASSERT(NULL != featureDir);
@@ -113,7 +113,7 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
                     }
 
 
-                m_tileHandler = IDTMFile::PointTileHandler<int32_t>::CreateFrom(featureDir->GetPointDir());
+                m_tileHandler = ISMStore::PointTileHandler<int32_t>::CreateFrom(featureDir->GetPointDir());
                 }
 
 
@@ -131,15 +131,15 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
 
             if (NULL == m_tileHandler)
                 {
-                IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
+                ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
                 if (NULL == layerDir)
                     return 0;
 
-                IDTMFile::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
+                ISMStore::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
                 if (NULL == featureDir)
                     return 0;
 
-                m_tileHandler = IDTMFile::PointTileHandler<int32_t>::CreateFrom(featureDir->GetPointDir());
+                m_tileHandler = ISMStore::PointTileHandler<int32_t>::CreateFrom(featureDir->GetPointDir());
                 }
             return 1;
             }
@@ -184,9 +184,9 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
             HPRECONDITION(m_DTMFile != NULL);
             size_t countAsPts;
             int32_t * ptArray = Serialize(countAsPts, DataTypeArray, countData);
-            IDTMFile::PointTileHandler<int32_t>::PointArray arrayOfPoints(ptArray, countAsPts);
+            ISMStore::PointTileHandler<int32_t>::PointArray arrayOfPoints(ptArray, countAsPts);
 
-            IDTMFile::NodeID newNodeID;
+            ISMStore::NodeID newNodeID;
 
             std::lock_guard<std::recursive_mutex> lck(m_DTMFile->GetFileAccessMutex());
 
@@ -194,7 +194,7 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
                 {
                 HASSERT(!"Write failed!");
                 //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
-                throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
+                throw HFCWriteFaultException(L"Unable to obtain file name ... ISMStore::File API should be modified.");
                 }
             delete[] ptArray;
             return HPMBlockID(newNodeID);
@@ -207,11 +207,11 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
             //HPRECONDITION(m_tileHandler != NULL);
             //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
-            if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::SubNodesTable::GetNoSubNodeID())
+            if (!blockID.IsValid() || blockID.m_integerID == ISMStore::SubNodesTable::GetNoSubNodeID())
                 return StoreNewBlock(DataTypeArray, countData);
             size_t countAsPts;
             int32_t * ptArray = Serialize(countAsPts, DataTypeArray, countData);
-            IDTMFile::PointTileHandler<int32_t>::PointArray arrayOfPoints(ptArray, countAsPts);
+            ISMStore::PointTileHandler<int32_t>::PointArray arrayOfPoints(ptArray, countAsPts);
             // PointArray arrayOfPoints(DataTypeArray, countData);
 
             std::lock_guard<std::recursive_mutex> lck(m_DTMFile->GetFileAccessMutex());
@@ -220,7 +220,7 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
                 {
                 HASSERT(!"Write failed!");
                 //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
-                throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
+                throw HFCWriteFaultException(L"Unable to obtain file name ... ISMStore::File API should be modified.");
                 }
             delete[] ptArray;
             return blockID;
@@ -234,7 +234,7 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
 
             std::lock_guard<std::recursive_mutex> lck(m_DTMFile->GetFileAccessMutex());
 
-            IDTMFile::PointTileHandler<int32_t>::PointArray arrayOfPoints;
+            ISMStore::PointTileHandler<int32_t>::PointArray arrayOfPoints;
             //get size of packet in number of ints
             //size_t nOfInts = (size_t)ceil((float)sizeof(size_t) / sizeof(int32_t));
             size_t packetSize = m_tileHandler->GetDir().CountPoints(ConvertBlockID(blockID));
@@ -268,7 +268,7 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
 
             std::lock_guard<std::recursive_mutex> lck(m_DTMFile->GetFileAccessMutex());
             std::string s;
-            IDTMFile::PointTileHandler<int32_t>::PointArray arrayOfPoints;
+            ISMStore::PointTileHandler<int32_t>::PointArray arrayOfPoints;
             //get size of packet in number of ints
             size_t packetSize = m_tileHandler->GetDir().CountPoints(ConvertBlockID(blockID));
             int32_t* results = new int32_t[packetSize];
@@ -311,17 +311,17 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
             return m_tileHandler->RemovePoints(ConvertBlockID(blockID));
             }
 
-        static const IDTMFile::FeatureType GRAPH_FEATURE_TYPE = 1;
+        static const ISMStore::FeatureType GRAPH_FEATURE_TYPE = 1;
 
     protected:
-        const IDTMFile::File::Ptr& GetFileP() const
+        const ISMStore::File::Ptr& GetFileP() const
             {
             return m_DTMFile;
             }
 
     private:
-        IDTMFile::File::Ptr m_DTMFile;
-        HFCPtr<IDTMFile::PointTileHandler<int32_t>> m_tileHandler;
+        ISMStore::File::Ptr m_DTMFile;
+        HFCPtr<ISMStore::PointTileHandler<int32_t>> m_tileHandler;
         bool m_receivedOpenedFile;
         size_t m_layerID;
         WString m_path;

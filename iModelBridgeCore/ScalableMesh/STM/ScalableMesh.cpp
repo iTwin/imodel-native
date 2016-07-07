@@ -95,7 +95,7 @@ typedef HGF3DExtent<double> YProtFeatureExtentType;
 /*                                                                  */
 /*==================================================================*/
 
-using namespace IDTMFile;
+using namespace ISMStore;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
@@ -542,7 +542,7 @@ bool ScalableMeshBase::LoadGCSFrom()
     if (m_smSQLitePtr->GetWkt(wktStr)) // if true, ScalableMesh has not Wkt
         return true;
 
-    IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
+    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
     BaseGCS::WktFlavor  wktFlavor;
 
     bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
@@ -812,7 +812,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
             WString clipFilePath = m_baseExtraFilesPath;
             clipFilePath.append(L"_clips"); 
-           // IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
+           // ISMStore::File::Ptr clipFilePtr = ISMStore::File::Create(clipFilePath.c_str());
             HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
             ((SMSQLiteDiffsetTileStore*)(store.GetPtr()))->Open();
             //store->StoreMasterHeader(NULL,0);
@@ -942,12 +942,12 @@ DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor   (const MeshIndexType*   po
 /*----------------------------------------------------------------------------+
 |ScalableMesh::CreatePointIndexFilter
 +----------------------------------------------------------------------------*/
-template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMesh<POINT>::CreatePointIndexFilter(IDTMFile::UniformFeatureDir* pointDirPtr) const
+template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMesh<POINT>::CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const
     {
     HPRECONDITION(pointDirPtr != 0);
 
-    const IDTMFile::FilteringDir* filteringDir = pointDirPtr->GetFilteringDir();
-    IDTMFile::SpatialIndexDir* indexDirP = pointDirPtr->GetSpatialIndexDir();
+    const ISMStore::FilteringDir* filteringDir = pointDirPtr->GetFilteringDir();
+    ISMStore::SpatialIndexDir* indexDirP = pointDirPtr->GetSpatialIndexDir();
 
     if (0 == filteringDir || 0 == indexDirP)
         return 0;
@@ -959,13 +959,13 @@ template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMe
  
 
     ISMPointIndexFilter<POINT, YProtPtExtentType>* pFilter = 0;                            
-    IDTMFile::FilterType filteringType = filteringDir->GetType();
+    ISMStore::FilterType filteringType = filteringDir->GetType();
 
     if (indexHandler->IsProgressive())
         {
         switch (filteringType)
             {
-            case IDTMFile::FILTER_TYPE_DUMB :
+            case ISMStore::FILTER_TYPE_DUMB :
                 pFilter = new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, YProtPtExtentType>();                           
                 break;            
             default : 
@@ -1644,7 +1644,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
 
     if (WKTKeyword::TYPE_UNKNOWN == GetWktType(extendedWktStr))
     {
-        wchar_t wktFlavor[2] = { (wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0' };
+        wchar_t wktFlavor[2] = { (wchar_t)ISMStore::WktFlavor_Autodesk, L'\0' };
 
         extendedWktStr += WString(wktFlavor);
         //wkt = HCPWKT(extendedWktStr.c_str());

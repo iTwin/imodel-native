@@ -117,7 +117,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     {
                     if (defs[i][j] < points.size()) feature.push_back(points[defs[i][j]]);
                     }
-                if (IsClosedFeature((IDTMFile::FeatureType)defs[i][0]) && DVec3d::FromStartEnd(feature.front(), feature.back()).Magnitude() > 0) feature.push_back(feature.front());
+                if (IsClosedFeature((ISMStore::FeatureType)defs[i][0]) && DVec3d::FromStartEnd(feature.front(), feature.back()).Magnitude() > 0) feature.push_back(feature.front());
 #if SM_TRACE_FEATURE_DEFINITIONS
                 WString namePoly = LOG_PATH_STR_W + L"prefeaturepoly_";
                 LOGSTRING_NODE_INFO_W(node, namePoly)
@@ -1898,7 +1898,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
                     fwrite(&polyline[0], sizeof(DPoint3d), polyline.size(), polyCliPFile);
                     fclose(polyCliPFile);
                     }
-                node->AddFeatureDefinitionSingleNode((IDTMFile::FeatureType)types[&polyline - &features.front()], polyline, extent);
+                node->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &features.front()], polyline, extent);
             }
         }
 #if SM_OUTPUT_MESHES_STITCHING

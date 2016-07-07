@@ -293,7 +293,7 @@ void SourcesImporter::Impl::ParseFeatureOrPointBuffer(unsigned char* buffer, siz
 
                 PacketGroup dstPackets(LinearTypeCreatorTrait<DPoint3d>::type().Create().GetDimensionOrgCount(), GetMemoryAllocator());
 
-                PODPacketProxy<IDTMFile::FeatureHeader> headerPacket;
+                PODPacketProxy<ISMStore::FeatureHeader> headerPacket;
                 headerPacket.AssignTo(dstPackets[0]);
                 headerPacket.Reserve(1);
                 headerPacket.SetSize(1);
@@ -430,7 +430,7 @@ SourcesImporter::Status SourcesImporter::Impl::ImportSDKSources()
             GCS::Status wktCreateStatus;
             WString extendedWktStr(sourceIt->m_importConfig->GetDefaultTargetGCS().GetWKT(wktCreateStatus).GetCStr());
             auto bGCS = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS();
-            IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&extendedWktStr, extendedWktStr);
+            ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&extendedWktStr, extendedWktStr);
 
             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;
 

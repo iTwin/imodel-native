@@ -414,7 +414,7 @@ private:
     LinearHandler::TypeInfoCIter    m_typeInfoIter;
     LinearHandler::TypeInfoCIter    m_typeInfoEnd;
 
-    PODPacketProxy<IDTMFile::FeatureHeader>
+    PODPacketProxy<ISMStore::FeatureHeader>
                                     m_headerPacket;
     PODPacketProxy<DPoint3d>        m_pointPacket;
 
@@ -502,7 +502,7 @@ class CivilDTMLinearExtractorCreator : public InputExtractorCreatorMixinBase<Civ
         if (!sourceBase.GetLinearHandler().ComputeCounts())
             return RawCapacities(0, 0);
 
-        return RawCapacities (sourceBase.GetLinearHandler().GetMaxLinearCount()*sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities (sourceBase.GetLinearHandler().GetMaxLinearCount()*sizeof(ISMStore::FeatureHeader),
                               sourceBase.GetLinearHandler().GetMaxPointCount()*sizeof(DPoint3d));
         }
 
@@ -549,7 +549,7 @@ class CivilDTMTINLinearExtractorCreator : public InputExtractorCreatorMixinBase<
         if (!sourceBase.GetTINLinearHandler().ComputeCounts())
             return RawCapacities(0, 0);
 
-        return RawCapacities (sourceBase.GetTINLinearHandler().GetMaxLinearCount()*sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities (sourceBase.GetTINLinearHandler().GetMaxLinearCount()*sizeof(ISMStore::FeatureHeader),
                               sourceBase.GetTINLinearHandler().GetMaxPointCount()*sizeof(DPoint3d));
         }
 

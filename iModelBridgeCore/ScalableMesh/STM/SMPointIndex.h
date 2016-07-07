@@ -13,7 +13,7 @@
 
 #include <ImagePP/all/h/HGF3DExtent.h>
 //#include <ImagePP/all/h/IDTMTypes.h>
-//#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/ISMStore.h>
 
 #include <ImagePP/all/h/HPMPooledVector.h>
 
@@ -1119,19 +1119,19 @@ protected:
 
     private:
 
-        static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+        static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
-            return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
+            return static_cast<ISMStore::NodeID>(blockID.m_integerID);
             }
 
-        static IDTMFile::NodeID ConvertChildID(const HPMBlockID& childID)
+        static ISMStore::NodeID ConvertChildID(const HPMBlockID& childID)
             {
-            return static_cast<IDTMFile::NodeID>(childID.m_integerID);
+            return static_cast<ISMStore::NodeID>(childID.m_integerID);
             }
 
-        static IDTMFile::NodeID ConvertNeighborID(const HPMBlockID& neighborID)
+        static ISMStore::NodeID ConvertNeighborID(const HPMBlockID& neighborID)
             {
-            return static_cast<IDTMFile::NodeID>(neighborID.m_integerID);
+            return static_cast<ISMStore::NodeID>(neighborID.m_integerID);
             }
 
         //Should be accessed using GetParentNode.        

@@ -8,7 +8,7 @@
 
 //#include <ImagePP\all\h\HGFSpatialIndex.h>
 
-using namespace IDTMFile;
+using namespace ISMStore;
 
 //=====================================================================================================================
 //=====================================================================================================================
@@ -546,7 +546,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
 
     if (!IsParentSet())
         {
-        if (UNCONSTTHIS->m_nodeHeader.m_parentNodeID != IDTMFile::GetNullNodeID())
+        if (UNCONSTTHIS->m_nodeHeader.m_parentNodeID != ISMStore::GetNullNodeID())
             {      
             s_createdNodeMutex.lock(); 
 
@@ -3954,7 +3954,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SetPar
             }
         else
             {
-            this->m_nodeHeader.m_parentNodeID = IDTMFile::GetNullNodeID();
+            this->m_nodeHeader.m_parentNodeID = ISMStore::GetNullNodeID();
             }
 
         m_isParentNodeSet = true;
@@ -6898,7 +6898,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::DumpOc
         }
     else
         {
-        nodeId = IDTMFile::GetNullNodeID();
+        nodeId = ISMStore::GetNullNodeID();
         }   
 
     NbChars = sprintf(TempBuffer, "<ChildNode NodeId=\"%lli\" TotalPoints=\"%lli\" SplitDepth=\"%zi\" ArePoints3d=\"%i\">", nodeId, GetCount(), GetSplitDepth(), m_nodeHeader.m_arePoints3d ? 1 : 0);
