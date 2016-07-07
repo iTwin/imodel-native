@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/OsEnvUnitTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -12,6 +12,7 @@
 #if !defined (_WIN32)
 #include <regex.h>
 #endif
+#include <wctype.h>
 
 /* */
 struct MyEmptyStruct {};
@@ -343,20 +344,17 @@ TEST (CRuntimeTests, Iswxdigit)
 //---------------------------------------------------------------------------------------
 TEST (CRuntimeTests, Iswctype)
 {
-#if defined (ANDROID)
-    // not sure if iswctype is portable, so keep this test Android-specific for now
-    ASSERT_TRUE (iswctype ('A', WC_TYPE_ALNUM));
-    ASSERT_TRUE (iswctype ('A', WC_TYPE_ALPHA));
-    ASSERT_TRUE (iswctype ('\n', WC_TYPE_CNTRL));
-    ASSERT_TRUE (iswctype ('1', WC_TYPE_DIGIT));
-    ASSERT_TRUE (iswctype ('1', WC_TYPE_GRAPH));
-    ASSERT_TRUE (iswctype ('a', WC_TYPE_LOWER));
-    ASSERT_TRUE (iswctype ('A', WC_TYPE_PRINT));
-    ASSERT_TRUE (iswctype (';', WC_TYPE_PUNCT));
-    ASSERT_TRUE (iswctype (' ', WC_TYPE_SPACE));
-    ASSERT_TRUE (iswctype ('A', WC_TYPE_UPPER));
-    ASSERT_TRUE (iswctype ('A', WC_TYPE_XDIGIT));
-#endif
+    ASSERT_TRUE (iswctype ('A',  wctype("alnum")));
+    ASSERT_TRUE (iswctype ('A',  wctype("alpha")));
+    ASSERT_TRUE (iswctype ('\n', wctype("cntrl")));
+    ASSERT_TRUE (iswctype ('1',  wctype("digit")));
+    ASSERT_TRUE (iswctype ('1',  wctype("graph")));
+    ASSERT_TRUE (iswctype ('a',  wctype("lower")));
+    ASSERT_TRUE (iswctype ('A',  wctype("print")));
+    ASSERT_TRUE (iswctype (';',  wctype("punct")));
+    ASSERT_TRUE (iswctype (' ',  wctype("space")));
+    ASSERT_TRUE (iswctype ('A',  wctype("upper")));
+    ASSERT_TRUE (iswctype ('A',  wctype("xdigit")));
     SUCCEED ();
 }
 
