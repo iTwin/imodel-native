@@ -13,6 +13,7 @@
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
 struct RasterTile;
+struct DrawArgs;
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -80,7 +81,7 @@ struct ItemCache_T
     ItemList m_lru;
     };
 
-#define TILE_CACHE_LIMIT 250     // The number of texture we keep in memory.
+#define TILE_CACHE_LIMIT 350  // The number of texture we keep in memory.
 typedef ItemCache_T<RasterTile, TILE_CACHE_LIMIT> RasterTileCache;
 
 //----------------------------------------------------------------------------------------
@@ -121,7 +122,7 @@ public:
     DPoint3dCP GetCorners() const { return m_corners; }
 
     //! Draw this tile in the view. Tile might not be loaded, it will be loaded only if locally available. Return true if successful.
-    bool Draw(Dgn::RenderContextR context);
+    bool Draw(DrawArgs& drawArgs);
     
     TileId const& GetId() const {return m_tileId;}
 
@@ -141,6 +142,8 @@ public:
     void DropGraphicsForViewport(Dgn::DgnViewportCR viewport);
     
     RasterQuadTreeR GetTreeR() {return m_tree;}       
+
+    RasterTileP FindCachedCoarserTile(uint32_t resolutionDelta, Dgn::DgnViewportCR viewport);
 
 private:
     RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tree);

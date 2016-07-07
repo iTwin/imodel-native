@@ -148,7 +148,7 @@ struct ThreeMxProgressive : ProgressiveTask
 {
     SceneR m_scene;
     DrawArgs::MissingNodes m_missing;
-    uint64_t m_nextShow = 0;
+    TimePoint m_nextShow;
 
     ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes) : m_scene(scene), m_missing(std::move(nodes)){}
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
@@ -159,7 +159,7 @@ struct ThreeMxProgressive : ProgressiveTask
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
-    uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
+    auto now = std::chrono::steady_clock::now();
     DrawArgs args(context, m_scene, now, now-m_scene.GetNodeExpirationTime());
 
     DEBUG_PRINTF("3MX progressive %d missing", m_missing.size());
@@ -186,7 +186,7 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
 
     if (now > m_nextShow)
         {
-        m_nextShow = now + 1000; // once per second
+        m_nextShow = now + std::chrono::seconds(1); // once per second
         wantShow = WantShow::Yes;
         }
 
@@ -225,16 +225,19 @@ void ThreeMxModel::Load(Dgn::Render::SystemP renderSys) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId ModelHandler::CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP trans)
+DgnModelId ModelHandler::CreateModel(DgnDbR db, Utf8CP modelNameIn, Utf8CP sceneFile, TransformCP trans)
     {
     DgnClassId classId(db.Schemas().GetECClassId(THREEMX_SCHEMA_NAME, "ThreeMxModel"));
     BeAssert(classId.IsValid());
+
+    Utf8String modelName(db.Models().GetUniqueModelName(modelNameIn));
 
     ThreeMxModelPtr model = new ThreeMxModel(DgnModel::CreateParams(db, classId, ThreeMxModel::CreateModelCode(modelName)));
 
     model->SetSceneFile(sceneFile);
     if (trans)
         model->SetLocation(*trans);
+
 
     model->Insert();
     return model->GetModelId();
@@ -279,7 +282,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         return;
         }
 
-    uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
+    auto now = std::chrono::steady_clock::now();
     DrawArgs args(context, *m_scene, now, now-m_scene->GetNodeExpirationTime());
     m_scene->Draw(args);
     DEBUG_PRINTF("3MX draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_scene->CountNodes(), args.m_missing.size());

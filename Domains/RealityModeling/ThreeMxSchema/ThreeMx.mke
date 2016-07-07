@@ -99,14 +99,19 @@ DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
 
-LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)  \
-                                $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
-                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
-                                $(ContextSubpartsLibs)$(stlibprefix)lzma$(stlibext)
+LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                   $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)  \
+                   $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
+                   $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                   $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
+                   $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                   $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
+                   $(ContextSubpartsLibs)$(stlibprefix)BeHttp$(stlibext) \
+                   $(ContextSubpartsLibs)$(stlibprefix)lzma$(stlibext)
+
+%if (("Windows" == TARGET_PLATFORM) || ("WinRT" == TARGET_PLATFORM) || ("iOS" == TARGET_PLATFORM))
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+%endif
 
 %include $(sharedMki)LinkLibrary.mki
