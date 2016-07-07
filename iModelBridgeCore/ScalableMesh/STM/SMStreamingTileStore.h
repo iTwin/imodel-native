@@ -1007,7 +1007,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
 
 						auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
-						indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+						indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
                         memcpy(&s_is_virtual_grouping, reinterpret_cast<char *>(dest.get()) + position, sizeof(s_is_virtual_grouping));
                         position += sizeof(s_is_virtual_grouping);
@@ -1081,7 +1081,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
 
 					auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
-					indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+					indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 /* Needed?
 					if (masterHeader.isMember("singleFile"))
 					{

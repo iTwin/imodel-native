@@ -31,9 +31,6 @@
     <Filter Include="Includes\PublicAPI">
       <UniqueIdentifier>{4245fa35-4e44-4b19-aeec-d0e9d0c602e7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Includes\STM">
-      <UniqueIdentifier>{9b2a811a-b4ee-4901-b972-87ccbb2b5026}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Includes\PublicAPI\Foundations">
       <UniqueIdentifier>{fcddf41e-5e1b-4917-9587-d5c10f1cf856}</UniqueIdentifier>
     </Filter>
@@ -67,12 +64,6 @@
     <Filter Include="Includes\PublicAPI\Import\Config\Content">
       <UniqueIdentifier>{4785ce83-4eda-4a3f-ac2c-66224b2a2833}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Includes\STM\ImportPlugins">
-      <UniqueIdentifier>{68f55aa3-3048-4165-a42b-fe222faae387}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Includes\STM\Plugins">
-      <UniqueIdentifier>{09d926f4-32ce-4919-a3bf-f793781e41f5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Foundations">
       <UniqueIdentifier>{26be359b-e587-4d34-9fcc-10bb8f64d315}</UniqueIdentifier>
     </Filter>
@@ -85,33 +76,6 @@
     <Filter Include="Source\Memory">
       <UniqueIdentifier>{d80ece41-d034-4c81-b49f-f64fcbf437f1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\STM">
-      <UniqueIdentifier>{0926c720-2be9-42e1-aca5-aae5790286c1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\STM\ImportPlugins">
-      <UniqueIdentifier>{1f0083ca-77f4-4ede-ad85-e956550f413a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\STM\Plugins">
-      <UniqueIdentifier>{e8f1cdbe-faec-4dd6-b072-dbab16c29a4a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\STM\ScalableMesh">
-      <UniqueIdentifier>{b0503107-94d5-445e-ba9f-2ee064a1e80d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Includes\STM\ScalableMesh">
-      <UniqueIdentifier>{3c5c816c-f14d-4610-b585-519c540ad1d1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Includes\STM\ScalableMesh\Garland">
-      <UniqueIdentifier>{b3af8d97-4a83-4db7-a936-bc894c807fcb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\STM\ScalableMesh\3dDelaunay">
-      <UniqueIdentifier>{d821f2e6-51b2-4217-a8ee-31b67dab6fd1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\STM\ScalableMesh\3dDelaunay\gDel3d">
-      <UniqueIdentifier>{1ca2c3ec-b788-4a26-afa0-cf64d483fc55}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\STM\ScalableMesh\3dDelaunay\tetgen">
-      <UniqueIdentifier>{611a3311-66a5-4ed6-b77c-b1fd94f74a8a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Includes\AutomaticGroundDetection">
       <UniqueIdentifier>{34f95208-240e-4d3b-8929-c7cb0f9f807e}</UniqueIdentifier>
     </Filter>
@@ -121,32 +85,68 @@
     <Filter Include="Includes\PublicAPI\AutomaticGroundDetection">
       <UniqueIdentifier>{98578e10-52e6-433d-aa33-b702f537f45a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\STM\Analysis">
-      <UniqueIdentifier>{858e43ae-5014-4a39-ae5d-34f38d048908}</UniqueIdentifier>
+    <Filter Include="Includes\Core">
+      <UniqueIdentifier>{9b2a811a-b4ee-4901-b972-87ccbb2b5026}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Includes\STM\Analysis">
-      <UniqueIdentifier>{3bc2bdd5-6412-462b-bb48-e1f789d232b8}</UniqueIdentifier>
+    <Filter Include="Includes\Core\ImportPlugins">
+      <UniqueIdentifier>{68f55aa3-3048-4165-a42b-fe222faae387}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\STM\Edits">
-      <UniqueIdentifier>{ae900a87-4137-4685-8c4a-246eeb02e18d}</UniqueIdentifier>
+    <Filter Include="Includes\Core\Plugins">
+      <UniqueIdentifier>{09d926f4-32ce-4919-a3bf-f793781e41f5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Includes\STM\Edits">
-      <UniqueIdentifier>{6d65e293-ba8d-4eb0-a46b-2defd49cb122}</UniqueIdentifier>
+    <Filter Include="Includes\Core\ScalableMesh">
+      <UniqueIdentifier>{3c5c816c-f14d-4610-b585-519c540ad1d1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Includes\STM\Threading">
-      <UniqueIdentifier>{5cb0104d-7dee-40c5-af11-e3c5f8f4d5f0}</UniqueIdentifier>
+    <Filter Include="Includes\Core\ScalableMesh\Garland">
+      <UniqueIdentifier>{b3af8d97-4a83-4db7-a936-bc894c807fcb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\STM\Threading">
-      <UniqueIdentifier>{ac54e5f2-d92c-4e0a-acb7-7796d9803645}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Includes\STM\ScalableMesh\Streaming">
+    <Filter Include="Includes\Core\ScalableMesh\Streaming">
       <UniqueIdentifier>{379d0ae1-b880-44d3-b4c8-50beeca511ee}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\STM\CloudDataSource">
-      <UniqueIdentifier>{e26b8da1-1e16-44b6-ab85-cc061a00ff26}</UniqueIdentifier>
+    <Filter Include="Includes\Core\Analysis">
+      <UniqueIdentifier>{3bc2bdd5-6412-462b-bb48-e1f789d232b8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Includes\STM\CloudDataSource">
-      <UniqueIdentifier>{9a8b6b78-8dd3-4104-bc21-f7e0075efdf0}</UniqueIdentifier>
+    <Filter Include="Includes\Core\Edits">
+      <UniqueIdentifier>{6d65e293-ba8d-4eb0-a46b-2defd49cb122}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\Core\Threading">
+      <UniqueIdentifier>{5cb0104d-7dee-40c5-af11-e3c5f8f4d5f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core">
+      <UniqueIdentifier>{0926c720-2be9-42e1-aca5-aae5790286c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\ImportPlugins">
+      <UniqueIdentifier>{1f0083ca-77f4-4ede-ad85-e956550f413a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Plugins">
+      <UniqueIdentifier>{e8f1cdbe-faec-4dd6-b072-dbab16c29a4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\ScalableMesh">
+      <UniqueIdentifier>{b0503107-94d5-445e-ba9f-2ee064a1e80d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\ScalableMesh\3dDelaunay">
+      <UniqueIdentifier>{d821f2e6-51b2-4217-a8ee-31b67dab6fd1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\ScalableMesh\3dDelaunay\gDel3d">
+      <UniqueIdentifier>{1ca2c3ec-b788-4a26-afa0-cf64d483fc55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\ScalableMesh\3dDelaunay\tetgen">
+      <UniqueIdentifier>{611a3311-66a5-4ed6-b77c-b1fd94f74a8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Analysis">
+      <UniqueIdentifier>{858e43ae-5014-4a39-ae5d-34f38d048908}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Edits">
+      <UniqueIdentifier>{ae900a87-4137-4685-8c4a-246eeb02e18d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Threading">
+      <UniqueIdentifier>{ac54e5f2-d92c-4e0a-acb7-7796d9803645}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Stores">
+      <UniqueIdentifier>{e7b7cdad-3e14-4004-875a-0257362155d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\Core\Stores">
+      <UniqueIdentifier>{6308fcf1-bce4-4087-962b-f247fa70bbd9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -244,82 +244,82 @@
       <Filter>Includes\Import</Filter>
     </ClInclude>
     <ClInclude Include="STM\HGF3DFilterCoord.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\HGF3DFilterCoord.hpp">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\InternalUtilityFunctions.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshContentConfigPersistance.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshCoreDefs.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshCoreFns.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshCreator.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshEditListener.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshImportSequencePersistance.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshMoniker.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.hpp">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshQuadTreeQueries.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshQuadTreeQueries.hpp">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshQuery.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshQuery.hpp">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshRasterDraping.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshRelevanceDistribution.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshSourcePersistance.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshSources.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshSourcesImport.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshSourcesPersistance.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshStorage.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshTilingOptions.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshPCH.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMesh.h">
       <Filter>Includes\PublicAPI</Filter>
@@ -544,101 +544,101 @@
       <Filter>Includes\PrivateAPI</Filter>
     </ClInclude>
     <ClInclude Include="STM\ImportPlugins\CivilDTMHelpers.h">
-      <Filter>Includes\STM\ImportPlugins</Filter>
+      <Filter>Includes\Core\ImportPlugins</Filter>
     </ClInclude>
     <ClInclude Include="STM\Plugins\ScalableMeshClipMaskFilterFactory.h">
-      <Filter>Includes\STM\Plugins</Filter>
+      <Filter>Includes\Core\Plugins</Filter>
     </ClInclude>
     <ClInclude Include="STM\Plugins\ScalableMeshDimensionTypeConversionFilter.h">
-      <Filter>Includes\STM\Plugins</Filter>
+      <Filter>Includes\Core\Plugins</Filter>
     </ClInclude>
     <ClInclude Include="STM\Plugins\ScalableMeshIDTMFileTraits.h">
-      <Filter>Includes\STM\Plugins</Filter>
+      <Filter>Includes\Core\Plugins</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshFeature.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshClipContainer.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshClipContainer.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshMesher.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshMesher.hpp">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\3dDelaunay\DTetrahedron3d.h">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay</Filter>
     </ClInclude>
     <ClInclude Include="STM\3dDelaunay\predicates.h">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay</Filter>
     </ClInclude>
     <ClInclude Include="STM\3dDelaunay\ScalableMeshCao.h">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay</Filter>
     </ClInclude>
     <ClInclude Include="STM\3dDelaunay\timer.h">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay</Filter>
     </ClInclude>
     <ClInclude Include="STM\3dDelaunay\TrimHull.h">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay</Filter>
     </ClInclude>
     <ClInclude Include="STM\3dDelaunay\gDel3d\PredWrapper.h">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay\gDel3d</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay\gDel3d</Filter>
     </ClInclude>
     <ClInclude Include="STM\3dDelaunay\gDel3d\splaying.h">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay\gDel3d</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay\gDel3d</Filter>
     </ClInclude>
     <ClInclude Include="STM\3dDelaunay\gDel3d\Star.h">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay\gDel3d</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay\gDel3d</Filter>
     </ClInclude>
     <ClInclude Include="STM\MeshingFunctions.h" />
     <ClInclude Include="STM\ScalableMesh\Garland\Array.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\Array3.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\Buffer.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\GarlandMeshFilter.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\Geometry.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\Heap.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\Mat4.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\Model.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\ProximityGrid.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\Quadrics.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\TypesAndDefinitions.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\Vec2.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\Vec3.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Garland\Vec4.h">
-      <Filter>Includes\STM\ScalableMesh\Garland</Filter>
+      <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\ScalableMeshGraph.h">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Attachment.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\ScalableMeshConfig.h" />
@@ -671,13 +671,13 @@
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Warnings.h" />
     <ClInclude Include="STM\ScalableMeshFeature.h" />
     <ClInclude Include="STM\3dDelaunay\tetGen\tetgen.h">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay\tetgen</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay\tetgen</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceImporter.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshSourceImporter.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="AutomaticGroundDetection\PointCloudEditGroundDetection.h">
       <Filter>Includes\AutomaticGroundDetection</Filter>
@@ -695,25 +695,25 @@
       <Filter>Includes\PublicAPI\GeoCoords</Filter>
     </ClInclude>
     <ClInclude Include="STM\ImportPlugins\ElemSourceRef.h">
-      <Filter>Includes\STM\ImportPlugins</Filter>
+      <Filter>Includes\Core\ImportPlugins</Filter>
     </ClInclude>
     <ClInclude Include="STM\ImportPlugins\ElementType.h">
-      <Filter>Includes\STM\ImportPlugins</Filter>
+      <Filter>Includes\Core\ImportPlugins</Filter>
     </ClInclude>
     <ClInclude Include="STM\ImportPlugins\PluginUtils.h">
-      <Filter>Includes\STM\ImportPlugins</Filter>
+      <Filter>Includes\Core\ImportPlugins</Filter>
     </ClInclude>
     <ClInclude Include="STM\ImportPlugins\XYZAsciiFormat.h">
-      <Filter>Includes\STM\ImportPlugins</Filter>
+      <Filter>Includes\Core\ImportPlugins</Filter>
     </ClInclude>
     <ClInclude Include="STM\ImportPlugins\XYZAsciiFormat.hpp">
-      <Filter>Includes\STM\ImportPlugins</Filter>
+      <Filter>Includes\Core\ImportPlugins</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshVolume.h">
-      <Filter>Includes\STM\Analysis</Filter>
+      <Filter>Includes\Core\Analysis</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshDraping.h">
-      <Filter>Includes\STM\Analysis</Filter>
+      <Filter>Includes\Core\Analysis</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\AutomaticGroundDetection\GroundDetectionManager.h">
       <Filter>Includes\PublicAPI\AutomaticGroundDetection</Filter>
@@ -737,22 +737,22 @@
       <Filter>Includes\AutomaticGroundDetection</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMMeshIndex.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMMeshIndex.hpp">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMPointIndex.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMPointIndex.hpp">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMPointTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshMemoryPools.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCreator.h">
       <Filter>Includes\PublicAPI</Filter>
@@ -761,206 +761,131 @@
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshSourceCreator.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshNodeCreator.h">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\Edits\DifferenceSet.h">
-      <Filter>Includes\STM\Edits</Filter>
+      <Filter>Includes\Core\Edits</Filter>
     </ClInclude>
     <ClInclude Include="STM\Edits\DiffSetTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\DTMGraphTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\Edits\ClipUtilities.h">
-      <Filter>Includes\STM\Edits</Filter>
+      <Filter>Includes\Core\Edits</Filter>
     </ClInclude>
     <ClInclude Include="STM\Threading\ScalableMeshScheduler.h">
-      <Filter>Includes\STM\Threading</Filter>
+      <Filter>Includes\Core\Threading</Filter>
     </ClInclude>
     <ClInclude Include="STM\Edits\ClipRegistry.h">
-      <Filter>Includes\STM\Edits</Filter>
+      <Filter>Includes\Core\Edits</Filter>
     </ClInclude>
     <ClInclude Include="STM\PointTypeDPoint3d.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshProgressiveQuery.h" />
     <ClInclude Include="STM\ScalableMeshProgressiveQuery.h" />
     <ClInclude Include="STM\ScalableMeshProgressiveQuery.hpp" />
     <ClInclude Include="STM\Edits\ClipUtilities.hpp">
-      <Filter>Includes\STM\Edits</Filter>
+      <Filter>Includes\Core\Edits</Filter>
     </ClInclude>
     <ClInclude Include="STM\Threading\LightThreadPool.h">
-      <Filter>Includes\STM\Threading</Filter>
+      <Filter>Includes\Core\Threading</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMStreamingTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMStreamingTextureTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMesh\Streaming\AzureStorage.h" />
     <ClInclude Include="STM\CGALEdgeCollapse.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ImagePPHeaders.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\CGAL_BentleyKernel.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\CGAL_MTGGraphGraphTraits.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\LogUtils.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMTextureTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMSQLiteFile.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMSQLiteGraphTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMSQLitePointTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMSQLiteTextureTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\Import\DataSQLite.h" />
     <ClInclude Include="STM\SMSQLiteIndiceTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClInclude>
     <ClInclude Include="stm\SMSQLiteUVStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="stm\SMSQLiteUVIndiceTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMSQLiteFeatureTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
     <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
     <ClInclude Include="STM\SMSQLiteSkirtDefinitionsTileStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\Edits\Skirts.h">
-      <Filter>Includes\STM\Edits</Filter>
+      <Filter>Includes\Core\Edits</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMMemoryPool.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="stm\ScalableMeshDb.h">
-      <Filter>Includes\STM</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\ActivitySemaphore.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSource.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccount.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccountAzure.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccountCached.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAccountFile.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceAzure.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceBuffer.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceBuffered.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceCached.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceCloud.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceFile.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceLocator.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceManager.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceManagerPCH.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceManagerTest.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceMode.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceService.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceServiceAzure.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceServiceFile.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceServiceManager.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceStatus.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceStoreConfig.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceTransferScheduler.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\DataSourceURL.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\Manager.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\PerformanceTimer.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\Status.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\CloudDataSource\include\stdafx.h">
-      <Filter>Includes\STM\CloudDataSource</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\SMDataSourceParams.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ISMDataStore.h">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\ISMDataStore.hpp">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="stm\ComputeMemoryUseTraits.h" />
+    <ClInclude Include="STM\Stores\ISMDataStore.h">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Stores\ISMDataStore.hpp">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Stores\SMSQLiteStore.h">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Stores\SMSQLiteStore.hpp">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1093,163 +1018,163 @@
       <Filter>Source\Memory</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\CivilDTMFileImporter.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\CivilDTMHelpers.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\IDTMFileImporter.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\LandXMLFileImporter.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\XYZAsciiFileImporter.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\XYZFileImporter.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\Plugins\ScalableMeshClipMaskFilterFactory.cpp">
-      <Filter>Source\STM\Plugins</Filter>
+      <Filter>Source\Core\Plugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\Plugins\ScalableMeshLinearTypes.cpp">
-      <Filter>Source\STM\Plugins</Filter>
+      <Filter>Source\Core\Plugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\Plugins\ScalableMeshMeshTypes.cpp">
-      <Filter>Source\STM\Plugins</Filter>
+      <Filter>Source\Core\Plugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\Plugins\ScalableMeshPointTypes.cpp">
-      <Filter>Source\STM\Plugins</Filter>
+      <Filter>Source\Core\Plugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\Plugins\ScalableMeshReprojectionFilterPlugins.cpp">
-      <Filter>Source\STM\Plugins</Filter>
+      <Filter>Source\Core\Plugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\Plugins\ScalableMeshTINTypes.cpp">
-      <Filter>Source\STM\Plugins</Filter>
+      <Filter>Source\Core\Plugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\InternalUtilityFunctions.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMesh.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshContentConfigPersistance.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshCoreFns.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshCreator.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshFilteringOptions.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshImportSequencePersistance.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshInitialization.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshMoniker.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshPolicy.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshQuadTreeBCLIBFilters.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshQuery.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshRasterDraping.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshRelevanceDistribution.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshSourceCollection.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshSourceDescription.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshSourceImportConfig.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshSourcePersistance.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshSources.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshSourcesImport.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshSourcesPersistance.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshStream.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshTilingOptions.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshTime.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshURL.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshUtilityFunctions.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshFeature.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshClipContainer.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshMesher.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\3dDelaunay\ScalableMeshCao.cpp">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay</Filter>
     </ClCompile>
     <ClCompile Include="STM\3dDelaunay\TrimHull.cpp">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay</Filter>
     </ClCompile>
     <ClCompile Include="STM\3dDelaunay\gDel3d\PredWrapper.cpp">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay\gDel3d</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay\gDel3d</Filter>
     </ClCompile>
     <ClCompile Include="STM\3dDelaunay\gDel3d\splaying.cpp">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay\gDel3d</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay\gDel3d</Filter>
     </ClCompile>
     <ClCompile Include="STM\3dDelaunay\gDel3d\Star.cpp">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay\gDel3d</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay\gDel3d</Filter>
     </ClCompile>
     <ClCompile Include="STM\MeshingFunctions.cpp" />
     <ClCompile Include="STM\ScalableMesh\ScalableMeshGraph.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="Import\ScalableMeshData.cpp" />
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgen.cpp">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay\tetgen</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay\tetgen</Filter>
     </ClCompile>
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgenPredicates.cpp">
-      <Filter>Source\STM\ScalableMesh\3dDelaunay\tetgen</Filter>
+      <Filter>Source\Core\ScalableMesh\3dDelaunay\tetgen</Filter>
     </ClCompile>
     <ClCompile Include="STM\3dDelaunay\MeshData.cpp" />
     <ClCompile Include="STM\ScalableMeshSourceImporter.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\GDALFileImporter.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="AutomaticGroundDetection\PointCloudEditGroundDetection.cpp">
       <Filter>Source\AutomaticGroundDetection</Filter>
@@ -1264,46 +1189,46 @@
       <Filter>Source\AutomaticGroundDetection</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\PODImporter.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\DGNModelUtilities.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="GeoCoords\DGNModelGeoref.cpp">
       <Filter>Source\GeoCoords</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\DGNLevelImporter.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\ElemSourceRef.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\ElementType.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\DEMRasterImporter.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\CivilElemSource.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\STMSource.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ImportPlugins\XYZAsciiSource.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+      <Filter>Source\Core\ImportPlugins</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshDraping.cpp">
-      <Filter>Source\STM\Analysis</Filter>
+      <Filter>Source\Core\Analysis</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshVolume.cpp">
-      <Filter>Source\STM\Analysis</Filter>
+      <Filter>Source\Core\Analysis</Filter>
     </ClCompile>
     <ClCompile Include="AutomaticGroundDetection\GroundDetectionManager.cpp">
       <Filter>Source\AutomaticGroundDetection</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshLib.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="AutomaticGroundDetection\TileLoaderQueue.cpp">
       <Filter>Source\AutomaticGroundDetection</Filter>
@@ -1315,125 +1240,59 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshNodeCreator.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\Edits\DifferenceSet.cpp">
-      <Filter>Source\STM\Edits</Filter>
+      <Filter>Source\Core\Edits</Filter>
     </ClCompile>
     <ClCompile Include="STM\Edits\ClipUtilities.cpp">
-      <Filter>Source\STM\Edits</Filter>
+      <Filter>Source\Core\Edits</Filter>
     </ClCompile>
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp">
-      <Filter>Source\STM\Threading</Filter>
+      <Filter>Source\Core\Threading</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshProgressiveQuery.cpp" />
     <ClCompile Include="STM\ScalableMeshTexture.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp">
-      <Filter>Source\STM\Threading</Filter>
+      <Filter>Source\Core\Threading</Filter>
     </ClCompile>
     <ClCompile Include="STM\CGALEdgeCollapse.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\SMSQLiteFile.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="Import\DataSQLite.cpp" />
     <ClCompile Include="STM\DrapeOnGraph.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\SMPointIndex.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\SMMeshIndex.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\Plugins\ScalableMeshTypeConversionFilterPlugins.cpp" />
     <ClCompile Include="STM\Edits\Skirts.cpp">
-      <Filter>Source\STM\Edits</Filter>
+      <Filter>Source\Core\Edits</Filter>
     </ClCompile>
     <ClCompile Include="STM\SMStreamingTileStore.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\SMMemoryPool.cpp">
-      <Filter>Includes\STM</Filter>
+      <Filter>Includes\Core</Filter>
     </ClCompile>
     <ClCompile Include="stm\ScalableMeshDb.cpp">
-      <Filter>Source\STM</Filter>
+      <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\ActivitySemaphore.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSource.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccount.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccountAzure.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccountCached.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAccountFile.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceAzure.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceBuffer.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceBuffered.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceCached.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceCloud.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceFile.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceLocator.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceManager.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceManagerPCH.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceManagerTest.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceService.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceServiceAzure.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceServiceFile.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceServiceManager.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceTransferScheduler.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\DataSourceURL.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMesh\CloudDataSource\PerformanceTimer.cpp">
-      <Filter>Source\STM\CloudDataSource</Filter>
+    <ClCompile Include="STM\Stores\SMSQLiteStore.cpp">
+      <Filter>Source\Core\Stores</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1448,9 +1307,6 @@
     <None Include="PublicAPI\ScalableMesh\__BENTLEY_INTERNAL_ONLY__" />
     <None Include="ScalableMesh.mke" />
     <None Include="ScalableMesh.mki" />
-    <None Include="STM\ScalableMesh\CloudDataSource\CloudDataSourcePolicy.mki">
-      <Filter>Source\STM\CloudDataSource</Filter>
-    </None>
     <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
