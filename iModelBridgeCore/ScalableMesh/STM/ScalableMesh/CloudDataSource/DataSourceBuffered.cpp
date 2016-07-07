@@ -86,6 +86,7 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
 		status = account->downloadBlobSync(*this, dest, destSize, readSize);
 	}
 
+    assert(status.isOK());
     assert(destSize >= readSize); // Not enough memory was allocated to the buffer!
 
                                   // Return status
