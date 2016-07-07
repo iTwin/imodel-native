@@ -148,6 +148,7 @@ OBBoxd	createFittingOBBd(const vector3d *pts, int numPoints)
     DVec3d cen(mx + my + mz);
     box.center(vector3d(cen.x, cen.y, cen.z));
     vector3d axis[] = { &px.x, &py.x, &pz.x };
+    UNUSED_VARIABLE(axis);
 
     box.extent(0, 0.5*bsiDVec3d_magnitude(&px));
     box.extent(1, 0.5*bsiDVec3d_magnitude(&py));
