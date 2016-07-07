@@ -207,9 +207,9 @@ TEST(DgnDb, MultipleReadWrite)
     ScopedDgnHost autoDgnHost;
 
     BeFileName fullFileName;
-    TestDataManager::FindTestData(fullFileName, L"ElementsSymbologyByLevel.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
+    TestDataManager::FindTestData(fullFileName, L"3dMetricGeneral.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
     
-    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"ElementsSymbologyByLevel.ibim");
+    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"3dMetricGeneral.ibim");
     BeFileName::BeCopyFile(fullFileName, testFile);
 
     DbResult status1;
@@ -309,7 +309,7 @@ TEST(DgnDb, OpenAlreadyOpen)
 {
     ScopedDgnHost  autoDgnHost;
 
-    WCharCP testFileName = L"ElementsSymbologyByLevel.ibim";
+    WCharCP testFileName = L"3dMetricGeneral.ibim";
     BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath(testFileName);
 
     BeFileName dgndbFileName;
@@ -465,8 +465,8 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     {
     //Copy file to temp directory
     BeFileName fullFileName;
-    TestDataManager::FindTestData(fullFileName, L"ElementsSymbologyByLevel.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
-    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"ElementsSymbologyByLevel.ibim");
+    TestDataManager::FindTestData(fullFileName, L"3dMetricGeneral.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
+    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"3dMetricGeneral.ibim");
     BeFileName::BeCopyFile(fullFileName, testFile);
     //Collect properties for later verification
     DbResult status;
@@ -488,7 +488,7 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     //Check embedded files table and get file id
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles();
     ASSERT_EQ(1, embeddedFiles.MakeIterator().QueryCount())<<"There should be only one embeded file";
-    BeBriefcaseBasedId fileId = embeddedFiles.QueryFile("ElementsSymbologyByLevel.ibim");
+    BeBriefcaseBasedId fileId = embeddedFiles.QueryFile("3dMetricGeneral.ibim");
     //Verify properties
     Utf8String propertToVerify;
     PropertiesInTable propertiesInTableV;
@@ -503,11 +503,11 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnProjectPackageTest, ExtractFromPackage)
     {
-    WCharCP testDatabase = L"ElementsSymbologyByLevel.ibim";
+    WCharCP testDatabase = L"3dMetricGeneral.ibim";
     //Copy file to temp directory
     BeFileName fullFileName;
     TestDataManager::FindTestData(fullFileName, testDatabase, DgnDbTestDgnManager::GetUtDatPath(__FILE__));
-    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"ElementsSymbologyByLevel.ibim");
+    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"3dMetricGeneral.ibim");
     BeFileName::BeCopyFile(fullFileName, testFile);
     //Get some information which can be used later to verify if file was extracted correctly
     DbResult status;
@@ -559,7 +559,7 @@ TEST_F(DgnProjectPackageTest, ExtractFromPackage)
 TEST_F(DgnProjectPackageTest, ExtractPackageUsingDefaults)
     {
     //Copy project to temp folder
-    WCharCP fileName = L"ElementsSymbologyByLevel.ibim";
+    WCharCP fileName = L"3dMetricGeneral.ibim";
     BeFileName fullFileName;
     TestDataManager::FindTestData(fullFileName, fileName, DgnDbTestDgnManager::GetUtDatPath(__FILE__));
     BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(fileName);

@@ -10,6 +10,7 @@
 #include <DgnPlatform/AnnotationTable.h>
 #include <ECDb/ECSqlStatement.h>
 #include <ECObjects/DesignByContract.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -161,86 +162,40 @@ public:
         }
 };
 
+#define TEST_MODEL_NAME     "TestModel"
+#define TEST_CATEGORY_NAME  "TestCategory"
+#define TEST_TEXTSTYLE_NAME "TestTextStyle"
+
 /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/
-struct AnnotationTableTest : public GenericDgnModelTestFixture
+struct AnnotationTableTest : ::testing::Test
 {
 private:
-    const    Utf8CP m_modelName     = "TestModel";
-    const    Utf8CP m_categoryName  = "TestCategory";
 
-    typedef GenericDgnModelTestFixture T_Super;
-
-    DgnModelId              m_modelId;
-    DgnCategoryId           m_categoryId;
-    DgnElementId   m_textStyleId;
+Dgn::ScopedDgnHost m_testHost;
+DgnDbPtr m_dgnDb;
 
 public:
-AnnotationTableTest() : GenericDgnModelTestFixture (__FILE__, true /*2D*/, false /*needBriefcase*/)
+
+static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+
+AnnotationTableTest() { }
+
+BETEST_DECLARE_TC_SETUP
+BETEST_DECLARE_TC_TEARDOWN
+
+DgnDbR                  GetDgnDb()
     {
+    if (m_dgnDb.IsNull())
+        m_dgnDb = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName);
+
+    return *m_dgnDb;
     }
 
-void SetUp () override
-    {
-    T_Super::SetUp();
-
-    // Create a category
-    DgnCategory category(DgnCategory::CreateParams(GetDgnDb(), m_categoryName, DgnCategory::Scope::Physical));
-    DgnSubCategory::Appearance appearance;
-    category.Insert(appearance);
-
-    m_categoryId = category.GetCategoryId();
-    ASSERT_TRUE(m_categoryId.IsValid());
-
-    // Create a text style
-    AnnotationTextStylePtr textStyle = AnnotationTextStyle::Create(GetDgnDb());
-    textStyle->SetName(GetTextStyleName());
-    textStyle->SetHeight(GetTextStyleHeight());
-    textStyle->SetFontId(GetDgnDb().Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
-    textStyle->Insert();
-
-    m_textStyleId = textStyle->GetElementId();
-    ASSERT_TRUE(m_textStyleId.IsValid());
-
-    // Create a 2d model
-    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(GetDgnDb(), DgnClassId(GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_GeometricModel2d)), DgnModel::CreateModelCode(m_modelName)));
-    ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
-
-    m_modelId = model->GetModelId();
-    ASSERT_TRUE(m_modelId.IsValid());
-
-#define WANT_VIEW
-#if defined (WANT_VIEW)
-    // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
-    //.........................................................................................
-    DrawingViewDefinition view(DrawingViewDefinition::CreateParams(GetDgnDb(), "AnnotationTableTest",
-                ViewDefinition::Data(m_modelId, DgnViewSource::Generated)));
-    EXPECT_TRUE(view.Insert().IsValid());
-
-    DRange3d  madeUpRange = DRange3d::From (DPoint3d::From(-10.0, -10.0, -10.0), DPoint3d::From(10.0, 10.0, 10.0));
-
-    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-
-    DrawingViewController viewController(GetDgnDb(), view.GetViewId());
-    viewController.SetStandardViewRotation(StandardView::Top);
-    viewController.LookAtVolume(madeUpRange, nullptr, &viewMargin);
-    //viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
-    viewController.ChangeCategoryDisplay(m_categoryId, true);
-    viewController.ChangeModelDisplay(m_modelId, true);
-
-    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-    GetDgnDb().SaveSettings();
-#endif
-    }
-
-DgnDbR                  GetDgnDb()              { return *T_Super::GetDgnDb(); }
-DgnModelId              GetModelId()            { return m_modelId; }
-DgnCategoryId           GetCategoryId()         { return m_categoryId; }
-DgnElementId            GetTextStyleId()        { return m_textStyleId; }
-Utf8CP                  GetTextStyleName()      { return "TextStyleForTable"; }
-double                  GetTextStyleHeight()    { return 0.25; }
+DgnModelId              GetModelId()            { return GetDgnDb().Models().QueryModelId(DgnModel::CreateModelCode(TEST_MODEL_NAME)); }
+DgnCategoryId           GetCategoryId()         { return DgnCategory::QueryCategoryId (TEST_CATEGORY_NAME, GetDgnDb()); }
+DgnElementId            GetTextStyleId()        { return AnnotationTextStyle::QueryId (GetDgnDb(), TEST_TEXTSTYLE_NAME); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/15
@@ -378,6 +333,88 @@ static void     VerifyCellsWithMergeBlocks (AnnotationTableCR table, bvector<Mer
 
 }; // AnnotationTableTest
 
+DgnDbTestUtils::SeedDbInfo AnnotationTableTest::s_seedFileInfo;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BETEST_TC_SETUP(AnnotationTableTest) 
+    {
+    ScopedDgnHost tempHost;
+
+    //  Request a root seed file.
+    DgnDbTestUtils::SeedDbInfo rootSeedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));
+
+    AnnotationTableTest::s_seedFileInfo = rootSeedInfo;
+    AnnotationTableTest::s_seedFileInfo.fileName.SetName(L"AnnotationTableTest/AnnotationTableTest.bim");
+
+    // Make a copy of the root seed which will be customized as a seed for tests in this group
+    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, AnnotationTableTest::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    ASSERT_TRUE(db.IsValid());
+
+    // Create a category
+    DgnCategory category(DgnCategory::CreateParams(*db, TEST_CATEGORY_NAME, DgnCategory::Scope::Physical));
+    DgnSubCategory::Appearance appearance;
+    category.Insert(appearance);
+
+    ASSERT_TRUE (category.GetCategoryId().IsValid());
+
+    // Create a text style
+    AnnotationTextStylePtr textStyle = AnnotationTextStyle::Create(*db);
+    textStyle->SetName(TEST_TEXTSTYLE_NAME);
+    textStyle->SetHeight(0.25);
+    textStyle->SetFontId(db->Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
+    textStyle->Insert();
+
+    ASSERT_TRUE(textStyle->GetElementId().IsValid());
+
+    // Create a 2d model
+    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode(TEST_MODEL_NAME)));
+    ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
+
+    ASSERT_TRUE(model->GetModelId().IsValid());
+
+#define WANT_VIEW
+#if defined (WANT_VIEW)
+    // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
+    //.........................................................................................
+    DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "AnnotationTableTest",
+                ViewDefinition::Data(model->GetModelId(), DgnViewSource::Generated)));
+    EXPECT_TRUE(view.Insert().IsValid());
+
+    DRange3d  madeUpRange = DRange3d::From (DPoint3d::From(-10.0, -10.0, -10.0), DPoint3d::From(10.0, 10.0, 10.0));
+
+    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
+
+    DrawingViewController viewController(*db, view.GetViewId());
+    viewController.SetStandardViewRotation(StandardView::Top);
+    viewController.LookAtVolume(madeUpRange, nullptr, &viewMargin);
+    //viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
+    viewController.ChangeCategoryDisplay(category.GetCategoryId(), true);
+    viewController.ChangeModelDisplay(model->GetModelId(), true);
+
+    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
+#endif
+
+    // Save the customized seed for use by all the tests in this group
+    db->SaveSettings();
+    db->SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// Clean up what I did in my one-time setup
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+BETEST_TC_TEARDOWN(AnnotationTableTest)
+    {
+    // Note: leave your subdirectory in place. Don't remove it. That allows the 
+    // base class to detect and throw an error if two groups try to use a directory of the same name.
+    // Don't worry about stale data. The test runner will clean out everything at the start of the program.
+    // You can empty the directory, if you want to save space.
+    DgnDbTestUtils::EmptySubDirectory(AnnotationTableTest::s_seedFileInfo.fileName.GetDirectoryName());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -411,6 +448,8 @@ TEST_F (AnnotationTableTest, BasicPersist)
     // Expect the minimum aspects on the element
     ExpectedAspectCounts expectedCounts;
     expectedCounts.VerifyCounts(*readTableElement);
+
+    GetDgnDb().SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,7 +464,7 @@ TEST_F (AnnotationTableTest, PersistTwoTables)
     DgnElementId elementId2 = CreateBasicTablePersisted (numRows2, numCols2);
 
     // Purge the cache so that we don't get a cached element.
-                                  GetDgnDb().Memory().PurgeUntil(0);
+    GetDgnDb().Memory().PurgeUntil(0);
 
     AnnotationTableCPtr readTableElement = AnnotationTable::Get(GetDgnDb(), elementId1);
     ASSERT_TRUE(readTableElement.IsValid());
@@ -445,6 +484,8 @@ TEST_F (AnnotationTableTest, PersistTwoTables)
 
     // Expect the minimum aspects on the element
     expectedCounts.VerifyCounts(*readTableElement);
+
+    GetDgnDb().SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -513,6 +554,8 @@ TEST_F (AnnotationTableTest, PersistRowAndColumnAspects)
     ExpectedAspectCounts expectedCounts2;
     expectedCounts2.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableRow), rowHeights2.size());
     expectedCounts2.VerifyCounts(*readTableElement);
+
+    GetDgnDb().SaveChanges();
     }
 
 /*=================================================================================**//**
@@ -612,6 +655,8 @@ public:
         EXPECT_TRUE (foundTable.IsValid());
 
         testAction._VerifyAction (*foundTable);
+
+        GetDgnDb().SaveChanges();
         }
 
     void DoModifyTableTest (AnnotationTableTestAction& testAction)
@@ -659,6 +704,8 @@ GetDgnDb().Elements().Purge(0);
         EXPECT_TRUE (postActionTable.IsValid());
 
         testAction._VerifyAction (*postActionTable);
+
+        GetDgnDb().SaveChanges();
         }
 };
 

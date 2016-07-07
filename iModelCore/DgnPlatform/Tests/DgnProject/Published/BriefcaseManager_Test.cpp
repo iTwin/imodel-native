@@ -1457,7 +1457,7 @@ struct DoubleBriefcaseTest : LocksManagerTest
             m_dbB->SaveChanges();
         }
 
-    static WCharCP SeedFileName() { return L"ElementsSymbologyByLeveldgn.i.ibim"; }
+    static WCharCP SeedFileName() { return L"ElementsSymbologyByLevel.ibim"; }
 
     DgnModelId Model3dId() { return m_modelIds[0]; }
     DgnModelId Model2dId() { return m_modelIds[1]; }

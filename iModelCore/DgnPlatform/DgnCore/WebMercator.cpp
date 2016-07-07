@@ -1031,7 +1031,7 @@ DEFINE_REF_COUNTED_PTR(TileData)
 
 END_UNNAMED_NAMESPACE
 
-#define TABLE_NAME_TiledRaster  "TiledRaster"
+#define TABLE_NAME_TiledRaster  "TileCache"
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis           03/2015
 +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1079,9 +1079,9 @@ BentleyStatus TiledRasterCache::_CleanupDatabase(Db& db) const
         runningSum += selectStatement->GetValueInt64(0);
         }
 
-    BeAssert (runningSum >= garbageSize);
+    BeAssert(runningSum >= garbageSize);
     uint64_t creationDate = selectStatement->GetValueInt64(1);
-    BeAssert (creationDate > 0);
+    BeAssert(creationDate > 0);
 
     CachedStatementPtr deleteStatement;
     db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TiledRaster " WHERE Created <= ?");
@@ -1099,7 +1099,7 @@ BentleyStatus TileData::LoadTile()
 
     ImageSource source(m_isJpeg ? ImageSource::Format::Jpeg : ImageSource::Format::Png, std::move(m_data));
     auto texture = m_renderSys._CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No);
-    m_data = std::move(source.GetByteStreamR()); // this is necessary since we need to keep the ImageSource data so we can save it in the cache.
+    m_data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the SQLite cache.
 
     graphic->SetSymbology(m_color, m_color, 0);
     graphic->AddTile(*texture, m_tile->m_corners.m_pts);

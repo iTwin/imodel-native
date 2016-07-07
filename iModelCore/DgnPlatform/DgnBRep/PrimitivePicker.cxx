@@ -40,7 +40,7 @@ namespace PickerTools
     Standard_Real aTimeOut = Min (aTimeMax.x(), Min (aTimeMax.y(), aTimeMax.z()));
     Standard_Real aTimeIn  = Max (aTimeMin.x(), Max (aTimeMin.y(), aTimeMin.z()));
 
-    return (aTimeIn <= aTimeOut) && (aTimeOut >= 0.0);
+    return aTimeIn < aTimeOut;
   }
 }
 
@@ -54,16 +54,16 @@ public:
                           const Standard_Real theSqRadius,
                           NCollection_Array1<Standard_Character>& theResult)
     : myVerts (theVertices),
-      myRay (theRay),
-      mySqRadius (theSqRadius),
+      myCylAxis (theRay),
+      myCylSqRadius (theSqRadius),
       myResult (theResult) {}
 
   //! Implements a precise test to detect overlap between the cylinder and point
   //! with index theThreadId in the map and stores the result
   void operator() (const Standard_Integer theThreadId) const
   {
-    Standard_Real aSqDist = myRay.SquareDistance (BRep_Tool::Pnt (TopoDS::Vertex (myVerts.FindKey (theThreadId))));
-    if (aSqDist < mySqRadius)
+    Standard_Real aSqDist = myCylAxis.SquareDistance (BRep_Tool::Pnt (TopoDS::Vertex (myVerts.FindKey (theThreadId))));
+    if (aSqDist < myCylSqRadius)
     {
       myResult.SetValue (theThreadId, 1);
     }
@@ -79,8 +79,8 @@ private:
 private:
 
   TopTools_IndexedMapOfShape              myVerts;
-  gp_Lin                                  myRay;
-  Standard_Real                           mySqRadius;
+  gp_Lin                                  myCylAxis;
+  Standard_Real                           myCylSqRadius;
   NCollection_Array1<Standard_Character>& myResult;
 };
 
@@ -92,22 +92,36 @@ public:
   BruteForceEdgePicker (const TopTools_IndexedMapOfShape& theEdges,
                         const TopoDS_Edge& theAxis,
                         const Standard_Real theRadius,
-                        NCollection_Array1<Standard_Character>& theResult)
+                        NCollection_Array1<Standard_Character>& theResult,
+                        NCollection_Array1<Standard_Real>&      theCurveParams)
     : myEdges (theEdges),
-      myAxis (theAxis),
-      myRadius (theRadius),
-      myResult (theResult) {}
+      myCylAxis (theAxis),
+      myCylRadius (theRadius),
+      myResult (theResult),
+      myCurveParams (theCurveParams) {}
 
   //! Implements a precise test to detect overlap between the cylinder and edge
   //! with index theThreadId in the map and stores the result
   void operator() (const Standard_Integer theThreadId) const
   {
-    BRepExtrema_DistShapeShape anIntersector (myAxis, TopoDS::Edge (myEdges.FindKey (theThreadId)));
+    const TopoDS_Edge anEdge = TopoDS::Edge (myEdges.FindKey (theThreadId));
+    BRepExtrema_DistShapeShape anIntersector (myCylAxis, anEdge, Extrema_ExtFlag_MIN);
     if (anIntersector.IsDone())
     {
-      if (anIntersector.Value() <= myRadius)
+      if (anIntersector.Value() < myCylRadius)
       {
         myResult.SetValue (theThreadId, 1);
+        TopoDS_Shape aDetectedShape = anIntersector.SupportOnShape2 (1);
+        if (aDetectedShape.ShapeType() == TopAbs_VERTEX)
+        {
+          myCurveParams.SetValue (theThreadId, BRep_Tool::Parameter (TopoDS::Vertex (aDetectedShape), anEdge));
+        }
+        else
+        {
+          Standard_Real aParam = DBL_MAX;
+          anIntersector.ParOnEdgeS2 (1, aParam);
+          myCurveParams.SetValue (theThreadId, aParam);
+        }
         return;
       }
     }
@@ -123,9 +137,10 @@ private:
 private:
 
   TopTools_IndexedMapOfShape              myEdges;
-  TopoDS_Edge                             myAxis;
-  Standard_Real                           myRadius;
+  TopoDS_Edge                             myCylAxis;
+  Standard_Real                           myCylRadius;
   NCollection_Array1<Standard_Character>& myResult;
+  NCollection_Array1<Standard_Real>&      myCurveParams;
 };
 
 //! An API class to perform parallelized testing for overlap between
@@ -207,12 +222,14 @@ public:
                       const NCollection_Vector<Standard_Integer> theEdgesToCheck,
                       const TopoDS_Edge&                         theEdge,
                       const Standard_Real                        theRadius,
-                      NCollection_Array1<Standard_Character>&    thePickedEdges)
+                      NCollection_Array1<Standard_Character>&    thePickedEdges,
+                      NCollection_Array1<Standard_Real>&         theCurveParams)
   : myCache        (theCache.get()),
     myEdgesToCheck (theEdgesToCheck),
     myCylAxis      (theEdge),
     myCylRadius    (theRadius),
-    myPickedEdges  (thePickedEdges)
+    myPickedEdges  (thePickedEdges),
+    myCurveParams  (theCurveParams)
 {}
 
   //! Performs a precise check for overlap between the edge with index theEdgeIdx
@@ -226,9 +243,20 @@ public:
     BRepExtrema_DistShapeShape anIntersector (myCylAxis, anEdge);
     if (anIntersector.IsDone())
     {
-      if (anIntersector.Value() <= myCylRadius)
+      if (anIntersector.Value() < myCylRadius)
       {
         myPickedEdges.SetValue (aMapIdx, 1);
+        TopoDS_Shape aDetectedShape = anIntersector.SupportOnShape2 (1);
+        if (aDetectedShape.ShapeType() == TopAbs_VERTEX)
+        {
+          myCurveParams.SetValue (aMapIdx, BRep_Tool::Parameter (TopoDS::Vertex (aDetectedShape), anEdge));
+        }
+        else
+        {
+          Standard_Real aParam = DBL_MAX;
+          anIntersector.ParOnEdgeS2 (1, aParam);
+          myCurveParams.SetValue (aMapIdx, aParam);
+        }
       }
     }
   }
@@ -245,6 +273,7 @@ private:
   TopoDS_Edge                             myCylAxis;
   Standard_Real                           myCylRadius;
   NCollection_Array1<Standard_Character>& myPickedEdges;
+  NCollection_Array1<Standard_Real>&      myCurveParams;
 };
 
 
@@ -293,11 +322,13 @@ void PrimitivePicker::SetPatchSize (const Standard_Integer theSize)
   myPatchSize = theSize;
 }
 
+#include <Geom_Line.hxx>
 //=======================================================================
 //function : traverseEdges
 //purpose  :
 //=======================================================================
-void PrimitivePicker::traverseEdges (NCollection_Array1<Standard_Character>& thePickedEdges)
+void PrimitivePicker::traverseEdges (NCollection_Array1<Standard_Character>& thePickedEdges,
+                                     NCollection_Array1<Standard_Real>&      theCurveParams)
 {
   TopoDS_Edge aCylinderAxis = BRepBuilderAPI_MakeEdge (gp_Lin (myCylinder.Origin(), myCylinder.Dir()));
   NCollection_Vector<Standard_Integer> anIndexesToCheck;
@@ -313,6 +344,7 @@ void PrimitivePicker::traverseEdges (NCollection_Array1<Standard_Character>& the
   Standard_Integer aStack[32];
   Standard_Integer aNode =  0;
   Standard_Integer aHead = -1;
+  Standard_Real aParam = DBL_MAX;
 
   for (;;)
   {
@@ -355,12 +387,23 @@ void PrimitivePicker::traverseEdges (NCollection_Array1<Standard_Character>& the
           TopoDS_Edge anEdge;
           Standard_Integer aMapIdx;
           myCaches[PrimitivePicker_EDGE]->GetItemById (anElemIdx, anEdge, aMapIdx);
-          BRepExtrema_DistShapeShape anIntersector (aCylinderAxis, anEdge);
+          BRepExtrema_DistShapeShape anIntersector (aCylinderAxis, anEdge, Extrema_ExtFlag_MIN);
           if (anIntersector.IsDone())
           {
-            if (anIntersector.Value() <= myCylinder.Radius())
+            if (anIntersector.Value() < myCylinder.Radius())
             {
               thePickedEdges.SetValue (aMapIdx, 1);
+              TopoDS_Shape aDetectedShape = anIntersector.SupportOnShape2 (1);
+              if (aDetectedShape.ShapeType() == TopAbs_VERTEX)
+              {
+                theCurveParams.SetValue (aMapIdx, BRep_Tool::Parameter (TopoDS::Vertex (aDetectedShape), anEdge));
+              }
+              else
+              {
+                aParam = DBL_MAX;
+                anIntersector.ParOnEdgeS2 (1, aParam);
+                theCurveParams.SetValue (aMapIdx, aParam);
+              }
             }
           }
         }
@@ -384,7 +427,8 @@ void PrimitivePicker::traverseEdges (NCollection_Array1<Standard_Character>& the
                                                      anIndexesToCheck,
                                                      aCylinderAxis,
                                                      myCylinder.Radius(),
-                                                     thePickedEdges));
+                                                     thePickedEdges,
+                                                     theCurveParams));
   }
 }
 
@@ -414,41 +458,56 @@ void PrimitivePicker::traverseVertices (NCollection_Array1<Standard_Character>& 
 void PrimitivePicker::PickEdges (const gp_Pnt& theRayOrigin,
                                  const gp_Dir& theRayDir,
                                  const Standard_Real theRadius,
-                                 NCollection_Array1<Standard_Character>& thePickedEdges)
+                                 NCollection_Array1<Standard_Character>& thePickedEdges,
+                                 NCollection_Array1<Standard_Real>&      theCurveParams)
 {
   const Standard_Integer aNbEdges = myEdges.IsEmpty() ?
                                     myCaches[PrimitivePicker_EDGE]->Size() : myEdges.Size();
-  if (thePickedEdges.Size() != aNbEdges)
+  if (thePickedEdges.Size() != aNbEdges || theCurveParams.Size() != aNbEdges)
     return;
 
   for (Standard_Integer anEdgeIdx = 1; anEdgeIdx <= aNbEdges; ++anEdgeIdx)
   {
     thePickedEdges.ChangeValue (anEdgeIdx) = 0;
+    theCurveParams.ChangeValue (anEdgeIdx) = 0.0;
   }
 
   if (myEdges.IsEmpty())
   {
     myCylinder = Cylinder (theRayOrigin, theRayDir, theRadius);
 
-    traverseEdges (thePickedEdges);
+    traverseEdges (thePickedEdges, theCurveParams);
   }
   else
   {
     const TopoDS_Edge aCylinderAxis = BRepBuilderAPI_MakeEdge (gp_Lin (theRayOrigin, theRayDir));
     if (myTypeOfAlgo == PrimitivePicker_BRUTE_FORCE)
     {
-      OSD_Parallel::For (1, myEdges.Extent() + 1, BruteForceEdgePicker (myEdges, aCylinderAxis, theRadius, thePickedEdges));
+      OSD_Parallel::For (1, myEdges.Extent() + 1, BruteForceEdgePicker (myEdges, aCylinderAxis, theRadius, thePickedEdges, theCurveParams));
     }
     else
     {
+      Standard_Real aParam = DBL_MAX;
       for (Standard_Integer aIdx = 1; aIdx <= myEdges.Extent(); ++aIdx)
       {
-        BRepExtrema_DistShapeShape anIntersector (aCylinderAxis, TopoDS::Edge (myEdges.FindKey (aIdx)));
+        const TopoDS_Edge anEdge = TopoDS::Edge (myEdges.FindKey (aIdx));
+        BRepExtrema_DistShapeShape anIntersector (aCylinderAxis, anEdge, Extrema_ExtFlag_MIN);
         if (anIntersector.IsDone())
         {
-          if (anIntersector.Value() <= theRadius)
+          if (anIntersector.Value() < theRadius)
           {
             thePickedEdges.SetValue (aIdx, 1);
+            TopoDS_Shape aDetectedShape = anIntersector.SupportOnShape2 (1);
+            if (aDetectedShape.ShapeType() == TopAbs_VERTEX)
+            {
+              theCurveParams.SetValue (aIdx, BRep_Tool::Parameter (TopoDS::Vertex (aDetectedShape), anEdge));
+            }
+            else
+            {
+              aParam = DBL_MAX;
+              anIntersector.ParOnEdgeS2 (1, aParam);
+              theCurveParams.SetValue (aIdx, aParam);
+            }
           }
         }
       }

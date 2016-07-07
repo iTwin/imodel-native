@@ -469,6 +469,7 @@ private:
 protected:
     /*ctor*/                AnnotationTableAspect (AnnotationTableR t) : m_table (t), m_hasChanges(false) {}
     /*ctor*/                AnnotationTableAspect (AnnotationTableAspectCR rhs, bool isNew);
+    virtual ~AnnotationTableAspect() {/* required because this has virtual functions*/}
 
     AnnotationTableAspectR  operator= (AnnotationTableAspectCR rhs);
 

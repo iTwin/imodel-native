@@ -30,11 +30,12 @@ void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8Stri
     ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, fileName, testProjFile, __FILE__));
 
     OpenDb(m_db, outFileName, mode);
-    bvector<ECN::ECSchemaCP> schemaList;
+    bvector<ECN::ECSchemaCP> schemaList = m_db->Schemas().GetECSchemas();
+    ASSERT_FALSE(schemaList.empty());
+
     ECSqlStatement stmt;
 
     bmap<Utf8String, int> classList;
-    ASSERT_EQ(BentleyStatus::SUCCESS, m_db->Schemas().GetECSchemas(schemaList));
 
     for (auto i = schemaList.begin(); i != schemaList.end(); ++i)
         {

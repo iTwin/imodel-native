@@ -99,7 +99,7 @@ ViewControllerDepends           = $(DgnPlatformAPISrc)ViewController.h $(DgnPlat
 
 HandlerDepends                  = $(DgnPlatformAPISrc)ElementHandler.h $(contextDepends)
 
-RealityDataHandlerDepends       = $(DgnPlatformAPISrc)DgnViewport.h $(DgnPlatformAPISrc)HttpHandler.h $(DgnPlatformAPISrc)RealityDataCache.h
+RealityDataHandlerDepends       = $(DgnPlatformAPISrc)DgnViewport.h $(DgnPlatformAPISrc)RealityDataCache.h
 
 WebMercatorDepends              = $(DgnPlatformAPISrc)WebMercator.h $(DgnPlatformAPISrc)DgnDbTables.h
 
@@ -242,8 +242,6 @@ $(CoreObjs)DgnElements$(oext) :                     $(DgnCoreDir)DgnElements.cpp
 $(CoreObjs)DgnViewport$(oext) :                     $(DgnCoreDir)DgnViewport.cpp $(contextDepends) ${MultiCompileDepends}
 
 $(CoreObjs)Render$(oext) :                          $(DgnCoreDir)Render.cpp $(DgnPlatformAPISrc)Render.h ${MultiCompileDepends}
-
-$(CoreObjs)HttpHandler$(oext) :                     $(DgnCoreDir)HttpHandler.cpp $(DgnPlatformAPISrc)HttpHandler.h ${MultiCompileDepends}
 
 $(CoreObjs)RealityDataCache$(oext) :                $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
@@ -637,6 +635,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
+                            $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext) \
                             $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
                             $(ContextSubpartsLibs)$(UnitsLib) \
                             $(ContextSubpartsLibs)$(BentleyGeomLib) \
@@ -667,12 +666,8 @@ LINKER_LIBRARIES_DELAYLOADED + \
     $(ContextSubPartsLibs)TKPrim.lib \
     $(ContextSubPartsLibs)TKMesh.lib \
     $(ContextSubPartsLibs)TKGeomAlgo.lib \
+    $(ContextSubPartsLibs)TKShHealing.lib \
     $(ContextSubPartsLibs)TKTopAlgo.lib
-%endif
-
-%if $(TARGET_PLATFORM)!="WinRT"
-    # The "Casablanca" library is used on WinRT instead
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext)
 %endif
 
 %ifndef CREATE_STATIC_LIBRARIES
@@ -687,34 +682,8 @@ LINKER_LIBRARIES_DELAYLOADED + \
     %endif
 %endif
 
-# JavaScript Support
-%ifndef BENTLEYCONFIG_NO_JAVASCRIPT
-    LINKER_LIBRARIES +    $(ContextSubpartsLibs)$(libprefix)BeJavaScript$(stlibext)
-    %if $(TARGET_PLATFORM) == "Windows"
-        %if defined (BEJAVASCRIPT_USE_CHAKRACORE)
-            LINKER_LIBRARIES + $(ContextSubpartsLibs)ChakraCore.lib
-        %else
-            %if !defined (NDEBUG) && !defined (DGNCLIENTFXJS_WINDOWS_FORCE_V8_ENGINE)
-                %if defined (BEJAVASCRIPT_FORCE_JSRT_EDGE_MODE) && (" " != $[@findstring "[Version 10.", $[@readstdout ver]])
-                    LINKER_LIBRARIES + chakrart.lib
-                %else
-                    LINKER_LIBRARIES + jsrt.lib
-                %endif
-            %else
-                LINKER_LIBRARIES + $(ContextSubpartsLibs)libv8.lib
-            %endif
-        %endif
-    %elif $(TARGET_PLATFORM) == "WinRT"
-        %if $(MSVC_VERSION) >= 1900
-            LINKER_LIBRARIES + chakrart.lib
-        %else
-            LINKER_LIBRARIES + jsrt.lib
-        %endif
-    %elif $(TARGET_PLATFORM) == "Android"
-        LINKER_LIBRARIES + $(ContextLibPrefix)v8_base.arm.a
-        LINKER_LIBRARIES + $(ContextLibPrefix)v8_snapshot.a
-    %endif
-%endif
+# Link in JavaScript support
+%include $(SrcRoot)bsicommon/sharedmki/AppendJavaScriptLinkerLibraries.mki
 
 %include $(sharedMki)linkLibrary.mki
 

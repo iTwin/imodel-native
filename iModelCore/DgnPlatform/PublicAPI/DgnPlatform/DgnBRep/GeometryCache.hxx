@@ -19,6 +19,9 @@ public:
   //! Returns the length of set of sensitives
   Standard_EXPORT virtual Standard_Integer Size() const Standard_OVERRIDE;
 
+  //! Make inherited method Box() visible to avoid CLang compilation error
+  using BVH_PrimitiveSet<Standard_Real, 3>::Box;
+
   //! Returns bounding box of sensitive with index theIdx
   Standard_EXPORT virtual BVH_Box<Standard_Real, 3> Box (const Standard_Integer theIdx) const Standard_OVERRIDE;
 

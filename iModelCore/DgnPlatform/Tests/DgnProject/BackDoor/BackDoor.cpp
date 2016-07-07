@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/DgnProject/BackDoor.h"
-#include <DgnPlatform/RealityDataCache.h>
 #include <Logging/bentleylogging.h>
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE

@@ -42,18 +42,34 @@
 #include <gp_Circ2d.hxx>
 #include <gp_Elips2d.hxx>
 #include <gp_GTrsf.hxx>
-#include <Geom_BSplineCurve.hxx>
+#include <Adaptor3d_CurveOnSurface.hxx>
+#include <Geom2dAdaptor_HCurve.hxx>
+#include <GeomAdaptor_HSurface.hxx>
+#include <Geom2dHatch_Hatcher.hxx>
 #include <Geom2d_BSplineCurve.hxx>
+#include <Geom2d_Line.hxx>
+#include <Geom2d_TrimmedCurve.hxx>
+#include <Geom_BSplineCurve.hxx>
 #include <Geom_BSplineSurface.hxx>
 #include <Geom_Circle.hxx>
+#include <Geom_ConicalSurface.hxx>
+#include <Geom_CylindricalSurface.hxx>
 #include <Geom_Ellipse.hxx>
 #include <Geom_Line.hxx>
 #include <Geom_Plane.hxx>
+#include <Geom_RectangularTrimmedSurface.hxx>
+#include <Geom_SphericalSurface.hxx>
+#include <Geom_SurfaceOfLinearExtrusion.hxx>
+#include <Geom_SurfaceOfRevolution.hxx>
+#include <Geom_ToroidalSurface.hxx>
 #include <Geom_TrimmedCurve.hxx>
 #include <GeomAdaptor_HCurve.hxx>
 #include <GeomConvert.hxx>
+#include <GeomConvert_ApproxCurve.hxx>
+#include <GeomLProp_CLProps.hxx>
 #include <GeomLProp_SLProps.hxx>
 #include <IntCurvesFace_ShapeIntersector.hxx>
+#include <ShapeAnalysis_Curve.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
 #include <BVH_LinearBuilder.hxx>
@@ -83,6 +99,7 @@
 #include <BRepPrimApi_MakeRevol.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <NCollection_Array1.hxx>
+#include <TColgp_SequenceOfPnt.hxx>
 #include <TColStd_Array1OfReal.hxx>
 #include <TColStd_Array1OfInteger.hxx>
 
@@ -91,7 +108,22 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+//__PUBLISH_SECTION_END__
 /*=================================================================================**//**
+* Internal Open Cascade helper methods
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct OCBRepUtil
+{
+DGNPLATFORM_EXPORT static void GetOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteger*& occtMultiplicities, bvector<double> const& knots, int order);
+DGNPLATFORM_EXPORT static void HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher& hatcher, TopoDS_Face const& face);
+DGNPLATFORM_EXPORT static TopAbs_ShapeEnum GetShapeType(TopoDS_Shape const& shape); // Try to get uniform type from shape that is TopAbs_COMPOUND...
+
+}; // OCBRepUtil
+//__PUBLISH_SECTION_START__
+
+/*=================================================================================**//**
+* Helper methods to facilliate working with DgnDb and Open Cascade types
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct OCBRep
@@ -113,7 +145,6 @@ DGNPLATFORM_EXPORT static gp_Circ ToGpCirc(double& start, double& end, DEllipse3
 DGNPLATFORM_EXPORT static gp_Elips ToGpElips(double& start, double& end, DEllipse3dCR ellipse);
 DGNPLATFORM_EXPORT static Handle(Geom_BSplineCurve) ToGeomBSplineCurve(MSBsplineCurveCR bCurve, TransformCP transform = nullptr);
 DGNPLATFORM_EXPORT static Handle(Geom2d_BSplineCurve) ToGeom2dBSplineCurve(MSBsplineCurveCR bCurve, TransformCP transform = nullptr);
-DGNPLATFORM_EXPORT static void GetOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteger*& occtMultiplicities, bvector<double> const& knots, int order);
 
 // Initialize Dgn type from Open Cascade type...
 static DPoint3d ToDPoint3d(gp_Pnt const& gpPoint) {return DPoint3d::From(gpPoint.X(), gpPoint.Y(), gpPoint.Z());}
@@ -129,6 +160,7 @@ static DEllipse3d ToDEllipse3d(gp_Circ const& gpCirc, double start, double end) 
 static DEllipse3d ToDEllipse3d(gp_Circ2d const& gpCirc, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpCirc.Location()), ToDVec3d(gpCirc.XAxis().Direction()), ToDVec3d(gpCirc.YAxis().Direction()), gpCirc.Radius(), gpCirc.Radius(), start, end - start);}
 static DEllipse3d ToDEllipse3d(gp_Elips const& gpElips, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpElips.Location()), ToDVec3d(gpElips.XAxis().Direction()), ToDVec3d(gpElips.YAxis().Direction()), gpElips.MajorRadius(), gpElips.MinorRadius(), start, end - start);}
 static DEllipse3d ToDEllipse3d(gp_Elips2d const& gpElips, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpElips.Location()), ToDVec3d(gpElips.XAxis().Direction()), ToDVec3d(gpElips.YAxis().Direction()), gpElips.MajorRadius(), gpElips.MinorRadius(), start, end - start);}
+DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(Handle(Geom_BSplineCurve) const&, double first, double last);
 DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(Handle(Geom_Curve) const&, double first, double last);
 DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(TopoDS_Edge const&);
 
@@ -136,6 +168,42 @@ DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(TopoDS_Shape const&);
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(TopoDS_Shape const&, IFacetOptionsR, bool cleanShape=true); //! BRepTools::Clean is called after meshing when cleanShape is true
 DGNPLATFORM_EXPORT static BentleyStatus ClipTopoShape(bvector<TopoDS_Shape>& output, bool& clipped, TopoDS_Shape const& shape, ClipVectorCR clip) {return ERROR;} // NEEDSWORK...
 DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clip, TransformCP localToWorld) {return ERROR;} // NEEDSWORK...
+
+//! Support for locate of faces, edges, and vertices.
+struct Locate
+    {
+    //! Pick faces of a body by their proximity to a ray.
+    //! @param[in] shape The shape to pick faces for.
+    //! @param[in] boresite The ray origin and direction.
+    //! @param[out] faces The selected faces.
+    //! @param[out] params The uv surface parameters for the ray intersections with the selected faces.
+    //! @param[out] points The face points for the ray intersections with the selected faces.
+    //! @param[in] maxFace The maximum number of face hits to return.
+    //! @note The returned faces are ordered by increasing distance from ray origin to hit point on face.
+    //! @return true if ray intersected a face.
+    DGNPLATFORM_EXPORT static bool Faces(TopoDS_Shape const& shape, DRay3dCR boresite, bvector<TopoDS_Face>& faces, bvector<DPoint2d>& params, bvector<DPoint3d>& points, uint32_t maxFace);
+
+    //! Pick edges of a body by their proximity to a ray.
+    //! @param[in] shape The shape to pick edges for.
+    //! @param[in] boresite The ray origin and direction.
+    //! @param[in] maxDistance An edge will be picked if it is within this distance from the ray.
+    //! @param[out] edges The selected edges.
+    //! @param[out] params The u curve parameters for the ray intersections with the selected edges.
+    //! @param[in] maxEdge The maximum number of edge hits to return.
+    //! @note The returned edges are ordered by increasing distance from ray origin to hit point on edge.
+    //! @return true if ray intersected an edge.
+    DGNPLATFORM_EXPORT static bool Edges(TopoDS_Shape const& shape, DRay3dCR boresite, double maxDistance, bvector<TopoDS_Edge>& edges, bvector<double>& params, uint32_t maxEdge);
+
+    //! Pick vertices of a body by their proximity to a ray.
+    //! @param[in] shape The shape to pick vertices for.
+    //! @param[in] boresite The ray origin and direction.
+    //! @param[in] maxDistance A vertex will be picked if it is within this distance from the ray.
+    //! @param[out] vertices The selected edges.
+    //! @param[in] maxVertex The maximum number of vertex hits to return.
+    //! @note The returned vertices are ordered by increasing distance from ray origin to vertex location.
+    //! @return true if ray intersected a vertex.
+    DGNPLATFORM_EXPORT static bool Vertices(TopoDS_Shape const& shape, DRay3dCR boresite, double maxDistance, bvector<TopoDS_Vertex>& vertices, uint32_t maxVertex);
+    };
 
 //! Support for the creation of new bodies from other types of geometry.
 struct Create
