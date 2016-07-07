@@ -182,7 +182,7 @@ namespace pt
 //	OBBoxf	createFittingOBBf( const std::vector< vector3 > &pts );
 	OBBoxd	createFittingOBBd( const std::vector< vector3d > &pts );
 //	OBBoxf	createFittingOBBf( const vector3 *pts, int numPoints );
-	OBBoxd	createFittingOBBd( const vector3d *pts, int numPoints );
+    VORTEX_EXPORT OBBoxd	createFittingOBBd( const vector3d *pts, int numPoints );
 
 //----------------------------------------------------------------------------
 // Implementation
