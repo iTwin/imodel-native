@@ -3510,6 +3510,30 @@ int OGRSpatialReference::FindProjParm( const char *pszParameter,
             iChild = FindProjParm(SRS_PP_LONGITUDE_OF_ORIGIN, poPROJCS );
     }
 
+
+/* -------------------------------------------------------------------- */
+/*      Try similar names, but in the inverse order                     */
+/* -------------------------------------------------------------------- */
+    if (iChild == -1)
+    {
+        if (EQUAL(pszParameter, SRS_PP_LATITUDE_OF_CENTER))
+        {
+            iChild = FindProjParm(SRS_PP_LATITUDE_OF_ORIGIN, poPROJCS);
+        }
+        else if (EQUAL(pszParameter, SRS_PP_LONGITUDE_OF_CENTER))
+        {
+            iChild = FindProjParm(SRS_PP_CENTRAL_MERIDIAN, poPROJCS);
+            if (iChild == -1)
+                iChild = FindProjParm(SRS_PP_LONGITUDE_OF_ORIGIN, poPROJCS);
+        }
+        else if (EQUAL(pszParameter, SRS_PP_LONGITUDE_OF_ORIGIN))
+        {
+            iChild = FindProjParm(SRS_PP_CENTRAL_MERIDIAN, poPROJCS);
+            if (iChild == -1)
+                iChild = FindProjParm(SRS_PP_LONGITUDE_OF_CENTER, poPROJCS);
+        }
+    }
+
     return iChild;
 }
 
