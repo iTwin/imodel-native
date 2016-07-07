@@ -1382,6 +1382,18 @@ namespace IndexECPlugin.Source.QueryProviders
                 //USGS returned an error. We will return the results contained in the cache.
                 instanceList = cachedinstanceList;
                 }
+            catch ( System.AggregateException ex )
+                {
+                if (ex.InnerExceptions.All(e => e.GetType() == typeof(EnvironmentalException))) 
+                    {
+                    //USGS returned an error. We will return the results contained in the cache.
+                    instanceList = cachedinstanceList;
+                    }
+                else
+                    {
+                    throw;
+                    }
+                }
 
             if ( relCrit != null )
                 CreateParentRelationship(instanceList, relCrit, ecClass);
