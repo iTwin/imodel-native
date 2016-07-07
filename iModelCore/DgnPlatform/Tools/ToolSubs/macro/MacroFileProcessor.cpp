@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/MacroFileProcessor.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -18,7 +18,6 @@
 #include <DgnPlatform/DesktopTools/MacroFileProcessor.h>
 #include <Bentley/BeFileListIterator.h>
 #include "macro.h"
-
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -96,9 +95,9 @@ BeFileStatus    OpenFile ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WChar       GetOneChar ()
+wint_t       GetOneChar ()
     {
-    WChar charRead = m_textFile->GetChar ();
+    wint_t charRead = m_textFile->GetChar ();
     if ( (LF == charRead) || (CR == charRead) )
         {
         // do we know the endOfLineChar for this file yet?
@@ -337,7 +336,7 @@ void        MacroFileProcessor::DoEcho (WStringR stringToEcho)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             07/90
 +---------------+---------------+---------------+---------------+---------------+------*/
-WChar       MacroFileProcessor::GetOneChar (WStringP endFileMsg)
+wint_t       MacroFileProcessor::GetOneChar (WStringP endFileMsg)
     {
     // do we need to open the current file?
     if (!m_currentFile->m_textFile.IsValid())
@@ -370,11 +369,11 @@ WChar       MacroFileProcessor::GetOneChar (WStringP endFileMsg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-WChar       MacroFileProcessor::ReadCharFromCurrentFile (bool doPreprocessor, bool processEof, WStringP endFileMsg)
+wint_t      MacroFileProcessor::ReadCharFromCurrentFile (bool doPreprocessor, bool processEof, WStringP endFileMsg)
     {
     // NOTE: When it runs out of data in the current file, it goes back to the file that %included that file,
     //       or the next file that was %included by the include file, if that specifed a "path" config variable.
-    WChar   charRead;
+    wint_t   charRead;
     while (0 != (charRead = GetOneChar(endFileMsg)))
         {
         // we processEof when preProcessing or reading the rest of a comment line.
@@ -418,10 +417,10 @@ WChar       MacroFileProcessor::ReadCharFromCurrentFile (bool doPreprocessor, bo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             10/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor, WStringP endFileMsg)
+wint_t      MacroFileProcessor::GetInputChar (bool doPreprocessor, WStringP endFileMsg)
     {
-    WChar       previousNonWhiteSpaceChar;
-    WChar       charRead;
+    wint_t       previousNonWhiteSpaceChar;
+    wint_t       charRead;
     for (charRead = 0; ;m_lastCharRead = charRead)
         {
         previousNonWhiteSpaceChar = m_lastNonWhiteSpaceChar;
@@ -458,7 +457,7 @@ WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor, WStringP endF
 
             case '\\':
                 {
-                WChar   nextChar;
+                wint_t   nextChar;
                 switch (nextChar = ReadCharFromCurrentFile(doPreprocessor, true, endFileMsg))
                     {
                     case '/':
@@ -550,7 +549,7 @@ MacroOperation  MacroFileProcessor::GetMacroNameAndOperation (WStringR macroName
 
     // outer loop skips blank lines.
     bool    noNonBlank = true;
-    WChar   charRead = 0;
+    wint_t  charRead = 0;
     while ( noNonBlank && !m_eofHit)
         {
         // build up the macro name up to the end of the line or the operator.
@@ -563,7 +562,7 @@ MacroOperation  MacroFileProcessor::GetMacroNameAndOperation (WStringR macroName
                          && (LF  != charRead))
             {
             noNonBlank = false;
-            macroName.append (1, charRead);
+            macroName.append (1, (WChar)charRead);
             }
         }
 
@@ -611,9 +610,9 @@ void        MacroFileProcessor::GetRestOfLine (WStringR restOfLine, WStringP end
     restOfLine.clear();
 
     /* read in line */
-    WChar   charRead;
+    wint_t  charRead;
     while ( (LF != (charRead = GetInputChar(true, endFileMsg))) && (CR != charRead) )
-        restOfLine.append (1, charRead);
+        restOfLine.append (1, (WChar)charRead);
 
     restOfLine.Trim();
     }
@@ -643,7 +642,7 @@ void        MacroFileProcessor::SkipToEndOfConditional (bool allowElse, WCharCP 
         {
         line.clear();
 
-        WChar  charRead;
+        wint_t  charRead;
         while ( (LF != (charRead = GetInputChar (false, endFileMsg))) && (CR != charRead) )
             {
             if ( (WEOF == charRead) || (CNTRL_Z == charRead) )
@@ -653,7 +652,7 @@ void        MacroFileProcessor::SkipToEndOfConditional (bool allowElse, WCharCP 
                 FatalError (errorMsg.c_str());
                 }
 
-            line.append (1, charRead);
+            line.append (1, (WChar)charRead);
             }
 
         // if we hit the of all files while in GetInputChar, fatal error.
@@ -769,8 +768,8 @@ void        MacroFileProcessor::PreProcess (WStringP endFileMsg)
 
 begin:
     // read the rest of the line (on entry to this method, the % PreProcessor leadin character has already been read).
-    WChar   previousChar = 0;
-    for (WChar  charRead = 0; LF != (charRead = ReadCharFromCurrentFile (false, false, endFileMsg)); )
+    wint_t   previousChar = 0;
+    for (wint_t  charRead = 0; LF != (charRead = ReadCharFromCurrentFile (false, false, endFileMsg)); )
         {
         if (WEOF == charRead)
             break;

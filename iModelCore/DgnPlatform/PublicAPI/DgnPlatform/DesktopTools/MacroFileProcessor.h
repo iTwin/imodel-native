@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/MacroFileProcessor.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -80,9 +80,9 @@ private:
 
     bool                            m_eofHit;
 
-    WChar                           m_lastCharRead;
-    WChar                           m_pushedChar;
-    WChar                           m_lastNonWhiteSpaceChar;
+    wint_t                          m_lastCharRead;
+    wint_t                          m_pushedChar;
+    wint_t                          m_lastNonWhiteSpaceChar;
 
     ConfigurationVariableLevel      m_processingLevel;
     MacroReadMonitor*               m_readMonitor;
@@ -90,9 +90,9 @@ private:
     // methods used internally.
     void                            DoInclude (WStringR includeFile);
     void                            DoEcho (WStringR stringToEcho);
-    WChar                           GetOneChar (WStringP endFileMsg);
-    WChar                           ReadCharFromCurrentFile (bool doPreprocess, bool processEof, WStringP endFileMsg);
-    WChar                           GetInputChar (bool doPreprocess, WStringP endFileMsg);
+    wint_t                          GetOneChar (WStringP endFileMsg);
+    wint_t                          ReadCharFromCurrentFile (bool doPreprocess, bool processEof, WStringP endFileMsg); // may return WEOF
+    wint_t                          GetInputChar (bool doPreprocess, WStringP endFileMsg);
     MacroOperation                  GetMacroNameAndOperation (WStringR macroName, WStringP endFileMsg);
     void                            GetRestOfLine (WStringR restOfLine, WStringP endFileMsg);
     void                            TraceConditionalLevel (WCharCP explanation, int conditionalLevel);

@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/fileutil/findfile.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -621,7 +621,7 @@ WCharCP         extensionP
 
         if (WString::npos != nextPos)
             {
-            processedPath.append (path.substr (inputPos, nextPos-1));
+            processedPath.append (path.substr (inputPos, nextPos-inputPos));
             nextPos++;
             }
         else

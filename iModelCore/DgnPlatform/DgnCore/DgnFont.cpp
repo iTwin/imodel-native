@@ -116,6 +116,34 @@ DgnFontCR DgnPlatformLib::Host::FontAdmin::_ResolveFont(DgnFontCP font)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     06/2016
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::FontAdmin::Suspend()
+    {
+    if (!m_isInitialized)
+        return;
+
+    m_lastResortFontDb->CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     06/2016
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::FontAdmin::Resume()
+    {
+    if (!m_isInitialized)
+        return;
+
+    BeFileName path = _GetLastResortFontDbPath();
+    if (path.empty())
+        return;
+    
+    DbResult openResult = m_lastResortFontDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::Readonly));
+    if (BE_SQLITE_OK != openResult)
+        return;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
 DgnFontCR DgnFontManager::GetLastResortTrueTypeFont() { return T_HOST.GetFontAdmin()._GetLastResortTrueTypeFont(); }

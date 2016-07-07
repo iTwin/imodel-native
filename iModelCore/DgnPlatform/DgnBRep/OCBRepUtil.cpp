@@ -9,9 +9,35 @@
 #include <DgnPlatform/DgnBRep/OCBRep.h>
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TopAbs_ShapeEnum OCBRepUtil::GetShapeType(TopoDS_Shape const& shape)
+    {
+    TopAbs_ShapeEnum shapeType = shape.ShapeType();
+
+    if (TopAbs_COMPOUND != shapeType)
+        return shapeType;
+
+    TopoDS_Iterator shapeIter(shape);
+
+    if (!shapeIter.More() || TopAbs_COMPOUND == (shapeType = GetShapeType(shapeIter.Value())))
+        return shapeType;
+
+    shapeIter.Next();
+
+    for (; shapeIter.More(); shapeIter.Next())
+        {
+        if (shapeType != GetShapeType(shapeIter.Value()))
+            return TopAbs_COMPOUND;
+        }
+
+    return shapeType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OCBRep::GetOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteger*& occtMultiplicities, bvector<double> const& knots, int order)
+void OCBRepUtil::GetOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteger*& occtMultiplicities, bvector<double> const& knots, int order)
     {
     size_t          lowIndex, highIndex;
     bvector<double> compressedKnots;
@@ -46,7 +72,7 @@ Handle(Geom_BSplineCurve) OCBRep::ToGeomBSplineCurve(MSBsplineCurveCR bCurveIn, 
     bvector <double>         knots;
 
     bCurve->GetKnots(knots);
-    GetOcctKnots(occtKnots, occtMultiplicities, knots, bCurve->GetIntOrder());
+    OCBRepUtil::GetOcctKnots(occtKnots, occtMultiplicities, knots, bCurve->GetIntOrder());
 
     for (int i=0; i<numPoles; i++)
         occtPoles.ChangeValue(i+1) = ToGpPnt(bCurve->GetUnWeightedPole(i));
@@ -90,7 +116,7 @@ Handle(Geom2d_BSplineCurve) OCBRep::ToGeom2dBSplineCurve(MSBsplineCurveCR bCurve
     bvector <double>         knots;
 
     bCurve->GetKnots(knots);
-    GetOcctKnots(occtKnots, occtMultiplicities, knots, bCurve->GetIntOrder());
+    OCBRepUtil::GetOcctKnots(occtKnots, occtMultiplicities, knots, bCurve->GetIntOrder());
 
     for (int i=0; i<numPoles; i++)
         occtPoles.ChangeValue(i+1) = ToGpPnt2d(bCurve->GetUnWeightedPole(i));
@@ -384,4 +410,96 @@ ICurvePrimitivePtr OCBRep::ToCurvePrimitive(TopoDS_Edge const& edge)
         curvePrimitive->TransformInPlace(OCBRep::ToTransform(location.Transformation()));
 
     return curvePrimitive;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OCBRep::Locate::Faces(TopoDS_Shape const& shape, DRay3dCR boresite, bvector<TopoDS_Face>& faces, bvector<DPoint2d>& params, bvector<DPoint3d>& points, uint32_t maxFace)
+    {
+    IntCurvesFace_ShapeIntersector shint;
+
+    shint.Load(shape, Precision::Confusion());
+    shint.Perform(OCBRep::ToGpLin(boresite), -RealLast(), RealLast());
+
+    if (!shint.IsDone() || 0 == shint.NbPnt())
+        return false;
+
+    int nHits = ((int) maxFace < shint.NbPnt() ? (int) maxFace : shint.NbPnt());
+
+    for (int iHit=1; iHit <= nHits; ++iHit)
+        {
+        faces.push_back(shint.Face(iHit));
+        params.push_back(DPoint2d::From(shint.UParameter(iHit), shint.VParameter(iHit)));
+        points.push_back(OCBRep::ToDPoint3d(shint.Pnt(iHit)));
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OCBRep::Locate::Edges(TopoDS_Shape const& shape, DRay3dCR boresite, double maxDistance, bvector<TopoDS_Edge>& edges, bvector<double>& params, uint32_t maxEdge)
+    {
+    TopTools_IndexedMapOfShape allEdge;
+    TopTools_IndexedMapOfShape allVert;
+
+    TopExp::MapShapes(shape, TopAbs_EDGE, allEdge);
+    TopExp::MapShapes(shape, TopAbs_VERTEX, allVert);
+
+    PrimitivePicker picker(allVert, allEdge, PrimitivePicker::PrimitivePicker_TypeOfAlgo::PrimitivePicker_BRUTE_FORCE);
+
+    NCollection_Array1<Standard_Character> pickedEdge(1, allEdge.Size());
+    NCollection_Array1<Standard_Character> pickedVert(1, allVert.Size());
+    NCollection_Array1<Standard_Real> curveParams(1, allEdge.Size());
+
+    picker.PickEdges(OCBRep::ToGpPnt(boresite.origin), OCBRep::ToGpDir(boresite.direction), maxDistance, pickedEdge, curveParams);
+
+    for (Standard_Integer iEdge = 1; iEdge <= pickedEdge.Size(); ++iEdge)
+        {
+        if (1 != pickedEdge.Value(iEdge))
+            continue;
+
+        edges.push_back(TopoDS::Edge(allEdge.FindKey(iEdge)));
+        params.push_back(curveParams.Value(iEdge));
+
+        if (edges.size() == maxEdge)
+            break;
+        }    
+
+    return !edges.empty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OCBRep::Locate::Vertices(TopoDS_Shape const& shape, DRay3dCR boresite, double maxDistance, bvector<TopoDS_Vertex>& vertices, uint32_t maxVertex)
+    {
+    TopTools_IndexedMapOfShape allEdge;
+    TopTools_IndexedMapOfShape allVert;
+
+    TopExp::MapShapes(shape, TopAbs_EDGE, allEdge);
+    TopExp::MapShapes(shape, TopAbs_VERTEX, allVert);
+
+    PrimitivePicker picker(allVert, allEdge, PrimitivePicker::PrimitivePicker_TypeOfAlgo::PrimitivePicker_BRUTE_FORCE);
+
+    NCollection_Array1<Standard_Character> pickedEdge(1, allEdge.Size());
+    NCollection_Array1<Standard_Character> pickedVert(1, allVert.Size());
+    NCollection_Array1<Standard_Real> curveParams(1, allEdge.Size());
+
+    picker.PickVertices(OCBRep::ToGpPnt(boresite.origin), OCBRep::ToGpDir(boresite.direction), maxDistance, pickedVert);
+
+    for (Standard_Integer iVert = 1; iVert <= pickedVert.Size(); ++iVert)
+        {
+        if (1 != pickedVert.Value(iVert))
+            continue;
+
+        vertices.push_back(TopoDS::Vertex(allVert.FindKey(iVert)));
+
+        if (vertices.size() == maxVertex)
+            break;
+        }    
+
+    return !vertices.empty();
     }

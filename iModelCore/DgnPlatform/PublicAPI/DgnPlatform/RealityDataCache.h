@@ -7,7 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
+
+#ifndef _M_CEE // can't include this file in managed compilands
+
 #include <DgnPlatform/DgnPlatform.h>
+#include <Bentley/Tasks/CancellationToken.h>
+#include <queue>
+#include <chrono>
 
 #define BEGIN_BENTLEY_REALITYDATA_NAMESPACE  BEGIN_BENTLEY_DGN_NAMESPACE namespace RealityData {
 #define END_BENTLEY_REALITYDATA_NAMESPACE    } END_BENTLEY_DGN_NAMESPACE
@@ -16,7 +22,7 @@
 BEGIN_BENTLEY_REALITYDATA_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache2)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FileSource)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(HttpSource)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Payload)
@@ -28,6 +34,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Work)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(WorkerThread)
 
 DEFINE_REF_COUNTED_PTR(Cache)
+DEFINE_REF_COUNTED_PTR(Cache2)
 DEFINE_REF_COUNTED_PTR(FileSource)
 DEFINE_REF_COUNTED_PTR(HttpSource)
 DEFINE_REF_COUNTED_PTR(Payload)
@@ -60,7 +67,6 @@ protected:
     Utf8String m_payloadId;
 
 public:
-    void ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header);
     void SetExpirationDate(DateTime const& date) {m_expirationDate = date;}
     void SetEntityTag(Utf8CP eTag) {m_entityTag = eTag;}
     DateTime const& GetExpirationDate() const {return m_expirationDate;}
@@ -445,7 +451,7 @@ protected:
     RefCountedPtr<StorageThreadPool> m_threadPool;
     BeAtomic<bool> m_hasChanges;
     BeMutex m_saveChangesMux;
-    BeSQLite::Db m_database;
+    BeSQLite::Db m_db;
     uint32_t m_idleTime;
     RefCountedPtr<BeSQLite::BusyRetry> m_retry;
 
@@ -534,15 +540,6 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            05/2015
-//=======================================================================================
-struct IAsyncRequestCancellationToken
-{
-    virtual ~IAsyncRequestCancellationToken() {}
-    virtual bool _ShouldCancel() const = 0;
-};
-
-//=======================================================================================
 //! A request interface for @ref AsyncSource.
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
@@ -551,23 +548,23 @@ struct AsyncSourceRequest : RefCountedBase
     struct SynchronousRequestPredicate;
 
 protected:
-    IAsyncRequestCancellationToken* m_cancellationToken;
+    Tasks::ICancellationTokenPtr m_cancellationToken;
     Options m_options;
     PayloadPtr m_payload;
 
     mutable RefCountedPtr<SourceResponse> m_response; // set only for sync requests
 
-    AsyncSourceRequest(IAsyncRequestCancellationToken* cancellationToken, Options options, Payload& payload) : m_cancellationToken(cancellationToken), m_options(options), m_payload(&payload) {}
-
+    AsyncSourceRequest(Tasks::ICancellationToken* cancellationToken, Options options, Payload& payload) : m_cancellationToken(cancellationToken), m_options(options), m_payload(&payload) {}
+              
     //! Returns true if the request was cancelled.
-    DGNPLATFORM_EXPORT bool ShouldCancelRequest() const;
+    Tasks::ICancellationTokenPtr GetCancellationToken() const {return m_cancellationToken;}
 
     //! Handle the request (e.g. read file content and initialize reality data from it).
     virtual RefCountedPtr<SourceResponse> _Handle() const = 0;
 
 public:
     RefCountedPtr<SourceResponse> Handle(BeMutex& cs) const;
-    void SetCancellationToken(IAsyncRequestCancellationToken& token) {m_cancellationToken = &token;}
+    void SetCancellationToken(Tasks::ICancellationTokenPtr token) {m_cancellationToken = token;}
     Payload& GetPayload() const {return *m_payload;}
     Options GetRequestOptions() const {return m_options;}
 };
@@ -581,7 +578,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncSource : Source
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        10/2014
     //===================================================================================
-    struct RequestHandler : RefCounted<Work>, IAsyncRequestCancellationToken
+    struct RequestHandler : RefCounted<Work>
     {
     private:
         RefCountedPtr<AsyncSource> m_source;
@@ -592,7 +589,6 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncSource : Source
 
     protected:
         virtual void _DoWork() override;
-        virtual bool _ShouldCancel() const override;
 
     public:
         RequestHandler(AsyncSource& source, AsyncSourceRequest const& request, Cache& responseReceiver)
@@ -606,7 +602,7 @@ private:
     bset<Utf8String>         m_activeRequests;
     BeAtomic<uint64_t>       m_ignoreRequestsUntil;
     BeConditionVariable      m_synchronizationCV;
-    bool                     m_terminateRequested;
+    Tasks::SimpleCancellationTokenPtr m_cancellationToken;
 
 private:
     void SetIgnoreRequests(uint32_t ignoreTime);
@@ -615,13 +611,14 @@ private:
 protected:
     virtual ~AsyncSource()
         {
-        m_terminateRequested = true;
+        m_cancellationToken->SetCanceled();
         m_threadPool->Terminate();
         m_threadPool->WaitUntilAllThreadsIdle();
         }
     AsyncSource(int numThreads, SchedulingMethod schedulingMethod)
-        : m_threadPool(ThreadPool::Create(numThreads, numThreads, schedulingMethod)), m_ignoreRequestsUntil(0), m_terminateRequested(false)
-        {}
+        : m_threadPool(ThreadPool::Create(numThreads, numThreads, schedulingMethod)), m_ignoreRequestsUntil(0), m_cancellationToken(Tasks::SimpleCancellationToken::Create())
+        {
+        }
 
 protected:
     //! Queues a request for handling on the work thread. Derived classes should use this
@@ -656,4 +653,51 @@ struct EXPORT_VTABLE_ATTRIBUTE HttpSource : AsyncSource
     DGNPLATFORM_EXPORT virtual SourceResult _Request(Payload& data, Options options, Cache& responseReceiver) override;
 };
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct Cache2 : BeSQLite::BusyRetry
+{
+    typedef std::chrono::steady_clock::time_point TimePoint;
+    struct Worker : RefCountedBase
+    {
+        Cache2& m_cache;
+        bool m_hasChanges = false;
+        TimePoint m_saveTime;
+
+        Worker(Cache2& cache) : m_cache(cache) {}
+        Worker(Worker const&) = delete;
+        void Work();
+        void Start();
+        void SaveChanges();
+        THREAD_MAIN_DECL Main(void* arg);
+    };
+
+protected:
+    typedef RefCountedPtr<Worker> WorkerPtr;
+    bool m_isStopped=false;
+    std::chrono::milliseconds m_saveDelay = std::chrono::seconds(2);
+    WorkerPtr m_worker;
+    BentleyApi::BeConditionVariable m_cv;
+    BeSQLite::Db m_db;
+
+    //! Called to prepare the database for storing specific type of data (the type
+    //! must be known to the implementation).
+    virtual BentleyStatus _Prepare() const = 0;
+
+    //! Called to free some space in the database.
+    virtual BentleyStatus _Cleanup() const = 0;
+
+public:
+    Cache2() = default;
+    DGNPLATFORM_EXPORT ~Cache2();
+
+    DGNPLATFORM_EXPORT BentleyStatus OpenAndPrepare(BeFileNameCR cacheName);
+    DGNPLATFORM_EXPORT void ScheduleSave();
+    bool IsStopped() const {return m_isStopped;}
+    BeSQLite::DbR GetDb() {return m_db;}
+};
+
 END_BENTLEY_REALITYDATA_NAMESPACE
+
+#endif // _M_CEE 

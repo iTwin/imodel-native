@@ -98,32 +98,6 @@ virtual void _SetEntityTransform (TransformCR transform) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TopAbs_ShapeEnum GetShapeType(TopoDS_Shape const& shape) const
-    {
-    TopAbs_ShapeEnum shapeType = shape.ShapeType();
-
-    if (TopAbs_COMPOUND != shapeType)
-        return shapeType;
-
-    TopoDS_Iterator shapeIter(shape);
-
-    if (!shapeIter.More() || TopAbs_COMPOUND == (shapeType = GetShapeType(shapeIter.Value())))
-        return shapeType;
-
-    shapeIter.Next();
-
-    for (; shapeIter.More(); shapeIter.Next())
-        {
-        if (shapeType != GetShapeType(shapeIter.Value()))
-            return TopAbs_COMPOUND;
-        }
-
-    return shapeType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 KernelEntityType ToEntityType(TopAbs_ShapeEnum shapeType) const
     {
     switch (shapeType)
@@ -152,7 +126,7 @@ KernelEntityType ToEntityType(TopAbs_ShapeEnum shapeType) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-KernelEntityType _GetEntityType() const {return ToEntityType(GetShapeType(m_shape));}
+KernelEntityType _GetEntityType() const {return ToEntityType(OCBRepUtil::GetShapeType(m_shape));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
@@ -161,7 +135,7 @@ DRange3d _GetEntityRange() const
     {
     Bnd_Box box;
 
-    BRepBndLib::Add(m_shape, box, false); // Never use triangulation...
+    BRepBndLib::AddOptimal(m_shape, box, false); // Never use triangulation...
 
     return OCBRep::ToDRange3d(box);
     }

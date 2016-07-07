@@ -1220,7 +1220,22 @@ public:
     DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
 
     //! Determine whether this Placement3d is valid.
-    bool IsValid() const {return m_boundingBox.IsValid();}
+    bool IsValid() const
+        {
+        if (!m_boundingBox.IsValid())
+            return false;
+
+        double maxCoord = (10000 * DgnUnits::OneKilometer()); // about the diameter of the earth
+
+        if (m_boundingBox.low.x < -maxCoord || m_boundingBox.low.y < -maxCoord || m_boundingBox.low.z < -maxCoord ||
+            m_boundingBox.high.x > maxCoord || m_boundingBox.high.y > maxCoord || m_boundingBox.high.z > maxCoord)
+            return false;
+
+        if (fabs(m_origin.x) > maxCoord || fabs(m_origin.y) > maxCoord || fabs(m_origin.z) > maxCoord)
+            return false;
+
+        return true;
+        }
 };
 
 //=======================================================================================
@@ -1268,7 +1283,22 @@ public:
     DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
 
     //! Determine whether this Placement2d is valid
-    bool IsValid() const {return m_boundingBox.IsValid();}
+    bool IsValid() const
+        {
+        if (!m_boundingBox.IsValid())
+            return false;
+
+        double maxCoord = (10000 * DgnUnits::OneKilometer()); // about the diameter of the earth
+
+        if (m_boundingBox.low.x < -maxCoord || m_boundingBox.low.y < -maxCoord ||
+            m_boundingBox.high.x > maxCoord || m_boundingBox.high.y > maxCoord)
+            return false;
+
+        if (fabs(m_origin.x) > maxCoord || fabs(m_origin.y) > maxCoord)
+            return false;
+
+        return true;
+        }
 };
 
 //=======================================================================================
