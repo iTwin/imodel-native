@@ -160,28 +160,14 @@ class SMMemoryPoolItemBase : public RefCountedBase
 
 
 /*
-class CustomTypedPoolItemCreator
+class SMMemoryPoolMultiItemBase : public SMMemoryPoolItemBase
     {
-    public : 
-                
-        virtual Byte* AllocateData() = 0;
-
-        virtual uint64_t GetSize() = 0;
-    };
-
-class TextureTypedPoolItemCreator : public CustomTypedPoolItemCreator
-    {
-    TextureTypedPoolItemCreator(size_t sizeX, size_t sizeY)
-        {
-        }
-
-
-    virtual ~TextureTypedPoolItemCreator()
-        {
-        }
+    
 
     }
-    */
+*/
+
+
 
 template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolItemBase
     {
