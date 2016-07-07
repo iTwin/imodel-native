@@ -6729,7 +6729,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
         }
     }
 
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
     pi_pPointStore->StoreHeader(&m_nodeHeader, this->GetBlockID());
@@ -6746,27 +6746,27 @@ This method saves the node for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointsToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore)
     {
     assert(pi_pPointStore != nullptr);
 
     if (!IsLoaded())
         Load();
 
-    this->SavePointDataToCloud(pi_pPointStore);
+    this->SavePointDataToCloud(dataSourceAccount, pi_pPointStore);
 
     // Save children nodes
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SavePointsToCloud(pi_pPointStore);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SavePointsToCloud(dataSourceAccount, pi_pPointStore);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SavePointsToCloud(pi_pPointStore);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SavePointsToCloud(dataSourceAccount, pi_pPointStore);
                 }
             }
         }
@@ -6777,7 +6777,7 @@ This method saves the node for streaming using the grouping strategy.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup,
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pGroup,
                                                                                                  SMNodeGroupMasterHeader* pi_pGroupsHeader)
     {
     if (!IsLoaded())
@@ -6810,7 +6810,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
             nextGroup = s_OpenGroups.count(nextLevel) > 0 ? s_OpenGroups[nextLevel] : nullptr;
             if (!nextGroup)
                 {
-                nextGroup = new SMNodeGroup(pi_pGroup->GetFilePath(), nextLevel, ++s_GroupID);
+                nextGroup = new SMNodeGroup(dataSourceAccount, pi_pGroup->GetFilePath(), nextLevel, ++s_GroupID);
                 this->AddOpenGroup(nextLevel, nextGroup);
                 pi_pGroupsHeader->AddGroup(s_GroupID);
                 }
@@ -6819,13 +6819,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
 
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(dataSourceAccount, nextGroup, pi_pGroupsHeader);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(dataSourceAccount, nextGroup, pi_pGroupsHeader);
                 }
             }
 
@@ -7721,14 +7721,14 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, bool pi_pCompress) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress) const
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    HFCPtr<SMNodeGroup> group = new SMNodeGroup(pi_pOutputDirPath, 0, 0);
+        HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0);
 
     HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
     SMPointIndexHeader<EXTENT> oldMasterHeader;
@@ -7743,7 +7743,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     auto rootNode = GetRootNode();
     rootNode->AddOpenGroup(0, group);
 
-    rootNode->SaveGroupedNodeHeaders(group, groupMasterHeader);
+    rootNode->SaveGroupedNodeHeaders(dataSourceAccount, group, groupMasterHeader);
 
     // Handle all open groups 
     rootNode->SaveAllOpenGroups();
@@ -7758,18 +7758,18 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(const WString& pi_pOutputDirPath, bool pi_pCompress) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress) const
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(pi_pOutputDirPath, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);
+    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);
 
-    this->GetRootNode()->SavePointsToCloud(pointStore);
+    this->GetRootNode()->SavePointsToCloud(dataSourceAccount, pointStore);
 
-    this->SaveMasterHeaderToCloud(pi_pOutputDirPath);
+    this->SaveMasterHeaderToCloud(dataSourceAccount, pi_pOutputDirPath);
 
     return SUCCESS;
     }
@@ -7778,7 +7778,7 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(const WString& pi_pOutputDirPath) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath) const
     {
     Json::Value masterHeader;
     masterHeader["balanced"] = this->IsBalanced();

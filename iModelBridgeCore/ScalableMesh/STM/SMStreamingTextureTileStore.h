@@ -12,6 +12,8 @@
 #include <ImagePP/all/h/HPMDataStore.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
+#include <CloudDataSource/DataSourceAccount.h>
+
 class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, float>
     {
     public:
@@ -58,7 +60,67 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     file.Write(NULL, texData.data(), (uint32_t)(texData.size()));
                     file.Close();
                     }
-                void Load()
+
+				DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
+				{
+					if (dataSourceAccount == nullptr)
+						return nullptr;
+															// Get the thread's DataSource or create a new one
+					DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
+					if (dataSource == nullptr)
+						return nullptr;
+															// Make sure caching is enabled for this DataSource
+					dataSource->setCachingEnabled(s_stream_enable_caching);
+
+					dest.reset(new unsigned char[destSize]);
+															// Return the DataSource
+					return dataSource;
+				}
+
+				void Load(DataSourceAccount *dataSourceAccount)
+				{
+					std::unique_ptr<DataSource::Buffer[]>		dest;
+					DataSource								*	dataSource;
+					DataSource::DataSize						readSize;
+
+					assert(m_ID != -1);
+					wchar_t buffer[10000];
+					swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), m_ID);
+
+					DataSourceURL	dataSourceURL(buffer);
+
+					DataSourceBuffer::BufferSize	destSize = 5 * 1024 * 1024;
+
+					dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
+					if (dataSource == nullptr)
+						return;
+
+					if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+						return;
+
+					if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+						return;
+
+					dataSource->close();
+
+					if (readSize > 0)
+					{
+						m_Width = reinterpret_cast<int&>(dest.get()[0]);
+						m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
+						m_NbChannels = reinterpret_cast<int&>(dest.get()[2 * sizeof(int)]);
+						m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
+
+						auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
+						uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
+
+						DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
+					}
+
+					m_IsLoaded = true;
+				}
+
+                void Load_Old()
+
                     {
                     assert(m_ID != -1);
                     wchar_t buffer[10000];
@@ -78,6 +140,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                         }
                     m_IsLoaded = true;
                     }
+
                 bool IsLoaded() { return m_IsLoaded; }
                 bool IsLoading() { return m_IsLoading; }
                 void LockAndWait()
@@ -222,6 +285,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                     }
 
+				void				setDataSourceAccount	(DataSourceAccount *dataSourceAccount)		{ m_dataSourceAccount = dataSourceAccount; }
+				DataSourceAccount *	getDataSourceAccount	(void) const								{ return m_dataSourceAccount; }
+
             private:
                 uint64_t m_ID = -1;
                 bool m_IsLoaded = false;
@@ -234,6 +300,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 condition_variable m_TextureCV;
                 mutex m_TextureMutex;
                 const scalable_mesh::azure::Storage* m_stream_store;
+
+				DataSourceAccount *	m_dataSourceAccount;
             };
 
         static void OpenOrCreateBeFile(BeFile& file, const WString& path, HPMBlockID blockID)
@@ -263,20 +331,23 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     {
                     texture.SetDataSource(m_path);
                     texture.SetStore(m_stream_store);
-                    texture.SetID(blockID.m_integerID);
-                    texture.Load();
+                    texture.SetID(blockID.m_integerID);					
+                    texture.Load(getDataSourceAccount());
                     }
                 }
             assert(texture.IsLoaded() && !texture.empty());
             return texture;
             }
 
-        StreamingTextureTileStore(const WString& directory)
+        StreamingTextureTileStore(DataSourceAccount *dataSourceAccount, const WString& directory)
             : m_path(directory),
             m_stream_store(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="
                            , L"scalablemeshtest")
             {
             m_path += L"textures/";
+			
+			setDataSourceAccount(dataSourceAccount);
+			
             // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
             if (s_stream_from_disk)
                 {
@@ -288,6 +359,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     }
                 }
             }
+
 
         virtual ~StreamingTextureTileStore()
             {
@@ -371,6 +443,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             return std::min(textureSize + 3 * sizeof(int), maxCountData);
             }
 
+		void				setDataSourceAccount	(DataSourceAccount *dataSourceAccount)	{m_dataSourceAccount = dataSourceAccount;}
+		DataSourceAccount *	getDataSourceAccount	(void) const							{return m_dataSourceAccount;}
+
     private:
         WString m_path;
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
@@ -378,4 +453,6 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
         mutable std::mutex m_textureCacheLock;
         // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
         scalable_mesh::azure::Storage m_stream_store;
+
+		DataSourceAccount *	m_dataSourceAccount;
     };

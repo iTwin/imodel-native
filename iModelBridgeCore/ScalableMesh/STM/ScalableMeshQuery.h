@@ -42,9 +42,6 @@
 #endif
 //#include <hash_map>
 
-//NEEDS_WORK_SM_STREAMING : remove this!
-extern std::mutex s_streamingMutex;
-
 
 //Only way found to deactivate warning C4250 since the pragma warning(disable... doesn't work
 #pragma warning( push, 0 )

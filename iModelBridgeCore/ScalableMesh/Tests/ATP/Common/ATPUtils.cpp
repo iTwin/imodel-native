@@ -15,7 +15,8 @@ WString GetHeaderForTestType(TestType t)
     switch (t)
         {
         case TEST_GENERATION:
-            return  L"File Name,Mesher,Filter,Trimming,Nb Input Points,Nb Output Points,Point Kept (%%), GroundDetection (%%), Import Points (%%),Balancing (%%),Meshing (%%),Filtering (%%),Stitching (%%),Duration (minutes),Duration (hours), Ground Duration (minutes), Import Points (minutes),Balancing (minutes),Meshing (minutes),Filtering (minutes),Stitching (minutes),Status\n";
+            return  L"File Name,Mesher,Filter,Trimming,Nb Input Points,Nb Output Points,Point Kept (%%),File Size (Mb),GroundDetection (%%), Import Points (%%),Balancing (%%),Meshing (%%),Filtering (%%),Stitching (%%),Duration (minutes),Duration (hours), GD Accelerator, GD Seed Creation, GD Params Estimation, GD Filter Ground, Ground Duration (minutes), Import Points (minutes),Balancing (minutes),Meshing (minutes),Filtering (minutes),Stitching (minutes),Status\n";            
+            break;
         case TEST_PARTIAL_UPDATE:
             return L"";
             break;
