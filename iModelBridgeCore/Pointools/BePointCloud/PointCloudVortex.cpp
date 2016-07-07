@@ -205,10 +205,10 @@ void PointCloudVortex::StaticOptimizer(float opt)
     {
     ptStaticOptimizer(opt);
     }
-float PointCloudVortex::GetStaticOptimizer()
-    {
-    return ptGetStaticOptimizer();
-    }
+//float PointCloudVortex::GetStaticOptimizer()
+//    {
+//    return ptGetStaticOptimizer();
+//    }
 void PointCloudVortex::GlobalDensity(float opt)
     {
     ptGlobalDensity(opt);

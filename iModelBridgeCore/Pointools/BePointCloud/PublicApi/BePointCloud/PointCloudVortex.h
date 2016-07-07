@@ -114,7 +114,7 @@ struct PointCloudVortex
         BEPOINTCLOUD_EXPORT static void        DynamicFrameRate(float fps);
         BEPOINTCLOUD_EXPORT static float       GetDynamicFrameRate();
         BEPOINTCLOUD_EXPORT static void        StaticOptimizer(float opt);
-        BEPOINTCLOUD_EXPORT static float       GetStaticOptimizer();
+        //BEPOINTCLOUD_EXPORT static float       GetStaticOptimizer();
         BEPOINTCLOUD_EXPORT static void        GlobalDensity(float opt);
         BEPOINTCLOUD_EXPORT static float       GetGlobalDensity();
 
