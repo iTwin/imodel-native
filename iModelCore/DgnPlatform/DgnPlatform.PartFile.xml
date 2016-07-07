@@ -686,12 +686,12 @@
         <Directories DirectoryListName="BimConsoleDirList" />
     </Product>
 
-    <Part Name="BimConsoleExe" BentleyBuildMakeFile="BimConsole/BimConsole.mke">
+    <Part Name="BimConsoleExe" BentleyBuildMakeFile="BimConsole/BimConsole.mke" OnlyPlatforms="x64">
         <SubPart PartName="DgnPlatformLib"/>
         <SubPart PartName="DgnPlatformSqlang"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery/BimConsole$(exeext)
-                                                       Delivery/logging.config.xml</Files>
+                                                          Delivery/logging.config.xml</Files>
         </Bindings>
     </Part>
 

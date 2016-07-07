@@ -1153,7 +1153,7 @@ Utf8String DbSchemaCommand::_GetName() const
 Utf8String DbSchemaCommand::_GetUsage() const
     {
     return " .dbschema search <search term> [<folder> <file extension>]\r\n"
-        "                                Searches the DB schemas in the current file or\r\n"
+        "                                Searches the DDL of all DB schema elements in the current file or\r\n"
         "                                in all SQLite files in the specified folder for the specified\r\n"
         "                                search term.";
     }
