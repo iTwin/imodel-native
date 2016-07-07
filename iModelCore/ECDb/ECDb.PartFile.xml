@@ -216,45 +216,5 @@
         <Directories DirectoryListName="ECDbTestedDirList" />
     </Product>
 
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // ECSqlConsole                                                           // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-
-    <Product Name="ECSqlConsole" SaveProduct="true">
-        <SubPart PartName="ECSqlConsoleExe" />
-        <Directories DirectoryListName="ECSqlConsoleDirList" />
-    </Product>
-
-    <Part Name="ECSqlConsoleExe" BentleyBuildMakeFile="ECSqlConsole/ECSqlConsole.mke">
-        <SubPart PartName="ECDb"/>
-        <Bindings>
-            <Files ProductDirectoryName="ECSqlConsole">Delivery/ECSqlConsole$(exeext)
-                                                       Delivery/logging.config.xml</Files>
-        </Bindings>
-    </Part>
-
-    <ProductDirectoryList ListName="ECSqlConsoleDirList" >
-        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
-        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="Libs"                               Deliver="false"/>
-        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
-        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
-        <ProductDirectory Name="MergeModules"                       Deliver="false"/>
-        
-        <ProductDirectory Name="ECSqlConsole"                       Path=""/>
-        <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
-        <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
-        <ProductDirectory Name="unitsnativeassemblies"              Path=""/>
-        <ProductDirectory Name="ecschemas"                          Path=""/>
-        <ProductDirectory Name="geomnativeassemblies"               Path=""/>
-        <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
-        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
-        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
-    </ProductDirectoryList>
 
 </BuildContext>
