@@ -593,6 +593,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                                  HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
                                  HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore);
 
+    virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly) override; 
+
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
                                          bool pi_OnlyLoadedNode) const override;

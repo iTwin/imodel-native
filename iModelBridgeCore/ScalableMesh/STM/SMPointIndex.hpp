@@ -6476,7 +6476,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query 
     return digDown;
     }
 
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level, bool headersOnly)
 {
     HINVARIANTS;
 
@@ -6485,28 +6485,34 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadTr
 
     nLoaded++;
 
+    if (!headersOnly)
+    {
+        this->GetPointsStore()->GetBlockDataCount(this->GetBlockID());
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+    }
+
     if (level != 0 && this->GetLevel() + 1 > level) return;
 
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->LoadTreeNode(nLoaded, level);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->LoadTreeNode(nLoaded, level, headersOnly);
             }
         else
             {
                 for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
                     {
-                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->LoadTreeNode(nLoaded, level);
+                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->LoadTreeNode(nLoaded, level, headersOnly);
                     }
 
             }
         }
 }
 
-template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::LoadTree(size_t& nLoaded, int level)
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::LoadTree(size_t& nLoaded, int level, bool headersOnly)
 {
-    if(m_pRootNode != NULL) m_pRootNode->LoadTreeNode(nLoaded, level);
+    if(m_pRootNode != NULL) m_pRootNode->LoadTreeNode(nLoaded, level, headersOnly);
 }
 
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query(ISMPointIndexQuery<POINT, EXTENT>* queryObject, HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode)

@@ -3704,19 +3704,33 @@ void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("Using default maxLevel value, all nodes will be loaded\r\n");
         }
 
-    double t = clock();
+    bool headersOnly = 0;
+    if (pTestNode->GetAttributeBooleanValue(headersOnly, "headersOnly") != BEXML_Success)
+    {
+        printf("Using default maxLevel value, all nodes will be loaded\r\n");
+    }
+
     StatusInt status;
     IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
     size_t nbLoadedNodes = 0;
 
-    status = stmFile->LoadAllNodeHeaders(nbLoadedNodes, level);
+    double t = clock();
+    if (headersOnly)
+    {
+        status = stmFile->LoadAllNodeHeaders(nbLoadedNodes, level);
+    }
+    else
+    {
+        status = stmFile->LoadAllNodeData(nbLoadedNodes, level);
+    }
     assert(status == SUCCESS);
 
     t = clock() - t;
 
-    fwprintf(pResultFile, L"%s,%.5f,%I64d\n",
+    fwprintf(pResultFile, L"%s,%I64d,%.5f,%d,%I64d\n",
              stmFileName.c_str(),
              (double)t / CLOCKS_PER_SEC,
+             level,
              nbLoadedNodes);
 
     fflush(pResultFile);

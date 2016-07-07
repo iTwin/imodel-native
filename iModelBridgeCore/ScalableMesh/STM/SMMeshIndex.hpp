@@ -667,6 +667,66 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
     if (m_nodeHeader.m_level == 0)
         WaitForThreadStop();
     }
+
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level, bool headersOnly)
+{
+    if (!IsLoaded())
+        Load();
+
+    nLoaded++;
+    RunOnNextAvailableThread(std::bind([headersOnly](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+    {
+        if (!headersOnly)
+        {
+            // Points
+            //auto count = node->GetPointsStore()->GetBlockDataCount(node->GetBlockID());
+            if (node->GetNbPoints() > 0)
+            {
+                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+
+                // Indices
+                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
+
+                if (node->m_nodeHeader.m_isTextured)
+                {
+                    // UVs
+                    RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
+
+                    // UVIndices
+                    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
+
+                    // Texture
+                    auto textureStore = static_cast<IScalableMeshDataStore<uint8_t, float, float>*>(node->GetTextureStore());
+                    assert(textureStore != nullptr);
+                    textureStore->GetBlockDataCount(node->GetBlockID());
+                }
+            }
+        }
+        SetThreadAvailableAsync(threadId);
+    }, this, std::placeholders::_1));
+
+    if (level != 0 && this->GetLevel() + 1 > level) return;
+
+    if (!m_nodeHeader.m_IsLeaf)
+    {
+        if (m_pSubNodeNoSplit != NULL)
+        {
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->LoadTreeNode(nLoaded, level, headersOnly);
+        }
+        else
+        {
+            for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
+            {
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->LoadTreeNode(nLoaded, level, headersOnly);
+            }
+
+        }
+    }
+    if (m_nodeHeader.m_level == 0)
+        WaitForThreadStop();
+
+}
+
 #ifdef INDEX_DUMPING_ACTIVATED
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
                              bool pi_OnlyLoadedNode) const
