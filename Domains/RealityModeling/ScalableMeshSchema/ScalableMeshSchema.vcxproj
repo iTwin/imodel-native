@@ -61,7 +61,6 @@ BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityMo
     <ClCompile Include="ScalableMeshDisplayCacheManager.cpp" />
     <ClCompile Include="ScalableMeshDomain.cpp" />
     <ClCompile Include="ScalableMeshHandler.cpp" />
-    <ClCompile Include="ScalableMeshProgressiveDisplay.cpp" />
     <ClCompile Include="ScalableMeshSchemaPCH.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -71,7 +70,6 @@ BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityMo
     <ClInclude Include="..\PublicApi\ScalableMeshSchema\ScalableMeshHandler.h" />
     <ClInclude Include="..\PublicApi\ScalableMeshSchema\ScalableMeshSchemaCommon.h" />
     <ClInclude Include="ScalableMeshDisplayCacheManager.h" />
-    <ClInclude Include="ScalableMeshProgressiveDisplay.h" />
     <ClInclude Include="ScalableMeshSchemaPCH.h" />
   </ItemGroup>
   <ItemGroup>

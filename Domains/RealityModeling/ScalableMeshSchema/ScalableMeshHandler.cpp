@@ -738,14 +738,14 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+        assert(status == SUCCESS);
 
         bvector<IScalableMeshNodePtr> nodes;
         for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
         m_smPtr->SetCurrentlyViewedNodes(nodes);
-        assert(m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
-
+        
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
-        assert(status == SUCCESS);
+        
         needProgressive = false;
         m_forceRedraw = false;
         }
