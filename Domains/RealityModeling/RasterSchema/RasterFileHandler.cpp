@@ -224,12 +224,7 @@ RasterFileModel::~RasterFileModel()
 BentleyStatus RasterFileModel::_LoadQuadTree() const
     {
     m_rasterTreeP = nullptr;
-
-    //&&MM  this will occurs during the first draw and that might take noticeable time and locks the UI. 
-    //  - The dgn admin cannot be called from a thread but ipp open can?  maybe not because of ipp admin.
-    //  - Do it at DgnDb open?
-    //  - Need to avoid doing it over and over again.
-    //      
+   
     // Resolve raster name
     BeFileName fileName;
     BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, m_fileProperties.m_fileId, GetDgnDb());
