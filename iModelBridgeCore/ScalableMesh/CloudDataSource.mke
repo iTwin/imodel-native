@@ -16,7 +16,7 @@ CCompOpts + $(VendorApiIncludes)
 
 #consoleAppUnicode = 1
 
-includeDir=$(SrcRoot)ScalableMesh/STM/ScalableMesh/CloudDataSource/include/
+includeDir=$(SrcRoot)ScalableMesh/CloudDataSource/include/
 dirToSearch=$(includeDir)
 %include cincapnd.mki
 
@@ -34,7 +34,7 @@ o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
 always:
     ~mkdir $(o)
 
-SrcDir=$(SrcRoot)ScalableMesh/STM/ScalableMesh/CloudDataSource/
+SrcDir=$(SrcRoot)ScalableMesh/CloudDataSource/
 
 always:
 	@CreateSymLinks.py -d"$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
@@ -95,6 +95,10 @@ $(o)PerformanceTimer$(oext) : $(SrcDir)PerformanceTimer.cpp ${MultiCompileDepend
 #----------------------------------------------------------------------
 #   Link the executable
 #----------------------------------------------------------------------
+
+LINKER_LIBRARIES_DELAYLOADED  = \
+    $(ContextSubpartsLibs)wastorage.lib \
+
 #--------------------------------------------------------------------------------------
 #   Create the library
 #--------------------------------------------------------------------------------------
@@ -114,7 +118,7 @@ DLM_NO_BENTLEY_LIB          = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
-CREATE_STATIC_LIBRARIES     = 1
+#CREATE_STATIC_LIBRARIES     = 1
 
 %include $(sharedMki)linkLibrary.mki
 

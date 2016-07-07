@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: STM/ScalableMesh/CloudDataSource/CloudDataSourcePolicy.mki $
+#     $Source: CloudDataSource/CloudDataSourcePolicy.mki $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -21,7 +21,7 @@ CCompPDBName = $(appName)
 # ------------------------------------
 # Source directories
 # ------------------------------------
-SrcCloudDataSource  = $(SrcRoot)ScalableMesh/STM/ScalableMesh/CloudDataSource/
+SrcCloudDataSource  = $(SrcRoot)ScalableMesh/CloudDataSource/
 
 
 # ------------------------------------

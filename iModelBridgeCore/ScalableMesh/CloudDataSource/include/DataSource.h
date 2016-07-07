@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: STM/ScalableMesh/CloudDataSource/include/DataSource.h $
+|     $Source: CloudDataSource/include/DataSource.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |

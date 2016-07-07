@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: STM/ScalableMesh/CloudDataSource/include/DataSourceManagerPCH.h $
+|     $Source: CloudDataSource/include/DataSourceManagerPCH.h $
 |    $RCSfile: stdafx.h,v $
 |   $Revision: 1.11 $
 |       $Date: 2012/07/25 14:13:37 $
