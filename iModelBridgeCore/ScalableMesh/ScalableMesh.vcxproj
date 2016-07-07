@@ -542,6 +542,10 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\SMStreamingTextureTileStore.h" />
     <ClInclude Include="STM\SMStreamingTileStore.h" />
     <ClInclude Include="STM\SMTextureTileStore.h" />
+    <ClInclude Include="STM\Stores\ISMDataStore.h" />
+    <ClInclude Include="STM\Stores\ISMDataStore.hpp" />
+    <ClInclude Include="STM\Stores\SMSQLiteStore.h" />
+    <ClInclude Include="STM\Stores\SMSQLiteStore.hpp" />
     <ClInclude Include="STM\Threading\LightThreadPool.h" />
     <ClInclude Include="STM\Threading\ScalableMeshScheduler.h" />
   </ItemGroup>
@@ -689,6 +693,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\ScalableMeshLib.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp" />
     <ClCompile Include="STM\SMStreamingTileStore.cpp" />
+    <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp" />
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>
