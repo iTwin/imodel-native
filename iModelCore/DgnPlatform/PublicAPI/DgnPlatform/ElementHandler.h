@@ -74,7 +74,7 @@ namespace dgn_ElementHandler
     {
         friend struct Dgn::DgnElement;
         friend struct Dgn::DgnElements;
-        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+        DOMAINHANDLER_DECLARE_MEMBERS(BIS_CLASS_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     private:
         ECSqlClassParams m_classParams;
@@ -102,27 +102,27 @@ namespace dgn_ElementHandler
     //! The ElementHandler for GeometricElement3d
     struct EXPORT_VTABLE_ATTRIBUTE Geometric3d : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement3d, Geometric3d, Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricElement3d, GeometricElement3d, Geometric3d, Element, DGNPLATFORM_EXPORT)
         virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); GeometricElement3d::AddClassParams(params); }
     };
 
     //! The ElementHandler for GeometricElement2d
     struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement2d, GeometricElement2d, Geometric2d, Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricElement2d, GeometricElement2d, Geometric2d, Element, DGNPLATFORM_EXPORT)
         virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); GeometricElement2d::AddClassParams(params); }
     };
 
     //! The ElementHandler for AnnotationElement2d
     struct EXPORT_VTABLE_ATTRIBUTE Annotation2d : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement2d, AnnotationElement2d, Annotation2d, Geometric2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationElement2d, AnnotationElement2d, Annotation2d, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for DrawingGraphic
     struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphic : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
     };
 };
 
@@ -141,7 +141,7 @@ namespace dgn_AspectHandler
     struct EXPORT_VTABLE_ATTRIBUTE Aspect : DgnDomain::Handler
     {
         friend struct DgnElement;
-        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementAspect, Aspect, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+        DOMAINHANDLER_DECLARE_MEMBERS(BIS_CLASS_ElementAspect, Aspect, DgnDomain::Handler, DGNPLATFORM_EXPORT)
     protected:
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
     public:

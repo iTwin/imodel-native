@@ -54,7 +54,7 @@ static void importBisCoreSchema(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& modelCode)
     {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(DGN_CLASSNAME_Model) " (Id,Code_Value,Label,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,Code_Value,Label,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?)");
     stmt.BindId(1, modelId);
     stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);
     stmt.BindId(3, classId);
@@ -130,27 +130,27 @@ DbResult DgnDb::CreateDgnDbTables()
         return BE_SQLITE_NOTFOUND;
         }
 
-    ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d)
+    ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)
                " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=old.ElementId;END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) 
+    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
                " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
                "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) 
+    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
                 " WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL"
                 " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=OLD.ElementId;END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) 
+    ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
                " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
                "BEGIN INSERT INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
 #ifdef NEEDSWORK_VIEW_SETTINGS_TRIGGER
-    ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " BIS_TABLE(DGN_CLASSNAME_View) " BEGIN DELETE FROM " BEDB_TABLE_Property
+    ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " BIS_TABLE(BIS_CLASS_View) " BEGIN DELETE FROM " BEDB_TABLE_Property
                " WHERE Namespace=\"" PROPERTY_APPNAME_DgnView "\" AND Id=OLD.Id;END");
 #endif
 

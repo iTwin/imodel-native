@@ -65,7 +65,7 @@ TEST(TextAnnotation2dTest, BasicCrud)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode("2D Model")));
+        DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_GeometricModel2d)), DgnModel::CreateModelCode("2D Model")));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();
@@ -256,7 +256,7 @@ TEST(TextAnnotation3dTest, BasicCrud)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new SpatialModel(SpatialModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)), DgnModel::CreateModelCode("Physical Model")));
+        DgnModelPtr model = new SpatialModel(SpatialModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel)), DgnModel::CreateModelCode("Physical Model")));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();

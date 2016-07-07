@@ -174,7 +174,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
     DgnElementCPtr elem = m_db->Elements().GetElement(elementId);
     
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(DGN_RELNAME_ElementUsesGeometryParts)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(BIS_REL_ElementUsesGeometryParts)));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1,stmt.GetValueInt(0));
     ASSERT_EQ(elementId.GetValue(), stmt.GetValueInt64(1));
@@ -210,7 +210,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteGeomPart)
     // Delete Geom Part
     EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(existingPartId));
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(DGN_RELNAME_ElementUsesGeometryParts)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(BIS_REL_ElementUsesGeometryParts)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -243,7 +243,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
     // Delete Element
     ASSERT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(*m_db->Elements().GetElement(elementId)));
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(DGN_RELNAME_ElementUsesGeometryParts)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(BIS_REL_ElementUsesGeometryParts)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     EXPECT_TRUE(DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db).IsValid());

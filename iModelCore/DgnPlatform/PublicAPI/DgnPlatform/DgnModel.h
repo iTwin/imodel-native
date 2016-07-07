@@ -424,7 +424,7 @@ protected:
 public:
     Utf8CP GetCopyrightMessage() const {return _GetCopyrightMessage();}
 
-    virtual Utf8CP _GetHandlerECClassName() const {return DGN_CLASSNAME_Model;} //!< @private
+    virtual Utf8CP _GetHandlerECClassName() const {return BIS_CLASS_Model;} //!< @private
     virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}        //!< @private
 
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
@@ -863,7 +863,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricModel2d, GeometricModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_GeometricModel2d, GeometricModel);
 
 protected:
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
@@ -896,7 +896,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : GeometricModel3d
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialModel, GeometricModel3d);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SpatialModel, GeometricModel3d);
 protected:
     SpatialModelCP _ToSpatialModel() const override final {return this;}
     CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::World;}
@@ -924,7 +924,7 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : InformationModel
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_DefinitionModel, InformationModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, InformationModel);
 protected:
     DefinitionModelCP _ToDefinitionModel() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
@@ -946,7 +946,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : DefinitionModel
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DefinitionModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DictionaryModel, DefinitionModel);
 protected:
     virtual DgnDbStatus _OnDelete() override { return DgnDbStatus::WrongModel; }
     virtual void _OnDeleted() override { BeAssert(false && "The dictionary model cannot be deleted"); }
@@ -963,7 +963,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GroupInformationModel : InformationModel
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_GroupInformationModel, InformationModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_GroupInformationModel, InformationModel);
 protected:
     GroupInformationModelCP _ToGroupInformationModel() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
@@ -980,7 +980,7 @@ struct ComponentDef;
 **//*=======================================================================================*/
 struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : GeometricModel3d
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_ComponentModel, GeometricModel3d);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_ComponentModel, GeometricModel3d);
     
     friend struct ComponentDef;
 
@@ -1362,7 +1362,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : DrawingModel
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SectionDrawingModel, DrawingModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SectionDrawingModel, DrawingModel);
 protected:
     SectionDrawingModelCP _ToSectionDrawingModel() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
@@ -1379,7 +1379,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicalModel2d
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, GraphicalModel2d);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SheetModel, GraphicalModel2d);
 public:
     struct CreateParams : GraphicalModel2d::CreateParams
     {
@@ -1447,7 +1447,7 @@ namespace dgn_ModelHandler
     {
         friend struct Dgn::DgnModel;
         friend struct Dgn::DgnModels;
-        DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, Model, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+        DOMAINHANDLER_DECLARE_MEMBERS (BIS_CLASS_Model, Model, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     private:
         ECSqlClassParams m_classParams;
@@ -1476,31 +1476,31 @@ namespace dgn_ModelHandler
     //! The ModelHandler for Geometric2d
     struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricModel2d, GeometricModel2d, Geometric2d, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricModel2d, GeometricModel2d, Geometric2d, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SpatialModel
     struct EXPORT_VTABLE_ATTRIBUTE Spatial : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialModel, SpatialModel, Spatial, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialModel, SpatialModel, Spatial, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for ComponentModel
     struct EXPORT_VTABLE_ATTRIBUTE Component : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SectionDrawingModel
     struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Geometric2d
     {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Geometric2d, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS (BIS_CLASS_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SheetModel
     struct EXPORT_VTABLE_ATTRIBUTE Sheet : Geometric2d
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Geometric2d, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, SheetModel, Sheet, Geometric2d, DGNPLATFORM_EXPORT)
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     };
@@ -1508,19 +1508,19 @@ namespace dgn_ModelHandler
     //! The ModelHandler for DefinitionModel
     struct EXPORT_VTABLE_ATTRIBUTE Definition : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DefinitionModel, DefinitionModel, Definition, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, DefinitionModel, Definition, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for DictionaryModel
     struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Definition
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for GroupInformationModel
     struct EXPORT_VTABLE_ATTRIBUTE GroupInformation : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GroupInformationModel, GroupInformationModel, GroupInformation, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationModel, GroupInformationModel, GroupInformation, Model, DGNPLATFORM_EXPORT)
     };
 };
 

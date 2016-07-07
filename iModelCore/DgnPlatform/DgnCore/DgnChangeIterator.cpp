@@ -232,7 +232,7 @@ DgnModelId ElementChangeEntry::ExtractModelId(Changes::Change::Stage stage) cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     03/2016
 //---------------------------------------------------------------------------------------
-ElementChangeIterator::ElementChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet) : T_Super(dgndb, changeSet, *(dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_Element)))
+ElementChangeIterator::ElementChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet) : T_Super(dgndb, changeSet, *(dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element)))
     {
     }
 
@@ -274,7 +274,7 @@ ModelChangeEntry::ModelChangeEntry(ModelChangeIterator const& parent, BeSQLite::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     03/2016
 //---------------------------------------------------------------------------------------
-ModelChangeIterator::ModelChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet) : T_Super(dgndb, changeSet, *(dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_Model)))
+ModelChangeIterator::ModelChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet) : T_Super(dgndb, changeSet, *(dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model)))
     {}
 
 //---------------------------------------------------------------------------------------

@@ -26,7 +26,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnTrueColor : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TrueColor, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TrueColor, DefinitionElement);
 public:
     //! Parameters used to construct a DgnTrueColor
     struct CreateParams : T_Super::CreateParams
@@ -71,7 +71,7 @@ public:
     //! Creates a code for a color with the given name and book name
     static DgnCode CreateColorCode(Utf8StringCR name, Utf8StringCR book) { return TrueColorAuthority::CreateTrueColorCode(name, book); }
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_TrueColor); } //!< The class ID associated with true colors within the given DgnDb
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TrueColor); } //!< The class ID associated with true colors within the given DgnDb
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< The class ID associated with true colors within the given DgnDb
 
     //! Inserts this color into the database and returns the persistent copy
@@ -142,7 +142,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct TrueColor : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TrueColor, DgnTrueColor, TrueColor, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TrueColor, DgnTrueColor, TrueColor, Element, DGNPLATFORM_EXPORT);
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };

@@ -811,7 +811,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
     //       ---> m3
     //
 
-    auto modelClassId = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_Model)->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model)->GetId();
     auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
     auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
     auto m3key = ECInstanceKey(modelClassId, ECInstanceId(m3id.GetValue()));
@@ -819,10 +819,10 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
 
     ECSqlStatement mrelstmt;
     ECInstanceKey rkey;
-    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key, m2key);
-    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key, m3key);
-    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m2key, m4key);
-    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m3key, m4key);
+    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m1key, m2key);
+    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m1key, m3key);
+    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m2key, m4key);
+    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m3key, m4key);
     m_db->SaveChanges();
 
     //  Put an element in each model
@@ -873,7 +873,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
 static int64_t countModelDrivesModelInstances(DgnDb& db)
     {
     Statement modelsCount;
-    modelsCount.Prepare(db, "SELECT COUNT(*) FROM " BIS_TABLE(DGN_RELNAME_ModelDrivesModel));
+    modelsCount.Prepare(db, "SELECT COUNT(*) FROM " BIS_TABLE(BIS_REL_ModelDrivesModel));
     modelsCount.Step();
     return modelsCount.GetValueInt64(0);
     }
@@ -910,7 +910,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
     //       ---> m3
     //
 
-    auto modelClassId = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel)->GetId();
     auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
     auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
     auto m3key = ECInstanceKey(modelClassId, ECInstanceId(m3id.GetValue()));
@@ -918,22 +918,22 @@ TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
 
     ECSqlStatement mrelstmt;
     ECInstanceKey rkey;
-    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key, m2key);
-    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key, m3key);
-    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m2key, m4key);
-    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m3key, m4key);
+    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m1key, m2key);
+    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m1key, m3key);
+    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m2key, m4key);
+    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m3key, m4key);
     m_db->SaveChanges();
 
-    ASSERT_TRUE(!DgnDbUtilities::QueryRelationshipSourceFromTarget(*m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key).IsValid() ) << L"m1 is not the target of any deprel";
-    ASSERT_TRUE( DgnDbUtilities::QueryRelationshipSourceFromTarget(*m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m4key).IsValid() ) << L"m4 is the target two deprels. Pick either";
+    ASSERT_TRUE(!DgnDbUtilities::QueryRelationshipSourceFromTarget(*m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m1key).IsValid() ) << L"m1 is not the target of any deprel";
+    ASSERT_TRUE( DgnDbUtilities::QueryRelationshipSourceFromTarget(*m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m4key).IsValid() ) << L"m4 is the target two deprels. Pick either";
 
     auto count = countModelDrivesModelInstances(*m_db);
     ASSERT_EQ( count, 4 );
 
-    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m4key, m1key);
+    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m4key, m1key);
     m_db->SaveChanges();
 
-    ASSERT_TRUE(!DgnDbUtilities::QueryRelationshipSourceFromTarget(*m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key).IsValid() ) << L"m1 is not the target of any deprel";
+    ASSERT_TRUE(!DgnDbUtilities::QueryRelationshipSourceFromTarget(*m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m1key).IsValid() ) << L"m1 is not the target of any deprel";
 
     auto count2 = countModelDrivesModelInstances(*m_db);
     ASSERT_EQ( count, count2 ) << L"addition of 5th deprel should have been rolled back";
@@ -958,17 +958,17 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
     auto m2id = m2->GetModelId();
 
     // Make m2 depend on m1
-    auto modelClassId = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel)->GetId();
     auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
     auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
 
     ECSqlStatement mrelstmt;
     ECInstanceKey rkey;                                                                          /* source  target */
-    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key, m2key);
+    DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m1key, m2key);
     m_db->SaveChanges();
 
-    ASSERT_TRUE(!DgnDbUtilities::QueryRelationshipSourceFromTarget(*m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key).IsValid() ) << L"m1 is not the target of any dependency";
-    ASSERT_TRUE( DgnDbUtilities::QueryRelationshipSourceFromTarget(*m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m2key).IsValid() ) << L"m2 is the target a dependency";
+    ASSERT_TRUE(!DgnDbUtilities::QueryRelationshipSourceFromTarget(*m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m1key).IsValid() ) << L"m1 is not the target of any dependency";
+    ASSERT_TRUE( DgnDbUtilities::QueryRelationshipSourceFromTarget(*m_db, BIS_SCHEMA(BIS_REL_ModelDrivesModel), m2key).IsValid() ) << L"m2 is the target a dependency";
 
     auto count = countModelDrivesModelInstances(*m_db);
     ASSERT_EQ( count, 1 );

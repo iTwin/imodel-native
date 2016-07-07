@@ -14,11 +14,11 @@
 #include "ECSqlStatementIterator.h"
 #include "DgnMarkupProject.h"
 
-#define DGN_CLASSNAME_ViewDefinition "ViewDefinition"
-#define DGN_CLASSNAME_SpatialViewDefinition "SpatialViewDefinition"
-#define DGN_CLASSNAME_CameraViewDefinition "CameraViewDefinition"
-#define DGN_CLASSNAME_DrawingViewDefinition "DrawingViewDefinition"
-#define DGN_CLASSNAME_SheetViewDefinition "SheetViewDefinition"
+#define BIS_CLASS_ViewDefinition "ViewDefinition"
+#define BIS_CLASS_SpatialViewDefinition "SpatialViewDefinition"
+#define BIS_CLASS_CameraViewDefinition "CameraViewDefinition"
+#define BIS_CLASS_DrawingViewDefinition "DrawingViewDefinition"
+#define BIS_CLASS_SheetViewDefinition "SheetViewDefinition"
 #define MARKUP_CLASSNAME_RedlineViewDefinition "RedlineViewDefinition"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -151,7 +151,7 @@ public:
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db, FillModels fillModels=FillModels::No);
 
     //! Create a DgnCode for a view with the specified name
-    static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_ViewDefinition); }
+    static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ViewDefinition); }
 
     //! Look up the ID of the view with the specified DgnCode
     DGNPLATFORM_EXPORT static DgnViewId QueryViewId(DgnCode const& code, DgnDbR db);
@@ -298,7 +298,7 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialViewDefinition : ViewDefinition3d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialViewDefinition, ViewDefinition3d);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, ViewDefinition3d);
 public:
     //! Parameters for initializing a SpatialViewDefinition
     struct CreateParams : T_Super::CreateParams
@@ -320,7 +320,7 @@ public:
     explicit SpatialViewDefinition(CreateParams const& params) : T_Super(params) { }
 
     //! Look up the ECClass ID used for SpatialViewDefinitions within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialViewDefinition)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition)); }
 };
 
 //=======================================================================================
@@ -330,7 +330,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CameraViewDefinition : SpatialViewDefinition
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_CameraViewDefinition, SpatialViewDefinition);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, SpatialViewDefinition);
 public:
     //! Parameters for initializing a CameraViewDefinition
     struct CreateParams : T_Super::CreateParams
@@ -349,7 +349,7 @@ public:
     explicit CameraViewDefinition(CreateParams const& params) : T_Super(params) { }
 
     //! Look up the ECClass ID used for CameraViewDefinitions within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_CameraViewDefinition)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition)); }
 };
 
 //=======================================================================================
@@ -369,7 +369,7 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingViewDefinition : ViewDefinition2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingViewDefinition, ViewDefinition2d);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DrawingViewDefinition, ViewDefinition2d);
 public:
     //! Parameters used to construct a DrawingViewDefinition
     struct CreateParams : T_Super::CreateParams
@@ -392,7 +392,7 @@ public:
     explicit DrawingViewDefinition(CreateParams const& params) : T_Super(params) { }
 
     //! Look up the ECClass ID used for DrawingViewDefinitions in the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingViewDefinition)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition)); }
 };
 
 //=======================================================================================
@@ -401,7 +401,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SheetViewDefinition : ViewDefinition2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SheetViewDefinition, ViewDefinition2d);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SheetViewDefinition, ViewDefinition2d);
 public:
     //! Parameters used to construct a SheetViewDefinition
     struct CreateParams : T_Super::CreateParams
@@ -424,7 +424,7 @@ public:
     explicit SheetViewDefinition(CreateParams const& params) : T_Super(params) {}
 
     //! Look up the ECClass ID used for SheetViewDefinitions in the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SheetViewDefinition)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition)); }
 };
 
 //=======================================================================================
@@ -463,7 +463,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct SpatialViewDef : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialViewDefinition, SpatialViewDefinition, SpatialViewDef, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, SpatialViewDefinition, SpatialViewDef, Element, DGNPLATFORM_EXPORT);
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
@@ -474,7 +474,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct CameraViewDef : SpatialViewDef
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_CameraViewDefinition, CameraViewDefinition, CameraViewDef, SpatialViewDef, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, CameraViewDefinition, CameraViewDef, SpatialViewDef, DGNPLATFORM_EXPORT);
     };
 
     //=======================================================================================
@@ -483,7 +483,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct DrawingViewDef : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingViewDefinition, DrawingViewDefinition, DrawingViewDef, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingViewDefinition, DrawingViewDefinition, DrawingViewDef, Element, DGNPLATFORM_EXPORT);
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
@@ -494,7 +494,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct SheetViewDef : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetViewDefinition, SheetViewDefinition, SheetViewDef, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetViewDefinition, SheetViewDefinition, SheetViewDef, Element, DGNPLATFORM_EXPORT);
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };

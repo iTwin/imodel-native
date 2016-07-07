@@ -21,9 +21,9 @@ DGNPLATFORM_REF_COUNTED_PTR(TextAnnotation2d);
 DGNPLATFORM_TYPEDEFS(TextAnnotation3d);
 DGNPLATFORM_REF_COUNTED_PTR(TextAnnotation3d);
 
-#define DGN_CLASSNAME_TextAnnotationData "TextAnnotationData"
-#define DGN_CLASSNAME_TextAnnotation2d "TextAnnotation2d"
-#define DGN_CLASSNAME_TextAnnotation3d "TextAnnotation3d"
+#define BIS_CLASS_TextAnnotationData "TextAnnotationData"
+#define BIS_CLASS_TextAnnotation2d "TextAnnotation2d"
+#define BIS_CLASS_TextAnnotation3d "TextAnnotation3d"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -38,7 +38,7 @@ namespace DgnDbSync { namespace DgnV8 { struct ConvertV8TextToDgnDbExtension; } 
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationData : DgnElement::UniqueAspect
 {
-    DGNASPECT_DECLARE_MEMBERS(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationData, DgnElement::UniqueAspect);
+    DGNASPECT_DECLARE_MEMBERS(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotationData, DgnElement::UniqueAspect);
 
 private:
 //__PUBLISH_SECTION_END__
@@ -55,7 +55,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadProperties(DgnElementCR) override;
     
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationData); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotationData); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     static TextAnnotationDataCP GetCP(DgnElementCR el) { return UniqueAspect::Get<TextAnnotationData>(el, *QueryECClass(el.GetDgnDb())); }
@@ -76,7 +76,7 @@ namespace dgn_AspectHandler
     //=======================================================================================
     struct TextAnnotationDataHandler : Aspect
     {
-        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationData, TextAnnotationDataHandler, Aspect, DGNPLATFORM_EXPORT);
+        DOMAINHANDLER_DECLARE_MEMBERS(BIS_CLASS_TextAnnotationData, TextAnnotationDataHandler, Aspect, DGNPLATFORM_EXPORT);
         RefCountedPtr<DgnElement::Aspect> _CreateInstance() override { return new TextAnnotationData(); }
     };
 }
@@ -87,7 +87,7 @@ namespace dgn_AspectHandler
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, AnnotationElement2d);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation2d, AnnotationElement2d);
 
 protected:
     virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const {return nullptr;} // Don't flash text box...
@@ -100,7 +100,7 @@ protected:
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotation2d); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotation2d); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     static TextAnnotation2dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation2d>(id); }
@@ -123,7 +123,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct TextAnnotation2dHandler : Annotation2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation2d, TextAnnotation2d, TextAnnotation2dHandler, Annotation2d, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation2d, TextAnnotation2d, TextAnnotation2dHandler, Annotation2d, DGNPLATFORM_EXPORT);
     };
 }
 
@@ -133,7 +133,7 @@ namespace dgn_ElementHandler
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : GraphicalElement3d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, GraphicalElement3d);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation3d, GraphicalElement3d);
 
 protected:
     virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const {return nullptr;} // Don't flash text box...
@@ -146,7 +146,7 @@ protected:
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotation3d); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotation3d); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     static TextAnnotation3dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation3d>(id); }
@@ -169,7 +169,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct TextAnnotation3dHandler : Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, TextAnnotation3d, TextAnnotation3dHandler, Geometric3d, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TextAnnotation3d, TextAnnotation3d, TextAnnotation3dHandler, Geometric3d, DGNPLATFORM_EXPORT);
     };
 }
 

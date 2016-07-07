@@ -446,7 +446,7 @@ public:
         virtual Utf8CP _GetECSchemaName() const = 0;
 
         //! The subclass must implement this method to return the name of the class that defines the aspect.
-        virtual Utf8CP _GetECClassName() const {return DGN_CLASSNAME_ElementAspect;}
+        virtual Utf8CP _GetECClassName() const {return BIS_CLASS_ElementAspect;}
 
         //! The subclass must implement this method to return the name of the superclass
         virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
@@ -938,7 +938,7 @@ protected:
     CreateParams GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const;
 
 public:
-    static Utf8CP MyHandlerECClassName() {return DGN_CLASSNAME_Element;}                //!< @private
+    static Utf8CP MyHandlerECClassName() {return BIS_CLASS_Element;}                //!< @private
     Utf8CP GetHandlerECClassName() const {return _GetHandlerECClassName();}             //!< @private
     Utf8CP GetSuperHandlerECClassName() const {return _GetSuperHandlerECClassName();}   //!< @private
 
@@ -1429,7 +1429,7 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySource3d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement)
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GeometricElement3d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric3d;
 
     DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
@@ -1473,7 +1473,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
     virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(DGN_CLASSNAME_GeometricElement3d);}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement3d);}
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
@@ -1500,7 +1500,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySource2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement2d, GeometricElement)
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GeometricElement2d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric2d;
 
 public:
@@ -1541,7 +1541,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(DGN_CLASSNAME_GeometricElement2d);}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement2d);}
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
@@ -1631,7 +1631,7 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement2d : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement2d, GraphicalElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_AnnotationElement2d, GraphicalElement2d)
     friend struct dgn_ElementHandler::Annotation2d;
 public:
     //! Create a AnnotationElement2d from CreateParams.
@@ -1649,7 +1649,7 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphic : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingGraphic, GraphicalElement2d)
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DrawingGraphic, GraphicalElement2d)
     friend struct dgn_ElementHandler::DrawingGraphic;
 public:
     //! Create a DrawingGraphic from CreateParams.

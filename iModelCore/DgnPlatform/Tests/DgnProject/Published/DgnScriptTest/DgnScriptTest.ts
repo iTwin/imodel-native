@@ -418,9 +418,9 @@ module DgnScriptTests {
     {
         //  EC API
         var schemas: be.SchemaManager = db.Schemas;
-        var elementClass: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_PhysicalElement);
+        var elementClass: be.ECClass = schemas.GetECClass(be.BIS_ECSCHEMA_NAME, be.BIS_CLASS_PhysicalElement);
         if (!elementClass)
-            be.Script.ReportError('SchemaManager.GetECClass could not find ' + be.DGN_ECSCHEMA_NAME + '.' + be.DGN_CLASSNAME_PhysicalElement);
+            be.Script.ReportError('SchemaManager.GetECClass could not find ' + be.BIS_ECSCHEMA_NAME + '.' + be.BIS_CLASS_PhysicalElement);
 
         // -----------------------------------------------
         // Test GetProperties and ECPropertyCollection
@@ -484,7 +484,7 @@ module DgnScriptTests {
         if (baseCount != 1)
             be.Script.ReportError('BaseClasses ECClassCollection must have failed -- there should be 1 but I got ' + JSON.stringify(baseCount));
 
-        var se: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_SpatialElement);
+        var se: be.ECClass = schemas.GetECClass(be.BIS_ECSCHEMA_NAME, be.BIS_CLASS_SpatialElement);
         var derivedclasses: be.ECClassCollection = se.DerivedClasses;
         var derivedCount: number = 0;
         for (var clsiter = derivedclasses.Begin(); derivedclasses.IsValid(clsiter); derivedclasses.ToNext(clsiter)) {

@@ -20,7 +20,7 @@ struct DgnElementDependencyGraph;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElementDependencyHandler : DgnDomain::Handler
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(DGN_RELNAME_ElementDrivesElement, DgnElementDependencyHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+    DOMAINHANDLER_DECLARE_MEMBERS(BIS_REL_ElementDrivesElement, DgnElementDependencyHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
 protected:
     friend struct DgnElementDependencyGraph;

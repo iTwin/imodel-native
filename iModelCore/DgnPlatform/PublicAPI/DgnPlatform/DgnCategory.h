@@ -12,8 +12,8 @@
 #include "DgnElement.h"
 #include "ElementHandler.h"
 
-#define DGN_CLASSNAME_Category "Category"
-#define DGN_CLASSNAME_SubCategory "SubCategory"
+#define BIS_CLASS_Category "Category"
+#define BIS_CLASS_SubCategory "SubCategory"
 
 DGNPLATFORM_TYPEDEFS(DgnCategory);
 DGNPLATFORM_TYPEDEFS(DgnSubCategory);
@@ -33,7 +33,7 @@ typedef bvector<DgnCategoryId> DgnCategoryIdList;
 //! @ingroup GROUP_DgnCategory
 struct EXPORT_VTABLE_ATTRIBUTE DgnSubCategory : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SubCategory, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DefinitionElement);
 public:
     //! The parameters that can determine how graphics on a SubCategory appear when drawn.
     //! @ingroup GROUP_DgnCategory
@@ -226,7 +226,7 @@ public:
     //! @return The number of sub-categories.
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db, DgnCategoryId categoryId=DgnCategoryId());
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SubCategory); } //!< Returns the class ID used for sub-categories.
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SubCategory); } //!< Returns the class ID used for sub-categories.
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Returns the class ID used for sub-categories
 };
 
@@ -243,7 +243,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnCategory : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_Category, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Category, DefinitionElement);
 public:
     //! The Rank of a category indicates how it was created and where it can be used.
     //! @ingroup GROUP_DgnCategory
@@ -393,7 +393,7 @@ public:
     DGNPLATFORM_EXPORT static DgnCategoryId QueryFirstCategoryId(DgnDbR db); //!< Returns the ID of the first category found in the DgnDb
     DGNPLATFORM_EXPORT static DgnCategoryId QueryHighestCategoryId(DgnDbR db); //!< Returns the highest category ID found in the DgnDb
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_Category); } //!< Returns the class ID used for categories.
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Category); } //!< Returns the class ID used for categories.
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Returns the class ID used for categories
 
     //! Get a string containing the list of characters that may NOT appear in category codes.
@@ -411,7 +411,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct Category : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Category, DgnCategory, Category, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Category, DgnCategory, Category, Element, DGNPLATFORM_EXPORT);
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
@@ -422,7 +422,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct SubCategory : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SubCategory, DgnSubCategory, SubCategory, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DgnSubCategory, SubCategory, Element, DGNPLATFORM_EXPORT);
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };

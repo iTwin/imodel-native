@@ -39,7 +39,7 @@ DgnDbStatus TextAnnotationData::_UpdateProperties(DgnElementCR el)
             return DgnDbStatus::WriteError;
         }
 
-    CachedECSqlStatementPtr update = el.GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationData) " SET TextAnnotation=? WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr update = el.GetDgnDb().GetPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_TextAnnotationData) " SET TextAnnotation=? WHERE ECInstanceId=?");
     if (!update.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -63,7 +63,7 @@ DgnDbStatus TextAnnotationData::_LoadProperties(DgnElementCR el)
     {
     // T_Super::_LoadProperties is pure; it is a link error to call super, so don't.
     
-    CachedECSqlStatementPtr select = el.GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotation FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationData) " WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr select = el.GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotation FROM " BIS_SCHEMA(BIS_CLASS_TextAnnotationData) " WHERE ECInstanceId=?");
     if (!select.IsValid())
         return DgnDbStatus::ReadError;
 

@@ -126,7 +126,7 @@ void DgnElement::ClearAllAppData()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_DeleteInDb() const
     {
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("DELETE FROM " BIS_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("DELETE FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     stmt->BindId(1, m_elementId);
 
     switch (stmt->Step())
@@ -163,7 +163,7 @@ DgnCode DgnElement::_GenerateDefaultCode() const
 DateTime DgnElement::QueryTimeStamp() const
     {
     ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT " DGN_ELEMENT_PROPNAME_LastMode " FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE " DGN_ELEMENT_PROPNAME_ECInstanceId "=?");
+    stmt.Prepare(GetDgnDb(), "SELECT " DGN_ELEMENT_PROPNAME_LastMode " FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE " DGN_ELEMENT_PROPNAME_ECInstanceId "=?");
     stmt.BindId(1, m_elementId);
     stmt.Step();
     return stmt.GetValueDateTime(0);
@@ -335,7 +335,7 @@ static bool parentCycleExists(DgnElementId parentId, DgnElementId elemId, DgnDbR
     if (parentId == elemId)
         return true;
 
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId FROM " BIS_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     do
         {
         stmt->BindId(1, parentId);
@@ -623,7 +623,7 @@ DgnDbStatus DgnElement::_LoadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementIdSet DgnElement::QueryChildren() const
     {
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Id FROM " BIS_TABLE(DGN_CLASSNAME_Element) " WHERE ParentId=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ParentId=?");
     stmt->BindId(1, GetElementId());
 
     DgnElementIdSet elementIdSet;
@@ -925,7 +925,7 @@ void DgnElement::LoadUserProperties() const
        return;
     BeAssert(GetElementId().IsValid());
 
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT UserProperties FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT UserProperties FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ECInstanceId=?");
     BeAssert(stmt.IsValid());
 
     stmt->BindId(1, GetElementId());
@@ -946,7 +946,7 @@ DgnDbStatus DgnElement::SaveUserProperties() const
     {
     BeAssert(m_userProperties);
 
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_Element) " SET UserProperties=? WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_Element) " SET UserProperties=? WHERE ECInstanceId=?");
     BeAssert(stmt.IsValid());
 
     Utf8String str;
@@ -1410,7 +1410,7 @@ DgnDbStatus DgnElement::Delete() const {return GetDgnDb().Elements().Delete(*thi
 DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member, int priority)
     {
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
-        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) 
+        "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) 
         " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId,MemberPriority) VALUES(?,?,?,?,?)");
 
     if (!statement.IsValid())
@@ -1430,7 +1430,7 @@ DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member
 DgnDbStatus ElementGroupsMembers::Delete(DgnElementCR group, DgnElementCR member)
     {
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
-        "DELETE FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+        "DELETE FROM " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
 
     if (!statement.IsValid())
         return DgnDbStatus::BadRequest;
@@ -1446,7 +1446,7 @@ DgnDbStatus ElementGroupsMembers::Delete(DgnElementCR group, DgnElementCR member
 bool ElementGroupsMembers::HasMember(DgnElementCR group, DgnElementCR member)
     {
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=? LIMIT 1");
+        "SELECT SourceECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=? LIMIT 1");
 
     if (!statement.IsValid())
         return false;
@@ -1464,7 +1464,7 @@ DgnElementIdSet ElementGroupsMembers::QueryMembers(DgnElementCR group)
     BeAssert(nullptr != group.ToIElementGroup());
 
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=?");
+        "SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) " WHERE SourceECInstanceId=?");
 
     if (!statement.IsValid())
         return DgnElementIdSet();
@@ -1484,7 +1484,7 @@ DgnElementIdSet ElementGroupsMembers::QueryMembers(DgnElementCR group)
 int ElementGroupsMembers::QueryMemberPriority(DgnElementCR group, DgnElementCR member)
     {
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT MemberPriority FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=? LIMIT 1");
+        "SELECT MemberPriority FROM " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=? LIMIT 1");
 
     if (!statement.IsValid())
         return -1;
@@ -1500,7 +1500,7 @@ int ElementGroupsMembers::QueryMemberPriority(DgnElementCR group, DgnElementCR m
 DgnElementIdSet ElementGroupsMembers::QueryGroups(DgnElementCR member)
     {
     CachedECSqlStatementPtr statement = member.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE TargetECInstanceId=?");
+        "SELECT SourceECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) " WHERE TargetECInstanceId=?");
 
     if (!statement.IsValid())
         return DgnElementIdSet();
@@ -2347,7 +2347,7 @@ DgnElement::ExternalKeyAspectPtr DgnElement::ExternalKeyAspect::Create(DgnAuthor
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementExternalKey) " ([ElementId],[AuthorityId],[ExternalKey]) VALUES (?,?,?)");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " ([ElementId],[AuthorityId],[ExternalKey]) VALUES (?,?,?)");
     if (!statement.IsValid())
         return DgnElement::AppData::DropMe::Yes;
 
@@ -2369,7 +2369,7 @@ DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [ExternalKey] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [ExternalKey] FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
     if (!statement.IsValid())
         return DgnDbStatus::ReadError;
 
@@ -2388,7 +2388,7 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnEle
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -3238,7 +3238,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
     // Update ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = GetDgnDb();
     DgnElementId eid = GetElementId();
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeometryPartId FROM " BIS_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeometryPartId FROM " BIS_TABLE(BIS_REL_ElementUsesGeometryParts) " WHERE ElementId=?");
     stmt->BindId(1, eid);
 
     IdSet<DgnGeometryPartId> partsOld;
@@ -3256,7 +3256,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 
     if (!partsToRemove.empty())
         {
-        stmt = db.Elements().GetStatement("DELETE FROM " BIS_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=? AND GeometryPartId=?");
+        stmt = db.Elements().GetStatement("DELETE FROM " BIS_TABLE(BIS_REL_ElementUsesGeometryParts) " WHERE ElementId=? AND GeometryPartId=?");
         stmt->BindId(1, eid);
 
         for (DgnGeometryPartId const& partId : partsToRemove)

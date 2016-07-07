@@ -2014,7 +2014,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
     DgnModelPtr model = new SpatialModel(SpatialModel::CreateParams
         (
         *db,
-        DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)),
+        DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel)),
         DgnModel::CreateModelCode("Physical Model")
         ));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());

@@ -87,7 +87,7 @@ DgnTrueColorId DgnTrueColor::QueryColorId(DgnCode const& code, DgnDbR db)
 DgnTrueColorId DgnTrueColor::FindMatchingColor(ColorDef colorDef, DgnDbR db)
     {
     DgnTrueColorId colorId;
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_TrueColor) " Where Data=? LIMIT 1");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_TrueColor) " Where Data=? LIMIT 1");
     if (stmt.IsValid())
         {
         stmt->BindInt(1, static_cast<int32_t>(colorDef.GetValue()));
@@ -98,7 +98,7 @@ DgnTrueColorId DgnTrueColor::FindMatchingColor(ColorDef colorDef, DgnDbR db)
     return colorId;
     }
 
-#define COUNT_TrueColor "SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_TrueColor)
+#define COUNT_TrueColor "SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_TrueColor)
 #define COUNT_TrueColorByBook COUNT_TrueColor " WHERE Code.[Namespace]=?"
 
 /*---------------------------------------------------------------------------------**//**
@@ -129,7 +129,7 @@ ColorDef DgnTrueColor::Entry::GetColorDef() const
     return ColorDef(static_cast<uint32_t>(m_statement->GetValueInt(3)));
     }
 
-#define SELECT_TrueColor "SELECT ECInstanceId, Code.[Value], Code.[Namespace], Data FROM " DGN_SCHEMA(DGN_CLASSNAME_TrueColor)
+#define SELECT_TrueColor "SELECT ECInstanceId, Code.[Value], Code.[Namespace], Data FROM " BIS_SCHEMA(BIS_CLASS_TrueColor)
 #define SELECT_TrueColorByBook SELECT_TrueColor " WHERE Code.[Namespace]=?"
 #define SELECT_ORDERED_TrueColor SELECT_TrueColor " ORDER BY Code.[Namespace], Code.[Value]"
 #define SELECT_ORDERED_TrueColorByBook SELECT_TrueColorByBook " ORDER BY Code.[Value]"

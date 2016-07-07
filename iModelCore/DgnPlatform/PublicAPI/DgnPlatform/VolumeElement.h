@@ -26,7 +26,7 @@ namespace dgn_ElementHandler { struct VolumeElementHandler; }
 struct EXPORT_VTABLE_ATTRIBUTE VolumeElement : SpatialLocationElement
 {
     friend struct dgn_ElementHandler::VolumeElementHandler;
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, SpatialLocationElement)
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_VolumeElement, SpatialLocationElement)
 public:
     struct CreateParams : SpatialLocationElement::CreateParams
     {
@@ -171,7 +171,7 @@ public:
     */
     //! Query the DgnClassId of the dgn.VolumeElement ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the dgn.VolumeElement class - it does @em not return the class of a specific instance.
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_VolumeElement)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_VolumeElement)); }
 
     //! Gets the default category id for the volumes
     DGNPLATFORM_EXPORT static DgnCategoryId GetDefaultCategoryId(DgnDbR db);
@@ -182,7 +182,7 @@ namespace dgn_ElementHandler
     //! The ElementHandler for VolumeElement
     struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, VolumeElement, VolumeElementHandler, Geometric3d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_VolumeElement, VolumeElement, VolumeElementHandler, Geometric3d, DGNPLATFORM_EXPORT)
     };
 }
 

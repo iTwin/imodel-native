@@ -22,9 +22,9 @@ DGNPLATFORM_REF_COUNTED_PTR(DimensionStyle);
 DGNPLATFORM_REF_COUNTED_PTR(LinearDimension2d);
 DGNPLATFORM_REF_COUNTED_PTR(LinearDimension3d);
 
-#define DGN_CLASSNAME_DimensionStyle            "DimensionStyle"
-#define DGN_CLASSNAME_LinearDimension2d         "LinearDimension2d"
-#define DGN_CLASSNAME_LinearDimension3d         "LinearDimension3d"
+#define BIS_CLASS_DimensionStyle            "DimensionStyle"
+#define BIS_CLASS_LinearDimension2d         "LinearDimension2d"
+#define BIS_CLASS_LinearDimension3d         "LinearDimension3d"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -33,14 +33,14 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DimensionStyle : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DimensionStyle, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DimensionStyle, DefinitionElement);
 
 private:
     DgnElementId        m_textStyleId;
 
     DgnDbStatus                     BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 
-    static DgnCode CreateCodeFromName(Utf8CP name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_AnnotationTextStyle); }
+    static DgnCode CreateCodeFromName(Utf8CP name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_AnnotationTextStyle); }
 
 protected:
     DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
@@ -54,7 +54,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
 
 public:
-    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_DimensionStyle)); }
+    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DimensionStyle)); }
     
     explicit DimensionStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), DgnCode())) {}
     explicit DimensionStyle(CreateParams const& params) : T_Super(params) {}
@@ -84,7 +84,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct DimensionStyleHandler : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DimensionStyle, DimensionStyle, DimensionStyleHandler, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DimensionStyle, DimensionStyle, DimensionStyleHandler, Element, DGNPLATFORM_EXPORT);
 
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams&) override;
@@ -169,7 +169,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LinearDimension2d : AnnotationElement2d, LinearDimension
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LinearDimension2d, AnnotationElement2d);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LinearDimension2d, AnnotationElement2d);
 
 protected:
     DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _OnInsert() override;
@@ -185,7 +185,7 @@ public:
                     explicit                        LinearDimension2d(CreateParams const& params);
 DGNPLATFORM_EXPORT  static LinearDimension2dPtr     Create(CreateParams const& params);
 
-                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_LinearDimension2d)); }
+                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LinearDimension2d)); }
 
                     virtual GeometricElement const& _DimToElement() const override final { return *this; }
 
@@ -203,7 +203,7 @@ DGNPLATFORM_EXPORT  static LinearDimension2dPtr     Create(CreateParams const& p
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LinearDimension3d : GraphicalElement3d, LinearDimension
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LinearDimension3d, GraphicalElement3d);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LinearDimension3d, GraphicalElement3d);
 
 protected:
     DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _OnInsert() override;
@@ -219,7 +219,7 @@ public:
                     explicit                        LinearDimension3d(CreateParams const& params);
 DGNPLATFORM_EXPORT  static LinearDimension3dPtr     Create(CreateParams const& params);
 
-                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_LinearDimension3d)); }
+                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LinearDimension3d)); }
 
                     virtual GeometricElement const& _DimToElement() const override final { return *this; }
 
@@ -239,7 +239,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct LinearDimensionHandler2d : Annotation2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_LinearDimension2d, LinearDimension2d, LinearDimensionHandler2d, Annotation2d, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LinearDimension2d, LinearDimension2d, LinearDimensionHandler2d, Annotation2d, DGNPLATFORM_EXPORT);
         virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 
@@ -248,7 +248,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct LinearDimensionHandler3d : Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_LinearDimension3d, LinearDimension3d, LinearDimensionHandler3d, Geometric3d, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LinearDimension3d, LinearDimension3d, LinearDimensionHandler3d, Geometric3d, DGNPLATFORM_EXPORT);
         virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 }

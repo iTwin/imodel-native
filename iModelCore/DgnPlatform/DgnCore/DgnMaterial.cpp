@@ -105,7 +105,7 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
     if (parentId.IsValid())
         {
         // parent must be another material
-        auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement) " WHERE ECInstanceId=?");
+        auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement) " WHERE ECInstanceId=?");
         if (!stmt.IsValid())
             return DgnDbStatus::InvalidParent;
 
@@ -191,7 +191,7 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
     {
-    Utf8String ecsql("SELECT ECInstanceId,Code.[Value],Code.Namespace,ParentId,Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement));
+    Utf8String ecsql("SELECT ECInstanceId,Code.[Value],Code.Namespace,ParentId,Descr FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
     if (options.m_byPalette)
         ecsql.append(" WHERE Code.[Namespace]=?");
 

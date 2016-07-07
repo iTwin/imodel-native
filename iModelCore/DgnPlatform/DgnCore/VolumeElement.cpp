@@ -121,7 +121,7 @@ DgnElementIdSet VolumeElement::QueryVolumes(DgnDbCR db)
     {
     DgnElementIdSet ids;
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_VolumeElement));
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_VolumeElement));
     if (stmt.IsValid())
         {
         while (BE_SQLITE_ROW == stmt->Step())
@@ -136,7 +136,7 @@ DgnElementIdSet VolumeElement::QueryVolumes(DgnDbCR db)
 //+---------------+---------------+---------------+---------------+---------------+-----
 DgnElementId VolumeElement::QueryVolumeByLabel(DgnDbCR db, Utf8CP label)
     {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_VolumeElement) " WHERE Label=? LIMIT 1"); // find first if label not unique
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_VolumeElement) " WHERE Label=? LIMIT 1"); // find first if label not unique
 
     if (label)
         stmt->BindText(1, label, IECSqlBinder::MakeCopy::No);
@@ -419,7 +419,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     
     // Prepare element query by range, and by what's visible in the view
     Statement stmt;
-    Utf8CP sql = "SELECT r.ElementId FROM " DGN_VTABLE_SpatialIndex " AS r, " BIS_TABLE(DGN_CLASSNAME_Element) " AS e, " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g " \
+    Utf8CP sql = "SELECT r.ElementId FROM " DGN_VTABLE_SpatialIndex " AS r, " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g " \
         " WHERE r.MaxX > ? AND r.MinX < ?  AND r.MaxY > ? AND r.MinY < ? AND r.MaxZ > ? AND r.MinZ < ?" \
         " AND e.Id=r.ElementId AND g.ElementId=r.ElementId AND e.Id != ?" \
         " AND InVirtualSet (?,e.ModelId,g.CategoryId)";

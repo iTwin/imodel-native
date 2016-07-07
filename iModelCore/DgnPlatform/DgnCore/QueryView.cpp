@@ -51,7 +51,7 @@ Frustum::Frustum(DRange3dCR range)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnQueryView::DgnQueryView(DgnDbR db, DgnViewId id) : CameraViewController(db, id)
     {
-    m_viewSQL = "SELECT e.Id FROM " BIS_TABLE(DGN_CLASSNAME_Element) " AS e, " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g "
+    m_viewSQL = "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
                 "WHERE g.ElementId=e.Id AND InVirtualSet(@vset,e.ModelId,g.CategoryId) AND e.Id=@elId";
     }
 

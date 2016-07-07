@@ -76,7 +76,7 @@ TEST_F(ElementGroupTests, CRUD)
     EXPECT_TRUE (3 == group->QueryMembers().size());
     
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(DGN_RELNAME_ElementGroupsMembers)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(BIS_REL_ElementGroupsMembers)));
     int relationshipCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -146,7 +146,7 @@ TEST_F(ElementGroupTests, ElementCrossMembershipOfGroups)
     ASSERT_EQ(2, group2->QueryMembers().size());
     
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(DGN_RELNAME_ElementGroupsMembers)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(BIS_REL_ElementGroupsMembers)));
     int relationshipCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -206,7 +206,7 @@ TEST_F(ElementGroupTests, NestedGroups)
     ASSERT_EQ(3, group2->QueryMembers().size());
     
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(DGN_RELNAME_ElementGroupsMembers)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(BIS_REL_ElementGroupsMembers)));
     int relationshipCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -243,7 +243,7 @@ TEST_F(ElementGroupTests, DeleteMemberElement)
     ASSERT_EQ(0, group1->QueryMembers().size());
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(DGN_RELNAME_ElementGroupsMembers)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(BIS_REL_ElementGroupsMembers)));
     int relationshipCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -276,7 +276,7 @@ TEST_F(ElementGroupTests, DeleteElementGroup)
     ASSERT_TRUE(DgnDbStatus::Success == m_db->Elements().Delete(group->GetElementId()));
     
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(DGN_RELNAME_ElementGroupsMembers)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(BIS_REL_ElementGroupsMembers)));
     int relationshipCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -324,7 +324,7 @@ TEST_F(ElementGroupTests, ElementGroupsMembersHelper)
     EXPECT_TRUE(2 == ElementGroupsMembers::QueryMembers(groupElement).size());
     
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(DGN_RELNAME_ElementGroupsMembers)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " BIS_TABLE(BIS_REL_ElementGroupsMembers)));
     int relationshipCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {

@@ -113,7 +113,7 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
 //---------------+---------------+---------------+---------------+---------------+-------
 SpatialModelPtr PerformanceElementTestFixture::CreateSpatialModel() const
     {
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
     SpatialModelPtr targetModel = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Instances")));
     EXPECT_EQ(DgnDbStatus::Success, targetModel->Insert());       /* Insert the new model into the DgnDb */
     return targetModel;

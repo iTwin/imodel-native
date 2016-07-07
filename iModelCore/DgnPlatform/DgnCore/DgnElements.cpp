@@ -1125,7 +1125,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
     enum Column : int {ClassId=0,ModelId=1,Code_AuthorityId=2,Code_Namespace=3,Code_Value=4,Label=5,ParentId=6};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,Code_AuthorityId,Code_Namespace,Code_Value,Label,ParentId FROM " BIS_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,Code_AuthorityId,Code_Namespace,Code_Value,Label,ParentId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1167,7 +1167,7 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
 void DgnElements::InitNextId()
     {
     if (!m_nextAvailableId.IsValid())
-        m_nextAvailableId = DgnElementId(m_dgndb, BIS_TABLE(DGN_CLASSNAME_Element), "Id");
+        m_nextAvailableId = DgnElementId(m_dgndb, BIS_TABLE(BIS_CLASS_Element), "Id");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1425,7 +1425,7 @@ DgnDbStatus DgnElements::Delete(DgnElementCR element)
 //---------------------------------------------------------------------------------------
 DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
     {
-    CachedStatementPtr stmt=GetStatement("SELECT ModelId FROM " BIS_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt=GetStatement("SELECT ModelId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
@@ -1454,7 +1454,7 @@ DgnElementId DgnElements::QueryElementIdByCode(Utf8CP authority, Utf8StringCR va
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8StringCR value, Utf8StringCR nameSpace) const
     {
-    CachedStatementPtr statement=GetStatement("SELECT Id FROM " BIS_TABLE(DGN_CLASSNAME_Element) " WHERE Code_Value=? AND Code_AuthorityId=? AND Code_Namespace=? LIMIT 1"); // find first if code not unique
+    CachedStatementPtr statement=GetStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Code_Value=? AND Code_AuthorityId=? AND Code_Namespace=? LIMIT 1"); // find first if code not unique
     statement->BindText(1, value, Statement::MakeCopy::No);
     statement->BindId(2, authority);
     statement->BindText(3, nameSpace, Statement::MakeCopy::No);

@@ -248,7 +248,7 @@ DgnDbStatus ViewDefinition::_OnDelete() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewDefinition::DeleteReferences() const
     {
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewAttachment) " WHERE ViewId=?");
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ViewId=?");
     stmt->BindId(1, GetViewId());
     while (BE_SQLITE_ROW == stmt->Step())
         {
@@ -319,7 +319,7 @@ DbResult ViewDefinition::DeleteSettings(DgnViewId viewId, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
     {
-    static const Utf8CP s_ecsql = "SELECT ECInstanceId,Code.[Value],[" PROPNAME_Source "]," PROPNAME_BaseModel "," PROPNAME_Descr ",GetECClassId() FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewDefinition);
+    static const Utf8CP s_ecsql = "SELECT ECInstanceId,Code.[Value],[" PROPNAME_Source "]," PROPNAME_BaseModel "," PROPNAME_Descr ",GetECClassId() FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition);
 
     Utf8CP ecsql = s_ecsql;
     Utf8String customECSql;
@@ -436,7 +436,7 @@ Utf8String ViewDefinition::Iterator::Options::ToString() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t ViewDefinition::QueryCount(DgnDbR db, Iterator::Options const& opts)
     {
-    static const Utf8CP s_ecsql = "SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewDefinition);
+    static const Utf8CP s_ecsql = "SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition);
     
     Utf8CP ecsql = s_ecsql;
     Utf8String customECSql;

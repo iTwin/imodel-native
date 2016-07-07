@@ -37,13 +37,13 @@ static bvector<TestAnnotationTableAspectDescr> const& getAspectDescrs ()
 
     s_aspectDescrs = 
         {
-        { DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableHeader),   true    },
-        { DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableRow),      false   },
-        { DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableColumn),   false   },
-        { DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableCell),     false   },
-        { DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableMerge),    false   },
-        { DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology),false   },
-        { DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableEdgeRun),  false   },
+        { BIS_SCHEMA(BIS_CLASS_AnnotationTableHeader),   true    },
+        { BIS_SCHEMA(BIS_CLASS_AnnotationTableRow),      false   },
+        { BIS_SCHEMA(BIS_CLASS_AnnotationTableColumn),   false   },
+        { BIS_SCHEMA(BIS_CLASS_AnnotationTableCell),     false   },
+        { BIS_SCHEMA(BIS_CLASS_AnnotationTableMerge),    false   },
+        { BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology),false   },
+        { BIS_SCHEMA(BIS_CLASS_AnnotationTableEdgeRun),  false   },
         };
 
     return s_aspectDescrs;
@@ -61,10 +61,10 @@ public:
     /* ctor */  ExpectedAspectCounts ()
         {
         // Every table has exactly one table data aspect
-        AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableHeader), 1);
+        AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableHeader), 1);
 
         // Every table at least one symbology aspect
-        AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 1);
+        AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 1);
         }
 
     /* ctor */  ExpectedAspectCounts (uint32_t rowsExpected, uint32_t colsExpected, uint32_t cellsExpected, uint32_t mergesExpected)
@@ -72,16 +72,16 @@ public:
         ExpectedAspectCounts()
         {
         if (0 < rowsExpected)
-            AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableRow), rowsExpected);
+            AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableRow), rowsExpected);
 
         if (0 < colsExpected)
-            AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableColumn), colsExpected);
+            AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableColumn), colsExpected);
 
         if (0 < cellsExpected)
-            AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableCell), cellsExpected);
+            AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableCell), cellsExpected);
 
         if (0 < mergesExpected)
-            AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableMerge), mergesExpected);
+            AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableMerge), mergesExpected);
         }
 
     void        AddEntry (Utf8CP className, size_t count)
@@ -204,7 +204,7 @@ void SetUp () override
     ASSERT_TRUE(m_textStyleId.IsValid());
 
     // Create a 2d model
-    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(GetDgnDb(), DgnClassId(GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode(m_modelName)));
+    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(GetDgnDb(), DgnClassId(GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_GeometricModel2d)), DgnModel::CreateModelCode(m_modelName)));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
     m_modelId = model->GetModelId();
@@ -500,7 +500,7 @@ TEST_F (AnnotationTableTest, PersistRowAndColumnAspects)
 
     // Expect row aspects for the rows with non-default heights.
     ExpectedAspectCounts expectedCounts1;
-    expectedCounts1.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableRow), rowHeights1.size());
+    expectedCounts1.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableRow), rowHeights1.size());
     expectedCounts1.VerifyCounts(*readTableElement);
 
     readTableElement = AnnotationTable::Get(GetDgnDb(), elementId2);
@@ -511,7 +511,7 @@ TEST_F (AnnotationTableTest, PersistRowAndColumnAspects)
 
     // Expect row aspects for the rows with non-default heights.
     ExpectedAspectCounts expectedCounts2;
-    expectedCounts2.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableRow), rowHeights2.size());
+    expectedCounts2.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableRow), rowHeights2.size());
     expectedCounts2.VerifyCounts(*readTableElement);
     }
 
@@ -749,7 +749,7 @@ public:
             }
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableRow), 1);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableRow), 1);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -817,7 +817,7 @@ public:
             }
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableColumn), 1);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableColumn), 1);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -963,7 +963,7 @@ public:
         EXPECT_TRUE (NULL == foundCell->GetTextBlock());
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableCell), 1);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableCell), 1);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -1050,7 +1050,7 @@ public:
         EXPECT_TRUE (NULL == foundCell->GetTextBlock());
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableCell), 1);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableCell), 1);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -1199,7 +1199,7 @@ public:
         EXPECT_EQ (m_rowCount - 1, table.GetRowCount());
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableRow), m_rowCount - 1);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableRow), m_rowCount - 1);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -2439,8 +2439,8 @@ public:
         verifier.VerifyColors (table);
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 2);
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableEdgeRun),   m_expectedRunCount);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableEdgeRun),   m_expectedRunCount);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -2610,8 +2610,8 @@ public:
         verifier.VerifyColors (table);
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 2);
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableEdgeRun),   1);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableEdgeRun),   1);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -2686,8 +2686,8 @@ public:
         verifier.VerifyColors (table);
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 2);
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableEdgeRun),   1);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableEdgeRun),   1);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -2759,8 +2759,8 @@ public:
         verifier.VerifyColors (table);
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 2);
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableEdgeRun),   1);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableEdgeRun),   1);
         expectedCounts.VerifyCounts(table);
         }
 };
@@ -2905,8 +2905,8 @@ public:
         verifier.VerifyColors (table);
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 2);
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableEdgeRun),   3);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableEdgeRun),   3);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -3031,9 +3031,9 @@ public:
     void    _DoAction (AnnotationTableR table) override
         {
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 3);
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableEdgeRun),   2);
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableMerge),     1);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 3);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableEdgeRun),   2);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableMerge),     1);
         expectedCounts.VerifyCounts(table);
 
 
@@ -3134,9 +3134,9 @@ public:
         verifier.VerifyColors (table);
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 3);
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableEdgeRun),   2);
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableMerge),     m_expectedMergeCount);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 3);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableEdgeRun),   2);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableMerge),     m_expectedMergeCount);
         expectedCounts.VerifyCounts(table);
         }
 };
@@ -3214,7 +3214,7 @@ public:
         EXPECT_EQ (color, m_colorVal);
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 2);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -3355,8 +3355,8 @@ public:
         verifier.VerifyColors (table);
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 2);
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableEdgeRun),   3);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableEdgeRun),   3);
         expectedCounts.VerifyCounts(table);
         }
 
@@ -3769,7 +3769,7 @@ public:
         EXPECT_EQ (false, symb.HasFillColor());
 
         ExpectedAspectCounts expectedCounts;
-        expectedCounts.AddEntry (DGN_SCHEMA(DGN_CLASSNAME_AnnotationTableSymbology), 2);
+        expectedCounts.AddEntry (BIS_SCHEMA(BIS_CLASS_AnnotationTableSymbology), 2);
         expectedCounts.VerifyCounts(table);
         }
 

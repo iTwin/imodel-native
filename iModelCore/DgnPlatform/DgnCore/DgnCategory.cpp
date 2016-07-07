@@ -212,7 +212,7 @@ DgnCategoryIdSet DgnCategory::QueryCategories(DgnDbR db)
     {
     DgnCategoryIdSet ids;
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_Category));
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Category));
     if (stmt.IsValid())
         {
         while (BE_SQLITE_ROW == stmt->Step())
@@ -229,7 +229,7 @@ DgnCategoryIdList DgnCategory::QueryOrderedCategories(DgnDbR db)
     {
     DgnCategoryIdList ids;
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId, Code.[Value] FROM " DGN_SCHEMA(DGN_CLASSNAME_Category) " ORDER BY Code.[Value]");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId, Code.[Value] FROM " BIS_SCHEMA(BIS_CLASS_Category) " ORDER BY Code.[Value]");
     if (stmt.IsValid())
         {
         while (BE_SQLITE_ROW == stmt->Step())
@@ -244,7 +244,7 @@ DgnCategoryIdList DgnCategory::QueryOrderedCategories(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnCategory::QueryCount(DgnDbR db)
     {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_Category));
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_Category));
     return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : 0;
     }
 
@@ -253,7 +253,7 @@ size_t DgnCategory::QueryCount(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId DgnCategory::QueryFirstCategoryId(DgnDbR db)
     {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_Category) " LIMIT 1");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Category) " LIMIT 1");
     return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
     }
 
@@ -262,7 +262,7 @@ DgnCategoryId DgnCategory::QueryFirstCategoryId(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId DgnCategory::QueryHighestCategoryId(DgnDbR db)
     {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT max(ECInstanceId) FROM " DGN_SCHEMA(DGN_CLASSNAME_Category));
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT max(ECInstanceId) FROM " BIS_SCHEMA(BIS_CLASS_Category));
     return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
     }
 
@@ -368,7 +368,7 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR 
     if (!subCatId.IsValid())
         return DgnCategoryId();
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId FROM " DGN_SCHEMA(DGN_CLASSNAME_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
     if (stmt.IsValid())
         {
         stmt->BindId(1, subCatId);
@@ -387,7 +387,7 @@ DgnSubCategoryIdSet DgnSubCategory::QuerySubCategories(DgnDbR db, DgnCategoryId 
     {
     DgnSubCategoryIdSet ids;
 
-    Utf8String ecsql("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_SubCategory));
+    Utf8String ecsql("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SubCategory));
     if (catId.IsValid())
         ecsql.append(" WHERE [ParentId]=?");
 
@@ -410,7 +410,7 @@ DgnSubCategoryIdSet DgnSubCategory::QuerySubCategories(DgnDbR db, DgnCategoryId 
 size_t DgnSubCategory::QueryCount(DgnDbR db, DgnCategoryId catId)
     {
     size_t count = 0;
-    Utf8String ecsql("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_SubCategory));
+    Utf8String ecsql("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_SubCategory));
     if (catId.IsValid())
         ecsql.append (" WHERE [ParentId]=?");
 

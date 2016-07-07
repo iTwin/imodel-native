@@ -693,7 +693,7 @@ bvector<Utf8String> ComponentDef::GetInputs() const
         // There are no declared inputs. Assume that all properties are inputs ...
         //  ... excluding the properties of dgn.Element, SpatialElement, and PhysicalElement, as they are very unlikely to be
         //      parametric model inputs, and excluding all non-primitive properties.
-        ECN::ECClassCP physEle = GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+        ECN::ECClassCP physEle = GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
         bset<Utf8String> physEleProps;
         for (auto prop : physEle->GetProperties())
             physEleProps.insert(prop->GetName());
@@ -740,7 +740,7 @@ ComponentModelR ComponentDef::GetModel()
     if (m_model.IsValid())
         {
         //  Sandbox model already exists. Clean it out and re-use it.
-        CachedECSqlStatementPtr delStmt = m_db.GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+        CachedECSqlStatementPtr delStmt = m_db.GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ModelId=?");
         delStmt->BindId(1, m_model->GetModelId());
         delStmt->Step();
         return *m_model;
@@ -1237,7 +1237,7 @@ void ComponentDef::QueryVariations(bvector<DgnElementId>& variations, DgnModelId
 DgnDbStatus ComponentDef::UpdateSolutionsAndInstances()
     {
     EC::ECSqlStatement selectCatalogItems;
-    selectCatalogItems.Prepare(GetDgnDb(), "SELECT SourceECInstanceId,Parameters FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE(TargetECInstanceId=?)");
+    selectCatalogItems.Prepare(GetDgnDb(), "SELECT SourceECInstanceId,Parameters FROM " BIS_SCHEMA(BIS_REL_SolutionOfComponent) " WHERE(TargetECInstanceId=?)");
     selectCatalogItems.BindId(1, GetModelId());
     while (BE_SQLITE_ROW == selectCatalogItems.Step())
         {

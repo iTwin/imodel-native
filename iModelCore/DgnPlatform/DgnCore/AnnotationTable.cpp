@@ -434,13 +434,13 @@ AspectTypeData const&   AnnotationTableAspect::GetAspectTypeData(AnnotationTable
 
         s_typeData = 
             {
-            { AspectTypeData (AnnotationTableAspectType::Header,    headerNames,   true,  DGN_CLASSNAME_AnnotationTableHeader)     },
-            { AspectTypeData (AnnotationTableAspectType::Row,       rowNames,      false, DGN_CLASSNAME_AnnotationTableRow)        },
-            { AspectTypeData (AnnotationTableAspectType::Column,    colNames,      false, DGN_CLASSNAME_AnnotationTableColumn)     },
-            { AspectTypeData (AnnotationTableAspectType::Cell,      cellNames,     false, DGN_CLASSNAME_AnnotationTableCell)       },
-            { AspectTypeData (AnnotationTableAspectType::Merge,     mergeNames,    false, DGN_CLASSNAME_AnnotationTableMerge)      },
-            { AspectTypeData (AnnotationTableAspectType::Symbology, symbNames,     false, DGN_CLASSNAME_AnnotationTableSymbology)  },
-            { AspectTypeData (AnnotationTableAspectType::EdgeRun,   edgeRunNames,  false, DGN_CLASSNAME_AnnotationTableEdgeRun)    },
+            { AspectTypeData (AnnotationTableAspectType::Header,    headerNames,   true,  BIS_CLASS_AnnotationTableHeader)     },
+            { AspectTypeData (AnnotationTableAspectType::Row,       rowNames,      false, BIS_CLASS_AnnotationTableRow)        },
+            { AspectTypeData (AnnotationTableAspectType::Column,    colNames,      false, BIS_CLASS_AnnotationTableColumn)     },
+            { AspectTypeData (AnnotationTableAspectType::Cell,      cellNames,     false, BIS_CLASS_AnnotationTableCell)       },
+            { AspectTypeData (AnnotationTableAspectType::Merge,     mergeNames,    false, BIS_CLASS_AnnotationTableMerge)      },
+            { AspectTypeData (AnnotationTableAspectType::Symbology, symbNames,     false, BIS_CLASS_AnnotationTableSymbology)  },
+            { AspectTypeData (AnnotationTableAspectType::EdgeRun,   edgeRunNames,  false, BIS_CLASS_AnnotationTableEdgeRun)    },
             };
         }
 
