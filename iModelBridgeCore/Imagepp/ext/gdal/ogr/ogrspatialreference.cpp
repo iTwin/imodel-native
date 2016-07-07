@@ -3510,7 +3510,7 @@ int OGRSpatialReference::FindProjParm( const char *pszParameter,
             iChild = FindProjParm(SRS_PP_LONGITUDE_OF_ORIGIN, poPROJCS );
     }
 
-
+//IPP  Begin TFS445530
 /* -------------------------------------------------------------------- */
 /*      Try similar names, but in the inverse order                     */
 /* -------------------------------------------------------------------- */
@@ -3533,6 +3533,7 @@ int OGRSpatialReference::FindProjParm( const char *pszParameter,
                 iChild = FindProjParm(SRS_PP_LONGITUDE_OF_CENTER, poPROJCS);
         }
     }
+//IPP End
 
     return iChild;
 }
