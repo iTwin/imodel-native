@@ -310,10 +310,7 @@ DbResult ECDbProfileUpgrader_3720::_Upgrade(ECDbCR ecdb) const
         DbResult r = stmt.Step();
         
         if (r != BE_SQLITE_DONE)
-            {
-            printf("%s\n", ecdb.GetLastError().c_str());
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-            }
         }
 
     stmt.Finalize();
