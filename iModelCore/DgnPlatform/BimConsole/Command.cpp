@@ -120,7 +120,7 @@ void OpenCommand::_Run(Session& session, vector<Utf8String> const& args) const
 
     if (session.IsFileLoaded())
         {
-        Console::WriteErrorLine("%s file '%s' already open. Close it first before opening another file.", session.GetFile().GetPath());
+        Console::WriteErrorLine("%s file '%s' already open. Close it first before opening another file.", session.GetFile().TypeToString(), session.GetFile().GetPath());
         return;
         }
 
