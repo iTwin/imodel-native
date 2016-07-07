@@ -91,7 +91,7 @@ public:
     void SetValue(Utf8StringCR value) { m_data.m_value = value; } //!< Set the light data as a JSON string
     void SetDescr(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the description of this light definition
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LightDefinition); } //!< Returns the class ID used for light definitions
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_LightDefinition); } //!< Returns the class ID used for light definitions
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Return the class ID used for light definitions
 
     //! Insert this light definition into the DgnDb and return the persistent light definition

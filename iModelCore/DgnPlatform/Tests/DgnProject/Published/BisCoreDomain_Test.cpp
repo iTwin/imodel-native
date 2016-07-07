@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Published/DgnBaseDomainSchema_Test.cpp $
+|  $Source: Tests/DgnProject/Published/BisCoreDomain_Test.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,7 +10,7 @@
 //----------------------------------------------------------------------------------------
 // @bsiclass                                    Shaun.Sewall                    01/2016
 //----------------------------------------------------------------------------------------
-struct DgnBaseDomainSchemaTests : public DgnDbTestFixture
+struct BisCoreDomainTests : public DgnDbTestFixture
     {
     Utf8String GetDDL(Utf8CP tableName);
     };
@@ -18,7 +18,7 @@ struct DgnBaseDomainSchemaTests : public DgnDbTestFixture
 //----------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2016
 //----------------------------------------------------------------------------------------
-Utf8String DgnBaseDomainSchemaTests::GetDDL(Utf8CP tableName)
+Utf8String BisCoreDomainTests::GetDDL(Utf8CP tableName)
     {
     CachedStatementPtr statement;
     m_db->GetCachedStatement(statement, "SELECT sql FROM sqlite_master WHERE name=?");
@@ -31,13 +31,13 @@ Utf8String DgnBaseDomainSchemaTests::GetDDL(Utf8CP tableName)
 //---------------------------------------------------------------------------------------
 // @betest                                      Shaun.Sewall                    01/2016
 //---------------------------------------------------------------------------------------
-TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
+TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
     {
     SetupProject(L"3dMetricGeneral.ibim", L"ValidateDomainSchemaDDL.bim", Db::OpenMode::ReadWrite);
 
     // dgn_Element
         {
-        Statement statement(*m_db, "PRAGMA TABLE_INFO(" DGN_TABLE(DGN_CLASSNAME_Element) ")");
+        Statement statement(*m_db, "PRAGMA TABLE_INFO(" BIS_TABLE(DGN_CLASSNAME_Element) ")");
         int numColumns = 0;
         bvector<Utf8String> expectedColumnNames;
         expectedColumnNames.push_back("Id");
@@ -71,7 +71,7 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
 
         ASSERT_EQ(numColumns, expectedColumnNames.size());
 
-        Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_Element));
+        Utf8String ddl = GetDDL(BIS_TABLE(DGN_CLASSNAME_Element));
         ASSERT_TRUE(ddl.Contains("[Id] INTEGER PRIMARY KEY,"));
         ASSERT_TRUE(ddl.Contains("[ECClassId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[ParentId] INTEGER,"));
@@ -81,37 +81,37 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("[Code_Value] TEXT COLLATE NOCASE,"));
         ASSERT_TRUE(ddl.Contains("[LastMod] TIMESTAMP NOT NULL DEFAULT(julianday('now')),"));
         ASSERT_FALSE(ddl.Contains("PRIMARY KEY([Id])"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([Code_AuthorityId]) REFERENCES [dgn_Authority]([Id])"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ParentId]) REFERENCES [dgn_Element]([Id])")); // Element API does the "cascade delete"
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ModelId]) REFERENCES [dgn_Model]([Id])"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([Code_AuthorityId]) REFERENCES [" BIS_TABLE(DGN_CLASSNAME_Authority) "]([Id])"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ParentId]) REFERENCES [" BIS_TABLE(DGN_CLASSNAME_Element) "]([Id])")); // Element API does the "cascade delete"
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ModelId]) REFERENCES [" BIS_TABLE(DGN_CLASSNAME_Model) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
 
     // dgn_DefinitionElement
         {
-        Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_DefinitionElement));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [dgn_Element]([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([BaseModelId]) REFERENCES [dgn_Model]([Id])"));
+        Utf8String ddl = GetDDL(BIS_TABLE(DGN_CLASSNAME_DefinitionElement));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(DGN_CLASSNAME_Element) "]([Id]) ON DELETE CASCADE"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([BaseModelId]) REFERENCES [" BIS_TABLE(DGN_CLASSNAME_Model) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
 
     // dgn_GeometricElement2d
         {
-        Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_GeometricElement2d));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [dgn_Element]([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CategoryId]) REFERENCES [dgn_Element]([Id])"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ViewId]) REFERENCES [dgn_Element]([Id])"));
+        Utf8String ddl = GetDDL(BIS_TABLE(DGN_CLASSNAME_GeometricElement2d));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(DGN_CLASSNAME_Element) "]([Id]) ON DELETE CASCADE"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CategoryId]) REFERENCES [" BIS_TABLE(DGN_CLASSNAME_Element) "]([Id])"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ViewId]) REFERENCES [" BIS_TABLE(DGN_CLASSNAME_Element) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
 
     // dgn_GeometricElement3d
         {
-        Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_GeometricElement3d));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [dgn_Element]([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CategoryId]) REFERENCES [dgn_Element]([Id])")); 
+        Utf8String ddl = GetDDL(BIS_TABLE(DGN_CLASSNAME_GeometricElement3d));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(DGN_CLASSNAME_Element) "]([Id]) ON DELETE CASCADE"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CategoryId]) REFERENCES [" BIS_TABLE(DGN_CLASSNAME_Element) "]([Id])")); 
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
@@ -120,8 +120,8 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE UNIQUE INDEX%'");
         bvector<Utf8String> expectedSqlList;
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Model)   "]([Code_AuthorityId], [Code_Namespace], [Code_Value])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element) "]([Code_AuthorityId], [Code_Namespace], [Code_Value])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_Model)   "]([Code_AuthorityId], [Code_Namespace], [Code_Value])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_Element) "]([Code_AuthorityId], [Code_Namespace], [Code_Value])");
 
         for (Utf8String expectedSql : expectedSqlList)
             {
@@ -146,15 +146,15 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE INDEX%'");
         bvector<Utf8String> expectedSqlList;
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Authority)          "]([ECClassId])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Model)              "]([ECClassId])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "]([ECClassId])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "]([ParentId]) WHERE ([ParentId] IS NOT NULL)");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "]([ModelId])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_Element)            "]([Label]) WHERE ([Label] IS NOT NULL)");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_GeometricElement2d) "]([CategoryId])");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_GeometricElement2d) "]([ViewId]) WHERE ([ViewId] IS NOT NULL)");
-        expectedSqlList.push_back("ON [" DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) "]([CategoryId])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_Authority)          "]([ECClassId])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_Model)              "]([ECClassId])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_Element)            "]([ECClassId])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_Element)            "]([ParentId]) WHERE ([ParentId] IS NOT NULL)");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_Element)            "]([ModelId])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_Element)            "]([Label]) WHERE ([Label] IS NOT NULL)");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_GeometricElement2d) "]([CategoryId])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_GeometricElement2d) "]([ViewId]) WHERE ([ViewId] IS NOT NULL)");
+        expectedSqlList.push_back("ON [" BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) "]([CategoryId])");
 
         for (Utf8String expectedSql : expectedSqlList)
             {

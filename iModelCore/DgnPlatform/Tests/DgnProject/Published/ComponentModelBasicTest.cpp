@@ -87,7 +87,7 @@ DgnDbPtr ComponentModelBasicTest::initDb(WCharCP fileName, Db::OpenMode mode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
     {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, code));
     catalogModel->SetInGuiList(false);
     return catalogModel->Insert();
@@ -164,7 +164,7 @@ void ComponentModelBasicTest::CreateAndImportComponentSchema(DgnDbPtr& db)
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
 
     TsComponentParameterSet params;
     params["H"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
@@ -191,7 +191,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECClass)
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
 
     MakeBoxTsComponentParameterSet();
 
@@ -224,7 +224,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECClassId)
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
 
     MakeBoxTsComponentParameterSet();
 
@@ -448,7 +448,7 @@ TEST_F(ComponentModelBasicTest, QueryComponentDefs)
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
 
     MakeBoxTsComponentParameterSet();
 

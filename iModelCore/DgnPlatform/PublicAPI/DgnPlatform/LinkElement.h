@@ -74,7 +74,7 @@ public:
 
     //! Query the DgnClassId of the dgn.LinkModel ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the dgn.LinkModel class - it does @em not return the class of a specific instance.
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LinkModel)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_LinkModel)); }
 };
 
 //=======================================================================================
@@ -378,7 +378,7 @@ public:
 
     //! Get the schema name for the UrlLink class
     //! @note This is a static method that always returns the schema name of the dgn.UrlLink class - it does @em not return the schema of a specific instance.
-    static Utf8CP MyECSchemaName() { return DGN_ECSCHEMA_NAME; }
+    static Utf8CP MyECSchemaName() { return BIS_ECSCHEMA_NAME; }
 };
 
 //=======================================================================================
@@ -465,7 +465,7 @@ public:
 
     //! Get the schema name for the UrlLink class
     //! @note This is a static method that always returns the schema name of the dgn.UrlLink class - it does @em not return the schema of a specific instance.
-    static Utf8CP MyECSchemaName() { return DGN_ECSCHEMA_NAME; }
+    static Utf8CP MyECSchemaName() { return BIS_ECSCHEMA_NAME; }
 };
 
 namespace dgn_ModelHandler

@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="Documentation" nameSpacePrefix="doc" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
-    <ECSchemaReference name="dgn" version="02.00" prefix="dgn"/>
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="Document">
-        <BaseClass>dgn:InformationElement</BaseClass>
+        <BaseClass>bis:InformationElement</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -17,7 +17,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="DocumentCopy" modifier="Abstract">
-        <BaseClass>dgn:InformationCarrierElement</BaseClass>
+        <BaseClass>bis:InformationCarrierElement</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>

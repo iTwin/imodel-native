@@ -116,7 +116,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
         // This statement is wrong, because DGN_placement_angles returns a DGN_angles object, while DGN_bbox_areaxy expects a DGN_bbox object.
         // Note that the error is detected when you try to step the statement, not when you prepare it.
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_angles(Yaw,Pitch,Roll)) FROM " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d));
+        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_angles(Yaw,Pitch,Roll)) FROM " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d));
         DbResult rc = stmt.Step(); // rc will be BE_SQLITE_ERROR, and m_db->GetLastError() will return "Illegal input to DGN_bbox_areaxy"
         //__PUBLISH_EXTRACT_END__
         ASSERT_EQ( BE_SQLITE_ERROR , rc );
@@ -132,7 +132,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     double totalAreaXy = 0.0;
         {
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(" EABB_FROM_GEOM ") FROM " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d));
+        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(" EABB_FROM_GEOM ") FROM " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d));
 
         DbResult rc;
         while (BE_SQLITE_ROW == (rc = stmt.Step()))
@@ -153,7 +153,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
         // This is an example of using DGN_placement_eabb to sum up element areas. Note that we must to use 
         // element-aligned bounding boxes in this query, rather than axis-aligned bounding boxes.
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT SUM(DGN_bbox_areaxy(" EABB_FROM_GEOM ")) FROM " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d));
+        stmt.Prepare(*m_db, "SELECT SUM(DGN_bbox_areaxy(" EABB_FROM_GEOM ")) FROM " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d));
         //__PUBLISH_EXTRACT_END__
 
         ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
@@ -164,7 +164,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     if (true)
         {
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT SUM(area) FROM (SELECT DGN_bbox_areaxy(" EABB_FROM_GEOM ") AS area FROM " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) ")");
+        stmt.Prepare(*m_db, "SELECT SUM(area) FROM (SELECT DGN_bbox_areaxy(" EABB_FROM_GEOM ") AS area FROM " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) ")");
 
         ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
         ASSERT_EQ( totalAreaXy , stmt.GetValueDouble(0) );
@@ -199,7 +199,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
 
     //  Verify that only one is found with a placement angle of 90
     Statement stmt;
-    stmt.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g WHERE DGN_angles_maxdiff(" ANGLES_FROM_PLACEMENT ",DGN_Angles(90,0,0)) < 1.0");
+    stmt.Prepare(*m_db, "SELECT g.ElementId FROM " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g WHERE DGN_angles_maxdiff(" ANGLES_FROM_PLACEMENT ",DGN_Angles(90,0,0)) < 1.0");
 
     ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
     ASSERT_EQ( elem1At90->GetElementId() , stmt.GetValueId<DgnElementId>(0) );
@@ -211,7 +211,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
         Statement stmt2;
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
         // This query uses DGN_angles_value to extract the Yaw angle of an element's placement, in order to compare it with 90.
-        stmt2.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g WHERE ABS(g.Yaw - 90) < 1.0");
+        stmt2.Prepare(*m_db, "SELECT g.ElementId FROM " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g WHERE ABS(g.Yaw - 90) < 1.0");
         //__PUBLISH_EXTRACT_END__
 
         ASSERT_EQ( BE_SQLITE_ROW , stmt2.Step() );
@@ -240,7 +240,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
 
     //  Only one should be found with a placement angle of 0
     stmt.Finalize();
-    stmt.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g WHERE DGN_angles_maxdiff(" ANGLES_FROM_PLACEMENT ",DGN_Angles(0,0,0)) < 1.0");
+    stmt.Prepare(*m_db, "SELECT g.ElementId FROM " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g WHERE DGN_angles_maxdiff(" ANGLES_FROM_PLACEMENT ",DGN_Angles(0,0,0)) < 1.0");
 
     ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
     ASSERT_EQ( elemAt0->GetElementId() , stmt.GetValueId<DgnElementId>(0) );
@@ -319,7 +319,7 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
         
     Statement stmt;
     stmt.Prepare(*m_db,        // aspect.sc01 == aspect.TestUniqueAspectProperty
-        "SELECT aspect.ElementId, aspect.sc01 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " e, " DGN_TABLE(DGN_CLASSNAME_ElementUniqueAspect) " aspect," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " g, " DGN_VTABLE_SpatialIndex " rt WHERE"
+        "SELECT aspect.ElementId, aspect.sc01 FROM " BIS_TABLE(DGN_CLASSNAME_Element) " e, " BIS_TABLE(DGN_CLASSNAME_ElementUniqueAspect) " aspect," BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) " g, " DGN_VTABLE_SpatialIndex " rt WHERE"
              " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)" // FROM R-Tree
              " AND g.ElementId=rt.ElementId"
              " AND DGN_point_min_distance_to_bbox(:testPoint, " AABB_FROM_PLACEMENT ") <= :maxDistance"  // select geoms that are within some distance of a specified point
@@ -663,7 +663,7 @@ TEST_F(SqlFunctionsTest, spatialQuery)
     // item property = :propertyValue.
     Statement stmt;
     stmt.Prepare(*m_db,       // aspect.sc01 == aspect.TestUniqueAspectProperty
-        "SELECT aspect.ElementId,aspect.sc01 FROM " DGN_VTABLE_SpatialIndex " rt," DGN_TABLE(DGN_CLASSNAME_Element) " e," DGN_TABLE(DGN_CLASSNAME_ElementUniqueAspect) " aspect WHERE"
+        "SELECT aspect.ElementId,aspect.sc01 FROM " DGN_VTABLE_SpatialIndex " rt," BIS_TABLE(DGN_CLASSNAME_Element) " e," BIS_TABLE(DGN_CLASSNAME_ElementUniqueAspect) " aspect WHERE"
            " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)"      // select elements whose range overlaps box
            " AND e.Id=rt.ElementId AND e.ECClassId=:ecClass"        // and are of a specific ecClass 
            " AND aspect.ElementId=e.Id AND aspect.sc01=:propertyValue"   // ... with certain item value
@@ -830,7 +830,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
     // This is an example of accumlating the union of bounding boxes.
     // Note that when computing a union, it only makes sense to use axis-aligned bounding boxes, not element-aligned bounding boxes.
-    stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(" AABB_FROM_PLACEMENT ") FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
+    stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(" AABB_FROM_PLACEMENT ") FROM " BIS_TABLE(DGN_CLASSNAME_Element) " AS e," BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) 
                     " AS g WHERE e.ModelId=3 AND e.id=g.ElementId");
     //__PUBLISH_EXTRACT_END__
     auto rc = stmt.Step();
@@ -846,7 +846,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
     // An example of constructing a DGN_Angles object in order to test the placement angles of elements in the Db.
     Utf8CP anglesSql = "SELECT count(*) FROM (SELECT Placement FROM "
-        DGN_TABLE(DGN_CLASSNAME_GeometricElement3d)
+        BIS_TABLE(DGN_CLASSNAME_GeometricElement3d)
         " WHERE Placement IS NOT NULL) WHERE DGN_angles_maxdiff(DGN_placement_angles(Placement),DGN_Angles(0,0,90)) < 1.0";
 
     stmt.Prepare(*dgndb, anglesSql);
@@ -862,7 +862,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
     int count = 0;
 #endif
     stmt.Prepare(*dgndb, "SELECT count(*) FROM "
-                         DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g WHERE g.Roll < 90");
+                         BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g WHERE g.Roll < 90");
 
     rc = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, rc);

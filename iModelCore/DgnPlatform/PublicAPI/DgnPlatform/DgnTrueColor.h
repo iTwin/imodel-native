@@ -71,7 +71,7 @@ public:
     //! Creates a code for a color with the given name and book name
     static DgnCode CreateColorCode(Utf8StringCR name, Utf8StringCR book) { return TrueColorAuthority::CreateTrueColorCode(name, book); }
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TrueColor); } //!< The class ID associated with true colors within the given DgnDb
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_TrueColor); } //!< The class ID associated with true colors within the given DgnDb
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< The class ID associated with true colors within the given DgnDb
 
     //! Inserts this color into the database and returns the persistent copy

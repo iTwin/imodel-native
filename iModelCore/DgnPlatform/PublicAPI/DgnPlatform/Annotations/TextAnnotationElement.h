@@ -38,7 +38,7 @@ namespace DgnDbSync { namespace DgnV8 { struct ConvertV8TextToDgnDbExtension; } 
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationData : DgnElement::UniqueAspect
 {
-    DGNASPECT_DECLARE_MEMBERS(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationData, DgnElement::UniqueAspect);
+    DGNASPECT_DECLARE_MEMBERS(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationData, DgnElement::UniqueAspect);
 
 private:
 //__PUBLISH_SECTION_END__
@@ -55,7 +55,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadProperties(DgnElementCR) override;
     
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationData); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationData); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     static TextAnnotationDataCP GetCP(DgnElementCR el) { return UniqueAspect::Get<TextAnnotationData>(el, *QueryECClass(el.GetDgnDb())); }
@@ -100,7 +100,7 @@ protected:
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotation2d); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotation2d); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     static TextAnnotation2dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation2d>(id); }
@@ -146,7 +146,7 @@ protected:
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotation3d); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotation3d); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     static TextAnnotation3dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation3d>(id); }

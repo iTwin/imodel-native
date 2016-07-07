@@ -204,7 +204,7 @@ void SetUp () override
     ASSERT_TRUE(m_textStyleId.IsValid());
 
     // Create a 2d model
-    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(GetDgnDb(), DgnClassId(GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode(m_modelName)));
+    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(GetDgnDb(), DgnClassId(GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode(m_modelName)));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
     m_modelId = model->GetModelId();

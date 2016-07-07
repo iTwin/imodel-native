@@ -60,7 +60,7 @@ static ECN::ECClassCP getECClassByFullName(DgnDbR db, Utf8StringCR fullname)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ECN::IECInstancePtr getComponentSpecCA(DgnDbR db, ECN::ECClassCR cls)
     {
-     ECN::ECClassCP caClass = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
+     ECN::ECClassCP caClass = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "ComponentSpecification");
     if (nullptr == caClass)
         return nullptr;
 
@@ -390,7 +390,7 @@ ComponentDef::ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass)
 #ifdef WIP_ECOBJECTS_PROBLEM // *** DerivedClassses collection is not updated when we insert a new ECClass
 void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR db, ECN::ECClassCR baseClassIn)
     {
-    auto componentSpecificationCA = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
+    auto componentSpecificationCA = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "ComponentSpecification");
     if (nullptr == componentSpecificationCA)
         return;
 
@@ -413,7 +413,7 @@ void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR
 #else
 void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR db, ECN::ECClassCR baseClassIn)
     {
-    auto componentSpecificationCA = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
+    auto componentSpecificationCA = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "ComponentSpecification");
     if (nullptr == componentSpecificationCA)
         return;
 
@@ -693,7 +693,7 @@ bvector<Utf8String> ComponentDef::GetInputs() const
         // There are no declared inputs. Assume that all properties are inputs ...
         //  ... excluding the properties of dgn.Element, SpatialElement, and PhysicalElement, as they are very unlikely to be
         //      parametric model inputs, and excluding all non-primitive properties.
-        ECN::ECClassCP physEle = GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+        ECN::ECClassCP physEle = GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
         bset<Utf8String> physEleProps;
         for (auto prop : physEle->GetProperties())
             physEleProps.insert(prop->GetName());
@@ -1284,7 +1284,7 @@ DgnDbStatus ComponentDef::UpdateSolutionsAndInstances()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnClassId getComponentModelClassId(DgnDbR db)
     {
-    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "ComponentModel"));
+    return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, "ComponentModel"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1368,7 +1368,7 @@ DgnDbStatus ComponentModel::_OnDelete()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr ComponentDefCreator::CreatePropSpecCA()
     {
-    ECN::ECClassCP caClass = m_db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentParameterSpecification");
+    ECN::ECClassCP caClass = m_db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "ComponentParameterSpecification");
     if (nullptr == caClass)
         return nullptr;
     return caClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -1379,7 +1379,7 @@ ECN::IECInstancePtr ComponentDefCreator::CreatePropSpecCA()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr ComponentDef::GetPropSpecCA(ECN::ECPropertyCR prop)
     {
-    ECN::ECClassCP caClass = m_db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentParameterSpecification");
+    ECN::ECClassCP caClass = m_db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "ComponentParameterSpecification");
     if (nullptr == caClass)
         return nullptr;
     return prop.GetCustomAttribute(*caClass);
@@ -1413,7 +1413,7 @@ static ECN::IECInstancePtr createAdHocPropSpecCA(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr ComponentDefCreator::CreateSpecCA()
     {
-    ECN::ECClassCP caClass = m_db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
+    ECN::ECClassCP caClass = m_db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "ComponentSpecification");
     if (nullptr == caClass)
         return nullptr;
     return caClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -1457,7 +1457,7 @@ ECN::IECInstancePtr ComponentDefCreator::AddSpecCA(ECN::ECClassR ecclass)
 
     #ifndef NDEBUG
         {
-        ECN::ECClassCP caClass = m_db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
+        ECN::ECClassCP caClass = m_db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "ComponentSpecification");
         auto ca = ecclass.GetCustomAttribute(*caClass);
         ECN::ECValue v;
         BeAssert(ECN::ECObjectsStatus::Success == ca->GetValue(v, CDEF_CA_CATEGORY) && v.ToString() == m_categoryName);
@@ -1540,7 +1540,7 @@ ECN::ECClassCP ComponentDefCreator::GenerateECClass()
     adhocspecCa->SetValue("AdhocPropertyContainer", ECN::ECValue("ComponentSpecificationAdhocHolder"));
     ECSUCCESS(ecclass->SetCustomAttribute(*adhocspecCa));
 
-    ECN::ECClassCP adHocPropsHolderClass0 = m_db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecificationAdhocHolder");
+    ECN::ECClassCP adHocPropsHolderClass0 = m_db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "ComponentSpecificationAdhocHolder");
     ECN::ECStructClassCP adHocPropsHolderClass = dynamic_cast<ECN::ECStructClassCP>(adHocPropsHolderClass0);
 
     ECN::StructArrayECPropertyP adhocsArrayProp;

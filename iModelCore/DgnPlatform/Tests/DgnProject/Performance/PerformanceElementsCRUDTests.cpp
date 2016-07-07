@@ -58,7 +58,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
         ASSERT_EQ (ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext));
 
         schemaContext->AddSchema(*schema);
-        ASSERT_EQ(DgnDbStatus::Success, DgnBaseDomain::GetDomain().ImportSchema(*m_db, schemaContext->GetCache()));
+        ASSERT_EQ(DgnDbStatus::Success, BisCoreDomain::GetDomain().ImportSchema(*m_db, schemaContext->GetCache()));
         ASSERT_TRUE (m_db->IsDbOpen());
 
         bvector<DgnElementPtr> testElements;
@@ -89,20 +89,20 @@ uint64_t PerformanceElementsCRUDTestFixture::s_elementId = UINT64_C(2000000);
 
 Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
+        "  <ECSchemaReference name = 'BisCore' version = '01.00' prefix = 'bis' />"
         "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
         "  <ECClass typeName='Element1' >"
         "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
-        "    <BaseClass>dgn:PhysicalElement</BaseClass>"
+        "    <BaseClass>bis:PhysicalElement</BaseClass>"
         "    <ECProperty propertyName='Prop1_1' typeName='string' />"
         "    <ECProperty propertyName='Prop1_2' typeName='long' />"
         "    <ECProperty propertyName='Prop1_3' typeName='double' />"
         "  </ECClass>"
         "  <ECClass typeName='Element2' >"
         "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element1</BaseClass>"
         "    <ECProperty propertyName='Prop2_1' typeName='string' />"
@@ -111,7 +111,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "  </ECClass>"
         "  <ECClass typeName='Element3' >"
         "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element2</BaseClass>"
         "    <ECProperty propertyName='Prop3_1' typeName='string' />"
@@ -120,7 +120,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "  </ECClass>"
         "  <ECClass typeName='Element4' >"
         "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element3</BaseClass>"
         "    <ECProperty propertyName='Prop4_1' typeName='string' />"
@@ -129,7 +129,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "  </ECClass>"
         "  <ECClass typeName='Element4b' >"
         "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element3</BaseClass>"
         "    <ECProperty propertyName='Prop4b_1' typeName='string' />"
@@ -138,7 +138,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "    <ECProperty propertyName='Prop4b_4' typeName='point3d' />"
         "  </ECClass>"
         "  <ECClass typeName='TestMultiAspect' isDomainClass='True'>"
-        "    <BaseClass>dgn:ElementMultiAspect</BaseClass>"
+        "    <BaseClass>bis:ElementMultiAspect</BaseClass>"
         "    <ECCustomAttributes>"
         "       <ClassMap xmlns = 'ECDbMap.01.00'>"
         "           <Indexes>"
@@ -617,7 +617,7 @@ PerformanceElement4CPtr PerformanceElement4::Update()
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyPropertyValues) const
     {
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     SpatialModelPtr targetModel = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode(modelCode)));
     EXPECT_EQ (DgnDbStatus::Success, targetModel->Insert());       /* Insert the new model into the DgnDb */
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);

@@ -712,7 +712,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int32_t countElementsOfClass(DgnClassId classId, DgnDbR db)
     {
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ECClassId=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT count(*) FROM " BIS_TABLE(DGN_CLASSNAME_Element) " WHERE ECClassId=?");
     stmt->BindUInt64(1, classId.GetValue());
     stmt->Step();
     return stmt->GetValueInt(0);

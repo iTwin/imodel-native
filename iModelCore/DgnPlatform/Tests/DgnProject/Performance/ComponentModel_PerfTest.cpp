@@ -57,7 +57,7 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
     {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, code));
     catalogModel->SetInGuiList(false);
     return catalogModel->Insert();
@@ -165,7 +165,7 @@ void ComponentModelPerfTest::Developer_CreateCMs()
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_componentDb, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = m_componentDb->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
 
     TsComponentParameterSet params;
     params["H"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));

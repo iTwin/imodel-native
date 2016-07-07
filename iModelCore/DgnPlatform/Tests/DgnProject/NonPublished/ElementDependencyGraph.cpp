@@ -811,7 +811,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
     //       ---> m3
     //
 
-    auto modelClassId = m_db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model)->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_Model)->GetId();
     auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
     auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
     auto m3key = ECInstanceKey(modelClassId, ECInstanceId(m3id.GetValue()));
@@ -873,7 +873,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
 static int64_t countModelDrivesModelInstances(DgnDb& db)
     {
     Statement modelsCount;
-    modelsCount.Prepare(db, "SELECT COUNT(*) FROM " DGN_TABLE(DGN_RELNAME_ModelDrivesModel));
+    modelsCount.Prepare(db, "SELECT COUNT(*) FROM " BIS_TABLE(DGN_RELNAME_ModelDrivesModel));
     modelsCount.Step();
     return modelsCount.GetValueInt64(0);
     }
@@ -910,7 +910,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
     //       ---> m3
     //
 
-    auto modelClassId = m_db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)->GetId();
     auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
     auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
     auto m3key = ECInstanceKey(modelClassId, ECInstanceId(m3id.GetValue()));
@@ -958,7 +958,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
     auto m2id = m2->GetModelId();
 
     // Make m2 depend on m1
-    auto modelClassId = m_db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)->GetId();
     auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
     auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
 

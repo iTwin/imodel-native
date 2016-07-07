@@ -226,7 +226,7 @@ public:
     //! @return The number of sub-categories.
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db, DgnCategoryId categoryId=DgnCategoryId());
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SubCategory); } //!< Returns the class ID used for sub-categories.
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SubCategory); } //!< Returns the class ID used for sub-categories.
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Returns the class ID used for sub-categories
 };
 
@@ -393,7 +393,7 @@ public:
     DGNPLATFORM_EXPORT static DgnCategoryId QueryFirstCategoryId(DgnDbR db); //!< Returns the ID of the first category found in the DgnDb
     DGNPLATFORM_EXPORT static DgnCategoryId QueryHighestCategoryId(DgnDbR db); //!< Returns the highest category ID found in the DgnDb
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Category); } //!< Returns the class ID used for categories.
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_Category); } //!< Returns the class ID used for categories.
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Returns the class ID used for categories
 
     //! Get a string containing the list of characters that may NOT appear in category codes.

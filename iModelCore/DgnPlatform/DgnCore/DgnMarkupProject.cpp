@@ -658,7 +658,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         {
         Statement stmt;
         // *** NEEDS WORK: Missing WHERE Id=?   
-        stmt.Prepare(*this, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Visibility=1");  // ModelIterate::All (i.e., hide when looking for models to show in the GUI)
+        stmt.Prepare(*this, "UPDATE " BIS_TABLE(DGN_CLASSNAME_Model) " SET Visibility=1");  // ModelIterate::All (i.e., hide when looking for models to show in the GUI)
         stmt.Step();
         }
 

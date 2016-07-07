@@ -33,7 +33,7 @@ void DgnSqlTestDomain::RegisterDomainAndImportSchema(DgnDbR db, BeFileNameCR sch
     BeFileName schemaFile = schemasDir;
     schemaFile.AppendToPath(L"ECSchemas/" DGN_SQL_TEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
 
-    auto status = DgnBaseDomain::GetDomain().ImportSchema(db, schemaFile);
+    auto status = DgnSqlTestDomain::GetDomain().ImportSchema(db, schemaFile);
     ASSERT_TRUE(DgnDbStatus::Success == status);
     }
 

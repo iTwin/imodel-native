@@ -126,7 +126,7 @@ void DgnElement::ClearAllAppData()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_DeleteInDb() const
     {
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("DELETE FROM " BIS_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, m_elementId);
 
     switch (stmt->Step())
@@ -335,7 +335,7 @@ static bool parentCycleExists(DgnElementId parentId, DgnElementId elemId, DgnDbR
     if (parentId == elemId)
         return true;
 
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId FROM " BIS_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     do
         {
         stmt->BindId(1, parentId);
@@ -623,7 +623,7 @@ DgnDbStatus DgnElement::_LoadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementIdSet DgnElement::QueryChildren() const
     {
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ParentId=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Id FROM " BIS_TABLE(DGN_CLASSNAME_Element) " WHERE ParentId=?");
     stmt->BindId(1, GetElementId());
 
     DgnElementIdSet elementIdSet;
@@ -1157,7 +1157,7 @@ BeSQLite::EC::ECInstanceUpdater const& DgnImportContext::GetUpdater(ECN::ECClass
     for (ECN::ECPropertyCP ecProperty : ecClass.GetProperties(true))
         {
         // Don't bind any of the dgn derived properties
-        if (ecProperty->GetClass().GetSchema().GetName().Equals("dgn"))
+        if (ecProperty->GetClass().GetSchema().GetName().Equals(BIS_ECSCHEMA_NAME))
             continue;
         propertiesToBind.push_back(ecProperty);
         }
@@ -3238,7 +3238,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
     // Update ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = GetDgnDb();
     DgnElementId eid = GetElementId();
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeometryPartId FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeometryPartId FROM " BIS_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=?");
     stmt->BindId(1, eid);
 
     IdSet<DgnGeometryPartId> partsOld;
@@ -3256,7 +3256,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 
     if (!partsToRemove.empty())
         {
-        stmt = db.Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=? AND GeometryPartId=?");
+        stmt = db.Elements().GetStatement("DELETE FROM " BIS_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=? AND GeometryPartId=?");
         stmt->BindId(1, eid);
 
         for (DgnGeometryPartId const& partId : partsToRemove)

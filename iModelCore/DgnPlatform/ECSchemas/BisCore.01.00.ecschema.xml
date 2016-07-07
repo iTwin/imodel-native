@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="dgn" nameSpacePrefix="dgn" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+<ECSchema schemaName="BisCore" nameSpacePrefix="bis" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.03" prefix="beca" />
@@ -68,7 +68,7 @@
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string" description="Name of authority">
             <ECCustomAttributes>
@@ -83,55 +83,55 @@
     </ECEntityClass>
     <ECEntityClass typeName="LocalAuthority">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="NamespaceAuthority">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="MaterialAuthority">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ComponentAuthority">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ModelAuthority">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="TrueColorAuthority">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ResourceAuthority">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="CategoryAuthority">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="GeometryPartAuthority">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
@@ -204,7 +204,7 @@
 
     <ECEntityClass typeName="Model" modifier="Abstract">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00">
+            <ClassHasHandler xmlns="BisCore.01.00">
                 <Restrictions>
                     <string>Clone</string><!-- It is never permitted to clone a model without its handler -->
                 </Restrictions>
@@ -274,7 +274,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel2d">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GeometricModel</BaseClass>
         <ECProperty propertyName="GlobalOrigin" displayLabel="Global Origin" typeName="point2d"/>
@@ -284,7 +284,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="SpatialModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
@@ -293,13 +293,13 @@
     </ECEntityClass>
     <ECEntityClass typeName="SectionDrawingModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DrawingModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SheetModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalModel2d</BaseClass>
         <ECProperty propertyName="SheetSize" displayLabel="Sheet Size" typeName="point2d"/>
@@ -307,7 +307,7 @@
 
     <ECEntityClass typeName="ComponentModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
@@ -316,37 +316,37 @@
     </ECEntityClass>
     <ECEntityClass typeName="DefinitionModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="LinkModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="GroupInformationModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="WebMercatorModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>SpatialModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="StreetMapModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>WebMercatorModel</BaseClass>
     </ECEntityClass>
@@ -413,7 +413,7 @@
             <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <PropertyName>LastMod</PropertyName>
             </ClassHasCurrentTimeStampProperty>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward">
@@ -500,7 +500,7 @@
     
     <ECEntityClass typeName="UrlLink">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
                     <DbIndex>
@@ -520,7 +520,7 @@
 
     <ECEntityClass typeName="EmbeddedFileLink">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
                     <DbIndex>
@@ -564,7 +564,7 @@
 	    <!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
@@ -664,7 +664,7 @@
     <ECEntityClass typeName="VolumeElement">
         <!-- A SpatialLocationElement that defines a volume -->
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>SpatialLocationElement</BaseClass>
     </ECEntityClass>
@@ -672,7 +672,7 @@
         <!-- Base class for elements with 2d geometry -->
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
@@ -694,14 +694,14 @@
     <ECEntityClass typeName="AnnotationElement2d">
         <!-- 2D element used to annotate drawings and sheets -->
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DrawingGraphic">
         <!-- 2D element used in drawings -->
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
     </ECEntityClass>
@@ -709,7 +709,7 @@
     <!-- Text element data (shared by 2D and 3D) -->
     <ECEntityClass typeName="TextAnnotationData">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TextAnnotation" typeName="binary"/>
@@ -718,7 +718,7 @@
     <!-- 2D text element -->
     <ECEntityClass typeName="TextAnnotation2d">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>AnnotationElement2d</BaseClass>
     </ECEntityClass>
@@ -739,7 +739,7 @@
     <!-- 3D text element -->
     <ECEntityClass typeName="TextAnnotation3d">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement3d</BaseClass>
     </ECEntityClass>
@@ -760,7 +760,7 @@
     <ECEntityClass typeName="AnnotationTable">
         <!-- An AnnotationTable is an annotation element that displays a grid containing text and or graphics -->
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>AnnotationElement2d</BaseClass>
     </ECEntityClass>
@@ -973,7 +973,7 @@
     <!--
     <ECEntityClass typeName="DimensionStyle">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="TextStyleId" typeName="long"/>
@@ -981,7 +981,7 @@
 
     <ECEntityClass typeName="LinearDimension">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="StyleId" typeName="long"/>
         <ECProperty propertyName="Points" typeName="binary" description="Location of dimension points"/>
@@ -989,7 +989,7 @@
 
     <ECEntityClass typeName="LinearDimension2d">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>AnnotationElement2d</BaseClass>
         <BaseClass>LinearDimension</BaseClass>
@@ -997,7 +997,7 @@
 
     <ECEntityClass typeName="LinearDimension3d">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement3d</BaseClass>
         <BaseClass>LinearDimension</BaseClass>
@@ -1007,7 +1007,7 @@
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
         <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward"/>
@@ -1072,7 +1072,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -1179,7 +1179,7 @@
     <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing">
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <ClassMap xmlns="ECDbMap.01.00">
                 <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
@@ -1204,7 +1204,7 @@
 
     <ECEntityClass typeName="Category">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" DisplayLabel="Description" typeName="string">
@@ -1234,7 +1234,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="SubCategory">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
@@ -1270,7 +1270,7 @@
 
     <ECEntityClass typeName="TrueColor">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Data" typeName="int"/>
@@ -1278,7 +1278,7 @@
 
     <ECEntityClass typeName="MaterialElement">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
@@ -1287,7 +1287,7 @@
 
     <ECEntityClass typeName="AnnotationTextStyle">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
@@ -1296,7 +1296,7 @@
 
     <ECEntityClass typeName="AnnotationFrameStyle">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
@@ -1305,7 +1305,7 @@
 
     <ECEntityClass typeName="AnnotationLeaderStyle">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
@@ -1314,7 +1314,7 @@
 
     <ECEntityClass typeName="TextAnnotationSeed">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
@@ -1323,7 +1323,7 @@
 
     <ECEntityClass typeName="LineStyle">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
@@ -1332,7 +1332,7 @@
 
     <ECEntityClass typeName="Texture">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
@@ -1375,7 +1375,7 @@
 
     <ECEntityClass typeName="LightDefinition">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
@@ -1408,13 +1408,13 @@
     <ECEntityClass typeName="SpatialViewDefinition">
         <BaseClass>ViewDefinition3d</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="CameraViewDefinition">
         <BaseClass>SpatialViewDefinition</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="ViewDefinition2d" modifier="Abstract">
@@ -1423,13 +1423,13 @@
     <ECEntityClass typeName="DrawingViewDefinition">
         <BaseClass>ViewDefinition2d</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="SheetViewDefinition">
         <BaseClass>ViewDefinition2d</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
   
@@ -1483,7 +1483,7 @@
     <ECEntityClass typeName="GeometryPart">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>

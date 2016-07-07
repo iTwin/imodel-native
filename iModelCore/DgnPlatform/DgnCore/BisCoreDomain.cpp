@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/DgnBaseDomain.cpp $
+|     $Source: DgnCore/BisCoreDomain.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -78,12 +78,12 @@ END_BENTLEY_DGN_NAMESPACE
 
 HANDLER_EXTENSION_DEFINE_MEMBERS(IEditManipulatorExtension)
 
-DOMAIN_DEFINE_MEMBERS(DgnBaseDomain)
+DOMAIN_DEFINE_MEMBERS(BisCoreDomain)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain",1) 
+BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain", 1) 
     {
     // Note: Handlers must be registered in class heiarchy order (base classes before subclasses)
     RegisterHandler(DgnElementDependencyHandler::GetHandler());

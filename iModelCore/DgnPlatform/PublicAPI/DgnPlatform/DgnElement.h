@@ -1473,7 +1473,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
     virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final {return DGN_TABLE(DGN_CLASSNAME_GeometricElement3d);}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(DGN_CLASSNAME_GeometricElement3d);}
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
@@ -1541,7 +1541,7 @@ protected:
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
     virtual GeometrySource2dCP _ToGeometrySource2d() const override final {return this;}
-    virtual Utf8CP _GetGeometryColumnTableName() const override final {return DGN_TABLE(DGN_CLASSNAME_GeometricElement2d);}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(DGN_CLASSNAME_GeometricElement2d);}
     virtual DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}

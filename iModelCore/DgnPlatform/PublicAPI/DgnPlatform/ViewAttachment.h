@@ -130,7 +130,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus GenerateGeomStream(DgnSubCategoryId subCategory=DgnSubCategoryId());
 
     //! Look up the ID of the base ViewAttachmentElement ECClass within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ViewAttachment)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_ViewAttachment)); }
 };
 
 namespace dgn_ElementHandler

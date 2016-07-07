@@ -4,10 +4,10 @@
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
-    <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
 
     <ECClass typeName="DummyTestElement" isDomainClass="True">
-        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
     </ECClass>
 
 </ECSchema>

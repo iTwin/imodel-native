@@ -1,18 +1,18 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="Functional" nameSpacePrefix="func" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
-    <ECSchemaReference name="dgn" version="02.00" prefix="dgn"/>
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="FunctionalModel">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>dgn:Model</BaseClass>
+        <BaseClass>bis:Model</BaseClass>
     </ECEntityClass>
 
     <ECEntityClass typeName="FunctionalElement" modifier="Abstract">
-        <BaseClass>dgn:RoleElement</BaseClass>
+        <BaseClass>bis:RoleElement</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>

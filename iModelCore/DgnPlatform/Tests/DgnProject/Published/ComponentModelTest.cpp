@@ -276,7 +276,7 @@ void ComponentModelTest::Developer_DefineSchema()
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_componentDb, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    ECN::ECClassCP baseClass = m_componentDb->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
 
     // Widget
         {
@@ -605,7 +605,7 @@ void ComponentModelTest::SimulateDeveloper()
         DgnClassId  thingClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE,  TEST_THING_COMPONENT_NAME));
 
         bvector<DgnClassId> componentClassIds;
-        ComponentDef::QueryComponentDefs(componentClassIds, *m_componentDb, *m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+        ComponentDef::QueryComponentDefs(componentClassIds, *m_componentDb, *m_componentDb->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
         ASSERT_EQ(3, componentClassIds.size());
         ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), widgetClassId) != componentClassIds.end());
         ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), gadgetClassId) != componentClassIds.end());
@@ -667,7 +667,7 @@ void ComponentModelTest::SimulateClient()
             DgnClassId  thingClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE,  TEST_THING_COMPONENT_NAME));
 
             bvector<DgnClassId> componentClassIds;
-            ComponentDef::QueryComponentDefs(componentClassIds, *m_componentDb, *m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+            ComponentDef::QueryComponentDefs(componentClassIds, *m_componentDb, *m_componentDb->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
             ASSERT_EQ(3, componentClassIds.size());
             ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), widgetClassId) != componentClassIds.end());
             ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), gadgetClassId) != componentClassIds.end());
@@ -916,7 +916,7 @@ TEST(SchemaImportTest, SelectAfterImport)
         ASSERT_EQ( ECN::ECObjectsStatus::Success , ECN::ECSchema::CreateSchema(schema, "ImportTwoInARow", 0, 0) );
         schema->SetNamespacePrefix("tir");
 
-        ECN::ECClassCP baseClass = db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+        ECN::ECClassCP baseClass = db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
 
         ASSERT_TRUE( nullptr != generateECClass(*db, *schema, "C1", *baseClass) );
 

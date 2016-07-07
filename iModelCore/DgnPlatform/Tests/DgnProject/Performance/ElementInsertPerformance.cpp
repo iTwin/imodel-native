@@ -24,7 +24,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
             "  <ECClass typeName='Element1' >"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>dgn:PhysicalElement</BaseClass>"
             "    <ECProperty propertyName='Prop1_1' typeName='string' />"
@@ -33,7 +33,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  </ECClass>"
             "  <ECClass typeName='Element2' >"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>Element1</BaseClass>"
             "    <ECProperty propertyName='Prop2_1' typeName='string' />"
@@ -42,7 +42,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  </ECClass>"
             "  <ECClass typeName='Element3' >"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>Element2</BaseClass>"
             "    <ECProperty propertyName='Prop3_1' typeName='string' />"
@@ -51,7 +51,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  </ECClass>"
             "  <ECClass typeName='Element4' >"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>Element3</BaseClass>"
             "    <ECProperty propertyName='Prop4_1' typeName='string' />"
@@ -60,7 +60,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  </ECClass>"
             "  <ECClass typeName='Element4b' >"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>Element3</BaseClass>"
             "    <ECProperty propertyName='Prop4b_1' typeName='string' />"
@@ -70,7 +70,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "  </ECClass>"
             "  <ECClass typeName='SimpleElement'>"
             "    <ECCustomAttributes>"
-            "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+            "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
             "    </ECCustomAttributes>"
             "    <BaseClass>dgn:Element</BaseClass>"
             "  </ECClass>"
@@ -113,7 +113,7 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
 //---------------+---------------+---------------+---------------+---------------+-------
 SpatialModelPtr PerformanceElementTestFixture::CreateSpatialModel() const
     {
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     SpatialModelPtr targetModel = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Instances")));
     EXPECT_EQ(DgnDbStatus::Success, targetModel->Insert());       /* Insert the new model into the DgnDb */
     return targetModel;

@@ -320,7 +320,7 @@ public:
     explicit SpatialViewDefinition(CreateParams const& params) : T_Super(params) { }
 
     //! Look up the ECClass ID used for SpatialViewDefinitions within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialViewDefinition)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialViewDefinition)); }
 };
 
 //=======================================================================================
@@ -349,7 +349,7 @@ public:
     explicit CameraViewDefinition(CreateParams const& params) : T_Super(params) { }
 
     //! Look up the ECClass ID used for CameraViewDefinitions within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_CameraViewDefinition)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_CameraViewDefinition)); }
 };
 
 //=======================================================================================
@@ -392,7 +392,7 @@ public:
     explicit DrawingViewDefinition(CreateParams const& params) : T_Super(params) { }
 
     //! Look up the ECClass ID used for DrawingViewDefinitions in the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingViewDefinition)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingViewDefinition)); }
 };
 
 //=======================================================================================
@@ -424,7 +424,7 @@ public:
     explicit SheetViewDefinition(CreateParams const& params) : T_Super(params) {}
 
     //! Look up the ECClass ID used for SheetViewDefinitions in the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetViewDefinition)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SheetViewDefinition)); }
 };
 
 //=======================================================================================

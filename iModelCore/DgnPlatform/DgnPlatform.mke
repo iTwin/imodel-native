@@ -351,6 +351,8 @@ $(CoreObjs)DgnMarkupProject$(oext) :                $(DgnCoreDir)DgnMarkupProjec
 
 $(CoreObjs)DgnDomain$(oext) :                       $(DgnCoreDir)DgnDomain.cpp $(DgnPlatformAPISrc)DgnDomain.h ${MultiCompileDepends}
 
+$(CoreObjs)BisCoreDomain$(oext) :                   $(DgnCoreDir)BisCoreDomain.cpp ${MultiCompileDepends}
+
 $(CoreObjs)GenericDomain$(oext) :                   $(DgnCoreDir)GenericDomain.cpp $(DgnPlatformAPISrc)GenericDomain.h ${MultiCompileDepends}
 
 $(CoreObjs)DocumentationDomain$(oext) :             $(DgnCoreDir)DocumentationDomain.cpp $(DgnPlatformAPISrc)DocumentationDomain.h ${MultiCompileDepends}
@@ -358,8 +360,6 @@ $(CoreObjs)DocumentationDomain$(oext) :             $(DgnCoreDir)DocumentationDo
 $(CoreObjs)FunctionalDomain$(oext) :                $(DgnCoreDir)FunctionalDomain.cpp $(DgnPlatformAPISrc)FunctionalDomain.h ${MultiCompileDepends}
 
 $(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(DgnPlatformAPISrc)QueryView.h $(ViewControllerDepends) ${MultiCompileDepends}
-
-$(CoreObjs)DgnBaseDomain$(oext) :                   $(DgnCoreDir)DgnBaseDomain.cpp ${MultiCompileDepends}
 
 $(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(DgnPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
 

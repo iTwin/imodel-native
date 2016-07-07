@@ -175,7 +175,7 @@ module DgnScriptTests {
         // be testing for valves and girders and so on.) I could also be testing for the properties aspects,
         // or codes, or various other things.
         var spatialQuery = db.GetPreparedECSqlSelectStatement(
-            "SELECT rt.ECInstanceId FROM dgn.SpatialIndex rt, " + physObjClass.ECSqlName + 
+            "SELECT rt.ECInstanceId FROM BisCore.SpatialIndex rt, " + physObjClass.ECSqlName + 
             " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
         );
 

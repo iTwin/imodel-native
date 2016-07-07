@@ -1128,7 +1128,7 @@ struct LocksManagerTest : RepositoryManagerTest
 
     DgnModelPtr CreateModel(Utf8CP name, DgnDbR db)
         {
-        DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+        DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
         SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(db, classId, DgnModel::CreateModelCode(name)));
         IBriefcaseManager::Request req;
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForModelInsert(req, *model, IBriefcaseManager::PrepareAction::Acquire));

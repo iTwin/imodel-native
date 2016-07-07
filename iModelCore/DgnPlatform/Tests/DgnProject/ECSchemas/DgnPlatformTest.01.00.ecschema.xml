@@ -4,13 +4,13 @@
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
-    <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
 
     <ECClass typeName="TestElement" isDomainClass="True">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
         <ECProperty propertyName="TestElementProperty" typeName="string" />
         <!-- Sam added the following properties and explicitly did NOT implement logic to read/write them -->
         <ECProperty propertyName="IntegerProperty1" typeName="int" />
@@ -43,17 +43,17 @@
 
     <ECClass typeName="TestElement2d" isDomainClass="True">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:AnnotationElement2d</BaseClass>
+        <BaseClass>bis:AnnotationElement2d</BaseClass>
         <ECProperty propertyName="TestElementProperty" typeName="string" />
     </ECClass>
 
     <ECClass typeName="TestUniqueAspect" isDomainClass="True">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:ElementUniqueAspect</BaseClass>
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TestUniqueAspectProperty" typeName="string" />
         <ECProperty propertyName="Length" typeName="double" />
     </ECClass>
@@ -65,7 +65,7 @@
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="dgn:Element" />
+            <Class class="bis:Element" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="False">
           <Class class="TestUniqueAspect">
@@ -78,42 +78,42 @@
 
     <ECClass typeName="TestMultiAspect" isDomainClass="True">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:ElementMultiAspect</BaseClass>
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECProperty propertyName="TestMultiAspectProperty" typeName="string" />
     </ECClass>
 
     <ECRelationshipClass typeName="TestElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward" >
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:ElementDrivesElement</BaseClass>
+        <BaseClass>bis:ElementDrivesElement</BaseClass>
         <Source cardinality="(0,1)" roleLabel="Element with datum plane" polymorphic="True">
-            <Class class="dgn:Element" />
+            <Class class="bis:Element" />
         </Source>
         <Target cardinality="(0,1)" roleLabel="Element to move" polymorphic="True">
-            <Class class="dgn:Element" />
+            <Class class="bis:Element" />
         </Target>
         <ECProperty propertyName="Property1" typeName="string" />
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="TestElementIsRelatedToElement" isDomainClass="True" strength="referencing" strengthDirection="forward" >
         <Source cardinality="(0,N)" polymorphic="True">
-            <Class class="dgn:Element" />
+            <Class class="bis:Element" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="dgn:Element" />
+            <Class class="bis:Element" />
         </Target>
         <ECProperty propertyName="Property1" typeName="string" />
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="TestElementIsRelatedToElement2" isDomainClass="True" strength="referencing" strengthDirection="forward" >
         <Source cardinality="(0,N)" polymorphic="True">
-            <Class class="dgn:Element" />
+            <Class class="bis:Element" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="dgn:Element" />
+            <Class class="bis:Element" />
         </Target>
         <ECProperty propertyName="Property1" typeName="string" />
     </ECRelationshipClass>
@@ -121,31 +121,31 @@
     <ECClass typeName="TestGroup" isDomainClass="True">
         <!-- Used to test the IElementGroup interface -->
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="Robot" isDomainClass="true">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
         <ECProperty propertyName="Name" typeName="string" />
     </ECClass>
 
     <ECClass typeName="Obstacle" isDomainClass="true">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
         <ECProperty propertyName="CanMove" typeName="boolean" />
         <ECProperty propertyName="SomeProperty" typeName="string" />
     </ECClass>
 
     <ECClass typeName="RestrictedElement1" isDomainClass="true">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00">
+            <ClassHasHandler xmlns="BisCore.01.00">
                 <Restrictions>
                     <string>Delete</string>
                     <string>Insert</string>
@@ -156,12 +156,12 @@
                 </Restrictions>
             </ClassHasHandler>
         </ECCustomAttributes>
-        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="RestrictedElement2" isDomainClass="true">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00">
+            <ClassHasHandler xmlns="BisCore.01.00">
                 <Restrictions>
                     <string>Clone</string>
                     <string>SetParent</string>
@@ -171,19 +171,19 @@
                 </Restrictions>
             </ClassHasHandler>
         </ECCustomAttributes>
-        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="TestAuthority" isDomainClass="True">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:Authority</BaseClass>
+        <BaseClass>bis:Authority</BaseClass>
     </ECClass>
     
     <ECClass typeName="TestElementSub1" isDomainClass="True">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>TestElement</BaseClass>
         <ECProperty propertyName='Prop1_1' typeName='string' />
@@ -193,7 +193,7 @@
     
     <ECClass typeName="TestElementSub2" isDomainClass="True">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>TestElementSub1</BaseClass>
         <ECProperty propertyName='Prop2_1' typeName='string' />
@@ -203,7 +203,7 @@
     
     <ECClass typeName="TestElementSub3" isDomainClass="True">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>TestElementSub2</BaseClass>
         <ECProperty propertyName='Prop3_1' typeName='string' />
@@ -219,7 +219,7 @@
     
     <ECClass typeName="TestElementComplex" isDomainClass="True">
         <ECCustomAttributes>
-          <ClassHasHandler xmlns="dgn.02.00" />
+          <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>TestElement</BaseClass>
         <ECProperty propertyName='Prop_point3d' typeName='point3d' />

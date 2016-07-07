@@ -166,7 +166,7 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModel)
 static int countSheets(DgnDbR db)
     {
     int count = 0;
-    auto sheetClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
+    auto sheetClassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
     for (auto const& sheet : db.Models().MakeIterator())
         {
         if (sheetClassId == sheet.GetClassId())
@@ -186,7 +186,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
     if (is3d)
         gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject)), cat, Placement3d()));
     else
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d)), cat, Placement2d()));
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d)), cat, Placement2d()));
 
     GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
@@ -222,7 +222,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
         //  Create a sheet
         DPoint2d sheetSize = DPoint2d::From(.100, .100);
-        SheetModel::CreateParams params(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
+        SheetModel::CreateParams params(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
                                 DgnModel::CreateModelCode(s_sheet1Name), sheetSize);
         SheetModelPtr sheet1 = SheetModel::Create(params);
         ASSERT_TRUE( sheet1.IsValid() );
@@ -239,7 +239,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_NE( DgnDbStatus::Success, sheetSameName->Insert() ) << "Should be illegal to add a second sheet with the same name";
 
         //  Create a second sheet
-        SheetModel::CreateParams params2(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
+        SheetModel::CreateParams params2(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
                                 DgnModel::CreateModelCode(s_sheet2Name), sheetSize);
         SheetModelPtr sheet2 = SheetModel::Create(params2);
         ASSERT_TRUE(sheet2.IsValid());

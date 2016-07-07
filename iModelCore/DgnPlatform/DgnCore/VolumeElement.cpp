@@ -419,7 +419,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     
     // Prepare element query by range, and by what's visible in the view
     Statement stmt;
-    Utf8CP sql = "SELECT r.ElementId FROM " DGN_VTABLE_SpatialIndex " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g " \
+    Utf8CP sql = "SELECT r.ElementId FROM " DGN_VTABLE_SpatialIndex " AS r, " BIS_TABLE(DGN_CLASSNAME_Element) " AS e, " BIS_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g " \
         " WHERE r.MaxX > ? AND r.MinX < ?  AND r.MaxY > ? AND r.MinY < ? AND r.MaxZ > ? AND r.MinZ < ?" \
         " AND e.Id=r.ElementId AND g.ElementId=r.ElementId AND e.Id != ?" \
         " AND InVirtualSet (?,e.ModelId,g.CategoryId)";

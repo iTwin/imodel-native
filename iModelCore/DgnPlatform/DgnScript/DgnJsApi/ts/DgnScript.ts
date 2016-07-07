@@ -22,7 +22,7 @@
     export function RegisterDgnDbScript(scriptName: string, scriptFunction: any): void { m_dgnDbScriptFunctions[scriptName] = scriptFunction; }
 
     /** The alias of the dgn schema namespace */
-    export var DGN_ECSCHEMA_NAME = "dgn";
+    export var DGN_ECSCHEMA_NAME = "BisCore"; // WIP: rename DGN_ECSCHEMA_NAME --> BIS_ECSCHEMA_NAME
     /** The alias of the Generic schema namespace */
     export var GENERIC_ECSCHEMA_NAME = "Generic";
 

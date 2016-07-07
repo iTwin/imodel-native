@@ -309,8 +309,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 TargetECInstanceId;NULL;0:4
     */
     EXPECT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csModelId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel, DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csCategoryId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Category, DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csModelId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel, DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csCategoryId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, DGN_CLASSNAME_Category, DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "Generic", GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Insert));
 
     m_testDb->SaveChanges();
@@ -904,10 +904,10 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
                 TargetECInstanceId;NULL;0:7
     */
     EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsChildElements, DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsChildElements, DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), "Generic", GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Update)); // Captured due to change of ParentId property
 
-    ECClassId relClassId = m_testDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsChildElements);
+    ECClassId relClassId = m_testDb->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_RELNAME_ElementOwnsChildElements);
     ECClassId elClassId = m_testDb->Schemas().GetECClassId("Generic", GENERIC_CLASSNAME_PhysicalObject);
 
     ChangeSummary::Instance instance = changeSummary.GetInstance(elClassId, ECInstanceId(childElementId.GetValue()));
@@ -968,7 +968,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     // Query changed elements directly using ECSQL
     ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.PhysicalElement el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
+    Utf8CP ecsql = "SELECT el.ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement) " el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
     ECSqlStatus status = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(status.IsSuccess());
     
@@ -987,7 +987,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     
     // Query changed elements directly using the API
     bmap<ECInstanceId, ChangeSummary::Instance> changes;
-    ECClassId elClassId = m_testDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "Element");
+    ECClassId elClassId = m_testDb->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, "Element");
     changeSummary.QueryByClass(changes, elClassId, true, ChangeSummary::QueryDbOpcode::All);
     changedElements.empty();
     for (bmap<ECInstanceId, ChangeSummary::Instance>::const_iterator iter = changes.begin(); iter != changes.end(); iter++)
@@ -1032,7 +1032,7 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     // changeSummary.Dump();
 
     int expectedChangeCount = nSessions * nTransactionsPerSession + 2; /* category and sub category are now elements */
-    EXPECT_EQ(expectedChangeCount, GetChangeSummaryInstanceCount(changeSummary, "dgn.Element"));
+    EXPECT_EQ(expectedChangeCount, GetChangeSummaryInstanceCount(changeSummary, DGN_SCHEMA(DGN_CLASSNAME_Element)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1053,7 +1053,7 @@ TEST_F(ChangeSummaryTestFixture, ValidateTableMap)
     ASSERT_TRUE(tableMap->GetECClassIdColumn().GetIndex() >= 0);
     ASSERT_TRUE(tableMap->GetECInstanceIdColumn().GetIndex() >= 0);
 
-    ECClassCP ecRelClass = m_testDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementHasLinks);
+    ECClassCP ecRelClass = m_testDb->Schemas().GetECClass(BIS_ECSCHEMA_NAME, DGN_RELNAME_ElementHasLinks);
     ASSERT_TRUE(ecRelClass != nullptr);
 
     ChangeSummary::TableMapPtr relTableMap = ChangeSummary::GetPrimaryTableMap(*m_testDb, *ecRelClass);

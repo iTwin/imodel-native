@@ -87,7 +87,7 @@ void ViewAttachmentTest::SetUp()
 
     // Set up a sheet to hold attachments
     auto& db = *GetDgnDb();
-    DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
+    DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
     SheetModelPtr sheet = new SheetModel(SheetModel::CreateParams(db, classId, DgnModel::CreateModelCode("MySheet"), DPoint2d::From(10,10)));
     ASSERT_EQ(DgnDbStatus::Success, sheet->Insert());
     m_sheetId = sheet->GetModelId();
@@ -99,7 +99,7 @@ void ViewAttachmentTest::SetUp()
     ASSERT_TRUE(m_attachmentCatId.IsValid());
 
     // Set up a viewed model
-    classId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SectionDrawingModel));
+    classId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_SectionDrawingModel));
     RefCountedPtr<SectionDrawingModel> drawing = new SectionDrawingModel(SectionDrawingModel::CreateParams(db, classId, DgnModel::CreateModelCode("MyDrawing")));
     ASSERT_EQ(DgnDbStatus::Success, drawing->Insert());
     m_drawingId = drawing->GetModelId();
@@ -154,7 +154,7 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
     ICurvePrimitivePtr curve = ICurvePrimitive::CreateLineString(pts);
 
     auto& db = *GetDgnDb();
-    DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
+    DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
     DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, drawingId, classId, DgnCode()));
     ASSERT_TRUE(el.IsValid());
 

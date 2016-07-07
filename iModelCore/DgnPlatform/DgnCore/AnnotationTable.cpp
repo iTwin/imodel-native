@@ -545,7 +545,7 @@ bool AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType a
     Utf8StringR     sqlString = typeData.m_ecSqlSelectDupeString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlSelectDupeString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames[0].c_str());
+        sqlString = buildECSqlSelectDupeString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames[0].c_str());
 
     CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (UNEXPECTED_CONDITION (!statement.IsValid()))
@@ -566,7 +566,7 @@ CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement (Annot
     Utf8StringR     sqlString = typeData.m_ecSqlSelectString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlSelectString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
+        sqlString = buildECSqlSelectString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (!statement.IsValid())
@@ -601,7 +601,7 @@ BentleyStatus AnnotationTableAspect::InsertInDb()
     Utf8StringR     sqlString = typeData.m_ecSqlUpdateString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlInsertString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
+        sqlString = buildECSqlInsertString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
@@ -627,7 +627,7 @@ BentleyStatus AnnotationTableAspect::UpdateInDb()
     Utf8StringR     sqlString = typeData.m_ecSqlUpdateString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlUpdateString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
+        sqlString = buildECSqlUpdateString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
@@ -656,7 +656,7 @@ BentleyStatus AnnotationTableAspect::DeleteAspectFromDb (AnnotationTableAspectTy
     Utf8StringR     sqlString = typeData.m_ecSqlDeleteString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlDeleteString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_isUniqueAspect);
+        sqlString = buildECSqlDeleteString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (!statement.IsValid())

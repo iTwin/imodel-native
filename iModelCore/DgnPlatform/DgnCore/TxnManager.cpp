@@ -1516,7 +1516,7 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         if (s_modelIdColIdx == -1)
             {
             bvector<Utf8String> columnNames;
-            m_txnMgr.GetDgnDb().GetColumns(columnNames, DGN_TABLE(DGN_CLASSNAME_Element));
+            m_txnMgr.GetDgnDb().GetColumns(columnNames, BIS_TABLE(DGN_CLASSNAME_Element));
             auto i = std::find(columnNames.begin(), columnNames.end(), "ModelId");
             BeAssert(i != columnNames.end());
             s_modelIdColIdx = (int)std::distance(columnNames.begin(), i);
@@ -1573,7 +1573,7 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, Chan
 //---------------------------------------------------------------------------------------
 void dgn_TxnTable::ModelDep::CheckDirection(ECInstanceId relid)
     {
-    CachedStatementPtr stmt = m_txnMgr.GetTxnStatement("SELECT RootModelId,DependentModelId FROM " DGN_TABLE(DGN_RELNAME_ModelDrivesModel) " WHERE(ECInstanceId=?)");
+    CachedStatementPtr stmt = m_txnMgr.GetTxnStatement("SELECT RootModelId,DependentModelId FROM " BIS_TABLE(DGN_RELNAME_ModelDrivesModel) " WHERE(ECInstanceId=?)");
     stmt->BindId(1, relid);
     if (stmt->Step() != BE_SQLITE_ROW)
         {

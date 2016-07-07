@@ -86,7 +86,7 @@ DgnClassIds in two different DgnDbs. Whenever a DgnDb is created or opened, the 
 local DgnClassId to DgnDomain::Handler (it will report an error if any expected ones are missing.) That map is stored in a class
 called DgnDomains, which is accessed through the method DgnDb::Domains().
 
-The DgnDomain for the base "dgn" schema is is called DgnBaseDomain. It is always loaded and it registers all of its DgnDomain::Handlers.
+The DgnDomain for the base "dgn" schema is is called BisCoreDomain. It is always loaded and it registers all of its DgnDomain::Handlers.
 
 */
 
@@ -453,14 +453,14 @@ public:
 //! @ingroup GROUP_DgnDomain
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
-struct DgnBaseDomain : DgnDomain
+struct BisCoreDomain : DgnDomain
 {
-    DOMAIN_DECLARE_MEMBERS(DgnBaseDomain,DGNPLATFORM_EXPORT)
+    DOMAIN_DECLARE_MEMBERS(BisCoreDomain,DGNPLATFORM_EXPORT)
 
     void _OnDgnDbOpened(DgnDbR db) const override;
 
 public:
-    DgnBaseDomain();
+    BisCoreDomain();
 };
 
 END_BENTLEY_DGN_NAMESPACE

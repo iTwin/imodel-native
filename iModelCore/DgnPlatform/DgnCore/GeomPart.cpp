@@ -114,7 +114,7 @@ DgnDbStatus DgnGeometryPart::WriteGeometryStream()
 
     m_multiChunkGeomStream = false;
     DgnDbR db = GetDgnDb();
-    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), DGN_TABLE(DGN_CLASSNAME_DefinitionElement), "sc01"); // NOTE: takes advantage of knowing how the EC --> SQLite mapping will turn out!
+    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), BIS_TABLE(DGN_CLASSNAME_DefinitionElement), "sc01"); // NOTE: takes advantage of knowing how the EC --> SQLite mapping will turn out!
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -54,7 +54,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
 
 public:
-    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DimensionStyle)); }
+    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_DimensionStyle)); }
     
     explicit DimensionStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), DgnCode())) {}
     explicit DimensionStyle(CreateParams const& params) : T_Super(params) {}
@@ -185,7 +185,7 @@ public:
                     explicit                        LinearDimension2d(CreateParams const& params);
 DGNPLATFORM_EXPORT  static LinearDimension2dPtr     Create(CreateParams const& params);
 
-                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LinearDimension2d)); }
+                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_LinearDimension2d)); }
 
                     virtual GeometricElement const& _DimToElement() const override final { return *this; }
 
@@ -219,7 +219,7 @@ public:
                     explicit                        LinearDimension3d(CreateParams const& params);
 DGNPLATFORM_EXPORT  static LinearDimension3dPtr     Create(CreateParams const& params);
 
-                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LinearDimension3d)); }
+                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_LinearDimension3d)); }
 
                     virtual GeometricElement const& _DimToElement() const override final { return *this; }
 

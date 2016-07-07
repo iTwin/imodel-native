@@ -29,7 +29,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
     if (!model.Is3d ())
         return ERROR; // What kind of model is this?!?
 
-    DgnClassId elementClassId = DgnClassId (model.GetDgnDb ().Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)); // Should be passed in from primary ECInstance...
+    DgnClassId elementClassId = DgnClassId (model.GetDgnDb ().Schemas ().GetECClassId (BIS_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)); // Should be passed in from primary ECInstance...
     ElementHandlerP elementHandler = dgn_ElementHandler::Element::FindHandler (model.GetDgnDb (), elementClassId);
 
     if (nullptr == elementHandler)

@@ -116,7 +116,7 @@ public:
     void SetValue(Utf8StringCR value) { m_data.m_value = value; } //!< Sets the material data as a JSON string
     void SetDescr(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Sets the material description
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_MaterialElement); } //!< Returns the class ID used for material elements.
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_MaterialElement); } //!< Returns the class ID used for material elements.
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Returns the class ID used for material elements.
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); } //!< Looks up the ECClass used for material elements.
 

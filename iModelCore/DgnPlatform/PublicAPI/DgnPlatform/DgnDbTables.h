@@ -8,10 +8,12 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#define DGN_ECSCHEMA_NAME "dgn"
-#define DGN_TABLE_PREFIX  DGN_ECSCHEMA_NAME "_"
-#define DGN_SCHEMA(name)  DGN_ECSCHEMA_NAME "." name
-#define DGN_TABLE(name)   DGN_TABLE_PREFIX name
+//-----------------------------------------------------------------------------------------
+// Macros associated with the BisCore ECSchema
+//-----------------------------------------------------------------------------------------
+#define BIS_ECSCHEMA_NAME   "BisCore"
+#define DGN_SCHEMA(name)    BIS_ECSCHEMA_NAME "." name // WIP: rename DGN_SCHEMA --> BIS_SCHEMA
+#define BIS_TABLE(name)     "bis_" name
 
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
@@ -67,11 +69,11 @@
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
 //-----------------------------------------------------------------------------------------
-#define DGN_TABLE_Domain                    DGN_TABLE("Domain")
-#define DGN_TABLE_Font                      DGN_TABLE("Font")
-#define DGN_TABLE_Handler                   DGN_TABLE("Handler")
-#define DGN_TABLE_Txns                      DGN_TABLE("Txns")
-#define DGN_VTABLE_SpatialIndex             DGN_TABLE(DGN_CLASSNAME_SpatialIndex)
+#define DGN_TABLE_Domain                    "dgn_Domain"
+#define DGN_TABLE_Font                      "dgn_Font"
+#define DGN_TABLE_Handler                   "dgn_Handler"
+#define DGN_TABLE_Txns                      "dgn_Txns"
+#define DGN_VTABLE_SpatialIndex             "dgn_" DGN_CLASSNAME_SpatialIndex
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)

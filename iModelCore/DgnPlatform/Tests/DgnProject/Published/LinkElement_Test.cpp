@@ -47,7 +47,7 @@ DgnElementCPtr LinkElementTest::InsertAnnotationElement()
     if(!categoryId.IsValid())
         return nullptr;
 
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
+    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
     if(!elementClassId.IsValid())
         return nullptr;
     AnnotationElement2dPtr elementPtr = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
