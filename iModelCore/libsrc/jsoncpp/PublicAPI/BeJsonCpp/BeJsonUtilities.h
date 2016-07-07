@@ -26,11 +26,12 @@ typedef Json::Value const& JsonValueCR;
 //=======================================================================================
 struct IJsonLocalState : ILocalState
     {
+    public:
     //! Saves the supplied JSON value as string in the local state
-    void SaveJsonValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value) {SaveValue(nameSpace, key, Json::FastWriter().write(value)); }
+    virtual void SaveJsonValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value) {SaveValue(nameSpace, key, Json::FastWriter().write(value)); }
 
     //! Parses the stored serialized JSON value and returns it as JSON
-    Json::Value GetJsonValue(Utf8CP nameSpace, Utf8CP key) const 
+    virtual Json::Value GetJsonValue(Utf8CP nameSpace, Utf8CP key) const 
         {
         Json::Value value;
         if (Json::Reader().parse(_GetValue(nameSpace, key), value, false))
