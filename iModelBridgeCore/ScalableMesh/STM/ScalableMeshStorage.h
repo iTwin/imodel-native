@@ -144,7 +144,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
     friend class                            GenericStorage<PtType>;
 
     Memory::ConstPacketProxy<PtType>      m_pointPacket;
-    Memory::ConstPacketProxy<IDTMFile::FeatureHeader> 
+    Memory::ConstPacketProxy<ISMStore::FeatureHeader> 
                                           m_headerPacket;
 
     typedef IDTMFeatureArray<PtType> ArrayType;
@@ -190,7 +190,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
      friend class                            ScalableMeshStorage < PtType > ;
      protected:
      Memory::ConstPacketProxy<PtType>      m_pointPacket;
-     Memory::ConstPacketProxy < IDTMFile::FeatureHeader >
+     Memory::ConstPacketProxy < ISMStore::FeatureHeader >
          m_headerPacket;
 
      typedef IDTMFeatureArray<PtType> ArrayType;
@@ -479,7 +479,7 @@ class ClipShapeLinearFeatureStorageEditor : public Import::BackInserter
     friend class ClipShapeStorage;
 
     Import::ConstPacketProxy<DPoint3d>                m_pointPacket;
-    Import::ConstPacketProxy<IDTMFile::FeatureHeader> m_headerPacket;
+    Import::ConstPacketProxy<ISMStore::FeatureHeader> m_headerPacket;
 
     typedef IDTMFeatureArray<DPoint3d>  ArrayType;
 

@@ -172,7 +172,7 @@ public:
 *
 * @bsiclass                                                  Raymond.Gauthier   5/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <typename PointType, typename HeaderType = IDTMFile::FeatureHeader>
+template <typename PointType, typename HeaderType = ISMStore::FeatureHeader>
 class IDTMFeatureArray : public HPU::CompositeArrayBase<IDTMFeatureFacade<PointType, HeaderType>,
                                                         HeaderType,
                                                         IDTMFeatureArray<PointType, HeaderType>>
@@ -332,14 +332,14 @@ inline void                                 swap                               (
 /*namespace std
 {
 
-inline void                             swap                               (IDTMFeatureFacade<IDTMFile::Point3d64f, IDTMFile::FeatureHeader>& pi_rLeft,
-                                                                            IDTMFeatureFacade<IDTMFile::Point3d64f, IDTMFile::FeatureHeader>& pi_rRight)
+inline void                             swap                               (IDTMFeatureFacade<ISMStore::Point3d64f, ISMStore::FeatureHeader>& pi_rLeft,
+                                                                            IDTMFeatureFacade<ISMStore::Point3d64f, ISMStore::FeatureHeader>& pi_rRight)
     {
     pi_rLeft.Swap(pi_rRight);
     }
 
-inline void                             iter_swap                          (IDTMFeatureArray<IDTMFile::Point3d64f, IDTMFile::FeatureHeader>::iterator pi_rLeft,
-                                                                            IDTMFeatureArray<IDTMFile::Point3d64f, IDTMFile::FeatureHeader>::iterator pi_rRight)
+inline void                             iter_swap                          (IDTMFeatureArray<ISMStore::Point3d64f, ISMStore::FeatureHeader>::iterator pi_rLeft,
+                                                                            IDTMFeatureArray<ISMStore::Point3d64f, ISMStore::FeatureHeader>::iterator pi_rRight)
     {
     (*pi_rLeft).Swap(*pi_rRight);
     }

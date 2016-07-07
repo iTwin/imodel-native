@@ -26,7 +26,7 @@
 #include "ScalableMeshContentConfigPersistance.h"
 
 using namespace std;
-using namespace IDTMFile;
+using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

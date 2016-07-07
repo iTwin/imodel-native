@@ -128,13 +128,13 @@ END_BENTLEY_SCALABLEMESH_NAMESPACE
 //extern size_t nGraphPins;
 //extern size_t nGraphReleases;
 
-inline bool IsLinearFeature(IDTMFile::FeatureType type)
+inline bool IsLinearFeature(ISMStore::FeatureType type)
     {
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Breakline || dtmType == DTMFeatureType::SoftBreakline || dtmType == DTMFeatureType::ContourLine || dtmType == DTMFeatureType::GraphicBreak;
     }
 
-inline bool IsClosedFeature(IDTMFile::FeatureType type)
+inline bool IsClosedFeature(ISMStore::FeatureType type)
     {
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Island || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
@@ -384,9 +384,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
 
-    size_t                AddFeatureDefinitionSingleNode(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
-    size_t                AddFeatureDefinitionUnconditional(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
-    size_t                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
+    size_t                AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+    size_t                AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+    size_t                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
 
     //NEEDS_WORK_SM: clean up clipping API (remove extra calls, clarify uses, etc)
 
@@ -847,8 +847,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 //        HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> GetClipPool() const { return m_clipPool; }
         void                SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool);
 
-        //IDTMFile::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
-        void                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+        //ISMStore::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
+        void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
 
         void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);
         void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn=true);
@@ -1031,7 +1031,7 @@ template<class POINT, class EXTENT> class ISMMeshIndexFilter : public ISMPointIn
 
     };
 
-inline bool IsVoidFeature(IDTMFile::FeatureType type)
+inline bool IsVoidFeature(ISMStore::FeatureType type)
     {
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||

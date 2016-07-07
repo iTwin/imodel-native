@@ -365,7 +365,7 @@ class LandXMLLinearExtractorCreator : public InputExtractorCreatorMixinBase<Land
         if (0 == surfaceP || !surfaceP->GetLinearHandler().ComputeCounts())
             return RawCapacities(0, 0);
 
-        return RawCapacities (surfaceP->GetLinearHandler().GetMaxLinearCount()*sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities (surfaceP->GetLinearHandler().GetMaxLinearCount()*sizeof(ISMStore::FeatureHeader),
                               surfaceP->GetLinearHandler().GetMaxPointCount()*sizeof(DPoint3d));
         }
 
@@ -453,7 +453,7 @@ class LandXMLTINExtractorCreator : public InputExtractorCreatorMixinBase<LandXML
         if (0 == surfaceP || !surfaceP->HasTIN() || !surfaceP->GetTINLinearHandler().ComputeCounts())
             return RawCapacities(0, 0);
 
-        return RawCapacities (surfaceP->GetTINLinearHandler().GetMaxLinearCount()*sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities (surfaceP->GetTINLinearHandler().GetMaxLinearCount()*sizeof(ISMStore::FeatureHeader),
                               surfaceP->GetTINLinearHandler().GetMaxPointCount()*sizeof(DPoint3d));
         }
 

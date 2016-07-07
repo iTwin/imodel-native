@@ -23,7 +23,7 @@
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 
-using namespace IDTMFile;
+using namespace ISMStore;
 
 
 namespace { // BEGIN UNAMED NAMESPACE
@@ -506,7 +506,7 @@ public:  // OPERATOR_NEW_KLUDGE
         void                                    operator()             (FeatureHeader&                  linearHeader) const
             {
             if (DTMFeatureType::TinLine == (DTMFeatureType)linearHeader.type)
-                linearHeader.type = (IDTMFile::FeatureType)DTMFeatureType::Breakline;
+                linearHeader.type = (ISMStore::FeatureType)DTMFeatureType::Breakline;
             }
         };
 

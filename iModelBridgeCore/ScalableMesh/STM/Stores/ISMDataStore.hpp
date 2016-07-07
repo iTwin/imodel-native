@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: STM/ISMDataStore.hpp $
+//:>     $Source: STM/Stores/ISMDataStore.hpp $
 //:>
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
@@ -13,7 +13,7 @@
 
 #include <../STM/IScalableMeshDataStore.h>
 /*#include <ImagePP/all/h/IDTMTypes.h>
-#include <ImagePP/all/h/IDTMFile.h>
+#include <ImagePP/all/h/ISMStore.h>
 #include <ImagePP/all/h/HGFSpatialIndex.h>
 #include <ImagePP/all/h/HVEDTMLinearFeature.h>
 #include <ImagePP/all/h/HGFPointTileStore.h>*/
@@ -21,7 +21,7 @@
 #include "SMSQLiteFile.h"
 USING_NAMESPACE_IMAGEPP
 
-namespace IDTMFile
+namespace ISMStore
     {
     typedef HFCAccessMode                   AccessMode;
     typedef uint32_t NodeID;
@@ -266,31 +266,31 @@ public:
 #endif
 
 #if 0
-template <> class ExtentOp <IDTMFile::Extent3d64f>
+template <> class ExtentOp <ISMStore::Extent3d64f>
 {
 public:
-    static double GetXMin(const IDTMFile::Extent3d64f& extent) {return extent.xMin;}
-    static double GetXMax(const IDTMFile::Extent3d64f& extent) {return extent.xMax;}
-    static double GetYMin(const IDTMFile::Extent3d64f& extent) {return extent.yMin;}
-    static double GetYMax(const IDTMFile::Extent3d64f& extent) {return extent.yMax;}
-    static double GetZMin(const IDTMFile::Extent3d64f& extent) {return extent.zMin;}
-    static double GetZMax(const IDTMFile::Extent3d64f& extent) {return extent.zMax;}
-    static void   SetXMin(IDTMFile::Extent3d64f& extent, double xMin) {extent.xMin = xMin;}
-    static void   SetXMax(IDTMFile::Extent3d64f& extent, double xMax) {extent.xMax = xMax;}
-    static void   SetYMin(IDTMFile::Extent3d64f& extent, double yMin) {extent.yMin = yMin;}
-    static void   SetYMax(IDTMFile::Extent3d64f& extent, double yMax) {extent.yMax = yMax;}
-    static void   SetZMin(IDTMFile::Extent3d64f& extent, double zMin) {extent.zMin = zMin;}
-    static void   SetZMax(IDTMFile::Extent3d64f& extent, double zMax) {extent.zMax = zMax;}
-    static double GetWidth(const IDTMFile::Extent3d64f& extent) {return (extent.xMax - extent.xMin);}
-    static double GetHeight(const IDTMFile::Extent3d64f& extent) {return (extent.yMax - extent.yMin);}
-    static double GetThickness(const IDTMFile::Extent3d64f& extent) {return extent.zMax - extent.zMin;}
-    static bool   Contains2d (const IDTMFile::Extent3d64f& extent1, const IDTMFile::Extent3d64f& extent2) {return (extent1.xMax >= extent2.xMax) && (extent1.xMin <= extent2.xMin) && (extent1.yMax >= extent2.yMax) && (extent1.yMin <= extent2.yMin);}                
-    static bool   Overlap (const IDTMFile::Extent3d64f& extent1, const IDTMFile::Extent3d64f& extent2) {return HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent1.xMin, extent1.yMin, extent1.xMax, extent1.yMax).Overlaps (HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent2.xMin, extent2.yMin, extent2.xMax, extent2.yMax));}
-    static bool   InnerOverlap (const IDTMFile::Extent3d64f& extent1, const IDTMFile::Extent3d64f& extent2) {return HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent1.xMin, extent1.yMin, extent1.xMax, extent1.yMax).InnerOverlaps (HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent2.xMin, extent2.yMin, extent2.xMax, extent2.yMax));}
-    static bool   OutterOverlap (const IDTMFile::Extent3d64f& extent1, const IDTMFile::Extent3d64f& extent2) {return HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent1.xMin, extent1.yMin, extent1.xMax, extent1.yMax).OutterOverlaps (HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent2.xMin, extent2.yMin, extent2.xMax, extent2.yMax));}
-    __forceinline static IDTMFile::Extent3d64f Create(double xMin, double yMin, double zMin, double xMax, double yMax, double zMax) 
+    static double GetXMin(const ISMStore::Extent3d64f& extent) {return extent.xMin;}
+    static double GetXMax(const ISMStore::Extent3d64f& extent) {return extent.xMax;}
+    static double GetYMin(const ISMStore::Extent3d64f& extent) {return extent.yMin;}
+    static double GetYMax(const ISMStore::Extent3d64f& extent) {return extent.yMax;}
+    static double GetZMin(const ISMStore::Extent3d64f& extent) {return extent.zMin;}
+    static double GetZMax(const ISMStore::Extent3d64f& extent) {return extent.zMax;}
+    static void   SetXMin(ISMStore::Extent3d64f& extent, double xMin) {extent.xMin = xMin;}
+    static void   SetXMax(ISMStore::Extent3d64f& extent, double xMax) {extent.xMax = xMax;}
+    static void   SetYMin(ISMStore::Extent3d64f& extent, double yMin) {extent.yMin = yMin;}
+    static void   SetYMax(ISMStore::Extent3d64f& extent, double yMax) {extent.yMax = yMax;}
+    static void   SetZMin(ISMStore::Extent3d64f& extent, double zMin) {extent.zMin = zMin;}
+    static void   SetZMax(ISMStore::Extent3d64f& extent, double zMax) {extent.zMax = zMax;}
+    static double GetWidth(const ISMStore::Extent3d64f& extent) {return (extent.xMax - extent.xMin);}
+    static double GetHeight(const ISMStore::Extent3d64f& extent) {return (extent.yMax - extent.yMin);}
+    static double GetThickness(const ISMStore::Extent3d64f& extent) {return extent.zMax - extent.zMin;}
+    static bool   Contains2d (const ISMStore::Extent3d64f& extent1, const ISMStore::Extent3d64f& extent2) {return (extent1.xMax >= extent2.xMax) && (extent1.xMin <= extent2.xMin) && (extent1.yMax >= extent2.yMax) && (extent1.yMin <= extent2.yMin);}                
+    static bool   Overlap (const ISMStore::Extent3d64f& extent1, const ISMStore::Extent3d64f& extent2) {return HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent1.xMin, extent1.yMin, extent1.xMax, extent1.yMax).Overlaps (HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent2.xMin, extent2.yMin, extent2.xMax, extent2.yMax));}
+    static bool   InnerOverlap (const ISMStore::Extent3d64f& extent1, const ISMStore::Extent3d64f& extent2) {return HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent1.xMin, extent1.yMin, extent1.xMax, extent1.yMax).InnerOverlaps (HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent2.xMin, extent2.yMin, extent2.xMax, extent2.yMax));}
+    static bool   OutterOverlap (const ISMStore::Extent3d64f& extent1, const ISMStore::Extent3d64f& extent2) {return HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent1.xMin, extent1.yMin, extent1.xMax, extent1.yMax).OutterOverlaps (HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent2.xMin, extent2.yMin, extent2.xMax, extent2.yMax));}
+    __forceinline static ISMStore::Extent3d64f Create(double xMin, double yMin, double zMin, double xMax, double yMax, double zMax) 
     {
-        IDTMFile::Extent3d64f dummy;
+        ISMStore::Extent3d64f dummy;
         dummy.xMin = xMin;
         dummy.yMin = yMin;
         dummy.zMin = zMin;
@@ -299,9 +299,9 @@ public:
         dummy.zMax = zMax;
         return dummy;
         }
-    static IDTMFile::Extent3d64f Create(double xMin, double yMin, double xMax, double yMax)
+    static ISMStore::Extent3d64f Create(double xMin, double yMin, double xMax, double yMax)
         {
-        IDTMFile::Extent3d64f dummy;
+        ISMStore::Extent3d64f dummy;
         dummy.xMin = xMin;
         dummy.yMin = yMin;
         dummy.zMin = 0.0;
@@ -311,7 +311,7 @@ public:
         return dummy;
         }
 
-    __forceinline static IDTMFile::Extent3d64f MergeExtents(const IDTMFile::Extent3d64f& extent1, const IDTMFile::Extent3d64f& extent2)
+    __forceinline static ISMStore::Extent3d64f MergeExtents(const ISMStore::Extent3d64f& extent1, const ISMStore::Extent3d64f& extent2)
         {
         return Create(min(GetXMin(extent1), GetXMin(extent2)),
                       min(GetYMin(extent1), GetYMin(extent2)),
@@ -325,12 +325,12 @@ public:
 
 
 
-template <class POINT> class ExtentPointOp<IDTMFile::Extent3d64f, POINT>
+template <class POINT> class ExtentPointOp<ISMStore::Extent3d64f, POINT>
     {
 public:
 
 
-    static bool IsPointOutterIn3D(const IDTMFile::Extent3d64f& extent, const POINT& point)
+    static bool IsPointOutterIn3D(const ISMStore::Extent3d64f& extent, const POINT& point)
         {
         return (extent.xMin <= PointOp<POINT>::GetX(point) && extent.xMax >= PointOp<POINT>::GetX(point)) &&
                (extent.yMin <= PointOp<POINT>::GetY(point) && extent.yMax >= PointOp<POINT>::GetY(point)) &&
@@ -338,7 +338,7 @@ public:
         }
 
 
-    static bool IsPointOutterIn2D(const IDTMFile::Extent3d64f& extent, const POINT& point)
+    static bool IsPointOutterIn2D(const ISMStore::Extent3d64f& extent, const POINT& point)
         {
         return HGF2DTemplateExtent<double, HGF3DCoord<double> >(extent.xMin,
                                                                 extent.yMin,
@@ -350,12 +350,12 @@ public:
     };
 
 
-template <class SPATIAL, class POINT> class SpatialOp<SPATIAL, POINT, IDTMFile::Extent3d64f, PointSpatialFamily>
+template <class SPATIAL, class POINT> class SpatialOp<SPATIAL, POINT, ISMStore::Extent3d64f, PointSpatialFamily>
     {
 public:
-    static  IDTMFile::Extent3d64f GetExtent(const SPATIAL& spatial)
+    static  ISMStore::Extent3d64f GetExtent(const SPATIAL& spatial)
         {
-        IDTMFile::Extent3d64f toto;
+        ISMStore::Extent3d64f toto;
         toto.xMin = PointOp<SPATIAL>::GetX(spatial);
         toto.xMax = PointOp<SPATIAL>::GetX(spatial);
         toto.yMin = PointOp<SPATIAL>::GetY(spatial);
@@ -375,7 +375,7 @@ public:
                                                                                PointOp<POINT>::GetZ(pi_rCoord)));
         }
 
-    __forceinline static bool IsSpatialInExtent2D (const SPATIAL& spatial, const  IDTMFile::Extent3d64f& extent)
+    __forceinline static bool IsSpatialInExtent2D (const SPATIAL& spatial, const  ISMStore::Extent3d64f& extent)
         {
         return ((PointOp<SPATIAL>::GetX(spatial) >= extent.xMin) &&
                 (PointOp<SPATIAL>::GetX(spatial) <= extent.xMax) &&
@@ -383,7 +383,7 @@ public:
                 (PointOp<SPATIAL>::GetY(spatial) <= extent.yMax));
         }
 
-    __forceinline static bool IsSpatialInExtent3D (const SPATIAL& spatial, const  IDTMFile::Extent3d64f& extent)
+    __forceinline static bool IsSpatialInExtent3D (const SPATIAL& spatial, const  ISMStore::Extent3d64f& extent)
         {
         return ((PointOp<SPATIAL>::GetX(spatial) >= extent.xMin) &&
                 (PointOp<SPATIAL>::GetX(spatial) <= extent.xMax) &&
@@ -533,7 +533,7 @@ public:
         m_meshComponents = nodeHeader.m_meshComponents;
         m_numberOfSubNodesOnSplit = nodeHeader.m_numberOfSubNodesOnSplit;
         if (nodeHeader.m_parentNodeID != SQLiteNodeHeader::NO_NODEID) m_parentNodeID = HPMBlockID(nodeHeader.m_parentNodeID);
-        else m_parentNodeID = IDTMFile::GetNullNodeID();
+        else m_parentNodeID = ISMStore::GetNullNodeID();
         if (nodeHeader.m_SubNodeNoSplitID != SQLiteNodeHeader::NO_NODEID) m_SubNodeNoSplitID = HPMBlockID(nodeHeader.m_SubNodeNoSplitID);
         if (nodeHeader.m_uvID != SQLiteNodeHeader::NO_NODEID) m_uvID = HPMBlockID(nodeHeader.m_uvID);
         m_totalCountDefined = nodeHeader.m_totalCountDefined;
@@ -579,28 +579,28 @@ public:
         header.m_numberOfMeshComponents = m_numberOfMeshComponents;
         header.m_meshComponents = m_meshComponents;
         header.m_numberOfSubNodesOnSplit = m_numberOfSubNodesOnSplit;
-        header.m_parentNodeID = m_parentNodeID.IsValid() && m_parentNodeID != IDTMFile::GetNullNodeID() ? m_parentNodeID.m_integerID : -1;
-        header.m_SubNodeNoSplitID = m_SubNodeNoSplitID.IsValid() && m_SubNodeNoSplitID != IDTMFile::GetNullNodeID() ? m_SubNodeNoSplitID.m_integerID : -1;
+        header.m_parentNodeID = m_parentNodeID.IsValid() && m_parentNodeID != ISMStore::GetNullNodeID() ? m_parentNodeID.m_integerID : -1;
+        header.m_SubNodeNoSplitID = m_SubNodeNoSplitID.IsValid() && m_SubNodeNoSplitID != ISMStore::GetNullNodeID() ? m_SubNodeNoSplitID.m_integerID : -1;
         header.m_uvID = m_uvID.IsValid() ? m_uvID.m_integerID : -1;
         header.m_totalCountDefined = m_totalCountDefined;
         header.m_totalCount = m_totalCount;
         header.m_SplitTreshold = m_SplitTreshold;
         header.m_clipSetsID.resize(m_clipSetsID.size());
         header.m_nodeCount = m_nodeCount;
-        for (auto& id : m_clipSetsID) header.m_clipSetsID[&id - &m_clipSetsID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        for (auto& id : m_clipSetsID) header.m_clipSetsID[&id - &m_clipSetsID.front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
         header.m_textureID.resize(m_textureID.size());
-        for (auto& id : m_textureID) header.m_textureID[&id - &m_textureID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        for (auto& id : m_textureID) header.m_textureID[&id - &m_textureID.front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
         header.m_ptsIndiceID.resize(m_ptsIndiceID.size());
-        for (auto& id : m_ptsIndiceID) header.m_ptsIndiceID[&id - &m_ptsIndiceID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        for (auto& id : m_ptsIndiceID) header.m_ptsIndiceID[&id - &m_ptsIndiceID.front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
         header.m_uvsIndicesID.resize(m_uvsIndicesID.size());
-        for (auto& id : m_uvsIndicesID) header.m_uvsIndicesID[&id - &m_uvsIndicesID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        for (auto& id : m_uvsIndicesID) header.m_uvsIndicesID[&id - &m_uvsIndicesID.front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
         header.m_apSubNodeID.resize(m_apSubNodeID.size());
-        for (auto& id : m_apSubNodeID) header.m_apSubNodeID[&id - &m_apSubNodeID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        for (auto& id : m_apSubNodeID) header.m_apSubNodeID[&id - &m_apSubNodeID.front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
         if (header.m_SubNodeNoSplitID != -1) header.m_apSubNodeID[0] = header.m_SubNodeNoSplitID;
         for (size_t i = 0; i < 26; ++i)
             {
             header.m_apNeighborNodeID[i].resize(m_apNeighborNodeID[i].size());
-            for (auto& id : m_apNeighborNodeID[i]) header.m_apNeighborNodeID[i][&id - &m_apNeighborNodeID[i].front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+            for (auto& id : m_apNeighborNodeID[i]) header.m_apNeighborNodeID[i][&id - &m_apNeighborNodeID[i].front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
             }
         return header;
         }
@@ -668,30 +668,30 @@ public:
 template <typename POINT, typename EXTENT> class SMPointTaggedTileStore : public SMPointTileStore<POINT, EXTENT>// , public HFCShareableObject<SMPointTileStore<POINT, EXTENT> >
     {
 protected:
-   // typedef IDTMFile::PointTileHandler<POINT> TileHandler;
-   //     typedef IDTMFile::BTreeIndexHandler IndexHandler;
+   // typedef ISMStore::PointTileHandler<POINT> TileHandler;
+   //     typedef ISMStore::BTreeIndexHandler IndexHandler;
 
   //  typedef typename TileHandler::PointArray PointArray;
 
- /*   static IDTMFile::NodeID ConvertBlockID (const HPMBlockID& blockID)
+ /*   static ISMStore::NodeID ConvertBlockID (const HPMBlockID& blockID)
         {
-        return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
+        return static_cast<ISMStore::NodeID>(blockID.m_integerID);
         }
 
-    static IDTMFile::SubNodesTable::value_type ConvertChildID (const HPMBlockID& childID)
+    static ISMStore::SubNodesTable::value_type ConvertChildID (const HPMBlockID& childID)
         {
-        return static_cast<IDTMFile::SubNodesTable::value_type>(childID.m_integerID);
+        return static_cast<ISMStore::SubNodesTable::value_type>(childID.m_integerID);
         }
 
-    static IDTMFile::NeighborNodesTable::value_type ConvertNeighborID (const HPMBlockID& neighborID)
+    static ISMStore::NeighborNodesTable::value_type ConvertNeighborID (const HPMBlockID& neighborID)
         {
-        return static_cast<IDTMFile::NeighborNodesTable::value_type>(neighborID.m_integerID);
+        return static_cast<ISMStore::NeighborNodesTable::value_type>(neighborID.m_integerID);
         }*/
 
 public:
     // Constructor / Destroyer
     
-   /* SMPointTaggedTileStore(IDTMFile::File::Ptr openedDTMFile, bool compress, size_t layerID = 0)
+   /* SMPointTaggedTileStore(ISMStore::File::Ptr openedDTMFile, bool compress, size_t layerID = 0)
             :   m_filteringDir(0),
                 m_layerID(layerID),
             m_compress(compress),            
@@ -711,7 +711,7 @@ public:
         {
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
                     
-        IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
+        ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
             
         if (NULL == layerDir)
             return false;
@@ -725,7 +725,7 @@ public:
         {
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
-        IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
+        ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
         if (NULL == layerDir)
             return false;
 
@@ -754,7 +754,7 @@ public:
 
         if (NULL == m_tileHandler)
             {
-            IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
+            ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
 
             if (NULL == layerDir)
                 {
@@ -767,14 +767,14 @@ public:
                 //HASSERT(0 == m_layerID);
                 }
 
-            IDTMFile::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
+            ISMStore::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
             if (NULL == featureDir)
                 {
                 //HASSERT(0 == layerDir->CountPointOnlyUniformFeatureDirs());
 
                 // No Point dir ... we create one
                 featureDir = layerDir->CreatePointsOnlyUniformFeatureDir(MASS_POINT_FEATURE_TYPE,
-                                                                         IDTMFile::PointTypeIDTrait<POINT>::value,
+                                                                         ISMStore::PointTypeIDTrait<POINT>::value,
                                                                          (m_compress) ? HTGFF::Compression::Deflate::Create() :
                                                                          HTGFF::Compression::None::Create());
 
@@ -800,7 +800,7 @@ public:
             if (NULL == m_filteringDir)
                 {
                 // TDORAY: Match real filter type. Ask alain where to find this information.
-                m_filteringDir = featureDir->CreateFilteringDir(IDTMFile::DumbFilteringHandler::Options());
+                m_filteringDir = featureDir->CreateFilteringDir(ISMStore::DumbFilteringHandler::Options());
                 HASSERT(NULL != m_filteringDir);
                 if (NULL == m_filteringDir)
                     return false;
@@ -820,7 +820,7 @@ public:
             if (indexHeader->m_rootNodeBlockID.m_integerInitialized)
                 m_indexHandler->SetTopNode(ConvertBlockID(indexHeader->m_rootNodeBlockID));
             else
-                m_indexHandler->SetTopNode(IDTMFile::GetNullNodeID());
+                m_indexHandler->SetTopNode(ISMStore::GetNullNodeID());
             }
             */
         return true;
@@ -835,11 +835,11 @@ public:
 
         if (NULL == m_tileHandler)
             {
-                IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
+                ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir (m_layerID);
             if (NULL == layerDir)
                 return 0;
 
-                IDTMFile::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
+                ISMStore::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
             if (NULL == featureDir)
                 return 0;
 
@@ -867,7 +867,7 @@ public:
 
             indexHeader->m_singleFile = m_indexHandler->IsSingleFile();
 
-            if (m_indexHandler->GetTopNode() != IDTMFile::GetNullNodeID())
+            if (m_indexHandler->GetTopNode() != ISMStore::GetNullNodeID())
                 indexHeader->m_rootNodeBlockID = m_indexHandler->GetTopNode();
             else
                 indexHeader->m_rootNodeBlockID = HPMBlockID();
@@ -883,7 +883,7 @@ public:
 
          PointArray MyArray(DataTypeArray, countData);
 
-         IDTMFile::NodeID newNodeID;
+         ISMStore::NodeID newNodeID;
 
          std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
@@ -891,7 +891,7 @@ public:
          {
          HASSERT(!"Write failed!");
          //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
-         throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
+         throw HFCWriteFaultException(L"Unable to obtain file name ... ISMStore::File API should be modified.");
          }
 
          return HPMBlockID(newNodeID);*/return 0;
@@ -902,7 +902,7 @@ public:
       /*  HPRECONDITION(m_tileHandler != NULL);
         //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
-        if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::SubNodesTable::GetNoSubNodeID())
+        if (!blockID.IsValid() || blockID.m_integerID == ISMStore::SubNodesTable::GetNoSubNodeID())
             return StoreNewBlock (DataTypeArray, countData);
 
         PointArray arrayOfPoints (DataTypeArray, countData);
@@ -913,7 +913,7 @@ public:
             {
             HASSERT(!"Write failed!");
             //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
-            throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
+            throw HFCWriteFaultException(L"Unable to obtain file name ... ISMStore::File API should be modified.");
             }*/
 
         return blockID;
@@ -943,7 +943,7 @@ public:
 
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
-        m_tileHandler->GetDir().SetResolution (ConvertBlockID(blockID), (IDTMFile::ResolutionID)header->m_level);
+        m_tileHandler->GetDir().SetResolution (ConvertBlockID(blockID), (ISMStore::ResolutionID)header->m_level);
         m_filteringDir->SetFiltered (ConvertBlockID(blockID), header->m_filtered);                
 
         if (header->m_parentNodeID.IsValid())
@@ -952,17 +952,17 @@ public:
             }
         else
             {
-            m_indexHandler->EditParentNode(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
+            m_indexHandler->EditParentNode(ConvertBlockID(blockID)) = ISMStore::GetNullNodeID();
             }
 
-        IDTMFile::SubNodesTable& rChildren = m_indexHandler->EditSubNodes(ConvertBlockID(blockID));
+        ISMStore::SubNodesTable& rChildren = m_indexHandler->EditSubNodes(ConvertBlockID(blockID));
         
         size_t nbChildren = header->m_IsLeaf || (!header->m_IsBranched  && !header->m_SubNodeNoSplitID.IsValid())? 0 : (!header->m_IsBranched ? 1 : header->m_numberOfSubNodesOnSplit);
 
 
         rChildren.SetNbVarData((uint32_t)nbChildren);
 
-        IDTMFile::NodeInfo* childNodeInfo = m_indexHandler->EditSubNodesVarData(rChildren, nbChildren);
+        ISMStore::NodeInfo* childNodeInfo = m_indexHandler->EditSubNodesVarData(rChildren, nbChildren);
 
         assert(childNodeInfo != 0 || rChildren.GetNbVarData() == 0);
 
@@ -983,7 +983,7 @@ public:
                 }
             }
        
-        IDTMFile::NeighborNodesTable& rNeighbors = m_indexHandler->EditNeighborNodes(ConvertBlockID(blockID));        
+        ISMStore::NeighborNodesTable& rNeighbors = m_indexHandler->EditNeighborNodes(ConvertBlockID(blockID));        
 
         size_t nbNeighbors = 0; 
 
@@ -995,7 +995,7 @@ public:
 
         rNeighbors.SetNbVarData((uint32_t)nbNeighbors);
         
-        IDTMFile::NodeInfo* neighborNodeInfo = m_indexHandler->EditNeighborNodesVarData (rNeighbors);
+        ISMStore::NodeInfo* neighborNodeInfo = m_indexHandler->EditNeighborNodesVarData (rNeighbors);
             
         assert(neighborNodeInfo != 0 || rNeighbors.GetNbVarData() == 0);
 
@@ -1014,7 +1014,7 @@ public:
                 }
             }        
 
-        IDTMFile::Extent3d64f& rExtent = m_tileHandler->GetDir().EditExtent (ConvertBlockID(blockID));
+        ISMStore::Extent3d64f& rExtent = m_tileHandler->GetDir().EditExtent (ConvertBlockID(blockID));
         rExtent.xMin = ExtentOp<EXTENT>::GetXMin(header->m_nodeExtent);
         rExtent.yMin = ExtentOp<EXTENT>::GetYMin(header->m_nodeExtent);
         rExtent.zMin = ExtentOp<EXTENT>::GetZMin(header->m_nodeExtent);
@@ -1025,7 +1025,7 @@ public:
 
         if (header->m_contentExtentDefined)
             {
-            IDTMFile::Extent3d64f& rContentExtent = m_indexHandler->EditContentExtent (ConvertBlockID(blockID));
+            ISMStore::Extent3d64f& rContentExtent = m_indexHandler->EditContentExtent (ConvertBlockID(blockID));
             rContentExtent.xMin = ExtentOp<EXTENT>::GetXMin(header->m_contentExtent);
             rContentExtent.yMin = ExtentOp<EXTENT>::GetYMin(header->m_contentExtent);
             rContentExtent.zMin = ExtentOp<EXTENT>::GetZMin(header->m_contentExtent);
@@ -1035,7 +1035,7 @@ public:
             }
         else
             {
-            IDTMFile::Extent3d64f& rContentExtent = m_indexHandler->EditContentExtent (ConvertBlockID(blockID));
+            ISMStore::Extent3d64f& rContentExtent = m_indexHandler->EditContentExtent (ConvertBlockID(blockID));
             rContentExtent.xMin = 0.0;
             rContentExtent.yMin = 0.0;
             rContentExtent.zMin = 0.0;
@@ -1061,12 +1061,12 @@ public:
             }
         else
             {
-            m_indexHandler->EditGraphBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
+            m_indexHandler->EditGraphBlockID(ConvertBlockID(blockID)) = ISMStore::GetNullNodeID();
             }
 
-        IDTMFile::PtsIndicesTable& rPtsIndices = m_indexHandler->EditPtsIndices(ConvertBlockID(blockID));
+        ISMStore::PtsIndicesTable& rPtsIndices = m_indexHandler->EditPtsIndices(ConvertBlockID(blockID));
         rPtsIndices.SetNbVarData((int)header->m_ptsIndiceID.size());
-        IDTMFile::NodeID* ptsIndiceInfo = m_indexHandler->EditPtsIndicesVarData(rPtsIndices, header->m_ptsIndiceID.size());
+        ISMStore::NodeID* ptsIndiceInfo = m_indexHandler->EditPtsIndicesVarData(rPtsIndices, header->m_ptsIndiceID.size());
         for (auto& id : header->m_ptsIndiceID)
         //if(header->m_ptsIndiceID.IsValid())
             {
@@ -1077,14 +1077,14 @@ public:
                 }
             else
                 {
-            //m_indexHandler->EditPtsIndiceBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
-                    ptsIndiceInfo[&id - &header->m_ptsIndiceID.front()] = IDTMFile::GetNullNodeID();
+            //m_indexHandler->EditPtsIndiceBlockID(ConvertBlockID(blockID)) = ISMStore::GetNullNodeID();
+                    ptsIndiceInfo[&id - &header->m_ptsIndiceID.front()] = ISMStore::GetNullNodeID();
                 }
             }
 
-        IDTMFile::UVsIndicesTable& rUVsIndices = m_indexHandler->EditUVsIndices(ConvertBlockID(blockID));
+        ISMStore::UVsIndicesTable& rUVsIndices = m_indexHandler->EditUVsIndices(ConvertBlockID(blockID));
         rUVsIndices.SetNbVarData((int)header->m_uvsIndicesID.size());
-        IDTMFile::NodeID* uvsIndicesInfo = m_indexHandler->EditUVsIndicesVarData(rUVsIndices, header->m_uvsIndicesID.size());
+        ISMStore::NodeID* uvsIndicesInfo = m_indexHandler->EditUVsIndicesVarData(rUVsIndices, header->m_uvsIndicesID.size());
         for (auto& id : header->m_uvsIndicesID)
             //if(header->m_ptsIndiceID.IsValid())
         {
@@ -1095,8 +1095,8 @@ public:
             }
             else
             {
-                //m_indexHandler->EditPtsIndiceBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
-                uvsIndicesInfo[&id - &header->m_uvsIndicesID.front()] = IDTMFile::GetNullNodeID();
+                //m_indexHandler->EditPtsIndiceBlockID(ConvertBlockID(blockID)) = ISMStore::GetNullNodeID();
+                uvsIndicesInfo[&id - &header->m_uvsIndicesID.front()] = ISMStore::GetNullNodeID();
             }
         }
 
@@ -1110,14 +1110,14 @@ public:
                 }
             else
                 {
-                m_indexHandler->EditUVBlockID(ConvertBlockID(blockID)) = IDTMFile::GetNullNodeID();
-                //uvInfo[&id - &header->m_uvID.front()] = IDTMFile::GetNullNodeID();
+                m_indexHandler->EditUVBlockID(ConvertBlockID(blockID)) = ISMStore::GetNullNodeID();
+                //uvInfo[&id - &header->m_uvID.front()] = ISMStore::GetNullNodeID();
                 }
             }
        
-        IDTMFile::TexturesTable& rTextures = m_indexHandler->EditTextures(ConvertBlockID(blockID));
+        ISMStore::TexturesTable& rTextures = m_indexHandler->EditTextures(ConvertBlockID(blockID));
         rTextures.SetNbVarData((int)header->m_textureID.size());
-        IDTMFile::NodeID* textureInfo = m_indexHandler->EditTexturesVarData(rTextures, header->m_textureID.size());
+        ISMStore::NodeID* textureInfo = m_indexHandler->EditTexturesVarData(rTextures, header->m_textureID.size());
         for(auto& id : header->m_textureID)
         {
         if (id.IsValid())
@@ -1126,21 +1126,21 @@ public:
         }
         else
         {
-            textureInfo[&id - &header->m_textureID.front()] = IDTMFile::GetNullNodeID();
+            textureInfo[&id - &header->m_textureID.front()] = ISMStore::GetNullNodeID();
         }
         }
 
         m_indexHandler->SetMeshComponentsCount(ConvertBlockID(blockID), header->m_numberOfMeshComponents);
         if (header->m_numberOfMeshComponents > 0)
             {
-            IDTMFile::MeshComponentsList& list = m_indexHandler->EditMeshComponents(ConvertBlockID(blockID));
+            ISMStore::MeshComponentsList& list = m_indexHandler->EditMeshComponents(ConvertBlockID(blockID));
             int* allComponents = m_indexHandler->EditMeshComponentsVarData(list, header->m_numberOfMeshComponents);
             memcpy(allComponents, header->m_meshComponents, header->m_numberOfMeshComponents * sizeof(int));
             }
-        IDTMFile::ClipSetsList &clipSets = m_indexHandler->EditClipSets(ConvertBlockID(blockID));
+        ISMStore::ClipSetsList &clipSets = m_indexHandler->EditClipSets(ConvertBlockID(blockID));
         if (header->m_clipSetsID.size() > 0)
             {
-            IDTMFile::NodeID* pClipSetInfo = m_indexHandler->EditClipSetsVarData(clipSets, header->m_clipSetsID.size());
+            ISMStore::NodeID* pClipSetInfo = m_indexHandler->EditClipSetsVarData(clipSets, header->m_clipSetsID.size());
             for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) pClipSetInfo[i] = ConvertNeighborID(header->m_clipSetsID[i]);
             }
       //  else
@@ -1157,7 +1157,7 @@ public:
 
         std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
-        const IDTMFile::Extent3d64f& rExtent = m_tileHandler->GetDir().GetExtent (ConvertBlockID(blockID));
+        const ISMStore::Extent3d64f& rExtent = m_tileHandler->GetDir().GetExtent (ConvertBlockID(blockID));
         ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, rExtent.xMin);
         ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, rExtent.yMin);
         ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, rExtent.zMin);
@@ -1169,13 +1169,13 @@ public:
         header->m_filtered = m_filteringDir->IsFiltered (ConvertBlockID(blockID));
         header->m_parentNodeID = m_indexHandler->GetParentNode(ConvertBlockID(blockID));   
 
-        const IDTMFile::SubNodesTable& rChildren = m_indexHandler->GetSubNodes(ConvertBlockID(blockID));
+        const ISMStore::SubNodesTable& rChildren = m_indexHandler->GetSubNodes(ConvertBlockID(blockID));
         header->m_numberOfSubNodesOnSplit = rChildren.GetNbVarData();
         header->m_apSubNodeID.resize(header->m_numberOfSubNodesOnSplit);
         if (rChildren.GetNbVarData() > 0)
             {
 
-            const IDTMFile::NodeInfo* pChildrenInfo(m_indexHandler->GetSubNodesVarData(rChildren));
+            const ISMStore::NodeInfo* pChildrenInfo(m_indexHandler->GetSubNodesVarData(rChildren));
 
             for (size_t indexNodes = 0; indexNodes < (size_t)rChildren.GetNbVarData(); indexNodes++)
                 {
@@ -1184,7 +1184,7 @@ public:
             header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
             }
 
-        const IDTMFile::NeighborNodesTable& rNeighbors = m_indexHandler->GetNeighborNodes(ConvertBlockID(blockID));
+        const ISMStore::NeighborNodesTable& rNeighbors = m_indexHandler->GetNeighborNodes(ConvertBlockID(blockID));
 
         for (int neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
             {       
@@ -1193,7 +1193,7 @@ public:
 
         if (rNeighbors.GetNbVarData() > 0)
             {
-            const IDTMFile::NodeInfo* pNeighborNodeInfo(m_indexHandler->GetNeighborNodesVarData (rNeighbors));                    
+            const ISMStore::NodeInfo* pNeighborNodeInfo(m_indexHandler->GetNeighborNodesVarData (rNeighbors));                    
                        
             for (size_t indexNodes = 0 ; indexNodes < (size_t)rNeighbors.GetNbVarData(); indexNodes++)
                 {                
@@ -1210,7 +1210,7 @@ public:
          header->m_balanced = m_indexHandler->IsBalanced();
 
 
-        const IDTMFile::Extent3d64f& rContentExtent = m_indexHandler->GetContentExtent (ConvertBlockID(blockID));
+        const ISMStore::Extent3d64f& rContentExtent = m_indexHandler->GetContentExtent (ConvertBlockID(blockID));
         ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, rContentExtent.xMin);
         ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, rContentExtent.yMin);
         ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, rContentExtent.zMin);
@@ -1236,16 +1236,16 @@ public:
         header->m_uvID = m_indexHandler->GetUVBlockID(ConvertBlockID(blockID));
 
 
-        const IDTMFile::PtsIndicesTable& rPtsIndices = m_indexHandler->GetPtsIndices(ConvertBlockID(blockID));
+        const ISMStore::PtsIndicesTable& rPtsIndices = m_indexHandler->GetPtsIndices(ConvertBlockID(blockID));
         header->m_ptsIndiceID.resize(rPtsIndices.GetNbVarData());
         if (rPtsIndices.GetNbVarData() > 0)
             {
 
-            const IDTMFile::NodeID* pPtsIndiceInfo(m_indexHandler->GetPtsIndicesVarData(rPtsIndices));
+            const ISMStore::NodeID* pPtsIndiceInfo(m_indexHandler->GetPtsIndicesVarData(rPtsIndices));
 
             for (size_t ptsIndiceID = 0; ptsIndiceID < (size_t)rPtsIndices.GetNbVarData(); ptsIndiceID++)
                 {
-                header->m_ptsIndiceID[ptsIndiceID] = pPtsIndiceInfo[ptsIndiceID] != IDTMFile::GetNullNodeID() ? pPtsIndiceInfo[ptsIndiceID] : HPMBlockID();
+                header->m_ptsIndiceID[ptsIndiceID] = pPtsIndiceInfo[ptsIndiceID] != ISMStore::GetNullNodeID() ? pPtsIndiceInfo[ptsIndiceID] : HPMBlockID();
                 }
             }
         else
@@ -1254,16 +1254,16 @@ public:
             header->m_ptsIndiceID[0] = HPMBlockID();
             }
 
-        const IDTMFile::UVsIndicesTable& rUvsIndices = m_indexHandler->GetUVsIndices(ConvertBlockID(blockID));
+        const ISMStore::UVsIndicesTable& rUvsIndices = m_indexHandler->GetUVsIndices(ConvertBlockID(blockID));
         header->m_uvsIndicesID.resize(rUvsIndices.GetNbVarData());
         if (rUvsIndices.GetNbVarData() > 0)
         {
 
-            const IDTMFile::NodeID* pUvsIndicesInfo(m_indexHandler->GetUVsIndicesVarData(rUvsIndices));
+            const ISMStore::NodeID* pUvsIndicesInfo(m_indexHandler->GetUVsIndicesVarData(rUvsIndices));
 
             for (size_t uvsIndicesID = 0; uvsIndicesID < (size_t)rUvsIndices.GetNbVarData(); uvsIndicesID++)
             {
-                header->m_uvsIndicesID[uvsIndicesID] = pUvsIndicesInfo[uvsIndicesID] != IDTMFile::GetNullNodeID() ? pUvsIndicesInfo[uvsIndicesID] : HPMBlockID();
+                header->m_uvsIndicesID[uvsIndicesID] = pUvsIndicesInfo[uvsIndicesID] != ISMStore::GetNullNodeID() ? pUvsIndicesInfo[uvsIndicesID] : HPMBlockID();
             }
         }
         else
@@ -1272,16 +1272,16 @@ public:
             header->m_uvsIndicesID[0] = HPMBlockID();
         }
 
-        const IDTMFile::TexturesTable& rTextures = m_indexHandler->GetTextures(ConvertBlockID(blockID));
+        const ISMStore::TexturesTable& rTextures = m_indexHandler->GetTextures(ConvertBlockID(blockID));
         header->m_textureID.resize(rTextures.GetNbVarData());
         if (rTextures.GetNbVarData() > 0)
             {
 
-            const IDTMFile::NodeID* pTextureInfo(m_indexHandler->GetTexturesVarData(rTextures));
+            const ISMStore::NodeID* pTextureInfo(m_indexHandler->GetTexturesVarData(rTextures));
 
             for (size_t textureID = 0; textureID < (size_t)rTextures.GetNbVarData(); textureID++)
                 {
-                header->m_textureID[textureID] = pTextureInfo[textureID] != IDTMFile::GetNullNodeID() ? pTextureInfo[textureID] : HPMBlockID();;
+                header->m_textureID[textureID] = pTextureInfo[textureID] != ISMStore::GetNullNodeID() ? pTextureInfo[textureID] : HPMBlockID();;
                 }
             }
         else
@@ -1290,24 +1290,24 @@ public:
             header->m_textureID[0] = HPMBlockID();
             }
 
-        if (ConvertBlockID(header->m_graphID) == IDTMFile::GetNullNodeID()) header->m_graphID = HPMBlockID();
-        if (ConvertBlockID(header->m_uvID) == IDTMFile::GetNullNodeID()) header->m_uvID = HPMBlockID();
+        if (ConvertBlockID(header->m_graphID) == ISMStore::GetNullNodeID()) header->m_graphID = HPMBlockID();
+        if (ConvertBlockID(header->m_uvID) == ISMStore::GetNullNodeID()) header->m_uvID = HPMBlockID();
         header->m_numberOfMeshComponents = (size_t)m_indexHandler->GetMeshComponentsCount(ConvertBlockID(blockID));
                         
         if (header->m_numberOfMeshComponents > 0)
             {
-            const IDTMFile::MeshComponentsList& list = m_indexHandler->GetMeshComponents(ConvertBlockID(blockID));
+            const ISMStore::MeshComponentsList& list = m_indexHandler->GetMeshComponents(ConvertBlockID(blockID));
             header->m_meshComponents = new int[header->m_numberOfMeshComponents];
 
             const int* allComponents = m_indexHandler->GetMeshComponentsVarData(list);
             memcpy(header->m_meshComponents, allComponents, header->m_numberOfMeshComponents * sizeof(int));
             }
 
-        const IDTMFile::ClipSetsList &clipSets = m_indexHandler->GetClipSets(ConvertBlockID(blockID));
+        const ISMStore::ClipSetsList &clipSets = m_indexHandler->GetClipSets(ConvertBlockID(blockID));
         header->m_clipSetsID.resize(clipSets.GetNbVarData());
         if (header->m_clipSetsID.size() > 0)
             {
-            const IDTMFile::NodeID* pClipSetInfo(m_indexHandler->GetClipSetsVarData(clipSets));
+            const ISMStore::NodeID* pClipSetInfo(m_indexHandler->GetClipSetsVarData(clipSets));
             for(size_t i =0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = pClipSetInfo[i];
             }*/
         return 1;
@@ -1340,18 +1340,18 @@ public:
         return true;
         }
 
-   // static const IDTMFile::FeatureType MASS_POINT_FEATURE_TYPE = 0;
+   // static const ISMStore::FeatureType MASS_POINT_FEATURE_TYPE = 0;
 
 protected:
-   /* const IDTMFile::File::Ptr& GetFileP () const
+   /* const ISMStore::File::Ptr& GetFileP () const
         {
         return m_DTMFile;
         }
 
-    IDTMFile::File::Ptr m_DTMFile;
+    ISMStore::File::Ptr m_DTMFile;
     typename TileHandler::Ptr m_tileHandler;
     IndexHandler::Ptr m_indexHandler;
-    IDTMFile::FilteringDir* m_filteringDir;
+    ISMStore::FilteringDir* m_filteringDir;
     size_t m_layerID;*/
 
 private:

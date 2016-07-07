@@ -83,7 +83,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
 extern bool s_inEditing = false; 
 
-using namespace IDTMFile;
+using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
    
@@ -151,7 +151,7 @@ IScalableMeshCreatorPtr IScalableMeshCreator::GetFor (const WChar*  filePath,
     {
     RegisterDelayedImporters();
 
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
 
     IScalableMeshCreatorPtr pCreator = new IScalableMeshCreator(new Impl(filePath));
@@ -167,7 +167,7 @@ IScalableMeshCreatorPtr IScalableMeshCreator::GetFor (const WChar*  filePath,
 IScalableMeshCreatorPtr IScalableMeshCreator::GetFor (const IScalableMeshPtr&    scmPtr,
                                         StatusInt&          status)
     {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     RegisterDelayedImporters();
 
@@ -777,7 +777,7 @@ StatusInt IScalableMeshCreator::Impl::LoadGCS()
     WString wktStr;
     m_smSQLitePtr->GetWkt(wktStr);
 
-    IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
+    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
 
     BaseGCS::WktFlavor wktFlavor;
 
@@ -826,7 +826,7 @@ int IScalableMeshCreator::Impl::SaveGCS()
 
     if (WKTKeyword::TYPE_UNKNOWN == GetWktType(extendedWktStr))
     {
-        wchar_t wktFlavor[2] = { (wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0' };
+        wchar_t wktFlavor[2] = { (wchar_t)ISMStore::WktFlavor_Autodesk, L'\0' };
 
         extendedWktStr += WString(wktFlavor);
     }

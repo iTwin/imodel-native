@@ -50,7 +50,7 @@
 #include "ScalableMeshCoreFns.h"
 
 #include <ScalableMesh/GeoCoords/Reprojection.h>
-//#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/ISMStore.h>
 #include <ScalableMesh/IScalableMeshDocumentEnv.h>
 
 #include "ScalableMeshEditListener.h"
@@ -82,7 +82,7 @@ typedef RefCountedPtr<IStorage>             IStoragePtr;
 typedef RefCountedPtr<ClipShapeStorage>     ClipShapeStoragePtr;
 
 typedef DPoint3d                          PointType;
-//typedef IDTMFile::Extent3d64f                         PointIndexExtentType;
+//typedef ISMStore::Extent3d64f                         PointIndexExtentType;
 typedef DRange3d PointIndexExtentType;
 typedef SMMeshIndex <PointType, PointIndexExtentType> MeshIndexType;
 
@@ -143,7 +143,7 @@ struct IScalableMeshCreator::Impl
         bool                                FileExist                      () const;
 
 
-        //IDTMFile::File::Ptr                 GetFile(const IDTMFile::AccessMode&             accessMode);
+        //ISMStore::File::Ptr                 GetFile(const ISMStore::AccessMode&             accessMode);
         virtual StatusInt                           Save();
         virtual StatusInt                           Load();
         void                                        SetupFileForCreation();

@@ -5,6 +5,9 @@
 #include "SMSQLiteFile.h"
 
 
+
+
+
 template <class POINT, class EXTENT> class SMSQLitePointTileStore : public SMPointTileStore<POINT, EXTENT>
 {
 private:

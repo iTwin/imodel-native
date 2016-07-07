@@ -55,16 +55,16 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
                  
          
 
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 
     m_nbClips = 0;
 //    m_differenceSets.SetDirty(false);
@@ -99,15 +99,15 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 //    m_differenceSets.SetDirty(false);
 //    m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
 //    m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 //    m_nodeHeader.m_uvID.resize(1);
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
 //    m_graphVec.SetBlockID(GetBlockID());
@@ -141,15 +141,15 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 //    m_differenceSets.SetDirty(false);
 //    m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
 //    m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 //    m_nodeHeader.m_uvID.resize(1);
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
 //    m_graphVec.SetBlockID(GetBlockID());
@@ -189,16 +189,16 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 //    m_differenceSets.SetDirty(false);
  //   m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
 //    m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 //    m_nodeHeader.m_uvID.resize(1);
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0]= IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0]= ISMStore::GetNullNodeID();
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
 //    m_graphVec.SetBlockID(GetBlockID());
@@ -239,15 +239,15 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 //    m_differenceSets.SetDirty(false);
 //    m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
 //    m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());    
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 //    m_nodeHeader.m_uvID.resize(1);
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
  //   m_graphVec.SetBlockID(GetBlockID());
 //    m_differenceSets.SetBlockID(GetBlockID());
@@ -271,14 +271,14 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 //    m_graphVec.SetDirty(false);
  //   m_graphVec.SetDiscarded(true);
          
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 
     m_nbClips = 0;
 //    m_differenceSets.SetDirty(false);
@@ -306,16 +306,16 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
   //  m_graphVec.SetDirty(false);
 //    m_graphVec.SetDiscarded(true);
               
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 //    m_nodeHeader.m_uvID.resize(1);
-    m_nodeHeader.m_uvID/*[0]*/ = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID/*[0]*/ = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 
     m_nbClips = 0;
 //    m_differenceSets.SetDirty(false);
@@ -349,15 +349,15 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 //    m_differenceSets.SetDirty(false);
 //    m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
 //    m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-   m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+   m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
   //  m_graphVec.SetBlockID(GetBlockID());
@@ -748,7 +748,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
         }
     else
         {
-        nodeId = IDTMFile::GetNullNodeID();
+        nodeId = ISMStore::GetNullNodeID();
         }
 
     NbChars = sprintf(TempBuffer, "<ChildNode NodeId=\"%lli\" TotalPoints=\"%lli\" SplitDepth=\"%zi\" ArePoints3d=\"%i\">", nodeId, GetCount(), GetSplitDepth(), m_nodeHeader.m_arePoints3d ? 1 : 0);
@@ -1364,7 +1364,7 @@ static size_t s_featuresAddedToTree = 0;
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 08/15
 //=======================================================================================
-template<class EXTENT> void ClipFeatureDefinition(IDTMFile::FeatureType type, EXTENT clipExtent, bvector<DPoint3d>& points, DRange3d& extent, const bvector<DPoint3d>& origPoints, DRange3d& origExtent)
+template<class EXTENT> void ClipFeatureDefinition(ISMStore::FeatureType type, EXTENT clipExtent, bvector<DPoint3d>& points, DRange3d& extent, const bvector<DPoint3d>& origPoints, DRange3d& origExtent)
     {
 
     if (/*IsClosedFeature(type) ||*/ (origExtent.low.x >= ExtentOp<EXTENT>::GetXMin(clipExtent) && origExtent.low.y >= ExtentOp<EXTENT>::GetYMin(clipExtent) && origExtent.low.z >= ExtentOp<EXTENT>::GetZMin(clipExtent)
@@ -1468,7 +1468,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFea
         }
     }
 
-template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionSingleNode(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
+template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
     {
     vector<int32_t> indexes;
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
@@ -1501,7 +1501,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 08/15
 //=======================================================================================
-    template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionUnconditional(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
+    template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
         {
         if (!IsLoaded())
             Load();
@@ -1595,7 +1595,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
     //=======================================================================================
     // @bsimethod                                                   Elenie.Godzaridis 08/15
     //=======================================================================================
-    template<class POINT, class EXTENT>  size_t  SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed)
+    template<class POINT, class EXTENT>  size_t  SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed)
         {
         assert(points.size()>0);
         if (s_inEditing)
@@ -1749,7 +1749,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
     if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
         {
         for (size_t i = 0; i < featurePoints.size(); ++i)
-            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->AddFeatureDefinitionUnconditional((IDTMFile::FeatureType)defs[i][0], featurePoints[i], extents[i]);
+            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->AddFeatureDefinitionUnconditional((ISMStore::FeatureType)defs[i][0], featurePoints[i], extents[i]);
         }
     else if (!IsLeaf())
         {
@@ -1758,7 +1758,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
             size_t added = 0;
             if (featurePoints[i].size() <= 1) continue;
             for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
-                added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->AddFeatureDefinition((IDTMFile::FeatureType)defs[i][0], featurePoints[i], extents[i], true);
+                added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->AddFeatureDefinition((ISMStore::FeatureType)defs[i][0], featurePoints[i], extents[i], true);
 
             assert(added >= featurePoints[i].size() - sentinels[i]);
             }
@@ -3711,7 +3711,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::PerformCl
     if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->ClipActionRecursive(action, clipId, extent, setToggledWhenIDIsOn);
     }
 
-template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
+template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
     {
     ++s_importedFeatures;
     if (0 == points.size())

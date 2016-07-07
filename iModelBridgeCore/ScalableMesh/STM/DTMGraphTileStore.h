@@ -4,19 +4,19 @@
 
 #include <ImagePP/all/h/HPMDataStore.h>
 #include <ImagePP/all/h/IDTMTypes.h>
-#include <ImagePP/all/h/IDTMFile.h>
+#include <ImagePP/all/h/ISMStore.h>
 #include <Mtg/MtgStructs.h>
 
 class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
     {
     public:
 
-        static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+        static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
-            return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
+            return static_cast<ISMStore::NodeID>(blockID.m_integerID);
             }
 
-        DTMGraphTileStore(IDTMFile::File::Ptr openedDTMFile, size_t layerID)
+        DTMGraphTileStore(ISMStore::File::Ptr openedDTMFile, size_t layerID)
             :
             m_layerID(layerID),
             m_DTMFile(openedDTMFile),
@@ -53,7 +53,7 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
 
             if (NULL == m_tileHandler)
                 {
-                IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
+                ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
 
                 if (NULL == layerDir)
                     {
@@ -66,13 +66,13 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
                     HASSERT(0 == m_layerID);
                     }
 
-                IDTMFile::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(GRAPH_FEATURE_TYPE);
+                ISMStore::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(GRAPH_FEATURE_TYPE);
                 if (NULL == featureDir)
                     {
 
                     // No Point dir ... we create one                    
                     featureDir = layerDir->CreatePointsOnlyUniformFeatureDir(GRAPH_FEATURE_TYPE,
-                                                                             IDTMFile::PointTypeIDTrait<int32_t>::value,
+                                                                             ISMStore::PointTypeIDTrait<int32_t>::value,
                                                                              HTGFF::Compression::Deflate::Create());
 
                     HASSERT(NULL != featureDir);
@@ -81,7 +81,7 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
                     }
 
 
-                m_tileHandler = IDTMFile::PointTileHandler<int32_t>::CreateFrom(featureDir->GetPointDir());
+                m_tileHandler = ISMStore::PointTileHandler<int32_t>::CreateFrom(featureDir->GetPointDir());
                 }
                 /*
 
@@ -99,7 +99,7 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
                 if (NULL == m_filteringDir)
                     {
                     // TDORAY: Match real filter type. Ask alain where to find this information.
-                    m_filteringDir = featureDir->CreateFilteringDir(IDTMFile::DumbFilteringHandler::Options());
+                    m_filteringDir = featureDir->CreateFilteringDir(ISMStore::DumbFilteringHandler::Options());
                     HASSERT(NULL != m_filteringDir);
                     if (NULL == m_filteringDir)
                         return false;
@@ -116,7 +116,7 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
             if (indexHeader->m_rootNodeBlockID.m_integerInitialized)
                 m_indexHandler->SetTopNode(ConvertBlockID(indexHeader->m_rootNodeBlockID));
             else
-                m_indexHandler->SetTopNode(IDTMFile::GetNullNodeID());*/
+                m_indexHandler->SetTopNode(ISMStore::GetNullNodeID());*/
 
 
             return true;
@@ -131,24 +131,24 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
 
             if (NULL == m_tileHandler)
                 {
-                IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
+                ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
                 if (NULL == layerDir)
                     return 0;
 
-                IDTMFile::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(GRAPH_FEATURE_TYPE);
+                ISMStore::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(GRAPH_FEATURE_TYPE);
                 if (NULL == featureDir)
                     return 0;
 
-                m_tileHandler = IDTMFile::PointTileHandler<int32_t>::CreateFrom(featureDir->GetPointDir());
+                m_tileHandler = ISMStore::PointTileHandler<int32_t>::CreateFrom(featureDir->GetPointDir());
                 }
             return 1;
            /* if (NULL == m_tileHandler)
                 {
-                IDTMFile::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
+                ISMStore::LayerDir* layerDir = m_DTMFile->GetRootDir()->GetLayerDir(m_layerID);
                 if (NULL == layerDir)
                     return 0;
 
-                IDTMFile::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
+                ISMStore::UniformFeatureDir* featureDir = layerDir->GetUniformFeatureDir(MASS_POINT_FEATURE_TYPE);
                 if (NULL == featureDir)
                     return 0;
 
@@ -174,7 +174,7 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
 
 
 
-            if (m_indexHandler->GetTopNode() != IDTMFile::GetNullNodeID())
+            if (m_indexHandler->GetTopNode() != ISMStore::GetNullNodeID())
                 indexHeader->m_rootNodeBlockID = m_indexHandler->GetTopNode();
             else
                 indexHeader->m_rootNodeBlockID = HPMBlockID();
@@ -214,9 +214,9 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
             ptArray[1] = (int32_t)offset;
             delete[] serializedGraph;
             delete[] ct;
-            IDTMFile::PointTileHandler<int32_t>::PointArray arrayOfPoints(ptArray, countAsPts);
+            ISMStore::PointTileHandler<int32_t>::PointArray arrayOfPoints(ptArray, countAsPts);
 
-            IDTMFile::NodeID newNodeID;
+            ISMStore::NodeID newNodeID;
 
             std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
@@ -224,7 +224,7 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
                 {
                 HASSERT(!"Write failed!");
                 //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
-                throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
+                throw HFCWriteFaultException(L"Unable to obtain file name ... ISMStore::File API should be modified.");
                 }
             delete[] ptArray;
             return HPMBlockID(newNodeID);
@@ -235,7 +235,7 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
             //HPRECONDITION(m_tileHandler != NULL);
             //HPRECONDITION(!m_DTMFile->IsReadOnly()); //TDORAY: Reactivate
 
-            if (!blockID.IsValid() || blockID.m_integerID == IDTMFile::SubNodesTable::GetNoSubNodeID())
+            if (!blockID.IsValid() || blockID.m_integerID == ISMStore::SubNodesTable::GetNoSubNodeID())
                 return StoreNewBlock(DataTypeArray, countData);
 
             void** serializedGraph = new void*[countData];
@@ -262,7 +262,7 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
             ptArray[1] = (int32_t) offset;
             delete[] serializedGraph;
             delete[] ct;
-            IDTMFile::PointTileHandler<int32_t>::PointArray arrayOfPoints(ptArray, countAsPts);
+            ISMStore::PointTileHandler<int32_t>::PointArray arrayOfPoints(ptArray, countAsPts);
            // PointArray arrayOfPoints(DataTypeArray, countData);
 
             std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
@@ -271,7 +271,7 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
                 {
                 HASSERT(!"Write failed!");
                 //&&MM TODO we cannot use custom exception string. AND the message seems wrong.
-                throw HFCWriteFaultException(L"Unable to obtain file name ... IDTMFile::File API should be modified.");
+                throw HFCWriteFaultException(L"Unable to obtain file name ... ISMStore::File API should be modified.");
                 }
             delete[] ptArray;
             return blockID;
@@ -302,7 +302,7 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
 
             std::lock_guard<std::recursive_mutex> lck (m_DTMFile->GetFileAccessMutex());
 
-            IDTMFile::PointTileHandler<int32_t>::PointArray arrayOfPoints;
+            ISMStore::PointTileHandler<int32_t>::PointArray arrayOfPoints;
             //get size of packet in number of ints
             size_t packetSize = m_tileHandler->GetDir().CountPoints(ConvertBlockID(blockID));
             int32_t* results = new int32_t[packetSize];
@@ -333,17 +333,17 @@ class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
              return m_tileHandler->RemovePoints(ConvertBlockID(blockID));
             }
 
-        static const IDTMFile::FeatureType GRAPH_FEATURE_TYPE = 1;
+        static const ISMStore::FeatureType GRAPH_FEATURE_TYPE = 1;
 
     protected:
-        const IDTMFile::File::Ptr& GetFileP() const
+        const ISMStore::File::Ptr& GetFileP() const
             {
             return m_DTMFile;
             }
 
     private:
-        IDTMFile::File::Ptr m_DTMFile;
-        HFCPtr<IDTMFile::PointTileHandler<int32_t>> m_tileHandler;
+        ISMStore::File::Ptr m_DTMFile;
+        HFCPtr<ISMStore::PointTileHandler<int32_t>> m_tileHandler;
         bool m_receivedOpenedFile;
         size_t m_layerID;
     };

@@ -52,7 +52,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct ScalableMeshViewDependentQueryParams;
 class ScalableMeshViewDependentQuery;
 
-//typedef IDTMFile::Extent3d64f YProtPtExtentType;
+//typedef ISMStore::Extent3d64f YProtPtExtentType;
 typedef DRange3d YProtPtExtentType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 

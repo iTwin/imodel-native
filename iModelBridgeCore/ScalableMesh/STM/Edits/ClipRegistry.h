@@ -21,7 +21,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-//typedef IDTMFile::Extent3d64f        YProtPtExtentType;
+//typedef ISMStore::Extent3d64f        YProtPtExtentType;
 typedef DRange3d       YProtPtExtentType;
 class ClipRegistry : public HFCShareableObject<ClipRegistry>
     {
@@ -37,7 +37,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     ClipRegistry(const WString& fileName)
         {       
-       // IDTMFile::File::Ptr filePtr = IDTMFile::File::Open(fileName.c_str());
+       // ISMStore::File::Ptr filePtr = ISMStore::File::Open(fileName.c_str());
         StatusInt status;
         SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(fileName.c_str(), false, status);
         m_path = fileName;
@@ -87,7 +87,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void OpenStore()
         {
-        //IDTMFile::File::Ptr filePtr = IDTMFile::File::Create(m_path.c_str());
+        //ISMStore::File::Ptr filePtr = ISMStore::File::Create(m_path.c_str());
         StatusInt status = 0;
         SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(m_path.c_str(), false, status);
         Utf8String utf8Path(m_path);

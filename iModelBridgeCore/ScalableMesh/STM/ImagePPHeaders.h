@@ -31,7 +31,7 @@
 #include <ImagePP/all/h/HPMPool.h>
 #include <Imagepp/all/h/HCPGCoordModel.h>
 //#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
-//#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/ISMStore.h>
 //#include <ImagePP/all/h/IDTMFeatureArray.h>
 //#include <ImagePP/all/h/HPUArray.h>
 
