@@ -50,13 +50,7 @@ template <class EXTENT> class SMSQLiteSkirtDefinitionsTileStore : public SMPoint
         virtual ~SMSQLiteSkirtDefinitionsTileStore()
             {
             //m_smSQLiteFile->Close();
-            }
-
-        virtual bool HasSpatialReferenceSystem()
-            {
-            // if spatialreference for scm return true
-            return false;
-            }
+            }        
 
         virtual std::string GetSpatialReferenceSystem()
             {

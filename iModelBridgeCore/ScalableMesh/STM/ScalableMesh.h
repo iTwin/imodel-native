@@ -187,13 +187,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         friend struct IScalableMesh;        
         friend class auto_ptr<ScalableMesh>;
         friend class ScalableMeshProgressiveQueryEngine;
-/*#ifndef SM_BESQL_FORMAT
-        typedef SMPointTaggedTileStore<INDEXPOINT, YProtPtExtentType >
-            TileStoreType;
 
-#else
-        typedef SMSQLitePointTileStore<INDEXPOINT, YProtPtExtentType>             TileStoreType;
-#endif*/
         typedef SMPointTileStore<INDEXPOINT, YProtPtExtentType >
             TileStoreType;
 

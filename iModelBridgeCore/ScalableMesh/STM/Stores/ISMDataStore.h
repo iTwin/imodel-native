@@ -16,36 +16,27 @@ need be.
 --------------------------------------------------------------------------------------------------------
 */
 
-enum class SMNodeDataStoreType
-    {
-    Points = 0,
-    /*
-    TriPtIndices,    
-    TriUvIndices, 
-    UvCoords, 
-    DiffSet, 
-    Graph,
-    Texture,
-    Display, //Use to represents data created for display purpose, like QV element. 
-    LinearFeature,
-    BcDTM,
-    Unknown, 
-    */
-    };
 
-template <typename DataType>  class ISMNodeDataStore : public RefCountedBase
+////MST_TS
+#include <ImagePP\all\h\HFCPtr.h>
+#include <ImagePP\all\h\HPMDataStore.h>
+USING_NAMESPACE_IMAGEPP
+
+//template <typename MasterHeaderType, typename NodeHeaderType> class ISMDataStore;      
+
+template <typename DataType, typename NodeHeaderType> class ISMNodeDataStore : public RefCountedBase
     {
     private : 
-
-        SMPointIndexHeader<EXTENT>* m_nodeHeader;
-        ISMDataStore*               m_store;
-
+        
+        NodeHeaderType* m_nodeHeader;
+        //ISMDataStore*   m_store;
+        
     public : 
 
-        ISMNodeDataStore(ISMDataStore* m_store, SMPointIndexHeader<EXTENT>* nodeHeader)
+        ISMNodeDataStore(/*ISMDataStore* m_store, */NodeHeaderType* nodeHeader)
             {
             m_nodeHeader = nodeHeader;
-            m_store = store;
+            //m_store = store;
             }    
 
         ~ISMNodeDataStore()
@@ -88,21 +79,20 @@ template <typename DataType>  class ISMNodeDataStore : public RefCountedBase
         /**----------------------------------------------------------------------------
         This method serializes the node for streaming.        
         -----------------------------------------------------------------------------*/
-        virtual void   SerializeHeaderToBinary(const TileHeaderType* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize, uint32_t pi_pMaxDataSize = 3000) const
+        virtual void SerializeHeaderToBinary(const NodeHeaderType* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize, uint32_t pi_pMaxDataSize = 3000) const
             {
             HASSERT(false); // Not implemented;
             }
     };
 
-typedef RefCountedPtr<ISMNodeDataStore<>> ISMNodeDataStorePtr;
 
-
-template <typename PointType, typename MasterHeaderType, typename NodeHeaderType>  class ISMDataStore
+template <typename MasterHeaderType, typename NodeHeaderType>  class ISMDataStore
     {
     public:
 
         ISMDataStore() {};
         virtual ~ISMDataStore() {};
+
 
         /**----------------------------------------------------------------------------
          Stores the master header in the store. The master header is of an undefined type
@@ -130,10 +120,14 @@ template <typename PointType, typename MasterHeaderType, typename NodeHeaderType
         -----------------------------------------------------------------------------*/
         virtual size_t LoadHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
 
+        /**----------------------------------------------------------------------------
+         Get the next node ID available.
+        -----------------------------------------------------------------------------*/
+        virtual uint64_t GetNextID() const = 0;
+
         virtual void Close () = 0;
-        
-        template<typename T>
-        RefCountedPtr<ISMNodeDataStore<T>> GetNodeDataStore() = 0;
+                
+        virtual RefCountedPtr<ISMNodeDataStore<DPoint3d, NodeHeaderType>> GetNodeDataStore(NodeHeaderType* nodeHeader) = 0;
                             
     };
-#endif
+

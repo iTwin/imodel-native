@@ -594,7 +594,6 @@
     <ClInclude Include="STM\3dDelaunay\gDel3d\Star.h">
       <Filter>Source\Core\ScalableMesh\3dDelaunay\gDel3d</Filter>
     </ClInclude>
-    <ClInclude Include="STM\MeshingFunctions.h" />
     <ClInclude Include="STM\ScalableMesh\Garland\Array.h">
       <Filter>Includes\Core\ScalableMesh\Garland</Filter>
     </ClInclude>
@@ -640,36 +639,6 @@
     <ClInclude Include="STM\ScalableMesh\ScalableMeshGraph.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Attachment.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\ScalableMeshConfig.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetScalableMeshConfig.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentConfig.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentConfigVisitor.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentDescriptor.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentDescriptor.hpp" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\CustomFilterFactory.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataTypeDescription.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataTypeFamily.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Definitions.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Exceptions.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ExtractionConfig.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Filter.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\FilterFactory.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\FilteringConfig.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportConfig.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportConfigVisitor.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Importer.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportPolicy.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportSequence.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportSequenceVisitor.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Metadata.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\ScalableMeshData.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Source.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\SourceReference.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\SourceReferenceVisitor.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Warnings.h" />
-    <ClInclude Include="STM\ScalableMeshFeature.h" />
     <ClInclude Include="STM\3dDelaunay\tetGen\tetgen.h">
       <Filter>Source\Core\ScalableMesh\3dDelaunay\tetgen</Filter>
     </ClInclude>
@@ -787,9 +756,6 @@
     <ClInclude Include="STM\PointTypeDPoint3d.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshProgressiveQuery.h" />
-    <ClInclude Include="STM\ScalableMeshProgressiveQuery.h" />
-    <ClInclude Include="STM\ScalableMeshProgressiveQuery.hpp" />
     <ClInclude Include="STM\Edits\ClipUtilities.hpp">
       <Filter>Includes\Core\Edits</Filter>
     </ClInclude>
@@ -802,7 +768,6 @@
     <ClInclude Include="STM\SMStreamingTextureTileStore.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMesh\Streaming\AzureStorage.h" />
     <ClInclude Include="STM\CGALEdgeCollapse.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
@@ -833,11 +798,9 @@
     <ClInclude Include="STM\SMSQLiteTextureTileStore.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataSQLite.h" />
     <ClInclude Include="STM\SMSQLiteIndiceTileStore.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
@@ -850,8 +813,6 @@
     <ClInclude Include="STM\SMSQLiteFeatureTileStore.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
-    <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
-    <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
     <ClInclude Include="STM\SMSQLiteSkirtDefinitionsTileStore.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
@@ -873,7 +834,6 @@
     <ClInclude Include="STM\ISMDataStore.hpp">
       <Filter>Includes\Core</Filter>
     </ClInclude>
-    <ClInclude Include="stm\ComputeMemoryUseTraits.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.h">
       <Filter>Includes\Core\Stores</Filter>
     </ClInclude>
@@ -885,6 +845,117 @@
     </ClInclude>
     <ClInclude Include="STM\Stores\SMSQLiteStore.hpp">
       <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="stm\ComputeMemoryUseTraits.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentConfigVisitor.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentDescriptor.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentDescriptor.hpp">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\CustomFilterFactory.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataSQLite.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataType.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataTypeDescription.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataTypeFamily.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetScalableMeshConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Definitions.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Exceptions.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ExtractionConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Filter.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\FilterFactory.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\FilteringConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportConfigVisitor.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Importer.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportPolicy.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportSequence.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportSequenceVisitor.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshProgressiveQuery.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Metadata.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\ScalableMeshConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ScalableMeshData.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshFeature.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshFileMoniker.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Source.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\SourceReference.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\SourceReferenceVisitor.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Warnings.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshProgressiveQuery.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MeshingFunctions.h">
+      <Filter>Includes\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1158,18 +1229,15 @@
     <ClCompile Include="STM\3dDelaunay\gDel3d\Star.cpp">
       <Filter>Source\Core\ScalableMesh\3dDelaunay\gDel3d</Filter>
     </ClCompile>
-    <ClCompile Include="STM\MeshingFunctions.cpp" />
     <ClCompile Include="STM\ScalableMesh\ScalableMeshGraph.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Import\ScalableMeshData.cpp" />
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgen.cpp">
       <Filter>Source\Core\ScalableMesh\3dDelaunay\tetgen</Filter>
     </ClCompile>
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgenPredicates.cpp">
       <Filter>Source\Core\ScalableMesh\3dDelaunay\tetgen</Filter>
     </ClCompile>
-    <ClCompile Include="STM\3dDelaunay\MeshData.cpp" />
     <ClCompile Include="STM\ScalableMeshSourceImporter.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1251,8 +1319,6 @@
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp">
       <Filter>Source\Core\Threading</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ScalableMeshProgressiveQuery.cpp" />
-    <ClCompile Include="STM\ScalableMeshTexture.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp">
       <Filter>Source\Core\Threading</Filter>
     </ClCompile>
@@ -1262,7 +1328,6 @@
     <ClCompile Include="STM\SMSQLiteFile.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Import\DataSQLite.cpp" />
     <ClCompile Include="STM\DrapeOnGraph.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1278,7 +1343,6 @@
     <ClCompile Include="STM\SMMeshIndex.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\Plugins\ScalableMeshTypeConversionFilterPlugins.cpp" />
     <ClCompile Include="STM\Edits\Skirts.cpp">
       <Filter>Source\Core\Edits</Filter>
     </ClCompile>
@@ -1294,26 +1358,27 @@
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp">
       <Filter>Source\Core\Stores</Filter>
     </ClCompile>
-    <ClCompile Include="stm\importplugins\DGNdbImporter.cpp">
-      <Filter>Source\STM\ImportPlugins</Filter>
+    <ClCompile Include="Import\DataSQLite.cpp">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ScalableMeshData.cpp">
+      <Filter>Includes\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshProgressiveQuery.cpp">
+      <Filter>Includes\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshTexture.cpp">
+      <Filter>Includes\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MeshingFunctions.cpp">
+      <Filter>Source\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Import\Import.mke.realOrig" />
-    <None Include="mki\AssertScalableTerrainModelPolicy.mki" />
-    <None Include="PrivateAPI\STMInternal\Foundations\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\Foundations\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\GeoCoords\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\Import\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\Memory\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\__BENTLEY_INTERNAL_ONLY__" />
     <None Include="ScalableMesh.mke" />
     <None Include="ScalableMesh.mki" />
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="transkit\transkit.xml" />
     <Xml Include="ScalableMesh.PartFile.xml" />
   </ItemGroup>
 </Project>

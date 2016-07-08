@@ -149,7 +149,20 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     friend class ISMPointIndexMesher<POINT, EXTENT>;
     friend class SMMeshIndex < POINT, EXTENT > ;
     public:
-        SMMeshIndexNode(size_t pi_SplitTreshold,
+
+           
+    SMMeshIndexNode(size_t pi_SplitTreshold,
+                                     const EXTENT& pi_rExtent,
+                                     const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode);
+    
+    SMMeshIndexNode(size_t pi_SplitTreshold,
+                                     const EXTENT& pi_rExtent,
+                                     const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode,
+                                     bool IsUnsplitSubLevel);
+
+    SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode);    
+
+    SMMeshIndexNode(size_t pi_SplitTreshold,
                         const EXTENT& pi_rExtent,                                                
                         SMMeshIndex<POINT, EXTENT>* meshIndex,
                         ISMPointIndexFilter<POINT, EXTENT>* filter,
@@ -159,23 +172,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                         ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
                         ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                         CreatedNodeMap*                      createdNodeMap);
-
-    SMMeshIndexNode(size_t pi_SplitTreshold,
-                                     const EXTENT& pi_rExtent,
-                                     const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode);
-
-    SMMeshIndexNode(size_t pi_SplitTreshold,
-                                     const EXTENT& pi_rExtent,
-                                     const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode,
-                                     bool IsUnsplitSubLevel);
-
-    SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode);
-
-    SMMeshIndexNode(const SMPointIndexNode<POINT, EXTENT>& pi_rNode);
-
-    SMMeshIndexNode(const SMMeshIndexNode<POINT, EXTENT>& pi_rNode,
-                     const HFCPtr<SMMeshIndexNode>& pi_rpParentNode);
-
+    
     SMMeshIndexNode(HPMBlockID blockID,
                      HFCPtr<SMMeshIndexNode<POINT, EXTENT> > parent,                                            
                       SMMeshIndex<POINT, EXTENT>* meshIndex,
@@ -186,46 +183,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                       ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
                       ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                       CreatedNodeMap*                      createdNodeMap);
-
-    SMMeshIndexNode(HPMBlockID blockID,                                            
-                      SMMeshIndex<POINT, EXTENT>* meshIndex,
-                      ISMPointIndexFilter<POINT, EXTENT>* filter,
-                      bool balanced,
-                      bool textured,
-                      bool propagateDataDown,
-                      ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                      ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                      CreatedNodeMap* createdNodeMap);
-
-    SMMeshIndexNode(size_t pi_SplitTreshold,
-                      const EXTENT& pi_rExtent,                                            
-                      SMMeshIndex<POINT, EXTENT>* meshIndex,
-                      ISMPointIndexFilter<POINT, EXTENT>* filter,
-                      bool balanced,
-                      bool propagateDataDown,
-                      ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                      ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                      CreatedNodeMap*                      createdNodeMap);
-
-    SMMeshIndexNode(HPMBlockID blockID,                                          
-                     SMMeshIndex<POINT, EXTENT>* meshIndex,
-                     ISMPointIndexFilter<POINT, EXTENT>* filter,
-                     bool balanced,
-                     bool propagateDataDown,
-                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                     CreatedNodeMap* createdNodeMap);
-
-    SMMeshIndexNode(HPMBlockID blockID,
-                     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > parent,                                          
-                     SMMeshIndex<POINT, EXTENT>* meshIndex,
-                     ISMPointIndexFilter<POINT, EXTENT>* filter,
-                     bool balanced,
-                     bool propagateDataDown,
-                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                     CreatedNodeMap*                      createdNodeMap);
-
+    
     virtual ~SMMeshIndexNode<POINT, EXTENT>();
     
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;

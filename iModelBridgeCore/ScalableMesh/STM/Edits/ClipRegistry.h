@@ -24,8 +24,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 //typedef ISMStore::Extent3d64f        YProtPtExtentType;
 typedef DRange3d       YProtPtExtentType;
 class ClipRegistry : public HFCShareableObject<ClipRegistry>
-    {
-    //HFCPtr<SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>> m_clipStore;
+    {    
     HFCPtr<SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>> m_clipStore;
     HFCPtr<SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>> m_skirtStore;    
     SMPointIndexHeader<YProtPtExtentType> h;
@@ -41,7 +40,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         StatusInt status;
         SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(fileName.c_str(), false, status);
         m_path = fileName;
-        if (status && nullptr != filePtr.get()) m_clipStore = new SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>(filePtr);//new SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>(filePtr, false);
+        if (status && nullptr != filePtr.get()) m_clipStore = new SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>(filePtr);
         h.m_depth = 0;
         h.m_SplitTreshold = 1;
         m_maxID = 0;
@@ -96,7 +95,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
             {
             m_clipStore = new SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>(filePtr);
             m_skirtStore = new SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>(filePtr);
-            }//new SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>(filePtr, false);
+            }
         }
 
     void LoadAllClips()
