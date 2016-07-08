@@ -288,6 +288,12 @@ $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompil
 
 $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCompileDepends}
 
+
+#-----------------------------------------------------------------------
+#   Build Stores
+#-----------------------------------------------------------------------
+$(o)SMSQLiteStore$(oext) : $(stmDir)Stores/SMSQLiteStore.cpp $(stmDir)Stores/SMSQLiteStore.h $(stmDir)Stores/SMSQLiteStore.hpp ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
 #-----------------------------------------------------------------------

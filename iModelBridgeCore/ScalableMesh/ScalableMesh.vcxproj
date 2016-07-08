@@ -335,7 +335,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Reprojection.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.hpp" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Attachment.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\Base.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\All.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Base.h" />
@@ -488,7 +487,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\ScalableMeshMoniker.h" />
     <ClInclude Include="STM\ScalableMeshNodeCreator.h" />
     <ClInclude Include="STM\ScalableMeshProgressiveQuery.h" />
-    <ClInclude Include="STM\ScalableMeshProgressiveQuery.hpp" />
     <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.h" />
     <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.hpp" />
     <ClInclude Include="STM\ScalableMeshQuadTreeQueries.h" />
@@ -526,7 +524,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\ScalableMesh\Garland\Vec3.h" />
     <ClInclude Include="STM\ScalableMesh\Garland\Vec4.h" />
     <ClInclude Include="STM\ScalableMesh\ScalableMeshGraph.h" />
-    <ClInclude Include="STM\ScalableMesh\Streaming\AzureStorage.h" />
     <ClInclude Include="STM\ScalableMeshPCH.h" />
     <ClInclude Include="STM\SMSQLiteGraphTileStore.h" />
     <ClInclude Include="STM\SMSQLiteIndiceTileStore.h" />
@@ -554,7 +551,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <Xml Include="ScalableMesh.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
-    <Xml Include="transkit\transkit.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AutomaticGroundDetection\AutomaticGroundDetectionInternalConfig.cpp" />
@@ -613,7 +609,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\3dDelaunay\gDel3d\PredWrapper.cpp" />
     <ClCompile Include="STM\3dDelaunay\gDel3d\splaying.cpp" />
     <ClCompile Include="STM\3dDelaunay\gDel3d\Star.cpp" />
-    <ClCompile Include="STM\3dDelaunay\MeshData.cpp" />
     <ClCompile Include="STM\3dDelaunay\ScalableMeshCao.cpp" />
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgen.cpp" />
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgenPredicates.cpp" />
@@ -687,7 +682,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Plugins\ScalableMeshPointTypes.cpp" />
     <ClCompile Include="STM\Plugins\ScalableMeshReprojectionFilterPlugins.cpp" />
     <ClCompile Include="STM\Plugins\ScalableMeshTINTypes.cpp" />
-    <ClCompile Include="STM\Plugins\ScalableMeshTypeConversionFilterPlugins.cpp" />
     <ClCompile Include="STM\ScalableMeshDraping.cpp" />
     <ClCompile Include="STM\ScalableMeshVolume.cpp" />
     <ClCompile Include="STM\ScalableMesh\ScalableMeshGraph.cpp" />
@@ -699,16 +693,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ClassDiagram.cd" />
-    <None Include="Import\Import.mke.realOrig" />
-    <None Include="mki\AssertScalableTerrainModelPolicy.mki" />
-    <None Include="PrivateAPI\STMInternal\Foundations\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\Foundations\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\GeoCoords\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\Import\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\Memory\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\__BENTLEY_INTERNAL_ONLY__" />
     <None Include="ScalableMesh.mke" />
     <None Include="ScalableMesh.mki" />
   </ItemGroup>
