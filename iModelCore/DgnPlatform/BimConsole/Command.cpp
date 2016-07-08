@@ -1265,7 +1265,10 @@ void ClassMappingCommand::_Run(Session& session, std::vector<Utf8String> const& 
             }
         }
     else
+        {
         Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
 
     Json::FastWriter writer;
     Utf8String infoStr = writer.write(json);
