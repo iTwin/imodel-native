@@ -88,6 +88,16 @@
         <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScMeshTest.exe</Files>
       </Bindings>
   </Part>
+
+  <Part Name="DgnDbToSM" BentleyBuildMakeFile="Tests/DgnDbToSM.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+    <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
+    <SubPart PartName="ConceptStationDomain" PartFile="ConceptStation" Repository="ConceptStation"/>
+    <SubPart PartName="PublicAPI" PartFile="ConceptStation" Repository="ConceptStation"/>
+    <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
+    <Bindings>
+      <Files ProductDirectoryName="DgnDbToSMTest">Delivery\DgnDbToSM.exe</Files>
+    </Bindings>
+  </Part>
     
     <ProductDirectoryList ListName="ScalableMeshSDK">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
@@ -241,5 +251,42 @@
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />            
         <Directories DirectoryListName="ScalableMeshCmd" />        
     </Product>
+
+
+  <ProductDirectoryList ListName="DgnDbToSM">
+    <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="DgnDbToSMTest" Path="Dlls"/>
+    <ProductDirectory Name="Assemblies" Path="Dlls"/>
+    <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="GeoCoordData" Deliver="true" Path="Dlls/GeoCoordinateData"/>
+    <ProductDirectory Name="Libs" Deliver="false" />
+    <ProductDirectory Name="Libs" LibType="static" Deliver="false" />
+    <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
+    <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="wastorageAssemblies" Path="Dlls" />
+    <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />
+    <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
+    <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
+    <ProductDirectory Name="RealityAssemblies"     Path="Dlls"         />
+    <ProductDirectory Name="ApplicationRoot"      Path="Dlls"        />
+    <ProductDirectory Name="ConceptAssemblies"      Path="Dlls"        />
+    <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
+    <ProductDirectory Name="RasterAssemblies" Path="Dlls" Deliver="true"/>
+    <ProductDirectory Name="PointoolsAssemblies" Path="Dlls" Deliver="true"/>
+    <ProductDirectory Name="ThreeMxAssemblies" Path="Dlls" Deliver="true"/>
+    <ProductDirectory Name="DgnClientFxNativeAssemblies" Path="Dlls" Deliver="true"/>
+  </ProductDirectoryList>
+
+  <Product Name="DgnDbSM">
+    <SubPart PartName="DgnDbToSM" />
+    <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />
+    <Directories DirectoryListName="DgnDbToSM" />
+  </Product>
   
   </BuildContext>

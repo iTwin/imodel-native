@@ -139,4 +139,5 @@ public:
 #endif                           
     };
 
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE

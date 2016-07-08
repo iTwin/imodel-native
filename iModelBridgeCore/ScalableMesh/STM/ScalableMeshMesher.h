@@ -62,6 +62,39 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
     };
 
 
+ template<class POINT, class EXTENT> class ScalableMeshExistingMeshMesher : public ISMPointIndexMesher<POINT, EXTENT>
+{
+
+    public:
+
+        // Primary methods
+        ScalableMeshExistingMeshMesher() {};
+        virtual             ~ScalableMeshExistingMeshMesher() {};
+
+        virtual bool        Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override
+            {
+           /* auto ptsIndicePtr = node->GetPtsIndicePtr();
+            node->m_nodeHeader.m_nbFaceIndexes = ptsIndicePtr->size();
+            if (ptsIndicePtr->size() > 0)
+                {
+                auto ptsPtr = node->GetPointsPtr();
+                RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
+                MTGGraph* newGraph = new MTGGraph();
+                bvector<int32_t> componentPointsId;
+                CreateGraphFromIndexBuffer(newGraph, (const long*)&*ptsIndicePtr->begin(), (int)ptsIndicePtr->size(), (int)ptsPtr->size(), componentPointsId, &*ptsPtr->begin());
+                graphPtr->SetData(newGraph);
+                graphPtr->SetDirty();
+
+                }*/
+            return true;
+            };
+
+        virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override
+            {
+            return true;
+            };
+        
+    };
     /** -----------------------------------------------------------------------------
 
     This class implements a default filter for spatial index of points. It takes

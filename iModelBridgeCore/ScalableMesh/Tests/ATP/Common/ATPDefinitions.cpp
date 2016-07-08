@@ -94,8 +94,8 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 		WString outputDir;
 		int maxLevel;
 		bool exportTexture;
-
-		assert(ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode) == true);
+        bool parseOptions = ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode);
+		assert(parseOptions==true);
 
 		if (status == SUCCESS)
 			{
@@ -330,7 +330,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             isSingleFile = true;
 
         ScalableMeshMesherType mesherType = SCM_MESHER_2D_DELAUNAY;
-        ScalableMeshFilterType filterType = SCM_FILTER_DUMB_MESH;
+        ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;//SCM_FILTER_DUMB_MESH;
         ScalableMeshSaveType saveType = SCM_SAVE_STMFILE;
         int trimmingMethod = 5;
 

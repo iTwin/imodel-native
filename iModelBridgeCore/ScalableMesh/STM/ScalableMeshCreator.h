@@ -67,6 +67,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 /*__PUBLISH_SECTION_START__*/
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
+extern ISMPointIndexFilter<DPoint3d, YProtPtExtentType>* s_filter;
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 struct Sink;

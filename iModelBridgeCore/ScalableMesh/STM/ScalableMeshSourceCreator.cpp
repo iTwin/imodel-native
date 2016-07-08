@@ -34,6 +34,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "../Import/Sink.h"
 #include "ScalableMeshSourcesImport.h"
 
+#include "ScalableMeshMesher.h"
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
 #include "ScalableMeshSources.h"
@@ -47,6 +48,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "ScalableMeshQuery.h"
 #include "Edits/ClipUtilities.hpp"
 #include "SMSQLiteFeatureTileStore.h"
+#include "ScalableMeshQuadTreeBCLIBFilters.h"
 using namespace IDTMFile;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 extern bool s_inEditing;
@@ -54,6 +56,7 @@ bool s_useThreadsInStitching = false;
 bool s_useThreadsInMeshing = false;
 bool s_useThreadsInFiltering = false;
 bool s_useThreadsInTexturing = false;
+ScalableMeshExistingMeshMesher<DPoint3d,DRange3d> s_ExistingMeshMesher;
 size_t s_nCreatedNodes = 0;
 bool s_useSpecialTriangulationOnGrids = false;
 
@@ -266,6 +269,14 @@ void IScalableMeshSourceCreator::Impl::SetupFileForCreation()
     m_sourcesDirty = true;
     //return filePtr;
 }
+
+void IScalableMeshSourceCreator::SetUserFilterCallback(MeshUserFilterCallback callback)
+    {
+#ifdef WIP_MESH_IMPORT
+    if (s_filter == nullptr) s_filter = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>();
+    ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>*)s_filter)->SetCallback(callback);
+#endif
+    }
 
 
 //NEEDS_WORK_SM : To be removed
@@ -554,18 +565,15 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #ifdef SCALABLE_MESH_ATP    
             startClock = clock();
 #endif
-            //if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
-            //    return BSIERROR;
+            if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
+                return BSIERROR;
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastFilteringDuration += clock() - startClock;
             startClock = clock();
 #endif
-            if (level == (int)depth)
-                {
-                if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
-                    return BSIERROR;
-                }
+            if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
+                return BSIERROR;
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastStitchingDuration += clock() - startClock;

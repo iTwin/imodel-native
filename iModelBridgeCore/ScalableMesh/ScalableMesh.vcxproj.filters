@@ -1266,6 +1266,9 @@
     <ClCompile Include="stm\ScalableMeshDb.cpp">
       <Filter>Source\STM</Filter>
     </ClCompile>
+    <ClCompile Include="stm\importplugins\DGNdbImporter.cpp">
+      <Filter>Source\STM\ImportPlugins</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Import\Import.mke.realOrig" />

@@ -111,6 +111,8 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     // Register TIN to linear converters
     static const RegisterTINAsIDTMLinearToIDTMLinearConverter                              s_tinToLinTypeConv0;
 
+    static const RegisterMeshConverter<DPoint3d, DPoint3d>                        s_ptMeshConv0;
+
     
     // Register Moniker
 

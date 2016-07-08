@@ -152,6 +152,11 @@ void GetSourceDataType(DTMSourceDataType& dataType, BeXmlNodeP pSourceNode)
                             dataType = DTM_SOURCE_DATA_CLIP;
                             }
                         else
+                            if (dataTypeStr.CompareTo(L"MESH") == 0)
+                                {
+                                dataType = DTM_SOURCE_DATA_MESH;
+                                }
+                        else
                             {
                             printf("Unsupporter/unknown data type");
                             }
