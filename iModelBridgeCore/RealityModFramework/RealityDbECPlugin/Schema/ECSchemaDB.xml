@@ -685,11 +685,11 @@
         </ECProperty>
         
         <ECProperty propertyName="Metadata" typeName="string" >
-            <ECCustomAttributes>
+            <!--ECCustomAttributes>
                 <MimicDBColumn>
                     <CacheColumnName>Metadata</CacheColumnName>
                 </MimicDBColumn>
-            </ECCustomAttributes>
+            </ECCustomAttributes-->
         </ECProperty>
         
         
