@@ -106,7 +106,7 @@ CCompOpts + -D__CPP__
 
 %if defined (MSVC_VERSION)
     %if MSVC_VERSION >= 1800
-        # New warning in VC12; ignore instead of changing third-party code.
+        # New warning in VS2013; ignore instead of changing third-party code.
         # warning C4756: overflow in constant arithmetic
         CCompOpts + -wd4756
     %endif
