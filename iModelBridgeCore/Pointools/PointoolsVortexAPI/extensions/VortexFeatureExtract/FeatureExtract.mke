@@ -121,9 +121,9 @@ LINKER_LIBRARIES = \
     LINKER_LIBRARIES + \
     %if $(BUILD_TOOLSET) == "VC8"
         $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC8$(stlibext)
-    %elif $(BUILD_TOOLSET) == "VC11"
+    %elif $(BUILD_TOOLSET) == "VS2012"
         $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC11$(stlibext)
-    %elif $(BUILD_TOOLSET) == "VC12"
+    %elif $(BUILD_TOOLSET) == "VS2013"
         $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC12$(stlibext)
     %elif $(BUILD_TOOLSET) == "VC13"
         $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC13$(stlibext)
