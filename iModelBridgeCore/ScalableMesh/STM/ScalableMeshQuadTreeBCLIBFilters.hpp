@@ -548,7 +548,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
         bvector<bvector<DPoint3d>> newLines;
         MergePolygonSets(polylines, [&newTypes, &newLines, &types] (const size_t i, const bvector<DPoint3d>& vec)
             {
-            if (!IsVoidFeature((IDTMFile::FeatureType)types[i]))
+            if (!IsVoidFeature((ISMStore::FeatureType)types[i]))
                 {
                 newLines.push_back(vec);
                 newTypes.push_back(types[i]);
@@ -582,7 +582,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
         for (auto& polyline : polylines)
             {
             DRange3d extent = DRange3d::From(polyline);
-            pParentMeshNode->AddFeatureDefinitionSingleNode((IDTMFile::FeatureType)types[&polyline - &polylines.front()], polyline, extent);
+            pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent);
             }
         }
     else
@@ -597,7 +597,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
         for (auto& polyline : polylines)
             {
             DRange3d extent = DRange3d::From(polyline);
-            pParentMeshNode->AddFeatureDefinitionSingleNode((IDTMFile::FeatureType)types[&polyline - &polylines.front()], polyline, extent);
+            pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent);
             }
 
         if (pParentMeshNode->m_nodeHeader.m_arePoints3d)

@@ -1,0 +1,55 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: CloudDataSource.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
+# PreCompiledHeader.mki uses CCompPDBName
+
+
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine = __BENTLEYSTM_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = NO_IODEFS
+%include cdefapnd.mki
+
+#
+#  Defining NOMINMAX keeps windef.h from defining min/max macros. This is necessary to be able to use
+#  the std::min and std::max function templates. It might be nice to hoist this up to the power platform
+#  build policy level.
+#
+nameToDefine = NOMINMAX
+%include cdefapnd.mki
+
+#NEEDS_WORK_SM : TEMP_SM_ATP For ATP purpose
+nameToDefine=SCALABLE_MESH_ATP
+%include cdefapnd.mki
+
+%ifndef NDEBUG
+nameToDefine=INDEX_DUMPING_ACTIVATED
+%include cdefapnd.mki
+%endif
+
+#nameToDefine=ACTIVATE_TEXTURE_DUMP
+#%include cdefapnd.mki
+
+%ifdef DHDEBUG
+nameToDefine = DHDEBUG
+%include cdefapnd.mki
+%endif
+
+
+#define this to activate besql format
+nameToDefine = SM_BESQL_FORMAT
+%include cdefapnd.mki
+
+#nameToDefine = USE_DIFFSET
+#%include cdefapnd.mki

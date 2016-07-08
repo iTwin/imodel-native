@@ -2,7 +2,7 @@
 
 #include <../STM/IScalableMeshDataStore.h>
 /*#include <ImagePP/all/h/IDTMTypes.h>
-#include <ImagePP/all/h/IDTMFile.h>*/
+#include <ImagePP/all/h/ISMStore.h>*/
 #include <ImagePP/all/h/HCDPacket.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 #include <ImagePP/all/h/HRFBmpFile.h>
@@ -13,11 +13,11 @@ class SMSQLiteTextureTileStore : public IScalableMeshDataStore<Byte, float, floa
 {
 public:
 
-    /*static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+    /*static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
     {
-        return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
+        return static_cast<ISMStore::NodeID>(blockID.m_integerID);
     }*/
-   /* SMSQLiteTextureTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const IDTMFile::AccessMode& accessMode)
+   /* SMSQLiteTextureTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const ISMStore::AccessMode& accessMode)
         {
         m_smSQLiteFile = SMSQLiteFile::Create();
         Utf8String filenameA;

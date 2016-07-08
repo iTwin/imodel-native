@@ -1928,6 +1928,6 @@ DifferenceSetWithTracking Clipper::ClipConvexPolygon2DCustom(const DPoint3d* pol
 
     }
 
-//template void ClipMeshToNodeRange<DPoint3d, IDTMFile::Extent3d64f>(vector<int>& faceIndexes, vector<DPoint3d>& nodePts, bvector<DPoint3d>& pts, IDTMFile::Extent3d64f& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP);
+//template void ClipMeshToNodeRange<DPoint3d, ISMStore::Extent3d64f>(vector<int>& faceIndexes, vector<DPoint3d>& nodePts, bvector<DPoint3d>& pts, ISMStore::Extent3d64f& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP);
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

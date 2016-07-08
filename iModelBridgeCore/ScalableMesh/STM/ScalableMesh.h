@@ -55,6 +55,9 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "ScalableMeshMemoryPools.h"
 
 #include "ScalableMeshVolume.h"
+
+#include <CloudDataSource/DataSourceManager.h>
+
 /*__PUBLISH_SECTION_START__*/
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
@@ -62,7 +65,7 @@ using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 extern bool s_useSQLFormat;
-//typedef IDTMFile::Extent3d64f        YProtPtExtentType;
+//typedef ISMStore::Extent3d64f        YProtPtExtentType;
 typedef DRange3d YProtPtExtentType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
@@ -83,11 +86,14 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     GeoCoords::GCS                      m_sourceGCS;
     DRange3d                            m_contentExtent;
 
-    WString                             m_baseExtraFilesPath;
+	WString                             m_baseExtraFilesPath;
+
+	static DataSourceManager			s_dataSourceManager;
+	DataSourceAccount				*	m_dataSourceAccount;
 
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
-    const WString                  m_path; 
+    const WString					     m_path; 
 
 
     explicit                            ScalableMeshBase(SMSQLiteFilePtr& smSQLiteFile, const WString&             filePath);
@@ -105,7 +111,13 @@ public:
 
     const SMSQLiteFilePtr&              GetDbFile() const;
 
-    const WChar*                      GetPath                    () const;
+    const WChar*						GetPath                 () const;
+
+	static DataSourceManager &			getDataSourceManager	(void)									{return s_dataSourceManager;}
+	void								setDataSourceAccount	(DataSourceAccount *dataSourceAccount)	{m_dataSourceAccount = dataSourceAccount;}
+	DataSourceAccount *					getDataSourceAccount	(void) const							{return m_dataSourceAccount;}
+
+	DataSourceStatus					initializeAzureTest		(void);
 
     };
 
@@ -241,7 +253,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         void                            AddBreaklineSet                (list<HFCPtr<HVEDTMLinearFeature> >& breaklineList, 
                                                                         BC_DTM_OBJ*                         po_ppBcDtmObj);
 
-        ISMPointIndexFilter<INDEXPOINT, YProtPtExtentType>* CreatePointIndexFilter(IDTMFile::UniformFeatureDir* pointDirPtr) const;
+        ISMPointIndexFilter<INDEXPOINT, YProtPtExtentType>* CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const;
 #endif
         void CreateSpatialIndexFromExtents(list<HVE2DSegment>& pi_rpBreaklineList, 
                                            BC_DTM_OBJ**        po_ppBcDtmObj);
@@ -313,6 +325,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override;
+        virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override;
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override;
 #endif
 
@@ -432,6 +445,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}
+        virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override { return ERROR; }
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override { return ERROR; }
 #endif
            

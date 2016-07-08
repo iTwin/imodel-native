@@ -49,7 +49,11 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "Edits/ClipUtilities.hpp"
 #include "SMSQLiteFeatureTileStore.h"
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
-using namespace IDTMFile;
+#ifdef MAPBOX_PROTOTYPE
+    #include <ImagePP\all\h\HRFMapboxFile.h>
+#endif
+
+using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 extern bool s_inEditing;
 bool s_useThreadsInStitching = false;
@@ -71,7 +75,7 @@ StatusInt&      status)
     {
     RegisterDelayedImporters();
 
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     IScalableMeshSourceCreatorPtr pCreator = new IScalableMeshSourceCreator(new Impl(filePath));
 
@@ -86,7 +90,7 @@ StatusInt&      status)
 IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const IScalableMeshPtr&    scmPtr,
                                                      StatusInt&          status)
     {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     RegisterDelayedImporters();
 
@@ -241,7 +245,7 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile)
 
 void IScalableMeshSourceCreator::Impl::SetupFileForCreation()
 {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     //File::Ptr filePtr;
     bool bAllRemoved = true;
@@ -341,7 +345,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     )
     {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     HFCPtr<MeshIndexType>          pDataIndex;
 
@@ -370,7 +374,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
 
 
-   // std::list<IDTMFile::Extent3d64f> listRemoveExtent;
+   // std::list<ISMStore::Extent3d64f> listRemoveExtent;
     std::list<DRange3d> listRemoveExtent;
     IDTMSourceCollection::const_iterator it = m_sources.Begin();
 
@@ -386,7 +390,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         if (data.GetUpToDateState() == UpToDateState::REMOVE || data.GetUpToDateState() == UpToDateState::MODIFY)
             {
             DRange3d sourceRange = data.GetExtentByLayer(0);
-            /*IDTMFile::Extent3d64f removeExtent;
+            /*ISMStore::Extent3d64f removeExtent;
             removeExtent.xMin = sourceRange.low.x;
             removeExtent.xMax = sourceRange.high.x;
             removeExtent.yMin = sourceRange.low.y;
@@ -448,7 +452,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     WString name = m_scmFileName;
     WString featureFilePath = name.append(L"_feature"); //temporary file, deleted after generation
     _wremove(featureFilePath.c_str());
-    //IDTMFile::File::Ptr featureFilePtr = IDTMFile::File::Create(featureFilePath.c_str());
+    //ISMStore::File::Ptr featureFilePtr = ISMStore::File::Create(featureFilePath.c_str());
     SMSQLiteFilePtr sqliteFeatureFile = new SMSQLiteFile();
     sqliteFeatureFile->Create(featureFilePath);
     HFCPtr<GenericTileStoreType>  pFeatureTileStore = new SMSQLiteFeatureTileStore<PointIndexExtentType>(sqliteFeatureFile);//new TileStoreType(featureFilePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
@@ -789,16 +793,40 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
     auto cluster = new HGFHMRStdWorldCluster();
     pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(cluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
     HIMMosaic::RasterList rasterList;
+    
     for (auto& source : filteredSources)
         {
-
-        WString path = WString(L"file://") + source->GetPath();
+        WString path;
+        
+        if (source->GetPath().StartsWith(L"http://"))
+            {
+            path = source->GetPath();
+            }
+        else
+            {
+            path = WString(L"file://") + source->GetPath();
+            }
+            
+            
         HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
         HFCPtr<HRSObjectStore> pObjectStore;
         HFCPtr<HRFRasterFile>  pRasterFile;
         HFCPtr<HRARaster>      pRaster;
         // HFCPtr<HRAOnDemandRaster> pOnDemandRaster;
-        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+
+#ifdef MAPBOX_PROTOTYPE
+        HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
+
+        if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
+            {
+            pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+            }
+        else
+#endif		
+            {
+            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+            }
+                                                                                                                            
         pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
         pObjectStore = new HRSObjectStore(s_rasterMemPool,
                                           pRasterFile,

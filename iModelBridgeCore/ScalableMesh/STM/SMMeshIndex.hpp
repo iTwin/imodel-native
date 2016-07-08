@@ -55,16 +55,16 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_existingMesh = false;
 #endif
 
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 
     m_nbClips = 0;
 
@@ -96,15 +96,15 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 
     m_nbClips = 0;
 
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
 
@@ -135,15 +135,15 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 #endif
     m_nbClips = 0;
 
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
 
@@ -180,16 +180,16 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 #endif
     m_nbClips = 0;
 
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0]= IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0]= ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
 
@@ -227,15 +227,15 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 
     m_nbClips = 0;
    
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
 
     }
@@ -259,14 +259,14 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_existingMesh = false;
 #endif
 
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 
     m_nbClips = 0;
 
@@ -292,16 +292,16 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_existingMesh = false;
 #endif
 
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
 
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvID/*[0]*/ = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 
     m_nbClips = 0;
 
@@ -328,16 +328,15 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_existingMesh = false;
 #endif 
     m_nbClips = 0;
-
-    m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
-   m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
+   m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = IDTMFile::GetNullNodeID();
-    m_nodeHeader.m_uvID = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
+    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
+    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
 
@@ -535,7 +534,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     assert(m_displayDataPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     }
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMeshToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMeshToCloud(DataSourceAccount *dataSourceAccount,
+                                                                                         HFCPtr<StreamingPointStoreType> pi_pPointStore,
                                                                                          HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                                                                          HFCPtr<StreamingUVStoreType> pi_pUVStore,
                                                                                          HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
@@ -547,11 +547,11 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
     if (!IsLoaded())
         Load();
 
-    RunOnNextAvailableThread(std::bind([pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+    RunOnNextAvailableThread(std::bind([dataSourceAccount, pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
         {
 
         // Save header and points
-        node->SavePointDataToCloud(pi_pPointStore);
+        node->SavePointDataToCloud(dataSourceAccount, pi_pPointStore);
 
         // Save indices
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
@@ -597,7 +597,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
 
     if (m_pSubNodeNoSplit != nullptr)
         {
-        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveMeshToCloud(pi_pPointStore,
+        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveMeshToCloud(dataSourceAccount,
+                                                                                             pi_pPointStore,
                                                                                              pi_pIndiceStore,
                                                                                              pi_pUVStore,
                                                                                              pi_pUVIndiceStore,
@@ -609,7 +610,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
             {
             if (m_apSubNodes[indexNode] != nullptr)
                 {
-                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveMeshToCloud(pi_pPointStore,
+                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveMeshToCloud(dataSourceAccount,
+				                                                                                           pi_pPointStore,
                                                                                                            pi_pIndiceStore,
                                                                                                            pi_pUVStore,
                                                                                                            pi_pUVIndiceStore,
@@ -620,6 +622,66 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
     if (m_nodeHeader.m_level == 0)
         WaitForThreadStop();
     }
+
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level, bool headersOnly)
+{
+    if (!IsLoaded())
+        Load();
+
+    nLoaded++;
+    RunOnNextAvailableThread(std::bind([headersOnly](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+    {
+        if (!headersOnly)
+        {
+            // Points
+            //auto count = node->GetPointsStore()->GetBlockDataCount(node->GetBlockID());
+            if (node->GetNbPoints() > 0)
+            {
+                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+
+                // Indices
+                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
+
+                if (node->m_nodeHeader.m_isTextured)
+                {
+                    // UVs
+                    RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
+
+                    // UVIndices
+                    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
+
+                    // Texture
+                    auto textureStore = static_cast<IScalableMeshDataStore<uint8_t, float, float>*>(node->GetTextureStore());
+                    assert(textureStore != nullptr);
+                    textureStore->GetBlockDataCount(node->GetBlockID());
+                }
+            }
+        }
+        SetThreadAvailableAsync(threadId);
+    }, this, std::placeholders::_1));
+
+    if (level != 0 && this->GetLevel() + 1 > level) return;
+
+    if (!m_nodeHeader.m_IsLeaf)
+    {
+        if (m_pSubNodeNoSplit != NULL)
+        {
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->LoadTreeNode(nLoaded, level, headersOnly);
+        }
+        else
+        {
+            for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
+            {
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->LoadTreeNode(nLoaded, level, headersOnly);
+            }
+
+        }
+    }
+    if (m_nodeHeader.m_level == 0)
+        WaitForThreadStop();
+
+}
+
 #ifdef INDEX_DUMPING_ACTIVATED
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
                              bool pi_OnlyLoadedNode) const
@@ -641,7 +703,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
         }
     else
         {
-        nodeId = IDTMFile::GetNullNodeID();
+        nodeId = ISMStore::GetNullNodeID();
         }
 
     NbChars = sprintf(TempBuffer, "<ChildNode NodeId=\"%lli\" TotalPoints=\"%lli\" SplitDepth=\"%zi\" ArePoints3d=\"%i\">", nodeId, GetCount(), GetSplitDepth(), m_nodeHeader.m_arePoints3d ? 1 : 0);
@@ -1257,7 +1319,7 @@ static size_t s_featuresAddedToTree = 0;
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 08/15
 //=======================================================================================
-template<class EXTENT> void ClipFeatureDefinition(IDTMFile::FeatureType type, EXTENT clipExtent, bvector<DPoint3d>& points, DRange3d& extent, const bvector<DPoint3d>& origPoints, DRange3d& origExtent)
+template<class EXTENT> void ClipFeatureDefinition(ISMStore::FeatureType type, EXTENT clipExtent, bvector<DPoint3d>& points, DRange3d& extent, const bvector<DPoint3d>& origPoints, DRange3d& origExtent)
     {
 
     if (/*IsClosedFeature(type) ||*/ (origExtent.low.x >= ExtentOp<EXTENT>::GetXMin(clipExtent) && origExtent.low.y >= ExtentOp<EXTENT>::GetYMin(clipExtent) && origExtent.low.z >= ExtentOp<EXTENT>::GetZMin(clipExtent)
@@ -1439,7 +1501,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFea
         }
     }
 
-template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionSingleNode(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
+template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
     {
     vector<int32_t> indexes;
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
@@ -1617,7 +1679,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 08/15
 //=======================================================================================
-    template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionUnconditional(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
+    template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
         {
         if (!IsLoaded())
             Load();
@@ -1711,7 +1773,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
     //=======================================================================================
     // @bsimethod                                                   Elenie.Godzaridis 08/15
     //=======================================================================================
-    template<class POINT, class EXTENT>  size_t  SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed)
+    template<class POINT, class EXTENT>  size_t  SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed)
         {
         assert(points.size()>0);
         if (s_inEditing)
@@ -1910,7 +1972,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
     if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
         {
         for (size_t i = 0; i < featurePoints.size(); ++i)
-            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->AddFeatureDefinitionUnconditional((IDTMFile::FeatureType)defs[i][0], featurePoints[i], extents[i]);
+            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->AddFeatureDefinitionUnconditional((ISMStore::FeatureType)defs[i][0], featurePoints[i], extents[i]);
         }
     else if (!IsLeaf())
         {
@@ -1919,7 +1981,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
             size_t added = 0;
             if (featurePoints[i].size() <= 1) continue;
             for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
-                added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->AddFeatureDefinition((IDTMFile::FeatureType)defs[i][0], featurePoints[i], extents[i], true);
+                added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->AddFeatureDefinition((ISMStore::FeatureType)defs[i][0], featurePoints[i], extents[i], true);
 
             assert(added >= featurePoints[i].size() - sentinels[i]);
             }
@@ -3973,7 +4035,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddMeshDe
     }
 #endif
 
-template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
+template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
     {
     ++s_importedFeatures;
     if (0 == points.size())
@@ -4058,7 +4120,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
 /**----------------------------------------------------------------------------
 Save cloud ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFormatStores(const WString& pi_pOutputDirPath,
+template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFormatStores(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath,
                                                                                           const bool& pi_pCompress,
                                                                                           HFCPtr<StreamingPointStoreType>& po_pPointStore,
                                                                                           HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
@@ -4066,17 +4128,18 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFor
                                                                                           HFCPtr<StreamingIndiceStoreType>& po_pUVIndiceStore,
                                                                                           HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const
     {
-    po_pPointStore = new StreamingPointStoreType(pi_pOutputDirPath, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);
-    po_pIndiceStore = new StreamingIndiceStoreType(pi_pOutputDirPath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, pi_pCompress);
-    po_pUVStore = new StreamingUVStoreType(pi_pOutputDirPath, StreamingUVStoreType::SMStreamingDataType::UVS, pi_pCompress);
-    po_pUVIndiceStore = new StreamingIndiceStoreType(pi_pOutputDirPath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES);
-    po_pTextureStore = new StreamingTextureTileStoreType(pi_pOutputDirPath);
+
+    po_pPointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);
+    po_pIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, pi_pCompress);
+    po_pUVStore = new StreamingUVStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingUVStoreType::SMStreamingDataType::UVS, pi_pCompress);
+    po_pUVIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES);
+    po_pTextureStore = new StreamingTextureTileStoreType(dataSourceAccount, pi_pOutputDirPath);
     }
 
 /**----------------------------------------------------------------------------
 Save cloud ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(const WString& pi_pOutputDirPath, const bool& pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const bool& pi_pCompress)
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
@@ -4088,11 +4151,11 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMe
     HFCPtr<StreamingUVStoreType> pUVStore;
     HFCPtr<StreamingIndiceStoreType> pUVIndiceStore;
     HFCPtr<StreamingTextureTileStoreType> pTextureStore;
-    this->GetCloudFormatStores(pi_pOutputDirPath, pi_pCompress, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
+    this->GetCloudFormatStores(dataSourceAccount, pi_pOutputDirPath, pi_pCompress, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
 
-    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->SaveMeshToCloud(pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
+    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->SaveMeshToCloud(dataSourceAccount, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
 
-    this->SaveMasterHeaderToCloud(pi_pOutputDirPath);
+    this->SaveMasterHeaderToCloud(dataSourceAccount, pi_pOutputDirPath);
 
     return SUCCESS;
     }

@@ -128,13 +128,13 @@ END_BENTLEY_SCALABLEMESH_NAMESPACE
 //extern size_t nGraphPins;
 //extern size_t nGraphReleases;
 
-inline bool IsLinearFeature(IDTMFile::FeatureType type)
+inline bool IsLinearFeature(ISMStore::FeatureType type)
     {
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Breakline || dtmType == DTMFeatureType::SoftBreakline || dtmType == DTMFeatureType::ContourLine || dtmType == DTMFeatureType::GraphicBreak;
     }
 
-inline bool IsClosedFeature(IDTMFile::FeatureType type)
+inline bool IsClosedFeature(ISMStore::FeatureType type)
     {
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Island || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
@@ -393,9 +393,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
 
-    size_t                AddFeatureDefinitionSingleNode(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
-    size_t                AddFeatureDefinitionUnconditional(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
-    size_t                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
+    size_t                AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+    size_t                AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+    size_t                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
 
     //NEEDS_WORK_SM: clean up clipping API (remove extra calls, clarify uses, etc)
 
@@ -597,11 +597,14 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
     typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
     typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
-    void         SaveMeshToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+    void         SaveMeshToCloud(DataSourceAccount *dataSourceAccount,
+                                 HFCPtr<StreamingPointStoreType> pi_pPointStore,
                                  HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                  HFCPtr<StreamingUVStoreType> pi_pUVStore,
                                  HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
                                  HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore);
+
+    virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly) override; 
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -808,7 +811,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
         typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
         typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
-        virtual void        GetCloudFormatStores(const WString& pi_pOutputDirPath,
+        virtual void        GetCloudFormatStores(DataSourceAccount *dataSourceAccount,
+		                                         const WString& pi_pOutputDirPath,
                                                  const bool& pi_pCompress,
                                                  HFCPtr<StreamingPointStoreType>& po_pPointStore,
                                                  HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
@@ -816,7 +820,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                                                  HFCPtr<StreamingIndiceStoreType>& po_pUVIndiceStore,
                                                  HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const;
 
-        StatusInt           SaveMeshToCloud(const WString& pi_pOutputDirPath, const bool& pi_pCompress);
+        StatusInt           SaveMeshToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const bool& pi_pCompress);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
 
@@ -857,12 +861,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         void                SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool);
 
+        //ISMStore::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
+        void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
 #ifdef WIP_MESH_IMPORT
         void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="");
 #endif
 
-        //IDTMFile::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
-        void                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
 
         void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);
         void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn=true);
@@ -1034,7 +1038,7 @@ template<class POINT, class EXTENT> class ISMMeshIndexFilter : public ISMPointIn
 
     };
 
-inline bool IsVoidFeature(IDTMFile::FeatureType type)
+inline bool IsVoidFeature(ISMStore::FeatureType type)
     {
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||

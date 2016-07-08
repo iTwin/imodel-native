@@ -38,12 +38,12 @@ private:
         }
 public:
 
-    static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+    static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
     {
-        return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
+        return static_cast<ISMStore::NodeID>(blockID.m_integerID);
     }
 
-    /*SMSQLiteGraphTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const IDTMFile::AccessMode& accessMode)
+    /*SMSQLiteGraphTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const ISMStore::AccessMode& accessMode)
         {
         m_smSQLiteFile = SMSQLiteFile::Create();
         Utf8String filenameA;

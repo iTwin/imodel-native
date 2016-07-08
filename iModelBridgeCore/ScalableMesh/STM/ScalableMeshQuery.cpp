@@ -40,8 +40,7 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMesh\ScalableMeshGraph.h"
 #include "DrapeOnGraph.h"
 //NEEDS_WORK_SM_STREAMING: remove these mutexes!
-std::mutex s_streamingMutex;
-std::mutex fileMutex;
+//std::mutex fileMutex;
 
 //NEEDS_WORK_SM : Is there a way to avoid this mutex?
 std::mutex s_createdNodeMutex;

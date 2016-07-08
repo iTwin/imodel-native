@@ -18,6 +18,7 @@
 #include "Threading\LightThreadPool.h"
 #include <curl/curl.h>
 #include <condition_variable>
+#include <CloudDataSource/DataSourceAccount.h>
 #ifdef VANCOUVER_API
 #define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
 #define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
@@ -30,9 +31,10 @@
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
 extern bool s_stream_from_grouped_store;
+extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;
 
-extern std::mutex fileMutex;
+//extern std::mutex fileMutex;
 
 // Helper point block data structure
 struct PointBlock : public bvector<uint8_t> {
@@ -44,8 +46,27 @@ public:
         unique_lock<mutex> lock(m_pPointBlockMutex);
         m_pPointBlockCV.wait(lock, [this]() { return m_pIsLoaded; });
         }
+		
     void SetLoading() { m_pIsLoading = true; }
-    void Load()
+
+	DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize)
+	{
+		if (dataSourceAccount == nullptr)
+			return nullptr;
+															// Get the thread's DataSource or create a new one
+		DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
+		if (dataSource == nullptr)
+			return nullptr;
+															// Make sure caching is enabled for this DataSource
+		dataSource->setCachingEnabled(s_stream_enable_caching);
+
+		dest.reset(new unsigned char[destSize]);
+															// Return the DataSource
+		return dataSource;
+	}
+
+	
+    void Load_Old()
         {
         if (!this->IsLoaded())
             {
@@ -74,12 +95,60 @@ public:
             }
         assert(this->IsLoaded());
         }
+	
+    void Load(DataSourceAccount *dataSourceAccount)
+    {
+		if (!IsLoaded())
+        {
+			if (IsLoading())
+            {
+            	LockAndWait();
+            }
+			else
+			{
+				wchar_t buffer[10000];
+				swprintf(buffer, L"%sp_%llu.bin", m_pDataSource.c_str(), m_pID);
+			
+				std::unique_ptr<DataSource::Buffer[]>		dest;
+				DataSource								*	dataSource;
+				DataSource::DataSize						readSize;
+
+				DataSourceURL	dataSourceURL(buffer);
+
+				DataSourceBuffer::BufferSize	destSize = 5 * 1024 * 1024;
+
+				dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
+				if (dataSource == nullptr)
+					return;
+
+				if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+					return;
+
+				if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+					return;
+
+				if (dataSource->close().isFailed())
+					return;
+
+				if (readSize > 0)
+				{
+					m_pIsLoaded = true;
+
+					uint32_t uncompressedSize = *reinterpret_cast<uint32_t *>(dest.get());
+					uint32_t sizeData = (uint32_t)readSize - sizeof(uint32_t);
+					DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
+				}
+			}
+        }
+	}
+	
     void UnLoad()
         {
         m_pIsLoaded = false;
         m_pIsLoading = false;
         this->clear();
-        }
+	}
+	
     void SetLoaded()
         {
         m_pIsLoaded = true;
@@ -252,29 +321,28 @@ private:
     mutex m_pPointBlockMutex;
     };
 
-
 template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore : public SMPointTileStore<POINT, EXTENT>// , public HFCShareableObject<SMPointTileStore<POINT, EXTENT> >
     {
 
     private:
-        static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+        static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
-            return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
+            return static_cast<ISMStore::NodeID>(blockID.m_integerID);
             }
 
-        static IDTMFile::NodeID ConvertChildID(const HPMBlockID& childID)
+        static ISMStore::NodeID ConvertChildID(const HPMBlockID& childID)
             {
-            return static_cast<IDTMFile::NodeID>(childID.m_integerID);
+            return static_cast<ISMStore::NodeID>(childID.m_integerID);
             }
 
-        static IDTMFile::NodeID ConvertNeighborID(const HPMBlockID& neighborID)
+        static ISMStore::NodeID ConvertNeighborID(const HPMBlockID& neighborID)
             {
-            return static_cast<IDTMFile::NodeID>(neighborID.m_integerID);
+            return static_cast<ISMStore::NodeID>(neighborID.m_integerID);
             }
 
         static bool IsValidID(const HPMBlockID& blockID)
             {
-            return blockID.IsValid() && blockID.m_integerID != IDTMFile::GetNullNodeID();
+            return blockID.IsValid() && blockID.m_integerID != ISMStore::GetNullNodeID();
             }
 
         bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket,
@@ -326,11 +394,11 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             dataIndex += sizeof(header->m_filtered);
             uint32_t parentNodeID;
             memcpy(&parentNodeID, headerData + dataIndex, sizeof(parentNodeID));
-            header->m_parentNodeID = parentNodeID != IDTMFile::GetNullNodeID() ? HPMBlockID(parentNodeID) : IDTMFile::GetNullNodeID();
+            header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
             dataIndex += sizeof(parentNodeID);
             uint32_t subNodeNoSplitID;
             memcpy(&subNodeNoSplitID, headerData + dataIndex, sizeof(subNodeNoSplitID));
-            header->m_SubNodeNoSplitID = subNodeNoSplitID != IDTMFile::GetNullNodeID() ? HPMBlockID(subNodeNoSplitID) : IDTMFile::GetNullNodeID();
+            header->m_SubNodeNoSplitID = subNodeNoSplitID != ISMStore::GetNullNodeID() ? HPMBlockID(subNodeNoSplitID) : ISMStore::GetNullNodeID();
             dataIndex += sizeof(subNodeNoSplitID);
             memcpy(&header->m_level, headerData + dataIndex, sizeof(header->m_level));
             dataIndex += sizeof(header->m_level);
@@ -352,7 +420,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             dataIndex += sizeof(header->m_nbFaceIndexes);
             uint32_t graphID;
             memcpy(&graphID, headerData + dataIndex, sizeof(graphID));
-            header->m_graphID = graphID != IDTMFile::GetNullNodeID() ? HPMBlockID(graphID) : IDTMFile::GetNullNodeID();
+            header->m_graphID = graphID != ISMStore::GetNullNodeID() ? HPMBlockID(graphID) : ISMStore::GetNullNodeID();
             dataIndex += sizeof(graphID);
 
             memcpy(&header->m_nodeExtent, headerData + dataIndex, 6 * sizeof(double));
@@ -376,7 +444,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (header->m_isTextured)
                 {
                 header->m_textureID.resize(1);
-                header->m_textureID[0] = IDTMFile::GetNullNodeID();
+                header->m_textureID[0] = ISMStore::GetNullNodeID();
                 header->m_ptsIndiceID.resize(2);
                 header->m_ptsIndiceID[1] = (int)idx;
                 header->m_ptsIndiceID[0] = SQLiteNodeHeader::NO_NODEID;
@@ -410,7 +478,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 uint32_t clip;
                 memcpy(&clip, headerData + dataIndex, sizeof(clip));
                 dataIndex += sizeof(clip);
-                header->m_clipSetsID.push_back(clip != IDTMFile::GetNullNodeID() ? HPMBlockID(clip) : IDTMFile::GetNullNodeID());
+                header->m_clipSetsID.push_back(clip != ISMStore::GetNullNodeID() ? HPMBlockID(clip) : ISMStore::GetNullNodeID());
                 }
 
             /* Children */
@@ -425,7 +493,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 uint32_t childID;
                 memcpy(&childID, headerData + dataIndex, sizeof(childID));
                 dataIndex += sizeof(childID);
-                header->m_apSubNodeID.push_back(childID != IDTMFile::GetNullNodeID() ? HPMBlockID(childID) : IDTMFile::GetNullNodeID());
+                header->m_apSubNodeID.push_back(childID != ISMStore::GetNullNodeID() ? HPMBlockID(childID) : ISMStore::GetNullNodeID());
                 }
 
             /* Neighbors */
@@ -441,13 +509,57 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     uint32_t neighborId;
                     memcpy(&neighborId, headerData + dataIndex, sizeof(neighborId));
                     dataIndex += sizeof(neighborId);
-                    header->m_apNeighborNodeID[neighborPosInd].push_back(neighborId != IDTMFile::GetNullNodeID() ? HPMBlockID(neighborId) : IDTMFile::GetNullNodeID());
+                    header->m_apNeighborNodeID[neighborPosInd].push_back(neighborId != ISMStore::GetNullNodeID() ? HPMBlockID(neighborId) : ISMStore::GetNullNodeID());
                     }
                 }
             assert(dataIndex == maxCountData);
             }
 
-        void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
+		void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
+		{
+			//NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
+			wstringstream								ss;
+			std::unique_ptr<DataSource::Buffer[]>		dest;
+			DataSource								*	dataSource;
+			DataSource::DataSize						readSize;
+			wchar_t										buffer[10000];
+
+			swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
+
+			DataSourceURL	dataSourceURL(buffer);
+
+			DataSourceBuffer::BufferSize	destSize = 5 * 1024 * 1024;
+
+			dataSource = initializeDataSource(dest, destSize);
+			if (dataSource == nullptr)
+				return;
+
+			if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+				return;
+
+			if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+				return;
+
+			if (dataSource->close().isFailed())
+				return;
+
+			if (readSize > 0)
+			{
+				po_pDataSize = readSize;
+
+				uint8_t *buffer = new uint8_t[readSize];
+				if (buffer)
+				{
+					po_pBinaryData.reset(buffer);
+					memmove(po_pBinaryData.get(), dest.get(), po_pDataSize);
+				}
+
+				assert(buffer);
+				assert(readSize > 0);
+			}
+		}
+
+        void GetNodeHeaderBinary_Old(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
             {
             wchar_t buffer[10000];
             swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
@@ -494,6 +606,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 }
             }
 
+
         void ReadNodeHeaderFromJSON(SMPointNodeHeader<EXTENT>* header, const Json::Value& nodeHeader) const
             {
             auto& nodeExtent = nodeHeader["nodeExtent"];
@@ -521,7 +634,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             header->m_level = nodeHeader["resolution"].asUInt();
             header->m_filtered = nodeHeader["filtered"].asBool();
             uint32_t parentNodeID = nodeHeader["parentID"].asUInt();
-            header->m_parentNodeID = parentNodeID != IDTMFile::GetNullNodeID() ? HPMBlockID(parentNodeID) : IDTMFile::GetNullNodeID();
+            header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
             header->m_numberOfSubNodesOnSplit = nodeHeader["nbChildren"].asUInt();
             header->m_apSubNodeID.resize(header->m_numberOfSubNodesOnSplit);
             //header->m_IsLeaf = nodeHeader["isLeaf"].asBool();
@@ -533,7 +646,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     {
                     auto childInd = child["index"].asUInt();
                     auto nodeId = child["id"].asUInt();
-                    if (nodeId != IDTMFile::GetNullNodeID()) header->m_apSubNodeID[childInd] = HPMBlockID(nodeId);
+                    if (nodeId != ISMStore::GetNullNodeID()) header->m_apSubNodeID[childInd] = HPMBlockID(nodeId);
                     }
                 }
             header->m_IsLeaf = header->m_apSubNodeID.size() == 0 || (!header->m_apSubNodeID[0].IsValid());
@@ -578,7 +691,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     for (size_t indiceID = 0; indiceID < (size_t)indices.size(); indiceID++)
                         {
                         auto id = indices[(Json::ArrayIndex)indiceID].asUInt();
-                        header->m_ptsIndiceID[indiceID] = id != IDTMFile::GetNullNodeID() ? HPMBlockID(id) : IDTMFile::GetNullNodeID();
+                        header->m_ptsIndiceID[indiceID] = id != ISMStore::GetNullNodeID() ? HPMBlockID(id) : ISMStore::GetNullNodeID();
                         }
                     }
 
@@ -590,7 +703,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     for (size_t indiceID = 0; indiceID < (size_t)uvIndiceIDs.size(); indiceID++)
                         {
                         auto uvIndiceID = uvIndiceIDs[(Json::ArrayIndex)indiceID].asUInt();
-                        header->m_uvsIndicesID[indiceID] = uvIndiceID != IDTMFile::GetNullNodeID() ? HPMBlockID(uvIndiceID) : IDTMFile::GetNullNodeID();
+                        header->m_uvsIndicesID[indiceID] = uvIndiceID != ISMStore::GetNullNodeID() ? HPMBlockID(uvIndiceID) : ISMStore::GetNullNodeID();
                         }
                     }
                 else
@@ -601,8 +714,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 }
 
 
-            //if (ConvertBlockID(header->m_uvID) == IDTMFile::GetNullNodeID()) header->m_uvID = HPMBlockID();
-            //if (ConvertBlockID(header->m_graphID) == IDTMFile::GetNullNodeID()) header->m_graphID = HPMBlockID();
+            //if (ConvertBlockID(header->m_uvID) == ISMStore::GetNullNodeID()) header->m_uvID = HPMBlockID();
+            //if (ConvertBlockID(header->m_graphID) == ISMStore::GetNullNodeID()) header->m_graphID = HPMBlockID();
             header->m_numberOfMeshComponents = (size_t)nodeHeader["numberOfMeshComponents"].asUInt();
             auto& meshComponents = nodeHeader["meshComponents"];
             assert(meshComponents.isArray());
@@ -625,6 +738,23 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
             }
 
+		DataSource *initializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
+		{
+			if (getDataSourceAccount() == nullptr)
+				return nullptr;
+															// Get the thread's DataSource or create a new one
+			DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+			if (dataSource == nullptr)
+				return nullptr;
+															// Make sure caching is enabled for this DataSource
+			dataSource->setCachingEnabled(s_stream_enable_caching);
+
+			dest.reset(new unsigned char[destSize]);
+															// Return the DataSource
+			return dataSource;
+		}
+		
+		
         Json::Value GetNodeHeaderJSON(HPMBlockID blockID)
             {
             uint64_t headerSize = 0;
@@ -647,12 +777,16 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 block.SetID(blockID.m_integerID);
                 block.SetDataSource(m_pathToPoints);
                 block.SetStore(m_stream_store);
-                block.Load();
+                block.Load(getDataSourceAccount());
                 }
             assert(block.GetID() == blockID.m_integerID);
             assert(block.IsLoaded() && !block.empty());
             return block;
             }
+
+	protected:
+
+		DataSourceAccount *m_dataSourceAccount;
 
     public:
         enum SMStreamingDataType
@@ -665,7 +799,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         // Constructor / Destructor
 
-        SMStreamingPointTaggedTileStore(const WString& path, SMStreamingDataType type, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
+        SMStreamingPointTaggedTileStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStreamingDataType type, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
             :m_rootDirectory(path),
             m_pathToPoints(path),
             m_pathToHeaders(headers_path),
@@ -674,6 +808,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
             m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")
             {
+			setDataSourceAccount(dataSourceAccount);			
             bool haveHeaders = false;
             switch (type)
                 {
@@ -697,6 +832,12 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 {
                 // Set default path to headers relative to root directory
                 m_pathToHeaders = m_rootDirectory + L"headers/";
+
+                if (m_use_node_header_grouping && s_is_virtual_grouping)
+                    {
+                    m_NodeHeaderFetchDistributor = new SMNodeDistributor<SMNodeGroup::DistributeData>();
+                    SMNodeGroup::SetWorkTo(*m_NodeHeaderFetchDistributor);
+                    }
                 }
 
             // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
@@ -721,6 +862,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         assert(ERROR_PATH_NOT_FOUND != GetLastError());
                         }
                     }
+
                 }
             else
                 {
@@ -730,7 +872,23 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         virtual ~SMStreamingPointTaggedTileStore()
             {
+            if (m_NodeHeaderFetchDistributor)
+                {
+                m_NodeHeaderFetchDistributor->CancelAll();
+                m_NodeHeaderFetchDistributor = nullptr;
+                }
             }
+
+		void setDataSourceAccount(DataSourceAccount *dataSourceAccount)
+		{
+			m_dataSourceAccount = dataSourceAccount;
+		}
+
+
+		DataSourceAccount *getDataSourceAccount(void) const
+		{
+			return m_dataSourceAccount;
+		}
 
         virtual bool HasSpatialReferenceSystem()
             {
@@ -794,7 +952,153 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             return true;
             }
 
-        virtual size_t LoadMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
+		virtual size_t LoadMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
+		{
+			std::unique_ptr<DataSource::Buffer[]>			dest;
+			DataSource								*	dataSource;
+			DataSource::DataSize						readSize;
+			DataSourceBuffer::BufferSize				destSize = 20 * 1024 * 1024;
+
+			if (indexHeader != NULL)
+			{
+
+				if (m_use_node_header_grouping || s_stream_from_grouped_store)
+				{
+					wchar_t buffer[10000];
+
+					swprintf(buffer, L"%sMasterHeaderWithGroups.bin", m_rootDirectory.c_str());
+
+					DataSourceURL	dataSourceURL(buffer);
+										
+
+					if (m_nodeHeaderGroups.empty())
+					{
+						dataSource = initializeDataSource(dest, destSize);
+						if (dataSource == nullptr)
+							return 0;
+
+						if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+							return 0;
+
+						if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+							return 0;
+
+                        assert(destSize >= readSize); 
+
+						dataSource->close();
+
+						headerSize = readSize;
+
+						uint64_t position = 0;
+
+						uint32_t sizeOfOldMasterHeaderPart;
+						memcpy(&sizeOfOldMasterHeaderPart, dest.get() + position, sizeof(sizeOfOldMasterHeaderPart));
+						position += sizeof(sizeOfOldMasterHeaderPart);
+						assert(sizeOfOldMasterHeaderPart == sizeof(SQLiteIndexHeader));
+
+						SQLiteIndexHeader oldMasterHeader;
+						memcpy(&oldMasterHeader, dest.get() + position, sizeof(SQLiteIndexHeader));
+						position += sizeof(SQLiteIndexHeader);
+						indexHeader->m_SplitTreshold = oldMasterHeader.m_SplitTreshold;
+						indexHeader->m_balanced = oldMasterHeader.m_balanced;
+						indexHeader->m_depth = oldMasterHeader.m_depth;
+                        indexHeader->m_isTerrain = oldMasterHeader.m_isTerrain;
+						indexHeader->m_singleFile = oldMasterHeader.m_singleFile;
+                        assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
+
+						auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
+						indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+
+                        memcpy(&s_is_virtual_grouping, reinterpret_cast<char *>(dest.get()) + position, sizeof(s_is_virtual_grouping));
+                        position += sizeof(s_is_virtual_grouping);
+
+
+						// Parse rest of file -- group information
+						while (position < headerSize)
+						{
+                            size_t group_id;
+                            memcpy(&group_id, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id));
+                            position += sizeof(group_id);
+
+                            uint64_t group_totalSizeOfHeaders(0);
+                            if (s_is_virtual_grouping)
+							{
+                                memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
+                                position += sizeof(group_totalSizeOfHeaders);
+							}
+
+                            size_t group_numNodes;
+                            memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(size_t));
+                            position += sizeof(size_t);
+                            //assert(group_size <= s_max_number_nodes_in_group);
+
+                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(getDataSourceAccount(), group_id, group_numNodes, group_totalSizeOfHeaders));
+                            // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
+                            group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_", m_stream_store);
+                            group->SetDistributor(*m_NodeHeaderFetchDistributor);
+                            m_nodeHeaderGroups.push_back(group);
+
+                            vector<uint64_t> nodeIds(group_numNodes);
+                            memcpy(nodeIds.data(), reinterpret_cast<char *>(dest.get()) + position, group_numNodes*sizeof(uint64_t));
+                            position += group_numNodes*sizeof(uint64_t);
+
+                            group->GetHeader()->resize(group_numNodes);
+                            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
+							{
+                                return SMNodeHeader{ nodeId, 0, 0 };
+							});
+						}
+					}
+				}
+				else
+				{
+					Json::Reader	reader;
+					Json::Value		masterHeader;
+
+					DataSourceURL dataSourceURL(m_rootDirectory.data());
+					
+					dataSourceURL.append(L"MasterHeader.sscm");
+
+					dataSource = initializeDataSource(dest, destSize);
+					if (dataSource == nullptr)
+						return 0;
+
+					if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+						return 0;
+
+					if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+						return 0;
+
+					dataSource->close();
+
+					headerSize = readSize;
+
+					reader.parse(reinterpret_cast<char *>(dest.get()), reinterpret_cast<char *>(&(dest.get()[readSize])), masterHeader);
+
+					indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
+					indexHeader->m_balanced = masterHeader["balanced"].asBool();
+					indexHeader->m_depth = masterHeader["depth"].asUInt();
+                    indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
+
+					auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
+					indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+/* Needed?
+					if (masterHeader.isMember("singleFile"))
+					{
+						indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
+						HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
+					}
+*/
+				}
+
+				return headerSize;
+			}
+
+			return 0;
+		}
+
+
+		virtual size_t LoadMasterHeader_Old(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
             {
 
             if (indexHeader != NULL)
@@ -858,7 +1162,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
 
                         auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
-                        indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+                        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
                         memcpy(&s_is_virtual_grouping, masterHeaderBuffer + position, sizeof(s_is_virtual_grouping));
                         position += sizeof(s_is_virtual_grouping);
@@ -882,9 +1186,10 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             position += sizeof(size_t);
                             //assert(group_size <= s_max_number_nodes_in_group);
 
-                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(group_id, group_numNodes, group_totalSizeOfHeaders));
+                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(getDataSourceAccount(), group_id, group_numNodes, group_totalSizeOfHeaders));
                             // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
                             group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_", m_stream_store);
+                            group->SetDistributor(*m_NodeHeaderFetchDistributor);
                             m_nodeHeaderGroups.push_back(group);
 
                             vector<uint64_t> nodeIds(group_numNodes);
@@ -928,7 +1233,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
 
                     auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
-                    indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+                    indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
                     file.Close();
                     }
                 else {
@@ -951,7 +1256,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
 
                         auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
-                        indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+                        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
                         });
 
@@ -1031,10 +1336,10 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             const auto filtered = pi_pHeader->m_filtered;
             memcpy(po_pBinaryData.get() + po_pDataSize, &filtered, sizeof(filtered));
             po_pDataSize += sizeof(filtered);
-            const auto parentBlockID = pi_pHeader->m_parentNodeID.IsValid() ? ConvertBlockID(pi_pHeader->m_parentNodeID) : IDTMFile::GetNullNodeID();
+            const auto parentBlockID = pi_pHeader->m_parentNodeID.IsValid() ? ConvertBlockID(pi_pHeader->m_parentNodeID) : ISMStore::GetNullNodeID();
             memcpy(po_pBinaryData.get() + po_pDataSize, &parentBlockID, sizeof(parentBlockID));
             po_pDataSize += sizeof(parentBlockID);
-            const auto subNodeNoSplitID = pi_pHeader->m_SubNodeNoSplitID.IsValid() ? ConvertBlockID(pi_pHeader->m_SubNodeNoSplitID) : IDTMFile::GetNullNodeID();
+            const auto subNodeNoSplitID = pi_pHeader->m_SubNodeNoSplitID.IsValid() ? ConvertBlockID(pi_pHeader->m_SubNodeNoSplitID) : ISMStore::GetNullNodeID();
             memcpy(po_pBinaryData.get() + po_pDataSize, &subNodeNoSplitID, sizeof(subNodeNoSplitID));
             po_pDataSize += sizeof(subNodeNoSplitID);
             const auto level = pi_pHeader->m_level;
@@ -1064,7 +1369,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             const auto nbFaceIndexes = pi_pHeader->m_nbFaceIndexes;
             memcpy(po_pBinaryData.get() + po_pDataSize, &nbFaceIndexes, sizeof(nbFaceIndexes));
             po_pDataSize += sizeof(nbFaceIndexes);
-            const auto graphID = pi_pHeader->m_graphID.IsValid() ? ConvertBlockID(pi_pHeader->m_graphID) : IDTMFile::GetNullNodeID();
+            const auto graphID = pi_pHeader->m_graphID.IsValid() ? ConvertBlockID(pi_pHeader->m_graphID) : ISMStore::GetNullNodeID();
             memcpy(po_pBinaryData.get() + po_pDataSize, &graphID, sizeof(graphID));
             po_pDataSize += sizeof(graphID);
 
@@ -1081,7 +1386,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 }
 
             /* Indice IDs */
-            const auto idx = pi_pHeader->m_ptsIndiceID[0].IsValid() ? ConvertBlockID(pi_pHeader->m_ptsIndiceID[0]) : IDTMFile::GetNullNodeID();
+            const auto idx = pi_pHeader->m_ptsIndiceID[0].IsValid() ? ConvertBlockID(pi_pHeader->m_ptsIndiceID[0]) : ISMStore::GetNullNodeID();
             memcpy(po_pBinaryData.get() + po_pDataSize, &idx, sizeof(idx));
             po_pDataSize += sizeof(idx);
 
@@ -1135,9 +1440,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         void SerializeHeaderToJSON(const SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)
             {
             block["id"] = ConvertBlockID(blockID);
-            block["resolution"] = (IDTMFile::NodeID)header->m_level;
+            block["resolution"] = (ISMStore::NodeID)header->m_level;
             block["filtered"] = header->m_filtered;
-            block["parentID"] = header->m_parentNodeID.IsValid() ? ConvertBlockID(header->m_parentNodeID) : IDTMFile::GetNullNodeID();
+            block["parentID"] = header->m_parentNodeID.IsValid() ? ConvertBlockID(header->m_parentNodeID) : ISMStore::GetNullNodeID();
             block["isLeaf"] = header->m_IsLeaf;
             block["isBranched"] = header->m_IsBranched;
             block["splitThreshold"] = header->m_SplitTreshold;
@@ -1154,7 +1459,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     {
                     Json::Value& child = childInd >= children.size() ? children.append(Json::Value()) : children[(int)childInd];
                     child["index"] = (uint8_t)childInd;
-                    child["id"] = header->m_apSubNodeID[childInd].IsValid() ? ConvertChildID(header->m_apSubNodeID[childInd]) : IDTMFile::GetNullNodeID();
+                    child["id"] = header->m_apSubNodeID[childInd].IsValid() ? ConvertChildID(header->m_apSubNodeID[childInd]) : ISMStore::GetNullNodeID();
                     }
                 }
             else if (nbChildren == 1)
@@ -1216,14 +1521,14 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             */
 
             block["nbFaceIndexes"] = header->m_nbFaceIndexes;
-            block["graphID"] = header->m_graphID.IsValid() ? ConvertBlockID(header->m_graphID) : IDTMFile::GetNullNodeID();
+            block["graphID"] = header->m_graphID.IsValid() ? ConvertBlockID(header->m_graphID) : ISMStore::GetNullNodeID();
             block["nbIndiceID"] = (int)header->m_ptsIndiceID.size();
 
             auto& indiceID = block["indiceID"];
             for (size_t i = 0; i < header->m_ptsIndiceID.size(); i++)
                 {
                 Json::Value& indice = (uint32_t)i >= indiceID.size() ? indiceID.append(Json::Value()) : indiceID[(uint32_t)i];
-                indice = header->m_ptsIndiceID[i].IsValid() ? ConvertBlockID(header->m_ptsIndiceID[i]) : IDTMFile::GetNullNodeID();
+                indice = header->m_ptsIndiceID[i].IsValid() ? ConvertBlockID(header->m_ptsIndiceID[i]) : ISMStore::GetNullNodeID();
                 }
 
             if (header->m_isTextured /*&& !header->m_textureID.empty() && IsValidID(header->m_textureID[0])*/)
@@ -1234,20 +1539,20 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 for (size_t i = 0; i < header->m_textureID.size(); i++)
                     {
                     auto convertedID = ConvertBlockID(header->m_textureID[i]);
-                    if (convertedID != IDTMFile::GetNullNodeID())
+                    if (convertedID != ISMStore::GetNullNodeID())
                         {
                         Json::Value& textureID = (uint32_t)i >= textureIDs.size() ? textureIDs.append(Json::Value()) : textureIDs[(uint32_t)i];
-                        textureID = header->m_textureID[i].IsValid() ? convertedID : IDTMFile::GetNullNodeID();
+                        textureID = header->m_textureID[i].IsValid() ? convertedID : ISMStore::GetNullNodeID();
                         }
                     }*/
-                block["uvID"] = header->m_uvID.IsValid() ? ConvertBlockID(header->m_uvID) : IDTMFile::GetNullNodeID();
+                block["uvID"] = header->m_uvID.IsValid() ? ConvertBlockID(header->m_uvID) : ISMStore::GetNullNodeID();
 
                 block["nbUVIDs"] = (int)header->m_uvsIndicesID.size();
                 auto& uvIndiceIDs = block["uvIndiceIDs"];
                 for (size_t i = 0; i < header->m_uvsIndicesID.size(); i++)
                     {
                     Json::Value& uvIndice = (uint32_t)i >= uvIndiceIDs.size() ? uvIndiceIDs.append(Json::Value()) : uvIndiceIDs[(uint32_t)i];
-                    uvIndice = header->m_uvsIndicesID[i].IsValid() ? ConvertBlockID(header->m_uvsIndicesID[i]) : IDTMFile::GetNullNodeID();
+                    uvIndice = header->m_uvsIndicesID[i].IsValid() ? ConvertBlockID(header->m_uvsIndicesID[i]) : ISMStore::GetNullNodeID();
                     }
                 }
             else {
@@ -1347,8 +1652,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
         WString m_storage_connection_string;
         scalable_mesh::azure::Storage m_stream_store;
+        SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
-        mutable std::map<IDTMFile::NodeID, PointBlock> m_pointCache;
+        mutable std::map<ISMStore::NodeID, PointBlock> m_pointCache;
         mutable std::mutex m_pointCacheLock;
     };

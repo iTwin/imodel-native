@@ -44,7 +44,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
 
-//typedef IDTMFile::Extent3d64f YProtPtExtentType;
+//typedef ISMStore::Extent3d64f YProtPtExtentType;
 typedef DRange3d YProtPtExtentType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
@@ -73,7 +73,7 @@ struct RequestedQuery
     int                                                          m_queryId;
     bvector<IScalableMeshCachedDisplayNodePtr>                                m_overviewMeshNodes;
     bvector<IScalableMeshCachedDisplayNodePtr>                                m_requiredMeshNodes;
-    //ISMPointIndexQuery<IDTMFile::Point3d64f, YProtPtExtentType>* m_queryObjectP;    
+    //ISMPointIndexQuery<ISMStore::Point3d64f, YProtPtExtentType>* m_queryObjectP;    
     bool                                                         m_isQueryCompleted;
     bool                                                         m_fetchLastCompletedNodes;
     bool                                                         m_loadTexture;

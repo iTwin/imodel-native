@@ -13,7 +13,7 @@
 
 #include <ImagePP/all/h/HGF3DExtent.h>
 //#include <ImagePP/all/h/IDTMTypes.h>
-//#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/ISMStore.h>
 
 #include <ImagePP/all/h/HPMPooledVector.h>
 
@@ -26,6 +26,8 @@
 #include <ImagePP/all/h/HVEShape.h>
 
 #include <ScalableMesh\IScalableMeshQuery.h>
+
+class DataSourceAccount;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
@@ -564,7 +566,7 @@ public:
     virtual bool Destroy();
 
 
-    void LoadTreeNode(size_t& nLoaded, int level);
+    virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly);
 
     uint32_t       GetNbObjects() const;
 
@@ -592,8 +594,8 @@ public:
     virtual void         SaveAllOpenGroups() const;
 
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
-    void                 SavePointsToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore);
-    virtual void         SaveGroupedNodeHeaders(SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
+    void                 SavePointsToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    virtual void         SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -1076,7 +1078,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    void SavePointDataToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    void SavePointDataToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1119,19 +1121,19 @@ protected:
 
     private:
 
-        static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
+        static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
-            return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
+            return static_cast<ISMStore::NodeID>(blockID.m_integerID);
             }
 
-        static IDTMFile::NodeID ConvertChildID(const HPMBlockID& childID)
+        static ISMStore::NodeID ConvertChildID(const HPMBlockID& childID)
             {
-            return static_cast<IDTMFile::NodeID>(childID.m_integerID);
+            return static_cast<ISMStore::NodeID>(childID.m_integerID);
             }
 
-        static IDTMFile::NodeID ConvertNeighborID(const HPMBlockID& neighborID)
+        static ISMStore::NodeID ConvertNeighborID(const HPMBlockID& neighborID)
             {
-            return static_cast<IDTMFile::NodeID>(neighborID.m_integerID);
+            return static_cast<ISMStore::NodeID>(neighborID.m_integerID);
             }
 
         //Should be accessed using GetParentNode.        
@@ -1315,9 +1317,9 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    StatusInt           SaveGroupedNodeHeaders(const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
-    StatusInt           SavePointsToCloud(const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
-    StatusInt           SaveMasterHeaderToCloud(const WString& pi_pOutputDirectoryName) const;
+    StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
+    StatusInt           SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
+    StatusInt           SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName) const;
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
 
 #ifdef INDEX_DUMPING_ACTIVATED    
@@ -1467,7 +1469,7 @@ public:
     -----------------------------------------------------------------------------*/
     size_t              GetSplitTreshold() const;
 
-    void LoadTree (size_t& nLoaded, int level);
+    void LoadTree (size_t& nLoaded, int level, bool headersOnly);
     void SetGenerating(bool isGenerating)
         {
         m_isGenerating = isGenerating;

@@ -83,7 +83,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
 extern bool s_inEditing = false; 
 
-using namespace IDTMFile;
+using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 
@@ -153,7 +153,7 @@ IScalableMeshCreatorPtr IScalableMeshCreator::GetFor (const WChar*  filePath,
     {
     RegisterDelayedImporters();
 
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
 
     IScalableMeshCreatorPtr pCreator = new IScalableMeshCreator(new Impl(filePath));
@@ -169,7 +169,7 @@ IScalableMeshCreatorPtr IScalableMeshCreator::GetFor (const WChar*  filePath,
 IScalableMeshCreatorPtr IScalableMeshCreator::GetFor (const IScalableMeshPtr&    scmPtr,
                                         StatusInt&          status)
     {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     RegisterDelayedImporters();
 
@@ -638,12 +638,15 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                 assert(ERROR_PATH_NOT_FOUND != GetLastError());
                 }
 
-            pStreamingTileStore = new StreamingStoreType(streamingFilePath, StreamingStoreType::SMStreamingDataType::POINTS, (SCM_COMPRESSION_DEFLATE == m_compressionType), true);
+			// Pip ToDo: Create account?
+			DataSourceAccount *account = nullptr;
+
+            pStreamingTileStore = new StreamingStoreType(account, streamingFilePath, StreamingStoreType::SMStreamingDataType::POINTS, (SCM_COMPRESSION_DEFLATE == m_compressionType), true);
             // SM_NEEDS_WORKS : layerID 
-            pStreamingIndiceTileStore = new StreamingIndiceStoreType(streamingFilePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVTileStore = new StreamingUVStoreType(streamingFilePath, StreamingUVStoreType::SMStreamingDataType::UVS, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(streamingFilePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingTextureTileStore = new StreamingTextureTileStore(streamingFilePath);
+            pStreamingIndiceTileStore = new StreamingIndiceStoreType(account, streamingFilePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingUVTileStore = new StreamingUVStoreType(account, streamingFilePath, StreamingUVStoreType::SMStreamingDataType::UVS, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(account, streamingFilePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingTextureTileStore = new StreamingTextureTileStore(account, streamingFilePath);
             
             pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
                                        &*pStreamingTileStore,                                       
@@ -776,7 +779,7 @@ StatusInt IScalableMeshCreator::Impl::LoadGCS()
     WString wktStr;
     m_smSQLitePtr->GetWkt(wktStr);
 
-    IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
+    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
 
     BaseGCS::WktFlavor wktFlavor;
 
@@ -825,7 +828,7 @@ int IScalableMeshCreator::Impl::SaveGCS()
 
     if (WKTKeyword::TYPE_UNKNOWN == GetWktType(extendedWktStr))
     {
-        wchar_t wktFlavor[2] = { (wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0' };
+        wchar_t wktFlavor[2] = { (wchar_t)ISMStore::WktFlavor_Autodesk, L'\0' };
 
         extendedWktStr += WString(wktFlavor);
     }

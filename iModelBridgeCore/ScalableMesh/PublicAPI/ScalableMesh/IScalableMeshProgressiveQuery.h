@@ -74,7 +74,7 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
                                           const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, 
                                           bool                                                                     loadTexture, 
                                           const bvector<bool>&                                                     clipVisibilities,
-                                          const DMatrix4d*                                                         prevLocalToView,
+                                          const DMatrix4d*                                                         prevLocalToView, //NEEDS_WORK_SM : prev and new local to view not used anymore.
                                           const DMatrix4d*                                                         newLocalToView) = 0; 
 
         virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 

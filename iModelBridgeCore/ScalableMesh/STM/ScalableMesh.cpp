@@ -36,6 +36,8 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSources.h>
 
+#include <CloudDataSource/DataSourceManager.h>
+
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshVolume.h"
 
@@ -55,6 +57,7 @@ extern bool   GET_HIGHEST_RES;
 #include "LogUtils.h"
 //#include "CGALEdgeCollapse.h"
 
+DataSourceManager ScalableMeshBase::s_dataSourceManager;
 
 
 ScalableMeshScheduler* s_clipScheduler = nullptr;
@@ -95,7 +98,7 @@ typedef HGF3DExtent<double> YProtFeatureExtentType;
 /*                                                                  */
 /*==================================================================*/
 
-using namespace IDTMFile;
+using namespace ISMStore;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
@@ -377,6 +380,11 @@ int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const
     return _LoadAllNodeHeaders(nbLoadedNodes, level);
     }
 
+int IScalableMesh::LoadAllNodeData(size_t& nbLoadedNodes, int level) const
+{
+    return _LoadAllNodeData(nbLoadedNodes, level);
+}
+
 int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
     {
     return _SaveGroupedNodeHeaders(pi_pOutputDirPath);
@@ -542,7 +550,7 @@ bool ScalableMeshBase::LoadGCSFrom()
     if (m_smSQLitePtr->GetWkt(wktStr)) // if true, ScalableMesh has not Wkt
         return true;
 
-    IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
+    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
     BaseGCS::WktFlavor  wktFlavor;
 
     bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
@@ -559,6 +567,63 @@ bool ScalableMeshBase::LoadGCSFrom()
     swap(m_sourceGCS, gcs);
 
     return true;
+}
+
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::ScalableMesh
++----------------------------------------------------------------------------*/
+DataSourceStatus ScalableMeshBase::initializeAzureTest(void)
+{
+	DataSourceStatus							status;
+	DataSourceAccount::AccountIdentifier		accountIdentifier(L"pcdsustest");
+	DataSourceAccount::AccountKey				accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
+	DataSourceService						*	serviceAzure;
+	DataSourceAccount						*	accountAzure;
+	DataSourceAccount						*	accountCaching;
+	DataSourceService						*	serviceFile;
+
+//	DataSourceAccount						*	accountCaching;
+//	DataSourceBuffer::BufferSize				testDataSize = 1024 * 1024 * 8;
+
+															// Get the Azure service
+	serviceAzure = getDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
+	if(serviceAzure == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Create an account on Azure
+	accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
+	if (accountAzure == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Set ScalableMesh's DataSource
+	setDataSourceAccount(accountAzure);
+
+/*
+															// Create an Azure specific DataSource
+	dataSourceAzure = dynamic_cast<DataSourceAzure *>(dataSourceManager.createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
+	if (dataSourceAzure == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error);
+															// Blobs will be split up into segments of this size
+	dataSourceAzure->setSegmentSize(1024 * 64);
+															// Time I/O operation timeouts for threading
+	dataSourceAzure->setTimeout(DataSource::Timeout(100000));
+*/
+															// Get the file service
+	if ((serviceFile = getDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Create an account on the file service for caching
+	if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Set prefix for caching account data sources
+	accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+
+//	accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+															// Set up local file based caching
+	accountAzure->setCaching(*accountCaching, DataSourceURL());
+															// Set up default container
+	accountAzure->setPrefixPath(DataSourceURL(L"scalablemeshtest"));
+
+
+	return status;
 }
 
 
@@ -753,16 +818,22 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     auto position = m_path.find_last_of(L".stm");
                     auto filenameWithoutExtension = m_path.substr(0, position - 3);
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"marseille/");
+                    WString azureDatasetName(L"marseille\\");
                     // NEEDS_WORK_SM - Check existence of the following directories
                     WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
 
+					if (initializeAzureTest().isFailed())
+					{
+						return BSIERROR; // Error loading layer gcs
+					}
+
+
                     // NEEDS_WORK_SM - Need to stream textures as well
-                    pStreamingTileStore = new StreamingPointStoreType(streamingSourcePath, StreamingPointStoreType::SMStreamingDataType::POINTS, AreDataCompressed(), s_stream_from_grouped_store);
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, AreDataCompressed());
-                    pStreamingUVTileStore = new StreamingUVStoreType(streamingSourcePath, StreamingUVStoreType::SMStreamingDataType::UVS, AreDataCompressed());
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, AreDataCompressed());
-                    pStreamingTextureTileStore = new StreamingTextureTileStore(streamingSourcePath);
+                    pStreamingTileStore = new StreamingPointStoreType(getDataSourceAccount(), streamingSourcePath, StreamingPointStoreType::SMStreamingDataType::POINTS, AreDataCompressed(), s_stream_from_grouped_store);
+                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(getDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, AreDataCompressed());
+                    pStreamingUVTileStore = new StreamingUVStoreType(getDataSourceAccount(), streamingSourcePath, StreamingUVStoreType::SMStreamingDataType::UVS, AreDataCompressed());
+                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(getDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, AreDataCompressed());
+                    pStreamingTextureTileStore = new StreamingTextureTileStore(getDataSourceAccount(), streamingSourcePath);
                     m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
                                                             &*pStreamingIndiceTileStore,
@@ -812,7 +883,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
             WString clipFilePath = m_baseExtraFilesPath;
             clipFilePath.append(L"_clips"); 
-           // IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
+           // ISMStore::File::Ptr clipFilePtr = ISMStore::File::Create(clipFilePath.c_str());
             HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
             ((SMSQLiteDiffsetTileStore*)(store.GetPtr()))->Open();
             //store->StoreMasterHeader(NULL,0);
@@ -942,12 +1013,12 @@ DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor   (const MeshIndexType*   po
 /*----------------------------------------------------------------------------+
 |ScalableMesh::CreatePointIndexFilter
 +----------------------------------------------------------------------------*/
-template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMesh<POINT>::CreatePointIndexFilter(IDTMFile::UniformFeatureDir* pointDirPtr) const
+template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMesh<POINT>::CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const
     {
     HPRECONDITION(pointDirPtr != 0);
 
-    const IDTMFile::FilteringDir* filteringDir = pointDirPtr->GetFilteringDir();
-    IDTMFile::SpatialIndexDir* indexDirP = pointDirPtr->GetSpatialIndexDir();
+    const ISMStore::FilteringDir* filteringDir = pointDirPtr->GetFilteringDir();
+    ISMStore::SpatialIndexDir* indexDirP = pointDirPtr->GetSpatialIndexDir();
 
     if (0 == filteringDir || 0 == indexDirP)
         return 0;
@@ -959,13 +1030,13 @@ template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMe
  
 
     ISMPointIndexFilter<POINT, YProtPtExtentType>* pFilter = 0;                            
-    IDTMFile::FilterType filteringType = filteringDir->GetType();
+    ISMStore::FilterType filteringType = filteringDir->GetType();
 
     if (indexHandler->IsProgressive())
         {
         switch (filteringType)
             {
-            case IDTMFile::FILTER_TYPE_DUMB :
+            case ISMStore::FILTER_TYPE_DUMB :
                 pFilter = new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, YProtPtExtentType>();                           
                 break;            
             default : 
@@ -1644,7 +1715,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
 
     if (WKTKeyword::TYPE_UNKNOWN == GetWktType(extendedWktStr))
     {
-        wchar_t wktFlavor[2] = { (wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0' };
+        wchar_t wktFlavor[2] = { (wchar_t)ISMStore::WktFlavor_Autodesk, L'\0' };
 
         extendedWktStr += WString(wktFlavor);
         //wkt = HCPWKT(extendedWktStr.c_str());
@@ -1997,7 +2068,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     s_stream_from_disk = true;
     s_stream_from_grouped_store = false;
 
-    return m_scmIndexPtr->SaveMeshToCloud(pi_pOutputDirPath, false);
+    return m_scmIndexPtr->SaveMeshToCloud(getDataSourceAccount(), pi_pOutputDirPath, false);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -2006,9 +2077,18 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
 +----------------------------------------------------------------------------*/
 template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const
     {    
-    m_scmIndexPtr->LoadTree(nbLoadedNodes, level);
+    m_scmIndexPtr->LoadTree(nbLoadedNodes, level, true);
     return SUCCESS;
     } 
+
+/*----------------------------------------------------------------------------+
+|MrDTM::_LoadAllNodeData
++----------------------------------------------------------------------------*/
+template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeData(size_t& nbLoadedNodes, int level) const
+{
+    m_scmIndexPtr->LoadTree(nbLoadedNodes, level, false);
+    return SUCCESS;
+}
 
 /*----------------------------------------------------------------------------+
 |MrDTM::_GroupNodeHeaders
@@ -2021,7 +2101,7 @@ template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WS
     s_stream_from_disk = true;
     s_stream_from_grouped_store = false;
 
-    m_scmIndexPtr->SaveGroupedNodeHeaders(pi_pOutputDirPath, true);
+    m_scmIndexPtr->SaveGroupedNodeHeaders(getDataSourceAccount(), pi_pOutputDirPath, true);
     return SUCCESS;
     }
 #endif

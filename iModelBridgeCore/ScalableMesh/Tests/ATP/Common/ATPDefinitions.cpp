@@ -32,6 +32,7 @@ using namespace std;
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
+
 #include <TerrainModel/Core/DTMDefs.h>
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMBaseDef.h>
@@ -60,8 +61,6 @@ using namespace std;
 
 #include <GeoCoord/BaseGeoCoord.h>
 
-#include <BeJpeg\BeJpeg.h>
-
 
 //#define ABORT(ERROR + 1)
 
@@ -80,207 +79,229 @@ enum
     };
 
 void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
-	{	
-	BeXmlStatus status;
-	WString stmFileName;
-	status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
+    {
+    BeXmlStatus status;
+    WString stmFileName;
+    status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
 
-	if (status != BEXML_Success)
-		{
-		printf("ERROR : stmFileName attribute not found\r\n");
-		}
-	else
-		{
-		WString outputDir;
-		int maxLevel;
-		bool exportTexture;
-        bool parseOptions = ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode);
-		assert(parseOptions==true);
+    if (status != BEXML_Success)
+        {
+        printf("ERROR : stmFileName attribute not found\r\n");
+        }
+    else
+        {
+        WString outputDir;
+        int maxLevel;
+        bool exportTexture;
 
-		if (status == SUCCESS)
-			{
-			StatusInt status;
-			IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+        assert(ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode) == true);
 
-			//Initialize the origin
-			DRange3d range;
-			stmFile->GetRange(range);
-			DPoint3d translateToOrigin;
-			translateToOrigin.x = (range.high.x + range.low.x) / 2;
-			translateToOrigin.y = (range.high.y + range.low.y) / 2;
-			translateToOrigin.z = (range.high.z + range.low.z) / 2;
-			translateToOrigin.Negate();
+        if (status == SUCCESS)
+            {
+            StatusInt status;
+            IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
 
-			if (stmFile != 0)
-				{				
-				IScalableMeshMeshQueryPtr meshQueryInterface = stmFile->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+            //Initialize the origin
+            DRange3d range;
+            stmFile->GetRange(range);
+            DPoint3d translateToOrigin;
+            translateToOrigin.x = (range.high.x + range.low.x) / 2;
+            translateToOrigin.y = (range.high.y + range.low.y) / 2;
+            translateToOrigin.z = (range.high.z + range.low.z) / 2;
+            translateToOrigin.Negate();
 
-				//the root node
-				IScalableMeshNodePtr root;
+            //the root node
+            IScalableMeshNodePtr root = stmFile->GetRootNode();
 
-				//find the root node
-				for (int level = 0; level <= maxLevel; level++)
-					{
-					bvector<IScalableMeshNodePtr> returnedNodes;
-					IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
-					params->SetLevel(level);
-					meshQueryInterface->Query(returnedNodes, 0, 0, params);
+            queue<IScalableMeshNodePtr> nodes;
+            nodes.push(root);
 
-					if (returnedNodes.size() == 1)
-						{
-						root = returnedNodes[0];
-						break;
-						}
-					}
+            //Folder name
+            WString folderName = outputDir + L"\\";
 
-				queue<IScalableMeshNodePtr> nodes;
-				nodes.push(root);
-				
-				//Folder name
-				WString folderName = outputDir + L"\\";
+            //NodeTree file
+            WString NodeTreeFileName = folderName + L"NodeTree.bin";
+            FILE* outTree;
+            outTree = _wfopen(NodeTreeFileName.c_str(), L"wb");
+            //nb of nodes
+            int64_t nbNodes = 0;
+            fwrite(&nbNodes, sizeof(int64_t), 1, outTree);
 
-				size_t level = root->GetLevel();
-				while(level <= maxLevel)
-					{
-					IScalableMeshNodePtr currentNode = nodes.front();
-					
-					//Infos for 1 tile
-					clock_t nodeClock = clock();
-					int64_t pointCount = 0;
-					int64_t paramCount = 0;
-					int64_t pointIndexCount = 0;
-					int64_t nodeId = currentNode->GetNodeId();
+            while (!nodes.empty())
+                {
+                IScalableMeshNodePtr currentNode = nodes.front();
 
-					//The node we're at
-					WChar numberChar[10];
-					swprintf(numberChar, L"%I64d", nodeId);
-					WString number(numberChar);
+                //Infos for 1 tile
+                clock_t nodeClock = clock();
+                int64_t pointCount = 0;
+                int64_t paramCount = 0;
+                int64_t pointIndexCount = 0;
+                int64_t nodeId = currentNode->GetNodeId();
 
-					//File name
-					WString materialName = number;
-					WString binFileName = folderName + materialName + L".bin";
+                //The node we're at
+                WChar numberChar[10];
+                swprintf(numberChar, L"%I64d", nodeId);
+                WString number(numberChar);
 
-					//Get mesh
-					bvector<bool> clips;
-					IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-					if (currentNode->IsTextured())
-						flags->SetLoadTexture(true);
-					IScalableMeshMeshPtr mesh = currentNode->GetMesh(flags, clips);
-					
-					if (mesh != NULL)
-						{
-						//Bin file
-						FILE* outBin;
-						outBin = _wfopen(binFileName.c_str(), L"wb");
+                //File name
+                WString materialName = number;
+                WString binFileName = folderName + materialName + L".bin";
+                
+                //Get mesh
+                bvector<bool> clips;
+                IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+                if (currentNode->IsTextured())
+                    flags->SetLoadTexture(true);
+                IScalableMeshMeshPtr mesh = currentNode->GetMesh(flags, clips);
+                
+                //Bin file
+                FILE* outBin;
+                outBin = _wfopen(binFileName.c_str(), L"wb");
 
-						const PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
+                const PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
 
-						//Get infos
-						pointCount = polyface->GetPointCount();
-						paramCount = polyface->GetParamCount();
-						pointIndexCount = polyface->GetPointIndexCount();
+                //Get infos
+                pointCount = polyface->GetPointCount();
+                paramCount = polyface->GetParamCount();
+                pointIndexCount = polyface->GetPointIndexCount();
 
-						IScalableMeshTexturePtr texture = currentNode->GetTexture();
-						bool isTextured = currentNode->IsTextured();
+                IScalableMeshTexturePtr texture = currentNode->GetTexture();
+                bool isTextured = currentNode->IsTextured();
 
-						//write node id
-						fwrite(&nodeId, sizeof(int64_t), 1, outBin);
+                //write node id
+                fwrite(&nodeId, sizeof(int64_t), 1, outBin);
 
-						//write if textured
-						fwrite(&isTextured, sizeof(bool), 1, outBin);
+                //write if textured
+                fwrite(&isTextured, sizeof(bool), 1, outBin);
 
-						//write v
-						fwrite(&pointCount, sizeof(int64_t), 1, outBin);
-						DPoint3dCP p = polyface->GetPointCP();
-						double* points = new double[pointCount * 3];
-						int j = 0;
-						for (int64_t i = 0; i < pointCount; i++)
-							{
-							DPoint3d point = p[i];
+                //write v
+                fwrite(&pointCount, sizeof(int64_t), 1, outBin);
+                DPoint3dCP p = polyface->GetPointCP();
+                float* points = new float[pointCount * 3];
+                int j = 0;
+                for (int64_t i = 0; i < pointCount; i++)
+                    {
+                    DPoint3d point = p[i];
 
-							point.Add(translateToOrigin);
+                    point.Add(translateToOrigin);
 
-							points[j] = point.x;
-							points[j + 1] = point.z;
-							points[j + 2] = -point.y;
-							j += 3;
-							}
-						fwrite(points, sizeof(double), pointCount * 3, outBin);
+                    points[j] = (float)point.x;
+                    points[j + 1] = (float)point.z;
+                    points[j + 2] = -(float)point.y;
+                    j += 3;
+                    }
+                fwrite(points, sizeof(float), pointCount * 3, outBin);
 
-						//write uv
-						if (isTextured)
-							{
-							fwrite(&paramCount, sizeof(int64_t), 1, outBin);
-							DPoint2dCP param = polyface->GetParamCP();
-							double* params = new double[paramCount * 2];
-							j = 0;
-							for (int64_t i = 0; i < paramCount; i++)
-								{
-								DPoint2d uv = param[i];
+                //write uv
+                if (isTextured)
+                    {
+                    fwrite(&paramCount, sizeof(int64_t), 1, outBin);
+                    DPoint2dCP param = polyface->GetParamCP();
+                    float* params = new float[paramCount * 2];
+                    j = 0;
+                    for (int64_t i = 0; i < paramCount; i++)
+                        {
+                        DPoint2d uv = param[i];
 
-								params[j] = uv.x;
-								params[j + 1] = uv.y;
-								j += 2;
-								}
-							fwrite(params, sizeof(double), paramCount * 2, outBin);
-							}
+                        params[j] = (float)uv.x;
+                        params[j + 1] = (float)uv.y;
+                        j += 2;
+                        }
+                    fwrite(params, sizeof(float), paramCount * 2, outBin);
+                    }
 
-						//write faces
-						fwrite(&pointIndexCount, sizeof(int64_t), 1, outBin);
-						//vertices indice
-						int32_t* facesV = new int32_t[pointIndexCount];
-						for (int64_t i = 0; i < pointIndexCount; i += 3)
-							{
-							//zero-based index
-							facesV[i] = polyface->GetPointIndexCP()[i] - 1;
-							facesV[i + 1] = polyface->GetPointIndexCP()[i + 1] - 1;
-							facesV[i + 2] = polyface->GetPointIndexCP()[i + 2] - 1;
-							}
-						fwrite(facesV, sizeof(int32_t), pointIndexCount, outBin);
-						//uv indice
-						if (isTextured)
-							{
-							int32_t* facesUV = new int32_t[pointIndexCount];
-							for (int64_t i = 0; i < pointIndexCount; i += 3)
-								{
-								//zero-based index
-								facesUV[i] = polyface->GetParamIndexCP()[i] - 1;
-								facesUV[i + 1] = polyface->GetParamIndexCP()[i + 1] - 1;
-								facesUV[i + 2] = polyface->GetParamIndexCP()[i + 2] - 1;
-								}
-							fwrite(facesUV, sizeof(int32_t), pointIndexCount, outBin);
-							}
+                //write faces
+                fwrite(&pointIndexCount, sizeof(int64_t), 1, outBin);
+                //vertices indice
+                int32_t* facesV = new int32_t[pointIndexCount];
+                for (int64_t i = 0; i < pointIndexCount; i += 3)
+                    {
+                    //zero-based index
+                    facesV[i] = polyface->GetPointIndexCP()[i] - 1;
+                    facesV[i + 1] = polyface->GetPointIndexCP()[i + 1] - 1;
+                    facesV[i + 2] = polyface->GetPointIndexCP()[i + 2] - 1;
+                    }
+                fwrite(facesV, sizeof(int32_t), pointIndexCount, outBin);
+                //uv indice
+                if (isTextured)
+                    {
+                    int32_t* facesUV = new int32_t[pointIndexCount];
+                    for (int64_t i = 0; i < pointIndexCount; i += 3)
+                        {
+                        //zero-based index
+                        facesUV[i] = polyface->GetParamIndexCP()[i] - 1;
+                        facesUV[i + 1] = polyface->GetParamIndexCP()[i + 1] - 1;
+                        facesUV[i + 2] = polyface->GetParamIndexCP()[i + 2] - 1;
+                        }
+                    fwrite(facesUV, sizeof(int32_t), pointIndexCount, outBin);
+                    }
 
-						//write texture
-						if (isTextured)
-							{
-							const uint8_t* data = texture->GetData();
-							fwrite(data, sizeof(byte), texture->GetSize(), outBin);
-							}
+                //write texture
+                if (isTextured)
+                    {
+                    int32_t x = texture->GetDimension().x;
+                    int32_t y = texture->GetDimension().y;
+                    fwrite(&x, sizeof(int32_t), 1, outBin);
+                    fwrite(&y, sizeof(int32_t), 1, outBin);
 
-						nodeClock = clock() - nodeClock;
-						double delay = (double)nodeClock / CLOCKS_PER_SEC;
+                    const uint8_t* data = texture->GetData();
+                    fwrite(data, sizeof(byte), texture->GetSize(), outBin);
+                    }
 
-						fwprintf(pResultFile, L"%s,%I64d,%I64d,%zu,%.5f\n", materialName.c_str(), pointCount, paramCount, level, delay);
+                //Close file for this tile
+                fclose(outBin);
 
-						//Close file for this tile
-						fclose(outBin);
-						}
+                nodeClock = clock() - nodeClock;
+                double delay = (double)nodeClock / CLOCKS_PER_SEC;
 
-					//get children nodes
-					bvector<IScalableMeshNodePtr> childrenNodes = currentNode->GetChildrenNodes();
-					for (auto child : childrenNodes)
-						nodes.push(child);
-					nodes.pop();
-					
-					level = currentNode->GetLevel();
-					}//end while
-				}
-			else
-				printf("Error loading stm file");
-			}
-		}
-	}
+                fwprintf(pResultFile, L"%s,%I64d,%I64d,%zu,%.5f\n", materialName.c_str(), pointCount, paramCount, currentNode->GetLevel(), delay);
+
+                //get children nodes
+                bvector<IScalableMeshNodePtr> childrenNodes = currentNode->GetChildrenNodes();
+                bvector<IScalableMeshNodePtr> trueChildrenNodes;
+                for (auto child : childrenNodes)
+                    {
+                    flags = IScalableMeshMeshFlags::Create();
+                    if (child->IsTextured())
+                        flags->SetLoadTexture(true);
+                    mesh = child->GetMesh(flags, clips);
+
+                    if (mesh != NULL && child->GetLevel() <= maxLevel)
+                        {
+                        nodes.push(child);
+                        trueChildrenNodes.push_back(child);
+                        }
+                    }
+                if (trueChildrenNodes.size() > 0)
+                    {
+                    nbNodes++;
+                    
+                    //node id
+                    fwrite(&nodeId, sizeof(int64_t), 1, outTree);
+                    //nb of children
+                    int nbChildren = (int)trueChildrenNodes.size();
+                    fwrite(&nbChildren, sizeof(int), 1, outTree);
+                    for (auto child : trueChildrenNodes)
+                        {
+                        int64_t childId = child->GetNodeId();
+                        fwrite(&childId, sizeof(int64_t), 1, outTree);
+                        }
+                    }
+                
+                nodes.pop();
+
+                }//end while
+
+                //write nb of nodes;
+                fseek(outTree, 0, SEEK_SET);
+                fwrite(&nbNodes, sizeof(int64_t), 1, outTree);
+
+                fclose(outTree);
+            }
+            else
+                printf("Error loading stm file");
+        }
+    }
 
 void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
@@ -3683,19 +3704,33 @@ void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("Using default maxLevel value, all nodes will be loaded\r\n");
         }
 
-    double t = clock();
+    bool headersOnly = 0;
+    if (pTestNode->GetAttributeBooleanValue(headersOnly, "headersOnly") != BEXML_Success)
+    {
+        printf("Using default maxLevel value, all nodes will be loaded\r\n");
+    }
+
     StatusInt status;
     IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
     size_t nbLoadedNodes = 0;
 
-    status = stmFile->LoadAllNodeHeaders(nbLoadedNodes, level);
+    double t = clock();
+    if (headersOnly)
+    {
+        status = stmFile->LoadAllNodeHeaders(nbLoadedNodes, level);
+    }
+    else
+    {
+        status = stmFile->LoadAllNodeData(nbLoadedNodes, level);
+    }
     assert(status == SUCCESS);
 
     t = clock() - t;
 
-    fwprintf(pResultFile, L"%s,%.5f,%I64d\n",
+    fwprintf(pResultFile, L"%s,%I64d,%.5f,%d,%I64d\n",
              stmFileName.c_str(),
              (double)t / CLOCKS_PER_SEC,
+             level,
              nbLoadedNodes);
 
     fflush(pResultFile);

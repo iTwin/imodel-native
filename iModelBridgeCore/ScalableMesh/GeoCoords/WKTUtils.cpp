@@ -373,10 +373,10 @@ const WKTKeyword& GetWKTKeyword (WKTKeyword::Type type)
 * @description  
 * @bsimethod                                                  Mathieu.St-Pierre   12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDTMFile::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, const WString& wktStr)
+ISMStore::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, const WString& wktStr)
     {
     assert(wktStr.size() > 0);
-    IDTMFile::WktFlavor fileWktFlavor = IDTMFile::WktFlavor_Oracle9;
+    ISMStore::WktFlavor fileWktFlavor = ISMStore::WktFlavor_Oracle9;
 
     size_t charInd;    
 
@@ -387,9 +387,9 @@ IDTMFile::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, const WString& wk
             break;
             }
         else
-        if (((short)wktStr[charInd] >= 1) || ((short)wktStr[charInd] < IDTMFile::WktFlavor_End))
+        if (((short)wktStr[charInd] >= 1) || ((short)wktStr[charInd] < ISMStore::WktFlavor_End))
             {
-            fileWktFlavor = (IDTMFile::WktFlavor)wktStr[charInd];            
+            fileWktFlavor = (ISMStore::WktFlavor)wktStr[charInd];            
             }
         }
 
@@ -426,16 +426,16 @@ WKTKeyword::Type GetWktType(WString wkt)
 /*----------------------------------------------------------------------------+
 |
 +----------------------------------------------------------------------------*/ 
-bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, IDTMFile::WktFlavor fileWktFlavor)
+bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, ISMStore::WktFlavor fileWktFlavor)
     {
     //Temporary use numeric value until the basegcs enum match the csmap's one.
     switch(fileWktFlavor)
         {
-        case IDTMFile::WktFlavor_Oracle9 :
+        case ISMStore::WktFlavor_Oracle9 :
             baseGcsWktFlavor = (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor)7;
             break;
 
-        case IDTMFile::WktFlavor_Autodesk :
+        case ISMStore::WktFlavor_Autodesk :
             baseGcsWktFlavor = (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor)8;
             break;
 

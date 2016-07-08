@@ -42,9 +42,6 @@
 #endif
 //#include <hash_map>
 
-//NEEDS_WORK_SM_STREAMING : remove this!
-extern std::mutex s_streamingMutex;
-
 
 //Only way found to deactivate warning C4250 since the pragma warning(disable... doesn't work
 #pragma warning( push, 0 )
@@ -55,7 +52,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct ScalableMeshViewDependentQueryParams;
 class ScalableMeshViewDependentQuery;
 
-//typedef IDTMFile::Extent3d64f YProtPtExtentType;
+//typedef ISMStore::Extent3d64f YProtPtExtentType;
 typedef DRange3d YProtPtExtentType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
