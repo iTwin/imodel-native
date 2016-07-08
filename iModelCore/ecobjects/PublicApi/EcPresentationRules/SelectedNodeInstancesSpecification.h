@@ -18,7 +18,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 Specification that creates content ECQueries for selected items.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SelectedNodeInstancesSpecification : public ContentSpecification
+struct EXPORT_VTABLE_ATTRIBUTE SelectedNodeInstancesSpecification : public ContentSpecification
     {
     private:
         Utf8String  m_acceptableSchemaName;

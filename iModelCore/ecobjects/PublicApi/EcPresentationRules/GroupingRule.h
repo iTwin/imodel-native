@@ -198,7 +198,7 @@ struct ClassGroup : public GroupSpecification
         ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
 
         //! Writes rule information to given XmlNode.
-        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const const;
+        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
         
         //! Allows the visitor to visit this group specification.
         ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
