@@ -126,9 +126,8 @@ template <typename MasterHeaderType, typename NodeHeaderType>  class ISMDataStor
         virtual uint64_t GetNextID() const = 0;
 
         virtual void Close () = 0;
-        
-        template<typename DataType, typename NodeHeaderType>
-        RefCountedPtr<ISMNodeDataStore<DataType, NodeHeaderType>> GetNodeDataStore(NodeHeaderType* nodeHeader) = 0;
+                
+        virtual RefCountedPtr<ISMNodeDataStore<DPoint3d, NodeHeaderType>> GetNodeDataStore(NodeHeaderType* nodeHeader) = 0;
                             
     };
 

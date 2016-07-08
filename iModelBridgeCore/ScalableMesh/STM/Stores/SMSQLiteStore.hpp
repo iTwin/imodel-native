@@ -214,6 +214,15 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadHeader(SMIndexNodeHead
     return sizeof(*header);
     }    
 
+template <class EXTENT> RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> SMSQLiteStore<EXTENT>::GetNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {    
+    RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> nodeDataStorePtr;
+        
+    nodeDataStorePtr = new SMSQLiteNodePointStore<DPoint3d, EXTENT>(nodeHeader, m_smSQLiteFile);
+
+    return nodeDataStorePtr;    
+    }
+
 template <class POINT, class EXTENT> SMSQLiteNodePointStore<POINT, EXTENT>::SMSQLiteNodePointStore(SMIndexNodeHeader<EXTENT>* nodeHeader, /*ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile)
     : ISMNodeDataStore(nodeHeader/*, dataStore*/)
     {       
