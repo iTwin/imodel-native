@@ -48,7 +48,7 @@ WString GetHeaderForTestType(TestType t)
             return L"";
             break;
         case TEST_LOADING:
-            return L"File Name, Time To Load (s), Nb of loaded nodes\n";
+            return L"File Name, Time To Load (s), Max depth To Load (if 0 all nodes are loaded), Nb of loaded nodes\n";
             break;
         case TEST_DRAPE_BASELINE:
             return L"Test Case,  Pass/Fail, Baseline, Nb of Lines, Nb of Lines Draped (baseline), Nb of Lines Draped(test), Nb Of Different Lines, %% unmatched points, Time to drape (1st load) (baseline), Time to drape (1st load) (test), Time taken (1st load) variation, Time to drape (cached) (baseline), Time to drape (cached) (test), Time taken (cached) variation\n";

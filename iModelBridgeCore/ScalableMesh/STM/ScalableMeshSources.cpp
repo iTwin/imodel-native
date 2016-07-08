@@ -319,6 +319,15 @@ ImportSequence CreateImportClipMasksSequence ()
     return sequence;
     }
 
+ImportSequence CreateImportMeshSequence()
+    {
+    ImportSequence sequence;
+    ImportCommandBase importMesh;
+    importMesh.SetSourceType(MeshTypeFamilyCreator().Create());
+    sequence.push_back(importMesh);
+    return sequence;
+    }
+
 
 
 const ImportSequence& GetImportSequenceFor (DTMSourceDataType type)
@@ -327,6 +336,7 @@ const ImportSequence& GetImportSequenceFor (DTMSourceDataType type)
     static const ImportSequence IMPORT_POINTS_SEQUENCE(CreateImportPointsSequence());
     static const ImportSequence IMPORT_LINEARS_SEQUENCE(CreateImportLinearsSequence());
     static const ImportSequence IMPORT_CLIPMASKS_SEQUENCE(CreateImportClipMasksSequence());
+    static const ImportSequence IMPORT_MESH_SEQUENCE(CreateImportMeshSequence());
     static const ImportSequence IMPORT_NOTHING_SEQUENCE;
 
     switch (type)
@@ -341,6 +351,8 @@ const ImportSequence& GetImportSequenceFor (DTMSourceDataType type)
     case DTM_SOURCE_DATA_CLIP:
     case DTM_SOURCE_DATA_MASK:
         return IMPORT_CLIPMASKS_SEQUENCE;
+    case DTM_SOURCE_DATA_MESH:
+        return IMPORT_MESH_SEQUENCE;
     default:
         return IMPORT_NOTHING_SEQUENCE;
         }

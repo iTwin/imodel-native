@@ -391,7 +391,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         pParentMeshNode->GetMesher2_5d()->Mesh(pParentMeshNode);
         }    
     }
-
+    if (pParentMeshNode->GetPointsPtr()->size() > 10 && pParentMeshNode->GetPtsIndicePtr()->size() == 0)
+        {
+        std::cout << "NODE " << pParentMeshNode->GetBlockID().m_integerID << " SHOULD HAVE FACES " << std::endl;
+        }
     return true;
     }
 
@@ -607,5 +610,65 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
             }
         }
     delete meshInput;
+    if (pParentMeshNode->GetPointsPtr()->size() > 10 && pParentMeshNode->GetPtsIndicePtr()->size() == 0)
+        {
+        std::cout << "NODE " << pParentMeshNode->GetBlockID().m_integerID << " SHOULD HAVE FACES " << std::endl;
+        }
     return true;
     }
+
+#ifdef WIP_MESH_IMPORT
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 07/16
+//=======================================================================================
+template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_UserMeshFilter<POINT, EXTENT>::Filter(
+    HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode,
+    std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>&  subNodes,
+    size_t numSubNodes) const
+    {
+    HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);    
+
+    DRange3d extent = DRange3d::NullRange();
+    bvector<IScalableMeshMeshPtr> subMeshes;
+    bvector<Utf8String> subMetadata;
+    for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+        {
+        if (subNodes[indexNodes] != NULL)
+            {
+            if (subNodes[indexNodes]->m_nodeHeader.m_contentExtentDefined) extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
+            size_t numFaceIndexes = subNodes[indexNodes]->m_nodeHeader.m_nbFaceIndexes;
+
+            if (numFaceIndexes > 0)
+                {
+                HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);                
+                bvector<IScalableMeshMeshPtr> meshParts;
+                bvector<Utf8String> meshMetadata;
+                subMeshNode->GetMeshParts(meshParts, meshMetadata);
+                if (meshParts.size() > 0)
+                    {
+                    subMeshes.insert(subMeshes.end(), meshParts.begin(), meshParts.end());
+                    subMetadata.insert(subMetadata.end(), meshMetadata.begin(), meshMetadata.end());
+                    }
+                }
+            }
+        }
+    if (!extent.IsNull()) pParentMeshNode->m_nodeHeader.m_contentExtent = extent;
+    if (m_callback != nullptr)
+        {
+        bool shouldCreateGraph = false;
+        bvector<bvector<DPoint3d>> parentMeshPts;
+        bvector<bvector<int32_t>> parentMeshIdx;
+        bvector<Utf8String> parentMetadata;
+        bool filterSuccess = m_callback(shouldCreateGraph, parentMeshPts, parentMeshIdx, parentMetadata, subMeshes, subMetadata, pParentMeshNode->m_nodeHeader.m_nodeExtent);
+        if (filterSuccess)
+            {
+            //user function needs to provide info for all mesh parts
+            assert(parentMeshPts.size() == parentMeshIdx.size() && parentMeshPts.size() == parentMetadata.size());
+            pParentMeshNode->AppendMeshParts(parentMeshPts, parentMeshIdx, parentMetadata, shouldCreateGraph);
+            }
+        return filterSuccess;
+        }
+
+    return true;
+    }
+#endif

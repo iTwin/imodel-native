@@ -20,7 +20,7 @@
 
 #include "SMMeshIndex.h"
 #include "ScalableMeshRelevanceDistribution.h"
-
+#include <ScalableMesh/IScalableMeshSourceCreator.h>
 
 template <> class SpatialOp<HGF3DFilterCoord<double,double>, HGF3DFilterCoord<double,double>, HGF3DExtent<double> >
 {
@@ -126,6 +126,30 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_CGALMeshFilt
         virtual bool        IsProgressiveFilter() const { return false; }        
     };
 
-//#include "ScalableMeshQuadTreeBCLIBFilters.hpp"
+#ifdef WIP_MESH_IMPORT
+template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_UserMeshFilter : public ISMMeshIndexFilter<POINT, EXTENT>
+    {
+    public:
+
+        // Primary methods
+        ScalableMeshQuadTreeBCLIB_UserMeshFilter() : m_callback(nullptr){};
+        virtual             ~ScalableMeshQuadTreeBCLIB_UserMeshFilter() {};
+
+        // IHGFPointFilter implementation
+        virtual bool        Filter(HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode,
+                                    std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
+                                    size_t numSubNodes) const;
+
+        virtual bool        IsProgressiveFilter() const { return false; }
+
+        void   SetCallback(MeshUserFilterCallback callback)
+            {
+            m_callback = callback;
+            }
+
+    private:
+        MeshUserFilterCallback     m_callback;
+    };
+#endif
 
 

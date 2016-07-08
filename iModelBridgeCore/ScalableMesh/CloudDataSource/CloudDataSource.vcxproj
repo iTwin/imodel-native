@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ActivitySemaphore.cpp" />
+    <ClCompile Include="DataSource.cpp" />
+    <ClCompile Include="DataSourceAccount.cpp" />
+    <ClCompile Include="DataSourceAccountAzure.cpp" />
+    <ClCompile Include="DataSourceAccountCached.cpp" />
+    <ClCompile Include="DataSourceAccountFile.cpp" />
+    <ClCompile Include="DataSourceAzure.cpp" />
+    <ClCompile Include="DataSourceBuffer.cpp" />
+    <ClCompile Include="DataSourceBuffered.cpp" />
+    <ClCompile Include="DataSourceCached.cpp" />
+    <ClCompile Include="DataSourceCloud.cpp" />
+    <ClCompile Include="DataSourceFile.cpp" />
+    <ClCompile Include="DataSourceLocator.cpp" />
+    <ClCompile Include="DataSourceManager.cpp" />
+    <ClCompile Include="DataSourceManagerPCH.cpp" />
+    <ClCompile Include="DataSourceManagerTest.cpp" />
+    <ClCompile Include="DataSourceService.cpp" />
+    <ClCompile Include="DataSourceServiceAzure.cpp" />
+    <ClCompile Include="DataSourceServiceFile.cpp" />
+    <ClCompile Include="DataSourceServiceManager.cpp" />
+    <ClCompile Include="DataSourceTransferScheduler.cpp" />
+    <ClCompile Include="DataSourceURL.cpp" />
+    <ClCompile Include="PerformanceTimer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\ActivitySemaphore.h" />
+    <ClInclude Include="include\DataSource.h" />
+    <ClInclude Include="include\DataSourceAccount.h" />
+    <ClInclude Include="include\DataSourceAccountAzure.h" />
+    <ClInclude Include="include\DataSourceAccountCached.h" />
+    <ClInclude Include="include\DataSourceAccountFile.h" />
+    <ClInclude Include="include\DataSourceAzure.h" />
+    <ClInclude Include="include\DataSourceBuffer.h" />
+    <ClInclude Include="include\DataSourceBuffered.h" />
+    <ClInclude Include="include\DataSourceCached.h" />
+    <ClInclude Include="include\DataSourceCloud.h" />
+    <ClInclude Include="include\DataSourceFile.h" />
+    <ClInclude Include="include\DataSourceLocator.h" />
+    <ClInclude Include="include\DataSourceManager.h" />
+    <ClInclude Include="include\DataSourceManagerPCH.h" />
+    <ClInclude Include="include\DataSourceManagerTest.h" />
+    <ClInclude Include="include\DataSourceMode.h" />
+    <ClInclude Include="include\DataSourceService.h" />
+    <ClInclude Include="include\DataSourceServiceAzure.h" />
+    <ClInclude Include="include\DataSourceServiceFile.h" />
+    <ClInclude Include="include\DataSourceServiceManager.h" />
+    <ClInclude Include="include\DataSourceStatus.h" />
+    <ClInclude Include="include\DataSourceStoreConfig.h" />
+    <ClInclude Include="include\DataSourceTransferScheduler.h" />
+    <ClInclude Include="include\DataSourceURL.h" />
+    <ClInclude Include="include\Manager.h" />
+    <ClInclude Include="include\PerformanceTimer.h" />
+    <ClInclude Include="include\Status.h" />
+    <ClInclude Include="include\stdafx.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CD27F277-B4E6-4FDA-A95F-78F4AEBF7EAB}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource </NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource -c</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource </NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource -c</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource -c
+BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource -c</NMakeCleanCommandLine>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

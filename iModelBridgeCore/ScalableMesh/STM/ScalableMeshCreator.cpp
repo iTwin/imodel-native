@@ -86,7 +86,7 @@ extern bool s_inEditing = false;
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-   
+
 /*----------------------------------------------+
 | Constant definitions                          |
 +----------------------------------------------*/
@@ -101,6 +101,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*          INTERNAL FUNCTIONS                                      */
 /*                                                                  */
 /*==================================================================*/
+
+ISMPointIndexFilter<DPoint3d, YProtPtExtentType>* s_filter = nullptr;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
@@ -513,8 +515,8 @@ ScalableMeshFilterType scm_getFilterType ()
     {
     //NEEDS_WORK_SM - No progressive for mesh
     //return SCM_FILTER_PROGRESSIVE_DUMB;    
-    return SCM_FILTER_CGAL_SIMPLIFIER;
-    //return SCM_FILTER_DUMB_MESH;
+    //return SCM_FILTER_CGAL_SIMPLIFIER;
+    return SCM_FILTER_DUMB_MESH;
     }
 
 ScalableMeshMesherType Get2_5dMesherType ()
@@ -615,7 +617,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
     s_inEditing = false;
 
 
-    ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter =
+    ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter = s_filter != nullptr? s_filter:
         scm_createFilterFromType<PointType, PointIndexExtentType>(scm_getFilterType());
 
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher2_5d =

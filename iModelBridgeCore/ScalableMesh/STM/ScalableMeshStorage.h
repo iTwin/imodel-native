@@ -241,6 +241,56 @@ class GenericLinearStorageEditor : public Import::BackInserter
          }
      };
 
+ /*---------------------------------------------------------------------------------**//**
+ * @description
+*
+* @bsiclass                                                  Raymond.Gauthier   03/2011
+-+---------------+---------------+---------------+---------------+---------------+------*/
+ template<typename PtType>
+ class ScalableMeshMeshStorageEditor : public Import::BackInserter
+
+     {
+     friend class                            ScalableMeshStorage < PtType > ;
+     protected:
+     Memory::ConstPacketProxy<PtType>      m_pointPacket;
+     Memory::ConstPacketProxy <int32_t>
+         m_indexPacket;
+     Memory::ConstPacketProxy <uint8_t>
+         m_metadataPacket;
+
+
+     typedef SMMeshIndex<PtType, YProtPtExtentType>
+         MeshIndexType;
+
+     MeshIndexType&                              m_rIndex;
+
+     explicit                                ScalableMeshMeshStorageEditor
+         (MeshIndexType&                  pi_rFeatureIndex)
+         : m_rIndex(pi_rFeatureIndex)
+         {}
+
+     virtual void                            _Assign(const Memory::PacketGroup&  pi_rSrc) override
+         {
+         m_pointPacket.AssignTo(pi_rSrc[0]);
+         m_indexPacket.AssignTo(pi_rSrc[1]);
+         m_metadataPacket.AssignTo(pi_rSrc[2]);
+         }
+
+     virtual void                            _Write() override
+         {
+         if ((int)m_pointPacket.GetSize() == 0) return;
+#ifdef WIP_MESH_IMPORT
+         Utf8String str;
+         str.Sprintf("%s", m_metadataPacket.Get());
+         
+         DRange3d meshExtent = DRange3d::From(m_pointPacket.Get(), (int)m_pointPacket.GetSize());
+             // Append to index
+         m_rIndex.AddMeshDefinition(m_pointPacket.Get(), m_pointPacket.GetSize(), m_indexPacket.Get(), m_indexPacket.GetSize(), meshExtent, str.c_str());
+#endif
+         // TDORAY: Throw on failures?
+         }
+     };
+
 
  /*---------------------------------------------------------------------------------**//**
  * @description
@@ -307,7 +357,9 @@ class ScalableMeshStorage : public IStorage
     typedef typename TINAsLinearTypeCreatorTrait<DPoint3d>::type
                                             TINTypeFactory;
     typedef typename MeshAsLinearTypeCreatorTrait<DPoint3d>::type
-                                            MeshTypeFactory;
+                                            MeshAsLinearTypeFactory;
+    typedef typename MeshTypeCreatorTrait<DPoint3d>::type
+        MeshTypeFactory;
 
     typedef SMMeshIndex<PtType, YProtPtExtentType>
                                             MeshIndexType;    
@@ -329,7 +381,8 @@ class ScalableMeshStorage : public IStorage
                             Import::DataTypeSet
                                 (
                                 PointTypeFactory().Create(), 
-                                LinearTypeFactory().Create()
+                                LinearTypeFactory().Create(),
+                                MeshTypeFactory().Create()
                                 ),
                             m_geoCoordSys,
                             0,
@@ -349,7 +402,8 @@ class ScalableMeshStorage : public IStorage
             return (0 != m_pPointIndex) ? new ScalableMeshPointStorageEditor<PtType>(*m_pPointIndex) : 0;
         if (LinearTypeFactory().Create() == type)
             return (0 != m_pPointIndex) ? new ScalableMeshLinearStorageEditor<PtType>(*m_pPointIndex) : 0;
-
+        if (MeshTypeFactory().Create() == type)
+            return (0 != m_pPointIndex) ? new ScalableMeshMeshStorageEditor<PtType>(*m_pPointIndex) : 0;
         return 0;
         }
 

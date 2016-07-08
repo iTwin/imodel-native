@@ -15,6 +15,7 @@
 #include "ScalableMesh\ScalableMeshGraph.h"
 #include <string>
 #include <queue>
+#include "ScalableMeshMesher.h"
 #include <ctime>
 #include <fstream>
 #include "Edits/ClipUtilities.h"
@@ -49,11 +50,10 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_SMIndex = meshIndex;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
-//    m_isGraphLoaded = false;
-//    m_graphVec.SetDirty(false);
-//    m_graphVec.SetDiscarded(true);
-                 
-         
+             
+#ifdef WIP_MESH_IMPORT        
+    m_existingMesh = false;
+#endif
 
     m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
@@ -67,7 +67,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
 
     m_nbClips = 0;
+
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
+
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -87,22 +89,25 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_SMIndex = pi_rpParentNode->m_SMIndex;
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
     m_mesher3d = pi_rpParentNode->GetMesher3d();
-                  
+     
+#ifdef WIP_MESH_IMPORT         
+    m_existingMesh = false;
+#endif
+
     m_nbClips = 0;
+
     m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
     m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_uvsIndicesID.resize(1);
     m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
-//    m_nodeHeader.m_uvID.resize(1);
+
     m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
-//#ifdef SM_BESQL_FORMAT
+
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-//    m_graphVec.SetBlockID(GetBlockID());
-//    m_differenceSets.SetBlockID(GetBlockID());
-//#endif
+
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
@@ -125,26 +130,23 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher3d = pi_rpParentNode->GetMesher3d();
 
      
-         
-    
+#ifdef WIP_MESH_IMPORT         
+    m_existingMesh = false;
+#endif
     m_nbClips = 0;
-//    m_differenceSets.SetDirty(false);
-//    m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
-//    m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
+
     m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
     m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
     m_nodeHeader.m_uvsIndicesID.resize(1);
     m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
-//    m_nodeHeader.m_uvID.resize(1);
+
     m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
-//#ifdef SM_BESQL_FORMAT
+
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-//    m_graphVec.SetBlockID(GetBlockID());
-//    m_differenceSets.SetBlockID(GetBlockID());
-//#endif
+
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
@@ -173,28 +175,24 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
      
-                 
-
+#ifdef WIP_MESH_IMPORT                
+    m_existingMesh = false;
+#endif
     m_nbClips = 0;
-//    m_differenceSets.SetDirty(false);
- //   m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
-//    m_differenceSets.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipPool());
+
     m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
     m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
 
     m_nodeHeader.m_uvsIndicesID.resize(1);
     m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
-//    m_nodeHeader.m_uvID.resize(1);
+
     m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0]= ISMStore::GetNullNodeID();
-//#ifdef SM_BESQL_FORMAT
-    m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-//    m_graphVec.SetBlockID(GetBlockID());
-//    m_differenceSets.SetBlockID(GetBlockID());
 
-//#endif
+    m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
+
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::~SMMeshIndexNode()
@@ -242,12 +240,6 @@ template <class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::IsGrap
 template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy()
     {
     SMPointIndexNode::Destroy();
-    //m_graphVec.clear();
-//    m_graphVec.SetDirty(false);
-//    m_graphVec.SetDiscarded(true);
-//    m_isGraphLoaded = false;
- //   if (m_graphVec.GetBlockID().IsValid())
- //       dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphStore()->DestroyBlock(m_graphVec.GetBlockID());
 
     if (GetBlockID().IsValid())
         {        
@@ -342,13 +334,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
     
     if (!m_destroyed)
         {
-       // const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)->m_tileBcDTM = nullptr;
-
- //       if (!m_graphVec.Discarded()) StoreGraph();
- //       else if (m_graphVec.GetBlockID().IsValid())  m_nodeHeader.m_graphID = m_graphVec.GetBlockID();
-        
- //       if(m_differenceSets.IsDirty() && !m_differenceSets.Discarded()) m_differenceSets.Discard();
-//        if (m_differenceSets.GetBlockID().IsValid()) m_nodeHeader.m_clipSetsID.push_back(m_differenceSets.GetBlockID());                
+             
         
         GetMemoryPool()->RemoveItem(m_triIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex);
         m_triIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
@@ -394,17 +380,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     std::lock_guard<std::mutex> lock(m_headerMutex);
     if (IsLoaded()) return;
     SMPointIndexNode<POINT, EXTENT>::Load();
-//    m_graphVec.SetBlockID(m_nodeHeader.m_graphID);
-//    if (m_nodeHeader.m_clipSetsID.size() > 0) m_differenceSets.SetBlockID(m_nodeHeader.m_clipSetsID[0]);
 
-
-#if DEBUG && SM_TRACE_RASTER_TEXTURING
-    std::string s;
-    for (size_t i = 0; i < m_nodeHeader.m_ptsIndiceID.size(); ++i)
-        {
-        s += "INDICE ID " + std::to_string(i) + " IS " + std::to_string(m_nodeHeader.m_ptsIndiceID[i].m_integerID);
-        }
-#endif
     
     assert(m_triIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     assert(m_texturePoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
@@ -501,6 +477,66 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
     if (m_nodeHeader.m_level == 0)
         WaitForThreadStop();
     }
+
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level, bool headersOnly)
+{
+    if (!IsLoaded())
+        Load();
+
+    nLoaded++;
+    RunOnNextAvailableThread(std::bind([headersOnly](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+    {
+        if (!headersOnly)
+        {
+            // Points
+            //auto count = node->GetPointsStore()->GetBlockDataCount(node->GetBlockID());
+            if (node->GetNbPoints() > 0)
+            {
+                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+
+                // Indices
+                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
+
+                if (node->m_nodeHeader.m_isTextured)
+                {
+                    // UVs
+                    RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
+
+                    // UVIndices
+                    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
+
+                    // Texture
+                    auto textureStore = static_cast<IScalableMeshDataStore<uint8_t, float, float>*>(node->GetTextureStore());
+                    assert(textureStore != nullptr);
+                    textureStore->GetBlockDataCount(node->GetBlockID());
+                }
+            }
+        }
+        SetThreadAvailableAsync(threadId);
+    }, this, std::placeholders::_1));
+
+    if (level != 0 && this->GetLevel() + 1 > level) return;
+
+    if (!m_nodeHeader.m_IsLeaf)
+    {
+        if (m_pSubNodeNoSplit != NULL)
+        {
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->LoadTreeNode(nLoaded, level, headersOnly);
+        }
+        else
+        {
+            for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
+            {
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->LoadTreeNode(nLoaded, level, headersOnly);
+            }
+
+        }
+    }
+    if (m_nodeHeader.m_level == 0)
+        WaitForThreadStop();
+
+}
+
 #ifdef INDEX_DUMPING_ACTIVATED
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
                              bool pi_OnlyLoadedNode) const
@@ -1221,6 +1257,84 @@ template<class EXTENT> void ClipFeatureDefinition(ISMStore::FeatureType type, EX
         }
     }
 
+template<class POINT> void SimplifyMesh(bvector<int32_t>& indices, bvector<POINT>& points)
+    {
+
+    std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPts(DPoint3dZYXTolerancedSortComparison(1e-4, 0));
+    vector<int32_t> matchedIndices(points.size(), -1);
+    vector<int32_t> newIndices(points.size(), -1);
+    for (auto& pt : points)
+        {
+        DPoint3d pt3d = DPoint3d::From(PointOp<POINT>::GetX(pt), PointOp<POINT>::GetY(pt), PointOp<POINT>::GetZ(pt));
+        if (mapOfPts.count(pt3d) == 0)
+            mapOfPts[pt3d] = &pt - &points[0];
+        matchedIndices[&pt - &points[0]] = mapOfPts[pt3d];
+        }
+    bvector<POINT> newSet;
+    newSet.reserve(points.size());
+
+    for (size_t j = 0; j < indices.size(); j += 3)
+        {
+        for (size_t k = 0; k < 3; ++k)
+            {
+            auto& idx = indices[j + k];
+            if (newIndices[matchedIndices[idx - 1]] == -1)
+                {
+                newSet.push_back(PointOp<POINT>::Create(points[idx - 1].x, points[idx - 1].y, points[idx - 1].z));
+                newIndices[matchedIndices[idx - 1]] = (int)newSet.size() - 1;
+                }
+            idx = newIndices[matchedIndices[idx - 1]] + 1;
+            }
+        if (indices[j] == indices[j + 1] || indices[j] == indices[j + 2] || indices[j + 1] == indices[j + 2])
+            {
+            indices.erase(indices.begin() + j, indices.begin() + j + 3);
+            j -= 3;
+            }
+        }
+    points = newSet;
+    }
+
+template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint3d>& pointsClipped, DRange3d& extentClipped, bvector<int32_t>& indicesClipped, const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent)
+    {
+    if ((extent.low.x >= ExtentOp<EXTENT>::GetXMin(clipExtent) && extent.low.y >= ExtentOp<EXTENT>::GetYMin(clipExtent) && extent.low.z >= ExtentOp<EXTENT>::GetZMin(clipExtent)
+        && extent.high.x <= ExtentOp<EXTENT>::GetXMax(clipExtent) && extent.high.y <= ExtentOp<EXTENT>::GetYMax(clipExtent) && extent.high.z <= ExtentOp<EXTENT>::GetZMax(clipExtent)))
+        {
+        pointsClipped.insert(pointsClipped.end(), pts, pts+nPts);
+        indicesClipped.insert(indicesClipped.end(), indices, indices + nIndices);
+        extentClipped = extent;
+        return;
+        }
+    DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(clipExtent), ExtentOp<EXTENT>::GetYMin(clipExtent), ExtentOp<EXTENT>::GetZMin(clipExtent),
+                                        ExtentOp<EXTENT>::GetXMax(clipExtent), ExtentOp<EXTENT>::GetYMax(clipExtent), ExtentOp<EXTENT>::GetZMax(clipExtent));
+
+    IScalableMeshMeshPtr meshPtr = IScalableMeshMesh::Create(nPts, const_cast<DPoint3d*>(pts), nIndices,indices, 0, 0, 0, 0, 0, 0);
+    ScalableMeshMesh* meshP = (ScalableMeshMesh*)meshPtr.get();
+    vector<int32_t> newIndices;
+    bvector<DPoint3d> origPoints;
+    vector<DPoint3d> meshPts;
+    for (size_t i = 0; i < nPts; ++i)
+        {
+        meshPts.push_back(pts[i]);
+        origPoints.push_back(pts[i]);
+        }
+
+    ClipMeshToNodeRange<DPoint3d, EXTENT>(newIndices, meshPts, origPoints, extentClipped, nodeRange, meshP);
+    if (newIndices.size() == 0) return;
+    bvector<int32_t> ptMap(meshPts.size(), -1);
+
+    for (auto& idx : newIndices)
+        {
+        assert(idx - 1 < ptMap.size());
+        if (ptMap[idx - 1] == -1)
+            {
+            pointsClipped.push_back(meshPts[idx - 1]);
+            ptMap[idx - 1] = (int)pointsClipped.size() - 1;
+            }
+        indicesClipped.push_back(ptMap[idx - 1] + 1);
+        }
+    SimplifyMesh(indicesClipped, pointsClipped);
+    }
+
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
@@ -1271,6 +1385,151 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
     linearFeaturesPtr->push_back(&indexes[0], indexes.size());
     return 0;
     }
+
+#ifdef WIP_MESH_IMPORT
+extern ScalableMeshExistingMeshMesher<DPoint3d, DRange3d> s_ExistingMeshMesher;
+
+template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata)
+    {
+    if (!IsLoaded())
+        Load();
+    if (m_DelayedSplitRequested)
+        SplitNode(GetDefaultSplitPosition());
+
+    DRange3d extentClipped = DRange3d::NullRange();
+    bvector<DPoint3d> pointsClipped;
+    bvector<int32_t> indicesClipped;
+    ClipMeshDefinition(m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, indicesClipped, pts, nPts, indices, nIndices, extent);
+    if (!m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) return 0;
+
+    if (m_mesher2_5d != &s_ExistingMeshMesher || m_mesher3d != &s_ExistingMeshMesher) m_mesher2_5d = m_mesher3d = &s_ExistingMeshMesher;
+    m_existingMesh = true;
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+
+    if (!HasRealChildren()) m_nodeHeader.m_arePoints3d = true;
+    if (m_nodeHeader.m_arePoints3d) SetNumberOfSubNodesOnSplit(8);
+
+    if (!HasRealChildren() && (pointsPtr->size() + pointsClipped.size() >= m_nodeHeader.m_SplitTreshold))
+        {
+        // There are too much objects ... need to split current node
+        SplitNode(GetDefaultSplitPosition());
+        }
+    else if (m_delayedDataPropagation && (pointsPtr->size() + pointsClipped.size() >= m_nodeHeader.m_SplitTreshold))
+        {
+        PropagateDataDownImmediately(false);
+        }
+    if (pointsClipped.size() == 0) return false;
+
+
+    m_nodeHeader.m_totalCount += pointsClipped.size();
+    EXTENT featureExtent = ExtentOp<EXTENT>::Create(extentClipped.low.x, extentClipped.low.y, extentClipped.low.z, extentClipped.high.x, extentClipped.high.y, extentClipped.high.z);
+    if (!m_nodeHeader.m_contentExtentDefined)
+        {
+        m_nodeHeader.m_contentExtent = featureExtent;
+        m_nodeHeader.m_contentExtentDefined = true;
+        }
+    else
+        {
+        m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::MergeExtents(m_nodeHeader.m_contentExtent, featureExtent);
+        }
+
+    size_t added = 0;
+
+    if (!HasRealChildren() || (m_delayedDataPropagation && (pointsPtr->size() + pointsClipped.size() < m_nodeHeader.m_SplitTreshold)))
+        {
+        std::cout << " NODE " << m_nodeId << " parent " << m_nodeHeader.m_parentNodeID.m_integerID << " level " << m_nodeHeader.m_level << " adding mesh with " << nPts << " points " << nIndices << " indices " << std::endl;
+        vector<int32_t> indexes;
+        DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
+                                            ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
+
+        added += pointsClipped.size();
+        size_t offset = pointsPtr->size();
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  indicesPtr = GetPtsIndicePtr();
+        m_meshParts.push_back((int)indicesPtr->size());
+        pointsPtr->push_back(&pointsClipped[0], pointsClipped.size());
+        for (auto& idx : indicesClipped)
+            {
+            indicesPtr->push_back(idx+(int)offset);
+            }
+        m_nodeHeader.m_nbFaceIndexes = indicesPtr->size();
+        m_meshParts.push_back((int)indicesPtr->size());
+        m_meshMetadata.push_back(Utf8String(metadata));
+        }
+    else
+        {
+        if (IsParentOfARealUnsplitNode())
+            added = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->AddMeshDefinitionUnconditional(&pointsClipped[0], pointsClipped.size(), &indicesClipped[0], indicesClipped.size(), extentClipped, metadata);
+        else
+            {
+            for (size_t indexNode = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
+                {
+                added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNode])->AddMeshDefinition(&pointsClipped[0], pointsClipped.size(), &indicesClipped[0], indicesClipped.size(), extentClipped, true, metadata);
+                }
+            }
+        }
+
+    SetDirty(true);
+    return added;
+    }
+
+template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bool ExtentFixed, const char* metadata)
+    {
+    if (s_inEditing)
+        {
+        InvalidateFilteringMeshing();
+        }
+    if (m_DelayedSplitRequested)
+        SplitNode(GetDefaultSplitPosition());
+
+    if (!ExtentFixed && GetParentNode() == NULL && m_nodeHeader.m_IsLeaf)
+        {
+        m_nodeHeader.m_nodeExtent = ExtentOp<EXTENT>::MergeExtents(GetNodeExtent(), ExtentOp<EXTENT>::Create(extent.low.x, extent.low.y, extent.low.z, extent.high.x, extent.high.y, extent.high.z));
+
+        if (ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) &&
+            ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent))
+            {
+            ExtentOp<EXTENT>::SetXMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent)));
+            ExtentOp<EXTENT>::SetZMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent)));
+            }
+        else
+            if (ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) &&
+                ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent))
+                {
+                ExtentOp<EXTENT>::SetYMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent)));
+                ExtentOp<EXTENT>::SetZMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent)));
+                }
+            else
+                if (ExtentOp<EXTENT>::GetWidth(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent) &&
+                    ExtentOp<EXTENT>::GetHeight(m_nodeHeader.m_nodeExtent) < ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent))
+                    {
+                    ExtentOp<EXTENT>::SetXMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent)));
+                    ExtentOp<EXTENT>::SetYMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent)));
+                    }
+
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+
+        if (nPts + pointsPtr->size() >= m_nodeHeader.m_SplitTreshold)
+            {
+            return AddMeshDefinition(pts, nPts, indices, nIndices, extent, true, metadata);
+            }
+        else
+            {
+            return AddMeshDefinitionUnconditional(pts, nPts, indices, nIndices, extent, metadata);
+            }
+        }
+    else
+        {
+        DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
+                                            ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
+        if (extent.IntersectsWith(nodeRange))
+            {
+            return AddMeshDefinitionUnconditional(pts, nPts, indices, nIndices, extent, metadata);
+            }
+        }
+    return 0;
+    
+    }
+#endif
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 08/15
@@ -1457,6 +1716,9 @@ template<class POINT, class EXTENT>  size_t SMMeshIndexNode<POINT, EXTENT>::Coun
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::OnPushNodeDown()
     {
     PropagateFeaturesToChildren();
+#ifdef WIP_MESH_IMPORT
+    PropagateMeshToChildren();
+#endif
     }
 
 //=======================================================================================
@@ -1465,7 +1727,49 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::OnPush
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::OnPropagateDataDown()
     {
     PropagateFeaturesToChildren();
+#ifdef WIP_MESH_IMPORT
+    PropagateMeshToChildren();
+#endif
     }
+
+#ifdef WIP_MESH_IMPORT
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::PropagateMeshToChildren()
+    {
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  indicesPtr = GetPtsIndicePtr();
+    if (indicesPtr->size() == 0) return;
+    DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
+                                        ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+    bvector<IScalableMeshMeshPtr> allMeshes;
+    bvector<Utf8String> metadata;
+    GetMeshParts(allMeshes, metadata);
+    if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
+        {
+        for (size_t i = 0; i < allMeshes.size(); ++i)
+            {
+            if (!allMeshes[i].IsValid() || allMeshes[i]->GetNbFaces() == 0) continue;
+            DRange3d extent = DRange3d::From(allMeshes[i]->EditPoints(), (int)allMeshes[i]->GetNbPoints());
+            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->AddMeshDefinitionUnconditional(allMeshes[i]->EditPoints(), allMeshes[i]->GetNbPoints(), allMeshes[i]->GetPolyfaceQuery()->GetPointIndexCP(), allMeshes[i]->GetPolyfaceQuery()->GetPointIndexCount(), extent, metadata[i].c_str());
+            }
+        }
+    else if (!IsLeaf())
+        {
+            for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
+                for (size_t i = 0; i < allMeshes.size(); ++i)
+                    {
+                    if (!allMeshes[i].IsValid() || allMeshes[i]->GetNbFaces() == 0) continue;
+                    DRange3d extent = DRange3d::From(allMeshes[i]->EditPoints(), (int)allMeshes[i]->GetNbPoints());
+                    dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes])->AddMeshDefinition(allMeshes[i]->EditPoints(), allMeshes[i]->GetNbPoints(), allMeshes[i]->GetPolyfaceQuery()->GetPointIndexCP(), allMeshes[i]->GetPolyfaceQuery()->GetPointIndexCount(), extent, true, metadata[i].c_str());
+                    }
+        }
+    indicesPtr->clear();
+    pointsPtr->clear();
+    m_meshParts.clear();
+    m_meshMetadata.clear();
+    m_nodeHeader.m_nbFaceIndexes = 0;
+    }
+#endif
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 08/15
@@ -2259,7 +2563,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Update
 
     if (existingFaces->size() > 0 && existingPts->size() > 0 && hasPtsToTrack)
         {
-        //should not happen
             {
             WString nameStitched = LOG_PATH_STR_W + L"postdtmmesh_1st";
             LOGSTRING_NODE_INFO_W(this, nameStitched)
@@ -2286,6 +2589,64 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Update
     GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex);
     m_dtmPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     }
+
+#ifdef WIP_MESH_IMPORT
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::GetMeshParts(bvector<IScalableMeshMeshPtr>& parts, bvector<Utf8String>& metadata)
+    {
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> existingPts(GetPointsPtr());
+    if (m_meshParts.size() > 0)
+        {
+        for (size_t i = 0; i < m_meshParts.size(); i += 2)
+            {
+            bvector<int> indices((m_meshParts[i + 1] - m_meshParts[i]));
+            memcpy(&indices[0], &(*existingFaces)[m_meshParts[i]], (m_meshParts[i + 1] - m_meshParts[i]) * sizeof(int32_t));
+            int idxMin = INT_MAX;
+            int idxMax = INT_MIN;
+            for (auto& idx : indices)
+                {
+                if (idx < idxMin) idxMin = idx;
+                if (idx > idxMax) idxMax = idx;
+                }
+            for (auto& idx : indices) idx -= (idxMin - 1);
+            IScalableMeshMeshPtr meshPtr = IScalableMeshMesh::Create(idxMax - (idxMin - 1), const_cast<DPoint3d*>(&(*existingPts)[idxMin-1]), indices.size(), &indices[0], 0, 0, 0, 0, 0, 0);
+            parts.push_back(meshPtr);
+            metadata.push_back(m_meshMetadata[i/2]);
+            }
+        }
+    else
+        {
+        metadata.push_back(Utf8String());
+        IScalableMeshMeshPtr meshPtr = IScalableMeshMesh::Create(existingPts->size(), const_cast<DPoint3d*>(&(*existingPts)[0]), existingFaces->size(), const_cast<int32_t*>(&(*existingFaces)[0]), 0, 0, 0, 0, 0, 0);
+        parts.push_back(meshPtr);
+        }
+    }
+
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::AppendMeshParts(bvector<bvector<DPoint3d>>& points, bvector<bvector<int32_t>>& indices, bvector<Utf8String>& metadata, bool shouldCreateGraph)
+    {
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicesPtr(GetPtsIndicePtr());
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+    for (size_t i = 0; i < points.size(); ++i)
+        {
+        DRange3d extentClipped = DRange3d::NullRange();
+        bvector<DPoint3d> pointsClipped;
+        bvector<int32_t> indicesClipped;
+        DRange3d extent = DRange3d::From(&points[i][0], (int)points[i].size());
+        ClipMeshDefinition(m_nodeHeader.m_nodeExtent, pointsClipped, extentClipped, indicesClipped, &points[i][0], points[i].size(), &indices[i][0], indices[i].size(), extent);
+        if (!m_nodeHeader.m_nodeExtent.IntersectsWith(extentClipped)) continue;
+        m_meshMetadata.push_back(metadata[i]);
+        size_t offset = pointsPtr->size();
+        m_meshParts.push_back((int)indicesPtr->size());
+        pointsPtr->push_back(&points[i][0], points[i].size());
+        for (auto& idx : indices[i])
+            {
+            indicesPtr->push_back(idx + (int)offset);
+            }
+        m_nodeHeader.m_nbFaceIndexes = indicesPtr->size();
+        m_meshParts.push_back((int)indicesPtr->size());
+        }
+    }
+#endif
 
 //=======================================================================================
 // @description Sets texture data for this node based on a raster. If untextured this adds
@@ -3341,7 +3702,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
         {
         if (!IsLoaded())
             Load();
-
+#ifdef WIP_MESH_IMPORT
+        if (m_existingMesh) return true;
+#endif
         bool needsMeshing = false;
 
         if (!HasRealChildren())
@@ -3486,6 +3849,48 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::PerformCl
     {
     if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->ClipActionRecursive(action, clipId, extent, setToggledWhenIDIsOn);
     }
+
+#ifdef WIP_MESH_IMPORT
+template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata)
+    {
+    if (0 == nPts)
+        return;
+
+    // Check if initial node allocated
+    if (m_pRootNode == 0)
+        {
+        // There is no root node at the moment
+        // Allocate root node the size of the object extent
+        if (m_indexHeader.m_HasMaxExtent)
+            m_pRootNode = CreateNewNode(m_indexHeader.m_MaxExtent);
+        else
+            m_pRootNode = CreateNewNode(ExtentOp<EXTENT>::Create(extent.low.x, extent.low.y, extent.low.z, extent.high.x, extent.high.y, extent.high.z), true);
+        }
+    size_t nAddedPoints = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->AddMeshDefinition(pts, nPts, indices, nIndices, extent, m_indexHeader.m_HasMaxExtent, metadata);
+    if (0 == nAddedPoints)
+        {
+        //can't add feature, need to grow extent
+        DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_pRootNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_pRootNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_pRootNode->m_nodeHeader.m_nodeExtent),
+                                            ExtentOp<EXTENT>::GetXMax(m_pRootNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_pRootNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_pRootNode->m_nodeHeader.m_nodeExtent));
+        while (!extent.IsContained(nodeRange))
+            {
+            // If the item is not in root node and extent is limited then it is impossible to add item
+            if (m_indexHeader.m_HasMaxExtent)
+                return;
+
+            // The extent is not contained... we must create a new node
+            PushRootDown(ExtentOp<EXTENT>::Create(extent.low.x, extent.low.y, extent.low.z, extent.high.x, extent.high.y, extent.high.z));
+            nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_pRootNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_pRootNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_pRootNode->m_nodeHeader.m_nodeExtent),
+                                       ExtentOp<EXTENT>::GetXMax(m_pRootNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_pRootNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_pRootNode->m_nodeHeader.m_nodeExtent));
+            }
+
+
+        // The root node contains the spatial object ... add it
+        nAddedPoints = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->AddMeshDefinition(pts, nPts, indices, nIndices, extent, m_indexHeader.m_HasMaxExtent, metadata);
+        assert(nAddedPoints >= nPts);
+        }
+    }
+#endif
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
     {

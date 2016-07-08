@@ -716,6 +716,8 @@ void CreateGraphFromIndexBuffer(MTGGraph* graphP, const long* meshFaces, int cou
         {
         int j = i % 3 < 2 ? i + 1 : i / 3;
         int k = j + 1;
+        bool distinctFace = meshFaces[i] != meshFaces[j] && meshFaces[j] != meshFaces[k] && meshFaces[k] != meshFaces[i];
+        if (!distinctFace) continue;
         assert(meshFaces[i] != meshFaces[j] && meshFaces[j] != meshFaces[k] && meshFaces[k] != meshFaces[i]);
         assert(meshFaces[i] <= pointCount && meshFaces[j] <= pointCount  && meshFaces[k] <= pointCount);
         /*      log << " FACE IS " + std::to_string(meshFaces[i]) + "/" + std::to_string(meshFaces[j]) + "/" + std::to_string(meshFaces[k]) << endl;
