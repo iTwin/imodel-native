@@ -33,16 +33,17 @@ enum class SMNodeDataStoreType
     */
     };
 
-template <typename DataType>  class ISMNodeDataStore : public RefCountedBase
+template <typename DataType, typename NodeHeaderType> class ISMNodeDataStore : public RefCountedBase
     {
     private : 
-
-        SMPointIndexHeader<EXTENT>* m_nodeHeader;
-        ISMDataStore*               m_store;
+        
+        NodeHeaderType* m_nodeHeader;
+        ISMDataStore*   m_store;
+        
 
     public : 
 
-        ISMNodeDataStore(ISMDataStore* m_store, SMPointIndexHeader<EXTENT>* nodeHeader)
+        ISMNodeDataStore(ISMDataStore* m_store, NodeHeaderType* nodeHeader)
             {
             m_nodeHeader = nodeHeader;
             m_store = store;
@@ -97,7 +98,7 @@ template <typename DataType>  class ISMNodeDataStore : public RefCountedBase
 typedef RefCountedPtr<ISMNodeDataStore<>> ISMNodeDataStorePtr;
 
 
-template <typename PointType, typename MasterHeaderType, typename NodeHeaderType>  class ISMDataStore
+template <typename MasterHeaderType, typename NodeHeaderType>  class ISMDataStore
     {
     public:
 
@@ -133,7 +134,7 @@ template <typename PointType, typename MasterHeaderType, typename NodeHeaderType
         virtual void Close () = 0;
         
         template<typename T>
-        RefCountedPtr<ISMNodeDataStore<T>> GetNodeDataStore() = 0;
+        RefCountedPtr<ISMNodeDataStore<T>> GetNodeDataStore(NodeHeaderType* nodeHeader) = 0;
                             
     };
 #endif

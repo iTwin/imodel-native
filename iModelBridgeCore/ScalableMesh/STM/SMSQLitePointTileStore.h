@@ -62,19 +62,7 @@ public:
         // We didn't want to close it. It's ScalableMesh which did this stuff now (and if SMSQLiteFilePtr is destroy, close is automatically called)
     //m_smSQLiteFile->Close();
     }
-
-    virtual bool HasSpatialReferenceSystem()
-    {
-        // if spatialreference for scm return true
-        return false;
-    }
-
-    virtual std::string GetSpatialReferenceSystem()
-    {
-        // return string for GCS
-        return string();
-    }
-
+   
     virtual uint64_t GetNextID() const override
         {
         //return m_smSQLiteFile->GetLastInsertRowId(); // This only works if last insert was performed on the same database connection

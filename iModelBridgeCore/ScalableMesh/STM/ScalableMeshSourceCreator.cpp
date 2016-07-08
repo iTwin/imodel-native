@@ -434,9 +434,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 
 
-
-    typedef SMPointTaggedTileStore<int32_t,
-        PointIndexExtentType>             TileStoreType;
+    
     typedef SMPointTileStore<int32_t,
         PointIndexExtentType>             GenericTileStoreType;
     WString name = m_scmFileName;
@@ -445,7 +443,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     //ISMStore::File::Ptr featureFilePtr = ISMStore::File::Create(featureFilePath.c_str());
     SMSQLiteFilePtr sqliteFeatureFile = new SMSQLiteFile();
     sqliteFeatureFile->Create(featureFilePath);
-    HFCPtr<GenericTileStoreType>  pFeatureTileStore = new SMSQLiteFeatureTileStore<PointIndexExtentType>(sqliteFeatureFile);//new TileStoreType(featureFilePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+    HFCPtr<GenericTileStoreType>  pFeatureTileStore = new SMSQLiteFeatureTileStore<PointIndexExtentType>(sqliteFeatureFile);
     //pFeatureTileStore->StoreMasterHeader(NULL, 0);
     pDataIndex->SetFeatureStore(pFeatureTileStore);
     auto pool = ScalableMeshMemoryPools<PointType>::Get()->GetFeaturePool();

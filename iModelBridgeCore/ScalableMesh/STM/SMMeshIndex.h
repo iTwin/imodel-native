@@ -1035,5 +1035,3 @@ inline bool IsVoidFeature(ISMStore::FeatureType type)
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
         dtmType == DTMFeatureType::DrapeVoid;
     }
-
-//#include "SMMeshIndex.hpp"
