@@ -373,6 +373,8 @@ $(CoreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable
 
 $(CoreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
+$(CoreObjs)PointCloudSettings$(oext) :              $(DgnCoreDir)PointCloudSettings.cpp $(DgnPlatformAPISrc)PointCloudSettings.h ${MultiCompileDepends}
+
 # NEEDSWORK: disabling this until we can settle schema issues
 #
 #$(CoreObjs)DimensionStyle$(oext) :                  $(DgnCoreDir)Dimension/DimensionStyle.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
