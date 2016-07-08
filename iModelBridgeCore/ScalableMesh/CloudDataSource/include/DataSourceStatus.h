@@ -47,16 +47,16 @@ protected:
 
 public:
 
-CLOUD_EXPORT								DataSourceStatus			(void);
-CLOUD_EXPORT								DataSourceStatus			(const DataSourceStatus &otherStatus);
-CLOUD_EXPORT								DataSourceStatus			(DataSourceStatusCode code);
+								DataSourceStatus			(void);
+								DataSourceStatus			(const DataSourceStatus &otherStatus);
+								DataSourceStatus			(DataSourceStatusCode code);
 
-CLOUD_EXPORT		void					set							(DataSourceStatusCode newCode);
-CLOUD_EXPORT		void					set							(const DataSourceStatus &newStatus);
-CLOUD_EXPORT		DataSourceStatusCode	getCode						(void) const;
+		void					set							(DataSourceStatusCode newCode);
+		void					set							(const DataSourceStatus &newStatus);
+		DataSourceStatusCode	getCode						(void) const;
 
-CLOUD_EXPORT		bool					isOK						(void) const;
-CLOUD_EXPORT		bool					isFailed					(void) const;
+		bool					isOK						(void) const;
+		bool					isFailed					(void) const;
 };
 
 

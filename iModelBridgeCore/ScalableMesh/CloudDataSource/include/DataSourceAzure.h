@@ -31,11 +31,11 @@ protected:
 
 public:
 
-CLOUD_EXPORT								DataSourceAzure			(DataSourceAccount *sourceAccount);
-CLOUD_EXPORT				   			   ~DataSourceAzure			(void);
+								DataSourceAzure			(DataSourceAccount *sourceAccount);
+				   			   ~DataSourceAzure			(void);
 
-CLOUD_EXPORT	DataSourceStatus			open					(const DataSourceURL &sourceURL, DataSourceMode mode);
-CLOUD_EXPORT	DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size);
-CLOUD_EXPORT	DataSourceStatus			close					(void);
+	DataSourceStatus			open					(const DataSourceURL &sourceURL, DataSourceMode mode);
+	DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size);
+	DataSourceStatus			close					(void);
 };
 

@@ -11,5 +11,5 @@ protected:
 
 public:
 
-CLOUD_EXPORT			DataSourceCloud		(DataSourceAccount *sourceAccount);
+			DataSourceCloud		(DataSourceAccount *sourceAccount);
 };

@@ -8,20 +8,20 @@ class DataSourceManager : public Manager<DataSource>, public DataSourceServiceMa
 {
 public:
 
-	typedef DataSource::Name	DataSourceName;
+    typedef DataSource::Name    DataSourceName;
 
 protected:
 
 public:
 CLOUD_EXPORT								DataSourceManager		(void);
 
-CLOUD_EXPORT	DataSource			*		createDataSource		(const DataSourceName &name, const DataSourceAccount::AccountName &account, const DataSourceStoreConfig *config = nullptr);
-CLOUD_EXPORT	DataSource			*		createDataSource		(const DataSourceName &name, DataSourceAccount &account, const DataSourceStoreConfig *config = nullptr);
+    DataSource *                         createDataSource        (const DataSourceName &name, const DataSourceAccount::AccountName &account, const DataSourceStoreConfig *config = nullptr);
+    DataSource *                         createDataSource        (const DataSourceName &name, DataSourceAccount &account, const DataSourceStoreConfig *config = nullptr);
 
-CLOUD_EXPORT	DataSource			*		getOrCreateDataSource	(const DataSourceName &name, DataSourceAccount &account, bool *created = nullptr);
+    DataSource *                         getOrCreateDataSource   (const DataSourceName &name, DataSourceAccount &account, bool *created = nullptr);
 
-CLOUD_EXPORT	DataSourceStatus			destroyDataSource		(DataSource *dataSource);
+    DataSourceStatus                     destroyDataSource       (DataSource *dataSource);
 
-CLOUD_EXPORT	DataSourceAccount	*		initializeAzureTest		(void);
+    DataSourceAccount *                  initializeAzureTest     (void);
 
 };

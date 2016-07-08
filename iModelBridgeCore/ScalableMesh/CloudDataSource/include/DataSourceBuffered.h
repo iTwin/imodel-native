@@ -19,27 +19,27 @@ protected:
 	DataSourceStatus			initializeBuffer		(DataSourceBuffer::BufferSize size = 0, DataSource::Buffer * existingBuffer = nullptr);
 
 public:
-CLOUD_EXPORT								DataSourceBuffered		(DataSourceAccount *sourceAccount);
+								DataSourceBuffered		(DataSourceAccount *sourceAccount);
 
-CLOUD_EXPORT	bool						isValid					(void);
+	bool						isValid					(void);
 
-CLOUD_EXPORT	DataSourceStatus			open					(const DataSourceURL & sourceURL, DataSourceMode sourceMode);
-CLOUD_EXPORT	DataSourceStatus			close					(void);
+	DataSourceStatus			open					(const DataSourceURL & sourceURL, DataSourceMode sourceMode);
+	DataSourceStatus			close					(void);
 
-CLOUD_EXPORT	DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
-CLOUD_EXPORT	DataSourceStatus			write					(Buffer * source, DataSize size);
+	DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
+	DataSourceStatus			write					(Buffer * source, DataSize size);
 
-CLOUD_EXPORT	DataSourceStatus			flush					(void);
+	DataSourceStatus			flush					(void);
 
-CLOUD_EXPORT	void						setBuffer				(DataSourceBuffer *newBuffer);
-CLOUD_EXPORT	DataSourceBuffer		*	getBuffer				(void);
+	void						setBuffer				(DataSourceBuffer *newBuffer);
+	DataSourceBuffer		*	getBuffer				(void);
 
-CLOUD_EXPORT	DataSourceBuffer		*	transferBuffer			(void);
+	DataSourceBuffer		*	transferBuffer			(void);
 
-CLOUD_EXPORT	DataSourceStatus			setSegmentSize			(DataSource::DataSize size);
-CLOUD_EXPORT	DataSource::DataSize		getSegmentSize			(void);
+	DataSourceStatus			setSegmentSize			(DataSource::DataSize size);
+	DataSource::DataSize		getSegmentSize			(void);
 
-CLOUD_EXPORT	TimeoutStatus				waitForSegments			(DataSourceBuffer::Timeout timeoutMilliseconds);
+	TimeoutStatus				waitForSegments			(DataSourceBuffer::Timeout timeoutMilliseconds);
 };
 
 
