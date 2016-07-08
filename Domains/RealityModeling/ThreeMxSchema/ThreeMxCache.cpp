@@ -146,6 +146,8 @@ StatusInt ThreeMxFileData::LoadFromDb() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Load a node from the http source. This method runs on an IOThreadPool thread and wait for the http request to 
+* complete or timeout.
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ThreeMxFileData::LoadFromHttp() const
