@@ -2,7 +2,7 @@
 #
 #     $Source: gtestlib.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if !defined (BuildContext)
@@ -26,7 +26,7 @@ GUnitTestDir    = $(SrcRoot)util/gtest/
   %include cdefapnd.mki
 %endif
 
-%if $(BUILD_TOOLSET) == "VC11"
+%if $(BUILD_TOOLSET) == "VS2012"
     nameToDefine = _VARIADIC_MAX=10
     %include cdefapnd.mki
 %endif
