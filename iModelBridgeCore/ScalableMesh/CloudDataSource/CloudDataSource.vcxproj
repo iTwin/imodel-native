@@ -55,6 +55,7 @@
     <ClInclude Include="include\DataSourceBuffered.h" />
     <ClInclude Include="include\DataSourceCached.h" />
     <ClInclude Include="include\DataSourceCloud.h" />
+    <ClInclude Include="include\DataSourceDefs.h" />
     <ClInclude Include="include\DataSourceFile.h" />
     <ClInclude Include="include\DataSourceLocator.h" />
     <ClInclude Include="include\DataSourceManager.h" />

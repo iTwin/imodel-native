@@ -176,5 +176,8 @@
     <ClInclude Include="include\stdafx.h">
       <Filter>Header Files\include</Filter>
     </ClInclude>
+    <ClInclude Include="include\DataSourceDefs.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
