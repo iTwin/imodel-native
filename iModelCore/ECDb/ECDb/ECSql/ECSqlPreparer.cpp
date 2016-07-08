@@ -1072,58 +1072,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
     return ECSqlStatus::Success;
     }
 
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PreparePropertyNameListExp(NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, PropertyNameListExp const* exp)
-    {
-    BeAssert(nativeSqlSnippetLists.empty());
-    for (Exp const* childExp : exp->GetChildren())
-        {
-        PropertyNameExp const* propNameExp = static_cast<PropertyNameExp const*> (childExp);
-
-        NativeSqlBuilder::List nativeSqlSnippets;
-        ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, propNameExp);
-        if (!stat.IsSuccess())
-            return stat;
-
-        nativeSqlSnippetLists.push_back(move(nativeSqlSnippets));
-        }
-
-    return ECSqlStatus::Success;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PreparePropertyNameListExp(NativeSqlBuilder::List& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, PropertyNameListExp const* exp)
-    {
-    BeAssert(nativeSqlSnippetLists.empty());
-    for (Exp const* childExp : exp->GetChildren())
-        {
-        PropertyNameExp const* propNameExp = static_cast<PropertyNameExp const*> (childExp);
-
-        NativeSqlBuilder::List nativeSqlSnippets;
-        ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, propNameExp);
-        if (!stat.IsSuccess())
-            return stat;
-
-        if (nativeSqlSnippets.size() > 1)
-            {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Property Name Expression '%s' with invalid type in Property Name List Expression '%s'. Only Property Name Expressions with numeric, string or blob types are supported.",
-                                                                   propNameExp->ToECSql().c_str(), exp->ToECSql().c_str());
-            return ECSqlStatus::InvalidECSql;
-            }
-
-        nativeSqlSnippetLists.push_back(move(nativeSqlSnippets[0]));
-        }
-
-    return ECSqlStatus::Success;
-    }
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------

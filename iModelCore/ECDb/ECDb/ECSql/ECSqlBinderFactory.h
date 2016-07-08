@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinderFactory.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,14 +20,14 @@ struct ECSqlStatementBase;
 //+===============+===============+===============+===============+===============+======
 struct ECSqlBinderFactory
     {
-private:
-    ECSqlBinderFactory ();
-    ~ECSqlBinderFactory ();
-    
-public:
-    static std::unique_ptr<ECSqlBinder> CreateBinder (ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
-    static std::unique_ptr<ECSqlBinder> CreateBinder (ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual, bool enforceConstraints);
-    static std::unique_ptr<ECSqlBinder> CreateBinder (ECSqlStatementBase& ecsqlStatement, PropertyMapCR propMap);
+    private:
+        ECSqlBinderFactory();
+        ~ECSqlBinderFactory();
+
+    public:
+        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
+        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual, bool enforceConstraints);
+        static std::unique_ptr<ECSqlBinder> CreateBinder(ECSqlStatementBase& ecsqlStatement, PropertyMapCR propMap);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

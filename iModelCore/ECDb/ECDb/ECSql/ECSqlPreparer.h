@@ -67,10 +67,6 @@ struct ECSqlExpPreparer
         static ECSqlStatus PrepareNullLiteralValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LiteralValueExp const*, size_t targetExpNativeSqlSnippetCount);
         static ECSqlStatus PrepareOrderByExp(ECSqlPrepareContext&, OrderByExp const*);
         static ECSqlStatus PrepareParameterExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ParameterExp const*, bool targetIsVirtual, bool enforceConstraints);
-        static ECSqlStatus PreparePropertyNameListExp(NativeSqlBuilder::ListOfLists&, ECSqlPrepareContext&, PropertyNameListExp const*);
-        //! Prepares the PropertyNameListExp if each PropertyNameExp in the list will be prepared into a single SQL snippet.
-        //! Returns an error otherwise
-        static ECSqlStatus PreparePropertyNameListExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, PropertyNameListExp const*);
         static ECSqlStatus PrepareQualifiedJoinExp(ECSqlPrepareContext&, QualifiedJoinExp const&);
         static ECSqlStatus PrepareQueryExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, QueryExp const*);
         static ECSqlStatus PrepareRelationshipJoinExp(ECSqlPrepareContext&, ECRelationshipJoinExp const&);

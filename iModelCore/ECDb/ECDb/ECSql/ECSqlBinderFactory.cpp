@@ -16,42 +16,31 @@
 #include "ECSqlStatementBase.h"
 #include "ECSqlBinder.h"
 
-using namespace std;
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //****************** ECSqlBinderFactory **************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder
-(
-ECSqlStatementBase& ecsqlStatement,
-ParameterExp const& parameterExp,
-bool targetIsVirtual,
-bool enforceConstraints
-)
+std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp,
+                                                         bool targetIsVirtual, bool enforceConstraints)
     {
-    ECSqlTypeInfo const& typeInfo = parameterExp.GetTypeInfo ();
-    auto targetExp = parameterExp.GetTargetExp ();
-    if (targetExp != nullptr && targetExp->GetType () == Exp::Type::PropertyName)
+    ECSqlTypeInfo const& typeInfo = parameterExp.GetTypeInfo();
+    ComputedExp const* targetExp = parameterExp.GetTargetExp();
+    if (targetExp != nullptr && targetExp->GetType() == Exp::Type::PropertyName)
         {
-        BeAssert (dynamic_cast<PropertyNameExp const*> (targetExp) != nullptr);
+        BeAssert(dynamic_cast<PropertyNameExp const*> (targetExp) != nullptr);
         PropertyNameExp const* propNameExp = static_cast<PropertyNameExp const*> (targetExp);
-        if (propNameExp->IsSystemProperty ())
-            return unique_ptr<ECSqlBinder> (new SystemPropertyECSqlBinder (ecsqlStatement, typeInfo, *propNameExp, targetIsVirtual, enforceConstraints));
+        if (propNameExp->IsSystemProperty())
+            return std::unique_ptr<ECSqlBinder>(new SystemPropertyECSqlBinder(ecsqlStatement, typeInfo, *propNameExp, targetIsVirtual, enforceConstraints));
         }
-    
-    return CreateBinder (ecsqlStatement, typeInfo);
+
+    return CreateBinder(ecsqlStatement, typeInfo);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder
-(
-    ECSqlStatementBase& ecsqlStatement,
-    ECSqlTypeInfo const& typeInfo
-    )
+std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)
     {
     auto typeKind = typeInfo.GetKind();
     BeAssert(typeKind != ECSqlTypeInfo::Kind::Unset);
@@ -70,13 +59,13 @@ unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder
                     case ECN::PRIMITIVETYPE_Integer:
                     case ECN::PRIMITIVETYPE_Long:
                     case ECN::PRIMITIVETYPE_String:
-                        return unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ecsqlStatement, typeInfo));
+                        return std::unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ecsqlStatement, typeInfo));
 
                     case ECN::PRIMITIVETYPE_Point2D:
-                        return unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ecsqlStatement, typeInfo, false));
+                        return std::unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ecsqlStatement, typeInfo, false));
 
                     case ECN::PRIMITIVETYPE_Point3D:
-                        return unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ecsqlStatement, typeInfo, true));
+                        return std::unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ecsqlStatement, typeInfo, true));
 
                     default:
                         BeAssert(false && "Could not create parameter mapping for the given parameter exp.");
@@ -86,14 +75,14 @@ unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder
             }
             //the rare case of expressions like this: NULL IS ?
             case ECSqlTypeInfo::Kind::Null:
-                return unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ecsqlStatement, typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ecsqlStatement, typeInfo));
 
             case ECSqlTypeInfo::Kind::Struct:
-                return unique_ptr<ECSqlBinder>(new StructToColumnsECSqlBinder(ecsqlStatement, typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new StructToColumnsECSqlBinder(ecsqlStatement, typeInfo));
             case ECSqlTypeInfo::Kind::PrimitiveArray:
-                return unique_ptr<ECSqlBinder>(new PrimitiveArrayToColumnECSqlBinder(ecsqlStatement, typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new PrimitiveArrayToColumnECSqlBinder(ecsqlStatement, typeInfo));
             case ECSqlTypeInfo::Kind::StructArray:
-                return unique_ptr<ECSqlBinder>(new StructArrayJsonECSqlBinder(ecsqlStatement, typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new StructArrayJsonECSqlBinder(ecsqlStatement, typeInfo));
 
             default:
                 BeAssert(false && "ECSqlBinderFactory::CreateBinder> Unhandled ECSqlTypeInfo::Kind value.");
@@ -104,13 +93,9 @@ unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder 
-(
-ECSqlStatementBase& ecsqlStatement, 
-PropertyMapCR propMap
-)
+std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlStatementBase& ecsqlStatement, PropertyMapCR propMap)
     {
-    return CreateBinder (ecsqlStatement, ECSqlTypeInfo (propMap));
+    return CreateBinder(ecsqlStatement, ECSqlTypeInfo(propMap));
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

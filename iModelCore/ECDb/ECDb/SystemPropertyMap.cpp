@@ -11,26 +11,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//******************************** PropertyMapSystem ****************************************
-
-void SystemPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const 
-    {
-    ColumnMappedToProperty info;
-    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
-        info.SetAccessString(GetPropertyAccessString());
-
-    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
-        info.SetColumn(*GetSingleColumn());
-
-    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
-        info.SetPropertyMap(*this);
-
-    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
-        info.SetStrongType(DbColumn::Type::Integer);
-
-    result.push_back(info);
-    }
-
+//******************************** SystemPropertyMap ****************************************
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
@@ -85,6 +66,27 @@ void SystemPropertyMap::_GetColumns(std::vector<DbColumn const*>& columns) const
         }
     }
 
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                02/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+void SystemPropertyMap::_QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const
+    {
+    ColumnMappedToProperty info;
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::AccessString))
+        info.SetAccessString(GetPropertyAccessString());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::Column))
+        info.SetColumn(*GetSingleColumn());
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::PropertyMap))
+        info.SetPropertyMap(*this);
+
+    if (Enum::Contains(loadFlags, ColumnMappedToProperty::LoadFlags::StrongType))
+        info.SetStrongType(DbColumn::Type::Integer);
+
+    result.push_back(info);
+    }
+
 //******************************** ECInstanceIdPropertyMap ****************************************
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2013
@@ -97,6 +99,9 @@ ECInstanceIdPropertyMap::ECInstanceIdPropertyMap(ECPropertyCR ecInstanceIdProper
     m_mappedTables.insert(m_mappedTables.begin(), tables.begin(), tables.end());
     }
 
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                06/2016
+//+---------------+---------------+---------------+---------------+---------------+-
 PropertyMapPtr ECInstanceIdPropertyMap::Create(ECDbSchemaManagerCR schemaManager, ClassMap const& classMap, std::vector<DbColumn const*> columns)
     {
     ECPropertyCP property = ECDbSystemSchemaHelper::GetSystemProperty(schemaManager, ECSqlSystemProperty::ECInstanceId);

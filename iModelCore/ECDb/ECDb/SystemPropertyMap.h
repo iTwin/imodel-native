@@ -132,7 +132,6 @@ struct RelConstraintECClassIdPropertyMap : RelationshipConstraintPropertyMap
         RelConstraintECClassIdPropertyMap(ECN::ECPropertyCR constraintProperty, std::vector<DbColumn const*>, ECSqlSystemProperty, ECN::ECClassId defaultClassId, ClassMap const&, Utf8CP endTableColumnAlias, bool colIsDelayGenerated);
         RelConstraintECClassIdPropertyMap(RelConstraintECClassIdPropertyMap const& proto) : RelationshipConstraintPropertyMap(proto) {}
 
-        virtual RelConstraintECClassIdPropertyMap const* _GetAsECClassIdRelationshipConstraintPropertyMapRelationship() const override { return this; }
         virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, DbTable const* tableFilter) const override;
 
     public:

@@ -8,6 +8,7 @@
 #include "ECDbPch.h"
 #include <Bentley/BeStringUtilities.h>
 #include "ECSqlInsertPreparer.h"
+#include "ECSqlPropertyNameExpPreparer.h"
 #include "SystemPropertyECSqlBinder.h"
 
 using namespace std;
@@ -23,7 +24,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
     BeAssert(exp.IsComplete());
     ctx.PushScope(exp);
 
-    auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (auto info = ctx.GetJoinedTableInfo())
         {
         ParentOfJoinedTableECSqlStatement* parentOfJoinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->CreateParentOfJoinedTableECSqlStatement(classMap.GetClass().GetId());
@@ -34,8 +35,8 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
             return ECSqlStatus::InvalidECSql;
             }
 
-        if (info->GetPrimaryECinstanceIdParameterIndex() > 0)
-            parentOfJoinedTableStmt->SetECInstanceIdBinder(static_cast<int>(info->GetPrimaryECinstanceIdParameterIndex()));
+        if (info->GetPrimaryECInstanceIdParameterIndex() > 0)
+            parentOfJoinedTableStmt->SetECInstanceIdBinder(static_cast<int>(info->GetPrimaryECInstanceIdParameterIndex()));
         }
 
 
@@ -276,22 +277,25 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets
-(
-NativeSqlSnippets& insertSqlSnippets,
-ECSqlPrepareContext& ctx,
-InsertStatementExp const& exp,
-ClassMap const& classMap
-)
+ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& insertSqlSnippets,ECSqlPrepareContext& ctx,
+                    InsertStatementExp const& exp,ClassMap const& classMap)
     {
     ECSqlStatus status = ECSqlExpPreparer::PrepareClassRefExp(insertSqlSnippets.m_classNameNativeSqlSnippet, ctx, *exp.GetClassNameExp());
     if (!status.IsSuccess())
         return status;
 
-    auto propNameListExp = exp.GetPropertyNameListExp();
-    status = ECSqlExpPreparer::PreparePropertyNameListExp(insertSqlSnippets.m_propertyNamesNativeSqlSnippets, ctx, propNameListExp);
-    if (!status.IsSuccess())
-        return status;
+    PropertyNameListExp const* propNameListExp = exp.GetPropertyNameListExp();
+    for (Exp const* childExp : propNameListExp->GetChildren())
+        {
+        PropertyNameExp const* propNameExp = static_cast<PropertyNameExp const*> (childExp);
+
+        NativeSqlBuilder::List nativeSqlSnippets;
+        ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, propNameExp);
+        if (!stat.IsSuccess())
+            return stat;
+
+        insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(nativeSqlSnippets));
+        }
 
     status = ECSqlExpPreparer::PrepareValueExpListExp(insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, exp.GetValuesExp(), propNameListExp, insertSqlSnippets.m_propertyNamesNativeSqlSnippets);
     if (!status.IsSuccess())

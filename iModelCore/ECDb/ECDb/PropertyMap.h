@@ -191,9 +191,6 @@ private:
     virtual BentleyStatus _Load(ClassDbMapping const&) { return SUCCESS; }
     virtual void _QueryColumnMappedToProperty(ColumnMappedToPropertyList& result, ColumnMappedToProperty::LoadFlags loadFlags, bool recusive) const = 0;
     virtual BentleyStatus _GetPropertyPathList(std::vector<Utf8String>& propertyPathList) const;
-    virtual StructArrayJsonPropertyMap const* _GetAsStructArrayPropertyMap() const { return nullptr; }
-    virtual NavigationPropertyMap const* _GetAsNavigationPropertyMap() const { return nullptr; }
-    virtual RelConstraintECClassIdPropertyMap const* _GetAsECClassIdRelationshipConstraintPropertyMapRelationship() const { return nullptr; }
 
 protected:
     //!@param[in] parent Parent property map in terms of a property map node hierarchy. Nothing to do with inheritance.

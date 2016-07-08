@@ -279,7 +279,7 @@ struct ECSqlPrepareContext
 
                 ParameterMap const& GetParameterMap() const { return m_parameterMap; }
                 bool IsUserProvidedECInstanceId()const { return m_ecinstanceIdIsUserProvided; }
-                size_t GetPrimaryECinstanceIdParameterIndex() const { return m_primaryECInstanceIdParameterIndex; }
+                size_t GetPrimaryECInstanceIdParameterIndex() const { return m_primaryECInstanceIdParameterIndex; }
             };
         //=======================================================================================
         // @bsiclass                                                 Affan.Khan    06/2013

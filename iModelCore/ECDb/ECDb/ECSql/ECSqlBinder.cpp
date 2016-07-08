@@ -31,7 +31,7 @@ ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
     {
     if (m_onBindEventHandlers == nullptr)
         m_onBindEventHandlers = std::unique_ptr<std::vector<IECSqlBinder*>>(new std::vector<IECSqlBinder*>());
-    
+
     BeAssert(std::find(m_onBindEventHandlers->begin(), m_onBindEventHandlers->end(), &binder) == m_onBindEventHandlers->end());
 
 #if 0
@@ -48,43 +48,43 @@ ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-void ECSqlBinder::SetSqliteIndex (size_t sqliteIndex)
+void ECSqlBinder::SetSqliteIndex(size_t sqliteIndex)
     {
-    SetSqliteIndex (-1, sqliteIndex);
+    SetSqliteIndex(-1, sqliteIndex);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-void ECSqlBinder::SetSqliteIndex (int ecsqlParameterComponentIndex, size_t sqliteIndex)
+void ECSqlBinder::SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex)
     {
-    _SetSqliteIndex (ecsqlParameterComponentIndex, sqliteIndex);
+    _SetSqliteIndex(ecsqlParameterComponentIndex, sqliteIndex);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlBinder::OnBeforeStep ()
+ECSqlStatus ECSqlBinder::OnBeforeStep()
     {
-    return _OnBeforeStep ();
+    return _OnBeforeStep();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-void ECSqlBinder::OnClearBindings ()
+void ECSqlBinder::OnClearBindings()
     {
-    _OnClearBindings ();
+    _OnClearBindings();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-Statement& ECSqlBinder::GetSqliteStatementR () const
+Statement& ECSqlBinder::GetSqliteStatementR() const
     {
-    BeAssert (m_ecsqlStatement.GetPreparedStatementP () != nullptr);
-    return m_ecsqlStatement.GetPreparedStatementP ()->GetSqliteStatementR ();
+    BeAssert(m_ecsqlStatement.GetPreparedStatementP() != nullptr);
+    return m_ecsqlStatement.GetPreparedStatementP()->GetSqliteStatementR();
     }
 
 //---------------------------------------------------------------------------------------
@@ -92,16 +92,16 @@ Statement& ECSqlBinder::GetSqliteStatementR () const
 //---------------------------------------------------------------------------------------
 ECDbCR ECSqlBinder::GetECDb() const
     {
-    BeAssert(m_ecsqlStatement.GetECDb() != nullptr); 
+    BeAssert(m_ecsqlStatement.GetECDb() != nullptr);
     return *m_ecsqlStatement.GetECDb();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlBinder::ReportError (DbResult sqliteStat, Utf8CP errorMessageHeader) const
+ECSqlStatus ECSqlBinder::ReportError(DbResult sqliteStat, Utf8CP errorMessageHeader) const
     {
-    BeAssert (m_ecsqlStatement.IsPrepared ());
+    BeAssert(m_ecsqlStatement.IsPrepared());
     GetECDb().GetECDbImplR().GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, sqliteStat, errorMessageHeader);
     return ECSqlStatus(sqliteStat);
     }
@@ -110,7 +110,7 @@ ECSqlStatus ECSqlBinder::ReportError (DbResult sqliteStat, Utf8CP errorMessageHe
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
 //static
-Statement::MakeCopy ECSqlBinder::ToBeSQliteBindMakeCopy (IECSqlBinder::MakeCopy makeCopy)
+Statement::MakeCopy ECSqlBinder::ToBeSQliteBindMakeCopy(IECSqlBinder::MakeCopy makeCopy)
     {
     switch (makeCopy)
         {
@@ -127,7 +127,7 @@ Statement::MakeCopy ECSqlBinder::ToBeSQliteBindMakeCopy (IECSqlBinder::MakeCopy 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-bool ECSqlParameterMap::Contains (int& ecsqlParameterIndex, Utf8CP ecsqlParameterName) const
+bool ECSqlParameterMap::Contains(int& ecsqlParameterIndex, Utf8CP ecsqlParameterName) const
     {
     ecsqlParameterIndex = GetIndexForName(ecsqlParameterName);
     return ecsqlParameterIndex > 0;
@@ -136,22 +136,22 @@ bool ECSqlParameterMap::Contains (int& ecsqlParameterIndex, Utf8CP ecsqlParamete
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-bool ECSqlParameterMap::TryGetBinder (ECSqlBinder*& binder, Utf8CP ecsqlParameterName) const
+bool ECSqlParameterMap::TryGetBinder(ECSqlBinder*& binder, Utf8CP ecsqlParameterName) const
     {
     int ecsqlParameterIndex = -1;
-    if (!Contains (ecsqlParameterIndex, ecsqlParameterName))
+    if (!Contains(ecsqlParameterIndex, ecsqlParameterName))
         return false;
 
-    BeAssert (ecsqlParameterIndex > 0);
-    return TryGetBinder (binder, ecsqlParameterIndex) == ECSqlStatus::Success;
+    BeAssert(ecsqlParameterIndex > 0);
+    return TryGetBinder(binder, ecsqlParameterIndex) == ECSqlStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlParameterMap::TryGetBinder (ECSqlBinder*& binder, int ecsqlParameterIndex) const
+ECSqlStatus ECSqlParameterMap::TryGetBinder(ECSqlBinder*& binder, int ecsqlParameterIndex) const
     {
-    if (ecsqlParameterIndex <= 0 || ecsqlParameterIndex > static_cast<int> (m_binders.size ()))
+    if (ecsqlParameterIndex <= 0 || ecsqlParameterIndex > static_cast<int> (m_binders.size()))
         return ECSqlStatus::Error;
 
     //parameter indices are 1-based, but stored in a 0-based vector.
@@ -162,9 +162,9 @@ ECSqlStatus ECSqlParameterMap::TryGetBinder (ECSqlBinder*& binder, int ecsqlPara
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlParameterMap::TryGetInternalBinder (ECSqlBinder*& binder, size_t internalBinderIndex) const
+ECSqlStatus ECSqlParameterMap::TryGetInternalBinder(ECSqlBinder*& binder, size_t internalBinderIndex) const
     {
-    if (internalBinderIndex >= m_internalSqlParameterBinders.size ())
+    if (internalBinderIndex >= m_internalSqlParameterBinders.size())
         return ECSqlStatus::Error;
 
     binder = m_internalSqlParameterBinders[internalBinderIndex];
@@ -175,10 +175,10 @@ ECSqlStatus ECSqlParameterMap::TryGetInternalBinder (ECSqlBinder*& binder, size_
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-int ECSqlParameterMap::GetIndexForName (Utf8CP ecsqlParameterName) const
+int ECSqlParameterMap::GetIndexForName(Utf8CP ecsqlParameterName) const
     {
-    auto it = m_nameToIndexMapping.find (ecsqlParameterName);
-    if (it != m_nameToIndexMapping.end ())
+    auto it = m_nameToIndexMapping.find(ecsqlParameterName);
+    if (it != m_nameToIndexMapping.end())
         return it->second;
     else
         return -1;
@@ -210,7 +210,7 @@ ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBin
         }
 
     if (!Utf8String::IsNullOrEmpty(parameterName))
-        m_nameToIndexMapping[parameterName] = ecsqlParameterIndex ;
+        m_nameToIndexMapping[parameterName] = ecsqlParameterIndex;
 
     return &binder;
     }
@@ -298,13 +298,13 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
     for (auto oi = orignalMap.First(); oi <= orignalMap.Last(); oi++)
         {
         auto param = orignalMap.Find(oi);
-        if (!param  || !param->IsNamed())
+        if (!param || !param->IsNamed())
             continue;
 
         ECSqlBinder* abinder = nullptr;
         ECSqlBinder* bbinder = nullptr;
 
-        baseParameterMap.TryGetBinder(abinder, param->GetName());        
+        baseParameterMap.TryGetBinder(abinder, param->GetName());
         TryGetBinder(bbinder, param->GetName());
 
         if (abinder == nullptr && bbinder == nullptr)
@@ -321,22 +321,22 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlBinder* ECSqlParameterMap::AddBinder (ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual, bool enforceConstraints)
+ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual, bool enforceConstraints)
     {
     int ecsqlParameterIndex = 0;
     //unnamed parameters don't have an identity, therefore always add a new binder in that case
-    if (parameterExp.IsNamedParameter () && Contains (ecsqlParameterIndex, parameterExp.GetParameterName ()))
+    if (parameterExp.IsNamedParameter() && Contains(ecsqlParameterIndex, parameterExp.GetParameterName()))
         {
-        BeAssert (false && "ECSqlParameterMap::AddBinder: mapping already exists");
+        BeAssert(false && "ECSqlParameterMap::AddBinder: mapping already exists");
         return nullptr;
         }
 
-    auto binder = ECSqlBinderFactory::CreateBinder (ecsqlStatement, parameterExp, targetIsVirtual, enforceConstraints);
+    auto binder = ECSqlBinderFactory::CreateBinder(ecsqlStatement, parameterExp, targetIsVirtual, enforceConstraints);
     if (binder == nullptr)
         return nullptr;
 
-    auto binderP = binder.get (); //cache raw pointer as return value as the unique_ptr will be moved into the list
-    m_ownedBinders.push_back (std::move (binder));
+    auto binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
+    m_ownedBinders.push_back(std::move(binder));
     m_binders.push_back(binderP);
 
     if (binderP->HasToCallOnBeforeStep())
@@ -345,35 +345,35 @@ ECSqlBinder* ECSqlParameterMap::AddBinder (ECSqlStatementBase& ecsqlStatement, P
     if (binderP->HasToCallOnClearBindings())
         m_bindersToCallOnClearBindings.push_back(binderP);
 
-    BeAssert (static_cast<int> (m_binders.size ()) == parameterExp.GetParameterIndex ()); //Parameter indices are 1-based
+    BeAssert(static_cast<int> (m_binders.size()) == parameterExp.GetParameterIndex()); //Parameter indices are 1-based
 
     //insert name to index mapping. 
-    if (parameterExp.IsNamedParameter ())
-        m_nameToIndexMapping[parameterExp.GetParameterName ()] = parameterExp.GetParameterIndex ();
-   
+    if (parameterExp.IsNamedParameter())
+        m_nameToIndexMapping[parameterExp.GetParameterName()] = parameterExp.GetParameterIndex();
+
     return binderP;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-ECSqlBinder* ECSqlParameterMap::AddInternalBinder (size_t& index, ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)
+ECSqlBinder* ECSqlParameterMap::AddInternalBinder(size_t& index, ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)
     {
-    auto binder = ECSqlBinderFactory::CreateBinder (ecsqlStatement, typeInfo);
+    auto binder = ECSqlBinderFactory::CreateBinder(ecsqlStatement, typeInfo);
     if (binder == nullptr)
         return nullptr;
 
-    auto binderP = binder.get (); //cache raw pointer as return value as the unique_ptr will be moved into the list
+    auto binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
     m_ownedBinders.push_back(std::move(binder));
-    m_internalSqlParameterBinders.push_back (binderP);
-    
+    m_internalSqlParameterBinders.push_back(binderP);
+
     if (binderP->HasToCallOnBeforeStep())
         m_bindersToCallOnStep.push_back(binderP);
 
     if (binderP->HasToCallOnClearBindings())
         m_bindersToCallOnClearBindings.push_back(binderP);
 
-    index = m_internalSqlParameterBinders.size () - 1;
+    index = m_internalSqlParameterBinders.size() - 1;
 
     return binderP;
     }
@@ -381,11 +381,11 @@ ECSqlBinder* ECSqlParameterMap::AddInternalBinder (size_t& index, ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlParameterMap::OnBeforeStep ()
+ECSqlStatus ECSqlParameterMap::OnBeforeStep()
     {
     for (ECSqlBinder* binder : m_bindersToCallOnStep)
         {
-        ECSqlStatus stat = binder->OnBeforeStep ();
+        ECSqlStatus stat = binder->OnBeforeStep();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -396,11 +396,11 @@ ECSqlStatus ECSqlParameterMap::OnBeforeStep ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-void ECSqlParameterMap::OnClearBindings ()
+void ECSqlParameterMap::OnClearBindings()
     {
     for (ECSqlBinder* binder : m_bindersToCallOnClearBindings)
         {
-        binder->OnClearBindings ();
+        binder->OnClearBindings();
         }
     }
 
@@ -410,9 +410,9 @@ void ECSqlParameterMap::OnClearBindings ()
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
 //static
-ECSqlStatus ArrayConstraintValidator::Validate (ECDbCR ecdb, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
+ECSqlStatus ArrayConstraintValidator::Validate(ECDbCR ecdb, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
     {
-    const uint32_t expectedMinOccurs = expected.GetArrayMinOccurs ();
+    const uint32_t expectedMinOccurs = expected.GetArrayMinOccurs();
     if (actualArrayLength < expectedMinOccurs)
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Array to be bound to the array parameter must at least have %" PRIu32 " element(s) as defined in the respective ECProperty.", expectedMinOccurs);

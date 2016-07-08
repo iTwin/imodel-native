@@ -17,36 +17,36 @@ using namespace std;
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp (PropertyPath&& propPath) : ValueExp (), m_propertyPath (std::move (propPath)), m_isSystemProperty (false), m_classRefExp (nullptr)
+PropertyNameExp::PropertyNameExp(PropertyPath&& propPath) : ValueExp(), m_propertyPath(std::move(propPath)), m_isSystemProperty(false), m_classRefExp(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp (Utf8CP propertyName) : ValueExp (), m_isSystemProperty (false), m_classRefExp (nullptr)
+PropertyNameExp::PropertyNameExp(Utf8CP propertyName) : ValueExp(), m_isSystemProperty(false), m_classRefExp(nullptr)
     {
-    m_propertyPath.Push (propertyName);
+    m_propertyPath.Push(propertyName);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp (RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp) 
-: ValueExp (), m_isSystemProperty (false), m_classAlias (classRefExp.GetAlias ()), m_classRefExp (&classRefExp)
+PropertyNameExp::PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp)
+    : ValueExp(), m_isSystemProperty(false), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp)
     {
-    m_propertyPath.Push (derivedPropExp.GetName ().c_str());
-    SetPropertyRef (derivedPropExp);
+    m_propertyPath.Push(derivedPropExp.GetName().c_str());
+    SetPropertyRef(derivedPropExp);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp (Utf8CP propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap) 
-: ValueExp (), m_isSystemProperty (false), m_classAlias (classRefExp.GetAlias ()), m_classRefExp (&classRefExp)
+PropertyNameExp::PropertyNameExp(Utf8CP propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap)
+    : ValueExp(), m_isSystemProperty(false), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp)
     {
-    m_propertyPath.Push (propertyName);
-    if (m_propertyPath.Resolve (classMap) != SUCCESS)
-        BeAssert (false && "Must always resolve correctly");
+    m_propertyPath.Push(propertyName);
+    if (m_propertyPath.Resolve(classMap) != SUCCESS)
+        BeAssert(false && "Must always resolve correctly");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -56,39 +56,39 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        if (ResolveColumnRef (ctx) != SUCCESS)
+        if (ResolveColumnRef(ctx) != SUCCESS)
             return FinalizeParseStatus::Error;
         else
             return FinalizeParseStatus::NotCompleted;
         }
 
     //After children have been finalized
-    if (!IsPropertyRef() && !m_propertyPath.IsResolved ())
+    if (!IsPropertyRef() && !m_propertyPath.IsResolved())
         {
-        BeAssert (false && "PropertyNameExp property path is expected to be resolved at end of parsing.");
+        BeAssert(false && "PropertyNameExp property path is expected to be resolved at end of parsing.");
         return FinalizeParseStatus::Error;
         }
 
     if (IsPropertyRef())
         {
-        auto& derivedProperty = GetPropertyRefP ()->LinkedTo();
+        auto& derivedProperty = GetPropertyRefP()->LinkedTo();
         if (derivedProperty.GetNestedAlias().empty())
-            const_cast<DerivedPropertyExp&>(derivedProperty).SetNestedAlias (ctx.GenerateAlias ().c_str ());
-      
-        if (SUCCESS != const_cast<DerivedPropertyExp&>(derivedProperty).FinalizeParsing (ctx))
+            const_cast<DerivedPropertyExp&>(derivedProperty).SetNestedAlias(ctx.GenerateAlias().c_str());
+
+        if (SUCCESS != const_cast<DerivedPropertyExp&>(derivedProperty).FinalizeParsing(ctx))
             return FinalizeParseStatus::Error;
 
-        SetTypeInfo (derivedProperty.GetExpression()->GetTypeInfo ());
+        SetTypeInfo(derivedProperty.GetExpression()->GetTypeInfo());
         }
     else
-        SetTypeInfo (ECSqlTypeInfo (GetPropertyMap ()));
+        SetTypeInfo(ECSqlTypeInfo(GetPropertyMap()));
 
-    if (IsPropertyRef ())
+    if (IsPropertyRef())
         return FinalizeParseStatus::Completed;
 
     //determine whether the exp refers to a system property
     ECSqlSystemProperty systemPropKind;
-    m_isSystemProperty = ECDbSystemSchemaHelper::TryGetSystemPropertyKind (systemPropKind, GetPropertyMap ().GetProperty ());
+    m_isSystemProperty = ECDbSystemSchemaHelper::TryGetSystemPropertyKind(systemPropKind, GetPropertyMap().GetProperty());
     if (m_isSystemProperty)
         m_systemProperty = systemPropKind;
 
@@ -213,28 +213,28 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(Utf8StringR error, RangeClassRef
     switch (classRefExp.GetType())
         {
             case Exp::Type::SubqueryRef:
-                {
-                SubqueryRefExp const& subQueryRef = static_cast<SubqueryRefExp const&>(classRefExp);
-                DerivedPropertyExp const* derivedPropertyRef = subQueryRef.GetSubquery()->FindProperty(propPath[0].GetPropertyName());
-                BeAssert(derivedPropertyRef != nullptr && "Should not be nullptr as the classRefExp was found in the first place by checking that the property exists");
+            {
+            SubqueryRefExp const& subQueryRef = static_cast<SubqueryRefExp const&>(classRefExp);
+            DerivedPropertyExp const* derivedPropertyRef = subQueryRef.GetSubquery()->FindProperty(propPath[0].GetPropertyName());
+            BeAssert(derivedPropertyRef != nullptr && "Should not be nullptr as the classRefExp was found in the first place by checking that the property exists");
 
-                if (derivedPropertyRef != nullptr)
-                    SetPropertyRef(*derivedPropertyRef);
+            if (derivedPropertyRef != nullptr)
+                SetPropertyRef(*derivedPropertyRef);
 
-                //1. Select statement must have a ECClass define it. 
-                //2. ECClass must have classMap info for this to work
-                //3. In context of query SELECT NewFoo.Prop1, NewFoo.Prop2 FROM (SELECT A Prop1, B + C Prop2 FROM Foo WHERE A = 12)  NewFoo;
-                //4. SELECT _a, [_b + _c]  FROM (SELECT _a "_a", _b + _c  "_b + _c" FROM _foo where _a = 12) NewFoo
-                //5. SELECT _a, [_b + _c] FROM newFoo;
-                //6. Scalar query.
-                return SUCCESS;
-                }
+            //1. Select statement must have a ECClass define it. 
+            //2. ECClass must have classMap info for this to work
+            //3. In context of query SELECT NewFoo.Prop1, NewFoo.Prop2 FROM (SELECT A Prop1, B + C Prop2 FROM Foo WHERE A = 12)  NewFoo;
+            //4. SELECT _a, [_b + _c]  FROM (SELECT _a "_a", _b + _c  "_b + _c" FROM _foo where _a = 12) NewFoo
+            //5. SELECT _a, [_b + _c] FROM newFoo;
+            //6. Scalar query.
+            return SUCCESS;
+            }
             case Exp::Type::ClassName:
-                {
-                ClassNameExp const& classNameExp = static_cast<ClassNameExp const&>(classRefExp);
-                ClassMap const& classMap = classNameExp.GetInfo().GetMap();
-                return propPath.Resolve(classMap, &error);
-                }
+            {
+            ClassNameExp const& classNameExp = static_cast<ClassNameExp const&>(classRefExp);
+            ClassMap const& classMap = classNameExp.GetInfo().GetMap();
+            return propPath.Resolve(classMap, &error);
+            }
 
             default:
                 BeAssert(false && "New subclass of RangeClassRefExp was added, but is not yet processed in ValueExp::ResolveColumnRef");
@@ -246,7 +246,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(Utf8StringR error, RangeClassRef
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void PropertyNameExp::SetClassRefExp (RangeClassRefExp const& resolvedClassRef)
+void PropertyNameExp::SetClassRefExp(RangeClassRefExp const& resolvedClassRef)
     {
     m_classRefExp = &resolvedClassRef;
     }
@@ -271,12 +271,12 @@ Utf8CP PropertyNameExp::GetPropertyName() const
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyMapCR PropertyNameExp::GetPropertyMap() const
-    {    
-    BeAssert (GetClassRefExp () != nullptr);
-    if (GetClassRefExp ()->GetType () == Exp::Type::ClassName)
+    {
+    BeAssert(GetClassRefExp() != nullptr);
+    if (GetClassRefExp()->GetType() == Exp::Type::ClassName)
         {
-        auto classNameExp = static_cast<ClassNameExp const*>(GetClassRefExp ());
-        auto propertyMap = classNameExp->GetInfo ().GetMap ().GetPropertyMap (GetPropertyPath ().ToString (false).c_str ());
+        auto classNameExp = static_cast<ClassNameExp const*>(GetClassRefExp());
+        auto propertyMap = classNameExp->GetInfo().GetMap().GetPropertyMap(GetPropertyPath().ToString(false).c_str());
         if (propertyMap == nullptr)
             {
             BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
@@ -284,28 +284,28 @@ PropertyMapCR PropertyNameExp::GetPropertyMap() const
         return *propertyMap;
         }
 
-    if (GetClassRefExp ()->GetType () == Exp::Type::SubqueryRef)
+    if (GetClassRefExp()->GetType() == Exp::Type::SubqueryRef)
         {
-        auto propertyRef = GetPropertyRef ();
-        BeAssert (propertyRef != nullptr);
-        auto const& derivedPropertyRef = propertyRef->LinkedTo ();
-        if (derivedPropertyRef.GetExpression ()->GetType () == Exp::Type::PropertyName)
+        auto propertyRef = GetPropertyRef();
+        BeAssert(propertyRef != nullptr);
+        auto const& derivedPropertyRef = propertyRef->LinkedTo();
+        if (derivedPropertyRef.GetExpression()->GetType() == Exp::Type::PropertyName)
             {
-            return static_cast<PropertyNameExp const*>(derivedPropertyRef.GetExpression ())->GetPropertyMap ();
+            return static_cast<PropertyNameExp const*>(derivedPropertyRef.GetExpression())->GetPropertyMap();
             }
         }
 
-    BeAssert (false && "Case not handled");
-    return *((PropertyMapCP)(nullptr));
+    BeAssert(false && "Case not handled");
+    return *((PropertyMapCP) (nullptr));
     }
 
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    07/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyNameExp::TryGetSystemProperty (ECSqlSystemProperty& systemProperty) const
+bool PropertyNameExp::TryGetSystemProperty(ECSqlSystemProperty& systemProperty) const
     {
-    if (!IsSystemProperty ())
+    if (!IsSystemProperty())
         return false;
 
     systemProperty = m_systemProperty;
@@ -317,19 +317,19 @@ bool PropertyNameExp::TryGetSystemProperty (ECSqlSystemProperty& systemProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PropertyNameExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    if (!m_classAlias.empty ())
-        ecsql.append (m_classAlias).append (".");
-  
-    ecsql.append (m_propertyPath.ToString (true, false));
+    if (!m_classAlias.empty())
+        ecsql.append(m_classAlias).append(".");
+
+    ecsql.append(m_propertyPath.ToString(true, false));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String PropertyNameExp::_ToString() const 
+Utf8String PropertyNameExp::_ToString() const
     {
-    Utf8String str ("PropertyName [");
-    str.append (ToECSql ()).append ("]");
+    Utf8String str("PropertyName [");
+    str.append(ToECSql()).append("]");
     return str;
     }
 
@@ -337,27 +337,27 @@ Utf8String PropertyNameExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DerivedPropertyExp const& PropertyNameExp::PropertyRef::GetEndPointDerivedProperty () const
+DerivedPropertyExp const& PropertyNameExp::PropertyRef::GetEndPointDerivedProperty() const
     {
-    if (LinkedTo ().GetExpression ()->GetType () == Exp::Type::PropertyName)
+    if (LinkedTo().GetExpression()->GetType() == Exp::Type::PropertyName)
         {
-        auto next = static_cast<PropertyNameExp const*>(LinkedTo ().GetExpression ());
-        if (next->IsPropertyRef ())
-            return next->GetPropertyRef ()->GetEndPointDerivedProperty ();
+        auto next = static_cast<PropertyNameExp const*>(LinkedTo().GetExpression());
+        if (next->IsPropertyRef())
+            return next->GetPropertyRef()->GetEndPointDerivedProperty();
         }
 
-    return LinkedTo ();
+    return LinkedTo();
     }
 
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp const* PropertyNameExp::PropertyRef::GetEndPointPropertyNameIfAny () const
+PropertyNameExp const* PropertyNameExp::PropertyRef::GetEndPointPropertyNameIfAny() const
     {
-    auto const& cur = GetEndPointDerivedProperty ();
-    if (cur.GetExpression ()->GetType () == Exp::Type::PropertyName)
-        return static_cast<PropertyNameExp const*>(cur.GetExpression ());
+    auto const& cur = GetEndPointDerivedProperty();
+    if (cur.GetExpression()->GetType() == Exp::Type::PropertyName)
+        return static_cast<PropertyNameExp const*>(cur.GetExpression());
 
     return nullptr;
     }
