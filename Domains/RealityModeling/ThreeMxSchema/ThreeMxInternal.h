@@ -12,7 +12,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/Render.h>
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS)
 #include <folly/BeFolly.h>
 #endif
 
