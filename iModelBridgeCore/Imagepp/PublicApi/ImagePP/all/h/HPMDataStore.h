@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMDataStore.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -341,7 +341,7 @@ public:
     -----------------------------------------------------------------------------*/
     virtual size_t LoadMasterHeader (MasterHeaderType* header, size_t maxHeaderSize) = 0;
 
-
+       
     /**----------------------------------------------------------------------------
      Stores the block header in the store. The block header is of an undefined type
      but should contain all information pertinent to the designated block except the
