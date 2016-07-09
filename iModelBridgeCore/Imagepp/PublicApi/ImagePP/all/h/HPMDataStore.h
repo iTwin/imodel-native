@@ -347,14 +347,14 @@ public:
      but should contain all information pertinent to the designated block except the
      block of data of type DataType.
     -----------------------------------------------------------------------------*/
-    virtual size_t StoreHeader (TileHeaderType* header, HPMBlockID blockID) = 0;
+    virtual size_t StoreNodeHeader (TileHeaderType* header, HPMBlockID blockID) = 0;
 
     /**----------------------------------------------------------------------------
      Loads the block header in the store. The block header is of an undefined type
      but should contain all information pertinent to the designated block except the
      block of data of type DataType.
     -----------------------------------------------------------------------------*/
-    virtual size_t LoadHeader (TileHeaderType* header, HPMBlockID blockID) = 0;
+    virtual size_t LoadNodeHeader (TileHeaderType* header, HPMBlockID blockID) = 0;
 
     // IHPMDataStore implementation
     virtual void Close () = 0;
