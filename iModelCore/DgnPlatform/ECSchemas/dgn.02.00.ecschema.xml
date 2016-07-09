@@ -163,7 +163,7 @@
                 </HideProperty>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Value" displayLabel="Code" typeName="string">
+        <ECProperty propertyName="Value" displayLabel="Name" typeName="string">
             <!-- Note: use Code.[Value] in ECSql since "Value" is a reserved word -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
