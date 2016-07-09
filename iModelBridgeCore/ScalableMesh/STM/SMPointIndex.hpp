@@ -291,8 +291,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_IsUnSplitSubLevel = false;
     m_nodeHeader.m_IsBranched = false;
     m_nodeHeader.m_level = 0;
-    m_nodeHeader.m_balanced = false;
-    m_needsBalancing = parent->m_needsBalancing;
+    m_nodeHeader.m_balanced = false;    
     m_nodeHeader.m_numberOfSubNodesOnSplit = 8;
     m_nodeHeader.m_apSubNodeID.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
     m_apSubNodes.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
