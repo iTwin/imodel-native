@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMDataStore.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -347,14 +347,14 @@ public:
      but should contain all information pertinent to the designated block except the
      block of data of type DataType.
     -----------------------------------------------------------------------------*/
-    virtual size_t StoreHeader (TileHeaderType* header, HPMBlockID blockID) = 0;
+    virtual size_t StoreNodeHeader (TileHeaderType* header, HPMBlockID blockID) = 0;
 
     /**----------------------------------------------------------------------------
      Loads the block header in the store. The block header is of an undefined type
      but should contain all information pertinent to the designated block except the
      block of data of type DataType.
     -----------------------------------------------------------------------------*/
-    virtual size_t LoadHeader (TileHeaderType* header, HPMBlockID blockID) = 0;
+    virtual size_t LoadNodeHeader (TileHeaderType* header, HPMBlockID blockID) = 0;
 
     // IHPMDataStore implementation
     virtual void Close () = 0;
@@ -581,7 +581,7 @@ public:
     /**----------------------------------------------------------------------------
      @bsimethod                                          Alain.Robert 2010/10
     -----------------------------------------------------------------------------*/
-    virtual size_t StoreHeader (Byte* header, HPMBlockID blockID)
+    virtual size_t StoreNodeHeader (Byte* header, HPMBlockID blockID)
         {
         if (!m_open)
             return 0;
@@ -614,7 +614,7 @@ public:
     /**----------------------------------------------------------------------------
      @bsimethod                                          Alain.Robert 2010/10
     -----------------------------------------------------------------------------*/
-    virtual size_t LoadHeader (Byte* header, HPMBlockID blockID)
+    virtual size_t LoadNodeHeader (Byte* header, HPMBlockID blockID)
         {
         if (!m_open)
             return 0;
