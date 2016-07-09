@@ -601,7 +601,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT bool IsMeshLoaded() const;
 
-        BENTLEY_SM_EXPORT void LoadHeader() const;
+        BENTLEY_SM_EXPORT void LoadNodeHeader() const;
 
         BENTLEY_SM_EXPORT bool HasClip(uint64_t id) const;
 

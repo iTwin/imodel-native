@@ -1564,7 +1564,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             block["nbClipSets"] = (uint32_t)header->m_clipSetsID.size();
             }
 
-        virtual size_t StoreHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+        virtual size_t StoreNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
             uint32_t headerSize = 0;
             std::unique_ptr<Byte> headerData = nullptr;
@@ -1592,7 +1592,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             return 1;
             }
 
-        virtual size_t LoadHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+        virtual size_t LoadNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
             if (s_stream_from_grouped_store)
                 {

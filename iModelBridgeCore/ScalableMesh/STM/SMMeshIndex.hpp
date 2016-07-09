@@ -3747,7 +3747,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(ISM
                                                                                bool propagatesDataDown,
                                                                                ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
                                                                                ISMPointIndexMesher<POINT, EXTENT>* mesher3d)
-                                                                               : SMPointIndex<POINT, EXTENT>(ptsStore, SplitTreshold, filter, balanced, propagatesDataDown, false)/*, m_graphPool(graphPool)*/, m_graphStore(graphStore),
+                                                                               : SMPointIndex<POINT, EXTENT>(smDataStore, ptsStore, SplitTreshold, filter, balanced, propagatesDataDown, false)/*, m_graphPool(graphPool)*/, m_graphStore(graphStore),
                                                                                m_smDataStore(smDataStore),
                                                                                m_smMemoryPool(smMemoryPool), 
                                                                                m_ptsIndicesStore(ptsIndicesStore),

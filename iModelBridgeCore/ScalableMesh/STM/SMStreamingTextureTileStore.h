@@ -418,13 +418,13 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             return this->GetTexture(blockID).size() + 3 * sizeof(int);
             }
 
-        virtual size_t StoreHeader(float* header, HPMBlockID blockID)
+        virtual size_t StoreNodeHeader(float* header, HPMBlockID blockID)
             {
             assert(!"Should not pass here.");
             return 0;
             }
 
-        virtual size_t LoadHeader(float* header, HPMBlockID blockID)
+        virtual size_t LoadNodeHeader(float* header, HPMBlockID blockID)
             {
             assert(!"Should not pass here.");
             return 0;

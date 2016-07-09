@@ -2466,7 +2466,7 @@ bool IScalableMeshNode::IsMeshLoaded() const
     return _IsMeshLoaded();
     }
 
-void IScalableMeshNode::LoadHeader() const 
+void IScalableMeshNode::LoadNodeHeader() const 
     {
     return _LoadHeader();
     }

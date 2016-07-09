@@ -126,7 +126,7 @@ public:
     return m_smSQLiteFile->GetNumberOfPoints(blockID.m_integerID) / sizeof(POINT);
     }
 
-    virtual size_t StoreHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+    virtual size_t StoreNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
     {
     if (header == nullptr) return 0;
     if (header->m_ptsIndiceID.size() > 0)header->m_ptsIndiceID[0] = blockID;
@@ -139,7 +139,7 @@ public:
     return sizeof(header);
     }
 
-    virtual size_t LoadHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+    virtual size_t LoadNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
     {
     if (header == nullptr) return 0;
     SQLiteNodeHeader nodeHeader;

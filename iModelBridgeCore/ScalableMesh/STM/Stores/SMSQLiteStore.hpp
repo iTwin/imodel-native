@@ -175,7 +175,7 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadMasterHeader(SMIndexMa
     return sizeof(*indexHeader);
     }
 
-template <class EXTENT> size_t SMSQLiteStore<EXTENT>::StoreHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
+template <class EXTENT> size_t SMSQLiteStore<EXTENT>::StoreNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
     {
     if (header == nullptr) return 0;
     if (header->m_ptsIndiceID.size() > 0)header->m_ptsIndiceID[0] = blockID;
@@ -188,7 +188,7 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::StoreHeader(SMIndexNodeHea
     return sizeof(header);
     }
 
-template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
+template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
     {
     if (header == nullptr) return 0;
     SQLiteNodeHeader nodeHeader;

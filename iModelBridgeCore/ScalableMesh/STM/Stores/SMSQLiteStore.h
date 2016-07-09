@@ -371,9 +371,9 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
             
         virtual size_t LoadMasterHeader(SMIndexMasterHeader<EXTENT>* indexHeader, size_t headerSize) override;
             
-        virtual size_t StoreHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;
+        virtual size_t StoreNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;
             
-        virtual size_t LoadHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;            
+        virtual size_t LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;            
         
         virtual RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> GetNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader) override;
     };

@@ -112,14 +112,14 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
          but should contain all information pertinent to the designated block except the
          block of data of type DataType.
         -----------------------------------------------------------------------------*/
-        virtual size_t StoreHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
+        virtual size_t StoreNodeHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
 
         /**----------------------------------------------------------------------------
          Loads the block header in the store. The block header is of an undefined type
          but should contain all information pertinent to the designated block except the
          block of data of type DataType.
         -----------------------------------------------------------------------------*/
-        virtual size_t LoadHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
+        virtual size_t LoadNodeHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
 
         /**----------------------------------------------------------------------------
          Get the next node ID available.

@@ -108,12 +108,12 @@ template <class EXTENT> class SMSQLiteFeatureTileStore : public SMPointTileStore
             return m_smSQLiteFile->GetNumberOfFeaturePoints(blockID.m_integerID);
             }
 
-        virtual size_t StoreHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+        virtual size_t StoreNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
             return 0;
             }
 
-        virtual size_t LoadHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+        virtual size_t LoadNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
             return 0;
             }

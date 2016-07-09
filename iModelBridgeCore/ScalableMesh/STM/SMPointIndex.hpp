@@ -443,20 +443,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
     {
     HPRECONDITION (!IsLoaded());
 
-    if (0 == (((SMPointIndexNode<POINT, EXTENT>*)this)->GetPointsStore())->LoadHeader (&m_nodeHeader, GetBlockID()))
+    if (0 == (((SMPointIndexNode<POINT, EXTENT>*)this)->GetPointsStore())->LoadNodeHeader (&m_nodeHeader, GetBlockID()))
         {
         // Something went wrong
         assert(!"Cannot load node header");
         throw HFCUnknownException();
         }
-   /* if (IsParentSet())
-        {
-        if (m_nodeHeader.m_contentExtentDefined && !m_nodeHeader.m_contentExtent.IsContained(GetParentNodePtr()->m_nodeHeader.m_contentExtent))
-            {
-            GetParentNodePtr()->m_nodeHeader.m_contentExtent.Extend(m_nodeHeader.m_contentExtent);
-            static_cast<SMPointTileStore<POINT, EXTENT>*>(&*m_store)->StoreHeader(&GetParentNodePtr()->m_nodeHeader, m_nodeHeader.m_parentNodeID);
-            }
-        }*/
+   
     m_wasBalanced = true;
 
     SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS =  const_cast<SMPointIndexNode<POINT, EXTENT>* >(this);
@@ -3716,7 +3709,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
 
             //NEEDS_WORK_SM : END
 
-            GetPointsStore()->StoreHeader(&m_nodeHeader, GetBlockID());                 
+            GetPointsStore()->StoreNodeHeader(&m_nodeHeader, GetBlockID());                 
             }            
                     
         SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex);
@@ -6742,7 +6735,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
-    pi_pPointStore->StoreHeader(&m_nodeHeader, this->GetBlockID());
+    pi_pPointStore->StoreNodeHeader(&m_nodeHeader, this->GetBlockID());
     auto count = this->GetPointsStore()->GetBlockDataCount(this->GetBlockID());
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
@@ -7609,8 +7602,9 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::NeedsF
                                node after which the node may be split.
 
 -------------------------------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t pi_SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter,bool balanced, bool propagatesDataDown, bool shouldCreateRoot)
-  : m_store (store),
+template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t pi_SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter,bool balanced, bool propagatesDataDown, bool shouldCreateRoot)
+  : m_newDataStore(newDataStore),
+    m_store (store),
     m_filter (filter)
     {
 
@@ -7628,36 +7622,32 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(HF
     m_indexHeader.m_terrainDepth = (size_t)-1;
     m_isGenerating = true;
     // If a store is provided ...
-    if (store != NULL)
+    if (m_newDataStore != NULL)
         {
         // Try to load master header
-        if (0 != store->LoadMasterHeader(&m_indexHeader, sizeof(m_indexHeader)))
+        if (0 != m_newDataStore->LoadMasterHeader(&m_indexHeader, sizeof(m_indexHeader)))
             {
             m_isGenerating = false;
-            // File allready contains a DTM ... load it
-            // First reset pool pointer and store pointer that got wiped during load            
-            m_store = store;
-           
+                       
             // Index header just loaded ... it is clean
             m_indexHeaderDirty = false;
             }
         else
             {
             // No master header ... force writting it (to prime the store)
-            if (!store->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader)))
+            if (!m_newDataStore->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader)))
                 {
                 HASSERT(!"Error in store master header!");
-                throw; //TDORAY: throw something significant here
+                throw;
                 }
             }
 
         }
+
     if (m_indexHeader.m_rootNodeBlockID.IsValid() && m_pRootNode == nullptr && shouldCreateRoot)
         {
         m_pRootNode = CreateNewNode(m_indexHeader.m_rootNodeBlockID);
-        }
-    // TDORAY: Validate soft instead...
-    //HINVARIANTS;
+        }  
     }
 
 
@@ -8179,7 +8169,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::Store()
 
     if (m_indexHeaderDirty)
     {
-        m_store->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader));
+        m_newDataStore->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader));
         m_indexHeaderDirty = false;
     }
 
@@ -8822,7 +8812,7 @@ size_t SMPointIndex<POINT, EXTENT>::GetDepth() const
         {
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader.m_depth = m_pRootNode->GetDepth();
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeaderDirty = true;
-        const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_store->StoreMasterHeader(&const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader, sizeof(m_indexHeader));
+        const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_newDataStore->StoreMasterHeader(&const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader, sizeof(m_indexHeader));
         }
     return m_indexHeader.m_depth;
     }

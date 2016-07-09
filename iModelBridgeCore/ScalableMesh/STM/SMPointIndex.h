@@ -27,6 +27,8 @@
 
 #include <ScalableMesh\IScalableMeshQuery.h>
 
+#include "Stores\SMSQLiteStore.h"
+
 class DataSourceAccount;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -52,7 +54,6 @@ extern bool s_useThreadsInFiltering;
 // Predeclaration of the Point Index Filter interface. This interface is defined lower in this same file.
 template<class POINT, class EXTENT> class ISMPointIndexFilter; 
 template<class POINT, class EXTENT> class ISMPointIndexQuery;
-//template <class POINT, class EXTENT> class SMPointTileStore;
 template<class POINT, class EXTENT> class SMPointIndex;
 
 
@@ -1213,7 +1214,7 @@ public:
                                    node after which the node may be split.
 
     -------------------------------------------------------------------------------------------------*/
-    SMPointIndex(HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
+    SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
     /**----------------------------------------------------------------------------
      Destructor
      If the index has unstored nodes then those will be stored.
@@ -1498,6 +1499,8 @@ protected:
         };
    
     HFCPtr<SMPointTileStore<POINT, EXTENT> > m_store;
+    ISMDataStoreTypePtr<EXTENT>              m_newDataStore;
+
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    
     typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap m_createdNodeMap;
 
@@ -1509,7 +1512,7 @@ protected:
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT>>                    m_pRootNode;
 
-    SMPointIndexHeader<EXTENT>             m_indexHeader;
+    SMIndexMasterHeader<EXTENT> m_indexHeader;
 
     bool                    m_indexHeaderDirty;
 

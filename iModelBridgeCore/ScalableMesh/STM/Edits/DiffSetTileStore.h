@@ -249,12 +249,12 @@ class DiffSetTileStore : public IScalableMeshDataStore < DifferenceSet, Byte, By
             }
 
 
-        virtual size_t StoreHeader(Byte* header, HPMBlockID blockID)
+        virtual size_t StoreNodeHeader(Byte* header, HPMBlockID blockID)
             {
             return 1;
             }
 
-        virtual size_t LoadHeader(Byte* header, HPMBlockID blockID)
+        virtual size_t LoadNodeHeader(Byte* header, HPMBlockID blockID)
             {
 
             return 1;
