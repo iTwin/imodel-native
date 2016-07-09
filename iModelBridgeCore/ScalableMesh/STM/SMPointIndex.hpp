@@ -280,7 +280,12 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_delayedDataPropagation = propagateDataDown;
     m_pParentNode = 0;
     m_isParentNodeSet = false;
-    m_isGenerating = parent->m_isGenerating;
+
+    if (parent != 0)
+        m_isGenerating = parent->m_isGenerating;
+    else
+        m_isGenerating = false;
+
     m_nodeHeader.m_SplitTreshold = 10000;
     m_nodeHeader.m_IsLeaf = true;
     m_nodeHeader.m_IsUnSplitSubLevel = false;
@@ -4016,7 +4021,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Track3
 
     if (!merged)
         {
-        m_nodeHeader.m_3dPointsDescBins.push_back(SMIndexNodeHeader<EXTENT>::RLC3dPoints(ptsPtr->size(), countPoints));
+        m_nodeHeader.m_3dPointsDescBins.push_back(SMPointNodeHeaderBase<EXTENT>::RLC3dPoints(ptsPtr->size(), countPoints));
         }
     }
 

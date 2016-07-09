@@ -3731,7 +3731,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
         }
     static size_t s_importedFeatures;
 
-template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(SMMemoryPoolPtr& smMemoryPool,
+template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(ISMDataStoreTypePtr<EXTENT>& smDataStore,
+                                                                             SMMemoryPoolPtr& smMemoryPool,
                                                                                HFCPtr<SMPointTileStore<POINT, EXTENT> > ptsStore,                      
                                                                                HFCPtr<SMPointTileStore<int32_t, EXTENT> > ptsIndicesStore,
                                                                                //HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > graphPool,
@@ -3747,6 +3748,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(SMM
                                                                                ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
                                                                                ISMPointIndexMesher<POINT, EXTENT>* mesher3d)
                                                                                : SMPointIndex<POINT, EXTENT>(ptsStore, SplitTreshold, filter, balanced, propagatesDataDown, false)/*, m_graphPool(graphPool)*/, m_graphStore(graphStore),
+                                                                               m_smDataStore(smDataStore),
                                                                                m_smMemoryPool(smMemoryPool), 
                                                                                m_ptsIndicesStore(ptsIndicesStore),
                                                                                m_uvStore(uvStore),

@@ -39,12 +39,12 @@ template<class EXTENT> SMIndexMasterHeader<EXTENT>::operator SQLiteIndexHeader()
     return header;
     }
 
-template <typename EXTENT> SMIndexNodeHeader<EXTENT>::~SMIndexNodeHeader()
+template <class EXTENT> SMIndexNodeHeader<EXTENT>::~SMIndexNodeHeader()
     {
     if (nullptr != m_meshComponents) delete[] m_meshComponents;
     }
 
-template <typename EXTENT> SMIndexNodeHeader<EXTENT>& SMIndexNodeHeader<EXTENT>::operator=(const SQLiteNodeHeader& nodeHeader)
+template <class EXTENT> SMIndexNodeHeader<EXTENT>& SMIndexNodeHeader<EXTENT>::operator=(const SQLiteNodeHeader& nodeHeader)
     {
     m_arePoints3d = nodeHeader.m_arePoints3d;
     m_isTextured = nodeHeader.m_isTextured;
@@ -90,7 +90,7 @@ template <typename EXTENT> SMIndexNodeHeader<EXTENT>& SMIndexNodeHeader<EXTENT>:
     return *this;
     }
 
-template <typename EXTENT> SMIndexNodeHeader<EXTENT>::operator SQLiteNodeHeader()
+template <class EXTENT> SMIndexNodeHeader<EXTENT>::operator SQLiteNodeHeader()
     {
     SQLiteNodeHeader header;
     header.m_arePoints3d = m_arePoints3d;

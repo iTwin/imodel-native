@@ -215,7 +215,7 @@ template <> class SpatialOp <DPoint3d, DPoint3d, DRange3d>
     inherit any actual node header from the provided HGFIndexNodeHeader.
     -----------------------------------------------------------------------------
     */
-    template <typename EXTENT> class SMIndexNodeHeader
+    template <typename EXTENT> class SMPointNodeHeaderBase
         {
         public:
 
@@ -284,7 +284,7 @@ template <> class SpatialOp <DPoint3d, DPoint3d, DRange3d>
 
 #define MAX_NEIGHBORNODES_COUNT 26
 
-template <typename EXTENT> class SMPointNodeHeader : public SMIndexNodeHeader<EXTENT>
+template <typename EXTENT> class SMPointNodeHeader : public SMPointNodeHeaderBase<EXTENT>
     {
 public:
    

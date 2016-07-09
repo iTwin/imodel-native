@@ -22,37 +22,6 @@
 #include "ScalableMeshRelevanceDistribution.h"
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
 
-template <> class SpatialOp<HGF3DFilterCoord<double,double>, HGF3DFilterCoord<double,double>, HGF3DExtent<double> >
-{
-
-    public:
-    static  HGF3DExtent<double> GetExtent(const HGF3DFilterCoord<double,double> spatialObject)
-    {
-    return  HGF3DExtent<double>(spatialObject.GetX(), spatialObject.GetY(), spatialObject.GetZ(), spatialObject.GetX(), spatialObject.GetY(), spatialObject.GetZ());
-    }
-
-    static bool IsPointIn2D(const HGF3DFilterCoord<double,double> spatialObject, HGF3DFilterCoord<double,double> pi_rCoord)
-    {
-    return spatialObject.IsEqualTo2D (pi_rCoord);
-    }
-
-    static bool IsSpatialInExtent2D (const HGF3DFilterCoord<double,double>& spatial, const  HGF3DExtent<double>& extent)
-    {
-        return extent.IsPointIn2D (spatial);
-    }
-
-    static bool IsSpatialInExtent3D (const HGF3DFilterCoord<double,double>& spatial, const  HGF3DExtent<double>& extent)
-    {
-        return extent.IsPointIn (spatial);
-    }
-
-};
-
-
-
-
-
-
 extern bool   GET_HIGHEST_RES;
 
 /*----------------------------------------------------------------------+

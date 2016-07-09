@@ -14,8 +14,7 @@
 #include <ImagePP\all\h\HCDCodecZlib.h>
 #include <ImagePP\all\h\HFCAccessMode.h>
 
- bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket,
-        HCDPacket& pi_compressedPacket)
+inline bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket, HCDPacket& pi_compressedPacket)
     {
         HPRECONDITION(pi_uncompressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
 
@@ -30,8 +29,7 @@
         return true;
     }
 
-    bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket,
-        HCDPacket& pi_uncompressedPacket)
+inline bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket, HCDPacket& pi_uncompressedPacket)
     {
         HPRECONDITION(pi_compressedPacket.GetDataSize() <= (numeric_limits<uint32_t>::max) ());
 
@@ -46,7 +44,10 @@
     }
 
 
-    
+#include "..\SMPointTileStore.h"
+
+#if 0  ////MST_TS - Activate when SMPointTileStore is removed. 
+
 namespace ISMStore
     {
     typedef HFCAccessMode                   AccessMode;
@@ -225,6 +226,8 @@ template <> class SpatialOp <DPoint3d, DPoint3d, DRange3d>
             return 1;
             }
     };
+
+#endif 
 ////////MST_TS
 
 template <class EXTENT> class SMIndexMasterHeader 
@@ -260,7 +263,7 @@ and be public for the provided node header. It is usually a lot easier to
 inherit any actual node header from the provided HGFIndexNodeHeader.
 -----------------------------------------------------------------------------
 */
-template <typename EXTENT> class SMIndexNodeHeaderBase
+template <class EXTENT> class SMIndexNodeHeaderBase
     {
     public:
 
@@ -300,7 +303,7 @@ template <typename EXTENT> class SMIndexNodeHeaderBase
         vector<RLC3dPoints> m_3dPointsDescBins;   //Determine if a group of points is 3D or not. 
     };
 
-template <typename EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<EXTENT>
+template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<EXTENT>
     {
     public:
    
@@ -329,7 +332,9 @@ template <typename EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBas
 
         std::vector<HPMBlockID> m_clipSetsID;
 
-        ~SMIndexNodeHeader();
+        SMIndexNodeHeader();
+
+        virtual ~SMIndexNodeHeader();
              
         SMIndexNodeHeader<EXTENT>& operator=(const SQLiteNodeHeader& nodeHeader);
             
@@ -337,6 +342,14 @@ template <typename EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBas
            
         };
 
+
+template<class EXTENT>
+using ISMDataStoreType = ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>;
+
+template<class EXTENT>
+using ISMDataStoreTypePtr = typename ISMDataStoreType<EXTENT>::Ptr;
+
+//typedef ISMDataStore<SMIndexMasterHeader<DRange3d>, SMIndexNodeHeader<DRange3d>> ISMDataStoreType;
 
 template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>
     {

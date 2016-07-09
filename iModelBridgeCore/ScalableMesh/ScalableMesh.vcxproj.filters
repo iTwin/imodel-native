@@ -1373,6 +1373,7 @@
     <ClCompile Include="STM\MeshingFunctions.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
+    <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ScalableMesh.mke" />

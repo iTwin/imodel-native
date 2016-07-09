@@ -54,6 +54,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include "ScalableMeshMemoryPools.h"
 
+#include "Stores/SMSQLiteStore.h"
+
 #include "ScalableMeshVolume.h"
 
 #include <CloudDataSource/DataSourceManager.h>
@@ -204,7 +206,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         typedef SMMeshIndex<INDEXPOINT, YProtPtExtentType>
                                         MeshIndexType;
-
+        
 
         bool                            m_areDataCompressed; 
         bool                            m_computeTileBoundary;
