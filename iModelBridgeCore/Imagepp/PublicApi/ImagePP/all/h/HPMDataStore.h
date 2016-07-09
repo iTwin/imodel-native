@@ -581,7 +581,7 @@ public:
     /**----------------------------------------------------------------------------
      @bsimethod                                          Alain.Robert 2010/10
     -----------------------------------------------------------------------------*/
-    virtual size_t StoreHeader (Byte* header, HPMBlockID blockID)
+    virtual size_t StoreNodeHeader (Byte* header, HPMBlockID blockID)
         {
         if (!m_open)
             return 0;
@@ -614,7 +614,7 @@ public:
     /**----------------------------------------------------------------------------
      @bsimethod                                          Alain.Robert 2010/10
     -----------------------------------------------------------------------------*/
-    virtual size_t LoadHeader (Byte* header, HPMBlockID blockID)
+    virtual size_t LoadNodeHeader (Byte* header, HPMBlockID blockID)
         {
         if (!m_open)
             return 0;
