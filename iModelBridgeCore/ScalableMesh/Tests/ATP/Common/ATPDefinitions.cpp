@@ -3727,7 +3727,7 @@ void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     t = clock() - t;
 
-    fwprintf(pResultFile, L"%s,%I64d,%.5f,%d,%I64d\n",
+    fwprintf(pResultFile, L"%s,%.5f,%d,%I64d\n",
              stmFileName.c_str(),
              (double)t / CLOCKS_PER_SEC,
              level,

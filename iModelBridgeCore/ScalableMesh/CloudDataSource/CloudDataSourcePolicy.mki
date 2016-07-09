@@ -5,14 +5,14 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%if defined (__ScalableMeshPolicy_mki__)
-    %warn ScalableMeshPolicy.mki is being included redundantly in $(_MakeFileSpec)
+%if defined (__CloudDataSourcePolicy_mki__)
+    %warn CloudDataSourcePolicy.mki is being included redundantly in $(_MakeFileSpec)
     %if defined (DebugRedundantMkiIncludes)
         %error DebugRedundantMkiIncludes is defined.
     %endif  
     %return
 %endif
-__ScalableTerrainModelPolicy_mki__=1
+__CloudDataSourcePolicy_mki__=1
 
 OPTIMIZE_FOR_SPEED=1
 appName     = CloudDataSource

@@ -32,15 +32,15 @@ protected:
 
 
 public:
-CLOUD_EXPORT											DataSourceService			(DataSourceManager &manager, const ServiceName &name);
+											DataSourceService			(DataSourceManager &manager, const ServiceName &name);
 
-CLOUD_EXPORT			void							setServiceName				(const ServiceName &serviceName);
-CLOUD_EXPORT			const ServiceName			&	getServiceName				(void);
+			void							setServiceName				(const ServiceName &serviceName);
+			const ServiceName			&	getServiceName				(void);
 
-CLOUD_EXPORT			DataSourceManager			&	getDataSourceManager		(void);
+			DataSourceManager			&	getDataSourceManager		(void);
 
-CLOUD_EXPORT	virtual	DataSourceAccount			*	createAccount				(const AccountName &accountName, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey &key) = 0;
-CLOUD_EXPORT	virtual	DataSourceStatus				destroyAccount				(const AccountName &accountName) = 0;
+	virtual	DataSourceAccount			*	createAccount				(const AccountName &accountName, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey &key) = 0;
+	virtual	DataSourceStatus				destroyAccount				(const AccountName &accountName) = 0;
 
-CLOUD_EXPORT			DataSourceAccount			*	getAccount					(const AccountName &accountName);
+			DataSourceAccount			*	getAccount					(const AccountName &accountName);
 };

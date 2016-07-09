@@ -65,23 +65,23 @@ protected:
 	DataSourceStoreConfig					*	getStoreConfig		(void);
 
 public:
-CLOUD_EXPORT
+
 												DataSource			(DataSourceAccount *sourceAccount);
-CLOUD_EXPORT	virtual						   			   ~DataSource			(void);
+	virtual						   			   ~DataSource			(void);
 
-CLOUD_EXPORT	DataSourceService						*	getService			(void);
+	DataSourceService						*	getService			(void);
 
-CLOUD_EXPORT	virtual			DataSourceStatus			open				(const DataSourceURL & sourceURL, DataSourceMode sourceMode);
-CLOUD_EXPORT	virtual			DataSourceStatus			close				(void) = 0;
+	virtual			DataSourceStatus			open				(const DataSourceURL & sourceURL, DataSourceMode sourceMode);
+	virtual			DataSourceStatus			close				(void) = 0;
 
-CLOUD_EXPORT	virtual			DataSourceStatus			read				(Buffer *dest,   DataSize destSize, DataSize &readSize, DataSize size = 0) = 0;
-CLOUD_EXPORT	virtual			DataSourceStatus			write				(Buffer *source, DataSize size) = 0;
+	virtual			DataSourceStatus			read				(Buffer *dest,   DataSize destSize, DataSize &readSize, DataSize size = 0) = 0;
+	virtual			DataSourceStatus			write				(Buffer *source, DataSize size) = 0;
 
-CLOUD_EXPORT	virtual			bool						isValid				(void);
+	virtual			bool						isValid				(void);
 
-CLOUD_EXPORT	virtual			void						setTimeout			(Timeout timeMilliseconds);
-CLOUD_EXPORT	virtual			Timeout						getTimeout			(void);
+	virtual			void						setTimeout			(Timeout timeMilliseconds);
+	virtual			Timeout						getTimeout			(void);
 
-CLOUD_EXPORT	virtual			void						setCachingEnabled	(bool enabled);
-CLOUD_EXPORT	virtual			bool						getCachingEnabled	(void);
+	virtual			void						setCachingEnabled	(bool enabled);
+	virtual			bool						getCachingEnabled	(void);
 };

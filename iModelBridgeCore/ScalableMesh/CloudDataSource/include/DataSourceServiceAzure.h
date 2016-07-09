@@ -9,9 +9,9 @@ class DataSourceServiceAzure : public DataSourceService
 
 public:
 
-CLOUD_EXPORT										DataSourceServiceAzure		(DataSourceManager &manager, const ServiceName &service);
+										DataSourceServiceAzure		(DataSourceManager &manager, const ServiceName &service);
 
-CLOUD_EXPORT		DataSourceAccount			*	createAccount				(const AccountName & account, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey &key);
-CLOUD_EXPORT		DataSourceStatus				destroyAccount				(const AccountName & account);
+		DataSourceAccount			*	createAccount				(const AccountName & account, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey &key);
+		DataSourceStatus				destroyAccount				(const AccountName & account);
 };
 

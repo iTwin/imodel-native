@@ -20,13 +20,13 @@ protected:
 
 public:
 
-CLOUD_EXPORT								DataSourceAccountCached		(void);
-CLOUD_EXPORT							   ~DataSourceAccountCached		(void);
+								DataSourceAccountCached		(void);
+							   ~DataSourceAccountCached		(void);
 
-CLOUD_EXPORT		DataSourceStatus		setCaching					(DataSourceAccount &cacheAccount, const DataSourceURL &cachingRootPath);
+		DataSourceStatus		setCaching					(DataSourceAccount &cacheAccount, const DataSourceURL &cachingRootPath);
 
-CLOUD_EXPORT		void					setCacheAccount				(DataSourceAccount *account);
-CLOUD_EXPORT		DataSourceAccount	*	getCacheAccount				(void);
+		void					setCacheAccount				(DataSourceAccount *account);
+		DataSourceAccount	*	getCacheAccount				(void);
 
-CLOUD_EXPORT		DataSourceStatus		getFormattedCacheURL				(const DataSourceURL & sourceURL, DataSourceURL & cacheURL);
+		DataSourceStatus		getFormattedCacheURL				(const DataSourceURL & sourceURL, DataSourceURL & cacheURL);
 };
