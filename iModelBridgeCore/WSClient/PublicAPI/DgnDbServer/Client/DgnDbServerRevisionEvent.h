@@ -42,7 +42,7 @@ struct DgnDbServerRevisionEvent : public DgnDbServerEvent::GenericEvent
                                                                                                );
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
-        DGNDBSERVERCLIENT_EXPORT virtual const type_info& GetEventType();
+        DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetDate();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetRevisionId();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetRevisionIndex();

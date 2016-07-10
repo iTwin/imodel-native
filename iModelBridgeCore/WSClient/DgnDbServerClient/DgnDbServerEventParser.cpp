@@ -9,6 +9,7 @@
 #include <DgnDbServer/Client/DgnDbServerLockevent.h>
 #include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
 #include <DgnDbServer/Client/DgnDbServerCodeEvent.h>
+#include <DgnDbServer/Client/DgnDbServerDeletedEvent.h>
 #include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
@@ -87,18 +88,21 @@ Json::Value DgnDbServerEventParser::GenerateEventSASJson() const
     return request;
     }
 
+
+
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 std::shared_ptr<Json::Value> GetProperties
 (
 Json::Value jsonResponse,
-bool isEventSubscription
+bool isEventSubscription,
+Utf8String *eventSubscriptionId = nullptr
 )
     {
     if (jsonResponse.empty() || jsonResponse.isNull())
         return nullptr;
-
+        
     Json::Value changedInstance;
     if (jsonResponse.isMember(ServerSchema::ChangedInstances) && jsonResponse[ServerSchema::ChangedInstances].isArray() && !jsonResponse[ServerSchema::ChangedInstances].empty())
         changedInstance = jsonResponse[ServerSchema::ChangedInstances][0];
@@ -106,22 +110,33 @@ bool isEventSubscription
         changedInstance = jsonResponse[ServerSchema::ChangedInstance];
     else
         return nullptr;
-
+        
     if (
         !changedInstance.isMember(ServerSchema::InstanceAfterChange) ||
-        !changedInstance[ServerSchema::InstanceAfterChange].isMember(ServerSchema::Properties)
+        !changedInstance[ServerSchema::InstanceAfterChange].isMember(ServerSchema::Properties) ||
+        !changedInstance[ServerSchema::InstanceAfterChange].isMember(ServerSchema::InstanceId)
         )
         return nullptr;
-
+        
     std::shared_ptr<Json::Value> properties = std::make_shared<Json::Value>(changedInstance[ServerSchema::InstanceAfterChange][ServerSchema::Properties]);
+    if (properties->isNull() || properties->empty())
+        return nullptr;
+        
     if (isEventSubscription)
         {
-        if (
+        /*if (
             !properties->isMember(ServerSchema::Property::Id) ||
             !(*properties)[ServerSchema::Property::EventTypes].isArray()
+            )*/
+
+        *eventSubscriptionId = changedInstance[ServerSchema::InstanceAfterChange][ServerSchema::InstanceId].asCString();
+        if  (
+            !properties->isMember(ServerSchema::Property::EventTypes) ||
+            !(*properties)[ServerSchema::Property::EventTypes].isArray() ||
+            Utf8String::IsNullOrEmpty(eventSubscriptionId->c_str())
             )
             return nullptr;
-
+            
         }
     else
         {
@@ -129,7 +144,7 @@ bool isEventSubscription
             !properties->isMember(ServerSchema::Property::BaseAddress) ||
             !properties->isMember(ServerSchema::Property::EventServiceSASToken)
             )
-            return nullptr;
+            return nullptr;           
         }
 
     return properties;
@@ -143,14 +158,19 @@ DgnDbServerEventSubscriptionPtr DgnDbServerEventParser::ParseEventSubscription
 Json::Value jsonResponse
 ) const
     {
-    std::shared_ptr<Json::Value> propertiesPtr = GetProperties(jsonResponse, true);
+    Utf8String eventSubscriptionId = "";
+    std::shared_ptr<Json::Value> propertiesPtr = GetProperties(jsonResponse, true, &eventSubscriptionId);
     if (propertiesPtr == nullptr)
         return nullptr;
-
+        
     Json::Value properties = *propertiesPtr;
-    Utf8String id = properties[ServerSchema::Property::Id].asCString();
+
+    /*Utf8String id = properties[ServerSchema::Property::Id].asCString();
     if (Utf8String::IsNullOrEmpty(id.c_str()))
+        {
+        printf("Error 7\n");
         return nullptr;
+        }*/
 
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
     Json::Value::ArrayIndex size = properties[ServerSchema::Property::EventTypes].size();
@@ -165,7 +185,7 @@ Json::Value jsonResponse
             }
         }
 
-    return DgnDbServerEventSubscription::Create(id, eventTypes);
+    return DgnDbServerEventSubscription::Create(eventSubscriptionId, eventTypes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -287,17 +307,30 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              07/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventPtr ParseIntoDeleteAllLocksEvent(Utf8String jsonString)
+DgnDbServerEventPtr ParseIntoDeletedEvent(Utf8String jsonString, DgnDbServerEvent::DgnDbServerEventType deletedEventType)
     {
-    return nullptr; //to be implemented
-    }
+    Json::Reader reader;
+    Json::Value data(Json::objectValue);
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                 Arvind.Venkateswaran	              07/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEventPtr ParseIntoDeleteAllCodesEvent(Utf8String jsonString)
-    {
-    return nullptr; //to be implemented
+    if (
+        reader.parse(jsonString, data) &&
+        !data.isArray() &&
+        data.isMember(DgnDbServerEvent::EventTopic) &&
+        data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
+        data.isMember(DgnDbServerEvent::DeletedEventProperties::BriefcaseId) &&
+        data.isMember(DgnDbServerEvent::DeletedEventProperties::Date) &&
+        !data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
+        !data.isMember(DgnDbServerEvent::CodeEventProperties::CodeAuthorityId)
+        )   
+        return DgnDbServerDeletedEvent::Create
+            (
+            data[DgnDbServerEvent::EventTopic].asString(),
+            data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
+            data[DgnDbServerEvent::DeletedEventProperties::BriefcaseId].asString(),
+            data[DgnDbServerEvent::DeletedEventProperties::Date].asString(),
+            deletedEventType
+            );
+        return nullptr;      
     }
 
 //---------------------------------------------------------------------------------------
@@ -316,42 +349,19 @@ Utf8String responseString
     size_t jsonPosEnd = responseString.find_last_of('}');
     if (jsonPosStart == Utf8String::npos || jsonPosEnd == Utf8String::npos)
         return nullptr;
-   
+        
     Utf8String actualJsonPart = responseString.substr(jsonPosStart, jsonPosEnd);
     DgnDbServerEvent::DgnDbServerEventType eventType = DgnDbServerEvent::Helper::GetEventTypeFromEventName(responseContentType);
     switch (eventType)
         {
-            case DgnDbServerEvent::DgnDbServerEventType::LockEvent:        return ParseIntoLockEvent(actualJsonPart);
-            case DgnDbServerEvent::DgnDbServerEventType::RevisionEvent:    return ParseIntoRevisionEvent(actualJsonPart);
-            case DgnDbServerEvent::DgnDbServerEventType::CodeEvent:        return ParseIntoCodeEvent(actualJsonPart);
-            case DgnDbServerEvent::DgnDbServerEventType::DeleteAllLocks:   return ParseIntoDeleteAllLocksEvent(actualJsonPart);
-            case DgnDbServerEvent::DgnDbServerEventType::DeleteAllCodes:   return ParseIntoDeleteAllCodesEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::LockEvent:             return ParseIntoLockEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::RevisionEvent:         return ParseIntoRevisionEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::CodeEvent:             return ParseIntoCodeEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::AllLocksDeletedEvent:
+            case DgnDbServerEvent::DgnDbServerEventType::AllCodesDeletedEvent:  return ParseIntoDeletedEvent(actualJsonPart, eventType);
             default:
             case DgnDbServerEvent::DgnDbServerEventType::UnknownEventType: return nullptr;
-        }    
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                 Arvind.Venkateswaran	              06/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEvent::DgnDbServerEventType DgnDbServerEventParser::GetEventType
-(
-DgnDbServerEventPtr eventPtr
-) const
-    {
-    if (eventPtr == nullptr)
-        return DgnDbServerEvent::DgnDbServerEventType::UnknownEventType;
-
-    const type_info& eventType = eventPtr->GetEventType();
-    Utf8String returnedEventName = eventType.name();
-    if (returnedEventName.ContainsI(typeid(DgnDbServerLockEvent).name()))
-        return DgnDbServerEvent::DgnDbServerEventType::LockEvent;
-    else if (returnedEventName.ContainsI(typeid(DgnDbServerRevisionEvent).name()))
-        return DgnDbServerEvent::DgnDbServerEventType::RevisionEvent;
-    else if (returnedEventName.ContainsI(typeid(DgnDbServerCodeEvent).name()))
-        return DgnDbServerEvent::DgnDbServerEventType::CodeEvent;
-    else
-        return DgnDbServerEvent::DgnDbServerEventType::UnknownEventType;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -398,6 +408,23 @@ std::shared_ptr<struct DgnDbServerCodeEvent> DgnDbServerEventParser::GetCodeEven
         if (eventPtr == nullptr)
             return nullptr;
         return std::make_shared<DgnDbServerCodeEvent>(dynamic_cast<DgnDbServerCodeEvent&>(*eventPtr));
+        }
+    catch (const std::bad_cast&)
+        {
+        return nullptr;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Arvind.Venkateswaran	              06/2016
+//---------------------------------------------------------------------------------------
+std::shared_ptr<struct DgnDbServerDeletedEvent> DgnDbServerEventParser::GetDeletedEvent(DgnDbServerEventPtr eventPtr)
+    {
+    try
+        {
+        if (eventPtr == nullptr)
+            return nullptr;
+        return std::make_shared<DgnDbServerDeletedEvent>(dynamic_cast<DgnDbServerDeletedEvent&>(*eventPtr));
         }
     catch (const std::bad_cast&)
         {

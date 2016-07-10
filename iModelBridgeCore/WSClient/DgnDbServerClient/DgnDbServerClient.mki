@@ -24,6 +24,7 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerLockEvent.h            \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevisionEvent.h        \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerCodeEvent.h            \
+								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerDeletedEvent.h         \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerEventSubscription.h    \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerEventSAS.h				\
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerResult.h               \
@@ -48,6 +49,8 @@ $(o)DgnDbServerLockEvent$(oext)            : $(DgnDbServerClientMkiSourceDir)Dgn
 $(o)DgnDbServerRevisionEvent$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerRevisionEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerCodeEvent$(oext)            : $(DgnDbServerClientMkiSourceDir)DgnDbServerCodeEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbServerDeletedEvent$(oext)         : $(DgnDbServerClientMkiSourceDir)DgnDbServerDeletedEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerEventSubscription$(oext)    : $(DgnDbServerClientMkiSourceDir)DgnDbServerEventSubscription.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 

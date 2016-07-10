@@ -45,14 +45,21 @@ namespace DgnDbServerEvent
         static Utf8CP UsedWithRevision = "UsedWithRevision";
         static Utf8CP Date = "Date";
         }
+    namespace DeletedEventProperties
+        {
+        static Utf8CP AllLocksDeletedEvent = "AllLocksDeletedEvent";
+        static Utf8CP AllCodesDeletedEvent = "AllCodesDeletedEvent";
+        static Utf8CP BriefcaseId = "BriefcaseId";
+        static Utf8CP Date = "Date";
+        }
 
     enum DgnDbServerEventType
         {
         LockEvent,
         RevisionEvent,
         CodeEvent,
-        DeleteAllLocks,
-        DeleteAllCodes,
+        AllLocksDeletedEvent,
+        AllCodesDeletedEvent,
         UnknownEventType
         };
 
@@ -66,11 +73,11 @@ namespace DgnDbServerEvent
             {
             switch (eventType)
                 {
-                    case DgnDbServerEventType::LockEvent:       return "LockEvent";
-                    case DgnDbServerEventType::RevisionEvent:   return "RevisionEvent";
-                    case DgnDbServerEventType::CodeEvent:       return "CodeEvent";
-                    case DgnDbServerEventType::DeleteAllLocks:  return "DeleteAllLocks";
-                    case DgnDbServerEventType::DeleteAllCodes:  return "DeleteAllCodes";
+                    case DgnDbServerEventType::LockEvent:             return "LockEvent";
+                    case DgnDbServerEventType::RevisionEvent:         return "RevisionEvent";
+                    case DgnDbServerEventType::CodeEvent:             return "CodeEvent";
+                    case DgnDbServerEventType::AllLocksDeletedEvent:  return "AllLocksDeletedEvent";
+                    case DgnDbServerEventType::AllCodesDeletedEvent:  return "AllCodesDeletedEvent";
                     case DgnDbServerEventType::UnknownEventType:
                     default:      return "UnknownEventType";
                 }
@@ -84,10 +91,10 @@ namespace DgnDbServerEvent
                 return DgnDbServerEventType::RevisionEvent;
             else if (0 == (BeStringUtilities::Stricmp("CodeEvent", eventName)))
                 return DgnDbServerEventType::CodeEvent;
-            else if (0 == (BeStringUtilities::Stricmp("DeleteAllLocks", eventName)))
-                return DgnDbServerEventType::DeleteAllLocks;
-            else if (0 == (BeStringUtilities::Stricmp("DeleteAllCodes", eventName)))
-                return DgnDbServerEventType::DeleteAllCodes;
+            else if (0 == (BeStringUtilities::Stricmp("AllLocksDeletedEvent", eventName)))
+                return DgnDbServerEventType::AllLocksDeletedEvent;
+            else if (0 == (BeStringUtilities::Stricmp("AllCodesDeletedEvent", eventName)))
+                return DgnDbServerEventType::AllCodesDeletedEvent;
             else
                 return DgnDbServerEventType::UnknownEventType;
             }
@@ -99,7 +106,8 @@ namespace DgnDbServerEvent
     struct GenericEvent
         {
         public:
-            DGNDBSERVERCLIENT_EXPORT virtual const type_info& GetEventType() { return typeid(this); }
+            //DGNDBSERVERCLIENT_EXPORT virtual const type_info& GetEventType() { return typeid(this); }
+            DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEventType GetEventType() { return UnknownEventType; }
             DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic() { return ""; }
             DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId() { return ""; }
         };

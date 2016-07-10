@@ -132,8 +132,9 @@ Utf8String DgnDbServerLockEvent::GetReleasedWithRevision()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-const type_info& DgnDbServerLockEvent::GetEventType()
+DgnDbServerEvent::DgnDbServerEventType DgnDbServerLockEvent::GetEventType()
     {
-    const type_info& tp = typeid(this);
-    return tp;
+    /*const type_info& tp = typeid(this);
+    return tp;*/
+    return DgnDbServerEvent::DgnDbServerEventType::LockEvent;
     }
