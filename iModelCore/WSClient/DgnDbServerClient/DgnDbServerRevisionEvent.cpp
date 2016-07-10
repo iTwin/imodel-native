@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             65/2016
+//@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerRevisionEvent::DgnDbServerRevisionEvent
 (
@@ -94,8 +94,7 @@ Utf8String DgnDbServerRevisionEvent::GetRevisionIndex()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-const type_info& DgnDbServerRevisionEvent::GetEventType()
+DgnDbServerEvent::DgnDbServerEventType DgnDbServerRevisionEvent::GetEventType()
     {
-    const type_info& tp = typeid(this);
-    return tp;
+    return DgnDbServerEvent::DgnDbServerEventType::RevisionEvent;
     }

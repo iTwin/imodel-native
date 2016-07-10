@@ -288,7 +288,8 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEventString(bool longPolling, I
         return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(currentEventTask.GetError()));
 
     DgnDbServerEventPtr currentEvent = currentEventTask.GetValue();
-    DgnDbServerEvent::DgnDbServerEventType eventType = DgnDbServerEventParser::GetInstance().GetEventType(currentEvent);
+    /*DgnDbServerEvent::DgnDbServerEventType eventType = DgnDbServerEventParser::GetInstance().GetEventType(currentEvent);*/
+    DgnDbServerEvent::DgnDbServerEventType eventType = currentEvent->GetEventType();
     switch (eventType)
         {
             case DgnDbServerEvent::DgnDbServerEventType::LockEvent:
@@ -340,6 +341,23 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEventString(bool longPolling, I
                     (
                     "Code Info-> CodeAuthority: " + codeEvent->GetCodeAuthorityId() +
                     " State: " + codeEvent->GetState()
+                    ));
+                }
+
+            case DgnDbServerEvent::DgnDbServerEventType::AllCodesDeletedEvent:
+            case DgnDbServerEvent::DgnDbServerEventType::AllLocksDeletedEvent:
+                {
+                std::shared_ptr<DgnDbServerDeletedEvent> deletedEvent = DgnDbServerEventParser::GetInstance().GetDeletedEvent(currentEvent);
+                if (deletedEvent == nullptr)
+                    return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
+                    (DgnDbServerEventStringResult::Error
+                    (
+                    DgnDbServerError::Id::InternalServerError
+                    ));
+                return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
+                    (DgnDbServerEventStringResult::Success
+                    (
+                    DgnDbServerEvent::Helper::GetEventNameFromEventType(eventType) + " Activated"
                     ));
                 }
 

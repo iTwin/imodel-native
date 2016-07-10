@@ -169,6 +169,7 @@
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryManager.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryConnection.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerCodeEvent.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerDeletedEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEventParser.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEventSAS.cpp" />
@@ -260,6 +261,8 @@
     <ClInclude Include="Cache\Schemas.h" />
     <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerCodeEvent.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerDeletedEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSAS.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSubscription.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h" />

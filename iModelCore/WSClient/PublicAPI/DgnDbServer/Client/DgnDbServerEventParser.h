@@ -39,8 +39,6 @@ struct IDgnDbServerEventParser
             Utf8CP responseContentType,
             Utf8String responseString
             ) const = 0;
-
-        DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType (DgnDbServerEventPtr eventPtr) const = 0;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -79,13 +77,13 @@ struct DgnDbServerEventParser : public IDgnDbServerEventParser
 
         DGNDBSERVERCLIENT_EXPORT DgnDbServerEventSASPtr ParseEventSAS(Json::Value jsonResponse) const override;
 
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerEvent::DgnDbServerEventType GetEventType(DgnDbServerEventPtr eventPtr) const override;
-
         DGNDBSERVERCLIENT_EXPORT std::shared_ptr<struct DgnDbServerLockEvent> GetLockEvent(DgnDbServerEventPtr eventPtr);
 
         DGNDBSERVERCLIENT_EXPORT std::shared_ptr<struct DgnDbServerRevisionEvent> GetRevisionEvent(DgnDbServerEventPtr eventPtr);
 
         DGNDBSERVERCLIENT_EXPORT std::shared_ptr<struct DgnDbServerCodeEvent> GetCodeEvent(DgnDbServerEventPtr eventPtr);
+
+        DGNDBSERVERCLIENT_EXPORT std::shared_ptr<struct DgnDbServerDeletedEvent> GetDeletedEvent(DgnDbServerEventPtr eventPtr);
     };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

@@ -41,6 +41,11 @@ Utf8String StubHttpResponseValidRevisionEvent();
 Utf8String StubHttpResponseValidCodeEvent();
 
 //---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            07/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidDeletedEvent();
+
+//---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidLockEvent();
@@ -54,6 +59,11 @@ Utf8String StubHttpResponseInvalidRevisionEvent();
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidCodeEvent();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            07/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidDeletedEvent();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
@@ -73,17 +83,62 @@ Utf8String StubHttpResponseValidEventSASResponse();
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse();
+Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse1();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse();
+Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse2();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSASResponse();
+Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse3();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse4();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse1();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse2();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse3();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse4();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSASResponse1();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSASResponse2();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSASResponse3();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidEventSASResponse4();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
@@ -164,6 +219,26 @@ Utf8CP     StubHttpResponseValidCodeEventContentType();
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Utf8CP     StubHttpResponseInvalidCodeEventContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            07/2016
+//---------------------------------------------------------------------------------------
+Utf8CP     StubHttpResponseValidLocksDeletedContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            07/2016
+//---------------------------------------------------------------------------------------
+Utf8CP     StubHttpResponseValidCodesDeletedContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            07/2016
+//---------------------------------------------------------------------------------------
+Utf8CP     StubHttpResponseInvalidLocksDeletedContentType();
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Arvind.Venkateswaran            07/2016
+//---------------------------------------------------------------------------------------
+Utf8CP     StubHttpResponseInvalidCodesDeletedContentType();
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016

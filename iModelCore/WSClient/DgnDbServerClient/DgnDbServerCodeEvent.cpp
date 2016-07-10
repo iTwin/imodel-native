@@ -140,10 +140,9 @@ Utf8String DgnDbServerCodeEvent::GetUsedWithRevision()
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
+//@bsimethod                                   Arvind.Venkateswaran             07/2016
 //---------------------------------------------------------------------------------------
-const type_info& DgnDbServerCodeEvent::GetEventType()
+DgnDbServerEvent::DgnDbServerEventType DgnDbServerCodeEvent::GetEventType()
     {
-    const type_info& tp = typeid(this);
-    return tp;
+    return DgnDbServerEvent::DgnDbServerEventType::CodeEvent;
     }

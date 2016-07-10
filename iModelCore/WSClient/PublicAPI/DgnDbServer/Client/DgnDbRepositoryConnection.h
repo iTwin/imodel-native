@@ -21,6 +21,7 @@
 #include <DgnDbServer/Client/DgnDbServerLockEvent.h>
 #include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
 #include <DgnDbServer/Client/DgnDbServerCodeEvent.h>
+#include <DgnDbServer/Client/DgnDbServerDeletedEvent.h>
 #include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
