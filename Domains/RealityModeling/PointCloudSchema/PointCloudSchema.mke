@@ -32,7 +32,6 @@ pointCloudSchemaDepends         = $(_MakeFileSpec)                              
                                   $(SrcPointCloudSchema)VisualizationManager.h                     \
                                   $(SrcPointCloudSchema)PointCloudGcsFacility.h                    \
                                   $(SrcPointCloudSchema)PointCloudViewport.h                       \
-                                  $(PointCloudSchemaPublicApiSrc)PointCloudViewSettings.h          \
                                   $(SrcPointCloudSchema)PointCloudRenderer.h                       \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaCommon.h          \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaTypes.h           \

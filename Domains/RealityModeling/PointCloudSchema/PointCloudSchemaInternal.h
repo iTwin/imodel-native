@@ -15,6 +15,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/JsonUtils.h>
+#include <DgnPlatform/PointCloudSettings.h>
 
 #include <BePointCloud/BePointCloudApi.h>
 #include <BePointCloud/PointCloudTypes.h>
@@ -30,7 +31,6 @@
 #include <PointCloudSchema/PointCloudSchemaTypes.h>
 #include <PointCloudSchema/PointCloudSchemaCommon.h>
 #include <PointCloudSchema/ExportMacros.h>
-#include <PointCloudSchema/PointCloudViewSettings.h>
 #include <PointCloudSchema/PointCloudDrawBuffer.h>
 #include <PointCloudSchema/PointCloudHandler.h>
 #include <PointCloudSchema/PointCloudDomain.h>
