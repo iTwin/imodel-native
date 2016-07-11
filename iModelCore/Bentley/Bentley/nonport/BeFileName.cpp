@@ -597,7 +597,7 @@ bool BeFileName::IsUrl() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BeFileName::IsUrl(WCharCP filename)
     {
-    return NULL != filename && 0 == wcsncmp(L"http:", filename, 5);
+    return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6))  ;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1082,19 +1082,26 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
     bool extendedPathPrefixNeeded = false;
-
-    if (isRelativePath (src))
+    
+    // Patch to support URLs (http or https) ... max length is irrelevant and no relative paths possible.
+    // IMPORTANT NOTE: This code is necessary on the DgnDb06 stream for ConceptStation but should be unrequired
+    // on newer stream since the use of BeFileName for URLs has been eliminated in ThreeMX
+    // DO NOT PORT
+    if (!IsUrl(src))
         {
-        // Windows does not allow relative path names to be >= MAX_PATH
-        if (wcslen (src) >= MAX_PATH)
-            return  BeFileNameStatus::IllegalName;
-        }
-    else
-        {
-        // Need the "extended path prefix" if name would be too long and if prefix is not already there
-        // MAX_PATH - 12 is the maximum length for a directory name (keeping room for an 8.3 filename)
-        if ((wcslen (src) >= (MAX_PATH - 12)) && !hasExtendedPathPrefix (src))
-            extendedPathPrefixNeeded = true;
+        if (isRelativePath (src))
+            {
+            // Windows does not allow relative path names to be >= MAX_PATH
+            if (wcslen (src) >= MAX_PATH)
+                return  BeFileNameStatus::IllegalName;
+            }
+        else
+            {
+            // Need the "extended path prefix" if name would be too long and if prefix is not already there
+            // MAX_PATH - 12 is the maximum length for a directory name (keeping room for an 8.3 filename)
+            if ((wcslen (src) >= (MAX_PATH - 12)) && !hasExtendedPathPrefix (src))
+                extendedPathPrefixNeeded = true;
+            }
         }
 
     size_t numToAllocate = wcslen (src) + 1;
@@ -1111,19 +1118,32 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
         dst += wcslen (WINDOWS_EXTENDED_PATH_PREFIX);
         }
 
-    for (; *src; ++src, ++dst)
+    // Patch to supportn URLs ... forward slash and double forward slashes are preserved
+    // Patch to support URLs (http or https) ... max length is irrelevant and no relative paths possible.
+    // IMPORTANT NOTE: This code is necessary on the DgnDb06 stream for ConceptStation but should be unrequired
+    // on newer stream since the use of BeFileName for URLs has been eliminated in ThreeMX
+    // DO NOT PORT
+    if (IsUrl(src))
         {
-        *dst = ('/' == *src) ? '\\' : *src;
-
-        // don't copy embedded multiple backskashes (keep leading double backslash for UNC's)
-        if ('\\' == dst[0]  &&  ('\\' == src[1] || '/'== src[1]) && dst != tmp1)
-            dst--;
+        wcscpy(dst, src);
         }
-        
-    *dst = '\0';
+    else
+        {
+        for (; *src; ++src, ++dst)
+            {
+            *dst = ('/' == *src) ? '\\' : *src;
 
-    if (('\\' == dst[-1]) && !keepTrailingSeparator)
-        dst[-1] = '\0';
+            // don't copy embedded multiple backskashes (keep leading double backslash for UNC's)
+            if ('\\' == dst[0]  &&  ('\\' == src[1] || '/'== src[1]) && dst != tmp1)
+                dst--;
+            }
+        
+        *dst = '\0';
+
+        if (('\\' == dst[-1]) && !keepTrailingSeparator)
+            dst[-1] = '\0';
+
+        }
 
     //Remove dots, compress relative paths, etc.
     ScopedArray<WChar, (MAX_PATH * sizeof (WChar))> tmpBuff(wcslen(tmp1) + 1);
