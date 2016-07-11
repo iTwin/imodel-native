@@ -20,22 +20,22 @@
 
 USING_NAMESPACE_BENTLEY_HTTP
 
-BeAtomic<int> HttpClient::s_tasksInProgressCount (0);
+BeAtomic<int> HttpClient::s_tasksInProgressCount(0);
 BeFileName HttpClient::s_assetsDirectoryPath;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpClient::HttpClient (IHttpHeaderProviderPtr defaultHeadersProvider, IHttpHandlerPtr customHandler) :
-m_defaultHeadersProvider (nullptr == defaultHeadersProvider ? HttpHeaderProvider::Create () : defaultHeadersProvider),
-m_handler (customHandler)
+HttpClient::HttpClient(IHttpHeaderProviderPtr defaultHeadersProvider, IHttpHandlerPtr customHandler) :
+m_defaultHeadersProvider(nullptr == defaultHeadersProvider ? HttpHeaderProvider::Create() : defaultHeadersProvider),
+m_handler(customHandler)
     {
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas     02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HttpClient::BeginNetworkActivity ()
+void HttpClient::BeginNetworkActivity()
     {
     if (++s_tasksInProgressCount == 1)
         NetworkIndicator::SetVisible(true);
@@ -44,7 +44,7 @@ void HttpClient::BeginNetworkActivity ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas     02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HttpClient::EndNetworkActivity ()
+void HttpClient::EndNetworkActivity()
     {
     if (--s_tasksInProgressCount == 0)
         NetworkIndicator::SetVisible(false);
@@ -53,7 +53,7 @@ void HttpClient::EndNetworkActivity ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas     02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HttpClient::IsNetworkActive ()
+bool HttpClient::IsNetworkActive()
     {
     return s_tasksInProgressCount > 0;
     }
@@ -61,35 +61,35 @@ bool HttpClient::IsNetworkActive ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Pavan.Emani     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String HttpClient::EscapeString (Utf8StringCR inStr)
+Utf8String HttpClient::EscapeString(Utf8StringCR inStr)
     {
 #if defined (HTTP_LIB_CURL)
-    Utf8P escapedStr = curl_escape (inStr.c_str(), (int)inStr.length());
+    Utf8P escapedStr = curl_escape(inStr.c_str(), (int)inStr.length());
     Utf8String outStr = escapedStr;
-    curl_free (escapedStr);
+    curl_free(escapedStr);
     return outStr;
 #else
-    return BeStringUtilities::UriEncode (inStr.c_str ());
+    return BeStringUtilities::UriEncode(inStr.c_str());
 #endif
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HttpClient::SetCredentials (Credentials credentials)
+void HttpClient::SetCredentials(Credentials credentials)
     {
-    m_credentials = std::move (credentials);
+    m_credentials = std::move(credentials);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest HttpClient::CreateRequest (Utf8StringCR url, Utf8StringCR method) const
+Request HttpClient::CreateRequest(Utf8StringCR url, Utf8StringCR method) const
     {
-    HttpRequest request (url, method, m_handler);
+    Request request(url, method, m_handler);
 
-    m_defaultHeadersProvider->FillHttpRequestHeaders (request.GetHeaders ());
-    request.SetCredentials (m_credentials);
+    m_defaultHeadersProvider->FillHttpRequestHeaders(request.GetHeaders());
+    request.SetCredentials(m_credentials);
 
     return request;
     }
@@ -97,20 +97,20 @@ HttpRequest HttpClient::CreateRequest (Utf8StringCR url, Utf8StringCR method) co
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest HttpClient::CreateGetRequest (Utf8StringCR url) const
+Request HttpClient::CreateGetRequest(Utf8StringCR url) const
     {
-    HttpRequest request = CreateRequest (url, "GET");
+    Request request = CreateRequest(url, "GET");
     return request;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest HttpClient::CreateGetRequest (Utf8StringCR url, Utf8StringCR etag) const
+Request HttpClient::CreateGetRequest(Utf8StringCR url, Utf8StringCR etag) const
     {
-    HttpRequest request = CreateRequest (url, "GET");
+    Request request = CreateRequest(url, "GET");
 
-    request.GetHeaders ().SetIfNoneMatch (etag);
+    request.GetHeaders().SetIfNoneMatch(etag);
 
     return request;
     }
@@ -118,12 +118,12 @@ HttpRequest HttpClient::CreateGetRequest (Utf8StringCR url, Utf8StringCR etag) c
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest HttpClient::CreateGetJsonRequest (Utf8StringCR url, Utf8StringCR etag) const
+Request HttpClient::CreateGetJsonRequest(Utf8StringCR url, Utf8StringCR etag) const
     {
-    HttpRequest request = CreateRequest (url, "GET");
+    Request request = CreateRequest(url, "GET");
 
-    request.GetHeaders ().SetIfNoneMatch (etag);
-    request.GetHeaders ().SetAccept ("application/json");
+    request.GetHeaders().SetIfNoneMatch(etag);
+    request.GetHeaders().SetAccept("application/json");
 
     return request;
     }
@@ -131,8 +131,8 @@ HttpRequest HttpClient::CreateGetJsonRequest (Utf8StringCR url, Utf8StringCR eta
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest HttpClient::CreatePostRequest (Utf8StringCR url) const
+Request HttpClient::CreatePostRequest(Utf8StringCR url) const
     {
-    HttpRequest request = CreateRequest (url, "POST");
+    Request request = CreateRequest(url, "POST");
     return request;
     }

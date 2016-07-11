@@ -21,7 +21,7 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IApplicationEventsListener
     {
-    virtual void _OnApplicationResume () = 0;
+    virtual void _OnApplicationResume() = 0;
     virtual ~IApplicationEventsListener() {}
     };
  
@@ -36,7 +36,7 @@ struct ApplicationEventsManager
 
     private:
         ApplicationEventsManager() { InitializeApplicationEventsListening(); }
-        void InitializeApplicationEventsListening ();
+        void InitializeApplicationEventsListening();
 
     public:
         static ApplicationEventsManager& GetInstance()
@@ -46,10 +46,10 @@ struct ApplicationEventsManager
             return *s_instance;
             }
         //! Registers the application events' listener.
-        void AddApplicationEventsListener (IApplicationEventsListener& listener);
+        void AddApplicationEventsListener(IApplicationEventsListener& listener);
 
         //! Unregisters the application events' listener.
-        void RemoveApplicationEventsListener (IApplicationEventsListener& listener);
+        void RemoveApplicationEventsListener(IApplicationEventsListener& listener);
     };
 
 
@@ -67,13 +67,13 @@ protected:
     CurlPool                                                m_curlPool;
     
 private:
-    virtual void _OnApplicationResume () override;
+    virtual void _OnApplicationResume() override;
 
 public:
-    CurlHttpHandler ();
-    virtual ~CurlHttpHandler ();
+    CurlHttpHandler();
+    virtual ~CurlHttpHandler();
 
-    virtual Tasks::AsyncTaskPtr<HttpResponse> PerformRequest (HttpRequestCR request) override;
+    virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(RequestCR request) override;
     };
 
 

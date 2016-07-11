@@ -13,23 +13,23 @@ USING_NAMESPACE_BENTLEY_TASKS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProxyHttpHandler::ProxyHttpHandler (Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler) :
-m_handler (customHandler ? customHandler : DefaultHttpHandler::GetInstance ()),
-m_proxyUrl (proxyUrl)
+ProxyHttpHandler::ProxyHttpHandler(Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler) :
+m_handler(customHandler ? customHandler : DefaultHttpHandler::GetInstance()),
+m_proxyUrl(proxyUrl)
     {
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProxyHttpHandler::~ProxyHttpHandler ()
+ProxyHttpHandler::~ProxyHttpHandler()
     {
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Ron.Stewart     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProxyHttpHandler::SetProxyCredentials (CredentialsCR credentials)
+void ProxyHttpHandler::SetProxyCredentials(CredentialsCR credentials)
     {
     m_proxyCredentials = credentials;
     }
@@ -37,7 +37,7 @@ void ProxyHttpHandler::SetProxyCredentials (CredentialsCR credentials)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Vytenis.Navalinskas    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ProxyHttpHandler::GetProxyUrl ()
+Utf8StringCR ProxyHttpHandler::GetProxyUrl()
     {
     return m_proxyUrl;
     }
@@ -53,36 +53,34 @@ CredentialsCR ProxyHttpHandler::GetProxyCredentials() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<HttpResponse> ProxyHttpHandler::PerformRequest (HttpRequestCR request)
+AsyncTaskPtr<Response> ProxyHttpHandler::_PerformRequest(RequestCR request)
     {
-    if (m_proxyUrl.empty ())
-        {
-        return m_handler->PerformRequest (request);
-        }
+    if (m_proxyUrl.empty())
+        return m_handler->_PerformRequest(request);
 
-    HttpRequest proxyRequest = request;
-    proxyRequest.SetProxy (m_proxyUrl);
+    Request proxyRequest = request;
+    proxyRequest.SetProxy(m_proxyUrl);
 
     if (m_proxyCredentials.IsValid())
         {
-        proxyRequest.SetProxyCredentials (m_proxyCredentials);
+        proxyRequest.SetProxyCredentials(m_proxyCredentials);
         }
 
-    return m_handler->PerformRequest (proxyRequest);
+    return m_handler->_PerformRequest(proxyRequest);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Vytenis.Navalinskas    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<ProxyHttpHandler> ProxyHttpHandler::GetFiddlerProxyIfReachable (IHttpHandlerPtr customHandler)
+std::shared_ptr<ProxyHttpHandler> ProxyHttpHandler::GetFiddlerProxyIfReachable(IHttpHandlerPtr customHandler)
     {
-    return GetProxyIfReachable ("http://127.0.0.1:8888", customHandler); // Default fiddler proxy
+    return GetProxyIfReachable("http://127.0.0.1:8888", customHandler); // Default fiddler proxy
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<ProxyHttpHandler> ProxyHttpHandler::GetProxyIfReachable (Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler)
+std::shared_ptr<ProxyHttpHandler> ProxyHttpHandler::GetProxyIfReachable(Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler)
     {
     return GetProxyIfReachable(proxyUrl, Credentials(), customHandler);
     }
@@ -92,24 +90,22 @@ std::shared_ptr<ProxyHttpHandler> ProxyHttpHandler::GetProxyIfReachable (Utf8Str
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<ProxyHttpHandler> ProxyHttpHandler::GetProxyIfReachable(Utf8StringCR proxyUrl, CredentialsCR proxyCredentials, IHttpHandlerPtr customHandler)
     {
-    HttpRequest request = HttpRequest(proxyUrl, "GET", customHandler);
-    if (proxyCredentials.IsValid ())
+    Request request(proxyUrl, "GET", customHandler);
+    if (proxyCredentials.IsValid())
         {
-        request.SetProxy (proxyUrl);
-        request.SetProxyCredentials (proxyCredentials);
+        request.SetProxy(proxyUrl);
+        request.SetProxyCredentials(proxyCredentials);
         }
 
-    HttpResponse response = request.PerformAsync()->GetResult();
+    Response response = request.PerformAsync()->GetResult();
 
-    if (HttpStatus::OK == response.GetHttpStatus ())
+    if (HttpStatus::OK == response.GetHttpStatus())
         {
         std::shared_ptr<ProxyHttpHandler> proxyHttpHandler = std::make_shared<ProxyHttpHandler> (proxyUrl, customHandler);
-        if (proxyCredentials.IsValid ())
-            proxyHttpHandler->SetProxyCredentials (proxyCredentials);
+        if (proxyCredentials.IsValid())
+            proxyHttpHandler->SetProxyCredentials(proxyCredentials);
         return proxyHttpHandler;
         }
-    else
-        {
-        return std::make_shared<ProxyHttpHandler> ("", customHandler);
-        }
+
+    return std::make_shared<ProxyHttpHandler> ("", customHandler);
     }

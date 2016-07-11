@@ -19,135 +19,120 @@
 #include <BeHttp/HttpResponse.h>
 #include <BeHttp/IHttpHandler.h>
 
-USING_NAMESPACE_BENTLEY_TASKS
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
-struct HttpRequest;
-typedef HttpRequest& HttpRequestR;
-typedef const HttpRequest& HttpRequestCR;
 
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                                     Vincas.Razma    06/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct HttpRequest
+//=======================================================================================
+// @bsiclass                                                    Vincas.Razma      07/16
+//=======================================================================================
+struct Request
     {
-public:
-    enum RetryOption
+    enum class RetryOption
         {
         DontRetry,
         ResetTransfer,
-        ResumeTransfer
+        ResumeTransfer 
         };
 
     typedef std::function<void (double bytesTransfered, double bytesTotal)> ProgressCallback;
     typedef const ProgressCallback& ProgressCallbackCR;
 
 private:
-    // Request setup
     Utf8String m_url;
     Utf8String m_method;
     Utf8String m_proxyUrl;
     Credentials m_proxyCredentials;
-
     Credentials m_credentials;
-    bool m_validateCertificate;
-
+    bool m_validateCertificate = false;
     HttpRequestHeaders m_requestHeaders;
     HttpBodyPtr m_requestBody;
-
     HttpBodyPtr m_responseBody;
-
-    ICancellationTokenPtr m_cancellationToken;
-
+    Tasks::ICancellationTokenPtr m_cancellationToken;
     ProgressCallback m_uploadProgressCallback;
     ProgressCallback m_downloadProgressCallback;
-
-    unsigned m_connectionTimeoutSeconds;
-    unsigned m_transferTimeoutSeconds;
-
-    RetryOption m_retryOption;
-    unsigned    m_retriesMax;
-
-    bool m_followRedirects;
-    bool m_useNewConnection;
-
+    unsigned m_connectionTimeoutSeconds = 60;
+    unsigned m_transferTimeoutSeconds = 60;
+    RetryOption m_retryOption = RetryOption::DontRetry;
+    unsigned m_retriesMax = 0;
+    bool m_followRedirects = true;
+    bool m_useNewConnection = false;
     IHttpHandlerPtr m_httpHandler;
 
-private:
-    Utf8String EscapeUnsafeSymbolsInUrl (Utf8StringCR url);
-
 public:
-    BEHTTP_EXPORT HttpRequest (Utf8StringCR url, Utf8StringCR method = "GET", IHttpHandlerPtr customHandler = nullptr);
+    BEHTTP_EXPORT Utf8String EscapeUnsafeSymbolsInUrl(Utf8StringCR url);
 
-    BEHTTP_EXPORT HttpRequestHeadersR  GetHeaders ();
-    BEHTTP_EXPORT HttpRequestHeadersCR GetHeaders () const;
+    BEHTTP_EXPORT Request(Utf8StringCR url, Utf8StringCR method = "GET", IHttpHandlerPtr customHandler = nullptr);
 
-    BEHTTP_EXPORT Utf8StringCR GetUrl () const;
-    BEHTTP_EXPORT Utf8StringCR GetMethod () const;
+    HttpRequestHeadersR  GetHeaders(){return m_requestHeaders;}
+    HttpRequestHeadersCR GetHeaders() const {return m_requestHeaders;}
 
-    BEHTTP_EXPORT void           SetCredentials (Credentials credentials);
-    BEHTTP_EXPORT CredentialsCR  GetCredentials () const;
+    Utf8StringCR GetUrl() const {return m_url;}
+    Utf8StringCR GetMethod() const {return m_method;}
+
+    void SetCredentials(Credentials credentials) {m_credentials = std::move(credentials);}
+    CredentialsCR GetCredentials() const {return m_credentials;}
 
     //! Enable or disable server certificate and hostname validation
-    BEHTTP_EXPORT void SetValidateCertificate(bool validate);
-    BEHTTP_EXPORT bool GetValidateCertificate() const;
+    void SetValidateCertificate(bool validate) {m_validateCertificate = validate;}
+    bool GetValidateCertificate() const {return m_validateCertificate;}
 
     // Set proxy for request. Pass empty string to not use proxy
-    BEHTTP_EXPORT void         SetProxy (Utf8StringCR proxyUrl);
-    BEHTTP_EXPORT Utf8StringCR GetProxy () const;
+    void SetProxy(Utf8StringCR proxyUrl) {m_proxyUrl = EscapeUnsafeSymbolsInUrl(proxyUrl);}
+    Utf8StringCR GetProxy() const {return m_proxyUrl;}
 
     // Set credentials for an authenticating proxy
-    BEHTTP_EXPORT void           SetProxyCredentials (Credentials credentials);
-    BEHTTP_EXPORT CredentialsCR  GetProxyCredentials() const;
+    void SetProxyCredentials(Credentials credentials) {m_proxyCredentials = credentials;}
+    CredentialsCR GetProxyCredentials() const {return m_proxyCredentials;}
 
     // Request body to send, default is no body
-    BEHTTP_EXPORT void         SetRequestBody (HttpBodyPtr body);
-    BEHTTP_EXPORT HttpBodyPtr  GetRequestBody () const;
+    void SetRequestBody(HttpBodyPtr body) {m_requestBody = body;}
+    HttpBodyPtr  GetRequestBody() const {return m_requestBody;}
 
     // Response body to write received data to
-    BEHTTP_EXPORT void         SetResponseBody (HttpBodyPtr body);
-    BEHTTP_EXPORT HttpBodyPtr  GetResponseBody () const;
+    void SetResponseBody(HttpBodyPtr body){m_responseBody = body;}
+    HttpBodyPtr GetResponseBody() const {return m_responseBody;}
 
     //! Sets connection and transfer timeouts with one value. Default - 60 seconds.
-    BEHTTP_EXPORT void         SetTimeoutSeconds (unsigned connectionAndTransferTimeout);
+    void SetTimeoutSeconds(unsigned connectionAndTransferTimeout) {m_connectionTimeoutSeconds = connectionAndTransferTimeout; m_transferTimeoutSeconds = connectionAndTransferTimeout;}
 
-    BEHTTP_EXPORT void         SetConnectionTimeoutSeconds (unsigned connectionTimeout);
-    BEHTTP_EXPORT unsigned     GetConnectionTimeoutSeconds () const;
+    void SetConnectionTimeoutSeconds(unsigned connectionTimeout){m_connectionTimeoutSeconds = connectionTimeout;}
+    unsigned GetConnectionTimeoutSeconds() const {return m_connectionTimeoutSeconds;}
 
-    BEHTTP_EXPORT void         SetTransferTimeoutSeconds (unsigned transferTimeout);
-    BEHTTP_EXPORT unsigned     GetTransferTimeoutSeconds () const;
+    void SetTransferTimeoutSeconds(unsigned transferTimeout) {m_transferTimeoutSeconds = transferTimeout;}
+    unsigned GetTransferTimeoutSeconds() const {return m_transferTimeoutSeconds;}
 
     //! Enable or disable following redirects. Default is true
-    BEHTTP_EXPORT void         SetFollowRedirects (bool follow);
-    BEHTTP_EXPORT bool         GetFollowRedirects () const;
+    void SetFollowRedirects(bool follow){m_followRedirects = follow;}
+    bool GetFollowRedirects() const {return m_followRedirects;}
 
     // Used to workaround a CURL bug:
     // https://sourceforge.net/p/curl/bugs/1275/
-    BEHTTP_EXPORT void         SetUseNewConnection (bool useNewConnection);
-    BEHTTP_EXPORT bool         GetUseNewConnection () const;
+    void SetUseNewConnection(bool useNewConnection) {m_useNewConnection = useNewConnection;}
+    bool GetUseNewConnection() const {return m_useNewConnection;}
 
     // Use this if you want to specify settings for poor conectivity. Useful for downloads.
     // Retries if connection lost happen for maximumRetries or indefinetely if maximumRetries = 0
     // Default - RetryOption::DontRetry
-    BEHTTP_EXPORT void                  SetRetryOptions (RetryOption option, unsigned maximumRetries = 1);
-    BEHTTP_EXPORT RetryOption const&    GetRetryOption () const;
-    BEHTTP_EXPORT unsigned              GetMaxRetries () const;
+    void SetRetryOptions(RetryOption option, unsigned maximumRetries = 1) {m_retryOption = option;m_retriesMax = maximumRetries;}
+    RetryOption const& GetRetryOption() const {return m_retryOption;}
 
-    BEHTTP_EXPORT void                  SetCancellationToken (ICancellationTokenPtr token);
-    BEHTTP_EXPORT ICancellationTokenPtr GetCancellationToken () const;
+    unsigned GetMaxRetries() const {return m_retriesMax;}
 
-    BEHTTP_EXPORT void                  SetDownloadProgressCallback (ProgressCallbackCR onProgress);
-    BEHTTP_EXPORT ProgressCallbackCR    GetDownloadProgressCallback () const;
+    void SetCancellationToken(Tasks::ICancellationTokenPtr token) {m_cancellationToken = token;}
+    Tasks::ICancellationTokenPtr GetCancellationToken() const {return m_cancellationToken;}
 
-    BEHTTP_EXPORT void                  SetUploadProgressCallback (ProgressCallbackCR onProgress);
-    BEHTTP_EXPORT ProgressCallbackCR    GetUploadProgressCallback () const;
+    void SetDownloadProgressCallback(ProgressCallbackCR onProgress) {m_downloadProgressCallback = onProgress;}
+    ProgressCallbackCR GetDownloadProgressCallback() const {return m_downloadProgressCallback;}
+
+    void SetUploadProgressCallback(ProgressCallbackCR onProgress) {m_uploadProgressCallback = onProgress;}
+    ProgressCallbackCR GetUploadProgressCallback() const {return m_uploadProgressCallback;}
 
     // DEPRECATED: Use PerformAsync to avoid blocking caller thread.
     // Execute request and block until finished.
-    BEHTTP_EXPORT HttpResponse Perform ();
+    Response Perform() {return PerformAsync()->GetResult();}
 
     // Execute request asynchronously
-    BEHTTP_EXPORT AsyncTaskPtr<HttpResponse> PerformAsync ();
+    Tasks::AsyncTaskPtr<Response> PerformAsync() {return m_httpHandler->_PerformRequest(*this);}
     };
 
 END_BENTLEY_HTTP_NAMESPACE

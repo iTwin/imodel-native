@@ -39,30 +39,30 @@ public:
     //! Construct new client with predefined configuration
     //! @param[in] defaultHeadersProvider - provided headers will be included by default to all requests created with this client
     //! @param[in] customHandler - custom handler to be used for requests
-    BEHTTP_EXPORT HttpClient (IHttpHeaderProviderPtr defaultHeadersProvider = nullptr, IHttpHandlerPtr customHandler = nullptr);
+    BEHTTP_EXPORT HttpClient(IHttpHeaderProviderPtr defaultHeadersProvider = nullptr, IHttpHandlerPtr customHandler = nullptr);
 
     // Initialize HttpClient before using any function related to http requests 
     static void Initialize(BeFileNameCR assetsDirectoryPath) { s_assetsDirectoryPath = assetsDirectoryPath; }
     static BeFileNameCR GetAssetsDirectoryPath() { return s_assetsDirectoryPath; }
 
     // Methods for grouping multiple network requests to one activity
-    BEHTTP_EXPORT static void BeginNetworkActivity ();
-    BEHTTP_EXPORT static void EndNetworkActivity ();
+    BEHTTP_EXPORT static void BeginNetworkActivity();
+    BEHTTP_EXPORT static void EndNetworkActivity();
 
-    BEHTTP_EXPORT static bool IsNetworkActive ();
+    BEHTTP_EXPORT static bool IsNetworkActive();
 
     // Use percent escape for URLs
-    BEHTTP_EXPORT static Utf8String EscapeString (Utf8StringCR inStr);
+    BEHTTP_EXPORT static Utf8String EscapeString(Utf8StringCR inStr);
 
     // Set authorization for request
-    BEHTTP_EXPORT void SetCredentials (Credentials credentials);
+    BEHTTP_EXPORT void SetCredentials(Credentials credentials);
 
     // Create requests with client info
-    BEHTTP_EXPORT HttpRequest CreateRequest (Utf8StringCR url, Utf8StringCR method) const;
-    BEHTTP_EXPORT HttpRequest CreateGetRequest (Utf8StringCR url) const;
-    BEHTTP_EXPORT HttpRequest CreateGetRequest (Utf8StringCR url, Utf8StringCR etag) const;
-    BEHTTP_EXPORT HttpRequest CreateGetJsonRequest (Utf8StringCR url, Utf8StringCR etag = nullptr) const;
-    BEHTTP_EXPORT HttpRequest CreatePostRequest (Utf8StringCR url) const;
+    BEHTTP_EXPORT Request CreateRequest(Utf8StringCR url, Utf8StringCR method) const;
+    BEHTTP_EXPORT Request CreateGetRequest(Utf8StringCR url) const;
+    BEHTTP_EXPORT Request CreateGetRequest(Utf8StringCR url, Utf8StringCR etag) const;
+    BEHTTP_EXPORT Request CreateGetJsonRequest(Utf8StringCR url, Utf8StringCR etag = nullptr) const;
+    BEHTTP_EXPORT Request CreatePostRequest(Utf8StringCR url) const;
     };
 
 typedef HttpClient& HttpClientR;

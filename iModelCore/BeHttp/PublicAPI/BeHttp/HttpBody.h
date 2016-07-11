@@ -33,33 +33,33 @@ struct EXPORT_VTABLE_ATTRIBUTE HttpBody : public RefCountedBase
 
     public:
         // Open for Read/Write
-        BEHTTP_EXPORT virtual void Open () = 0;
+        virtual void Open () = 0;
 
         // Close and release resources
-        BEHTTP_EXPORT virtual void Close () = 0;
+        virtual void Close () = 0;
 
         // Set Read/Write position
-        BEHTTP_EXPORT virtual BentleyStatus SetPosition (uint64_t position) = 0;
+        virtual BentleyStatus SetPosition (uint64_t position) = 0;
 
         // Get current position
-        BEHTTP_EXPORT virtual BentleyStatus GetPosition (uint64_t& position) = 0;
+        virtual BentleyStatus GetPosition (uint64_t& position) = 0;
 
         // Reset position and clear body contents
-        BEHTTP_EXPORT virtual BentleyStatus Reset () = 0;
+        virtual BentleyStatus Reset () = 0;
 
         // Write contents of buffer, return bytes successfully written
-        BEHTTP_EXPORT virtual size_t Write (const char* buffer, size_t bufferSize) = 0;
+        virtual size_t Write (const char* buffer, size_t bufferSize) = 0;
 
         // Read maximum bytes of bufferSize to bufferOut
-        BEHTTP_EXPORT virtual size_t Read (char* bufferOut, size_t bufferSize) = 0;
+        virtual size_t Read (char* bufferOut, size_t bufferSize) = 0;
 
         // Get length of contents
-        BEHTTP_EXPORT virtual uint64_t GetLength () = 0;
+        virtual uint64_t GetLength () = 0;
 
         // Convenience methods to read content
-        BEHTTP_EXPORT virtual Json::Value AsJson () const = 0;
-        BEHTTP_EXPORT virtual void AsRapidJson (rapidjson::Document& documentOut) const = 0;
-        BEHTTP_EXPORT virtual Utf8String AsString () const = 0;
+        virtual Json::Value AsJson () const = 0;
+        virtual void AsRapidJson (rapidjson::Document& documentOut) const = 0;
+        virtual Utf8String AsString () const = 0;
     };
 
 /*--------------------------------------------------------------------------------------+

@@ -47,7 +47,7 @@ struct CurlHttpRequest
         static uint64_t s_number;
 
     private:
-        HttpRequest m_httpRequest;
+        Request m_httpRequest;
         uint64_t m_number;
 
         CurlPool&   m_curlPool;
@@ -57,49 +57,45 @@ struct CurlHttpRequest
         std::shared_ptr<TransferInfo> m_transferInfo;
 
     private:
-        static void RegisterTransferInfo (TransferInfo* transfer);
-        static void UnregisterTransferInfo (TransferInfo* transfer);
-        static uint64_t GetNextNumber ();
+        static void RegisterTransferInfo(TransferInfo* transfer);
+        static void UnregisterTransferInfo(TransferInfo* transfer);
+        static uint64_t GetNextNumber();
 
-        static size_t CurlWriteHeaderCallback (void* buffer, size_t size, size_t count, CurlHttpRequest* request);
-        static size_t CurlWriteDataCallback (void* buffer, size_t size, size_t count, CurlHttpRequest* request);
-        static size_t CurlReadDataCallback (void* buffer, size_t size, size_t count, CurlHttpRequest* request);
-        static int    CurlProgressCallback (CurlHttpRequest* request, double dltotal, double dlnow, double ultotal, double ulnow);
+        static size_t CurlWriteHeaderCallback(void* buffer, size_t size, size_t count, CurlHttpRequest* request);
+        static size_t CurlWriteDataCallback(void* buffer, size_t size, size_t count, CurlHttpRequest* request);
+        static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, CurlHttpRequest* request);
+        static int    CurlProgressCallback(CurlHttpRequest* request, double dltotal, double dlnow, double ultotal, double ulnow);
         static int    CurlDebugCallback(CURL* handle, curl_infotype type, char* data, size_t size, CurlHttpRequest* request);
 
-        void SetupCurl ();
-        void SetupHeaders ();
-        void SetupCurlCallbacks ();
+        void SetupCurl();
+        void SetupHeaders();
+        void SetupCurlCallbacks();
 
-        HttpStatus ResolveHttpStatus (int httpStatusInt);
+        HttpStatus ResolveHttpStatus(int httpStatusInt);
 
-        void SendProgressCallback (double dltotal, double dlnow, double ultotal, double ulnow);
+        void SendProgressCallback(double dltotal, double dlnow, double ultotal, double ulnow);
 
-        size_t OnWriteData (void* buffer, size_t size, size_t count);
-        size_t OnWriteHeaders (void* buffer, size_t size, size_t count);
-        size_t OnReadData (void* buffer, size_t size, size_t count);
-        ProgressResult OnProgress (double dltotal, double dlnow, double ultotal, double ulnow);
+        size_t OnWriteData(void* buffer, size_t size, size_t count);
+        size_t OnWriteHeaders(void* buffer, size_t size, size_t count);
+        size_t OnReadData(void* buffer, size_t size, size_t count);
+        ProgressResult OnProgress(double dltotal, double dlnow, double ultotal, double ulnow);
 
     public:
         //! Call this method when HttpRequests are stuck. On iOS this happens when application switches from background to foreground.
-        static void ResetAllRequests ();
+        static void ResetAllRequests();
 
-        CurlHttpRequest (HttpRequestCR httpRequest, CurlPool& curlPool);
-        ~CurlHttpRequest ();
+        CurlHttpRequest(RequestCR httpRequest, CurlPool& curlPool);
+        ~CurlHttpRequest();
 
-        CURL* GetCurlHandle ();
-        HttpRequestCR GetHttpRequest () const;
-        uint64_t GetNumber () const;
+        CURL* GetCurlHandle();
+        RequestCR GetHttpRequest() const;
+        uint64_t GetNumber() const;
+        void PrepareRequest();
 
-        void PrepareRequest ();
-
-        ConnectionStatus GetConnectionStatus (CURLcode curlStatus);
-
-        bool ShouldRetry (ConnectionStatus curlStatus);
-
-        HttpResponse ResolveResponse (ConnectionStatus curlStatus);
-
-        static Utf8String GetDebugStatusString (ConnectionStatus status, HttpStatus httpStatus);
+        ConnectionStatus GetConnectionStatus(CURLcode curlStatus);
+        bool ShouldRetry(ConnectionStatus curlStatus);
+        Response ResolveResponse(ConnectionStatus curlStatus);
+        static Utf8String GetDebugStatusString(ConnectionStatus status, HttpStatus httpStatus);
     };
 
 END_BENTLEY_HTTP_NAMESPACE

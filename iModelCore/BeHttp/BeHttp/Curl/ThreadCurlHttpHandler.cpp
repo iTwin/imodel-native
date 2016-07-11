@@ -16,60 +16,60 @@ USING_NAMESPACE_BENTLEY_TASKS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThreadCurlHttpHandler::ThreadCurlHttpHandler ()
+ThreadCurlHttpHandler::ThreadCurlHttpHandler()
     {
     auto parallelTransfers = 10;
     auto threadCount = parallelTransfers + 1; // +1 for tasks that are being canceled
 
-    m_threadPool = WorkerThreadPool::Create (threadCount, "WebThreadPool");
-    m_threadQueue.SetLimit (parallelTransfers);
+    m_threadPool = WorkerThreadPool::Create(threadCount, "WebThreadPool");
+    m_threadQueue.SetLimit(parallelTransfers);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThreadCurlHttpHandler::~ThreadCurlHttpHandler ()
+ThreadCurlHttpHandler::~ThreadCurlHttpHandler()
     {
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<HttpResponse> ThreadCurlHttpHandler::PerformRequest (HttpRequestCR request)
+AsyncTaskPtr<Response> ThreadCurlHttpHandler::_PerformRequest(RequestCR request)
     {
-    if (request.GetMethod ().EqualsI ("GET"))
+    if (request.GetMethod().EqualsI ("GET"))
         {
-        return CurlHttpHandler::PerformRequest (request);
+        return CurlHttpHandler::_PerformRequest(request);
         }
 
-    return m_threadQueue.Push ([=]
+    return m_threadQueue.Push([=]
         {
-        return m_threadPool->ExecuteAsync<HttpResponse> ([=]
+        return m_threadPool->ExecuteAsync<Response> ([=]
             {
-            CurlHttpRequest curlRequest (request, m_curlPool);
+            CurlHttpRequest curlRequest(request, m_curlPool);
 
             ConnectionStatus connectionStatus;
             CURLcode curlStatus = CURLcode::CURL_LAST;
             do
                 {
-                curlRequest.PrepareRequest ();
-                CURL* curl = curlRequest.GetCurlHandle ();
-                curlStatus = curl_easy_perform (curl);
-                connectionStatus = curlRequest.GetConnectionStatus (curlStatus);
+                curlRequest.PrepareRequest();
+                CURL* curl = curlRequest.GetCurlHandle();
+                curlStatus = curl_easy_perform(curl);
+                connectionStatus = curlRequest.GetConnectionStatus(curlStatus);
                 }
-            while (curlRequest.ShouldRetry (connectionStatus));
+            while (curlRequest.ShouldRetry(connectionStatus));
 
-            return curlRequest.ResolveResponse (connectionStatus);
+            return curlRequest.ResolveResponse(connectionStatus);
             });
-        }, request.GetCancellationToken ());
+        }, request.GetCancellationToken());
     }
 
 // Test for CURLM
-//AsyncTaskPtr<HttpResponse> CurlHttpHandler::PerformRequest (HttpRequestCR request)
+//AsyncTaskPtr<Response> CurlHttpHandler::PerformRequest (HttpRequestCR request)
 //    {
 //    return m_threadQueue.Push ([=]
 //        {
-//        return m_threadPool->ExecuteAsync<HttpResponse> ([=]
+//        return m_threadPool->ExecuteAsync<Response> ([=]
 //            {
 //            CurlHttpRequest request (request, m_curlPool);
 //            request.PrepareRequest ();

@@ -39,24 +39,24 @@ struct EXPORT_VTABLE_ATTRIBUTE AuthenticationHandler : public IHttpHandler
         Tasks::AsyncTaskPtr<void> RetrieveAuthorizationAndPerformRequest
             (
             std::shared_ptr<AuthenticationState> authenticationState,
-            std::shared_ptr<HttpResponse> finalResponseInOut
+            std::shared_ptr<Response> finalResponseInOut
             );
 
         Tasks::AsyncTaskPtr<void> PerformRequest
             (
             std::shared_ptr<AuthenticationState> authenticationState,
-            std::shared_ptr<HttpResponse> responseOut
+            std::shared_ptr<Response> responseOut
             );
 
     protected:
-        BEHTTP_EXPORT virtual bool _ShouldRetryAuthentication (HttpResponseCR response);
-        virtual Tasks::AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization (AttemptCR previousAttempt) = 0;
+        BEHTTP_EXPORT virtual bool _ShouldRetryAuthentication(ResponseCR response);
+        virtual Tasks::AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization(AttemptCR previousAttempt) = 0;
 
     public:
-        BEHTTP_EXPORT AuthenticationHandler (IHttpHandlerPtr customHttpHandler = nullptr);
-        BEHTTP_EXPORT virtual ~AuthenticationHandler ();
+        BEHTTP_EXPORT AuthenticationHandler(IHttpHandlerPtr customHttpHandler = nullptr);
+        virtual ~AuthenticationHandler() {}
 
-        BEHTTP_EXPORT virtual Tasks::AsyncTaskPtr<HttpResponse> PerformRequest (HttpRequestCR request) override;
+        BEHTTP_EXPORT virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(RequestCR request) override;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -71,12 +71,12 @@ struct AuthenticationHandler::Attempt
         unsigned m_attemptNumber;
 
     public:
-        BEHTTP_EXPORT Attempt (Utf8String requestUrl, Utf8String authorization, DateTimeCR utcDate, unsigned attemptNumber);
+        BEHTTP_EXPORT Attempt(Utf8String requestUrl, Utf8String authorization, DateTimeCR utcDate, unsigned attemptNumber);
 
-        BEHTTP_EXPORT Utf8StringCR GetRequestUrl () const;
-        BEHTTP_EXPORT Utf8StringCR GetAuthorization () const;
-        BEHTTP_EXPORT DateTimeCR GetUtcDate () const;
-        BEHTTP_EXPORT unsigned GetAttemptNumber () const;
+        BEHTTP_EXPORT Utf8StringCR GetRequestUrl() const;
+        BEHTTP_EXPORT Utf8StringCR GetAuthorization() const;
+        BEHTTP_EXPORT DateTimeCR GetUtcDate() const;
+        BEHTTP_EXPORT unsigned GetAttemptNumber() const;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -85,15 +85,15 @@ struct AuthenticationHandler::Attempt
 struct AuthenticationHandler::AuthenticationState
     {
     private:
-        HttpRequest m_request;
+        Request m_request;
         Attempt m_attempt;
 
     public:
-        AuthenticationState (HttpRequest request);
-        HttpRequestR GetRequest ();
+        AuthenticationState(Request request);
+        RequestR GetRequest() {return m_request;}
 
-        void RegisterNewAttempt ();
-        AttemptCR GetLastAttempt () const;
+        void RegisterNewAttempt();
+        AttemptCR GetLastAttempt() const;
     };
 
 END_BENTLEY_HTTP_NAMESPACE

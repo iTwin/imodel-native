@@ -17,8 +17,8 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                               Beneditas.Lipnickas   09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE HttpError : public Tasks::AsyncError
-    {
+struct EXPORT_VTABLE_ATTRIBUTE HttpError : Tasks::AsyncError
+{
 private:
     ConnectionStatus m_connectionStatus;
     HttpStatus m_httpStatus;
@@ -28,22 +28,20 @@ private:
 
 public:
     BEHTTP_EXPORT HttpError();
-    BEHTTP_EXPORT HttpError(HttpResponse httpResponse);
+    BEHTTP_EXPORT HttpError(Response httpResponse);
     BEHTTP_EXPORT HttpError(ConnectionStatus connectionStatus, HttpStatus httpStatus);
 
-    BEHTTP_EXPORT ConnectionStatus GetConnectionStatus() const;
-    BEHTTP_EXPORT HttpStatus GetHttpStatus() const;
+    ConnectionStatus GetConnectionStatus() const {return m_connectionStatus;}
+    HttpStatus GetHttpStatus() const {return m_httpStatus;}
 
     //! DEPRECATED - use GetMessage()
-    BEHTTP_EXPORT virtual Utf8String GetDisplayMessage() const;
+    virtual Utf8String GetDisplayMessage() const {return m_message;}
+
     //! DEPRECATED - use GetDescription()
-    BEHTTP_EXPORT virtual Utf8String GetDisplayDescription () const;
+    BEHTTP_EXPORT virtual Utf8String GetDisplayDescription() const;
 
-    BEHTTP_EXPORT static Utf8String GetConnectionErrorDisplayMessage (ConnectionStatus connectionStatus);
-    BEHTTP_EXPORT static Utf8String GetHttpDisplayMessage (HttpStatus httpStatus);
-    };
+    BEHTTP_EXPORT static Utf8String GetConnectionErrorDisplayMessage(ConnectionStatus connectionStatus);
+    BEHTTP_EXPORT static Utf8String GetHttpDisplayMessage(HttpStatus httpStatus);
+};  
 
-typedef HttpError& HttpErrorR;
-typedef const HttpError& HttpErrorCR;
-
-END_BENTLEY_HTTP_NAMESPACE
+END_BENTLEY_HTTP_NAMESPACE 

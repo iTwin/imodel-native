@@ -22,7 +22,7 @@ BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
 struct MockHttpHandler : public IHttpHandler
     {
 public:
-    typedef std::function<HttpResponse (HttpRequestCR)> OnResponseCallback;
+    typedef std::function<Http::Response(Http::RequestCR)> OnResponseCallback;
 
 private:
     int64_t m_expectedRequests;
@@ -33,23 +33,23 @@ private:
     uint32_t m_perfomedRequests;
 
 public:
-    MockHttpHandler ();
-    virtual ~MockHttpHandler () override;
-    virtual AsyncTaskPtr<HttpResponse> PerformRequest (HttpRequestCR request) override;
+    MockHttpHandler();
+    virtual ~MockHttpHandler() override;
+    virtual AsyncTaskPtr<Http::Response> _PerformRequest(Http::RequestCR request) override;
 
-    uint32_t GetRequestsPerformed () const;
+    uint32_t GetRequestsPerformed() const;
 
-    MockHttpHandler& ExpectOneRequest ();
-    MockHttpHandler& ExpectRequests (uint32_t count);
+    MockHttpHandler& ExpectOneRequest();
+    MockHttpHandler& ExpectRequests(uint32_t count);
 
-    MockHttpHandler& ForRequest (uint32_t requestNumber, OnResponseCallback callback);
-    MockHttpHandler& ForRequest (uint32_t requestNumber, HttpResponseCR response);
+    MockHttpHandler& ForRequest(uint32_t requestNumber, OnResponseCallback callback);
+    MockHttpHandler& ForRequest(uint32_t requestNumber, Http::ResponseCR response);
 
-    MockHttpHandler& ForFirstRequest (OnResponseCallback callback);
-    MockHttpHandler& ForFirstRequest (HttpResponseCR response);
+    MockHttpHandler& ForFirstRequest(OnResponseCallback callback);
+    MockHttpHandler& ForFirstRequest(Http::ResponseCR response);
 
-    MockHttpHandler& ForAnyRequest (OnResponseCallback callback);
-    MockHttpHandler& ForAnyRequest (HttpResponseCR response);
+    MockHttpHandler& ForAnyRequest(OnResponseCallback callback);
+    MockHttpHandler& ForAnyRequest(Http::ResponseCR response);
     };
 
 END_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE

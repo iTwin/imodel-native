@@ -13,7 +13,6 @@
 #include <Bentley/WString.h>
 #include <Bentley/bmap.h>
 #include <functional>
-
 #include <BeHttp/Http.h>
 #include <BeHttp/IHttpHandler.h>
 #include <BeHttp/HttpResponse.h>
@@ -74,7 +73,7 @@ private:
 
     HttpStatus ResolveHttpStatus (int httpStatusInt);
     bool ShouldRetry (ConnectionStatus curlStatus);
-    HttpResponse ResolveResponse (ConnectionStatus curlStatus);
+    Response ResolveResponse (ConnectionStatus curlStatus);
 
     void SendProgressCallback (double dltotal, double dlnow, double ultotal, double ulnow);
 

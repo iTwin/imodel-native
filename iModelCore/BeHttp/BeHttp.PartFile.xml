@@ -21,7 +21,7 @@
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/BeHttp" />
         </Bindings>
     </Part>
-	
+
     <Part Name="BeHttpLibrary" BentleyBuildMakeFile="BeHttp.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttpLibrary-Curl"/>
@@ -208,7 +208,7 @@
 
     <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
         <SubPart PartName="PrewireForUnitTests" />
-		<SubPart PartName="PublishedAPI" />
+        <SubPart PartName="PublishedAPI" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeHttp/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>

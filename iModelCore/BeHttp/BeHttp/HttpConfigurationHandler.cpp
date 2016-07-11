@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_TASKS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpConfigurationHandler::HttpConfigurationHandler(std::function<void(HttpRequest& request)> configuration, IHttpHandlerPtr customHandler) :
+HttpConfigurationHandler::HttpConfigurationHandler(std::function<void(Request& request)> configuration, IHttpHandlerPtr customHandler) :
 m_handler(customHandler ? customHandler : DefaultHttpHandler::GetInstance()),
 m_configuration(configuration)
     {};
@@ -21,20 +21,12 @@ m_configuration(configuration)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpConfigurationHandler::~HttpConfigurationHandler()
-    {}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<HttpResponse> HttpConfigurationHandler::PerformRequest(HttpRequestCR request)
+AsyncTaskPtr<Response> HttpConfigurationHandler::_PerformRequest(RequestCR request)
     {
     if (!m_configuration)
-        {
-        return m_handler->PerformRequest(request);
-        }
+        return m_handler->_PerformRequest(request);
 
-    HttpRequest configuredRequest = request;
+    Request configuredRequest = request;
     m_configuration(configuredRequest);
-    return m_handler->PerformRequest(configuredRequest);
+    return m_handler->_PerformRequest(configuredRequest);
     }

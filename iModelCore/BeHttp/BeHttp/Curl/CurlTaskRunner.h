@@ -26,7 +26,7 @@ typedef RefCountedPtr<CurlTaskRunner> CurlTaskRunnerPtr;
 struct CurlTaskRunner : Tasks::AsyncTaskRunner
     {
 private:
-    bmap<CURL*, std::shared_ptr<SimplePackagedAsyncTask<std::shared_ptr<CurlHttpRequest>, HttpResponse>>> m_curlToRequestMap;
+    bmap<CURL*, std::shared_ptr<SimplePackagedAsyncTask<std::shared_ptr<CurlHttpRequest>, Response>>> m_curlToRequestMap;
     CURLM* m_multi;
     
 private:
