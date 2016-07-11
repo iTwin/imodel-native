@@ -110,7 +110,7 @@ LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
                    $(ContextSubpartsLibs)$(stlibprefix)BeHttp$(stlibext) \
                    $(ContextSubpartsLibs)$(stlibprefix)lzma$(stlibext)
 
-%if (("Windows" == TARGET_PLATFORM) || ("WinRT" == TARGET_PLATFORM) || ("iOS" == TARGET_PLATFORM))
+%if (("Windows" == TARGET_PLATFORM) || ("WinRT" == TARGET_PLATFORM) || ("iOS" == TARGET_PLATFORM) || ($(BUILD_TOOLSET) == "ANDROID_CLANG"))
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 %endif
 

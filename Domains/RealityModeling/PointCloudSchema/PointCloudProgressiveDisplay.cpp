@@ -58,15 +58,15 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
         BeAssert(false);
         return;
         }
-    auto const& settings = spatial->GetPointCloudSettings();
+    auto const& settings = spatial->GetPointCloudViewSettings();
 
     PointCloudVortex::SetEnabledState(PtEnable::RGB_SHADER, settings.GetUseRgb());
     PointCloudVortex::SetEnabledState(PtEnable::FRONT_BIAS, settings.GetUseFrontBias());
     PointCloudVortex::SetEnabledState(PtEnable::ADAPTIVE_POINT_SIZE, false);
     PointCloudVortex::SetEnabledState(PtEnable::LIGHTING, false);
 
-    PointCloudSettings::DisplayStyle displayStyle = settings.GetDisplayStyle();
-    if (displayStyle == PointCloudSettings::DisplayStyle::Custom)
+    PointCloudViewSettings::DisplayStyle displayStyle = settings.GetDisplayStyle();
+    if (displayStyle == PointCloudViewSettings::DisplayStyle::Custom)
         {
         PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, settings.GetUseIntensity());
         PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, settings.GetUsePlane());
@@ -110,7 +110,7 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
             PointCloudVortex::ShaderOptionfv( PtShaderOptions::PLANE_SHADER_VECTOR, axis ); 
             }
         }
-    else if (displayStyle == PointCloudSettings::DisplayStyle::Intensity)
+    else if (displayStyle == PointCloudViewSettings::DisplayStyle::Intensity)
         {
         PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, true);
         PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, false);
@@ -119,7 +119,7 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
         PointCloudVortex::ShaderOptioni( PtShaderOptions::INTENSITY_SHADER_RAMP, settings.GetIntensityRampIdx ());
         BeAssert (settings.GetIntensityRampIdx() != INVALID_RAMP_INDEX);
         }
-    else if (displayStyle == PointCloudSettings::DisplayStyle::Location)
+    else if (displayStyle == PointCloudViewSettings::DisplayStyle::Location)
         {
         PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, false);
         PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, true);
@@ -154,8 +154,8 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
         }
     else
         {
-        BeAssert (displayStyle == PointCloudSettings::DisplayStyle::None || 
-                    displayStyle == PointCloudSettings::DisplayStyle::Classification);
+        BeAssert (displayStyle == PointCloudViewSettings::DisplayStyle::None || 
+                    displayStyle == PointCloudViewSettings::DisplayStyle::Classification);
         PointCloudVortex::SetEnabledState (PtEnable::INTENSITY_SHADER, false);
         PointCloudVortex::SetEnabledState (PtEnable::PLANE_SHADER, false);
         }
