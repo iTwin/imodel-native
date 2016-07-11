@@ -648,7 +648,11 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
                 }
             if (customAttributeInstance.IsValid())
                 {
-                if (ECObjectsStatus::CustomAttributeContainerTypesNotCompatible == SetPrimaryCustomAttribute(*customAttributeInstance))
+                ECSchemaP containerSchema = const_cast<ECSchemaP>(_GetContainerSchema());
+                ECClassP customAttribClass = const_cast<ECClassP>(&customAttributeInstance->GetClass());
+                if ((_GetContainerSchema() != &(customAttributeInstance->GetClass().GetSchema()) && !ECSchema::IsSchemaReferenced(*containerSchema, customAttribClass->GetSchemaR())))
+                    containerSchema->AddReferencedSchema(customAttribClass->GetSchemaR());
+                if (ECObjectsStatus::CustomAttributeContainerTypesNotCompatible == SetCustomAttribute(*customAttributeInstance))
                     {
                     status = CustomAttributeReadStatus::InvalidCustomAttributes;
                     }
