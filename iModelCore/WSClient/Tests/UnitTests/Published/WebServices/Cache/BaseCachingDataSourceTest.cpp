@@ -181,7 +181,7 @@ WSInfoCR info
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse()))));
 
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SchemaWriteStatus status = schema->WriteToXmlFile(filePath);
         EXPECT_EQ(SchemaWriteStatus::Success, status);

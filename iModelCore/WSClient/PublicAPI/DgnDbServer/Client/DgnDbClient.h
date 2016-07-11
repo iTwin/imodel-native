@@ -40,8 +40,8 @@ private:
     bool        m_isReadOnly;
 
 public:
-    DgnDbServerBriefcaseInfo () {};
-    DgnDbServerBriefcaseInfo (BeFileName filePath, bool isReadOnly);
+    DgnDbServerBriefcaseInfo() {};
+    DgnDbServerBriefcaseInfo(BeFileName filePath, bool isReadOnly);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -70,40 +70,41 @@ private:
     ClientInfoPtr               m_clientInfo;
     AuthenticationHandlerPtr    m_authenticationHandler;
 
-    DgnDbClient (ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
+    DgnDbClient(ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
-    DgnDbServerRepositoryTaskPtr        InitializeRepository    (IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
-                                                                 ObjectId repositoryObjectId, HttpRequest::ProgressCallbackCR callback = nullptr,
+    DgnDbServerRepositoryTaskPtr InitializeRepository(IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
+                                                                 ObjectId repositoryObjectId, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
-    DgnDbServerStatusTaskPtr            DownloadBriefcase       (DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
-                                                                 Utf8StringCR url, bool doSync = true, HttpRequest::ProgressCallbackCR callback = nullptr,
+    DgnDbServerStatusTaskPtr DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
+                                                                 Utf8StringCR url, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
 //__PUBLISH_SECTION_START__
 public:
     DGNDBSERVERCLIENT_EXPORT static BriefcaseFileNameCallback                       DefaultFileNameCallback;
+
     //! Set up the DgnDbServer Client library. Initialization is required for most of the library functions to work.
     //! Needs to be called from the work thread where DgnPlatform is initialized.
-    DGNDBSERVERCLIENT_EXPORT static void                    Initialize              ();
+    DGNDBSERVERCLIENT_EXPORT static void Initialize();
 
     //! Create an instance of the client.
     //! @param[in] clientInfo Application information sent to server.
     //! @param[in] authenticationHandler Http handler for connect authentication.
     //! @return Returns a shared pointer to the created instance.
-    DGNDBSERVERCLIENT_EXPORT static DgnDbClientPtr          Create                  (ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler = nullptr);
+    DGNDBSERVERCLIENT_EXPORT static DgnDbClientPtr Create(ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler = nullptr);
 
     //! Address of the server.
-    DGNDBSERVERCLIENT_EXPORT void                           SetServerURL            (Utf8StringCR serverUrl);
+    DGNDBSERVERCLIENT_EXPORT void SetServerURL (Utf8StringCR serverUrl);
 
     //! Credentials used to authenticate to the on-premise server.
-    DGNDBSERVERCLIENT_EXPORT void                           SetCredentials          (CredentialsCR credentials);
+    DGNDBSERVERCLIENT_EXPORT void SetCredentials(CredentialsCR credentials);
 
     //! ProjectId to bind repositories to. Required for IMS authentication and should be empty for Basic.
-    DGNDBSERVERCLIENT_EXPORT void                           SetProject              (Utf8StringCR projectId);
+    DGNDBSERVERCLIENT_EXPORT void SetProject(Utf8StringCR projectId);
 
     //! Creates a connection to a repository. Use this method if you need to access repository information without acquirying a briefcase.
     //! If you already have a briefcase, please use DgnDbBriefcase.GetRepositoryConnection()
-    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionTaskPtr  ConnectToRepository(RepositoryInfoCR repository, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionTaskPtr ConnectToRepository(RepositoryInfoCR repository, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Creates a connection to a repository. Use this method if you need to access repository information without acquirying a briefcase.
     //! If you already have a briefcase, please use DgnDbBriefcase.GetRepositoryConnection()
@@ -113,7 +114,7 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has a collection of repository information as the result. See RepositoryInfo.
     //! @note Does not return unpublished, uninitialized repositories or repositories that the user does not have authorization to access.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoriesTaskPtr GetRepositories         (ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoriesTaskPtr GetRepositories(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new repository on the server.
     //! @param[in] db A DgnDb file to upload as a master file for the repository.
@@ -123,8 +124,7 @@ public:
     //! @return Asynchronous task that has created repository information as the result. See RepositoryInfo.
     //! @note This method uses name and description properties from dgn_Proj namespace as repository name and description. If name property is not set, it will use the filename instead.
     //! @note Returned repository Id might be different from the user supplied repository name.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr   CreateNewRepository     (DgnDbCR db, bool publish = true, HttpRequest::ProgressCallbackCR  callback = nullptr,
-                                                                                     ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, bool publish = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new repository on the server.
     //! @param[in] db A DgnDb file to upload as a master file for the repository.
@@ -136,8 +136,8 @@ public:
     //! @return Asynchronous task that has created repository information as the result. See RepositoryInfo.
     //! @note CreateNewRepository without repositoryName and descriptons arguments should be used instead, to resolve name and description from the dgndb file.
     //! @note Returned repository Id might be different from the user supplied repository name.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr   CreateNewRepository     (DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description, bool publish = true,
-                                                                                     HttpRequest::ProgressCallbackCR  callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description, bool publish = true,
+                                                                                     Http::Request::ProgressCallbackCR  callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a briefcase of a repository from the server.
     //! @param[in] repositoryInfo Information of repository to be acquired. This value should be returned by the server. See DgnDbClient::GetRepositories and DgnDbClient::CreateNewRepository.
@@ -147,8 +147,8 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has downloaded file name and is read-only flag as the result.
     //! @note If localFileName is an existing file, this method will fail. If it is an existing directory, file name retrieved from server will be appended.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfoTaskPtr AcquireBriefcase       (RepositoryInfoCR repositoryInfo, BeFileNameCR localFileName, bool doSync = true,
-                                                                                     HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfoTaskPtr AcquireBriefcase(RepositoryInfoCR repositoryInfo, BeFileNameCR localFileName, bool doSync = true,
+                                                                                     Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a briefcase of a repository from the server using callback to provide the file path.
     //! @param[in] repositoryInfo Information of repository to be acquired. This value should be returned by the server. See DgnDbClient::GetRepositories and DgnDbClient::CreateNewRepository.
@@ -159,9 +159,9 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has downloaded file name and is read-only flag as the result.
     //! @note Default callback will save repository at baseDirectory\\repositoryId\\briefcaseId\\fileName
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfoTaskPtr AcquireBriefcaseToDir  (RepositoryInfoCR repositoryInfo, BeFileNameCR baseDirectory, bool doSync = true,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseInfoTaskPtr AcquireBriefcaseToDir(RepositoryInfoCR repositoryInfo, BeFileNameCR baseDirectory, bool doSync = true,
                                                                                      BriefcaseFileNameCallback const& fileNameCallback = DefaultFileNameCallback, 
-                                                                                     HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+                                                                                     Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
    
     //! Create a DgnDbBriefcase instance from a previously downloaded DgnDb file.
     //! @param[in] db Previously downloaded briefcase file. See DgnDbClient::AcquireBriefcase.
@@ -170,11 +170,10 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has briefcase instance as result. See DgnDbBriefcase.
     //! @note This method ignores the server url set in client and uses server url read from the briefcase file.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseTaskPtr    OpenBriefcase           (DgnDbPtr db, bool doSync = false, HttpRequest::ProgressCallbackCR callback = nullptr,
-                                                                                     ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseTaskPtr OpenBriefcase(DgnDbPtr db, bool doSync = false, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns DgnDbServer RepositoryManager.
-    DGNDBSERVERCLIENT_EXPORT IRepositoryManager*            GetRepositoryManagerP   ();
+    DGNDBSERVERCLIENT_EXPORT IRepositoryManager* GetRepositoryManagerP();
 };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

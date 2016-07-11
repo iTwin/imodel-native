@@ -125,12 +125,12 @@ uint64_t lifetime
         params["Lifetime"] = Utf8PrintfString("%llu", lifetime);
 
     HttpClient client(m_clientInfo, UrlProvider::GetSecurityConfigurator(m_httpHandler));
-    HttpRequest request = client.CreatePostRequest(stsUrl);
+    Http::Request request = client.CreatePostRequest(stsUrl);
     request.GetHeaders().SetAuthorization(authorization);
     request.GetHeaders().SetContentType("application/json");
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter::ToString(params)));
 
-    return request.PerformAsync()->Then<SamlTokenResult>([] (HttpResponseCR response)
+    return request.PerformAsync()->Then<SamlTokenResult>([] (Http::ResponseCR response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK)
             return SamlTokenResult::Error({response});
@@ -161,7 +161,7 @@ uint64_t lifetime
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ImsClient::IsLoginRedirect(HttpResponseCR response)
+bool ImsClient::IsLoginRedirect(Http::ResponseCR response)
     {
     if (HttpStatus::OK != response.GetHttpStatus())
         return false;

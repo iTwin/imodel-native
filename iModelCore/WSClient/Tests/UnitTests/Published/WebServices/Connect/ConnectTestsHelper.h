@@ -17,5 +17,5 @@ Utf8String StubSamlTokenXML(uint32_t validMinutes = 10000, Utf8StringCR stubCert
 SamlTokenPtr StubSamlToken(uint32_t validMinutes = 10000);
 SamlTokenPtr StubSamlToken(const std::map<Utf8String, Utf8String>& attributes);
 SamlTokenPtr StubSamlTokenWithUser(Utf8StringCR username);
-HttpResponse StubImsTokenHttpResponse (uint32_t validMinutes = 10000);
-HttpResponse StubImsTokenHttpResponse (SamlTokenCR token);
+Response StubImsTokenHttpResponse (uint32_t validMinutes = 10000);
+Response StubImsTokenHttpResponse (SamlTokenCR token);

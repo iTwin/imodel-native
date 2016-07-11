@@ -20,7 +20,7 @@ BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 struct MockHttpHandler : public IHttpHandler
     {
     public:
-        typedef std::function<HttpResponse(HttpRequestCR)> OnResponseCallback;
+        typedef std::function<Http::Response(Http::RequestCR)> OnResponseCallback;
 
     private:
         int64_t m_expectedRequests;
@@ -36,7 +36,7 @@ struct MockHttpHandler : public IHttpHandler
     public:
         MockHttpHandler();
         virtual ~MockHttpHandler() override;
-        virtual AsyncTaskPtr<HttpResponse> PerformRequest(HttpRequestCR request) override;
+        virtual AsyncTaskPtr<Http::Response> _PerformRequest(Http::RequestCR request) override;
 
         uint32_t GetRequestsPerformed() const;
 
@@ -48,18 +48,18 @@ struct MockHttpHandler : public IHttpHandler
         //! DEPRECATED: Use ExpectRequest()
         MockHttpHandler& ForRequest(uint32_t requestNumber, OnResponseCallback callback);
         //! DEPRECATED: Use ExpectRequest()
-        MockHttpHandler& ForRequest(uint32_t requestNumber, HttpResponseCR response);
+        MockHttpHandler& ForRequest(uint32_t requestNumber, Http::ResponseCR response);
 
         MockHttpHandler& ExpectRequest(OnResponseCallback callback);
-        MockHttpHandler& ExpectRequest(HttpResponseCR response);
+        MockHttpHandler& ExpectRequest(Http::ResponseCR response);
 
         //! DEPRECATED: Use ExpectRequest()
         MockHttpHandler& ForFirstRequest(OnResponseCallback callback);
         //! DEPRECATED: Use ExpectRequest()
-        MockHttpHandler& ForFirstRequest(HttpResponseCR response);
+        MockHttpHandler& ForFirstRequest(Http::ResponseCR response);
 
         MockHttpHandler& ForAnyRequest(OnResponseCallback callback);
-        MockHttpHandler& ForAnyRequest(HttpResponseCR response);
+        MockHttpHandler& ForAnyRequest(Http::ResponseCR response);
     };
 
 END_WSCLIENT_UNITTESTS_NAMESPACE

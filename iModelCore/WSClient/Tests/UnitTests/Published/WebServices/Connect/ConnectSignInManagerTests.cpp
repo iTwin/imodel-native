@@ -38,13 +38,13 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderProduction
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
     auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForFirstRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForFirstRequest([=] (Http::RequestCR request)
         {
         EXPECT_TRUE(request.GetValidateCertificate());
         return StubHttpResponse();
         });
 
-    HttpRequest("https://foo.com", "GET", authHandler).Perform();
+    Http::Request("https://foo.com", "GET", authHandler).Perform();
     }
 
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNotSetSetValidateCertificateForRequests)
@@ -53,13 +53,13 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNot
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
     auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForFirstRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForFirstRequest([=] (Http::RequestCR request)
         {
         EXPECT_FALSE(request.GetValidateCertificate());
         return StubHttpResponse();
         });
 
-    HttpRequest("https://foo.com", "GET", authHandler).Perform();
+    Http::Request("https://foo.com", "GET", authHandler).Perform();
     }
 
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNotSetSetValidateCertificateForRequests)
@@ -68,13 +68,13 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNo
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
     auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForFirstRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForFirstRequest([=] (Http::RequestCR request)
         {
         EXPECT_FALSE(request.GetValidateCertificate());
         return StubHttpResponse();
         });
 
-    HttpRequest("https://foo.com", "GET", authHandler).Perform();
+    Http::Request("https://foo.com", "GET", authHandler).Perform();
     }
 
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingDifferentAuthHandlersWithSameServer_TokenReusedForSecondRequest)
@@ -95,8 +95,8 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingD
         .WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken()))));
     GetHandler().ForAnyRequest(StubImsTokenHttpResponse());
 
-    HttpRequest("https://foo.com/a", "GET", authHandler1).Perform();
-    HttpRequest("https://foo.com/b", "GET", authHandler2).Perform();
+    Http::Request("https://foo.com/a", "GET", authHandler1).Perform();
+    Http::Request("https://foo.com/b", "GET", authHandler2).Perform();
     }
 
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent)
@@ -111,7 +111,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInPara
     ASSERT_TRUE(manager->SignInWithCredentials(creds)->GetResult().IsSuccess());
 
     AsyncTestCheckpoint checkpoint;
-    GetHandler().ForAnyRequest([&] (HttpRequestCR request)
+    GetHandler().ForAnyRequest([&] (Http::RequestCR request)
         {
         checkpoint.CheckinAndWait();
         return StubHttpResponse();
@@ -122,8 +122,8 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInPara
     EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken()))));
 
-    auto t1 = HttpRequest("https://foo.com/a", "GET", authHandler).PerformAsync();
-    auto t2 = HttpRequest("https://foo.com/b", "GET", authHandler).PerformAsync();
+    auto t1 = Http::Request("https://foo.com/a", "GET", authHandler).PerformAsync();
+    auto t2 = Http::Request("https://foo.com/b", "GET", authHandler).PerformAsync();
 
     checkpoint.WaitUntilReached();
     checkpoint.Continue();

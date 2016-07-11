@@ -77,7 +77,7 @@ m_id(errorId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSError::WSError(HttpResponseCR httpResponse) : WSError()
+WSError::WSError(Http::ResponseCR httpResponse) : WSError()
     {
     if (ConnectionStatus::OK == httpResponse.GetConnectionStatus() &&
         LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_INFO))
@@ -162,7 +162,7 @@ WSError::WSError(HttpErrorCR httpError)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSError::ParseBody(HttpResponseCR httpResponse)
+BentleyStatus WSError::ParseBody(Http::ResponseCR httpResponse)
     {
     Utf8String contentType = httpResponse.GetHeaders().GetContentType();
     if (contentType.find("application/json") != Utf8String::npos)
@@ -181,7 +181,7 @@ BentleyStatus WSError::ParseBody(HttpResponseCR httpResponse)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSError::ParseJsonError(HttpResponseCR httpResponse)
+BentleyStatus WSError::ParseJsonError(Http::ResponseCR httpResponse)
     {
     Json::Value jsonError = httpResponse.GetBody().AsJson();
     if (!IsValidErrorJson(jsonError))
@@ -213,7 +213,7 @@ BentleyStatus GetChildNodeContents(BeXmlNodeP node, Utf8CP childNodePath, Utf8St
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSError::ParseXmlError(HttpResponseCR httpResponse)
+BentleyStatus WSError::ParseXmlError(Http::ResponseCR httpResponse)
     {
     Utf8String bodyStr = httpResponse.GetBody().AsString();
 

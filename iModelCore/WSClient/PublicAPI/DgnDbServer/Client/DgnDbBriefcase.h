@@ -21,7 +21,6 @@ DEFINE_TASK_TYPEDEFS(bool, DgnDbServerBool);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisionMerge);
 
 //=======================================================================================
-//! A class that represents 
 // @bsiclass                                      Karolis.Dziedzelis             10/2015
 //=======================================================================================
 struct DgnDbBriefcase
@@ -33,11 +32,11 @@ private:
     DgnDbRepositoryConnectionPtr  m_repositoryConnection;
     Dgn::DgnDbPtr                 m_db;
 
-    DgnDbBriefcase (Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+    DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
-    DgnDbServerRevisionsTaskPtr PullMergeAndPushInternal (Utf8CP description, HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
+    DgnDbServerRevisionsTaskPtr PullMergeAndPushInternal(Utf8CP description, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
-    DgnDbServerRevisionsTaskPtr PullMergeAndPushRepeated (Utf8CP description, HttpRequest::ProgressCallbackCR downloadCallback = nullptr, HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
+    DgnDbServerRevisionsTaskPtr PullMergeAndPushRepeated(Utf8CP description, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, int delay = 0) const;
 
 public:
@@ -46,7 +45,7 @@ public:
     //! @param[in] connection Connection to a repository on server.
     //! @return Returns shared pointer of the created instance.
     //! @note This method is called by DgnDbClient. See DgnDbClient::OpenBriefcase.
-    static DgnDbBriefcasePtr                                    Create                  (Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+    static DgnDbBriefcasePtr Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -54,8 +53,7 @@ public:
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error and list of pulled and merged revisions.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr    PullAndMerge            (HttpRequest::ProgressCallbackCR callback = nullptr,
-                                                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr PullAndMerge(Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Pull and merge incomming revisions and then send the outgoing revisions.
     //! @param[in] description Revision description.
@@ -64,19 +62,19 @@ public:
     //! @param[in] cancellationToken
     //! @param[in] attemptsCount Maximum count of retries if fail.
     //! @return Asynchronous task that returns success or an error and list of pulled and merged revisions.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr    PullMergeAndPush        (Utf8CP description = nullptr, HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
-                                                                                         HttpRequest::ProgressCallbackCR uploadCallback = nullptr,
-                                                                                         ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr PullMergeAndPush(Utf8CP description = nullptr, Http::Request::ProgressCallbackCR downloadCallback = nullptr,
+                                                                              Http::Request::ProgressCallbackCR uploadCallback = nullptr,
+                                                                              ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1) const;
 
     //! Returns true if briefcase is up to date and there are no revisions pending. This will end up sending request to the server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerBoolTaskPtr             IsBriefcaseUpToDate     (ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerBoolTaskPtr IsBriefcaseUpToDate(ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR                        GetDgnDb                () const; //!< Briefcase file.
-    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR        GetRepositoryConnection () const; //!< Connection to a repository on server.
-    DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId            GetBriefcaseId          () const; //!< Briefcase Id.
-    DGNDBSERVERCLIENT_EXPORT Utf8String                         GetLastRevisionPulled   () const; //!< Last revision that was pulled by this briefcase.
+    DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb() const; //!< Briefcase file.
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR GetRepositoryConnection() const; //!< Connection to a repository on server.
+    DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId GetBriefcaseId() const; //!< Briefcase Id.
+    DGNDBSERVERCLIENT_EXPORT Utf8String GetLastRevisionPulled() const; //!< Last revision that was pulled by this briefcase.
 
 };
 

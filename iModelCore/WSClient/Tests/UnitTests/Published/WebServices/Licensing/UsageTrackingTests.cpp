@@ -28,7 +28,7 @@ void UsageTrackingTests::TearDown()
 
 TEST_F(UsageTrackingTests, PostSingleUsage)
     {
-    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+    GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
         auto bodyJson = request.GetRequestBody()->AsJson();
         EXPECT_EQ(1, (int) bodyJson.size());
@@ -51,7 +51,7 @@ TEST_F(UsageTrackingTests, PostSingleUsage)
 
 TEST_F(UsageTrackingTests, PostMultipleUsage)
     {
-    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+    GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
         auto bodyJson = request.GetRequestBody()->AsJson();
         EXPECT_LT(1, (int) bodyJson.size());

@@ -132,7 +132,7 @@ struct CallbackQueue
         void Notify();
         struct Callback
             {
-            Http::HttpRequest::ProgressCallback callback;
+            Http::Request::ProgressCallback callback;
             CallbackQueue& m_queue;
             double m_bytesTransfered;
             double m_bytesTotal;
@@ -140,11 +140,11 @@ struct CallbackQueue
             };
         friend struct CallbackQueue::Callback;
         bvector<std::shared_ptr<CallbackQueue::Callback>> m_callbacks;
-        Http::HttpRequest::ProgressCallbackCR m_callback;
+        Http::Request::ProgressCallbackCR m_callback;
     public:
-        CallbackQueue(Http::HttpRequest::ProgressCallbackCR callback);
+        CallbackQueue(Http::Request::ProgressCallbackCR callback);
 
-        Http::HttpRequest::ProgressCallbackCR NewCallback();
+        Http::Request::ProgressCallbackCR NewCallback();
     };
 
 //=======================================================================================

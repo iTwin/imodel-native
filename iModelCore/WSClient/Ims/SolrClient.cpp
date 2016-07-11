@@ -67,9 +67,9 @@ AsyncTaskPtr<SolrGetResult> SolrClient::SendGetRequest(SolrQueryCR query) const
     Utf8String url(m_serverUrl + (m_serverUrl.EndsWith("/") ? "" : "/") + m_collectionPath + "/select" + query.ToString());
     BeAssert(url.size() < 2000 && "<Warning> Url length might be problematic as it is longer than most default settings");
 
-    HttpRequest request = m_httpClient->CreateGetJsonRequest(url);
+    Http::Request request = m_httpClient->CreateGetJsonRequest(url);
 
-    return request.PerformAsync()->Then<SolrGetResult>([this] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<SolrGetResult>([this] (Http::Response& httpResponse)
         {
         HttpStatus status = httpResponse.GetHttpStatus();
         if (HttpStatus::OK == status ||

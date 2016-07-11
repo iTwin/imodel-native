@@ -16,7 +16,7 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-typedef AsyncResult<WSInfo, HttpResponse> WSInfoHttpResult;
+typedef AsyncResult<WSInfo, Http::Response> WSInfoHttpResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2014

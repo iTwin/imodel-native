@@ -56,7 +56,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -77,7 +77,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -85,7 +85,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -94,7 +94,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -103,7 +103,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -117,7 +117,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
     };

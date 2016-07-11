@@ -189,7 +189,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadBriefcaseFile
 BeFileName                      localFile,
 BeBriefcaseId                   briefcaseId,
 Utf8StringCR                    url,
-HttpRequest::ProgressCallbackCR callback,
+Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
@@ -227,7 +227,7 @@ ICancellationTokenPtr           cancellationToken
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadRevisionFile
 (
 DgnDbServerRevisionPtr          revision,
-HttpRequest::ProgressCallbackCR callback,
+Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
@@ -1085,7 +1085,7 @@ ICancellationTokenPtr cancellationToken
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadRevisions
 (
 const bvector<DgnDbServerRevisionPtr>& revisions,
-HttpRequest::ProgressCallbackCR        callback,
+Http::Request::ProgressCallbackCR        callback,
 ICancellationTokenPtr                  cancellationToken
 ) const
     {
@@ -1110,7 +1110,7 @@ ICancellationTokenPtr                  cancellationToken
 DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::Pull
 (
 Utf8StringCR                    revisionId,
-HttpRequest::ProgressCallbackCR callback,
+Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
@@ -1173,7 +1173,7 @@ Dgn::DgnRevisionPtr             revision,
 BeBriefcaseId                   briefcaseId,
 JsonValueR                      pushJson,
 ObjectId                        revisionObjectId,
-HttpRequest::ProgressCallbackCR callback,
+Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
@@ -1219,7 +1219,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::Push
 (
 Dgn::DgnRevisionPtr             revision,
 BeBriefcaseId                   briefcaseId,
-HttpRequest::ProgressCallbackCR callback,
+Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {

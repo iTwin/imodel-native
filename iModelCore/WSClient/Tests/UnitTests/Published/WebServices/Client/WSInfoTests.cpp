@@ -23,37 +23,37 @@ TEST_F(WSInfoTests, IsValid_DefaultCtor_False)
 
 TEST_F(WSInfoTests, IsValid_NotExecutedResponse_False)
     {
-    HttpResponse response;
+    Http::Response response;
     EXPECT_FALSE(WSInfo(response).IsValid());
     }
 
 TEST_F(WSInfoTests, IsValid_ServerInfoWithVersion_True)
     {
-    HttpResponse response = StubHttpResponse(HttpStatus::OK, R"({"serverVersion" : "01.02.03.04"})", {{"Content-Type", "application/json"}});
+    Http::Response response = StubHttpResponse(HttpStatus::OK, R"({"serverVersion" : "01.02.03.04"})", {{"Content-Type", "application/json"}});
     EXPECT_TRUE(WSInfo(response).IsValid());
     }
 
 TEST_F(WSInfoTests, IsValid_ServerInfoWithVersionButWithoutContentTypeJson_False)
     {
-    HttpResponse response = StubHttpResponse(HttpStatus::OK, R"({"serverVersion" : "01.02.03.04"})");
+    Http::Response response = StubHttpResponse(HttpStatus::OK, R"({"serverVersion" : "01.02.03.04"})");
     EXPECT_FALSE(WSInfo(response).IsValid());
     }
 
 TEST_F(WSInfoTests, IsValid_ServerInfoWithVersionZero_False)
     {
-    HttpResponse response = StubHttpResponse(HttpStatus::OK, R"({"serverVersion" : "00.00.00.00"})");
+    Http::Response response = StubHttpResponse(HttpStatus::OK, R"({"serverVersion" : "00.00.00.00"})");
     EXPECT_FALSE(WSInfo(response).IsValid());
     }
 
 TEST_F(WSInfoTests, IsValid_SuccessResultButMalformedBody_False)
     {
-    HttpResponse response = StubHttpResponse(HttpStatus::OK, "a{22");
+    Http::Response response = StubHttpResponse(HttpStatus::OK, "a{22");
     EXPECT_FALSE(WSInfo(response).IsValid());
     }
 
 TEST_F(WSInfoTests, IsValid_NotFoundStatus_False)
     {
-    HttpResponse response = StubHttpResponse(HttpStatus::NotFound);
+    Http::Response response = StubHttpResponse(HttpStatus::NotFound);
     EXPECT_FALSE(WSInfo(response).IsValid());
     }
 
@@ -67,7 +67,7 @@ TEST_F(WSInfoTests, Ctor_Default_InvalidWithZeroVersionAndUnknownType)
 
 TEST_F(WSInfoTests, Ctor_DefaultResponse_InvalidWithZeroVersionAndUnknownType)
     {
-    HttpResponse response;
+    Http::Response response;
     WSInfo info(response);
     EXPECT_FALSE(info.IsValid());
     EXPECT_EQ(BeVersion(0, 0), info.GetVersion());
@@ -117,7 +117,7 @@ TEST_F(WSInfoTests, Ctor_FromSerialized_SameType)
 
 TEST_F(WSInfoTests, GetVersion_ButHttpStatusNotFound_ReturnsZero)
     {
-    HttpResponse response = StubHttpResponse(HttpStatus::NotFound);
+    Http::Response response = StubHttpResponse(HttpStatus::NotFound);
     EXPECT_EQ(BeVersion(0, 0), WSInfo(response).GetVersion());
     }
 
@@ -153,7 +153,7 @@ TEST_F(WSInfoTests, GetVersion_SuccessResponseWithR1BentleyConnectAboutPageHtml_
 
 TEST_F(WSInfoTests, GetVersion_ValidServerVersionInBodyButHttpStatusNonOk_ReturnsZeroVersion)
     {
-    HttpResponse response = StubHttpResponse(HttpStatus::InternalServerError, R"({"serverVersion" : "01.02.09.10"})");
+    Http::Response response = StubHttpResponse(HttpStatus::InternalServerError, R"({"serverVersion" : "01.02.09.10"})");
     EXPECT_EQ(BeVersion(0, 0), WSInfo(response).GetVersion());
     }
 

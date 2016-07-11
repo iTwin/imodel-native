@@ -289,14 +289,14 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetVa
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
         {
         EXPECT_FALSE(request.GetValidateCertificate());
         return StubHttpResponse();
         });
 
-    HttpRequest request("foo");
-    configurator->PerformRequest(request)->Wait();
+    Http::Request request("foo");
+    configurator->_PerformRequest(request)->Wait();
     }
 
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate)
@@ -306,14 +306,14 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetVal
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
         {
         EXPECT_FALSE(request.GetValidateCertificate());
         return StubHttpResponse();
         });
 
-    HttpRequest request("foo");
-    configurator->PerformRequest(request)->Wait();
+    Http::Request request("foo");
+    configurator->_PerformRequest(request)->Wait();
     }
 
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsValidateCertificate)
@@ -323,13 +323,13 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsVali
     UrlProvider::Initialize(UrlProvider::Environment::Release, UrlProvider::DefaultTimeout, &localState);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
         {
         EXPECT_TRUE(request.GetValidateCertificate());
         return StubHttpResponse();
         });
 
-    HttpRequest request("foo");
-    configurator->PerformRequest(request)->Wait();
+    Http::Request request("foo");
+    configurator->_PerformRequest(request)->Wait();
     }
 #endif

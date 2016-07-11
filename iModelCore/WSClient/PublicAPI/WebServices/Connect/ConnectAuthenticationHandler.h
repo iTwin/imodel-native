@@ -39,7 +39,7 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
 
         WSCLIENT_EXPORT virtual ~ConnectAuthenticationHandler();
 
-        WSCLIENT_EXPORT virtual bool _ShouldRetryAuthentication(HttpResponseCR response) override;
+        WSCLIENT_EXPORT virtual bool _ShouldRetryAuthentication(Http::ResponseCR response) override;
         WSCLIENT_EXPORT virtual AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization(AttemptCR previousAttempt) override;
     };
 

@@ -270,7 +270,7 @@ void UrlProvider::CleanUpUrlCache()
 IHttpHandlerPtr UrlProvider::GetSecurityConfigurator(IHttpHandlerPtr customHandler)
     {
     // TODO: maybe this could be tied to GetUrl calls - instead return HttpClient that would generate correctly configured requests
-    return std::make_shared<HttpConfigurationHandler>([=] (HttpRequest& request)
+    return std::make_shared<HttpConfigurationHandler>([=] (Http::Request& request)
         {
         if (Environment::Release == s_env)
             {

@@ -42,7 +42,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_CalledSecondTimeAfterCacheWasCreated
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse()))));
 
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         GetTestSchema()->WriteToXmlFile(filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
@@ -124,7 +124,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerDoesNotR
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
     EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
         Utf8String schemaXml(
@@ -159,7 +159,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerRetursMe
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
     EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "TestSchemaId"), objectId);
         return CreateCompletedAsyncTask(WSFileResult());
@@ -187,7 +187,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithRemoteSchemas_UsesE
         }));
 
     EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(2)
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
         Utf8String schemaXml(
@@ -196,7 +196,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithRemoteSchemas_UsesE
         SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, "SchemaFileETag")));
         }))
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR, Utf8StringCR eTag, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR, Utf8StringCR eTag, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
             {
             EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
             EXPECT_EQ("SchemaFileETag", eTag);
@@ -225,7 +225,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithLocalSchema_Queries
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse("SchemaListETag")))));
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
         Utf8String schemaXml;
@@ -253,7 +253,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemaWithReferancedSchema_ImportsB
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         Utf8String schemaXml =
             R"( <ECSchema schemaName="SchemaWithReferance" nameSpacePrefix="A" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
@@ -263,7 +263,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemaWithReferancedSchema_ImportsB
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         Utf8String schemaXml =
             R"( <ECSchema schemaName="ReferancedSchema" nameSpacePrefix="B" version="1.456" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
@@ -297,7 +297,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSche
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas1.ToWSObjectsResponse()))));
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         Utf8String schemaXml =
             R"( <ECSchema schemaName="ReferancedSchema" nameSpacePrefix="B" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
@@ -317,7 +317,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSche
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas2.ToWSObjectsResponse()))));
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         Utf8String schemaXml =
             R"( <ECSchema schemaName="SchemaWithReferance" nameSpacePrefix="A" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
@@ -327,7 +327,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSche
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         return CreateCompletedAsyncTask(StubWSFileResultNotModified());
         }));
@@ -358,7 +358,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_Skips
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "B"), objectId);
         Utf8String schemaXml;
@@ -386,7 +386,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsE
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SimpleWriteToFile("Not-a-schema", filePath);
         return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, nullptr)));
@@ -419,7 +419,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsR
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
     EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SimpleWriteToFile("Not-a-schema", filePath);
         return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, nullptr)));
@@ -450,14 +450,14 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemas_CacheContainsNonRepositorySc
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse()))));
 
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SimpleWriteToFile(StubSchemaXml("A"), filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SimpleWriteToFile(StubSchemaXml("B"), filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
@@ -503,14 +503,14 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemaKeys_CacheContainsNonRepositor
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse()))));
 
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SimpleWriteToFile(StubSchemaXml("A"), filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SimpleWriteToFile(StubSchemaXml("B"), filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
@@ -608,7 +608,7 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
         };
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
         progress(0, 0);
         return CreateCompletedAsyncTask(WSFileResult());
@@ -644,7 +644,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
         };
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
         EXPECT_EQ(L"TestClass_TestId", filePath.GetFileNameAndExtension());
         progress(0, 42);
@@ -671,7 +671,7 @@ TEST_F(CachingDataSourceTests, GetFile_InstanceHasVeryLongRemoteIdAndNoFileDepen
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
         SimpleWriteToFile("TestContent", filePath);
         return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, "")));
@@ -708,7 +708,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
         };
 
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
         EXPECT_EQ(L"TestLabel", filePath.GetFileNameAndExtension());
         progress(0, 42);
@@ -763,7 +763,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndSkipCached_OneFileRequ
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SimpleWriteToFile("", fileName);
         return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
@@ -792,7 +792,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRe
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(2)
-        .WillRepeatedly(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillRepeatedly(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SimpleWriteToFile("", fileName);
         return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
@@ -2185,7 +2185,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SendsCreateObjectR
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, BeFileName(), _, _))
         .Times(1)
-        .WillOnce(Invoke([=] (JsonValueCR json, BeFileNameCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([=] (JsonValueCR json, BeFileNameCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(expectedCreationJson, json);
         return CreateCompletedAsyncTask(WSCreateObjectResult());
@@ -2292,7 +2292,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledCreatedMo
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClass", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty" : "NewValue"})"));
@@ -2320,7 +2320,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClassA", "A"}, WSChangeset::Existing, nullptr)
@@ -2353,7 +2353,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndDelete
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestRelationshipClass", "AB"}, WSChangeset::Deleted, nullptr);
@@ -2384,7 +2384,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClassA", "ExistingId"}, WSChangeset::Existing, nullptr)
@@ -2417,7 +2417,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClassA", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"))
@@ -2450,7 +2450,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClassA", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"))
@@ -2483,7 +2483,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClassA", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"))
@@ -2531,7 +2531,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         auto& a = changeset.AddInstance({"TestSchema.TestClass", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"));
@@ -2578,7 +2578,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         StubInstances instances;
         auto instance = instances.Add({"TestSchema.TestClassA", "RemoteIdA"});
@@ -2618,7 +2618,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         StubInstances instances;
         auto instance = instances.Add({"TestSchema.TestClassA", "ExistingIdA"});
@@ -2654,7 +2654,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledModifiedO
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         auto body = HttpStringBody::Create(R"({"changedInstances" : [{"instanceAfterChange" : {}}]})");
         return CreateCompletedAsyncTask(WSChangesetResult::Success(body));
@@ -2683,7 +2683,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedOb
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         auto body = HttpStringBody::Create(R"({"changedInstances" : [{"instanceAfterChange" : {}}]})");
         return CreateCompletedAsyncTask(WSChangesetResult::Success(body));
@@ -2717,7 +2717,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedRe
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         auto body = HttpStringBody::Create(R"({"changedInstances" : [{"instanceAfterChange" : {}}]})");
         return CreateCompletedAsyncTask(WSChangesetResult::Success(body));
@@ -2764,7 +2764,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
     InSequence callsInSequence;
 
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         auto& a = changeset.AddInstance({"TestSchema.TestClass", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"));
@@ -2785,7 +2785,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
         }));
 
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         auto& a = changeset.AddInstance({"TestSchema.TestClass", "RemoteIdA"}, WSChangeset::Existing, nullptr);
@@ -2856,7 +2856,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
     InSequence callsInSequence;
 
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         auto& a = changeset.AddInstance({"TestSchema.TestClass", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"));
@@ -2876,7 +2876,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
         }));
 
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         WSChangeset changeset;
         auto& a = changeset.AddInstance({"TestSchema.TestClass", "RemoteIdA"}, WSChangeset::Existing, nullptr);
@@ -2948,7 +2948,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndOneObj
     InSequence callsInSequence;
 
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(expectedChangeset1, changesetBody->AsJson());
 
@@ -2959,7 +2959,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndOneObj
         }));
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR creationJson, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR creationJson, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(expectedCreation2, creationJson);
         EXPECT_EQ(filePath, path);
@@ -2978,7 +2978,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndOneObj
         }));
 
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(expectedChangeset3, changesetBody->AsJson());
 
@@ -3052,7 +3052,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndRelate
     InSequence callsInSequence;
 
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(expectedChangeset1, changesetBody->AsJson());
 
@@ -3063,7 +3063,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndRelate
         }));
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR creationJson, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR creationJson, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(expectedCreation2, creationJson);
         EXPECT_EQ(filePath, path);
@@ -3099,7 +3099,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V20WithChangesetEnabledAndCreate
             })");
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(expectedCreationJson, json);
         EXPECT_EQ(L"", path);
@@ -3185,14 +3185,14 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
     BeFileName filePath2 = ds->StartCacheTransaction().GetCache().ReadFilePath(instanceC);
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(expectedCreationJson1, json);
         EXPECT_EQ(L"", path);
         return CreateCompletedAsyncTask(StubWSCreateObjectResult(
             {"TestSchema.TestClass", "NewB"}, {"TestSchema.TestRelationshipClass", ""}, {"TestSchema.TestClass", "A"}));
         }))
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
             {
             EXPECT_EQ(expectedCreationJson2, json);
             EXPECT_EQ(filePath2, path);
@@ -3295,14 +3295,14 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
         .Times(2)
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(expectedCreationJson1, json);
         EXPECT_EQ(L"", path);
         return CreateCompletedAsyncTask(StubWSCreateObjectResult(
             {"TestSchema.TestClass", "NewB"}, {"TestSchema.TestRelationshipClass", ""}, {"TestSchema.TestClass", "A"}));
         }))
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
             {
             EXPECT_EQ(expectedCreationJson2, json);
             EXPECT_EQ(filePath2, path);
@@ -3424,13 +3424,13 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
         .Times(2)
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(expectedCreationJson1, json);
         return CreateCompletedAsyncTask(StubWSCreateObjectResult(
             {"TestSchema.TestClass", "NewC"}, {"TestSchema.TestRelationshipClass", ""}, {"TestSchema.TestClass", "A"}));
         }))
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
             {
             EXPECT_EQ(expectedCreationJson2, json);
             return CreateCompletedAsyncTask(StubWSCreateObjectResult
@@ -3489,7 +3489,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithReadOnlyPropert
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, BeFileName(), _, _))
         .Times(1)
-        .WillOnce(Invoke([=] (JsonValueCR json, BeFileNameCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([=] (JsonValueCR json, BeFileNameCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_TRUE(json["instance"]["properties"].isMember("TestReadOnlyProperty"));
         EXPECT_FALSE(json["instance"]["properties"].isMember("TestCalculatedProperty"));
@@ -3511,7 +3511,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithReadOnlyProper
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _))
         .Times(1)
-        .WillOnce(Invoke([=] (ObjectIdCR, JsonValueCR properties, Utf8String, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([=] (ObjectIdCR, JsonValueCR properties, Utf8String, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_FALSE(properties.isMember("TestReadOnlyProperty"));
         EXPECT_FALSE(properties.isMember("TestCalculatedProperty"));
@@ -3533,7 +3533,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_FailedToModifyObject_ReturnsFail
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _))
-        .WillOnce(Invoke([=] (ObjectIdCR, JsonValueCR properties, Utf8String, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([=] (ObjectIdCR, JsonValueCR properties, Utf8String, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError(StubWSErrorHttpResponse(HttpStatus::BadRequest))));
         }));
@@ -3560,7 +3560,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectR
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _))
         .Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, JsonValueCR propertiesJson, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, JsonValueCR propertiesJson, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
         EXPECT_EQ(ToJson(R"({ "TestProperty" : "NewA" })"), propertiesJson);
@@ -3586,7 +3586,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFile_SendUpdateFileReque
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendUpdateFileRequest(_, _, _, _))
         .Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
         EXPECT_EQ(cachedFilePath, filePath);
@@ -3612,7 +3612,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdate
 
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR filePath, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR filePath, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(cachedFilePath, filePath);
         return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Foo"}));
@@ -3663,7 +3663,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
         }));
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr ct)
         {
         EXPECT_EQ(filePath, path);
         EXPECT_NE(nullptr, ct);
@@ -3695,7 +3695,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
         }));
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr ct)
         {
         EXPECT_EQ(L"", path);
         EXPECT_NE(nullptr, ct);
@@ -3706,7 +3706,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
         }));
 
     EXPECT_CALL(GetMockClient(), SendUpdateFileRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr ct)
         {
         EXPECT_EQ(ObjectId("TestSchema.TestClass", "NewRemoteId"), objectId);
         EXPECT_EQ(filePath, path);
@@ -3739,7 +3739,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
         }));
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(L"", path);
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error({WSError::Id::Conflict}));
@@ -3771,7 +3771,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
         }));
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(filePath, path);
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
@@ -3780,7 +3780,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
     ASSERT_FALSE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(filePath, path);
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
@@ -3804,7 +3804,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
         }));
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(L"", path);
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
@@ -3813,7 +3813,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
     ASSERT_FALSE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
 
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(L"", path);
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(StubHttpResponse()));
@@ -4038,7 +4038,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFileWithLabel_CallsProgr
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendUpdateFileRequest(_, _, _, _))
         .Times(1)
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
         progress(0, 2);
         return CreateCompletedAsyncTask(WSUpdateFileResult());
@@ -4073,13 +4073,13 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
         .Times(2)
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
         progress(0, 2);
         progress(2, 2);
         return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "A"}));
         }))
-        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (JsonValueCR, BeFileNameCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
             {
             progress(0, 4);
             progress(4, 4);
@@ -4120,13 +4120,13 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
     // Act & Assert
     EXPECT_CALL(GetMockClient(), SendUpdateFileRequest(_, _, _, _))
         .Times(2)
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
         progress(0, 2);
         progress(2, 2);
         return CreateCompletedAsyncTask(WSUpdateFileResult::Success());
         }))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR, Http::Request::ProgressCallbackCR progress, ICancellationTokenPtr)
             {
             progress(0, 4);
             progress(4, 4);
@@ -4546,7 +4546,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_D
     EXPECT_CALL(*cache, ReadFileCacheTag(objectId)).WillOnce(Return("TestTag"));
     EXPECT_CALL(*cache, ReadFileProperties(instanceKey, _, _)).WillRepeatedly(Return(SUCCESS));
     EXPECT_CALL(*client, SendGetFileRequest(objectId, _, Utf8String("TestTag"), _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SimpleWriteToFile("", fileName);
         return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
@@ -4861,7 +4861,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
         return SUCCESS;
         }));
     EXPECT_CALL(*client, SendGetFileRequest(objectId, _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR onProgress, ICancellationTokenPtr)
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, Http::Request::ProgressCallbackCR onProgress, ICancellationTokenPtr)
         {
         onProgress(5, 42);
         SimpleWriteToFile("", fileName);

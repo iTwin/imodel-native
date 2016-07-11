@@ -40,7 +40,7 @@ ConnectAuthenticationHandler::~ConnectAuthenticationHandler()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConnectAuthenticationHandler::_ShouldRetryAuthentication(HttpResponseCR response)
+bool ConnectAuthenticationHandler::_ShouldRetryAuthentication(Http::ResponseCR response)
     {
     if (response.GetHttpStatus() == HttpStatus::Unauthorized ||
         response.GetHttpStatus() == HttpStatus::Forbidden)

@@ -16,10 +16,10 @@ const uint64_t ChunkedUploadRequest::DefaultChunkSize = 4 * 1024 * 1024;
 struct ChunkedUploadRequest::TransferData
     {
     public:
-        HttpResponse response;
+        Http::Response response;
         uint64_t contentLength;
         uint64_t rangeFrom;
-        HttpRequest::ProgressCallback onProgress;
+        Http::Request::ProgressCallback onProgress;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -90,7 +90,7 @@ void ChunkedUploadRequest::SetCancellationToken(ICancellationTokenPtr token)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChunkedUploadRequest::SetUploadProgressCallback(HttpRequest::ProgressCallbackCR onProgress)
+void ChunkedUploadRequest::SetUploadProgressCallback(Http::Request::ProgressCallbackCR onProgress)
     {
     m_progressCallback = onProgress;
     }
@@ -98,7 +98,7 @@ void ChunkedUploadRequest::SetUploadProgressCallback(HttpRequest::ProgressCallba
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest& ChunkedUploadRequest::GetHandshakeRequest()
+Http::Request& ChunkedUploadRequest::GetHandshakeRequest()
     {
     return m_handshakeRequest;
     }
@@ -106,7 +106,7 @@ HttpRequest& ChunkedUploadRequest::GetHandshakeRequest()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<HttpResponse> ChunkedUploadRequest::PerformAsync()
+AsyncTaskPtr<Http::Response> ChunkedUploadRequest::PerformAsync()
     {
     return PerformAsync(std::make_shared<ChunkedUploadRequest>(*this));
     }
@@ -114,14 +114,14 @@ AsyncTaskPtr<HttpResponse> ChunkedUploadRequest::PerformAsync()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<HttpResponse> ChunkedUploadRequest::PerformAsync(std::shared_ptr<ChunkedUploadRequest> cuRequest)
+AsyncTaskPtr<Http::Response> ChunkedUploadRequest::PerformAsync(std::shared_ptr<ChunkedUploadRequest> cuRequest)
     {
     cuRequest->m_data = std::make_shared<TransferData>();
     if (cuRequest->m_progressCallback)
         {
         cuRequest->m_progressCallback(0, 0);
         }
-    return SendHandshakeAndContinue(cuRequest)->Then<HttpResponse>([=]
+    return SendHandshakeAndContinue(cuRequest)->Then<Http::Response>([=]
         {
         auto data = cuRequest->m_data;
         cuRequest->m_data = nullptr;
@@ -134,7 +134,7 @@ AsyncTaskPtr<HttpResponse> ChunkedUploadRequest::PerformAsync(std::shared_ptr<Ch
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<void> ChunkedUploadRequest::SendHandshakeAndContinue(std::shared_ptr<ChunkedUploadRequest> cuRequest)
     {
-    HttpRequest request = cuRequest->m_handshakeRequest;
+    Http::Request request = cuRequest->m_handshakeRequest;
 
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
@@ -159,7 +159,7 @@ AsyncTaskPtr<void> ChunkedUploadRequest::SendHandshakeAndContinue(std::shared_pt
 
     LOG.debugv("ChunkedUpload::SendHandshake %s", cuRequest->m_etag.c_str());
     return request.PerformAsync()
-        ->Then([=] (HttpResponse& response)
+        ->Then([=] (Http::Response& response)
         {
         cuRequest->m_data->response = response;
         if (response.GetHttpStatus() != HttpStatus::ResumeIncomplete || cuRequest->m_mainBody.IsNull())
@@ -204,7 +204,7 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
         if (SUCCESS != RangeHeaderValue::Parse(rangeHeader, range))
             {
             BeAssert(false);
-            cuRequest->m_data->response = HttpResponse();
+            cuRequest->m_data->response = Http::Response();
             // End request
             return;
             }
@@ -217,7 +217,7 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
         rangeTo = cuRequest->m_data->contentLength - 1;
         }
 
-    HttpRequest request = cuRequest->m_client.CreateRequest(cuRequest->m_url, cuRequest->m_method);
+    Http::Request request = cuRequest->m_client.CreateRequest(cuRequest->m_url, cuRequest->m_method);
 
     // TODO VRA: calling ResetConnection() is a workaround to what seems to be CURL bug:
     // (logged as https://sourceforge.net/p/curl/bugs/1275/)
@@ -233,13 +233,13 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
     request.SetCancellationToken(cuRequest->m_cancellationToken);
     request.SetUploadProgressCallback(cuRequest->m_data->onProgress);
 
-    request.SetRetryOptions(HttpRequest::RetryOption::ResetTransfer, 0);
+    request.SetRetryOptions(Http::Request::RetryOption::ResetTransfer, 0);
 
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
 
     LOG.debugv("ChunkedUpload::SendChunk %s", cuRequest->m_etag.c_str());
-    request.PerformAsync()->Then([=] (HttpResponse& response)
+    request.PerformAsync()->Then([=] (Http::Response& response)
         {
         cuRequest->m_data->response = response;
         if (response.GetHttpStatus() == HttpStatus::ResumeIncomplete)

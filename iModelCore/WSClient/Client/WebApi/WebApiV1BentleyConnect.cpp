@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1BentleyConnect.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -45,7 +45,7 @@ AsyncTaskPtr<WSFileResult> WebApiV1BentleyConect::SendGetFileRequest
 ObjectIdCR objectId,
 BeFileNameCR filePath,
 Utf8StringCR eTag,
-HttpRequest::ProgressCallbackCR downloadProgressCallback,
+Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -55,7 +55,7 @@ ICancellationTokenPtr ct
         }
 
     Utf8String url = GetUrl(SERVICE_Files, CreateObjectIdParam(objectId));
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetRequest(url);
+    Http::Request request = m_configuration->GetHttpClient().CreateGetRequest(url);
 
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::FileDownload);
@@ -66,7 +66,7 @@ ICancellationTokenPtr ct
     auto result = std::make_shared<WSFileResult>();
 
     return request.PerformAsync()
-        ->Then([=] (HttpResponse& redirectResponse)
+        ->Then([=] (Http::Response& redirectResponse)
         {
         Utf8CP location = redirectResponse.GetHeaders().GetLocation();
 
@@ -77,10 +77,10 @@ ICancellationTokenPtr ct
             return;
             }
 
-        HttpRequest fileRequest = m_configuration->GetHttpClient().CreateGetRequest(location);
+        Http::Request fileRequest = m_configuration->GetHttpClient().CreateGetRequest(location);
 
         fileRequest.SetResponseBody(HttpFileBody::Create(filePath));
-        fileRequest.SetRetryOptions(HttpRequest::ResumeTransfer, 0);
+        fileRequest.SetRetryOptions(Http::Request::RetryOption::ResumeTransfer, 0);
         fileRequest.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
         fileRequest.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::FileDownload);
         fileRequest.SetDownloadProgressCallback(downloadProgressCallback);
@@ -88,7 +88,7 @@ ICancellationTokenPtr ct
         fileRequest.GetHeaders().SetIfNoneMatch(eTag);
 
         fileRequest.PerformAsync()
-            ->Then([result, filePath] (HttpResponse& fileResponse)
+            ->Then([result, filePath] (Http::Response& fileResponse)
             {
             *result = ResolveFileResponse(fileResponse, filePath);
             });

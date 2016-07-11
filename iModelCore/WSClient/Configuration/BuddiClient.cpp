@@ -23,7 +23,7 @@ m_client(nullptr, customHandler), m_url(url)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<BuddiRegionsResult> BuddiClient::GetRegions()
     {
-    HttpRequest request = m_client.CreatePostRequest(m_url);
+    Http::Request request = m_client.CreatePostRequest(m_url);
     Utf8String body = R"xml(<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -37,7 +37,7 @@ AsyncTaskPtr<BuddiRegionsResult> BuddiClient::GetRegions()
     request.SetRequestBody(HttpStringBody::Create(body));
     request.GetHeaders().SetContentType("text/xml; charset=utf-8");
 
-    return request.PerformAsync()->Then<BuddiRegionsResult>([=] (HttpResponse& response)
+    return request.PerformAsync()->Then<BuddiRegionsResult>([=] (Http::Response& response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK ||
             response.GetHttpStatus() != HttpStatus::OK)
@@ -92,7 +92,7 @@ AsyncTaskPtr<BuddiRegionsResult> BuddiClient::GetRegions()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<BuddiUrlResult> BuddiClient::GetUrl(Utf8StringCR url, uint32_t id)
     {
-    HttpRequest request = m_client.CreatePostRequest(m_url);
+    Http::Request request = m_client.CreatePostRequest(m_url);
     Utf8PrintfString body(R"xml(<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -109,7 +109,7 @@ AsyncTaskPtr<BuddiUrlResult> BuddiClient::GetUrl(Utf8StringCR url, uint32_t id)
     request.SetRequestBody(HttpStringBody::Create(body));
     request.GetHeaders().SetContentType("text/xml; charset=utf-8");
 
-    return request.PerformAsync()->Then<BuddiUrlResult>([=] (HttpResponse& response)
+    return request.PerformAsync()->Then<BuddiUrlResult>([=] (Http::Response& response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK ||
             response.GetHttpStatus() != HttpStatus::OK)

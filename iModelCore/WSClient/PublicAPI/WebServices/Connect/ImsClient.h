@@ -72,7 +72,7 @@ struct ImsClient : IImsClient
 
         //! Checks if given response is IMS Login redirect that should be treated as invalid credentials.
         //! This is workaround because IMS does not give any other indication.
-        WSCLIENT_EXPORT static bool IsLoginRedirect(HttpResponseCR response);
+        WSCLIENT_EXPORT static bool IsLoginRedirect(Http::ResponseCR response);
 
         //! Get Relying Party for given client info
         WSCLIENT_EXPORT static Utf8String GetRelyingPartyUri(ClientInfoCR info);

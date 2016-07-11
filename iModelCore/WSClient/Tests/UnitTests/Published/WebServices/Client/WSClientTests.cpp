@@ -29,7 +29,7 @@ TEST_F(WSClientTests, SendGetInfoRequest_Called_SendsGetPluginsUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.0/Plugins", request.GetUrl().c_str());
@@ -43,7 +43,7 @@ TEST_F(WSClientTests, GetServerInfo_CalledFirstTime_SendsGetPluginsUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.0/Plugins", request.GetUrl().c_str());
@@ -59,7 +59,7 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnNotFound_SendsGetInfoUrl
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v1.2/Info", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -75,7 +75,7 @@ TEST_F(WSClientTests, GetServerInfo_FirstAndSecondResponsesReturnNotFound_SendsG
     GetHandler().ExpectRequests(3);
     GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
-    GetHandler().ForRequest(3, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/Pages/About.aspx", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -234,7 +234,7 @@ TEST_F(WSClientTests, RegisterServerInfoListener_AddedListener_ListenerNotifiedW
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
     auto listener = std::make_shared<MockServerInfoListener>();
 
-    GetHandler().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ForAnyRequest([=] (Http::RequestCR request)
         {
         return StubWSInfoHttpResponseWebApi13();
         });
@@ -265,7 +265,7 @@ TEST_F(WSClientTests, RegisterServerInfoListener_AddedListenerDeleted_ListenerNo
             }
         };
 
-    GetHandler().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ForAnyRequest([=] (Http::RequestCR request)
         {
         return StubWSInfoHttpResponseWebApi13();
         });
@@ -290,7 +290,7 @@ TEST_F(WSClientTests, RegisterServerInfoListener_InfoNotReceivedDueToNetworkErro
     auto listener = std::make_shared<MockServerInfoListener>();
 
     EXPECT_CALL(*listener, OnServerInfoReceived(_)).Times(0);
-    GetHandler().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ForAnyRequest([=] (Http::RequestCR request)
         {
         return StubHttpResponse();
         });
@@ -305,7 +305,7 @@ TEST_F(WSClientTests, RegisterServerInfoListener_NotSupportedServer_ListenerNotN
     auto listener = std::make_shared<MockServerInfoListener>();
 
     EXPECT_CALL(*listener, OnServerInfoReceived(_)).Times(0);
-    GetHandler().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ForAnyRequest([=] (Http::RequestCR request)
         {
         return StubHttpResponse(HttpStatus::OK, "{}");
         });
@@ -320,7 +320,7 @@ TEST_F(WSClientTests, UnregisterServerInfoListener_ExistingListener_ListenerNotN
     auto listener = std::make_shared<MockServerInfoListener>();
 
     EXPECT_CALL(*listener, OnServerInfoReceived(_)).Times(0);
-    GetHandler().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ForAnyRequest([=] (Http::RequestCR request)
         {
         return StubWSInfoHttpResponseWebApi13();
         });
@@ -486,7 +486,7 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1_CorrectUrl)
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v1.1/DataSources", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -501,7 +501,7 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV11_UrlWithoutWebApiVersi
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi11());
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/DataSources", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -516,7 +516,7 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV2_CorrectUrl)
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -531,7 +531,7 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV21_CorrectUrl)
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v2.1/Repositories/", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -546,7 +546,7 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV22_CorrectUrl)
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi22());
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v2.2/Repositories/", request.GetUrl().c_str());
         return StubHttpResponse();
