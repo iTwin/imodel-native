@@ -297,6 +297,10 @@
         <Directories DirectoryListName="ImagePPGTestsDir"/>
     </Product>
 
+    <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=AndroidJUnit-ImagePP-TestCollection"   OnlyPlatforms="Android*">
+      <SubProduct ProductName="AndroidJUnit-ImagePP-TestCollection"/>
+    </Part>
+    
     <!--                ********************** -->
     <!--                **** iOSXCTest ******* -->
     <!--                ********************** -->
