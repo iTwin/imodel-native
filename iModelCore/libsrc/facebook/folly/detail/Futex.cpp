@@ -54,7 +54,7 @@ namespace {
 # define FUTEX_WAKE_BITSET 10
 #endif
 #ifndef FUTEX_PRIVATE_FLAG
-# define FUTEX_PRIVATE_FLAG 128`
+# define FUTEX_PRIVATE_FLAG 128
 #endif
 #ifndef FUTEX_CLOCK_REALTIME
 # define FUTEX_CLOCK_REALTIME 256
