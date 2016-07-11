@@ -24,14 +24,14 @@ struct PointCloudRenderer
 #if defined (NEEDS_WORK_POINT_CLOUD)
         void            DrawPointBuffer(ViewContextR context, PointCloudDrawParams& buffer) const;
 #endif
-        void            ApplyClassification(BePointCloud::PointCloudQueryBuffers& channels, LasClassificationInfo const* pClassifInfo, Dgn::ViewContextR context) const;
+        void            ApplyClassification(BePointCloud::PointCloudQueryBuffers& channels, PointCloudClassificationSettings const* pClassifInfo, Dgn::ViewContextR context) const;
 
         uint32_t        m_outputCapacity;
     public:
         PointCloudRenderer (uint32_t outputCapacity);
         virtual ~PointCloudRenderer();
 
-        Dgn::ProgressiveTask::Completion DrawPointCloud(Dgn::ViewContextR context, LasClassificationInfo const* pClassifInfo, BePointCloud::PointCloudSceneCR pointCloudScene);
+        Dgn::ProgressiveTask::Completion DrawPointCloud(Dgn::ViewContextR context, PointCloudClassificationSettings const* pClassifInfo, BePointCloud::PointCloudSceneCR pointCloudScene);
     };  //  PointCloudRenderer
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
