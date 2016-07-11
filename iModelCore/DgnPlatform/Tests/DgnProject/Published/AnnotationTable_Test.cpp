@@ -369,7 +369,7 @@ BETEST_TC_SETUP(AnnotationTableTest)
     ASSERT_TRUE(textStyle->GetElementId().IsValid());
 
     // Create a 2d model
-    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode(TEST_MODEL_NAME)));
+    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_GeometricModel2d)), DgnModel::CreateModelCode(TEST_MODEL_NAME)));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
     ASSERT_TRUE(model->GetModelId().IsValid());
