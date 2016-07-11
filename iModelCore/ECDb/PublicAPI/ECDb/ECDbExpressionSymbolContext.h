@@ -23,6 +23,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //!     in the current expression context has any related instances based on the supplied parameters.
 //!   - GetRelatedInstance("RelationshipName:0|1:RelatedClassName") - Returns related ECInstance
 //!     ECExpression context.
+//!   - GetRelatedValue("RelationshipName:0|1:RelatedClassName", "PropertyName") - Returns the specified 
+//!     property value of the specified related instance. Returns NULL if there're no related instances.
 // @bsiclass                                      Grigas.Petraitis              02/2016
 //+===============+===============+===============+===============+===============+======
 struct ECDbExpressionSymbolContext

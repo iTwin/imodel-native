@@ -576,5 +576,53 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
     EXPECT_STREQ("ClassA Label", v.GetUtf8CP());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsitest                                       Grigas.Petraitis              07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsNullWhenThereAreNoRelatedInstances)
+    {
+    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    
+    ECDbExpressionSymbolContext ecdbContext(GetECDb());
+    ExpressionContextPtr exprContext = CreateContext(*instanceA);
+    
+    ECValue value;
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedValue(\"Rel:0:ClassB\", \"label\")", *exprContext));
+    ASSERT_TRUE(value.IsNull());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                       Grigas.Petraitis              07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceValue)
+    {
+    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+
+    ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
+    IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
+    instanceB->SetValue("label", ECValue("test label"));
+    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB);
+    
+    ECSqlStatement stmt;
+    stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindId(2, classA->GetId());
+    stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindId(4, classB->GetId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    ECDbExpressionSymbolContext ecdbContext(GetECDb());
+    ExpressionContextPtr exprContext = CreateContext(*instanceA);
+
+    ECValue value;
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedValue(\"Rel:0:ClassB\", \"label\")", *exprContext));
+    ASSERT_TRUE(value.IsString());
+    ASSERT_STREQ("test label", value.GetUtf8CP());
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
 
