@@ -52,5 +52,5 @@ public:
     BE_FOLLY_EXPORT void WaitForIdle();
 };
 
-}
+} // namespace BeFolly
 
