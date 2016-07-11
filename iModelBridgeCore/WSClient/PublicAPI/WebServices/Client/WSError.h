@@ -84,9 +84,9 @@ struct WSError : public AsyncError
         static Id ErrorIdFromString(Utf8StringCR errorIdString);
         static Utf8String FormatDescription(Utf8StringCR errorMessage, Utf8StringCR errorDescription);
 
-        BentleyStatus ParseBody(HttpResponseCR httpResponse);
-        BentleyStatus ParseJsonError(HttpResponseCR httpResponse);
-        BentleyStatus ParseXmlError(HttpResponseCR httpResponse);
+        BentleyStatus ParseBody(Http::ResponseCR httpResponse);
+        BentleyStatus ParseJsonError(Http::ResponseCR httpResponse);
+        BentleyStatus ParseXmlError(Http::ResponseCR httpResponse);
 
         void SetStatusServerNotSupported();
         void SetStatusReceivedError
@@ -101,7 +101,7 @@ struct WSError : public AsyncError
     public:
         WSCLIENT_EXPORT WSError();
         //! Handle supported server response
-        WSCLIENT_EXPORT WSError(HttpResponseCR httpResponse);
+        WSCLIENT_EXPORT WSError(Http::ResponseCR httpResponse);
         //! Handle generic HttpError, unknow error will map to Id::Unknown
         WSCLIENT_EXPORT WSError(HttpErrorCR httpError);
         //! Do not use in production code, this is for testing purposes only

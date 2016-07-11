@@ -57,11 +57,11 @@ StatusInt Passport::HasUserPassport(Utf8StringCR userGuid)
     Utf8PrintfString authorization("Basic %s", Base64Utilities::Encode(credsPair).c_str());
 
     HttpClient client(nullptr, s_httpHandler);
-    HttpRequest request = client.CreateGetRequest(url);
+    Http::Request request = client.CreateGetRequest(url);
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().SetAuthorization(authorization);
 
-    HttpResponse httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform();
     if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
         {
         return PASSPORT_ERROR;

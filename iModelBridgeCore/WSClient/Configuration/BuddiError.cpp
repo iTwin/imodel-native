@@ -31,7 +31,7 @@ BuddiError::BuddiError(Status status)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Julija.Semenenko   06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BuddiError::BuddiError(HttpResponseCR httpResponse) : BuddiError()
+BuddiError::BuddiError(Http::ResponseCR httpResponse) : BuddiError()
     {
     if (ConnectionStatus::OK != httpResponse.GetConnectionStatus())
         {

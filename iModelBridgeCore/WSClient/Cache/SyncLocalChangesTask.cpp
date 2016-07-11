@@ -899,7 +899,7 @@ ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR objectLa
     {
     ReportProgress(0, objectLabel);
 
-    HttpRequest::ProgressCallback onProgress;
+    Http::Request::ProgressCallback onProgress;
 
     if (isFileBeingUploaded)
         {

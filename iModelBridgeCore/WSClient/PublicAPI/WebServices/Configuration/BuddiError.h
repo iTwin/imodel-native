@@ -42,7 +42,7 @@ struct BuddiError : public AsyncError
         //! Default error with status UnexpectedError
         WSCLIENT_EXPORT BuddiError();
         WSCLIENT_EXPORT BuddiError(Status status);
-        WSCLIENT_EXPORT BuddiError(HttpResponseCR httpResponse);
+        WSCLIENT_EXPORT BuddiError(Http::ResponseCR httpResponse);
 
         WSCLIENT_EXPORT Status GetStatus() const;
     };

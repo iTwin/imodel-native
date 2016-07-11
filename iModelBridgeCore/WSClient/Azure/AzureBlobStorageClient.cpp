@@ -45,10 +45,10 @@ IHttpHandlerPtr customHandler
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SetCommonRequestOptions
 (
-HttpRequestR                    request,
-HttpRequest::RetryOption        retryOption,
+Http::RequestR                    request,
+Http::Request::RetryOption        retryOption,
 uint32_t                        transferType,
-HttpRequest::ProgressCallbackCR progressCallback,
+Http::Request::ProgressCallbackCR progressCallback,
 ICancellationTokenPtr           ct
 )
     {
@@ -66,22 +66,21 @@ AsyncTaskPtr<AzureResult> AzureBlobStorageClient::SendGetFileRequest
 (
 Utf8StringCR url,
 BeFileNameCR filePath,
-HttpRequest::ProgressCallbackCR progressCallback,
+Http::Request::ProgressCallbackCR progressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    HttpRequest request(url, "GET", m_customHandler);
+    Http::Request request(url, "GET", m_customHandler);
 
     request.SetResponseBody(HttpFileBody::Create(filePath));
-    SetCommonRequestOptions(request, HttpRequest::ResumeTransfer, AzureBlobStorageClient::Timeout::Transfer::FileDownload, progressCallback, ct);
+    SetCommonRequestOptions(request, Http::Request::RetryOption::ResumeTransfer, AzureBlobStorageClient::Timeout::Transfer::FileDownload, progressCallback, ct);
 
     return request.PerformAsync()
-        ->Then<AzureResult>([=] (HttpResponse& httpResponse)
+        ->Then<AzureResult>([=] (Http::Response& httpResponse)
         {
-        if (httpResponse.IsSuccess ())
+        if (httpResponse.IsSuccess())
             return AzureResult::Success();
-        else
-            return AzureResult::Error(httpResponse);
+        return AzureResult::Error(httpResponse);
         });
     }
 
@@ -96,7 +95,7 @@ HttpBodyPtr httpBody,
 uint64_t fileSize,
 uint64_t chunkSize,
 int chunkNumber,
-HttpRequest::ProgressCallbackCR progressCallback,
+Http::Request::ProgressCallbackCR progressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -112,18 +111,18 @@ ICancellationTokenPtr ct
     if (bytesTo >= fileSize)
         bytesTo = fileSize - 1;
 
-    HttpRequest request(blockUrl, "PUT", m_customHandler);
+    Http::Request request(blockUrl, "PUT", m_customHandler);
     request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
     request.SetRequestBody(HttpRangeBody::Create(httpBody, chunkSize * chunkNumber, bytesTo));
-    SetCommonRequestOptions(request, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
+    SetCommonRequestOptions(request, Http::Request::RetryOption::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
 
     std::shared_ptr<AzureResult> finalResult = std::make_shared<AzureResult>();
     return request.PerformAsync()
-        ->Then([=] (const HttpResponse& httpResponse)
+        ->Then([=] (const Http::Response& httpResponse)
         {
         if (!httpResponse.IsSuccess())
             {
-            finalResult->SetError (httpResponse);
+            finalResult->SetError(httpResponse);
             return;
             }
 
@@ -133,7 +132,7 @@ ICancellationTokenPtr ct
                 ->Then([=] (const AzureResult& result)
                 {
                 if (result.IsSuccess())
-                    finalResult->SetSuccess ();
+                    finalResult->SetSuccess();
                 else
                     finalResult->SetError(result.GetError());
                 });
@@ -143,17 +142,17 @@ ICancellationTokenPtr ct
         Utf8String finalBody = Utf8PrintfString("<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>%s</BlockList>", blockIds.c_str());
         Utf8String blockListUrl = Utf8PrintfString("%s&comp=blocklist", url.c_str());
 
-        HttpRequest finalRequest(blockListUrl, "PUT", m_customHandler);
+        Http::Request finalRequest(blockListUrl, "PUT", m_customHandler);
         finalRequest.SetRequestBody(HttpStringBody::Create(finalBody));
-        SetCommonRequestOptions(finalRequest, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
+        SetCommonRequestOptions(finalRequest, Http::Request::RetryOption::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
 
         finalRequest.PerformAsync()
-            ->Then([=] (const HttpResponse& httpResponse)
+            ->Then([=] (const Http::Response& httpResponse)
             {
             if (httpResponse.IsSuccess())
                 finalResult->SetSuccess();
             else
-                finalResult->SetError (httpResponse);
+                finalResult->SetError(httpResponse);
             });
         })->Then<AzureResult>([=]
             {
@@ -168,7 +167,7 @@ AsyncTaskPtr<AzureResult> AzureBlobStorageClient::SendUpdateFileRequest
 (
 Utf8StringCR url,
 BeFileNameCR filePath,
-HttpRequest::ProgressCallbackCR progressCallback,
+Http::Request::ProgressCallbackCR progressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -178,7 +177,7 @@ ICancellationTokenPtr ct
     uint64_t fileSize;
     if (BeFileStatus::Success != beFile.GetSize(fileSize))
         {
-        HttpResponse response(HttpResponseContent::Create(HttpStringBody::Create("Invalid file.")), "", ConnectionStatus::None, HttpStatus::BadRequest);
+        Http::Response response(HttpResponseContent::Create(HttpStringBody::Create("Invalid file.")), "", ConnectionStatus::None, HttpStatus::BadRequest);
         return CreateCompletedAsyncTask<AzureResult>(AzureResult::Error(HttpError(response)));
         }
     beFile.Close();

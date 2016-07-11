@@ -22,7 +22,7 @@ void ImsClientTests::SetUp()
 
 TEST_F(ImsClientTests, GetToken_DefaultUrls_SendsRequestToRetrieveToken)
     {
-    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+    GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
         EXPECT_STREQ("TestUrl", request.GetUrl().c_str());
         EXPECT_EQ("Basic " + Base64Utilities::Encode("Foo:Boo"), request.GetHeaders().GetAuthorization());
@@ -50,7 +50,7 @@ TEST_F(ImsClientTests, GetToken_ResponseContainsToken_ReturnsToken)
 
 TEST_F(ImsClientTests, GetToken_ByCredentials_SendsRequestToRetrieveToken)
     {
-    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+    GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
         auto bodyJson = request.GetRequestBody()->AsJson();
 
@@ -69,7 +69,7 @@ TEST_F(ImsClientTests, GetToken_ByCredentials_SendsRequestToRetrieveToken)
 
 TEST_F(ImsClientTests, GetToken_ByCredentialsWithZeroLifetime_SendsRequestToRetrieveTokenWithoutLifetimee)
     {
-    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+    GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
         auto bodyJson = request.GetRequestBody()->AsJson();
 
@@ -90,7 +90,7 @@ TEST_F(ImsClientTests, GetToken_ByParentToken_SendsRequestToRetrieveToken)
     {
     SamlToken parentToken(StubSamlTokenXML(0, "TestCert"));
 
-    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+    GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
         auto bodyJson = request.GetRequestBody()->AsJson();
 
@@ -112,7 +112,7 @@ TEST_F(ImsClientTests, GetToken_ByParentTokenWithZeroLifetime_SendsRequestToRetr
     {
     SamlToken parentToken(StubSamlTokenXML(0, "TestCert"));
 
-    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+    GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
         auto bodyJson = request.GetRequestBody()->AsJson();
 

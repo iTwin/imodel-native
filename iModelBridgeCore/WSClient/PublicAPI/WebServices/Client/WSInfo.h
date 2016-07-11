@@ -41,8 +41,8 @@ struct WSInfo
 
     private:
         static void ParseHeaders(HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
-        static void ParseInfoPage(HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
-        static void ParseAboutPage(HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseInfoPage(Http::ResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseAboutPage(Http::ResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
         static BeVersion DeduceWebApiVersion(BeVersionCR serverVersion);
 
     public:
@@ -53,7 +53,7 @@ struct WSInfo
         //! Construct info with values
         WSCLIENT_EXPORT WSInfo(BeVersion serverVersion, BeVersion webApiVersion, Type serverType);
         //! Create info from server response
-        WSCLIENT_EXPORT WSInfo(HttpResponseCR response);
+        WSCLIENT_EXPORT WSInfo(Http::ResponseCR response);
         //! Deserialize string info
         WSCLIENT_EXPORT WSInfo(Utf8StringCR serialized);
 

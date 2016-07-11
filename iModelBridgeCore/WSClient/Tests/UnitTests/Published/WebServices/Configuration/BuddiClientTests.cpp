@@ -29,7 +29,7 @@ TEST_F(BuddiClientTests, GetRegions_Default_SendsPostSoapRequest)
     {
     BuddiClient client(GetHandlerPtr(), "http://test.com");
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("http://test.com", request.GetUrl().c_str());
@@ -151,7 +151,7 @@ TEST_F(BuddiClientTests, GetUrl_NameAndRegionPassed_SendsPostSoapRequest)
     {
     BuddiClient client(GetHandlerPtr(), "http://test.com");
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("http://test.com", request.GetUrl().c_str());

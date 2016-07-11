@@ -1,11 +1,10 @@
 /*--------------------------------------------------------------------------------------+
- |
- |     $Source: Cache/Network/ResponseGuard.cpp $
- |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
- |
- +--------------------------------------------------------------------------------------*/
-
+|
+|     $Source: Cache/Network/ResponseGuard.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "ResponseGuard.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -13,7 +12,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResponseGuard::ResponseGuard(ICancellationTokenPtr tokenToWrap, HttpRequest::ProgressCallbackCR onProgress) :
+ResponseGuard::ResponseGuard(Tasks::ICancellationTokenPtr tokenToWrap, Http::Request::ProgressCallbackCR onProgress) :
 m_tokenEnabled(true),
 m_token(tokenToWrap),
 m_onProgress(onProgress)
@@ -22,7 +21,7 @@ m_onProgress(onProgress)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResponseGuardPtr ResponseGuard::Create(ICancellationTokenPtr tokenToWrap, HttpRequest::ProgressCallbackCR onProgress)
+ResponseGuardPtr ResponseGuard::Create(Tasks::ICancellationTokenPtr tokenToWrap, Http::Request::ProgressCallbackCR onProgress)
     {
     return std::make_shared<ResponseGuard>(tokenToWrap, onProgress);
     }
@@ -38,13 +37,13 @@ bool ResponseGuard::IsCanceled()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ResponseGuard::Register(std::weak_ptr<ICancellationListener> listener)
+void ResponseGuard::Register(std::weak_ptr<Tasks::ICancellationListener> listener)
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest::ProgressCallback ResponseGuard::GetProgressCallback()
+Http::Request::ProgressCallback ResponseGuard::GetProgressCallback()
     {
     ResponseGuardPtr guard = shared_from_this();
     return [guard] (double bytesUploaded, double bytesToUpload)

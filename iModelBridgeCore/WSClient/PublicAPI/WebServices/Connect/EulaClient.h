@@ -30,7 +30,7 @@ struct EulaClient
         IHttpHandlerPtr m_customHandler;
 
     private:
-        HttpRequest CreateRequest(Utf8StringCR serverUrl, Utf8StringCR requestUrl, Utf8StringCR action);
+        Http::Request CreateRequest(Utf8StringCR serverUrl, Utf8StringCR requestUrl, Utf8StringCR action);
 
     public:
         WSCLIENT_EXPORT EulaClient(ClientInfoPtr clientInfo, IConnectAuthenticationProvider& authenticationProvider, IHttpHandlerPtr customHandler = nullptr);

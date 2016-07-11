@@ -91,7 +91,7 @@ struct IWSRepositoryClient
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -128,7 +128,7 @@ struct IWSRepositoryClient
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -146,7 +146,7 @@ struct IWSRepositoryClient
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -167,7 +167,7 @@ struct IWSRepositoryClient
             ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -176,7 +176,7 @@ struct IWSRepositoryClient
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -190,7 +190,7 @@ struct IWSRepositoryClient
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
     };
@@ -290,7 +290,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -311,7 +311,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -319,7 +319,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -328,7 +328,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName (),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -337,7 +337,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -351,7 +351,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
     };

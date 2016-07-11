@@ -11,13 +11,12 @@
 #include <Bentley/Tasks/AsyncResult.h>
 #include <Bentley/Tasks/AsyncTask.h>
 
-
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 
-template<typename ValueType> using  DgnDbServerResult       = AsyncResult<ValueType, DgnDbServerError>;
+template<typename ValueType> using  DgnDbServerResult       = Tasks::AsyncResult<ValueType, DgnDbServerError>;
 template<typename ValueType> using  DgnDbServerResultPtr    = std::shared_ptr<DgnDbServerResult<ValueType>>;
-template<typename ValueType> using  DgnDbServerTask         = PackagedAsyncTask<DgnDbServerResult<ValueType>>;
-template<typename ValueType> using  DgnDbServerTaskPtr      = AsyncTaskPtr<DgnDbServerResult<ValueType>>;
+template<typename ValueType> using  DgnDbServerTask         = Tasks::PackagedAsyncTask<DgnDbServerResult<ValueType>>;
+template<typename ValueType> using  DgnDbServerTaskPtr      = Tasks::AsyncTaskPtr<DgnDbServerResult<ValueType>>;
 
 #define DEFINE_TASK_TYPEDEFS(_type_, _name_) \
     typedef DgnDbServerResult<_type_>           _name_##Result; \

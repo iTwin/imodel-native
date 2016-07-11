@@ -90,22 +90,22 @@ std::string RapidJsonToString(const rapidjson::Value& json)
     return buffer.GetString();
     }
 
-HttpResponse StubHttpResponse(ConnectionStatus status)
+Response StubHttpResponse(ConnectionStatus status)
     {
     HttpStatus httpStatus = HttpStatus::None;
     if (status == ConnectionStatus::OK)
         {
         httpStatus = HttpStatus::OK;
         }
-    return HttpResponse(HttpResponseContent::Create(HttpStringBody::Create()), "", status, httpStatus);
+    return Response(HttpResponseContent::Create(HttpStringBody::Create()), "", status, httpStatus);
     }
 
-HttpResponse StubHttpResponse(HttpStatus httpStatus, Utf8StringCR body, const std::map<Utf8String, Utf8String>& headers)
+Response StubHttpResponse(HttpStatus httpStatus, Utf8StringCR body, const std::map<Utf8String, Utf8String>& headers)
     {
     return StubHttpResponse(httpStatus, HttpStringBody::Create(body), headers);
     }
 
-HttpResponse StubHttpResponse(HttpStatus httpStatus, HttpBodyPtr body, const std::map<Utf8String, Utf8String>& headers)
+Response StubHttpResponse(HttpStatus httpStatus, HttpBodyPtr body, const std::map<Utf8String, Utf8String>& headers)
     {
     ConnectionStatus status = ConnectionStatus::OK;
     if (httpStatus == HttpStatus::None)
@@ -117,20 +117,20 @@ HttpResponse StubHttpResponse(HttpStatus httpStatus, HttpBodyPtr body, const std
         {
         content->GetHeaders().SetValue(header.first, header.second);
         }
-    return HttpResponse(content, "", status, httpStatus);
+    return Http::Response(content, "", status, httpStatus);
     }
 
-HttpResponse StubJsonHttpResponse(HttpStatus httpStatus, Utf8StringCR body, const std::map<Utf8String, Utf8String>& headers)
+Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8StringCR body, const std::map<Utf8String, Utf8String>& headers)
     {
     auto newHeaders = headers;
     newHeaders["Content-Type"] = "application/json";
     return StubHttpResponse(httpStatus, body, newHeaders);
     }
 
-HttpResponse StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url)
+Http::Response StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url)
     {
     auto content = HttpResponseContent::Create(HttpStringBody::Create());
-    return HttpResponse(content, url.c_str(), ConnectionStatus::OK, httpStatus);
+    return Http::Response(content, url.c_str(), ConnectionStatus::OK, httpStatus);
     }
 
 WSQuery StubWSQuery()
@@ -138,7 +138,7 @@ WSQuery StubWSQuery()
     return WSQuery("TestSchema", "TestClass");
     }
 
-HttpResponse StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId, Utf8StringCR message, Utf8StringCR description)
+Http::Response StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId, Utf8StringCR message, Utf8StringCR description)
     {
     Json::Value errorJson;
 
@@ -171,48 +171,48 @@ WSInfo StubWSInfoWebApi(BeVersion webApiVersion, WSInfo::Type type)
     return WSInfo(serverVersion, webApiVersion, type);
     }
 
-HttpResponse StubWSInfoHttpResponseBentleyConnectV1()
+Http::Response StubWSInfoHttpResponseBentleyConnectV1()
     {
     auto bodyStub = R"(..stub.. Web Service Gateway for BentleyCONNECT ..stub.. <span id="versionLabel">1.1.0.0</span> ..stub..)";
     return StubHttpResponse(HttpStatus::OK, bodyStub, {{"Content-Type", "text/html"}});
     }
 
-HttpResponse StubWSInfoHttpResponseWebApi11()
+Http::Response StubWSInfoHttpResponseWebApi11()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(1, 1));
     }
 
-HttpResponse StubWSInfoHttpResponseWebApi12()
+Http::Response StubWSInfoHttpResponseWebApi12()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(1, 2));
     }
 
-HttpResponse StubWSInfoHttpResponseWebApi13()
+Http::Response StubWSInfoHttpResponseWebApi13()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(1, 3));
     }
 
-HttpResponse StubWSInfoHttpResponseWebApi20()
+Http::Response StubWSInfoHttpResponseWebApi20()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 0));
     }
 
-HttpResponse StubWSInfoHttpResponseWebApi21()
+Http::Response StubWSInfoHttpResponseWebApi21()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 1));
     }
 
-HttpResponse StubWSInfoHttpResponseWebApi22()
+Http::Response StubWSInfoHttpResponseWebApi22()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 2));
     }
 
-HttpResponse StubWSInfoHttpResponseWebApi24()
+Http::Response StubWSInfoHttpResponseWebApi24()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 4));
     }
 
-HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
+Http::Response StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
     {
     auto info = StubWSInfoWebApi(webApiVersion);
     Utf8PrintfString serverHeader(

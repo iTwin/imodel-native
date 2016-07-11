@@ -72,7 +72,7 @@ AsyncTaskPtr<UsageTracking::Status> UsageTracking::RegisterUserUsages(bvector<Us
         return CreateCompletedAsyncTask( Status::NoUsages);
 
     HttpClient client(nullptr, s_httpHandler);
-    HttpRequest request = client.CreatePostRequest(GetServiceUrl());
+    Http::Request request = client.CreatePostRequest(GetServiceUrl());
     request.GetHeaders().SetContentType("application/json");
 
     Utf8String body = Json::FastWriter().write(usageList);
@@ -80,7 +80,7 @@ AsyncTaskPtr<UsageTracking::Status> UsageTracking::RegisterUserUsages(bvector<Us
     request.SetRequestBody(requestBody);
 
     return request.PerformAsync()
-    ->Then<Status>([=] (HttpResponse response)
+    ->Then<Status>([=] (Http::Response response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK)
             return Status::Error;
@@ -109,11 +109,11 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
     Utf8StringCR ver = VerifyClientMobile(userGuid, deviceId);
 
     HttpClient client(nullptr, s_httpHandler);
-    HttpRequest request = client.CreateGetRequest(getURL);
+    Http::Request request = client.CreateGetRequest(getURL);
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
-    HttpResponse httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform();
 
     Json::Value usages = httpResponse.GetBody().AsJson();
     return usages;
@@ -130,11 +130,11 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
     Utf8StringCR ver = VerifyClientMobile(userGuid, deviceId);
 
     HttpClient client(nullptr, s_httpHandler);
-    HttpRequest request = client.CreateGetRequest(url);
+    Http::Request request = client.CreateGetRequest(url);
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
-    HttpResponse httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform();
 
     Json::Value usages = httpResponse.GetBody().AsJson();
     return usages;

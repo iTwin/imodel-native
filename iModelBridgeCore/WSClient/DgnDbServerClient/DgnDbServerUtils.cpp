@@ -22,13 +22,13 @@ CallbackQueue::Callback::Callback(CallbackQueue & queue) : m_bytesTransfered(0.0
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-CallbackQueue::CallbackQueue(Http::HttpRequest::ProgressCallbackCR callback) : m_callback(callback)
+CallbackQueue::CallbackQueue(Http::Request::ProgressCallbackCR callback) : m_callback(callback)
     {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-Http::HttpRequest::ProgressCallbackCR CallbackQueue::NewCallback()
+Http::Request::ProgressCallbackCR CallbackQueue::NewCallback()
     {
     std::shared_ptr<CallbackQueue::Callback> callback = std::make_shared<CallbackQueue::Callback>(*this);
     m_callbacks.push_back(callback);

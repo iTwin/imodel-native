@@ -40,20 +40,20 @@ struct WebApiV2 : public WebApi
         std::shared_ptr<WSObjectsReader> CreateJsonInstancesReader() const;
         static Utf8String GetNullableString(RapidJsonValueCR jsonValue);
 
-        WSRepositoriesResult ResolveGetRepositoriesResponse(HttpResponse& response) const;
-        WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response) const;
-        WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response) const;
-        WSObjectsResult ResolveObjectsResponse(HttpResponse& response, const ObjectId* objectId = nullptr) const;
+        WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response) const;
+        WSCreateObjectResult ResolveCreateObjectResponse(Http::Response& response) const;
+        WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response) const;
+        WSObjectsResult ResolveObjectsResponse(Http::Response& response, const ObjectId* objectId = nullptr) const;
 
-        HttpRequest CreateFileDownloadRequest
+        Http::Request CreateFileDownloadRequest
             (
             Utf8StringCR url,
             BeFileNameCR filePath,
             Utf8StringCR eTag,
-            HttpRequest::ProgressCallbackCR onProgress,
+            Http::Request::ProgressCallbackCR onProgress,
             ICancellationTokenPtr ct
             ) const;
-        WSFileResult ResolveFileDownloadResponse(HttpResponse& response, BeFileName filePath) const;
+        WSFileResult ResolveFileDownloadResponse(Http::Response& response, BeFileName filePath) const;
 
     public:
         WebApiV2(std::shared_ptr<const ClientConfiguration> configuration, WSInfo info);
@@ -88,7 +88,7 @@ struct WebApiV2 : public WebApi
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -109,7 +109,7 @@ struct WebApiV2 : public WebApi
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -117,7 +117,7 @@ struct WebApiV2 : public WebApi
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -126,7 +126,7 @@ struct WebApiV2 : public WebApi
             ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -135,7 +135,7 @@ struct WebApiV2 : public WebApi
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -149,7 +149,7 @@ struct WebApiV2 : public WebApi
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
     };

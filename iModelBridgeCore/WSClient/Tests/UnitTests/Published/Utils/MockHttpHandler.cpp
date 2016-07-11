@@ -19,7 +19,7 @@ MockHttpHandler::MockHttpHandler()
     {
     m_perfomedRequests = 0;
     m_expectedRequests = EXPECTED_COUNT_ANY;
-    m_onAnyRequestCallback = [&] (HttpRequestCR request)
+    m_onAnyRequestCallback = [&] (Http::Request request)
         {
         if (m_expectedRequests == EXPECTED_COUNT_ANY)
             {
@@ -33,7 +33,7 @@ MockHttpHandler::MockHttpHandler()
                 ).c_str());
             }
 
-        return HttpResponse(HttpResponseContent::Create(HttpStringBody::Create()), "", ConnectionStatus::CouldNotConnect, HttpStatus::None);
+        return Http::Response(HttpResponseContent::Create(HttpStringBody::Create()), "", Http::ConnectionStatus::CouldNotConnect, HttpStatus::None);
         };
     }
 
@@ -73,9 +73,9 @@ uint32_t MockHttpHandler::GetRequestsPerformed() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<HttpResponse> MockHttpHandler::PerformRequest(HttpRequestCR request)
+AsyncTaskPtr<Http::Response> MockHttpHandler::_PerformRequest(Http::RequestCR request)
     {
-    auto task = std::make_shared<PackagedAsyncTask<HttpResponse>>([&] ()
+    auto task = std::make_shared<PackagedAsyncTask<Http::Response>>([&] ()
         {
         EXPECT_LT(m_perfomedRequests, std::numeric_limits<uint32_t>::max());
         m_perfomedRequests++;
@@ -142,9 +142,9 @@ MockHttpHandler& MockHttpHandler::ExpectRequest(OnResponseCallback callback)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler& MockHttpHandler::ExpectRequest(HttpResponseCR response)
+MockHttpHandler& MockHttpHandler::ExpectRequest(Http::ResponseCR response)
     {
-    return ExpectRequest([=] (HttpRequestCR) { return response; });
+    return ExpectRequest([=] (Http::Request) { return response; });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -160,9 +160,9 @@ MockHttpHandler&  MockHttpHandler::ForRequest(uint32_t requestNumber, OnResponse
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler&  MockHttpHandler::ForRequest(uint32_t requestNumber, HttpResponseCR response)
+MockHttpHandler&  MockHttpHandler::ForRequest(uint32_t requestNumber, Http::ResponseCR response)
     {
-    return ForRequest(requestNumber, [=] (HttpRequestCR) { return response; });
+    return ForRequest(requestNumber, [=] (Http::Request) { return response; });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -176,7 +176,7 @@ MockHttpHandler&  MockHttpHandler::ForFirstRequest(OnResponseCallback callback)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler&  MockHttpHandler::ForFirstRequest(HttpResponseCR response)
+MockHttpHandler&  MockHttpHandler::ForFirstRequest(Http::ResponseCR response)
     {
     return ForRequest(1, response);
     }
@@ -194,9 +194,9 @@ MockHttpHandler& MockHttpHandler::ForAnyRequest(OnResponseCallback callback)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler& MockHttpHandler::ForAnyRequest(HttpResponseCR response)
+MockHttpHandler& MockHttpHandler::ForAnyRequest(Http::ResponseCR response)
     {
-    return ForAnyRequest([=] (HttpRequestCR)
+    return ForAnyRequest([=] (Http::Request)
         {
         return response;
         });

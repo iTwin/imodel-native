@@ -95,18 +95,18 @@ private:
 
     //! Download a copy of the master file from the repository
     DgnDbServerStatusTaskPtr DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR url,
-                                                     HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+                                                     Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download the file for this revision from server.
-    DgnDbServerStatusTaskPtr DownloadRevisionFile (DgnDbServerRevisionPtr revision, HttpRequest::ProgressCallbackCR callback = nullptr,
+    DgnDbServerStatusTaskPtr DownloadRevisionFile (DgnDbServerRevisionPtr revision, Http::Request::ProgressCallbackCR callback = nullptr,
                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Push this revision file to server.
-    DgnDbServerStatusTaskPtr Push (DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, HttpRequest::ProgressCallbackCR callback = nullptr,
+    DgnDbServerStatusTaskPtr Push (DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, Http::Request::ProgressCallbackCR callback = nullptr,
                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download all revision files after revisionId
-    DgnDbServerRevisionsTaskPtr Pull (Utf8StringCR revisionId, HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerRevisionsTaskPtr Pull (Utf8StringCR revisionId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all revision information based on a query.
     DgnDbServerRevisionsTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -122,7 +122,7 @@ private:
 
     //! Initializes the revision.
     DgnDbServerStatusTaskPtr InitializeRevision(Dgn::DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, JsonValueR pushJson, ObjectId revisionObjectId,
-                                              HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
+                                              Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
 
 public:
     //! Create an instance of the connection to a repository on the server.
@@ -183,7 +183,7 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadRevisions (const bvector<DgnDbServerRevisionPtr>& revisions, HttpRequest::ProgressCallbackCR callback = nullptr,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadRevisions (const bvector<DgnDbServerRevisionPtr>& revisions, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Verify the access to the revision on the server.

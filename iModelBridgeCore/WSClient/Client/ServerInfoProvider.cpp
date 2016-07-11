@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ServerInfoProvider.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -16,7 +16,7 @@
 ServerInfoProvider::ServerInfoProvider(std::shared_ptr<const ClientConfiguration> configuration) :
 m_configuration(configuration),
 m_thread(WorkerThread::Create("ServerInfoProvider")),
-m_serverInfo(HttpResponse()),
+m_serverInfo(Http::Response()),
 m_serverInfoUpdated(0)
     {}
 
@@ -102,7 +102,7 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
             finalResult->SetSuccess(result.GetValue());
             return;
             }
-        else if (result.GetError().GetConnectionStatus() != ConnectionStatus::OK)
+        else if (result.GetError().GetConnectionStatus() != Http::ConnectionStatus::OK)
             {
             finalResult->SetError(result.GetError());
             return;
@@ -161,10 +161,10 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR page, ICancellationTokenPtr ct) const
     {
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetRequest(m_configuration->GetServerUrl() + page);
+    Http::Request request = m_configuration->GetHttpClient().CreateGetRequest(m_configuration->GetServerUrl() + page);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSInfoHttpResult>([=] (HttpResponse& response)
+    return request.PerformAsync()->Then<WSInfoHttpResult>([=] (Http::Response& response)
         {
         WSInfo info(response);
         if (info.IsValid())

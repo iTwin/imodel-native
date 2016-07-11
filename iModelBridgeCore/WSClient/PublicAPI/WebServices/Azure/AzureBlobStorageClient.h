@@ -35,7 +35,7 @@ struct IAzureBlobStorageClient
             (
             Utf8StringCR url,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR progressCallback = nullptr,
+            Http::Request::ProgressCallbackCR progressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -43,7 +43,7 @@ struct IAzureBlobStorageClient
             (
             Utf8StringCR url,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR progressCallback = nullptr,
+            Http::Request::ProgressCallbackCR progressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
     };
@@ -66,7 +66,7 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
             uint64_t fileSize,
             uint64_t chunkSize,
             int chunkNumber,
-            HttpRequest::ProgressCallbackCR progressCallback,
+            Http::Request::ProgressCallbackCR progressCallback,
             ICancellationTokenPtr ct
             ) const;
 
@@ -94,7 +94,7 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
             (
             Utf8StringCR url,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR progressCallback = nullptr,
+            Http::Request::ProgressCallbackCR progressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -102,7 +102,7 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
             (
             Utf8StringCR url,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR progressCallback = nullptr,
+            Http::Request::ProgressCallbackCR progressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
     };
