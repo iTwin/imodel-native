@@ -20,6 +20,8 @@ struct ECDbExpressionSymbolProvider : ECN::IECSymbolProvider
 private:
     ECDbCR m_db;
 
+    static ECN::ExpressionStatus GetRelatedInstanceQueryFormat(Utf8StringR, ECDbCR, ECN::ECInstanceListCR, ECN::EvaluationResultVector&);
+    static ECN::ExpressionStatus HasRelatedInstance(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
     static ECN::ExpressionStatus GetRelatedInstance(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
     static BentleyStatus FindRelationshipAndClassInfo(ECDbCR, ECN::ECRelationshipClassCP&, Utf8CP relationshipName, ECN::ECEntityClassCP&, Utf8CP className);
 

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <ECObjects/ECExpressions.h>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -99,11 +100,14 @@ TEST_F(ECDbSymbolProviderTests, Name)
     }
 
 //=======================================================================================
-// @bsiclass                                      Grigas.Petraitis              02/2016
+// @bsiclass                                      Grigas.Petraitis              07/2016
 //+===============+===============+===============+===============+===============+======
-struct ECDbSymbolProviderRelatedInstanceTests : ECDbSymbolProviderTests
+struct ECDbExpressionSymbolContextTests : ECDbSymbolProviderTests
     {
-    Utf8String GetTestSchemaXMLString() const
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                06/2015
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual Utf8String GetTestSchemaXMLString() const
         {
         return
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -111,25 +115,9 @@ struct ECDbSymbolProviderRelatedInstanceTests : ECDbSymbolProviderTests
             "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.00\" prefix=\"bcs\" />"
             "    <ECEntityClass typeName=\"ClassA\" displayLabel=\"Class A\">"
             "        <ECProperty propertyName=\"label\" typeName=\"string\" />"
-            "        <ECProperty propertyName=\"calc_Forward\" typeName=\"string\">"
-            "            <ECCustomAttributes>"
-            "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.00\">"
-            "                    <ECExpression>this.GetRelatedInstance(\"Rel:0:ClassB\").label</ECExpression>"
-            "                    <FailureValue>Unknown</FailureValue>"
-            "                </CalculatedECPropertySpecification>"
-            "            </ECCustomAttributes>"
-            "        </ECProperty>"
             "    </ECEntityClass>"
             "    <ECEntityClass typeName=\"ClassB\" displayLabel=\"Class B\" >"
             "        <ECProperty propertyName=\"label\" typeName=\"string\" />"
-            "        <ECProperty propertyName=\"calc_Backward\" typeName=\"string\">"
-            "            <ECCustomAttributes>"
-            "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.00\">"
-            "                    <ECExpression>this.GetRelatedInstance(\"Rel:1:ClassA\").label</ECExpression>"
-            "                    <FailureValue>Unknown</FailureValue>"
-            "                </CalculatedECPropertySpecification>"
-            "            </ECCustomAttributes>"
-            "        </ECProperty>"
             "    </ECEntityClass>"
             "    <ECRelationshipClass typeName=\"Rel\" strength=\"referencing\" strengthDirection=\"forward\" modifier='Sealed'>"
             "        <Source cardinality=\"(0,1)\" roleLabel=\"A has B\" polymorphic=\"True\">"
@@ -141,7 +129,10 @@ struct ECDbSymbolProviderRelatedInstanceTests : ECDbSymbolProviderTests
             "    </ECRelationshipClass>"
             "</ECSchema>";
         }
-
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                06/2015
+    +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void SetUp() override
         {
         ECDbSymbolProviderTests::SetUp();
@@ -151,12 +142,128 @@ struct ECDbSymbolProviderRelatedInstanceTests : ECDbSymbolProviderTests
         ECSchema::ReadFromXmlString(schema, GetTestSchemaXMLString().c_str(), *context);
         GetECDb().Schemas().ImportECSchemas(context->GetCache());
         }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                06/2015
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static bool EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context)
+        {
+        NodePtr node = ECEvaluator::ParseValueExpressionAndCreateTree(expression.c_str());
+
+        ValueResultPtr valueResult;
+        if (ExpressionStatus::Success != node->GetValue(valueResult, context))
+            return false;
+
+        if (ExpressionStatus::Success != valueResult->GetECValue(result))
+            return false;
+
+        return true;
+        }
+    
+    //---------------------------------------------------------------------------------------
+    // @bsitest                                       Grigas.Petraitis              07/2016
+    //+---------------+---------------+---------------+---------------+---------------+------
+    static ExpressionContextPtr CreateContext(IECInstanceCR instance)
+        {
+        InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create(nullptr);
+        instanceContext->SetInstance(instance);
+        SymbolExpressionContextPtr rootCtx = SymbolExpressionContext::Create(bvector<Utf8String>(), nullptr);
+        rootCtx->AddSymbol(*ContextSymbol::CreateContextSymbol("this", *instanceContext));
+        return rootCtx;
+        }
     };
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                       Grigas.Petraitis              07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsFalseWhenDoesntHaveAnyRelatedInstances)
+    {
+    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+    
+    ECDbExpressionSymbolContext ecdbContext(GetECDb());
+    ExpressionContextPtr exprContext = CreateContext(*instanceA);
+    
+    ECValue value;
+    ASSERT_TRUE(EvaluateECExpression(value, "this.HasRelatedInstance(\"Rel:0:ClassB\")", *exprContext));
+    ASSERT_TRUE(value.IsBoolean());
+    ASSERT_FALSE(value.GetBoolean());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                       Grigas.Petraitis              07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasOneRelatedInstance)
+    {
+    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+
+    ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
+    IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB);
+    
+    ECSqlStatement stmt;
+    stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindId(2, classA->GetId());
+    stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindId(4, classB->GetId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    ECDbExpressionSymbolContext ecdbContext(GetECDb());
+    ExpressionContextPtr exprContext = CreateContext(*instanceA);
+
+    ECValue value;
+    ASSERT_TRUE(EvaluateECExpression(value, "this.HasRelatedInstance(\"Rel:0:ClassB\")", *exprContext));
+    ASSERT_TRUE(value.IsBoolean());
+    ASSERT_TRUE(value.GetBoolean());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest                                       Grigas.Petraitis              07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasMultipleRelatedInstances)
+    {
+    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(GetECDb(), *classA).Insert(*instanceA);
+
+    ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
+    IECInstancePtr instanceB1 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB1);
+    IECInstancePtr instanceB2 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECInstanceInserter(GetECDb(), *classB).Insert(*instanceB2);
+    
+    ECSqlStatement stmt;
+    stmt.Prepare(GetECDb(), "INSERT INTO [test].[Rel] (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindId(2, classA->GetId());
+    stmt.BindText(3, instanceB1->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindId(4, classB->GetId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    stmt.Reset();
+    stmt.BindText(1, instanceA->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindId(2, classA->GetId());
+    stmt.BindText(3, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindId(4, classB->GetId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    ECDbExpressionSymbolContext ecdbContext(GetECDb());
+    ExpressionContextPtr exprContext = CreateContext(*instanceA);
+
+    ECValue value;
+    ASSERT_TRUE(EvaluateECExpression(value, "this.HasRelatedInstance(\"Rel:0:ClassB\")", *exprContext));
+    ASSERT_TRUE(value.IsBoolean());
+    ASSERT_TRUE(value.GetBoolean());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsForwardRelationshipWithSingleInstance)
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelationshipWithSingleInstance)
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -174,9 +281,12 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsForwardRelationshipWithSin
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(4, classB->GetId());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    
+    ECDbExpressionSymbolContext ecdbContext(GetECDb());
+    ExpressionContextPtr exprContext = CreateContext(*instanceA);
 
     ECValue value;
-    ASSERT_EQ(ECObjectsStatus::Success, instanceA->GetValue(value, "calc_Forward"));
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedInstance(\"Rel:0:ClassB\").label", *exprContext));
     ASSERT_TRUE(value.IsString());
     ASSERT_STREQ("B", value.GetUtf8CP());
     }
@@ -184,7 +294,7 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsForwardRelationshipWithSin
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsBackwardRelationshipWithSingleInstance)
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelationshipWithSingleInstance)
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -202,9 +312,12 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsBackwardRelationshipWithSi
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(4, classB->GetId());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    
+    ECDbExpressionSymbolContext ecdbContext(GetECDb());
+    ExpressionContextPtr exprContext = CreateContext(*instanceB);
 
     ECValue value;
-    ASSERT_EQ(ECObjectsStatus::Success, instanceB->GetValue(value, "calc_Backward"));
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedInstance(\"Rel:1:ClassA\").label", *exprContext));
     ASSERT_TRUE(value.IsString());
     ASSERT_STREQ("A", value.GetUtf8CP());
     }
@@ -212,7 +325,7 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsBackwardRelationshipWithSi
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsForwardRelationshipWithMultipleInstances)
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelationshipWithMultipleInstances)
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -233,9 +346,12 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsForwardRelationshipWithMul
     stmt.BindText(3, instanceB2->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(4, classB->GetId());
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    
+    ECDbExpressionSymbolContext ecdbContext(GetECDb());
+    ExpressionContextPtr exprContext = CreateContext(*instanceA);
 
     ECValue value;
-    ASSERT_EQ(ECObjectsStatus::Success, instanceA->GetValue(value, "calc_Forward"));
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedInstance(\"Rel:0:ClassB\").label", *exprContext));
     ASSERT_TRUE(value.IsString());
     ASSERT_STREQ("B2", value.GetUtf8CP());
     }
@@ -243,7 +359,7 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsForwardRelationshipWithMul
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsBackwardRelationshipWithMultipleInstances)
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelationshipWithMultipleInstances)
     {
     ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
     IECInstancePtr instanceA1 = classA->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -264,9 +380,12 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsBackwardRelationshipWithMu
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(4, classB->GetId());
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    
+    ECDbExpressionSymbolContext ecdbContext(GetECDb());
+    ExpressionContextPtr exprContext = CreateContext(*instanceB);
 
     ECValue value;
-    ASSERT_EQ(ECObjectsStatus::Success, instanceB->GetValue(value, "calc_Backward"));
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedInstance(\"Rel:1:ClassA\").label", *exprContext));
     ASSERT_TRUE(value.IsString());
     ASSERT_STREQ("A2", value.GetUtf8CP());
     }
@@ -274,7 +393,7 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsBackwardRelationshipWithMu
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsRelationshipWhenRelationshipAndRelatedClassAreInDifferentSchema)
+TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsRelationshipWhenRelationshipAndRelatedClassAreInDifferentSchema)
     {
     Utf8CP differentSchemaXml = ""
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -283,14 +402,6 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsRelationshipWhenRelationsh
         "    <ECSchemaReference name=\"TestSchema\" version=\"01.00\" prefix=\"test\" />"
         "    <ECEntityClass typeName=\"DifferentClassB\" displayLabel=\"Different Class B\">"
         "        <ECProperty propertyName=\"label\" typeName=\"string\" />"
-        "        <ECProperty propertyName=\"calc_DifferentSchema\" typeName=\"string\">"
-        "            <ECCustomAttributes>"
-        "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.00\">"
-        "                    <ECExpression>this.GetRelatedInstance(\"DifferentRelationship:1:ClassA\").label</ECExpression>"
-        "                    <FailureValue>Unknown</FailureValue>"
-        "                </CalculatedECPropertySpecification>"
-        "            </ECCustomAttributes>"
-        "        </ECProperty>"
         "    </ECEntityClass>"
         "    <ECRelationshipClass typeName=\"DifferentRelationship\" strength=\"referencing\" strengthDirection=\"forward\" modifier='Sealed'>"
         "        <Source cardinality=\"(0,1)\" roleLabel=\"A has B\" polymorphic=\"True\">"
@@ -324,9 +435,12 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsRelationshipWhenRelationsh
     stmt.BindText(3, instanceB->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindId(4, classB->GetId());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    
+    ECDbExpressionSymbolContext ecdbContext(GetECDb());
+    ExpressionContextPtr exprContext = CreateContext(*instanceB);
 
     ECValue value;
-    ASSERT_EQ(ECObjectsStatus::Success, instanceB->GetValue(value, "calc_DifferentSchema"));
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedInstance(\"DifferentRelationship:1:ClassA\").label", *exprContext));
     ASSERT_TRUE(value.IsString());
     ASSERT_STREQ("A", value.GetUtf8CP());
     }
@@ -334,7 +448,7 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, FollowsRelationshipWhenRelationsh
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenImportingSchemas)
+TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenImportingSchemas)
     {
     Utf8CP schemaXml = ""
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -392,7 +506,7 @@ TEST_F(ECDbSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenImportingSc
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSymbolProviderRelatedInstanceTests, SymbolsAreInjectedWhenDeserializingSchemas)
+TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSchemas)
     {
     Utf8CP schemaXml = ""
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
