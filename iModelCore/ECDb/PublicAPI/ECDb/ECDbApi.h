@@ -19,3 +19,4 @@
 
 #include <ECDb/ChangeSummary.h>
 
+#include <ECDb/ECDbExpressionSymbolContext.h>

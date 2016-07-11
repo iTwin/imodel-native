@@ -28,7 +28,8 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECSqlColumnInfo.h \
                 $(publicApiDir)ECInstanceAdapter.h \
                 $(publicApiDir)JsonAdapter.h \
-                $(publicApiDir)ChangeSummary.h
+                $(publicApiDir)ChangeSummary.h \
+                $(publicApiDir)ECDbExpressionSymbolContext.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
