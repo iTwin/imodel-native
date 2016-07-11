@@ -8,7 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <BeHttp/HttpRequest.h>
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(__clang__)
 #include <folly/futures/Future.h>
 #endif
 
