@@ -126,7 +126,7 @@ protected:
 
 public:
     PointCloudClassificationSettings() {InitDefaults();}
-    void InitDefaults();
+    DGNPLATFORM_EXPORT void InitDefaults();
     bool AreSetToDefault() const;
     bool operator==(PointCloudClassificationSettings const& rhs) const;
 
