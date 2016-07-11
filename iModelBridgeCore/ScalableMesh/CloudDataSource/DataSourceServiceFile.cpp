@@ -15,6 +15,8 @@ DataSourceAccount * DataSourceServiceFile::createAccount(const AccountName & acc
 	if ((accountFile = new DataSourceAccountFile(ServiceName(L"DataSourceServiceFile"), account, identifier, key)) == nullptr)
 		return accountFile;
 
+    DataSourceService::createAccount(getDataSourceManager(), *accountFile);
+
 	return Manager<DataSourceAccount>::create(account, accountFile);
 }
 

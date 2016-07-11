@@ -4,6 +4,7 @@
 #include "DataSourceManager.h"
 #include "include\DataSourceAccount.h"
 
+#include <assert.h>
 #include <sstream>
 
 DataSourceTransferScheduler & DataSourceAccount::getTransferScheduler(void)
@@ -114,6 +115,7 @@ DataSource * DataSourceAccount::getOrCreateDataSource(DataSourceManager::DataSou
 
 DataSource * DataSourceAccount::getOrCreateThreadDataSource(bool *created)
 {
+    assert(dataSourceManager != nullptr);
 	std::wstringstream		name;
 	DataSource::Name		dataSourceName;
 															// Get thread ID and use as DataSource name
