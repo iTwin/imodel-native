@@ -26,7 +26,9 @@
     <Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke">
         <SubPart PartName="AzureSDK" />
         <Bindings>
-            <Libs>delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>    
+            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="MdlsysAsneeded">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
             <VendorAPI Domain="CloudDataSource" />
         </Bindings>
     </Part>

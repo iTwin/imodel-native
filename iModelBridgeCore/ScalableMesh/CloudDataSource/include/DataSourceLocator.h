@@ -30,31 +30,31 @@ protected:
 
 public:
 
-CLOUD_EXPORT											DataSourceLocator		(void);
-CLOUD_EXPORT											DataSourceLocator		(DataSourceLocator &locator);
+											DataSourceLocator		(void);
+											DataSourceLocator		(DataSourceLocator &locator);
 
-CLOUD_EXPORT	void									getURL					(DataSourceURL &url);
+	void									getURL					(DataSourceURL &url);
 
-CLOUD_EXPORT	void									setService				(DataSourceService *newService);
-CLOUD_EXPORT	DataSourceService					*	getService				(void);
+	void									setService				(DataSourceService *newService);
+	DataSourceService					*	getService				(void);
 
-CLOUD_EXPORT	void									setAccount				(DataSourceAccount *sourceAccount);
-CLOUD_EXPORT	DataSourceAccount					*	getAccount				(void) const;
+	void									setAccount				(DataSourceAccount *sourceAccount);
+	DataSourceAccount					*	getAccount				(void) const;
 
 
-CLOUD_EXPORT	void									setPrefixPath			(const DataSourceURL &path);
-CLOUD_EXPORT	const DataSourceURL					&	getPrefixPath			(void);
+	void									setPrefixPath			(const DataSourceURL &path);
+	const DataSourceURL					&	getPrefixPath			(void);
 
-CLOUD_EXPORT	void									setSubPath				(const DataSourceURL &path);
-CLOUD_EXPORT	const DataSourceURL					&	getSubPath				(void);
+	void									setSubPath				(const DataSourceURL &path);
+	const DataSourceURL					&	getSubPath				(void);
 
-CLOUD_EXPORT	void									setSegmentName			(DataSourceURL &segmentName);
-CLOUD_EXPORT	const DataSourceURL					&	getSegmentName			(void) const;
+	void									setSegmentName			(DataSourceURL &segmentName);
+	const DataSourceURL					&	getSegmentName			(void) const;
 
 //	void									getFullSubPath			(DataSourceURL &dest) const;
 
-CLOUD_EXPORT	void									setMode					(DataSourceMode sourceMode);
-CLOUD_EXPORT	DataSourceMode							getMode					(void) const;
+	void									setMode					(DataSourceMode sourceMode);
+	DataSourceMode							getMode					(void) const;
 
 };
 

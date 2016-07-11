@@ -7,10 +7,10 @@ class DataSourceAccountFile : public DataSourceAccount
 {
 
 public:
-CLOUD_EXPORT								DataSourceAccountFile		(const ServiceName &service, const AccountName &account);
-CLOUD_EXPORT								DataSourceAccountFile		(const ServiceName &service, const AccountName &account, const AccountIdentifier identifier, const AccountKey key);
+								DataSourceAccountFile		(const ServiceName &service, const AccountName &account);
+								DataSourceAccountFile		(const ServiceName &service, const AccountName &account, const AccountIdentifier identifier, const AccountKey key);
 
-CLOUD_EXPORT	DataSource				*	createDataSource			(void);
-CLOUD_EXPORT	DataSourceStatus			destroyDataSource			(DataSource *dataSource);
+	DataSource				*	createDataSource			(void);
+	DataSourceStatus			destroyDataSource			(DataSource *dataSource);
 
 };

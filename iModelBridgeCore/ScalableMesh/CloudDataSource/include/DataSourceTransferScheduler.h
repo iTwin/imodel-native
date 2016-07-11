@@ -51,8 +51,8 @@ protected:
 
 public:
 
-CLOUD_EXPORT								DataSourceTransferScheduler		(void);
+								DataSourceTransferScheduler		(void);
 
-CLOUD_EXPORT	DataSourceStatus			addBuffer					(DataSourceBuffer &buffer);
+	DataSourceStatus			addBuffer					(DataSourceBuffer &buffer);
 };
 

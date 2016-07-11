@@ -195,153 +195,6 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 
     }
 
-template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,                 
-                                                                                     SMMeshIndex<POINT, EXTENT>* meshIndex,
-                                                                                     ISMPointIndexFilter<POINT, EXTENT>* filter,
-                                                                                     bool balanced,
-                                                                                     bool textured,
-                                                                                     bool propagateDataDown,
-                                                                                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                                                                                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                                                                                     CreatedNodeMap* createdNodeMap)
-                                                                                     : SMPointIndexNode<POINT, EXTENT>(blockID, filter, balanced, propagateDataDown, createdNodeMap),
-                                                                                     m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),                 
-                                                                                     m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                     m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                     m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                     m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                     m_displayDataPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                     m_diffSetsItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                     m_featurePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                     m_dtmPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
-
-    {
-    m_SMIndex = meshIndex;
-    m_mesher2_5d = mesher2_5d;
-    m_mesher3d = mesher3d;
-
-     
-#ifdef WIP_MESH_IMPORT         
-    m_existingMesh = false;
-#endif
-
-    m_nbClips = 0;
-   
-    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
-
-    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-
-    }
-
-template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
-                 const EXTENT& pi_rExtent,                 
-                 SMMeshIndex<POINT, EXTENT>* meshIndex,
-                 ISMPointIndexFilter<POINT, EXTENT>* filter,
-                 bool balanced,
-                 bool propagateDataDown,
-                 ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                 ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                 CreatedNodeMap*                      createdNodeMap)
-                 : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, filter, balanced, propagateDataDown, createdNodeMap)
-    {
-    m_SMIndex = meshIndex;
-    m_mesher2_5d = mesher2_5d;
-    m_mesher3d = mesher3d;
-
-#ifdef WIP_MESH_IMPORT       
-    m_existingMesh = false;
-#endif
-
-    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
-
-    m_nbClips = 0;
-
-    m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-
-    }
-
-template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,                 
-                                                                                     SMMeshIndex<POINT, EXTENT>* meshIndex,
-                                                                                     ISMPointIndexFilter<POINT, EXTENT>* filter,
-                                                                                     bool balanced,
-                                                                                     bool propagateDataDown,
-                                                                                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                                                                                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                                                                                     CreatedNodeMap* createdNodeMap) 
-                                                                                     : SMPointIndexNode<POINT, EXTENT>(blockID, filter, balanced, propagateDataDown, createdNodeMap)
-    {
-    m_SMIndex = meshIndex;
-    m_mesher2_5d = mesher2_5d;
-    m_mesher3d = mesher3d;
-
-#ifdef WIP_MESH_IMPORT
-    m_existingMesh = false;
-#endif
-
-    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_ptsIndiceID.resize(1);
-    m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
-
-    m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
-
-    m_nodeHeader.m_uvID/*[0]*/ = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
-
-    m_nbClips = 0;
-
-    m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-
-    }
-
-template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(HPMBlockID blockID,
-                                                                                     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > parent,                                                                                     
-                                                                                     SMMeshIndex<POINT, EXTENT>* meshIndex,
-                                                                                     ISMPointIndexFilter<POINT, EXTENT>* filter,
-                                                                                     bool balanced,
-                                                                                     bool propagateDataDown,
-                                                                                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
-                                                                                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
-                                                                                     CreatedNodeMap*                      createdNodeMap)
-    : SMPointIndexNode<POINT, EXTENT>(blockID, static_pcast<SMPointIndexNode<POINT, EXTENT>, SMMeshIndexNode<POINT, EXTENT>>(parent), filter, balanced, propagateDataDown, createdNodeMap)
-    {
-    m_SMIndex = meshIndex;
-    m_mesher2_5d = mesher2_5d;
-    m_mesher3d = mesher3d;
-
-#ifdef WIP_MESH_IMPORT    
-    m_existingMesh = false;
-#endif 
-    m_nbClips = 0;
-    m_nodeHeader.m_graphID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_ptsIndiceID.resize(1);
-   m_nodeHeader.m_ptsIndiceID[0] = ISMStore::GetNullNodeID();
-
-    m_nodeHeader.m_uvsIndicesID.resize(1);
-    m_nodeHeader.m_uvsIndicesID[0] = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_uvID = ISMStore::GetNullNodeID();
-    m_nodeHeader.m_textureID.resize(1);
-    m_nodeHeader.m_textureID[0] = ISMStore::GetNullNodeID();
-
-    m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
-
-    }
-
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::~SMMeshIndexNode()
     {
     if (!IsDestroyed())
@@ -456,7 +309,9 @@ template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
 
 template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndexNode<POINT, EXTENT>::CreateNewNode(HPMBlockID blockID, bool isRootNode)
     {
-    auto node = new SMMeshIndexNode<POINT, EXTENT>(blockID, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex), m_filter, m_needsBalancing, false, !(m_delayedDataPropagation), m_mesher2_5d, m_mesher3d, m_createdNodeMap);
+    HFCPtr<SMMeshIndexNode<POINT, EXTENT>> parent;
+
+    auto node = new SMMeshIndexNode<POINT, EXTENT>(blockID, parent, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex), m_filter, m_needsBalancing, false, !(m_delayedDataPropagation), m_mesher2_5d, m_mesher3d, m_createdNodeMap);
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(node);
 
@@ -3876,7 +3731,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
         }
     static size_t s_importedFeatures;
 
-template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(SMMemoryPoolPtr& smMemoryPool,
+template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(ISMDataStoreTypePtr<EXTENT>& smDataStore,
+                                                                             SMMemoryPoolPtr& smMemoryPool,
                                                                                HFCPtr<SMPointTileStore<POINT, EXTENT> > ptsStore,                      
                                                                                HFCPtr<SMPointTileStore<int32_t, EXTENT> > ptsIndicesStore,
                                                                                //HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > graphPool,
@@ -3892,6 +3748,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(SMM
                                                                                ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
                                                                                ISMPointIndexMesher<POINT, EXTENT>* mesher3d)
                                                                                : SMPointIndex<POINT, EXTENT>(ptsStore, SplitTreshold, filter, balanced, propagatesDataDown, false)/*, m_graphPool(graphPool)*/, m_graphStore(graphStore),
+                                                                               m_smDataStore(smDataStore),
                                                                                m_smMemoryPool(smMemoryPool), 
                                                                                m_ptsIndicesStore(ptsIndicesStore),
                                                                                m_uvStore(uvStore),
@@ -3950,7 +3807,9 @@ template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
 
 template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(HPMBlockID blockID, bool isRootNode)
     {
-    auto meshNode = new SMMeshIndexNode<POINT, EXTENT>(blockID, this,m_filter, m_needsBalancing, IsTextured(), PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
+    HFCPtr<SMMeshIndexNode<POINT, EXTENT>> parent;
+
+    auto meshNode = new SMMeshIndexNode<POINT, EXTENT>(blockID, parent, this, m_filter, m_needsBalancing, IsTextured(), PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(meshNode);
     pNewNode->m_isGenerating = m_isGenerating;
 

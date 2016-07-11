@@ -834,7 +834,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     pStreamingUVTileStore = new StreamingUVStoreType(getDataSourceAccount(), streamingSourcePath, StreamingUVStoreType::SMStreamingDataType::UVS, AreDataCompressed());
                     pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(getDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, AreDataCompressed());
                     pStreamingTextureTileStore = new StreamingTextureTileStore(getDataSourceAccount(), streamingSourcePath);
-                    m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
+
+                    ////MST_TS
+                    ISMDataStoreType<YProtPtExtentType>::Ptr dataStore; 
+
+                    m_scmIndexPtr = new MeshIndexType(dataStore, 
+                                                      ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
                                                             &*pStreamingIndiceTileStore,
                                                     //        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
@@ -861,9 +866,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     pTextureTileStore = new SMSQLiteTextureTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
                     pGraphTileStore = new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
 
+                    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr));
 
-                    m_scmIndexPtr = new MeshIndexType(//pMemoryPool, 
-                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
+                    m_scmIndexPtr = new MeshIndexType(dataStore, 
+                                                      ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pTileStore,                                                       
                                                        &*pIndiceTileStore,
                                                      //  ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),

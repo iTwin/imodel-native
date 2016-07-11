@@ -8,8 +8,7 @@
 baseDir         = $(_MakeFilePath)
 
 %include  mdl.mki
-#%include $(baseDir)mki/ScalableMeshPolicy.mki
-#%include $(SrcRoot)scalablemesh/ScalableMesh.mki
+%include $(baseDir)CloudDataSource/CloudDataSourcePolicy.mki
 
 CCompOpts + $(PublicApiIncludes)
 CCompOpts + $(VendorApiIncludes)
@@ -93,32 +92,20 @@ $(o)PerformanceTimer$(oext) : $(SrcDir)PerformanceTimer.cpp ${MultiCompileDepend
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------
 #   Link the executable
 #----------------------------------------------------------------------
 
 LINKER_LIBRARIES_DELAYLOADED  = \
-    $(ContextSubpartsLibs)wastorage.lib \
+    $(ContextSubpartsLibs)wastorage.lib
 
 #--------------------------------------------------------------------------------------
 #   Create the library
 #--------------------------------------------------------------------------------------
-#DLM_OBJECT_PCH              = $(o)DataSourceManagerPCH$(oext)
-
-DLM_NAME                    = $(appName)
-DLM_OBJECT_FILES            = $(MultiCompileObjectList)
-DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
-DLM_OBJECT_DEST             = $(o)
-DLM_DEST                    = $(o)
-DLM_NOMSBUILTINS            = 1
-DLM_EXPORT_DEST             = $(o)
-DLM_NOENTRY                 = 1
-DLM_NO_DLS                  = 1
-DLM_NO_DEF                  = 1
-DLM_NO_BENTLEY_LIB          = 1
-DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
-DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
-DLM_CREATE_LIB_CONTEXT_LINK = 1
-#CREATE_STATIC_LIBRARIES     = 1
-
 %include $(sharedMki)linkLibrary.mki
 

@@ -19,18 +19,18 @@ protected:
 
 public:
 
-CLOUD_EXPORT									DataSourceFile			(DataSourceAccount *sourceAccount);
-CLOUD_EXPORT   								   ~DataSourceFile			(void);
+									DataSourceFile			(DataSourceAccount *sourceAccount);
+   								   ~DataSourceFile			(void);
 
-CLOUD_EXPORT		DataSourceStatus			open					(const DataSourceURL &sourceURL, DataSourceMode mode);
-CLOUD_EXPORT		DataSourceStatus			close					(void);
+		DataSourceStatus			open					(const DataSourceURL &sourceURL, DataSourceMode mode);
+		DataSourceStatus			close					(void);
 
-CLOUD_EXPORT		DataSource::DataSize		getSize					(void);
+		DataSource::DataSize		getSize					(void);
 
-CLOUD_EXPORT		DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
-CLOUD_EXPORT		DataSourceStatus			write					(Buffer *source, DataSize size);
+		DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
+		DataSourceStatus			write					(Buffer *source, DataSize size);
 
-CLOUD_EXPORT		DataSourceStatus			move					(DataPtr position);
+		DataSourceStatus			move					(DataPtr position);
 
 };
 

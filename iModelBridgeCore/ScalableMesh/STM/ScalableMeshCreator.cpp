@@ -647,10 +647,14 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             pStreamingUVTileStore = new StreamingUVStoreType(account, streamingFilePath, StreamingUVStoreType::SMStreamingDataType::UVS, (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(account, streamingFilePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingTextureTileStore = new StreamingTextureTileStore(account, streamingFilePath);
+
+            ////MST_TS
+            ISMDataStoreType<YProtPtExtentType>::Ptr dataStore; 
             
-            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
-                                       &*pStreamingTileStore,                                       
-                                       &*pStreamingIndiceTileStore,
+            pDataIndex = new MeshIndexType(dataStore, 
+                                           ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
+                                           &*pStreamingTileStore,                                       
+                                           &*pStreamingIndiceTileStore,
                                   //     ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
                                        pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr),                                       
                                        &*pStreamingTextureTileStore,                                                                              
@@ -683,7 +687,10 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr);
 
             //pIndiceTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
+            ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr));
+
+            pDataIndex = new MeshIndexType(dataStore,
+                                           ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
                                        &*pFinalTileStore,                                       
                                        &*pIndiceTileStore,
                                       // ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),

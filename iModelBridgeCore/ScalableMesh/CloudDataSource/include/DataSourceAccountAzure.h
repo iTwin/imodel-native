@@ -42,16 +42,16 @@ protected:
 
 public:
 
-CLOUD_EXPORT										DataSourceAccountAzure			(const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+										DataSourceAccountAzure			(const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 
-CLOUD_EXPORT		DataSourceStatus				setAccount						(const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+		DataSourceStatus				setAccount						(const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 
-CLOUD_EXPORT		DataSource					*	createDataSource				(void);
-CLOUD_EXPORT		DataSourceStatus				destroyDataSource				(DataSource *dataSource);
+		DataSource					*	createDataSource				(void);
+		DataSourceStatus				destroyDataSource				(DataSource *dataSource);
 
-CLOUD_EXPORT		AzureContainer					initializeContainer				(const DataSourceURL &containerName, DataSourceMode mode);
+		AzureContainer					initializeContainer				(const DataSourceURL &containerName, DataSourceMode mode);
 
-CLOUD_EXPORT		DataSourceStatus				downloadBlobSync				(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
-CLOUD_EXPORT		DataSourceStatus				downloadBlobSync				(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
-CLOUD_EXPORT		DataSourceStatus				uploadBlobSync					(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+		DataSourceStatus				downloadBlobSync				(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
+		DataSourceStatus				downloadBlobSync				(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
+		DataSourceStatus				uploadBlobSync					(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 };

@@ -889,23 +889,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 		{
 			return m_dataSourceAccount;
 		}
-
-        virtual bool HasSpatialReferenceSystem()
-            {
-            // NEEDS_WORK_SM_STREAMING : Add check to spatial reference system
-            assert(!"TODO!");
-            return false;
-            }
-
-
-        // New function
-        virtual std::string GetSpatialReferenceSystem()
-            {
-            // NEEDS_WORK_SM_STREAMING : Add check to spatial reference system
-            assert(!"TODO!");
-            return string("");
-            }
-
+       
         // ITileStore interface
         virtual void Close()
             {

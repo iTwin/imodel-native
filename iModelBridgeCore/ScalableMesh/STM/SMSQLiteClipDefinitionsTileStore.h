@@ -62,19 +62,7 @@ template <class EXTENT> class SMSQLiteClipDefinitionsTileStore : public SMPointT
             {
             //m_smSQLiteFile->Close();
             }
-
-        virtual bool HasSpatialReferenceSystem()
-            {
-            // if spatialreference for scm return true
-            return false;
-            }
-
-        virtual std::string GetSpatialReferenceSystem()
-            {
-            // return string for GCS
-            return string();
-            }
-
+     
         virtual void Close()
             {}
 

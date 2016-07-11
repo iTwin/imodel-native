@@ -52,28 +52,28 @@ protected:
 
 public:
 
-CLOUD_EXPORT										DataSourceBuffer					(void);
-CLOUD_EXPORT										DataSourceBuffer					(BufferSize size, BufferData *extBuffer = nullptr);
+										DataSourceBuffer					(void);
+										DataSourceBuffer					(BufferSize size, BufferData *extBuffer = nullptr);
 
-CLOUD_EXPORT	void								initializeSegments					(void);
-CLOUD_EXPORT	void								initializeSegments					(BufferSize segmentSize);
+	void								initializeSegments					(void);
+	void								initializeSegments					(BufferSize segmentSize);
 
-CLOUD_EXPORT	void								setLocator							(const DataSourceLocator &newLocator);
-CLOUD_EXPORT	DataSourceLocator				&	getLocator							(void);
+	void								setLocator							(const DataSourceLocator &newLocator);
+	DataSourceLocator				&	getLocator							(void);
 
-CLOUD_EXPORT	BufferSize							getSize								(void);
-CLOUD_EXPORT	SegmentIndex						getNumSegments						(void);
+	BufferSize							getSize								(void);
+	SegmentIndex						getNumSegments						(void);
 
-CLOUD_EXPORT	DataSourceStatus					clear								(void);
-CLOUD_EXPORT	DataSourceStatus					append								(BufferData *source, BufferSize size);
-CLOUD_EXPORT	DataSourceStatus					expand								(BufferSize size);
+	DataSourceStatus					clear								(void);
+	DataSourceStatus					append								(BufferData *source, BufferSize size);
+	DataSourceStatus					expand								(BufferSize size);
 
-CLOUD_EXPORT	SegmentIndex						getAndAdvanceCurrentSegment			(BufferData ** dest, BufferSize * size);
-CLOUD_EXPORT	bool								signalSegmentProcessed				(void);
-CLOUD_EXPORT	TimeoutStatus						waitForSegments						(Timeout timeoutMilliseconds);
+	SegmentIndex						getAndAdvanceCurrentSegment			(BufferData ** dest, BufferSize * size);
+	bool								signalSegmentProcessed				(void);
+	TimeoutStatus						waitForSegments						(Timeout timeoutMilliseconds);
 
-CLOUD_EXPORT	BufferData						*	getExternalBuffer					(void);
-CLOUD_EXPORT	BufferSize							getExternalBufferSize				(void);
+	BufferData						*	getExternalBuffer					(void);
+	BufferSize							getExternalBufferSize				(void);
 
 };
 
