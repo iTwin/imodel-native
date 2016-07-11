@@ -1027,6 +1027,16 @@ DateTime const& HttpRealityDataSource::Data::GetExpirationDate() const {return m
 Utf8CP HttpRealityDataSource::Data::GetEntityTag() const {return m_entityTag.c_str();}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Alain.Robert                 06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HttpRealityDataSource::Data::GetRequiresAuthentication() const {return m_needsAuthentication;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Alain.Robert                 06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR HttpRealityDataSource::Data::GetAuthenticationString() const {return m_authenticationString;}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HttpRealityDataSource::Data::SetExpirationDate(DateTime const& date) {m_expirationDate = date;}
@@ -1035,6 +1045,17 @@ void HttpRealityDataSource::Data::SetExpirationDate(DateTime const& date) {m_exp
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HttpRealityDataSource::Data::SetEntityTag(Utf8CP eTag) {m_entityTag = eTag;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Alain.Robert                 06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpRealityDataSource::Data::SetAuthenticationString(Utf8StringCR authenticationString) 
+	{
+    // If authentication is empty it indicate that there are no authentication
+    m_needsAuthentication = !authenticationString.empty();
+    m_authenticationString = authenticationString;
+    }
+	
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
@@ -1100,6 +1121,9 @@ protected:
             }
         if (!Utf8String::IsNullOrEmpty(m_data->GetEntityTag()))
             header["If-None-Match"] = m_data->GetEntityTag();
+
+        if (m_data->GetRequiresAuthentication())
+            header["Authorization"] = m_data->GetAuthenticationString();
 
         HttpResponsePtr response;
         HttpRequestStatus requestStatus = HttpHandler::Instance().Request(response, HttpRequest(m_url.c_str(), header), this);

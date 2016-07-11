@@ -1382,15 +1382,21 @@ struct HttpRealityDataSource : AsyncRealityDataSource<HttpRealityDataSource>
         private:
             DateTime    m_expirationDate;
             Utf8String  m_entityTag;
+            bool        m_needsAuthentication;
+            Utf8String  m_authenticationString; 
             void ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header);
         protected:
             using IRealityDataSource::Data::_InitFrom;
             DGNPLATFORM_EXPORT void SetExpirationDate(DateTime const& date);
             DGNPLATFORM_EXPORT void SetEntityTag(Utf8CP eTag);
+            // If authentication string given is empty it indicate that there are no authentication
+            DGNPLATFORM_EXPORT void SetAuthenticationString(Utf8StringCR authenticationString);
             virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, RequestOptions const& options) = 0;
         public:
             DGNPLATFORM_EXPORT DateTime const& GetExpirationDate() const;
             DGNPLATFORM_EXPORT Utf8CP GetEntityTag() const;
+            DGNPLATFORM_EXPORT bool GetRequiresAuthentication() const;
+            DGNPLATFORM_EXPORT Utf8StringCR GetAuthenticationString() const;
         };
         
     //===================================================================================
