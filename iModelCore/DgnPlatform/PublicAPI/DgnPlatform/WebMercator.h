@@ -65,7 +65,7 @@ struct Tile : RefCountedBase, NonCopyableClass
     void SetQueued() {m_loadStatus.store(LoadStatus::Queued);}
     void SetLoaded() {m_loadStatus.store(LoadStatus::Ready);}
     void SetAbandoned() {m_loadStatus.store(LoadStatus::Abandoned);}
-    void SetNotFound() {BeAssert(false); return m_loadStatus.store(LoadStatus::NotFound);}
+    void SetNotFound() {m_loadStatus.store(LoadStatus::NotFound);}
     bool IsQueued() const {return m_loadStatus.load() == LoadStatus::Queued;}
     TileId GetTileId() const {return m_id;}
     Tile(TileId id, Corners const& corners) : m_id(id), m_corners(corners){Accessed();}
@@ -132,8 +132,9 @@ protected:
     };
 
     Properties m_properties;
-    mutable RealityData::CachePtr m_realityDataCache;
+    Dgn::RealityData::Cache2Ptr m_cache;
     mutable TileCache m_tileCache;
+    void CreateCache();
 
 public:
     struct CreateParams : T_Super::CreateParams
@@ -148,10 +149,9 @@ public:
     void RequestTile(TileId, TileR, Render::SystemR) const;
     TilePtr CreateTile(TileId id, Tile::Corners const&, Render::SystemR) const;
 
-    RealityData::Cache& GetRealityDataCache() const;
     TileCache& GetTileCache() const {return m_tileCache;}
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
-    WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {}
+    WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {CreateCache();}
 
     void _AddTerrainGraphics(TerrainContextR) const override;
     void _WriteJsonProperties(Json::Value&) const override;
