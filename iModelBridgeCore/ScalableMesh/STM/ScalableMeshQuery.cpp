@@ -1628,6 +1628,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
             pts.push_back(m_points[m_faceIndexes[t + 2] - 1]);
             destIdx[m_faceIndexes[t + 2] - 1] = (int)pts.size() - 1;
             }
+        if (destIdx[m_faceIndexes[t + 2] - 1] == destIdx[m_faceIndexes[t + 1] - 1] || destIdx[m_faceIndexes[t + 2] - 1] == destIdx[m_faceIndexes[t] - 1] || destIdx[m_faceIndexes[t + 1] - 1] == destIdx[m_faceIndexes[t] - 1]) continue;
         indices.push_back(destIdx[m_faceIndexes[t] - 1]);
         if (bsiGeom_getXYPolygonArea(&triangle[0], 3) < 0)
             {
