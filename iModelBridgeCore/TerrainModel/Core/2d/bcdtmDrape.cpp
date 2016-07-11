@@ -2879,7 +2879,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
                if( zdp < 0.0 ) zdp = -zdp ;
                surfacePointP->x = xls + ( nx  - xls  ) * zdp / (zdp+zdn) ;
                surfacePointP->y = yls + ( ny  - yls  ) * zdp / (zdp+zdn) ;
-               surfacePointP->z = zls + ( nzl - zls  ) * zdp / (zdp+zdn) ;
+               surfacePointP->z = zls + ( nzs - zls  ) * zdp / (zdp+zdn) ;
               } 
 /*
 **          Get Triangle For Surface Point
