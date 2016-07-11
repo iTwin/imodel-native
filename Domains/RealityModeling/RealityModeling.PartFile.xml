@@ -100,6 +100,7 @@
 
     
     <Part Name="ThreeMxSchema" BMakeFile="ThreeMxSchema/ThreeMxSchema.mke">
+        <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="ThreeMxSchemaPublicAPI"/>
         <Bindings>

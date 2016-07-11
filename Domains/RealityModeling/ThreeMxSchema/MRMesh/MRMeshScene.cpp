@@ -34,7 +34,16 @@ ThreeMxScenePtr   MRMeshScene::Create (S3SceneInfo const& sceneInfo, WCharCP fil
     {
     MRMeshScene*    scene = new MRMeshScene (sceneInfo, fileName);
  
-    BeFileName   scenePath (BeFileName::DevAndDir, fileName);
+    // This is an unfortunate patch to temporarily support ThreeMX on Stream-X HTTP servers in ConceptStation
+	// on the stream DgnDb06 ONLY. Code on newer streams will require other changes.
+	// DO NOT PORT!
+	Utf8String tempFileName;
+    if (NULL != fileName)
+        BeStringUtilities::WCharToUtf8(tempFileName, fileName);
+
+    MRMeshFileName scenePathTMP(tempFileName, true);
+
+    BeFileName   scenePath (scenePathTMP.c_str());
     for (bvector<std::string>::const_iterator child = sceneInfo.meshChildren.begin (); child != sceneInfo.meshChildren.end (); child++)
         {
         MRMeshNodePtr       childNode = MRMeshNode::Create ();

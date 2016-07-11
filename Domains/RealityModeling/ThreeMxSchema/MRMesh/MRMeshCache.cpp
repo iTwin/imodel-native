@@ -9,15 +9,32 @@
 
 #include    <DgnPlatform/HttpHandler.h>
 
+// This is to temporarily support ThreeMX on Stream-X HTTP servers in ConceptStation
+// on the stream DgnDb06 ONLY. Code on newer streams will require other changes.
+// DO NOT PORT!
+#include <WebServices/Client/WSClient.h>
+#include <WebServices/Connect/SamlToken.h>
+#include <WebServices/Connect/Authentication.h>
+#include <WebServices/Connect/Connect.h>
+#include <WebServices/Connect/ConnectSetup.h>
+#include <WebServices/Connect/ConnectSpaces.h>
+#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
+
 #include    <windows.h>
 
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
+// This is to temporarily support ThreeMX on Stream-X HTTP servers in ConceptStation
+// on the stream DgnDb06 ONLY. Code on newer streams will require other changes.
+// DO NOT PORT!
+USING_NAMESPACE_BENTLEY_WEBSERVICES
+
 #define     ONE_GB   (1024 * 1024 * 1024)
 
 int s_debugCacheLevel = 0;
+
 
 
 
@@ -309,7 +326,7 @@ struct MRMeshHttpData : MRMeshData, IRealityData<MRMeshHttpData, BeSQLiteReality
     struct RequestOptions : MRMeshData::RequestOptions, IRealityData::RequestOptions
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    private:
+    protected:
         RequestOptions(bool synchronous) : MRMeshData::RequestOptions()
             {
             DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
@@ -321,8 +338,12 @@ struct MRMeshHttpData : MRMeshData, IRealityData<MRMeshHttpData, BeSQLiteReality
         static RefCountedPtr<RequestOptions> Create(bool synchronous) {return new RequestOptions(synchronous);}
     };
 
-private:
-    MRMeshHttpData () {}
+protected:
+    MRMeshHttpData () 
+        {
+        SetAuthenticationString(""); // This initializes the authentication requirements to no authentication
+        }    
+
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
@@ -335,6 +356,50 @@ public:
     static RefCountedPtr<MRMeshHttpData> Create() {return new MRMeshHttpData();}
 };
 typedef RefCountedPtr<MRMeshHttpData> MRMeshHttpDataPtr;
+
+
+//=======================================================================================
+// This class derives from previous HTTP data to be used by RealityDataCache.
+// It implements an HTTP data specialised for used in CONNECT through the
+// Web Service Gateway (WSG) that requires as authentication the token from the
+// locally logged Connection Client.
+// Note that it makes use of the ancested Request Options.
+// @bsiclass                                        Alain.Robert           06/2016
+//=======================================================================================
+struct MRMeshWSGHttpData : MRMeshHttpData
+{
+
+
+private:
+    MRMeshWSGHttpData () 
+        {
+        SetAuthenticationString(GetStaticWSGAuthorizationToken());
+        }
+protected:
+public:
+    static RefCountedPtr<MRMeshWSGHttpData> Create() {return new MRMeshWSGHttpData();}
+
+    static Utf8StringCR GetStaticWSGAuthorizationToken() 
+        {
+        static Utf8String s_authorizationToken;  
+
+        if (s_authorizationToken.empty())
+            {
+            Utf8String          cacheToken;
+            SamlTokenPtr cacheTokenPtr = ConnectAuthenticationPersistence::GetShared()->GetToken();
+            if (cacheTokenPtr != nullptr && !cacheTokenPtr->IsEmpty())
+                cacheToken = cacheTokenPtr->AsString();
+
+            Utf8String stsToken;
+            stsToken = "Token ";
+
+            s_authorizationToken = stsToken.append(cacheToken).c_str();
+            }
+        return s_authorizationToken;
+        }
+   
+};
+typedef RefCountedPtr<MRMeshWSGHttpData> MRMeshWSGHttpDataPtr;
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            04/2015
@@ -445,6 +510,8 @@ void CloneNodeFromMRMeshData(MRMeshNode& node, MRMeshData const& meshData)
     node.m_info = info;
     }
 
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -452,12 +519,31 @@ RealityDataCacheResult RequestData(MRMeshNode* node, BeFileNameCR path, bool syn
     {
     RealityDataCacheResult result;
 
+	
     if (path.IsUrl())
         {
-        MRMeshHttpDataPtr meshData;
-        result = m_cache->Get (meshData, path.GetNameUtf8().c_str(), *MRMeshHttpData::RequestOptions::Create(synchronous));
-        if (RealityDataCacheResult::Success == result && nullptr != node)
+        // This is to temporarily support ThreeMX on Stream-X HTTP servers in ConceptStation
+        // on the stream DgnDb06 ONLY. Code on newer streams will require other changes.
+        // DO NOT PORT!
+        Utf8String tempFileName;
+        BeStringUtilities::WCharToUtf8(tempFileName, path);
+
+        MRMeshFileName meshFileName(tempFileName);
+    
+        if (meshFileName.IsS3MXUrl())
+            {
+            MRMeshWSGHttpDataPtr meshData;
+            result = m_cache->Get (meshData, path.GetNameUtf8().c_str(), *MRMeshHttpData::RequestOptions::Create(synchronous));
+            if (RealityDataCacheResult::Success == result && nullptr != node)
+                CloneNodeFromMRMeshData(*node, *meshData);
+            }
+        else
+            {
+            MRMeshHttpDataPtr meshData;
+            result = m_cache->Get (meshData, path.GetNameUtf8().c_str(), *MRMeshHttpData::RequestOptions::Create(synchronous));
+            if (RealityDataCacheResult::Success == result && nullptr != node)
             CloneNodeFromMRMeshData(*node, *meshData);
+            }
         }
     else
         {
@@ -496,7 +582,15 @@ MRMeshCacheManager::RequestStatus ProcessRequests ()
             {
             case RealityDataCacheResult::Success:
                 {
-                curr->first->_SetDirectory (BeFileName (BeFileName::DevAndDir, fileName));
+				// This is to temporarily support ThreeMX on Stream-X HTTP servers in ConceptStation
+                // on the stream DgnDb06 ONLY. Code on newer streams will require other changes.
+                // DO NOT PORT!
+                Utf8String tempFileName;
+                if (NULL != fileName)
+                    BeStringUtilities::WCharToUtf8(tempFileName, fileName);
+
+                MRMeshFileName scenePathTMP(tempFileName, true);
+                curr->first->_SetDirectory (BeFileName (scenePathTMP.c_str()));
 
                 requestsProcessed++;
                 curr = m_requests.erase (curr);
@@ -654,7 +748,15 @@ BentleyStatus   SynchronousRead (MRMeshNodeR node, BeFileNameCR fileName)
     if (RealityDataCacheResult::Success != status)
         return ERROR;
 
-    node._SetDirectory (BeFileName (BeFileName::DevAndDir, fileName));
+    // This is to temporarily support ThreeMX on Stream-X HTTP servers in ConceptStation
+    // on the stream DgnDb06 ONLY. Code on newer streams will require other changes.
+    // DO NOT PORT!
+    Utf8String tempName;
+    BeStringUtilities::WCharToUtf8(tempName, fileName);
+
+    MRMeshFileName scenePathTMP(tempName, true);
+
+    node._SetDirectory (BeFileName (scenePathTMP.c_str()));
     return SUCCESS;
     }
 
@@ -786,7 +888,7 @@ MRMeshCacheManager::~MRMeshCacheManager()
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  MRMeshUtil::ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP  fileName)
+BentleyStatus  MRMeshUtil::ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP  fileName, Utf8StringCP authToken)
     {
     std::string     err;
     BeFileName      beFileName (fileName);
@@ -797,8 +899,13 @@ BentleyStatus  MRMeshUtil::ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP  fileN
     Utf8String                      url;
     bmap<Utf8String, Utf8String>    header;
 
-    HttpRequest         request (beFileName.GetNameUtf8().c_str(), header);
-    HttpResponsePtr     response;
+    // Add authorization token if provided ... it is the responsibility of the caller to determine if one is required.
+    if (NULL != authToken && !authToken->empty())
+        header["Authorization"] = *authToken;
+
+    // We have two objects HttpRequests so we need to scope to get the right one.
+    Dgn::HttpRequest         request (beFileName.GetNameUtf8().c_str(), header);
+    Dgn::HttpResponsePtr     response;
 
     if (HttpRequestStatus::Success != HttpHandler::Instance().Request (response, request))
         return ERROR;

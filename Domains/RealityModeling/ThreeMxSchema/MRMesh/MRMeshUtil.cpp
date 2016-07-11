@@ -13,6 +13,10 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
+
+
+
+
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -23,11 +27,22 @@ BeFileName MRMeshUtil::ConstructNodeName (std::string const& childName, BeFileNa
     if (nodeFileName.IsAbsolutePath() ||  nodeFileName.IsUrl())
         return nodeFileName;
 
-    BeFileName fullNodeFileName = (NULL == parentName) ? BeFileName() : *parentName;
+    // This is an unfortunate patch to temporarily support ThreeMX on Stream-X HTTP servers in ConceptStation
+	// on the stream DgnDb06 ONLY. Code on newer streams will require other changes.
+	// DO NOT PORT!
+    MRMeshFileName fullNodeFileName;
 
-    fullNodeFileName.AppendToPath (nodeFileName.c_str());
+    // Patch to support Stream-X
+    if (parentName != NULL)
+		{
+		Utf8String tempString;
+        BeStringUtilities::WCharToUtf8(tempString, *parentName);
+		fullNodeFileName = tempString;
+		}
 
-    return fullNodeFileName;
+    fullNodeFileName.AppendToPath (childName.c_str());
+
+    return BeFileName(fullNodeFileName.c_str());
     }
 
 /*-----------------------------------------------------------------------------------**//**

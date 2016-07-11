@@ -16,6 +16,7 @@ THREEMXSCHEMA_TYPEDEFS(MRMeshNode)
 THREEMXSCHEMA_TYPEDEFS(MRMeshGeometry)
 THREEMXSCHEMA_TYPEDEFS(MRMeshTexture)
 THREEMXSCHEMA_TYPEDEFS(MRMeshCacheManager)
+THREEMXSCHEMA_TYPEDEFS(MRMeshFileName)
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -152,6 +153,46 @@ public:
 
 };  // MRMeshScene
 
+/*=================================================================================**//**
+* @bsiclass                                                     Alain.Robert     05/2016
+* This class is used internally in ThreeMx to carry and manipulate 3MX file names. 
+* Contrary to a BeFileName that is adequate for local file names this class will 
+* transport http based file names without replacing slashes and more importantly
+* allow to append / change file names even on Stream-X WSG REST URL that unfortunately
+* has a strange URL encoded path embedded in the middle of the URL due to WSG API constaints.
++===============+===============+===============+===============+===============+======*/
+struct  MRMeshFileName : Utf8String
+{
+    MRMeshFileName () {};
+
+    MRMeshFileName (Utf8StringCR name);
+    MRMeshFileName (Utf8CP name);
+    MRMeshFileName (Utf8StringCR name, bool pathOnly);
+    MRMeshFileName (Utf8CP name, bool pathOnly);
+    MRMeshFileName (const MRMeshFileName& name);
+    MRMeshFileName& operator=(const MRMeshFileName& object) {bastring::operator=(object); return *this;}
+    MRMeshFileName& operator=(const Utf8String& object) {bastring::operator=(object); return *this;}
+    
+
+    ~MRMeshFileName() {}
+
+
+    void AppendToPath(Utf8StringCR pathToAdd);
+    bool IsUrl() const;
+    bool IsS3MXUrl() const;
+    bool IsAbsolutePath() const;
+    Utf8String GetFileNameWithoutExtension() const;
+
+private:
+    bool ParseUrl(Utf8StringP protocol, Utf8StringP server, Utf8StringP remainder) const;
+    bool ParseWSGUrl(Utf8StringP protocol, Utf8StringP server, Utf8StringP version, Utf8StringP repositoryName, Utf8StringP schemaName, Utf8StringP className, Utf8StringP objectId, bool* contentFlag) const;
+
+    bool BuildWSGUrl(Utf8StringCR protocol, Utf8StringCR server, Utf8StringCR version, Utf8StringCR repositoryName, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR objectId, bool contentFlag);
+    bool AppendToS3MXFileName(Utf8StringCR additionalPath);
+    void StripOutFileName();
+
+};  // MRMeshFileName
+
 typedef     bvector <MRMeshNodePtr>  T_MeshNodeArray;
 
 /*=================================================================================**//**
@@ -256,7 +297,7 @@ struct  MRMeshUtil
 {
     static void                 DisplayNodeFailureWarning (WCharCP fileName) { BeAssert(false); };
     static BeFileName           ConstructNodeName (std::string const& childName, BeFileNameCP parentName);
-    static BentleyStatus        ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP fileName);
+    static BentleyStatus        ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP fileName, Utf8StringCP authToken);
     static void                 GetMemoryStatistics (size_t& memoryLoad, size_t& total, size_t& available);
     static double               CalculateResolutionRatio ();
     static BentleyStatus        ParseTileId(std::string const& name, uint32_t& tileX, uint32_t& tileY);
