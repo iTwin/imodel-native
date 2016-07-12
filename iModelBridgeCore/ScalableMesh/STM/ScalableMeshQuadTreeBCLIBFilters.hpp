@@ -11,7 +11,7 @@
 //:>+--------------------------------------------------------------------------------------
 #include <windows.h> //for showing info.
 #include <ImagePP/all/h/HFCException.h>
-//#include "ScalableMesh/Garland/GarlandMeshFilter.h"
+
 #include "ScalableMesh\ScalableMeshGraph.h"
 #include "CGALEdgeCollapse.h"
 #include "ScalableMeshMesher.h"
@@ -359,9 +359,6 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
                     pointArrayInitialNumber[indexNodes] = subNodePointsPtr->size();
 
-                    // Randomize the node content
-                    //NEEDS_WORK_SM - Cannot random_shuffle once meshed. 
-                    //subNodes[indexNodes]->random_shuffle();
 
                     vector<POINT> points(subNodePointsPtr->size());
                     memcpy(&points[0], &(*subNodePointsPtr)[0], points.size() * sizeof(POINT));
@@ -372,10 +369,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
                     parentPointsPtr->push_back(&points[0], count);
-                    /*
-                    subNodes[indexNodes]->clearFrom (indexStart);
-                    subNodes[indexNodes]->m_nodeHeader.m_totalCount -= pointArrayInitialNumber[indexNodes] - subNodes[indexNodes]->size();
-                    */
+
                 }               
             }
             if (!extent.IsNull())  parentNode->m_nodeHeader.m_contentExtent = extent;
@@ -407,25 +401,15 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
     size_t numSubNodes) const
     {
     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);    
-   // if (NULL == pParentMeshNode->GetGraphPtr()) pParentMeshNode->LoadGraph();
+  
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(pParentMeshNode->GetGraphPtr());
     MTGGraph* meshInput = nullptr;
     std::vector<DPoint3d> inputPts;
     DPoint3d extentMin, extentMax;
     extentMin = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMin(pParentMeshNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(pParentMeshNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(pParentMeshNode->m_nodeHeader.m_nodeExtent));
     extentMax = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMax(pParentMeshNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(pParentMeshNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(pParentMeshNode->m_nodeHeader.m_nodeExtent));
-    Utf8String path = "E:\\output\\scmesh\\2016-05-05\\";
-   //     path += (std::to_string((unsigned long long) parentNode.GetPtr())+"_").c_str();
-   /* path.append("filter.log");
-    std::ofstream f;
-    f.open(path.c_str(), std::ios_base::app);
-    f << " CREATING NODE " + std::to_string(parentNode->GetBlockID().m_integerID) + " FROM ";
-    for (auto& node : subNodes)
-        {
-        if (node != nullptr) f << std::to_string(node->GetBlockID().m_integerID) + " ";
-        }
-    f << std::endl;
-    f.close();*/
+
+
     bvector<bvector<DPoint3d>> polylines;
     bvector<DTMFeatureType> types;
     for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
@@ -437,7 +421,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
             if (numFaceIndexes > 0)
                 {
                 HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);                
-              //  if (NULL == subMeshNode->GetGraphPtr()) subMeshNode->LoadGraph();
+              
                 RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> subMeshGraphPtr(subMeshNode->GetGraphPtr());
                 if (meshInput == nullptr)
                     {
@@ -449,20 +433,6 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     PtToPtConverter::Transform(&inputPts[0], &(*subMeshPointsPtr)[0], inputPts.size());        
                     subMeshNode->ReadFeatureDefinitions(polylines, types);
 
-                   /* Utf8String str2 = "beforeFilter_beforeMerge_sub_";
-                    str2 += std::to_string(inputPts.size()).c_str();
-                    PrintGraph(path, str2, subMeshNode->GetGraphPtr());
-                    str2 += "_init1.g";
-                    void* graphData;
-                    size_t ct = meshInput->WriteToBinaryStream(graphData);
-                    FILE* graphSaved = fopen((path + str2).c_str(), "wb");
-                    fwrite(&ct, sizeof(size_t), 1, graphSaved);
-                    fwrite(graphData, 1, ct, graphSaved);
-                    size_t npts = inputPts.size();
-                    fwrite(&npts, sizeof(size_t), 1, graphSaved);
-                    fwrite(&inputPts[0], sizeof(DPoint3d), npts, graphSaved);
-                    fclose(graphSaved);
-                    delete[]graphData;*/
                     }
                 else
                     {
@@ -478,7 +448,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     for (int i = 0; i < (int)inputPts.size(); i++)
                         {
                         stitchedSet.insert(std::make_pair(inputPts[i], i));
-                        //stitchedSet.push_back(std::make_pair(stitchedPoints[i], i));
+                        
                         }
 
                     for (size_t i = 0; i < pts.size(); i++)
@@ -488,48 +458,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                         else pointsToDestPointsMap[i] = -1;
                         }
                     bvector<int> contours;
-/*                    std::ofstream fn;
-                    fn.open((path +"_processidx.log").c_str(), std::ios_base::trunc);
-                    for (size_t n = 0; n < pointsToDestPointsMap.size(); n++)
-                        {
-                        fn << " ORIGINAL " + std::to_string(n + 1) + " NEW " + std::to_string(pointsToDestPointsMap[n] + 1) << std::endl;
-                        }
-                    fn.close();*/
-                   /* Utf8String str2 = "beforeFilter_beforeMerge_sub_";
-                    str2 += std::to_string(pts.size()).c_str();
-                    PrintGraph(path, str2, subMeshNode->GetGraphPtr());
-                    str2 += "_init2.g";
-                    void* graphData;
-                    size_t ct = subMeshNode->GetGraphPtr()->WriteToBinaryStream(graphData);
-                    FILE* graphSaved = fopen((path + str2).c_str(), "wb");
-                    fwrite(&ct, sizeof(size_t), 1, graphSaved);
-                    fwrite(graphData, 1, ct, graphSaved);
-                    size_t npts = pts.size();
-                    fwrite(&npts, sizeof(size_t), 1, graphSaved);
-                    fwrite(&pts[0], sizeof(DPoint3d), npts, graphSaved);
-                    fclose(graphSaved);*/
-                   // if (NULL == subMeshNode->GetGraphPtr()) subMeshNode->LoadGraph();
+
                     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> subMeshGraphPtr(subMeshNode->GetGraphPtr());
                     if(nullptr != subMeshGraphPtr->GetData()) MergeGraphs(meshInput, inputPts, subMeshGraphPtr->EditData(), pts, extentMin, extentMax, pointsToDestPointsMap, contours);
-                   /* if (pParentMeshNode->GetBlockID().m_integerID == 15)
-                        {
-                        bvector<TaggedEdge> edges;
-                        std::vector<int> temp;
-                        ReadFeatureEndTags(meshInput, temp, edges);
-                        }*/
-                    /*Utf8String str1 = "beforeFilter_afterMerge_sub_";
-                    str1 += std::to_string(pts.size()).c_str();
-                    PrintGraph(path, str1, meshInput);
-                    str1 += "_.g";
-                    delete []graphData;
-                    ct = meshInput->WriteToBinaryStream(graphData);
-                    graphSaved = fopen((path + str1).c_str(), "wb");
-                    fwrite(&ct, sizeof(size_t), 1, graphSaved);
-                    fwrite(graphData, 1, ct, graphSaved);
-                    npts = inputPts.size();
-                    fwrite(&npts, sizeof(size_t), 1, graphSaved);
-                    fwrite(&inputPts[0], sizeof(DPoint3d), npts, graphSaved);
-                    fclose(graphSaved);*/
+
                     }                
                 }
             }

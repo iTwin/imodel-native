@@ -2134,24 +2134,24 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
     }
 
 template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_GetChildrenNodes() const
-	{
-	LOAD_NODE
+    {
+    LOAD_NODE
 
-	bvector<IScalableMeshNodePtr> children;
+    bvector<IScalableMeshNodePtr> children;
     if (m_node->m_nodeHeader.m_IsLeaf) return children;
-	if (m_node->GetSubNodeNoSplit() != NULL)
-		{
-		auto var = m_node->GetSubNodeNoSplit();
-		children.push_back(new ScalableMeshNode<POINT>(var));
-		}
-	else
-		for (size_t i = 0; i < m_node->m_apSubNodes.size(); i++)
-			{
-			children.push_back(new ScalableMeshNode<POINT>(m_node->m_apSubNodes[i]));
-			}
+    if (m_node->GetSubNodeNoSplit() != NULL)
+        {
+        auto var = m_node->GetSubNodeNoSplit();
+        children.push_back(new ScalableMeshNode<POINT>(var));
+        }
+        else
+        for (size_t i = 0; i < m_node->m_apSubNodes.size(); i++)
+        {
+        children.push_back(new ScalableMeshNode<POINT>(m_node->m_apSubNodes[i]));
+        }
 
-	return children;
-	}
+    return children;
+    }
 
 template <class POINT> size_t ScalableMeshNode<POINT>::_GetLevel() const
     {
@@ -2194,8 +2194,7 @@ template <class POINT> size_t ScalableMeshNode<POINT>::_GetPointCount() const
     LOAD_NODE
 
     return m_node->GetNbObjects();
-    //NEEDSWORK_SM: GetNbObjects() is sometimes 0 here
-    //return m_node->size();
+
     }  
 
 template <class POINT> bool ScalableMeshNode<POINT>::_IsHeaderLoaded() const
@@ -2224,21 +2223,7 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
     {
     s_nGetDTMs++;
     auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
-  /*  std::lock_guard<std::mutex> m(m_meshNode->m_dtmLock);
-    if (m_meshNode->m_tileBcDTM.get() != nullptr)
-        return m_meshNode->m_tileBcDTM.get();
-    else
-        {
-        s_nMissedDTMs++;
-            {
-            bvector<bool> clips;
-            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-            auto meshP = GetMesh(flags, clips);
-            if (meshP == nullptr) return nullptr;
-            meshP->GetAsBcDTM(m_meshNode->m_tileBcDTM);
-            return m_meshNode->m_tileBcDTM.get();
-            }
-        }*/
+
     if (m_meshNode->GetTileDTM().get() == nullptr || m_meshNode->GetTileDTM()->GetData() == nullptr) return nullptr;
     return *m_meshNode->GetTileDTM()->GetData();
     }
@@ -2301,13 +2286,6 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
 
 template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips() const
     {
-    /*ClipRegistry* clipRegistryP(dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->GetClipRegistry());
-   
-    for (size_t i = 0; i < clipRegistryP->GetNbClips(); ++i)
-        {
-        //NEEDS_WORK_SM : must remove + 1 magic number
-        _AddClip(i + 1, true);
-        }*/
        
     _RefreshMergedClip();    
     }
@@ -2374,9 +2352,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
     CreateGraphFromIndexBuffer(newGraphP, (const long*)&indicesVec[0], (int)nIndices, (int)nodePts.size(), componentPointsId, &nodePts[0]);
     graphPtr->SetData(newGraphP);
     graphPtr->SetDirty();
-    // m_meshNode->GetGraphPtr()->SortNodesBasedOnLabel(0);
-    //m_meshNode->SetGraphDirty();
-   // m_meshNode->StoreGraph();
+
 
     if (componentPointsId.size() > 0)
         {
@@ -2440,9 +2416,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
     MTGGraph* newGraphP = new MTGGraph();
     CreateGraphFromIndexBuffer(newGraphP , (const long*)&indicesLine[0], (int)indicesLine.size(), (int)nodePts.size(), componentPointsId, &vertices[0]);
-    //m_meshNode->GetGraphPtr()->SortNodesBasedOnLabel(0);
-   // m_meshNode->SetGraphDirty();
-    //m_meshNode->StoreGraph();
+
     graphPtr->SetData(newGraphP);
     graphPtr->SetDirty();
 
@@ -2585,11 +2559,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
             dataPoints[pointInd] = converter.operator()(pointsPtr->operator[](pointInd));
             }
         m_reprojectFunction.Reproject(&dataPoints[0], dataPoints.size(), &dataPoints[0]);
-        //int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)&m_node->operator[](m_node->size()), 0, 0, 0);
-        // NEEDS_WORK_SM : texture logique !
- /*       std::ofstream file_s;
-        file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
-        file_s << "PushIndices etc... -- shit 14" << endl;*/
+
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(m_meshNode->GetPtsIndicePtr());
 
         int status = meshPtr->AppendMesh(dataPoints.size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, &(*ptsIndices)[0], 0, 0, 0, 0, 0, 0);

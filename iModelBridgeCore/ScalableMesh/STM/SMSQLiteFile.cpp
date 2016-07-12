@@ -30,26 +30,24 @@ void SMSQLiteFile::CommitAll()
     }
 
 bool SMSQLiteFile::Close()
-{
-m_database->SaveChanges();
-    //DbResult result;
-    /*result =*/ m_database->CloseDb();
-    
-    //assert(result == BE_SQLITE_OK);
-    return true;// result == BE_SQLITE_OK;
-}
+    {
+    m_database->SaveChanges();
+    m_database->CloseDb();
+    return true;
+    }
+
+
 bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly)
-{
-if (m_database == nullptr)
-m_database = new ScalableMeshDb();
+    {
+    if (m_database == nullptr)
+    m_database = new ScalableMeshDb();
     DbResult result;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
     result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
 
-    //assert(result == BE_SQLITE_OK);
     return result == BE_SQLITE_OK;
-}
+    }
 
 bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly)
     {
@@ -525,7 +523,7 @@ void SMSQLiteFile::GetFeature(int64_t featureID, bvector<uint8_t>& featureData, 
     m_database->GetCachedStatement(stmt, "SELECT FeatureData, length(FeatureData), Size FROM SMFeatures WHERE FeatureId=?");
     stmt->BindInt64(1, featureID);
     DbResult status = stmt->Step();
-    // assert(status == BE_SQLITE_ROW);
+
     if (status == BE_SQLITE_DONE)
         {
         uncompressedSize = 0;
@@ -543,7 +541,7 @@ void SMSQLiteFile::GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, si
     m_database->GetCachedStatement(stmt, "SELECT PolygonData, length(PolygonData), Size FROM SMClipDefinitions WHERE PolygonId=?");
     stmt->BindInt64(1, clipID);
     DbResult status = stmt->Step();
-    // assert(status == BE_SQLITE_ROW);
+
     if (status == BE_SQLITE_DONE)
         {
         uncompressedSize = 0;
@@ -623,10 +621,6 @@ void SMSQLiteFile::StorePoints(int64_t& nodeID, const bvector<uint8_t>& pts, siz
         stmt->BindInt64(5, 0);
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
-        /*CachedStatementPtr stmt2;
-        m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
-        status = stmt2->Step();
-        nodeID = stmt2->GetValueInt64(0);*/
         }
     else
         {
@@ -660,17 +654,12 @@ void SMSQLiteFile::StoreIndices(int64_t& nodeID, const bvector<uint8_t>& indices
         stmt->BindInt64(5, uncompressedSize);
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
-       /* CachedStatementPtr stmt2;
-        m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
-        status = stmt2->Step();
-        nodeID = stmt2->GetValueInt64(0);*/
         stmt->ClearBindings();
         }
     else if (nodeID == SQLiteNodeHeader::NO_NODEID)
         {
         Savepoint insertTransaction(*m_database, "insert");
         m_database->GetCachedStatement(stmt, "INSERT INTO SMPoint (PointData, IndexData, SizePts, SizeIndices) VALUES(?,?,?,?)");
-        //stmt->BindInt64(1, nodeID);
         stmt->BindBlob(1, nullptr, 0, MAKE_COPY_NO);
         stmt->BindBlob(2, &indices[0], (int)indices.size(), MAKE_COPY_NO);
         stmt->BindInt64(3, 0);
@@ -682,10 +671,10 @@ void SMSQLiteFile::StoreIndices(int64_t& nodeID, const bvector<uint8_t>& indices
             s = std::to_string(status);
             }
         assert(status == BE_SQLITE_DONE);
-        /* CachedStatementPtr stmt2;
+         CachedStatementPtr stmt2;
         m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
         status = stmt2->Step();
-        nodeID = stmt2->GetValueInt64(0);*/
+        nodeID = stmt2->GetValueInt64(0);
         stmt->ClearBindings();
         }
     else
@@ -967,7 +956,7 @@ void SMSQLiteFile::GetClipPolygonMetadata(uint64_t clipID, double& importance, i
     m_database->GetCachedStatement(stmt, "SELECT Importance, NDimensions FROM SMClipDefinitions WHERE PolygonId=?");
     stmt->BindInt64(1, clipID);
     DbResult status = stmt->Step();
-    // assert(status == BE_SQLITE_ROW);
+
     if (status != BE_SQLITE_ROW) return;
     importance = stmt->GetValueDouble(0);
     nDimensions = stmt->GetValueInt(1);
@@ -1143,7 +1132,6 @@ size_t SMSQLiteFile::GetNumberOfUVs(int64_t nodeID)
     m_database->GetCachedStatement(stmt, "SELECT SizeUVs FROM SMUVs WHERE NodeId=?");
     stmt->BindInt64(1, nodeID);
     DbResult status = stmt->Step();
-    // assert(status == BE_SQLITE_ROW);
     if (status != BE_SQLITE_ROW) return 0;
     return stmt->GetValueInt64(0);
     }
@@ -1155,7 +1143,6 @@ size_t SMSQLiteFile::GetNumberOfFeaturePoints(int64_t featureID)
     m_database->GetCachedStatement(stmt, "SELECT Size FROM SMFeatures WHERE FeatureId=?");
     stmt->BindInt64(1, featureID);
     DbResult status = stmt->Step();
-    // assert(status == BE_SQLITE_ROW);
     if (status != BE_SQLITE_ROW) return 0;
     return stmt->GetValueInt64(0) / sizeof(int32_t);
     }
@@ -1167,7 +1154,6 @@ size_t SMSQLiteFile::GetClipPolygonByteCount(int64_t clipID)
     m_database->GetCachedStatement(stmt, "SELECT Size FROM SMClipDefinitions WHERE PolygonId=?");
     stmt->BindInt64(1, clipID);
     DbResult status = stmt->Step();
-    // assert(status == BE_SQLITE_ROW);
     if (status != BE_SQLITE_ROW) return 0;
     return stmt->GetValueInt64(0);
     }
@@ -1179,7 +1165,6 @@ size_t SMSQLiteFile::GetSkirtPolygonByteCount(int64_t clipID)
     m_database->GetCachedStatement(stmt, "SELECT Size FROM SMSkirts WHERE PolygonId=?");
     stmt->BindInt64(1, clipID);
     DbResult status = stmt->Step();
-    // assert(status == BE_SQLITE_ROW);
     if (status != BE_SQLITE_ROW) return 0;
     return stmt->GetValueInt64(0);
     }
@@ -1191,7 +1176,6 @@ void SMSQLiteFile::GetAllClipIDs(bvector<uint64_t>& allIds)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT PolygonId FROM SMClipDefinitions");
     DbResult status = stmt->Step();
-    // assert(status == BE_SQLITE_ROW);
     while (status == BE_SQLITE_ROW)
         {
         allIds.push_back(stmt->GetValueInt64(0));
@@ -1202,8 +1186,6 @@ void SMSQLiteFile::GetAllClipIDs(bvector<uint64_t>& allIds)
 
     bool SMSQLiteFile::SetWkt(WCharCP extendedWkt)
 {
-    /*char* tmpCharP = new char[extendedWkt.GetMaxLocaleCharBytes()];
-    filename.ConvertToLocaleChars(tmpCharP, extendedWkt.GetMaxLocaleCharBytes());*/
 
     Utf8String extendedWktUtf8String;
     BeStringUtilities::WCharToUtf8(extendedWktUtf8String, extendedWkt);
@@ -1217,15 +1199,14 @@ void SMSQLiteFile::GetAllClipIDs(bvector<uint64_t>& allIds)
     CachedStatementPtr stmt;
     if (nRows == 0)
     {
-        //Savepoint insertTransaction(*m_database, "insert");
+        
         m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, GCS, RootNodeId) VALUES(?,?,?)");
-        //stmt.Prepare(*m_database, "INSERT INTO SMMasterHeader (MasterHeaderId, GCS) VALUES(?,?)");
+
     }
     else
     {
-        //Savepoint insertTransaction(*m_database, "update");
+        
         m_database->GetCachedStatement(stmt, "UPDATE SMMasterHeader SET MasterHeaderId=?, GCS=? WHERE MasterHeaderID=?");
-        //stmt.Prepare(*m_database, "UPDATE SMMasterHeader SET MasterHeaderId=?, GCS=? WHERE MasterHeaderID=?");
     }
     stmt->BindInt64(1, id);
     BIND_VALUE_STR(stmt, 2, extendedWktUtf8String, MAKE_COPY_NO);
@@ -1233,14 +1214,9 @@ void SMSQLiteFile::GetAllClipIDs(bvector<uint64_t>& allIds)
         stmt->BindInt64(3, id);
     else
         stmt->BindInt64(3, SQLiteNodeHeader::NO_NODEID);
-    /*stmt.Prepare(*m_database, "REPLACE INTO SMSources "
-        "(SourceId, SourceType, ModelId, ModelName, LevelId, LevelName, RootToRefPersistentPath, ReferenceName,"
-        " ReferenceModelName, GCS, Flags, TypeFamilyID, OrgCount, Layer, ComponentCount, MonikerType, CommandCount, CommandID, TimeLastModified) "
-        " VALUES(1, 2, 6553695, '', 3014702, '', '', '', '', 'LOCAL_CS["", "
-        "LOCAL_DATUM[\"AnywhereXYZ\", 11000, AUTHORITY[\"BENTLEY_SYSTEMS\", \"11000\"]], UNIT[\"m\", 1], AXIS[\"X\", OTHER], AXIS[\"Y\", OTHER], AXIS[\"Z\", OTHER], AUTHORITY[\"BENTLEY_SYSTEMS\", \"0\"]]', "
-        "1, '', 7340148, 4390944, 2, 1, 1, 12, 1452028924)");*/
+
     DbResult status = stmt->Step();
-    //m_database->SaveChanges();
+  
     assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
     return ((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
 }
@@ -1315,26 +1291,22 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
     {
         Utf8String extendedWktUtf8String;
         BeStringUtilities::WCharToUtf8(extendedWktUtf8String, sourceData.GetGCS().GetWCharCP());
-        // Logic to reconstruct all dimensionCount and company
-        /*std::vector<uint32_t> m_dimensionCount = sourceData.GetDimensionCount();
-        std::vector<byte> m_dimensionType = sourceData.GetDimensionType();
-        std::vector<byte> m_dimensionRole = sourceData.GetDimensionRole();
-        std::vector<WString> m_dimTypeName = sourceData.GetDimensionTypeName();*/
-        //uint32_t componentID = sourceData.GetComponentID();
+
+
         ScalableMeshData smData = sourceData.GetScalableMeshData();
 
         Utf8String modelNameUtf8String;
         BeStringUtilities::WCharToUtf8(modelNameUtf8String, sourceData.GetModelName().GetWCharCP());
-        //WString levelName = sourceData.GetLevelName();
+
         Utf8String levelNameUtf8String;
         BeStringUtilities::WCharToUtf8(levelNameUtf8String, sourceData.GetLevelName().GetWCharCP());
-        //WString rootToRefPersistentPath = sourceData.GetRootToRefPersistentPath();
+
         Utf8String rootToRefPersistentPathUtf8String;
         BeStringUtilities::WCharToUtf8(rootToRefPersistentPathUtf8String, sourceData.GetRootToRefPersistentPath().GetWCharCP());
-        //WString referenceName = sourceData.GetReferenceName();
+       
         Utf8String referenceNameUtf8String;
         BeStringUtilities::WCharToUtf8(referenceNameUtf8String, sourceData.GetReferenceName().GetWCharCP());
-        //WString referenceModelName = sourceData.GetReferenceModelName();
+   
         Utf8String referenceModelNameUtf8String;
         BeStringUtilities::WCharToUtf8(referenceModelNameUtf8String, sourceData.GetReferenceModelName().GetWCharCP());
 
@@ -1370,20 +1342,15 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         stmt->BindInt64(13, sourceData.GetFlags());
         stmt->BindInt64(14, sourceData.GetTypeFamilyID());
         stmt->BindInt64(15, sourceData.GetTypeID());
-       // stmt->BindInt64(16, sourceData.GetLayer());
-        //stmt->BindInt64(16, sourceData.GetComponentCount());
-        
-        //stmt->BindBlob(17, &sourceData.GetConfigComponentID()[0], sizeof(byte)*(int)(sourceData.GetComponentCount()), MAKE_COPY_YES);
+
 
         stmt->BindInt(16, sourceData.GetMonikerType());
         BIND_VALUE_STR(stmt, 17, monikerStringUtf8String, MAKE_COPY_NO);
-        /*stmt->BindInt64(21, sourceData.GetCommandCount());
 
-        stmt->BindBlob(22, &sourceData.GetCommandID()[0], sizeof(byte)*(int)(sourceData.GetCommandCount()), MAKE_COPY_YES);*/
 
         stmt->BindInt64(18, sourceData.GetTimeLastModified());
         stmt->BindInt64(19, smData.GetExtent().size());
-        //if(smData.GetExtent().size()>0)
+
         {
             stmt->BindBlob(20, &smData.GetExtent()[0], sizeof(DRange3d)*(int)smData.GetExtent().size(), MAKE_COPY_YES);
         }
@@ -1398,7 +1365,7 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         stmt->BindInt(29, smData.IsGridData() ? 1 : 0);
         DbResult status = stmt->Step();
         assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
-//        m_database->SaveChanges();
+
 
         for (auto& cmdData : sourceData.GetOrderedCommands())
             {
@@ -1499,23 +1466,18 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
         sourceData.SetFlags(stmt->GetValueInt64(12));
         sourceData.SetTypeFamilyID(stmt->GetValueInt64(13));
         sourceData.SetTypeID(stmt->GetValueInt64(14));
-       // sourceData.SetLayer(stmt->GetValueInt64(15));
+
 
         sourceData.SetMonikerType(stmt->GetValueInt(15));
         sourceData.SetMonikerString(WSTRING_FROM_CSTR(Utf8String(GET_VALUE_STR(stmt, 16)).c_str()));
-        /*sourceData.SetCommandCount(stmt->GetValueInt64(20));
 
-        std::vector<byte> commandID(sourceData.GetCommandCount());
-        std::memcpy(&commandID[0], stmt->GetValueBlob(21), sizeof(byte) * (int)sourceData.GetCommandCount());
-        sourceData.SetCommandID(commandID);*/
 
         sourceData.SetTimeLastModified(stmt->GetValueInt64(17));
 
         ScalableMeshData smData(ScalableMeshData::GetNull());
         size_t nLayer = stmt->GetValueInt64(18);
-        //if(nLayer>0)
+
         {
-            //stmt->BindBlob(21, reinterpret_cast<const byte*>(&smData.GetExtent()[0]), sizeof(DRange3d)*(int)smData.GetExtent().size(), MAKE_COPY_YES);
             std::vector<DRange3d> extents(nLayer);
             std::memcpy(&extents[0], stmt->GetValueBlob(19), sizeof(DRange3d)*(int)nLayer);
             smData.SetExtents(extents);

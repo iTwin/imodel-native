@@ -110,19 +110,7 @@ void FaceToUVMap::AddFacet(const int32_t* indices, const DPoint2d* uvCoords)
     stats << std::to_string(uvCoords[2].x) + " " + std::to_string(uvCoords[2].y) << std::endl;
     stats.close();
 #endif
-   /* std::array<int32_t, 3> idx = { 0, 1, 2 };
-    std::sort(idx.begin(), idx.end(), [&indices] (const int32_t& a, const int32_t&b) { return indices[a] < indices[b]; });
-    std::array<DPoint2d, 3> sortedUvs = { uvCoords[idx[0]], uvCoords[idx[1]], uvCoords[idx[2]] };
-    if (map.count(indices[idx[0]]) > 0 && map[indices[idx[0]]].count(indices[idx[1]]) > 0) 
-        {
-        if (map[indices[idx[0]]][indices[idx[1]]][1].first == -1)
-            map[indices[idx[0]]][indices[idx[1]]][1] = make_bpair(indices[idx[2]], sortedUvs);
-        }
-    else
-        {
-        std::array<bpair<int32_t, std::array<DPoint2d, 3>>, 2> values = { make_bpair(indices[idx[2]], sortedUvs), make_bpair(-1, sortedUvs) };
-        map[indices[idx[0]]][indices[idx[1]]] = values;
-        }*/
+
     int32_t edges[3][2] = { { indices[0], indices[1] }, { indices[1], indices[2] }, { indices[0], indices[2] } };
     for (size_t i = 0; i < 3; ++i)
         AddFacetOnEdge(indices, uvCoords, edges[i]);
@@ -130,22 +118,7 @@ void FaceToUVMap::AddFacet(const int32_t* indices, const DPoint2d* uvCoords)
 
 void FaceToUVMap::RemoveFacet(const int32_t* indices)
     {
-   /* bool deleteEdge = false;
-    if (map.count(indices[0]) > 0 && map[indices[0]].count(indices[1]) > 0)
-        {
-        if (map[indices[0]][indices[1]][0].first == indices[2])
-            {
-            map[indices[0]][indices[1]][0] = map[indices[0]][indices[1]][1];
-            map[indices[0]][indices[1]][1].first = -1;
-            if (map[indices[0]][indices[1]][0].first == -1) deleteEdge = true;
-            }
-        else
-            {
-            map[indices[0]][indices[1]][1].first = -1;
-            if (map[indices[0]][indices[1]][0].first == -1) deleteEdge = true;
-            }
-        }
-    if (deleteEdge)map[indices[0]].erase(indices[1]);*/
+
     int32_t edges[3][2] = { { indices[0], indices[1] }, { indices[1], indices[2] }, { indices[0], indices[2] } };
     for (size_t i = 0; i < 3; ++i)
         RemoveFacetFromEdge(indices, edges[i]);
@@ -184,7 +157,7 @@ bool FaceToUVMap::GetFacet(const int32_t* indices, DPoint2d* uvCoords)
                 return true;
                 }
         }
-#if 0
+#if SM_TRACE_CLIPS_FULL
     Utf8String nameBeforeClips = Utf8String(s_path) + "missedHits_";
     nameBeforeClips.append(to_string(range.low.x).c_str());
     nameBeforeClips.append("_");
@@ -466,27 +439,22 @@ void PolygonFromFaceList(bvector<bvector<int32_t>>& contourPolyIndices, bvector<
     vector<set<int32_t>> edges(nVertices);
     for (auto& face : faceIndices)
         {
-        //if (face[0] < face[1])
-       //     {
+
             if (edges[face[0]].count(face[1]) == 0) edges[face[0]].insert(face[1]);
             else edges[face[0]].erase(face[1]);
             if (edges[face[1]].count(face[0]) == 0) edges[face[1]].insert(face[0]);
             else edges[face[1]].erase(face[0]);
-       //     }
-      //  if (face[1] < face[2])
-      //      {
+
             if (edges[face[1]].count(face[2]) == 0) edges[face[1]].insert(face[2]);
             else edges[face[1]].erase(face[2]);
             if (edges[face[2]].count(face[1]) == 0) edges[face[2]].insert(face[1]);
             else edges[face[2]].erase(face[1]);
-       //     }
-       // if (face[0] < face[2])
-       //     {
+
             if (edges[face[0]].count(face[2]) == 0) edges[face[0]].insert(face[2]);
             else edges[face[0]].erase(face[2]);
             if (edges[face[2]].count(face[0]) == 0) edges[face[2]].insert(face[0]);
             else edges[face[2]].erase(face[0]);
-       //     }
+
         }
     int32_t currentIdx = -1;
     int32_t lastIdx = -1;
@@ -499,7 +467,7 @@ void PolygonFromFaceList(bvector<bvector<int32_t>>& contourPolyIndices, bvector<
             break;
             }
         }
-    volatile int32_t firstIdx = currentIdx;
+    int32_t firstIdx = currentIdx;
     bvector<int32_t> currentLoop;
     while (currentIdx != -1)
         {
@@ -690,12 +658,9 @@ void DifferenceSetWithTracking::ApplySetMerge(DifferenceSetWithTracking& d, int 
         size_t id = &conflict - &conflicts[0];
         if (mapOfRemovedFaces[id].size() == 0) continue;
         for (auto& faceId : conflict) if (faceId != -1)facesNotAdded[faceId] = true;
-//        DPoint3d triangle[3] = { vertices[removedFaces[id * 3] - 1], vertices[removedFaces[id * 3 + 1] - 1], vertices[removedFaces[id * 3 + 2] - 1] };
-        //ResolveConflicts(mergedFaces[id], triangle, conflict, vertices);
+
         }
-   /* for (size_t i = 0; i < removedFaces.size(); i += 3)
-        if (!removed[removedFaces[i] - 1] && !removed[removedFaces[i + 1] - 1] && !removed[removedFaces[i + 2] - 1]) faces.insert(faces.end(), &removedFaces[i], &removedFaces[i + 3]);
-    removedFaces = faces;*/
+
     faces.clear();
     bvector<int32_t> splits;
     for (size_t i = 0; i < addedFaces.size(); i += 3)
@@ -1078,86 +1043,7 @@ DifferenceSet Clipper::ClipNonConvexPolygon2D(const DPoint3d* poly, size_t polyS
     if (s_maxClipTime < totalTime)s_maxClipTime = totalTime;
     return d;
     }
-/*
-class DifferenceSetFromClip : public PolyfaceQuery::IClipToPlaneSetDiffSetOutput
-    {
 
-    DifferenceSetWithTracking d;
-    const DPoint3d* m_vertices;
-    DRange3d* m_limits;
-
-    public:
-        DifferenceSetFromClip(const size_t n, const DPoint3d* origVertices, DRange3d* limits = nullptr)
-            : m_vertices(origVertices), m_limits(limits)
-            {
-            d.firstIndex = (int32_t)n;
-            }
-        DifferenceSetWithTracking& GetDifferences() { return d; }
-    virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery)
-        {
-        return SUCCESS;
-        }
-    virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader)
-        {
-        return SUCCESS;
-        }
-    virtual StatusInt _ProcessAddedFacet(const DPoint3d* face, size_t nPoints)
-        {
-        assert(nPoints == 3);
-        if (m_limits != nullptr && !m_limits->IsContainedXY(face[0]) && !m_limits->IsContainedXY(face[1]) && !m_limits->IsContainedXY(face[2]))
-            return SUCCESS;
-        bvector<int32_t> indices(nPoints,-1);
-        for (int32_t j = 0; j < (int) nPoints; ++j)
-            {
-            for (int32_t i = 0; i < 3; ++i)
-                {
-                if (fabs(m_vertices[d.removedFaces[d.removedFaces.size() - 3 + i] - 1].x - face[j].x) < 1.0e-8 &&
-                    fabs(m_vertices[d.removedFaces[d.removedFaces.size() - 3 + i] - 1].y - face[j].y) < 1.0e-8)
-                    {
-                    indices[j] = d.removedFaces[d.removedFaces.size() - 3 + i];
-                    break;
-                    }
-                }
-            if (indices[j] == -1)
-                {
-                for (int32_t vertexId = (int32_t)d.addedVertices.size() - 1; vertexId >= 0; --vertexId)
-                    {
-                    if (fabs(d.addedVertices[vertexId].x - face[j].x) < 1.0e-8 &&
-                        fabs(d.addedVertices[vertexId].y - face[j].y) < 1.0e-8)
-                        {
-                        indices[j] = vertexId + d.firstIndex;
-                        break;
-                        }
-                    }
-                }
-            }
-        for (int32_t i = 0; i < (int)nPoints; ++i)
-            {
-            if (indices[i] == -1)
-                {
-                d.addedFaces.push_back(((int)d.addedVertices.size() + d.firstIndex));
-                d.addedVertices.push_back(face[i]);
-                }
-            else d.addedFaces.push_back(indices[i]);
-            }
-        d.splitFaces.push_back((int)d.removedFaces.size() /3-1);
-        return SUCCESS;
-        }
-    virtual StatusInt _ProcessRemovedFacet(const int* face, size_t nPoints)
-        {
-        assert(nPoints == 3);
-
-        std::string s;
-        s += " N VERTICES " + std::to_string(d.firstIndex) +"\n";
-        for (int32_t i = 0; i < (int)nPoints; ++i)
-            {
-            s += "FACE PT " + std::to_string(face[i]+1);
-            d.removedFaces.push_back(face[i]+1);
-            }
-        return SUCCESS;
-        }
-    };
-    */
     bool s_stop = false;
 
     class FaceLookupList
@@ -1446,8 +1332,8 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
             poly->ParamIndex().push_back(allUvs[uvCoords[uvI]]);
             }
         }
-    //assert(nFaceMisses <= (indices.size()*.75)/3 );
-#if 0
+
+#if SM_TRACE_CLIPS_FULL
     Utf8String nameBeforeClips = Utf8String(s_path) + "meshtaggeds_";
     nameBeforeClips.append(to_string(m_range.low.x).c_str());
     nameBeforeClips.append("_");
@@ -1645,10 +1531,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             }
         if (applyClipPoly)
             {
-            /* DTM_POLYGON_OBJ* polyP = nullptr;
-             long flag = 0;
-             if (DTM_SUCCESS == bcdtmPolygon_intersectPolygonAndTinHullDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), &poly[0], (int)poly.size(), &polyP, &flag))
-             {*/
+
             stat = bcdtmInsert_internalDtmFeatureMrDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(),
                                                              DTMFeatureType::Region,
                                                              1,
@@ -1659,32 +1542,11 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                                                              &poly[0],
                                                              (long)poly.size(),
                                                              m_uvBuffer && m_uvIndices ? GetInsertPointCallback(originalFaceMap, dtmPtr) : nullptr);
-            //assert(stat == DTM_SUCCESS);
-            // if (stat != DTM_SUCCESS) break;
-            //  }
-            // if (polyP != nullptr) free(polyP);
+
             userTag++;
             }
         }
-   /* if (stat != DTM_SUCCESS)
-        {
-        std::cout << " CAN'T CLIP WITH POLY " + std::to_string(userTag) << std::endl;
-      {        WString namePoly = WString(s_path) + L"fpreclippolyreg_";
-            namePoly.append(to_wstring(userTag).c_str());
-            namePoly.append(L"_");
-            namePoly.append(to_wstring(m_range.low.x).c_str());
-            namePoly.append(L"_");
-            namePoly.append(to_wstring(m_range.low.y).c_str());
-            namePoly.append(L".p");
-            FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
-            size_t polySize = polygons[userTag].size();
-            fwrite(&polySize, sizeof(size_t), 1, polyCliPFile);
-            fwrite(&polygons[userTag][0], sizeof(DPoint3d), polySize, polyCliPFile);
-            fclose(polyCliPFile);
-            }
-        bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(m_range.low.x).c_str())+WString(L"_") 
-            + WString(std::to_wstring(m_range.low.y).c_str())/* + WString(L"_") + WString(std::to_wstring(userTag).c_str()) + WString(L".dtm")).c_str());
-        }*/
+
     if (dbg) bcdtmWrite_toFileDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), (WString(s_path) + WString(L"featurepolytest") + WString(std::to_wstring(s_nclip).c_str()) + WString(L"_after.tin")).c_str());
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
     if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
@@ -1770,7 +1632,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     builder->AddPolyface(*poly);
     delete poly;
     polyfaces[0].push_back(builder->GetClientMeshPtr());
-    return true;//false;
+    return true;
     }
 
 DifferenceSet Clipper::ClipSeveralPolygons(bvector<bvector<DPoint3d>>& polygons)
@@ -1928,6 +1790,5 @@ DifferenceSetWithTracking Clipper::ClipConvexPolygon2DCustom(const DPoint3d* pol
 
     }
 
-//template void ClipMeshToNodeRange<DPoint3d, ISMStore::Extent3d64f>(vector<int>& faceIndexes, vector<DPoint3d>& nodePts, bvector<DPoint3d>& pts, ISMStore::Extent3d64f& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP);
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

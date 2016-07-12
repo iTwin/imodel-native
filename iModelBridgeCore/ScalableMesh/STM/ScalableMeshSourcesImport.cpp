@@ -402,6 +402,8 @@ void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourcesImporter::Status SourcesImporter::Impl::ImportSDKSources()
     {
+    if (m_sdkSources.empty()) return S_SUCCESS;
+
     BeFileName tempDir(T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName());
     BeFileName tempSourcesToImportFile = tempDir;
     tempSourcesToImportFile.AppendUtf8("tempTerrainSourceImport.xml");

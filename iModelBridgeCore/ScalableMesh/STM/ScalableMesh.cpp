@@ -1385,6 +1385,56 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
     return DTM_SUCCESS;
     }
 
+DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP) 
+    {
+    //find the highest resolution that has less than 5M points
+    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+    IScalableMeshMeshQueryPtr meshQueryInterface = m_scMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    bvector<IScalableMeshNodePtr> returnedNodes;
+    params->SetLevel(m_scMesh->GetTerrainDepth());
+
+    size_t totalPts = 0;
+    if (meshQueryInterface->Query(returnedNodes, 0, 0, params) != SUCCESS)
+        return DTM_ERROR;
+    for (auto& node : returnedNodes)
+        {
+        totalPts += node->GetPointCount();
+        }
+    while (totalPts > 5000000 && params->GetLevel() > 1)
+        {
+        returnedNodes.clear();
+        params->SetLevel(params->GetLevel() - 1);
+        meshQueryInterface->Query(returnedNodes, 0,0, params);
+        totalPts = 0;
+        for (auto& node : returnedNodes)
+            {
+            totalPts += node->GetPointCount();
+            }
+        }
+    if (returnedNodes.size() == 0) return DTM_ERROR;
+    bvector<bool> clips;
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    auto meshPtr = returnedNodes.front()->GetMesh(flags, clips);
+    ScalableMeshMesh* meshP = dynamic_cast<ScalableMeshMesh*>(meshPtr.get());
+    //add all triangles from returned nodes to DTM
+    for (auto nodeIter = returnedNodes.begin() + 1; nodeIter != returnedNodes.end(); ++nodeIter)
+        {
+        if ((*nodeIter)->GetPointCount() <= 4) continue;
+        auto currentMeshPtr = (*nodeIter)->GetMesh(flags, clips);
+        if (!currentMeshPtr.IsValid()) continue;
+        bvector<int32_t> indices(currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCount());
+        memcpy(&indices[0], currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCP(), indices.size()*sizeof(int32_t));
+        for (auto&idx : indices) idx += (int)meshP->GetNbPoints();
+        meshP->AppendMesh(currentMeshPtr->GetPolyfaceQuery()->GetPointCount(), const_cast<DPoint3d*>(currentMeshPtr->GetPolyfaceQuery()->GetPointCP()), (int)indices.size(), &indices[0],0,0,0,0,0,0);
+        }
+
+    TerrainModel::BcDTMPtr dtm;
+    DTMStatusInt val = meshP->GetAsBcDTM(dtm);
+    if (val == DTM_ERROR) return val;
+    val = dtm->ExportToGeopakTinFile(fileNameP);
+    return val;
+    }
+
 bool ScalableMeshDTM::_GetTransformation(TransformR)
     {
     return true;
