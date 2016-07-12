@@ -62,7 +62,7 @@ PointCloudRenderer::~PointCloudRenderer()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     2/2015
 //----------------------------------------------------------------------------------------
-ProgressiveTask::Completion PointCloudRenderer::DrawPointCloud(ViewContextR context, LasClassificationInfo const* pClassifInfo, PointCloudSceneCR pointCloudScene)
+ProgressiveTask::Completion PointCloudRenderer::DrawPointCloud(ViewContextR context, PointCloudClassificationSettings const* pClassifInfo, PointCloudSceneCR pointCloudScene)
     {
         bool sceneHasClassif = pointCloudScene.HasClassificationChannel();
 
@@ -185,12 +185,22 @@ void PointCloudRenderer::DrawPointBuffer(ViewContextR context, PointCloudDrawPar
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Simon.Normand                   05/2014
 //----------------------------------------------------------------------------------------
-void classifyPoints (LasClassificationInfo const* pClassifInfo, unsigned char* filterBuffer, unsigned char* pClassifChannel, BePointCloud::PointCloudColorDef const* pClassifColors, BePointCloud::PointCloudColorDef* pRgbChannel, uint32_t nPoints, bool hasRgb, bool hasFilter)
+void classifyPoints (PointCloudClassificationSettings const* pClassifInfo, unsigned char* filterBuffer, unsigned char* pClassifChannel, ColorDef const* pClassifColors, BePointCloud::PointCloudColorDef* pRgbChannel, uint32_t nPoints, bool hasRgb, bool hasFilter)
     {
-    bool bUnclassState = pClassifInfo->GetUnclassState();
+    bool bUnclassState = pClassifInfo->GetUnclassVisible();
     bool bBlendColor   = pClassifInfo->GetBlendColor();
     bool bUseBaseColor = pClassifInfo->GetUseBaseColor();
-    BePointCloud::PointCloudColorDef rgbColorUnclass = pClassifInfo->GetUnclassColor();
+    ColorDef unclassCol = pClassifInfo->GetUnclassColor();
+    BePointCloud::PointCloudColorDef rgbColorUnclass (unclassCol.GetRed(), unclassCol.GetGreen(), unclassCol.GetBlue());
+
+    // Convert ColorDef to PointCloudColorDef
+    PointCloudColorDef pointCloudClassifColor[CLASSIFICATION_COUNT];
+    for (uint32_t i = 0; i < CLASSIFICATION_COUNT; i++)
+        {
+        pointCloudClassifColor[i].SetRed(pClassifColors[i].GetRed());
+        pointCloudClassifColor[i].SetGreen(pClassifColors[i].GetGreen());
+        pointCloudClassifColor[i].SetBlue(pClassifColors[i].GetBlue());
+        }
 
     for (uint32_t ptIdx = 0; ptIdx < nPoints; ++ptIdx)
         {
@@ -198,8 +208,8 @@ void classifyPoints (LasClassificationInfo const* pClassifInfo, unsigned char* f
             {
             // Get classification value (the five least significant bits)
             const unsigned char classifValue = (pClassifChannel[ptIdx]);
-            bool bClassState = pClassifInfo->GetClassificationState(classifValue);
-            bool bClassActive = pClassifInfo->GetClassActiveState(classifValue);
+            bool bClassState = pClassifInfo->GetVisibleState(classifValue);
+            bool bClassActive = pClassifInfo->GetActiveState(classifValue);
 
             // Is classification visible?
             if ((bClassState && bClassActive) || 
@@ -216,7 +226,7 @@ void classifyPoints (LasClassificationInfo const* pClassifInfo, unsigned char* f
                         {
                         if(bClassActive)
                             {
-                            halfBlend (pRgbChannel[ptIdx], pClassifColors[classifValue]);
+                            halfBlend (pRgbChannel[ptIdx], pointCloudClassifColor[classifValue]);
                             }
                         else
                             {
@@ -225,7 +235,7 @@ void classifyPoints (LasClassificationInfo const* pClassifInfo, unsigned char* f
                         }
                     else if (!bUseBaseColor)
                         {
-                        pRgbChannel[ptIdx] = bClassActive ? pClassifColors[classifValue] : rgbColorUnclass;
+                        pRgbChannel[ptIdx] = bClassActive ? pointCloudClassifColor[classifValue] : rgbColorUnclass;
                         }
                     }
                 }
@@ -238,7 +248,7 @@ void classifyPoints (LasClassificationInfo const* pClassifInfo, unsigned char* f
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Stephane.Poulin                 10/2012
 //----------------------------------------------------------------------------------------
-void PointCloudRenderer::ApplyClassification(PointCloudQueryBuffers& channels, LasClassificationInfo const* pClassifInfo, ViewContextR context) const
+void PointCloudRenderer::ApplyClassification(PointCloudQueryBuffers& channels, PointCloudClassificationSettings const* pClassifInfo, ViewContextR context) const
     {
     BeAssert(NULL != channels.GetClassificationChannel());
     BeAssert(NULL != channels.GetXyzChannel());
@@ -251,14 +261,14 @@ void PointCloudRenderer::ApplyClassification(PointCloudQueryBuffers& channels, L
     DgnViewportP contextVp = context.GetViewport();
 
     ColorDef whiteColor = {255,255,255};
-    LasClassificationInfo adjustedClassification;
+    PointCloudClassificationSettings adjustedClassification;
     if (contextVp != NULL)
         {
         mediaColor = contextVp->GetBackgroundColor();
         if(memcmp(&mediaColor, &whiteColor, sizeof(whiteColor)) == 0)
             backgroundIsWhite = true;
         }
-    BePointCloud::PointCloudColorDef const* pClassifColors;
+    ColorDef const* pClassifColors;
     if (!backgroundIsWhite)
         {
         // Background is not white. No need to modify classification colors.
@@ -267,19 +277,19 @@ void PointCloudRenderer::ApplyClassification(PointCloudQueryBuffers& channels, L
     else
         {
         // Background is white. Change white color to black.
-        BePointCloud::PointCloudColorDef blackColor = {0,0,0};
+        ColorDef blackColor = ColorDef::Black();
 
         // Take a copy of LasClassification, so that original classification is not altered. The color change will only be applied to display.
-        memcpy (&adjustedClassification, pClassifInfo, sizeof (LasClassificationInfo));
+        memcpy (&adjustedClassification, pClassifInfo, sizeof (PointCloudClassificationSettings));
 
-        BePointCloud::PointCloudColorDef color;
-        for (int idxClassif = 0; idxClassif < CLASSIFCATION_COUNT; idxClassif++)
+        ColorDef color;
+        for (int idxClassif = 0; idxClassif < CLASSIFICATION_COUNT; idxClassif++)
             {
             color = adjustedClassification.GetClassificationColor ((unsigned char) idxClassif);
             if(color.GetRed() == whiteColor.GetRed() && color.GetGreen() == whiteColor.GetGreen() && color.GetBlue() == whiteColor.GetBlue())
                 {
                 // Original class color is white. Change it to black.
-                adjustedClassification.SetClassificationColor((unsigned char)idxClassif, blackColor);
+                adjustedClassification.SetClassificationColor(blackColor, (unsigned char)idxClassif);
                 }
             }
         pClassifColors = adjustedClassification.GetClassificationColors();
