@@ -75,6 +75,8 @@ public:
 
     virtual bool StoreMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
     {
+    assert(!"////MST_TS : tobedeleted");
+
     if (indexHeader == nullptr) return 0;
     SQLiteIndexHeader header = *indexHeader;
     m_smSQLiteFile->SetMasterHeader(header);
@@ -83,6 +85,8 @@ public:
 
     virtual size_t LoadMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
     {
+    assert(!"////MST_TS : tobedeleted");
+
     if (indexHeader == nullptr) return 0;
     SQLiteIndexHeader header;
     if (!m_smSQLiteFile->GetMasterHeader(header)) return 0;
@@ -128,6 +132,8 @@ public:
 
     virtual size_t StoreNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
     {
+    assert(!"////MST_TS : tobedeleted");
+
     if (header == nullptr) return 0;
     if (header->m_ptsIndiceID.size() > 0)header->m_ptsIndiceID[0] = blockID;
     SQLiteNodeHeader nodeHeader = *header;
@@ -141,6 +147,8 @@ public:
 
     virtual size_t LoadNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
     {
+    assert(!"////MST_TS : tobedeleted");
+
     if (header == nullptr) return 0;
     SQLiteNodeHeader nodeHeader;
     if (header->m_meshComponents != nullptr) delete[] header->m_meshComponents;

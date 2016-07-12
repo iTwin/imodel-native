@@ -11,6 +11,7 @@
 
 
 
+#include "Stores/SMStoreUtils.h"
 #include "SMPointTileStore.h"
 #include "SMNodeGroup.h"
 #include <ImagePP/all/h/HCDCodecZlib.h>
@@ -325,6 +326,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
     {
 
     private:
+
         static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
             return static_cast<ISMStore::NodeID>(blockID.m_integerID);
@@ -897,6 +899,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         virtual bool StoreMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
             {
+            assert(!"////MST_TS : tobedeleted");
+
             if (indexHeader != NULL && indexHeader->m_rootNodeBlockID.IsValid())
                 {
                 Json::Value masterHeader;
@@ -938,6 +942,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
 		virtual size_t LoadMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
 		{
+            assert(!"////MST_TS : tobedeleted");
 			std::unique_ptr<DataSource::Buffer[]>			dest;
 			DataSource								*	dataSource;
 			DataSource::DataSize						readSize;
@@ -1566,6 +1571,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         virtual size_t StoreNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
+            assert(!"////MST_TS : tobedeleted");
+
             uint32_t headerSize = 0;
             std::unique_ptr<Byte> headerData = nullptr;
             SerializeHeaderToBinary(header, headerData, headerSize);
@@ -1594,6 +1601,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         virtual size_t LoadNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
+            assert(!"////MST_TS : tobedeleted");
+
             if (s_stream_from_grouped_store)
                 {
                 auto group = this->GetGroup(blockID);

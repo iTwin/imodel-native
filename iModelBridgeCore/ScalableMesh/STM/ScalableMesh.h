@@ -192,8 +192,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         typedef SMPointTileStore<INDEXPOINT, YProtPtExtentType >
             TileStoreType;
-
-
+        
         typedef SMStreamingPointTaggedTileStore<
             INDEXPOINT,
             YProtPtExtentType >        StreamingPointStoreType;

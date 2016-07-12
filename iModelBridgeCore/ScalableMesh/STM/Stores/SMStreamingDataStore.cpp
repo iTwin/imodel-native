@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: STM/Stores/SMSQLiteStore.cpp $
+//:>     $Source: STM/Stores/SMStreamingDataStore.cpp $
 //:>
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
@@ -8,9 +8,10 @@
 
 #include <ScalableMeshPCH.h>
 
-#include "SMSQLiteStore.h"
-#include "SMSQLiteStore.hpp"
 
-template class SMSQLiteStore<DRange3d>;
+#include "SMStreamingDataStore.h"
+#include "SMStreamingDataStore.hpp"
 
-template class SMSQLiteNodePointStore<DPoint3d, DRange3d>;
+template class SMStreamingStore<DRange3d>;
+
+//template class SMSQLiteNodePointStore<DPoint3d, DRange3d>;

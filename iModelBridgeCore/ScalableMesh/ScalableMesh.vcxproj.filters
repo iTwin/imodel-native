@@ -957,6 +957,18 @@
     <ClInclude Include="STM\MeshingFunctions.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
+    <ClInclude Include="STM\Stores\SMStreamingDataStore.h">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Stores\SMStreamingDataStore.hpp">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Stores\SMStoreUtils.h">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Stores\SMStoreUtils.hpp">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1374,6 +1386,12 @@
       <Filter>Source\Core</Filter>
     </ClCompile>
     <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
+    <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Stores\SMStoreUtils.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ScalableMesh.mke" />

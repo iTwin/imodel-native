@@ -50,6 +50,8 @@ extern bool   GET_HIGHEST_RES;
 #include "SMSQLiteUVStore.h"
 #include "SMSQLiteUVIndiceTileStore.h"
 #include "SMSQLiteTextureTileStore.h"
+#include "Stores\SMStreamingDataStore.h"
+
 #include <Vu\VuApi.h>
 #include <Vu\vupoly.fdf>
 #include "vuPolygonClassifier.h"
@@ -786,7 +788,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
 
 
-        HFCPtr<TileStoreType> pTileStore;
+        HFCPtr<TileStoreType> pTileStore;        
         HFCPtr<StreamingPointStoreType>  pStreamingTileStore;
         HFCPtr<StreamingIndiceStoreType> pStreamingIndiceTileStore;
         HFCPtr<StreamingUVStoreType> pStreamingUVTileStore;
@@ -828,15 +830,14 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 					}
 
 
-                    // NEEDS_WORK_SM - Need to stream textures as well
+                    // NEEDS_WORK_SM - Need to stream textures as well                    
                     pStreamingTileStore = new StreamingPointStoreType(getDataSourceAccount(), streamingSourcePath, StreamingPointStoreType::SMStreamingDataType::POINTS, AreDataCompressed(), s_stream_from_grouped_store);
                     pStreamingIndiceTileStore = new StreamingIndiceStoreType(getDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, AreDataCompressed());
                     pStreamingUVTileStore = new StreamingUVStoreType(getDataSourceAccount(), streamingSourcePath, StreamingUVStoreType::SMStreamingDataType::UVS, AreDataCompressed());
                     pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(getDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, AreDataCompressed());
                     pStreamingTextureTileStore = new StreamingTextureTileStore(getDataSourceAccount(), streamingSourcePath);
-
-                    ////MST_TS
-                    ISMDataStoreType<YProtPtExtentType>::Ptr dataStore; 
+                    
+                    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(getDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store));                    
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
@@ -865,7 +866,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     pUVsIndicesTileStore = new SMSQLiteUVIndiceTileStore<YProtPtExtentType >((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
                     pTextureTileStore = new SMSQLiteTextureTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
                     pGraphTileStore = new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
-
+                    
                     ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr));
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 

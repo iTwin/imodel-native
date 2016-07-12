@@ -6,25 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-//#include <ImagePP\all\h\HGFSpatialIndex.h>
-
 using namespace ISMStore;
-
-//=====================================================================================================================
-//=====================================================================================================================
-//=====================================================================================================================
-//=====================================================================================================================
-//=====================================================================================================================
-//=====================================================================================================================
-
-// SMPointIndexNode Class
-
-//=====================================================================================================================
-//=====================================================================================================================
-//=====================================================================================================================
-//=====================================================================================================================
-//=====================================================================================================================
-//=====================================================================================================================
 
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
@@ -442,8 +424,8 @@ extern std::mutex s_createdNodeMutex;
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load() const
     {
     HPRECONDITION (!IsLoaded());
-
-    if (0 == (((SMPointIndexNode<POINT, EXTENT>*)this)->GetPointsStore())->LoadNodeHeader (&m_nodeHeader, GetBlockID()))
+    
+    if (0 == (((SMPointIndexNode<POINT, EXTENT>*)this)->GetDataStore())->LoadNodeHeader (&m_nodeHeader, GetBlockID()))
         {
         // Something went wrong
         assert(!"Cannot load node header");
@@ -3709,7 +3691,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
 
             //NEEDS_WORK_SM : END
 
-            GetPointsStore()->StoreNodeHeader(&m_nodeHeader, GetBlockID());                 
+            GetDataStore()->StoreNodeHeader(&m_nodeHeader, GetBlockID());                 
             }            
                     
         SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex);
@@ -4013,7 +3995,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Track3
 
     if (!merged)
         {
-        m_nodeHeader.m_3dPointsDescBins.push_back(SMPointNodeHeaderBase<EXTENT>::RLC3dPoints(ptsPtr->size(), countPoints));
+        m_nodeHeader.m_3dPointsDescBins.push_back(SMIndexNodeHeaderBase<EXTENT>::RLC3dPoints(ptsPtr->size(), countPoints));
         }
     }
 
@@ -6732,10 +6714,10 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
         }
     }
 
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, HFCPtr<StreamingPointStoreType> pi_pPointStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
-    pi_pPointStore->StoreNodeHeader(&m_nodeHeader, this->GetBlockID());
+    pi_pDataStreamingStore->StoreNodeHeader(&m_nodeHeader, this->GetBlockID());
     auto count = this->GetPointsStore()->GetBlockDataCount(this->GetBlockID());
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
@@ -6749,27 +6731,27 @@ This method saves the node for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, HFCPtr<StreamingPointStoreType> pi_pPointStore)
     {
     assert(pi_pPointStore != nullptr);
 
     if (!IsLoaded())
         Load();
 
-    this->SavePointDataToCloud(dataSourceAccount, pi_pPointStore);
+    this->SavePointDataToCloud(dataSourceAccount, pi_pDataStore, pi_pPointStore);
 
     // Save children nodes
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SavePointsToCloud(dataSourceAccount, pi_pPointStore);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SavePointsToCloud(dataSourceAccount, pi_pDataStore, pi_pPointStore);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SavePointsToCloud(dataSourceAccount, pi_pPointStore);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SavePointsToCloud(dataSourceAccount, pi_pDataStore, pi_pPointStore);
                 }
             }
         }
@@ -6789,7 +6771,9 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
     // Add node header data
     uint32_t headerSize = 0;
     std::unique_ptr<Byte> headerData = nullptr;
-    this->GetPointsStore()->SerializeHeaderToBinary(&this->m_nodeHeader, headerData, headerSize);
+    SMStreamingStore<EXTENT>* streamingStore(dynamic_cast<SMStreamingStore<EXTENT>*>(this->GetDataStore().get()));
+    assert(streamingStore != nullptr);
+    streamingStore->SerializeHeaderToBinary(&this->m_nodeHeader, headerData, headerSize);
     pi_pGroup->AddNode(ConvertBlockID(GetBlockID()), headerData, headerSize);
     delete[] headerData.release();
     
@@ -7603,7 +7587,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::NeedsF
 
 -------------------------------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t pi_SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter,bool balanced, bool propagatesDataDown, bool shouldCreateRoot)
-  : m_newDataStore(newDataStore),
+  : m_dataStore(newDataStore),
     m_store (store),
     m_filter (filter)
     {
@@ -7622,10 +7606,10 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
     m_indexHeader.m_terrainDepth = (size_t)-1;
     m_isGenerating = true;
     // If a store is provided ...
-    if (m_newDataStore != NULL)
+    if (m_dataStore != NULL)
         {
         // Try to load master header
-        if (0 != m_newDataStore->LoadMasterHeader(&m_indexHeader, sizeof(m_indexHeader)))
+        if (0 != m_dataStore->LoadMasterHeader(&m_indexHeader, sizeof(m_indexHeader)))
             {
             m_isGenerating = false;
                        
@@ -7635,7 +7619,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
         else
             {
             // No master header ... force writting it (to prime the store)
-            if (!m_newDataStore->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader)))
+            if (!m_dataStore->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader)))
                 {
                 HASSERT(!"Error in store master header!");
                 throw;
@@ -7765,9 +7749,10 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);
+    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);    
+    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress));                    
 
-    this->GetRootNode()->SavePointsToCloud(dataSourceAccount, pointStore);
+    this->GetRootNode()->SavePointsToCloud(dataSourceAccount, dataStore, pointStore);
 
     this->SaveMasterHeaderToCloud(dataSourceAccount, pi_pOutputDirPath);
 
@@ -8105,15 +8090,27 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::Filter(int
     }
 
 /**----------------------------------------------------------------------------
- This method returns the store
+ This method returns the point store
 
- @return The store
+ @return The point store
 
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> HFCPtr<SMPointTileStore<POINT, EXTENT> > SMPointIndex<POINT, EXTENT>::GetPointsStore() const
     {
     HINVARIANTS;
     return m_store;
+    }
+
+/**----------------------------------------------------------------------------
+ This method returns the data store
+
+ @return The data store
+
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> ISMDataStoreTypePtr<EXTENT> SMPointIndex<POINT, EXTENT>::GetDataStore()
+    {
+    HINVARIANTS;
+    return m_dataStore;
     }
 
 
@@ -8169,7 +8166,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::Store()
 
     if (m_indexHeaderDirty)
     {
-        m_newDataStore->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader));
+        m_dataStore->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader));
         m_indexHeaderDirty = false;
     }
 
@@ -8812,7 +8809,7 @@ size_t SMPointIndex<POINT, EXTENT>::GetDepth() const
         {
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader.m_depth = m_pRootNode->GetDepth();
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeaderDirty = true;
-        const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_newDataStore->StoreMasterHeader(&const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader, sizeof(m_indexHeader));
+        const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_dataStore->StoreMasterHeader(&const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader, sizeof(m_indexHeader));
         }
     return m_indexHeader.m_depth;
     }

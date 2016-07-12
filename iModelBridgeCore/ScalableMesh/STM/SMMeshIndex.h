@@ -557,6 +557,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
     typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
     void         SaveMeshToCloud(DataSourceAccount *dataSourceAccount,
+                                 ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, 
                                  HFCPtr<StreamingPointStoreType> pi_pPointStore,
                                  HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                  HFCPtr<StreamingUVStoreType> pi_pUVStore,
@@ -774,6 +775,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         virtual void        GetCloudFormatStores(DataSourceAccount *dataSourceAccount,
 		                                         const WString& pi_pOutputDirPath,
                                                  const bool& pi_pCompress,
+                                                 ISMDataStoreTypePtr<EXTENT>&     po_pDataStore, 
                                                  HFCPtr<StreamingPointStoreType>& po_pPointStore,
                                                  HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
                                                  HFCPtr<StreamingUVStoreType>& po_pUVStore,
