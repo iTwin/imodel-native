@@ -8,7 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <BeHttp/HttpRequest.h>
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(__clang__)
+#if defined(BENTLEYCONFIG_OS_WINDOWS) /* || defined(__clang__) WIP_ANDROID_CLANG */
 #include <folly/futures/Future.h>
 #endif
 
