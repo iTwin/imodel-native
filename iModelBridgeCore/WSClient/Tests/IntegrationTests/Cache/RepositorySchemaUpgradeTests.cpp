@@ -20,35 +20,69 @@ IHttpHandlerPtr s_proxy;
 ConnectSignInManagerPtr s_signInManager;
 
 Credentials s_credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
-UrlProvider::Environment s_env = UrlProvider::Qa;
 BeFileName s_outRootPath("C:/test/RepositorySchemaUpgradeTests/"); // Keep historic records for "Upgrade" test cases
 
-std::vector<RepositoryDef> s_repositories =
+bvector<RepositoryDef> GetTestData()
     {
-        {UrlProvider::Urls::ConnectWsgGlobal, "BentleyCONNECT.Global--CONNECT.GLOBAL"},
-        {UrlProvider::Urls::ConnectWsgSharedContent, "BentleyCONNECT.SharedContent--CONNECT.SharedContent"},
-        //{UrlProvider::Urls::ConnectWsgProjectContent, "BentleyCONNECT.ProjectContent--e577dbb3-07d4-413d-af06-4b0d6abf5a55"}, // PROD only
-        {UrlProvider::Urls::ConnectWsgProjectContent, "BentleyCONNECT.ProjectContent--b89f0fe5-5313-4995-84c0-731723fb1590"}, // QA only
-        {UrlProvider::Urls::ConnectWsgPersonalPublishing, "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing"},
-        {UrlProvider::Urls::ConnectWsgPunchList, "IssuePlugin--default"},
+    bvector<UrlProvider::Environment> testEnvironments =
+        {
+        //UrlProvider::Environment::Release,
+        UrlProvider::Environment::Qa,
+        //UrlProvider::Environment::Dev,
+        };
+
+    bmap<UrlProvider::Environment, bvector<RepositoryDef>> all;
+
+    all[UrlProvider::Release] = {
+            {UrlProvider::Release, UrlProvider::Urls::ConnectWsgGlobal, "BentleyCONNECT.Global--CONNECT.GLOBAL"},
+            {UrlProvider::Release, UrlProvider::Urls::ConnectWsgSharedContent, "BentleyCONNECT.SharedContent--CONNECT.SharedContent"},
+            {UrlProvider::Release, UrlProvider::Urls::ConnectWsgPersonalPublishing, "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing"},
+            {UrlProvider::Release, UrlProvider::Urls::ConnectWsgPunchList, "IssuePlugin--default"},
+            {UrlProvider::Release, UrlProvider::Urls::ConnectWsgProjectContent, "BentleyCONNECT.ProjectContent--e577dbb3-07d4-413d-af06-4b0d6abf5a55"}
+        };
+
+    all[UrlProvider::Qa] = {
+            {UrlProvider::Qa, UrlProvider::Urls::ConnectWsgGlobal, "BentleyCONNECT.Global--CONNECT.GLOBAL"},
+            {UrlProvider::Qa, UrlProvider::Urls::ConnectWsgSharedContent, "BentleyCONNECT.SharedContent--CONNECT.SharedContent"},
+            {UrlProvider::Qa, UrlProvider::Urls::ConnectWsgPersonalPublishing, "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing"},
+            {UrlProvider::Qa, UrlProvider::Urls::ConnectWsgPunchList, "IssuePlugin--default"},
+            {UrlProvider::Qa, UrlProvider::Urls::ConnectWsgProjectContent, "BentleyCONNECT.ProjectContent--b89f0fe5-5313-4995-84c0-731723fb1590"},
+        };
+
+    all[UrlProvider::Dev] = {
+            {UrlProvider::Dev, UrlProvider::Urls::ConnectWsgGlobal, "BentleyCONNECT.Global--CONNECT.GLOBAL"},
+            {UrlProvider::Dev, UrlProvider::Urls::ConnectWsgSharedContent, "BentleyCONNECT.SharedContent--CONNECT.SharedContent"},
+            {UrlProvider::Dev, UrlProvider::Urls::ConnectWsgPersonalPublishing, "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing"},
+            {UrlProvider::Dev, UrlProvider::Urls::ConnectWsgPunchList, "IssuePlugin--default"},
+            {UrlProvider::Dev, UrlProvider::Urls::ConnectWsgProjectContent, "BentleyCONNECT.ProjectContent--ddd97671-790e-432b-bfd9-772bf8715b09"}
+        };
+
+    bvector<RepositoryDef> testRepositories;
+    for (auto env : testEnvironments)
+        {
+        auto& allForEnv = all[env];
+        testRepositories.insert(testRepositories.end(), allForEnv.begin(), allForEnv.end());
+        }
+    return testRepositories;
     };
 
-INSTANTIATE_TEST_CASE_P(, RepositorySchemaUpgradeTests, ::testing::ValuesIn(s_repositories));
+INSTANTIATE_TEST_CASE_P(, RepositorySchemaUpgradeTests, ::testing::ValuesIn(GetTestData()));
 
 void RepositorySchemaUpgradeTests::SetUpTestCase()
     {
     WSClientBaseTest::SetUpTestCase();
-    s_localState = StubLocalState();
-    s_proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    UrlProvider::Initialize(s_env, UrlProvider::DefaultTimeout, &s_localState, nullptr, s_proxy);
-
-    s_signInManager = ConnectSignInManager::Create(StubValidClientInfo(), s_proxy, &s_localState);
-    ASSERT_TRUE(s_signInManager->SignInWithCredentials(s_credentials)->GetResult().IsSuccess());
     }
 
 void RepositorySchemaUpgradeTests::SetUp()
     {
+    s_localState = StubLocalState();
+    s_proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    UrlProvider::Initialize(GetParam().env, UrlProvider::DefaultTimeout, &s_localState, nullptr, s_proxy);
+
+    s_signInManager = ConnectSignInManager::Create(StubValidClientInfo(), s_proxy, &s_localState);
+    ASSERT_TRUE(s_signInManager->SignInWithCredentials(s_credentials)->GetResult().IsSuccess());
+
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, NativeLogging::LOG_INFO);
     }
 
@@ -78,15 +112,15 @@ Utf8String GetDateStr(DateTimeCR dateTime)
     return Utf8PrintfString("%04d-%02d-%02d", dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay());
     }
 
-BeFileName GetOutputPath()
+BeFileName RepositorySchemaUpgradeTests::GetOutputPath()
     {
     BeFileName path = s_outRootPath;
     path.AppendToPath(BeFileName(BUILD_VERSION));
-    path.AppendToPath(BeFileName(GetEnvStr(s_env)));
+    path.AppendToPath(BeFileName(GetEnvStr(GetParam().env)));
     return path;
     }
 
-BeFileName GetOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId, Utf8StringCR dateStr)
+BeFileName RepositorySchemaUpgradeTests::GetOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId, Utf8StringCR dateStr)
     {
     BeFileName path = GetOutputPath();
     path.AppendToPath(BeFileName(dateStr));
@@ -95,7 +129,7 @@ BeFileName GetOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId, Utf8S
     return path;
     }
 
-BeFileName GetNewOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId)
+BeFileName RepositorySchemaUpgradeTests::GetNewOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId)
     {
     auto todayStr = GetDateStr(DateTime::GetCurrentTimeUtc());
     auto path = GetOutputPath(testName, repositoryId, todayStr);
@@ -108,7 +142,7 @@ BeFileName GetNewOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId)
     return path;
     }
 
-BeFileName GetPreviousOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId)
+BeFileName RepositorySchemaUpgradeTests::GetPreviousOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId)
     {
     BeFileName path = GetOutputPath();
     path.AppendToPath(L"*");

@@ -16,9 +16,12 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 struct RepositoryDef
     {
-    RepositoryDef(const UrlProvider::UrlDescriptor& url, Utf8CP id) : url(&url), id(id){}
+    UrlProvider::Environment env;
     const UrlProvider::UrlDescriptor* url;
     Utf8CP id;
+
+    RepositoryDef(UrlProvider::Environment env, const UrlProvider::UrlDescriptor& url, Utf8CP id) : 
+        env(env), url(&url), id(id) {}
     };
 
 void PrintTo(const RepositoryDef& value, ::std::ostream* os)
@@ -30,4 +33,9 @@ struct RepositorySchemaUpgradeTests : public ::testing::TestWithParam<Repository
     {
     static void SetUpTestCase();
     void SetUp();
+
+    BeFileName GetOutputPath();
+    BeFileName GetOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId, Utf8StringCR dateStr);
+    BeFileName GetNewOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId);
+    BeFileName GetPreviousOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId);
     };
