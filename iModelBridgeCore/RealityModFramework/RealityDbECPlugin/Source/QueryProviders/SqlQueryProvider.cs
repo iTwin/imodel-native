@@ -147,8 +147,9 @@ namespace IndexECPlugin.Source.QueryProviders
                 propertyList = m_query.SelectClause.SelectedProperties;
                 }
 
-            List<IECInstance> instanceList = SqlQueryHelpers.QueryDbForInstances( sqlCommandString, dataReadingHelper, paramNameValueMap, ecClass, propertyList, m_dbConnection);
-            
+            IDbQuerier dbQuerier = new DbQuerier();
+
+            List<IECInstance> instanceList = dbQuerier.QueryDbForInstances(sqlCommandString, dataReadingHelper, paramNameValueMap, ecClass, propertyList, m_dbConnection);
 
             //Creation of related instances
             //foreach ( var instance in instanceList )

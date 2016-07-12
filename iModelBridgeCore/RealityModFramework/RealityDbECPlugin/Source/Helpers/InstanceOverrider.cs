@@ -34,8 +34,8 @@ namespace IndexECPlugin.Source.Helpers
         /// <summary>
         /// InstanceOverrider constructor
         /// </summary>
-        public InstanceOverrider()
-            : base(true, "OverrideTableName", "OverrideColumnName", "OverrideJoinTableName", "OverrideTableUniqueIdColumn")
+        public InstanceOverrider(IDbQuerier dbQuerier)
+            : base(true, "OverrideTableName", "OverrideColumnName", "OverrideJoinTableName", "OverrideTableUniqueIdColumn", dbQuerier)
             {
             }
 

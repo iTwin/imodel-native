@@ -107,6 +107,7 @@
     <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
     <Compile Include="Source\Helpers\ECQueryConverter.cs" />
     <Compile Include="Source\Helpers\ECToSQLMap.cs" />
+    <Compile Include="Source\Helpers\IDbQuerier.cs" />
     <Compile Include="Source\Helpers\InstanceCacheManager.cs" />
     <Compile Include="Source\Helpers\InstanceComplement.cs" />
     <Compile Include="Source\Helpers\InstanceModifier.cs" />

@@ -95,7 +95,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 daysCacheIsValid = 10;
                 }
-            m_instanceCacheManager = new InstanceCacheManager(DataSource.USGS, daysCacheIsValid, dbConnection, querySettings);
+            m_instanceCacheManager = new InstanceCacheManager(DataSource.USGS, daysCacheIsValid, dbConnection, querySettings, new DbQuerier());
 
             }
 
@@ -243,17 +243,6 @@ namespace IndexECPlugin.Source.QueryProviders
             {
             switch ( ecClass.Name )
                 {
-                case "SpatialEntityBase":
-                case "SpatialEntityDataset":
-                case "SpatialEntity":
-                        {
-                        foreach (IECInstance inst in cachedInstances)
-                            {
-                            inst["DataProvider"].StringValue = "USGS";
-                            inst["DataProviderName"].StringValue = "United States Geological Survey";
-                            }
-                        break;
-                        }
                 case "SpatialEntityWithDetailsView":
                         {
                         foreach ( IECInstance inst in cachedInstances )
@@ -262,9 +251,6 @@ namespace IndexECPlugin.Source.QueryProviders
                             inst["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + inst.InstanceId + "?format=fgdc";
                             inst["RawMetadataFormat"].StringValue = "FGDC";
                             inst["SubAPI"].StringValue = "USGS";
-
-                            inst["DataProvider"].StringValue = "USGS";
-                            inst["DataProviderName"].StringValue = "United States Geological Survey";
                             }
                         break;
                         }
@@ -1185,7 +1171,8 @@ namespace IndexECPlugin.Source.QueryProviders
 
             //AccuracyResolutionDensity
 
-            instance["AccuracyResolutionDensity"].SetToNull();
+            instance["AccuracyResolutionDensity"].StringValue = "Unknown";
+            instance["ResolutionInMeters"].StringValue = "Unknown";
 
             instance["DataProvider"].StringValue = "USGS";
             instance["DataProviderName"].StringValue = "United States Geological Survey";
@@ -1395,6 +1382,18 @@ namespace IndexECPlugin.Source.QueryProviders
                 //USGS returned an error. We will return the results contained in the cache.
                 instanceList = cachedinstanceList;
                 }
+            catch ( System.AggregateException ex )
+                {
+                if (ex.InnerExceptions.All(e => e.GetType() == typeof(EnvironmentalException))) 
+                    {
+                    //USGS returned an error. We will return the results contained in the cache.
+                    instanceList = cachedinstanceList;
+                    }
+                else
+                    {
+                    throw;
+                    }
+                }
 
             if ( relCrit != null )
                 CreateParentRelationship(instanceList, relCrit, ecClass);
@@ -1477,6 +1476,10 @@ namespace IndexECPlugin.Source.QueryProviders
                 SEBInstance["Date"].NativeValue = item.Date.Value;
                 }
             SEBInstance["AccuracyResolutionDensity"].StringValue = item.Resolution;
+            SEBInstance["ResolutionInMeters"].StringValue = item.ResolutionInMeters;
+
+            SEBInstance["DataProvider"].StringValue = "USGS";
+            SEBInstance["DataProviderName"].StringValue = "United States Geological Survey";
 
             SEBInstance["Classification"].StringValue = classification;
 

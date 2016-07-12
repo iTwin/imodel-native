@@ -214,8 +214,8 @@ namespace IndexECPlugin.Source
                         source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
                         }
 
-                    InstanceOverrider instanceOverrider = new InstanceOverrider();
-                    InstanceComplement instanceComplement = new InstanceComplement();
+                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
                     using ( SqlConnection sqlConnection = new SqlConnection(ConnectionString) )
                         {
                         switch ( source.ToLower() )
@@ -633,20 +633,39 @@ namespace IndexECPlugin.Source
 
             foreach ( IECInstance spatialEntity in queriedSpatialEntities )
                 {
-
+                RequestedEntity requestedEntity = basicRequestedEntities.First(e => e.ID == spatialEntity.GetPropertyValue("Id").StringValue);
                 //IECRelationshipInstance firstWMSSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource");
                 if ( spatialEntity.GetRelationshipInstances().Any(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource") )
                     {
-                    WMSList.Add(CreateWMSSource(spatialEntity, coordinateSystem, basicRequestedEntities));
+                    WMSList.Add(CreateWMSSource(spatialEntity, coordinateSystem, requestedEntity));
                     }
                 else
                     {
-
                     IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
                     IECInstance firstMetadata = firstMetadataRel.Target;
 
-                    IECRelationshipInstance firstDataSourceRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "SpatialDataSource");
-                    IECInstance firstSpatialDataSource = firstDataSourceRel.Target;
+                    IECRelationshipInstance dataSourceRel;
+                    if ( requestedEntity.SpatialDataSourceID == null )
+                        {
+                        dataSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && 
+                                                                                                           relInst.Target.ClassDefinition.Name == "SpatialDataSource");
+                        if ( dataSourceRel == null )
+                            {
+                            throw new OperationFailedException("The selected spatial entity does not have any related spatial data source.");
+                            }
+                        }
+                    else
+                        {
+                        dataSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && 
+                                                                                                           relInst.Target.ClassDefinition.Name == "SpatialDataSource" &&
+                                                                                                           relInst.Target.InstanceId == requestedEntity.SpatialDataSourceID);
+                        if(dataSourceRel == null)
+                            {
+                            throw new UserFriendlyException("The specified spatial dataSource ID is not related to the selected spatial entity");
+                            }
+                        }
+
+                    IECInstance firstSpatialDataSource = dataSourceRel.Target;
 
                     UInt64 filesize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : (UInt64)((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
 
@@ -665,10 +684,21 @@ namespace IndexECPlugin.Source
                 }
             }
 
-        private WmsSourceNet CreateWMSSource (IECInstance spatialEntity, string coordinateSystem, List<RequestedEntity> requestedEntities)
+        private WmsSourceNet CreateWMSSource (IECInstance spatialEntity, string coordinateSystem, RequestedEntity requestedEntity)
             {
-            IECRelationshipInstance wmsSourceRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
-                                                                                                             relInst.Target.ClassDefinition.Name == "WMSSource");
+            IECRelationshipInstance wmsSourceRel;
+
+            if ( requestedEntity.SpatialDataSourceID == null )
+                {
+                wmsSourceRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
+                                                                                         relInst.Target.ClassDefinition.Name == "WMSSource");
+                }
+            else
+                {
+                wmsSourceRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
+                                                                                         relInst.Target.ClassDefinition.Name == "WMSSource" &&
+                                                                                         relInst.Target.InstanceId == requestedEntity.SpatialDataSourceID);
+                }
             IECInstance wmsSource = wmsSourceRel.Target;
 
             IECRelationshipInstance wmsServerRel = wmsSource.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "ServerToSpatialDataSource" &&
@@ -696,8 +726,8 @@ namespace IndexECPlugin.Source
                 Version = wmsServer.GetPropertyValue("Version").StringValue,
                 Layers = (wmsSource.GetPropertyValue("Layers") == null || wmsSource.GetPropertyValue("Layers").IsNull) ? null : wmsSource.GetPropertyValue("Layers").StringValue,
                 CoordinateSystem = coordinateSystem,
-                SelectedStyle = requestedEntities.First(e => e.ID == entityId).SelectedStyle,
-                SelectedFormat = requestedEntities.First(e => e.ID == entityId).SelectedFormat,
+                SelectedStyle = requestedEntity.SelectedStyle,
+                SelectedFormat = requestedEntity.SelectedFormat,
                 Legal = (wmsServer.GetPropertyValue("Legal") == null || wmsServer.GetPropertyValue("Legal").IsNull) ? null : wmsServer.GetPropertyValue("Legal").StringValue,
                 Footprint = model.points
             };

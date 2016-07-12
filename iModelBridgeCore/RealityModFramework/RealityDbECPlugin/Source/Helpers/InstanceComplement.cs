@@ -26,8 +26,8 @@ namespace IndexECPlugin.Source.Helpers
         /// <summary>
         /// InstanceComplement constructor
         /// </summary>
-        public InstanceComplement ()
-            : base(false, "ComplementTableName", "ComplementColumnName", "ComplementJoinTableName", "ComplementTableUniqueIdColumn")
+        public InstanceComplement (IDbQuerier dbQuerier)
+            : base(false, "ComplementTableName", "ComplementColumnName", "ComplementJoinTableName", "ComplementTableUniqueIdColumn", dbQuerier)
             {
             }
 

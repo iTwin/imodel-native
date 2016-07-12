@@ -19,6 +19,7 @@ using System.Reflection;
 using Bentley.ECObjects.XML;
 using Bentley.ECObjects.Instance;
 using Bentley.EC.Persistence.Operations;
+using IndexECPlugin.Tests.Common;
 
 namespace IndexECPlugin.Tests
     {
@@ -43,13 +44,7 @@ namespace IndexECPlugin.Tests
 
             m_instanceCacheManager = (IInstanceCacheManager) m_mock.StrictMock(typeof(IInstanceCacheManager));
 
-            PrepareSchema();
-            }
-
-        private void PrepareSchema ()
-            {
-            ECSchemaXmlStreamReader schemaReader = new ECSchemaXmlStreamReader(Assembly.GetAssembly(typeof(IndexECPlugin.Source.IndexECPlugin)).GetManifestResourceStream("ECSchemaDB.xml"));
-            m_schema = schemaReader.Deserialize();
+            m_schema = SetupHelpers.PrepareSchema();
             }
 
         private RepositoryConnection CreateRepositoryConnection (ECSession session, RepositoryConnectionService connectionService)
@@ -101,160 +96,6 @@ namespace IndexECPlugin.Tests
             instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "4f552e93e4b018de15819c51");
             instance.ExtendedDataValueSetter.Add("Complete", true);
 
-            return instance;
-            }
-
-
-        private IECInstance CreateParentSED()
-            {
-            IECInstance instance = m_schema.GetClass("SpatialEntityDataset").CreateInstance();
-            instance.InstanceId = "543e6b86e4b0fd76af69cf4c";
-
-            instance["Id"].StringValue = "543e6b86e4b0fd76af69cf4c";
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "4f552e93e4b018de15819c51");
-            instance.ExtendedDataValueSetter.Add("Complete", true);
-
-            return instance;
-            }
-        private IECInstance CreateSEWDV(bool complete)
-            {
-            IECInstance instance = m_schema.GetClass("SpatialEntityWithDetailsView").CreateInstance();
-            instance.InstanceId = "553690bfe4b0b22a15807df2";
-
-            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "543e6b86e4b0fd76af69cf4c");
-            instance.ExtendedDataValueSetter.Add("Complete", complete);
-
-            return instance;
-            }
-
-        private IECInstance CreateSEB (bool complete)
-            {
-            IECInstance instance = m_schema.GetClass("SpatialEntityBase").CreateInstance();
-            instance.InstanceId = "553690bfe4b0b22a15807df2";
-            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
-            instance["Footprint"].StringValue = "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }";
-            instance["Name"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015";
-            instance["Keywords"].StringValue = "elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States";
-            instance["AssociateFile"].SetToNull();
-            instance["ProcessingDescription"].SetToNull();
-            instance["DataSourceTypesAvailable"].StringValue = "IMG";
-            instance["AccuracyResolutionDensity"].SetToNull();
-            instance["DataProvider"].StringValue = "USGS";
-            instance["DataProviderName"].StringValue = "United States Geological Survey";
-            instance["Date"].SetToNull();
-            instance["Classification"].StringValue = "Terrain";
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "543e6b86e4b0fd76af69cf4c");
-            instance.ExtendedDataValueSetter.Add("Complete", complete);
-            return instance;
-            }
-
-        private IECInstance CreateSpatialEntity (bool complete)
-            {
-            IECInstance instance = m_schema.GetClass("SpatialEntity").CreateInstance();
-            instance.InstanceId = "553690bfe4b0b22a15807df2";
-            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
-            instance["Footprint"].StringValue = "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }";
-            instance["Name"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015";
-            instance["Keywords"].StringValue = "elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States";
-            instance["AssociateFile"].SetToNull();
-            instance["ProcessingDescription"].SetToNull();
-            instance["DataSourceTypesAvailable"].StringValue = "IMG";
-            instance["AccuracyResolutionDensity"].SetToNull();
-            instance["DataProvider"].StringValue = "USGS";
-            instance["DataProviderName"].StringValue = "United States Geological Survey";
-            instance["Date"].SetToNull();
-            instance["Classification"].StringValue = "Terrain";
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "543e6b86e4b0fd76af69cf4c");
-            instance.ExtendedDataValueSetter.Add("Complete", complete);
-            return instance;
-            }
-
-        private IECInstance CreateMetadata (bool complete)
-            {
-            IECInstance instance = m_schema.GetClass("Metadata").CreateInstance();
-            instance.InstanceId = "553690bfe4b0b22a15807df2";
-            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
-            instance["RawMetadata"].SetToNull();
-            instance["RawMetadataFormat"].StringValue = "FGDC";
-            instance["DisplayStyle"].SetToNull();
-            instance["Description"].StringValue = "CachedValueTest";
-            instance["ContactInformation"].SetToNull();
-            instance["Keywords"].StringValue = "CachedValueTest";
-            instance["Legal"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015 courtesy of the U.S. Geological Survey";
-            instance["Lineage"].SetToNull();
-            instance["Provenance"].SetToNull();
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("Complete", complete);
-            return instance;
-            }
-
-        private IECInstance CreateThumbnail (bool complete)
-            {
-            IECInstance instance = m_schema.GetClass("Thumbnail").CreateInstance();
-            instance.InstanceId = "553690bfe4b0b22a15807df2";
-            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
-            instance["ThumbnailProvenance"].SetToNull();
-            instance["ThumbnailFormat"].StringValue = "jpg";
-            instance["ThumbnailWidth"].SetToNull();
-            instance["ThumbnailHeight"].SetToNull();
-            instance["ThumbnailStamp"].SetToNull();
-            instance["ThumbnailGenerationDetails"].SetToNull();
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("Complete", complete);
-            return instance;
-            }
-
-        private IECInstance CreateSDS (bool complete)
-            {
-            IECInstance instance = m_schema.GetClass("SpatialDataSource").CreateInstance();
-            instance.InstanceId = "553690bfe4b0b22a15807df2";
-            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
-            instance["MainURL"].StringValue = "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015.zip";
-            instance["CompoundType"].StringValue = "USGS";
-            instance["LocationInCompound"].StringValue = "Unknown";
-            instance["DataSourceType"].StringValue = "IMG";
-            instance["SisterFiles"].SetToNull();
-            instance["FileSize"].StringValue = "256093";
-            instance["Metadata"].StringValue = "https://www.sciencebase.gov/catalog/file/get/553690bfe4b0b22a15807df2?f=__disk__d0%2F20%2Fa5%2Fd020a57f42c6a948f52f567a25858aa87b4e7f50";
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("Complete", complete);
-            return instance;
-            }
-
-        private IECInstance CreateServer (bool complete)
-            {
-            IECInstance instance = m_schema.GetClass("Server").CreateInstance();
-            instance.InstanceId = "553690bfe4b0b22a15807df2";
-            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
-            instance["CommunicationProtocol"].StringValue = "ftp";
-            instance["Name"].SetToNull();
-            instance["URL"].StringValue = "ftp://rockyftp.cr.usgs.gov";
-            instance["ServerContactInformation"].SetToNull();
-            instance["Fees"].StringValue = "None. No fees are applicable for obtaining the data set.";
-            instance["Legal"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015 courtesy of the U.S. Geological Survey";
-            instance["AccessConstraints"].SetToNull();
-            instance["Online"].SetToNull();
-            instance["LastCheck"].SetToNull();
-            instance["LastTimeOnline"].SetToNull();
-            instance["Latency"].SetToNull();
-            instance["MeanReachabilityStats"].SetToNull();
-            instance["State"].SetToNull();
-            instance["Type"].SetToNull();
-
-            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
-            instance.ExtendedDataValueSetter.Add("Complete", complete);
             return instance;
             }
 
@@ -313,12 +154,12 @@ namespace IndexECPlugin.Tests
             {
 
             //This instance's purpose is to verify that instances that are cached but not returned by the fetcher are returned in the results.
-            var instanceToAdd = CreateSEWDV(false);
+            var instanceToAdd = SetupHelpers.CreateSEWDV(false, m_schema);
             instanceToAdd.InstanceId = "553690bfe4b0b22a15807aaa";
             instanceToAdd["Id"].StringValue = "553690bfe4b0b22a15807aaa";
 
             //This instance's purpose is to verify that instances that are cached and also returned by the fetcher are not duplicated in the results.
-            var duplicateOfFetcherInstance = CreateSEWDV(false);
+            var duplicateOfFetcherInstance = SetupHelpers.CreateSEWDV(false, m_schema);
 
             List<IECInstance> cachedInstanceList = new List<IECInstance>() { instanceToAdd, duplicateOfFetcherInstance };
             using ( m_mock.Record() )
@@ -376,7 +217,7 @@ namespace IndexECPlugin.Tests
         [Test]
         public void SEWDVUsgsFailureTest ()
             {
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateSEWDV(false)};
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){SetupHelpers.CreateSEWDV(false, m_schema)};
 
             using ( m_mock.Record() )
                 {
@@ -701,7 +542,7 @@ namespace IndexECPlugin.Tests
         public void SpatialEntityBaseCompleteCacheTest ()
             {
 
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateSEB(true)};
+            List<IECInstance> cachedInstanceList = new List<IECInstance>(){SetupHelpers.CreateSEB(true, m_schema)};
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -737,7 +578,7 @@ namespace IndexECPlugin.Tests
         public void SpatialEntityCompleteCacheTest ()
             {
 
-            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSpatialEntity(true) };
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSpatialEntity(true, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -773,7 +614,7 @@ namespace IndexECPlugin.Tests
         public void SpatialDataSourceCompleteCacheTest ()
             {
 
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateSDS(true)};
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSDS(true, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -809,7 +650,7 @@ namespace IndexECPlugin.Tests
         public void MetadataCompleteCacheTest ()
             {
 
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateMetadata(true)};
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateMetadata(true, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -845,7 +686,7 @@ namespace IndexECPlugin.Tests
         public void ThumbnailCompleteCacheTest ()
             {
 
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateThumbnail(true)};
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateThumbnail(true, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -880,7 +721,7 @@ namespace IndexECPlugin.Tests
         [Test]
         public void ServerCompleteCacheTest ()
             {
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateServer(true)};
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateServer(true, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -915,7 +756,7 @@ namespace IndexECPlugin.Tests
         [Test]
         public void SpatialEntityBaseIncompleteCacheTest ()
             {
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateSEB(false)};
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSEB(false, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -951,7 +792,7 @@ namespace IndexECPlugin.Tests
         public void SpatialDataSourceIncompleteCacheTest ()
             {
 
-            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSDS(false) };
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSDS(false, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -986,7 +827,7 @@ namespace IndexECPlugin.Tests
         [Test]
         public void MetadataIncompleteCacheTest ()
             {
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateMetadata(false)};
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateMetadata(false, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -1021,7 +862,7 @@ namespace IndexECPlugin.Tests
         [Test]
         public void ThumbnailIncompleteCacheTest ()
             {
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateThumbnail(false)};
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateThumbnail(false, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -1057,7 +898,7 @@ namespace IndexECPlugin.Tests
         public void ServerIncompleteCacheTest ()
             {
 
-            List<IECInstance> cachedInstanceList = new List<IECInstance>(){CreateServer(false)};
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateServer(false, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -1092,7 +933,7 @@ namespace IndexECPlugin.Tests
         [Test]
         public void IncompleteCacheUSGSFailureTest ()
             {
-            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSEB(false) };
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSEB(false, m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -1127,7 +968,7 @@ namespace IndexECPlugin.Tests
         [Test]
         public void SEWDVCachedAndParentCachedTest ()
             {
-            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSEWDV(false) };
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSEWDV(false, m_schema) };
             List<IECInstance> cachedParent = new List<IECInstance>() { CreateParentSEWDV() };
             using ( m_mock.Record() )
                 {
@@ -1173,7 +1014,7 @@ namespace IndexECPlugin.Tests
         [Test]
         public void SEWDVCachedAndParentNotCachedTest ()
             {
-            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSEWDV(false) };
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSEWDV(false, m_schema) };
             List<IECInstance> emptyList = new List<IECInstance>() {};
             using ( m_mock.Record() )
                 {
@@ -1219,8 +1060,8 @@ namespace IndexECPlugin.Tests
         [Test]
         public void SpatialEntityBaseCachedAndParentCached ()
             {
-            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSEB(true) };
-            List<IECInstance> cachedParent = new List<IECInstance>() { CreateParentSED() };
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSEB(true, m_schema) };
+            List<IECInstance> cachedParent = new List<IECInstance>() { SetupHelpers.CreateParentSED(m_schema) };
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });
@@ -1267,7 +1108,7 @@ namespace IndexECPlugin.Tests
         [Test]
         public void SpatialEntityBaseCachedAndParentNotCached ()
             {
-            List<IECInstance> cachedInstanceList = new List<IECInstance>() { CreateSEB(true) };
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSEB(true, m_schema) };
             List<IECInstance> cachedParent = new List<IECInstance>() {};
             using ( m_mock.Record() )
                 {
@@ -1370,7 +1211,7 @@ namespace IndexECPlugin.Tests
             List<IECInstance> cachedInstanceList = new List<IECInstance>()
             {
             };
-            List<IECInstance> cachedParent = new List<IECInstance>(){CreateParentSED()};
+            List<IECInstance> cachedParent = new List<IECInstance>(){SetupHelpers.CreateParentSED(m_schema)};
             using ( m_mock.Record() )
                 {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();//.Return(new List<USGSRequestBundle> { m_testBundle });

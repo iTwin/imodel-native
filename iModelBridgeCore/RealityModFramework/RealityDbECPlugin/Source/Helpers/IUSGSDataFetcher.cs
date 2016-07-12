@@ -326,7 +326,7 @@ namespace IndexECPlugin.Source.Helpers
                     }
                 else
                     {
-                    throw ex;
+                    throw;
                     }
                 }
             reqList.Sort();

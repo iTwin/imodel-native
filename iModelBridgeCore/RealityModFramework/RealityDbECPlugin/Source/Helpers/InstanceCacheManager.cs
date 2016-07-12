@@ -66,6 +66,7 @@ namespace IndexECPlugin.Source.Helpers
         uint m_daysBeforeCacheReplaced;
         IDbConnection m_dbConnection;
         ECQuerySettings m_querySettings;
+        IDbQuerier m_dbQuerier;
 
         MimicTableWriter m_mimicTableWriter;
         /// <summary>
@@ -75,7 +76,8 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="daysCacheIsValid">The maximum age allowed for the cached information (in days)</param>
         /// <param name="dbConnection">The dbConnection used to communicate to the appropriate database</param>
         /// <param name="querySettings">The ecquery settings of the present query</param>
-        public InstanceCacheManager(DataSource source, uint daysCacheIsValid, IDbConnection dbConnection, ECQuerySettings querySettings)
+        /// <param name="dbQuerier">The IDbQuerier object that will communicate with the database</param>
+        public InstanceCacheManager(DataSource source, uint daysCacheIsValid, IDbConnection dbConnection, ECQuerySettings querySettings, IDbQuerier dbQuerier)
             //: base(true, "CacheTableName", "CacheColumnName", "CacheJoinTableName", null)
             {
             m_source = source;
@@ -83,6 +85,7 @@ namespace IndexECPlugin.Source.Helpers
             m_daysBeforeCacheReplaced = ((m_daysCacheIsValid + 1) / 2);
             m_dbConnection = dbConnection;
             m_querySettings = querySettings;
+            m_dbQuerier = dbQuerier;
 
             m_mimicTableWriter = new MimicTableWriter(true, "CacheTableName", "CacheColumnName", "CacheJoinTableName", null);
             }
@@ -155,7 +158,7 @@ namespace IndexECPlugin.Source.Helpers
 
             string sqlQueryString = m_mimicTableWriter.CreateMimicSQLQuery(m_source, instanceIdsList, baseECClass, basePropertiesSelected, out drh, out paramNameValueMap, additionalColumns);
 
-            List<IECInstance> cachedInstances = SqlQueryHelpers.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
+            List<IECInstance> cachedInstances = m_dbQuerier.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
             //List<string> instancesToDelete;
             foreach (IECInstance oldInstance in cachedInstances.Where(inst => (DateTime.UtcNow - (DateTime)inst.ExtendedData["DateCacheCreated"]).Days > m_daysCacheIsValid).ToList())
                 {
@@ -260,7 +263,7 @@ namespace IndexECPlugin.Source.Helpers
 
             string sqlQueryString = m_mimicTableWriter.CreateMimicSQLSpatialQuery(m_source, polygonDescriptor, baseECClass, basePropertiesSelected, out drh, out paramNameValueMap, additionalColumns, whereCriteria);
 
-            List<IECInstance> cachedInstances = SqlQueryHelpers.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
+            List<IECInstance> cachedInstances = m_dbQuerier.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_dbConnection, additionalColumns);
             //List<string> instancesToDelete;
             foreach ( IECInstance oldInstance in cachedInstances.Where(inst => (DateTime.UtcNow - (DateTime) inst.ExtendedData["DateCacheCreated"]).Days > m_daysCacheIsValid).ToList() )
                     {
@@ -297,68 +300,95 @@ namespace IndexECPlugin.Source.Helpers
         public void InsertInstancesInCache (IEnumerable<IECInstance> instanceList, IECClass ecClass, IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null)
             {
 
-            ISQLInsertStatementBuilder sqlQueryBuilder = DbConnectionHelper.GetSqlInsertStatementBuilder(m_dbConnection);
-            IParamNameValueMap paramNameValueMap;
+            IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> modifiedAddColumns;
+            Func<IECInstance, WhereStatementManager> deleteStatementConstructor;
 
-            string sqlInsertQueryString = CreateCacheSQLStatement(instanceList, ecClass, sqlQueryBuilder, out paramNameValueMap, additionalColumns);
+            int numberOfParamsPerInstance = PrepareArgs(ecClass, additionalColumns, out modifiedAddColumns, out deleteStatementConstructor);
 
-            SqlQueryHelpers.ExecuteNonQueryInDb(sqlInsertQueryString, paramNameValueMap, m_dbConnection);
+            //We add a loop to divide this operation for large sets of instances. This is because the maximum number of parameters for SQL server is 2100,
+            //and for SpatialEntityBase, this means that around 100 instances will break that limit.
+
+            int addedCount = 0;
+            int step = 1050/numberOfParamsPerInstance;
+            int totalCount = instanceList.Count();
+            while ( addedCount < totalCount )
+                {
+
+                IEnumerable<IECInstance> partialInstanceList = instanceList.Skip(addedCount).Take(step);
+
+                ISQLInsertStatementBuilder sqlQueryBuilder = DbConnectionHelper.GetSqlInsertStatementBuilder(m_dbConnection);
+                IParamNameValueMap paramNameValueMap;
+
+                string sqlInsertQueryString = m_mimicTableWriter.CreateMimicSQLInsert(partialInstanceList, ecClass, sqlQueryBuilder, out paramNameValueMap, modifiedAddColumns, deleteStatementConstructor);
+
+                m_dbQuerier.ExecuteNonQueryInDb(sqlInsertQueryString, paramNameValueMap, m_dbConnection);
+
+                addedCount += step;
+                }
             }
 
         /// <summary>
-        /// Creates the statement that inserts instances in the cache tables on the database
+        /// Prepares the arguments for CreateMimicSQLInsert.
         /// </summary>
-        /// <param name="instanceList">The list of instances to insert. The instances must have the extended data "Complete" set with a boolean</param>
-        /// <param name="ecClass">The class of the instances to insert. It is necessary to give an ECClass that is persisted in the database</param>
-        /// <param name="sqlQueryBuilder">The ISQLInsertStatementBuilder used to write the SQL statement.</param>
-        /// <param name="paramNameValueMap">The IParamNameValueMap object used to complete the query</param>
+        /// <param name="ecClass"></param>
         /// <param name="additionalColumns">Additional columns to fill in the database and that are not contained in the class properties.</param>
-        /// <returns>The sql statement for inserting the instances in the cache.</returns>
-        private string CreateCacheSQLStatement (IEnumerable<IECInstance> instanceList, 
-                                               IECClass ecClass, ISQLInsertStatementBuilder sqlQueryBuilder, 
-                                               out IParamNameValueMap paramNameValueMap, IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null)
+        /// <param name="modifiedAddColumns">Same as additionalColumns, but with standard caching columns if they weren't already added</param>
+        /// <param name="deleteStatementConstructor">The delete statement constructor needed by CreateMimicSQLInsert</param>
+        /// <returns>The maximum number of parameters per row.</returns>
+        private int PrepareArgs(IECClass ecClass,
+                                IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns, 
+                                out IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>> modifiedAddColumns, 
+                                out Func<IECInstance, WhereStatementManager> deleteStatementConstructor)
             {
             List<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumnsList = new List<Tuple<string, IECType, Func<IECInstance, string>>>();
 
             additionalColumnsList.Add(new Tuple<string, IECType, Func<IECInstance, string>>("SubAPI", Bentley.ECObjects.ECObjects.StringType, inst => SourceStringMap.SourceToString(m_source)));
             additionalColumnsList.Add(new Tuple<string, IECType, Func<IECInstance, string>>("DateCacheCreated", Bentley.ECObjects.ECObjects.StringType, inst => DateTime.UtcNow.ToString()));
-            additionalColumnsList.Add(new Tuple<string, IECType, Func<IECInstance, string>>("Complete", Bentley.ECObjects.ECObjects.BooleanType, inst => ((bool)inst.ExtendedData["Complete"]).ToString()));
+            additionalColumnsList.Add(new Tuple<string, IECType, Func<IECInstance, string>>("Complete", Bentley.ECObjects.ECObjects.BooleanType, inst => ((bool) inst.ExtendedData["Complete"]).ToString()));
 
             String idColumnName = ecClass["Id"].GetCustomAttributes("DBColumn")["ColumnName"].StringValue;
 
-            Func<IECInstance, WhereStatementManager> deleteStatementConstructor;
+            //IF PARAMETERS ARE ADDED IN THE deleteStatementManager, CHANGE ACCORDINGLY THE VALUE OF maxNumberOfDeleteParams VARIABLE BELOW.
 
             deleteStatementConstructor = inst =>
             {
                 WhereStatementManager deleteStatementManager;
-            if ( (bool) inst.ExtendedData["Complete"] )
-                {
-                deleteStatementManager = new WhereStatementManager();
-                deleteStatementManager.WhereStatement = idColumnName + " = @instId@ AND SubAPI = @subAPI@; ";
-                deleteStatementManager.AddParameter("@instId@", Bentley.ECObjects.ECObjects.StringType, inst.InstanceId);
-                deleteStatementManager.AddParameter("@subAPI@", Bentley.ECObjects.ECObjects.StringType, SourceStringMap.SourceToString(m_source));
-                }
-            else
-                {
-                deleteStatementManager = new WhereStatementManager();
-                deleteStatementManager.WhereStatement = idColumnName + " = @instId@ AND SubAPI = @subAPI@ AND (Complete = @isComplete@ OR DateCacheCreated <= @dateCacheCreated@); ";
-                deleteStatementManager.AddParameter("@instId@", Bentley.ECObjects.ECObjects.StringType, inst.InstanceId);
-                deleteStatementManager.AddParameter("@subAPI@", Bentley.ECObjects.ECObjects.StringType, SourceStringMap.SourceToString(m_source));
-                deleteStatementManager.AddParameter("@isComplete@", Bentley.ECObjects.ECObjects.BooleanType, false);
-                deleteStatementManager.AddParameter("@dateCacheCreated@", Bentley.ECObjects.ECObjects.DateTimeType, DateTime.UtcNow.AddDays(m_daysBeforeCacheReplaced * -1));
-                }
-            return deleteStatementManager;
+                if ( (bool) inst.ExtendedData["Complete"] )
+                    {
+                    //IF PARAMETERS ARE ADDED IN THE deleteStatementManager, CHANGE ACCORDINGLY THE VALUE OF maxNumberOfDeleteParams VARIABLE BELOW.
+                    deleteStatementManager = new WhereStatementManager();
+                    deleteStatementManager.WhereStatement = idColumnName + " = @instId@ AND SubAPI = @subAPI@; ";
+                    deleteStatementManager.AddParameter("@instId@", Bentley.ECObjects.ECObjects.StringType, inst.InstanceId);
+                    deleteStatementManager.AddParameter("@subAPI@", Bentley.ECObjects.ECObjects.StringType, SourceStringMap.SourceToString(m_source));
+                    }
+                else
+                    {
+                    //IF PARAMETERS ARE ADDED IN THE deleteStatementManager, CHANGE ACCORDINGLY THE VALUE OF maxNumberOfDeleteParams VARIABLE BELOW.
+                    deleteStatementManager = new WhereStatementManager();
+                    deleteStatementManager.WhereStatement = idColumnName + " = @instId@ AND SubAPI = @subAPI@ AND (Complete = 'false' OR DateCacheCreated <= @dateCacheReplaced@); ";
+                    deleteStatementManager.AddParameter("@instId@", Bentley.ECObjects.ECObjects.StringType, inst.InstanceId);
+                    deleteStatementManager.AddParameter("@subAPI@", Bentley.ECObjects.ECObjects.StringType, SourceStringMap.SourceToString(m_source));
+                    deleteStatementManager.AddParameter("@dateCacheReplaced@", Bentley.ECObjects.ECObjects.DateTimeType, DateTime.UtcNow.AddDays(m_daysBeforeCacheReplaced * -1));
+                    }
+                return deleteStatementManager;
             };
-                
+
 
             if ( additionalColumns != null )
                 {
-            foreach ( var column in additionalColumns )
-                {
-                additionalColumnsList.Add(column);
+                foreach ( var column in additionalColumns )
+                    {
+                    if ( !additionalColumnsList.Any(c => c.Item1 == column.Item1) )
+                    additionalColumnsList.Add(column);
+                    }
                 }
-                }
-            return m_mimicTableWriter.CreateMimicSQLInsert(instanceList, ecClass, sqlQueryBuilder, out paramNameValueMap, additionalColumnsList, deleteStatementConstructor);
+
+            modifiedAddColumns = additionalColumnsList;
+
+            //TODO : We should find a way to find this number programmatically instead of hardcoding it...
+            //As things are of now, it is the responsibility of the programmer to update it.
+            int maxNumberOfDeleteParams = 3;
+            return maxNumberOfDeleteParams + additionalColumnsList.Count() + ecClass.Count();
             }
         }
     }

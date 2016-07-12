@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Data;
+using IndexECPlugin.Tests.Common;
 
 
 namespace IndexECPlugin.Tests
@@ -26,8 +27,7 @@ namespace IndexECPlugin.Tests
         [SetUp]
         public void SetUp ()
             {
-            ECSchemaXmlStreamReader schemaReader = new ECSchemaXmlStreamReader(Assembly.GetAssembly(typeof(IndexECPlugin.Source.IndexECPlugin)).GetManifestResourceStream("ECSchemaDB.xml"));
-            m_schema = schemaReader.Deserialize();
+            m_schema = SetupHelpers.PrepareSchema();
             }
 
         [Test]
