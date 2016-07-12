@@ -186,7 +186,7 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsFalseWhenDoes
     ExpressionContextPtr exprContext = CreateContext(*instanceA);
     
     ECValue value;
-    ASSERT_TRUE(EvaluateECExpression(value, "this.HasRelatedInstance(\"Rel:0:ClassB\")", *exprContext));
+    ASSERT_TRUE(EvaluateECExpression(value, "this.HasRelatedInstance(\"TestSchema:Rel\", \"Forward\", \"TestSchema:ClassB\")", *exprContext));
     ASSERT_TRUE(value.IsBoolean());
     ASSERT_FALSE(value.GetBoolean());
     }
@@ -216,7 +216,7 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasOn
     ExpressionContextPtr exprContext = CreateContext(*instanceA);
 
     ECValue value;
-    ASSERT_TRUE(EvaluateECExpression(value, "this.HasRelatedInstance(\"Rel:0:ClassB\")", *exprContext));
+    ASSERT_TRUE(EvaluateECExpression(value, "this.HasRelatedInstance(\"TestSchema:Rel\", \"Forward\", \"TestSchema:ClassB\")", *exprContext));
     ASSERT_TRUE(value.IsBoolean());
     ASSERT_TRUE(value.GetBoolean());
     }
@@ -255,7 +255,7 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasMu
     ExpressionContextPtr exprContext = CreateContext(*instanceA);
 
     ECValue value;
-    ASSERT_TRUE(EvaluateECExpression(value, "this.HasRelatedInstance(\"Rel:0:ClassB\")", *exprContext));
+    ASSERT_TRUE(EvaluateECExpression(value, "this.HasRelatedInstance(\"TestSchema:Rel\", \"Forward\", \"TestSchema:ClassB\")", *exprContext));
     ASSERT_TRUE(value.IsBoolean());
     ASSERT_TRUE(value.GetBoolean());
     }
@@ -589,7 +589,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsNullWhenThereAre
     ExpressionContextPtr exprContext = CreateContext(*instanceA);
     
     ECValue value;
-    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedValue(\"Rel:0:ClassB\", \"label\")", *exprContext));
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedValue(\"TestSchema:Rel\", \"Forward\", \"TestSchema:ClassB\", \"label\")", *exprContext));
     ASSERT_TRUE(value.IsNull());
     }
 
@@ -619,7 +619,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceV
     ExpressionContextPtr exprContext = CreateContext(*instanceA);
 
     ECValue value;
-    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedValue(\"Rel:0:ClassB\", \"label\")", *exprContext));
+    ASSERT_TRUE(EvaluateECExpression(value, "this.GetRelatedValue(\"TestSchema:Rel\", \"Forward\", \"TestSchema:ClassB\", \"label\")", *exprContext));
     ASSERT_TRUE(value.IsString());
     ASSERT_STREQ("test label", value.GetUtf8CP());
     }
