@@ -756,7 +756,7 @@ struct HttpSourceRequest : AsyncSourceRequest
     +---------------+---------------+---------------+---------------+-----------+------*/
     virtual RefCountedPtr<SourceResponse> _Handle() const override 
         {
-        HttpRequest request(m_payload->GetPayloadId());
+        Http::Request request(m_payload->GetPayloadId());
         request.SetCancellationToken(m_cancellationToken);
 
         HttpByteStreamBodyPtr responseBody = HttpByteStreamBody::Create();
@@ -770,7 +770,7 @@ struct HttpSourceRequest : AsyncSourceRequest
         if (!Utf8String::IsNullOrEmpty(m_payload->GetEntityTag()))
             request.GetHeaders().SetIfNoneMatch(m_payload->GetEntityTag());
         
-        HttpResponse response = request.Perform();
+        Http::Response response = request.Perform();
         switch (response.GetConnectionStatus())
             {
             case ConnectionStatus::CouldNotConnect:

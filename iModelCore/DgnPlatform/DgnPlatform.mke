@@ -643,6 +643,10 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext)
 
+%if (("Windows" == TARGET_PLATFORM) || ("WinRT" == TARGET_PLATFORM))
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+%endif
+
 %if defined (BENTLEYCONFIG_OPENCASCADE)
 # FoundationClasses
 LINKER_LIBRARIES_DELAYLOADED = \
