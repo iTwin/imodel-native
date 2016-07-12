@@ -63,10 +63,6 @@ $(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(PublicApiDi
 
 $(o)WMSCapabilities$(oext) : $(baseDir)WMSCapabilities.cpp $(PublicApiDir)WMSCapabilities.h $(baseDir)WMSTag.h ${MultiCompileDepends}
 
-$(o)WMSSource$(oext) : $(baseDir)WMSSource.cpp $(PublicApiDir)WMSSource.h ${MultiCompileDepends}
-
-$(o)OsmSource$(oext) : $(baseDir)OsmSource.cpp $(PublicApiDir)OsmSource.h ${MultiCompileDepends}
-
 $(o)RealityDataDownload$(oext) : $(baseDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
 
 $(o)SpatioTemporalSelector$(oext) : $(baseDir)SpatioTemporalSelector.cpp $(PublicApiDir)SpatioTemporalSelector.h ${MultiCompileDepends}

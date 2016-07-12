@@ -55,9 +55,9 @@ int FtpClient::m_retryCount = 0;
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClientPtr FtpClient::ConnectTo(Utf8CP url)
+FtpClientPtr FtpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName)
     {
-    return new FtpClient(url);
+    return new FtpClient(serverUrl, serverName);
     }
 
 //-------------------------------------------------------------------------------------
@@ -154,6 +154,9 @@ FtpStatus FtpClient::GetData() const
     
         // Set server.
         pExtractedData->SetServer(*m_pServer);
+
+        // Set provider.
+        pExtractedData->SetProvider(GetServerName().c_str());
     
         // Process created data.
         if (m_pObserver != NULL && pExtractedData != NULL)
@@ -175,6 +178,14 @@ Utf8StringCR FtpClient::GetServerUrl() const
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    7/2016
+//-------------------------------------------------------------------------------------
+Utf8StringCR FtpClient::GetServerName() const
+    {
+    return m_pServer->GetName();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 const FtpClient::RepositoryMapping& FtpClient::GetRepositoryMapping() const
@@ -193,9 +204,9 @@ void FtpClient::SetObserver(IFtpTraversalObserver* pObserver)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClient::FtpClient(Utf8CP url)
+FtpClient::FtpClient(Utf8CP serverUrl, Utf8CP serverName)
     {
-    m_pServer = FtpServer::Create(url);
+    m_pServer = FtpServer::Create(serverUrl, serverName);
     m_pObserver = NULL;    
     m_dataRepositories = RepositoryMapping();    
     }
@@ -432,6 +443,12 @@ void FtpData::SetCompoundType(Utf8CP type) { m_compoundType = type; }
 uint64_t FtpData::GetSize() const { return m_size; }
 void FtpData::SetSize(uint64_t size) { m_size = size; }
 
+Utf8StringCR FtpData::GetResolution() const { return m_resolution; }
+void FtpData::SetResolution(Utf8CP res) { m_resolution = res; }
+
+Utf8StringCR FtpData::GetProvider() const { return m_provider; }
+void FtpData::SetProvider(Utf8CP provider) { m_provider = provider; }
+
 Utf8StringCR FtpData::GetDataType() const { return m_dataType; }
 void FtpData::SetDataType(Utf8CP type) { m_dataType = type; }
 
@@ -613,9 +630,9 @@ FtpServerPtr FtpServer::Create()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpServerPtr FtpServer::Create(Utf8CP url)
+FtpServerPtr FtpServer::Create(Utf8CP url, Utf8CP name)
     {
-    return new FtpServer(url);
+    return new FtpServer(url, name);
     }
 
 //-------------------------------------------------------------------------------------
@@ -663,8 +680,8 @@ FtpServer::FtpServer()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-FtpServer::FtpServer(Utf8CP url)
-    : m_url(url)
+FtpServer::FtpServer(Utf8CP url, Utf8CP name)
+    : m_url(url), m_name(name)
     {
     // Default values.
     m_online = true;
@@ -679,12 +696,15 @@ FtpServer::FtpServer(Utf8CP url)
         m_protocol = protocol.substr(0, protocol.find_first_of(":"));
         m_type = m_protocol;
 
-        // Extract name from url.
-        Utf8String name(url);
-        size_t beginPos = name.find_first_of("://") + 3;
-        size_t pos = name.find_last_of(".");
-        size_t endPos = name.find("/", pos);
-        m_name = name.substr(beginPos, endPos - beginPos);
+        if (m_name.empty())
+            {
+            // No server name was provided, try to extract it from url.
+            Utf8String name(url);
+            size_t beginPos = name.find_first_of("://") + 3;
+            size_t pos = name.find_last_of(".");
+            size_t endPos = name.find("/", pos);
+            m_name = name.substr(beginPos, endPos - beginPos);
+            }        
         }
     }
 
@@ -725,7 +745,7 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
     FtpDataPtr pExtractedData = FtpData::Create();    
 
     // Data extraction.
-    RealityDataPtr pRasterData = RasterData::Create(tifFileList[0].GetNameUtf8().c_str());
+    RealityDataPtr pData = RasterData::Create(tifFileList[0].GetNameUtf8().c_str());
 
     // Name.
     Utf8String name = tifFileList[0].GetNameUtf8();
@@ -771,9 +791,29 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
     if (pMetadata != NULL)
         pExtractedData->SetMetadata(*pMetadata);
 
+    // Resolution.
+    RasterDataPtr pRasterData = dynamic_cast<RasterDataP>(pData.get());
+    if (pRasterData != NULL)
+        {
+        Utf8String resolution = pRasterData->ComputeResolutionInMeters();
+        if (resolution.empty())
+            {
+            // File has no geocoding, try to parse metadata and create sister file.
+            Utf8String geocoding = FtpDataHandler::RetrieveGeocodingFromMetadata(metadataFilename);
+            if (!geocoding.empty())
+                {
+                // Make sure geocoding is well formatted.
+                geocoding.ReplaceAll("::", ":");
+                RasterFacility::CreateSisterFile(tifFileList[0].GetNameUtf8().c_str(), geocoding.c_str());
+                resolution = pRasterData->ComputeResolutionInMeters();
+                }
+            }
+        pExtractedData->SetResolution(resolution.c_str());
+        }
+
     // Footprint.
     DRange2d shape = DRange2d::NullRange();
-    if (SUCCESS != pRasterData->GetFootprint(&shape))
+    if (SUCCESS != pData->GetFootprint(&shape))
         {
         // File has no geocoding, try to parse metadata and create sister file.
         Utf8String geocoding = FtpDataHandler::RetrieveGeocodingFromMetadata(metadataFilename);
@@ -782,15 +822,14 @@ FtpDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outpu
             // Make sure geocoding is well formatted.
             geocoding.ReplaceAll("::", ":");
             RasterFacility::CreateSisterFile(tifFileList[0].GetNameUtf8().c_str(), geocoding.c_str());
-            pRasterData->GetFootprint(&shape);
-            //pRasterData->GetFootprint(&shape, geocoding.c_str());
+            pData->GetFootprint(&shape);
             }
     
         }
     pExtractedData->SetFootprint(shape);
 
     // Thumbnail.
-    FtpThumbnailPtr pThumbnail = FtpThumbnail::Create(*pRasterData);
+    FtpThumbnailPtr pThumbnail = FtpThumbnail::Create(*pData);
     if (pThumbnail != NULL)
         pExtractedData->SetThumbnail(*pThumbnail);
 

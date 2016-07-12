@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/WMSSource.cpp $
+|     $Source: RealityPackage/WMSSource.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <RealityPlatform/WMSSource.h>
+#include <RealityPackage/WMSSource.h>
 #include <BeXml/BeXml.h>
 
 // Xml Fragment Tags
@@ -27,7 +27,7 @@
 
 #define WMSSOURCE_ATTRIBUTE_CoordSysType        "type"
 
-USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 5/2015

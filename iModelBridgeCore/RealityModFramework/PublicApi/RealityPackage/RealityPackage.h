@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPackage/RealityPackage.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,8 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
+#include <Bentley/WString.h>
+#include <Geom/GeomApi.h>
 
 #if defined (__REALITYPACKAGE_BUILD__)
 #   define REALITYPACKAGE_EXPORT EXPORT_ATTRIBUTE
@@ -40,8 +42,12 @@ REALITYPACKAGE_TYPEDEFS(RealityDataSource)
 REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSource)
 REALITYPACKAGE_TYPEDEFS(WmsDataSource)
 REALITYPACKAGE_REF_COUNTED_PTR(WmsDataSource)
+REALITYPACKAGE_TYPEDEFS(WmsMapSettings)
+REALITYPACKAGE_REF_COUNTED_PTR(WmsMapSettings)
 REALITYPACKAGE_TYPEDEFS(OsmDataSource)
 REALITYPACKAGE_REF_COUNTED_PTR(OsmDataSource)
+REALITYPACKAGE_TYPEDEFS(OsmResource)
+REALITYPACKAGE_REF_COUNTED_PTR(OsmResource)
 
 // RealityData
 REALITYPACKAGE_TYPEDEFS(RealityData)

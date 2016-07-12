@@ -1,15 +1,15 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RealityPlatform/OsmSource.h $
+|     $Source: PublicApi/RealityPackage/OsmSource.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <RealityPlatform/RealityPlatformAPI.h>
+#include <RealityPackage/RealityPackage.h>
 
-BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
+BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              10/2015
@@ -18,15 +18,15 @@ struct OsmResource : public RefCountedBase
     {
 public:
     //! Create OsmResource with all the required information. 
-    REALITYDATAPLATFORM_EXPORT static OsmResourcePtr Create(DRange2dCR bbox);
-    REALITYDATAPLATFORM_EXPORT static OsmResourcePtr CreateFromXml(Utf8CP xmlFragment);
+    REALITYPACKAGE_EXPORT static OsmResourcePtr Create(DRange2dCR bbox);
+    REALITYPACKAGE_EXPORT static OsmResourcePtr CreateFromXml(Utf8CP xmlFragment);
 
     //! Get/Set the alternate url list. 
-    REALITYDATAPLATFORM_EXPORT const bvector<Utf8String>&   GetAlternateUrlList() const;
-    REALITYDATAPLATFORM_EXPORT void                         SetAlternateUrlList(const bvector<Utf8String>& urlList);
+    REALITYPACKAGE_EXPORT const bvector<Utf8String>&   GetAlternateUrlList() const;
+    REALITYPACKAGE_EXPORT void                         SetAlternateUrlList(const bvector<Utf8String>& urlList);
 
     //! Xml fragment.
-    REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR xmlFragment) const;
+    REALITYPACKAGE_EXPORT void ToXml(Utf8StringR xmlFragment) const;
 
 private:
     OsmResource(DRange2dCR bbox);
@@ -36,4 +36,4 @@ private:
     DRange2d m_bbox;                            //! Bbox to append to the alternate urls.
     };
 
-END_BENTLEY_REALITYPLATFORM_NAMESPACE
+END_BENTLEY_REALITYPACKAGE_NAMESPACE

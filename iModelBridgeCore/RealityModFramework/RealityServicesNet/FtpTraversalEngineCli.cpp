@@ -58,11 +58,13 @@ void FtpTraversalObserverWrapper::OnDataExtracted(FtpDataCR data)
 
     // Native to managed.
     FtpDataWrapper^ dataWrapper = FtpDataWrapper::Create();
-    
+
     dataWrapper->SetName(ctx.marshal_as<String^>(data.GetName().c_str()));
     dataWrapper->SetUrl(ctx.marshal_as<String^>(data.GetUrl().c_str()));
     dataWrapper->SetCompoundType(ctx.marshal_as<String^>(data.GetCompoundType().c_str()));
     dataWrapper->SetSize(data.GetSize());
+    dataWrapper->SetResolution(ctx.marshal_as<String^>(data.GetResolution().c_str()));
+    dataWrapper->SetProvider(ctx.marshal_as<String^>(data.GetProvider().c_str()));
     dataWrapper->SetDataType(ctx.marshal_as<String^>(data.GetDataType().c_str()));
     dataWrapper->SetLocationInCompound(ctx.marshal_as<String^>(data.GetLocationInCompound().c_str()));
     dataWrapper->SetDate(ctx.marshal_as<String^>(data.GetDate().ToString().c_str()));
@@ -130,9 +132,17 @@ void FtpTraversalObserverWrapper::OnDataExtracted(FtpDataCR data)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClientWrapper^ FtpClientWrapper::ConnectTo(System::String^ url)
+FtpClientWrapper^ FtpClientWrapper::ConnectTo(String^ serverUrl)
     {
-    return gcnew FtpClientWrapper(url);
+    return gcnew FtpClientWrapper(serverUrl, nullptr);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    4/2016
+//-------------------------------------------------------------------------------------
+FtpClientWrapper^ FtpClientWrapper::ConnectTo(String^ serverUrl, String^ serverName)
+    {
+    return gcnew FtpClientWrapper(serverUrl, serverName);
     }
 
 //-------------------------------------------------------------------------------------
@@ -161,6 +171,19 @@ String^ FtpClientWrapper::GetServerUrl()
 
     marshal_context ctx;
     return ctx.marshal_as<System::String^>((*m_pClient)->GetServerUrl().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    7/2016
+//-------------------------------------------------------------------------------------
+String^ FtpClientWrapper::GetServerName()
+    {
+    // Make sure client is init and valid.
+    if (NULL == m_pClient && (*m_pClient).IsValid())
+        return "";
+
+    marshal_context ctx;
+    return ctx.marshal_as<System::String^>((*m_pClient)->GetServerName().c_str());
     }
 
 //-------------------------------------------------------------------------------------
@@ -209,12 +232,13 @@ void FtpClientWrapper::SetObserver(IFtpTraversalObserverWrapper^ traversalObserv
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-FtpClientWrapper::FtpClientWrapper(String^ url)
+FtpClientWrapper::FtpClientWrapper(String^ serverUrl, String^ serverName)
     {
-    Utf8String urlUtf8;
-    BeStringUtilities::WCharToUtf8(urlUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(url).ToPointer()));
+    Utf8String urlUtf8, nameUtf8;
+    BeStringUtilities::WCharToUtf8(urlUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(serverUrl).ToPointer()));
+    BeStringUtilities::WCharToUtf8(nameUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(serverName).ToPointer()));
 
-    m_pClient = new FtpClientPtr(FtpClient::ConnectTo(urlUtf8.c_str()));
+    m_pClient = new FtpClientPtr(FtpClient::ConnectTo(urlUtf8.c_str(), nameUtf8.c_str()));
     }
 
 //-------------------------------------------------------------------------------------
@@ -320,6 +344,46 @@ uint64_t FtpDataWrapper::GetSize()
 void FtpDataWrapper::SetSize(uint64_t size)
     {
     (*m_pData)->SetSize(size);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+System::String^ FtpDataWrapper::GetResolution()
+    {
+    marshal_context ctx;
+    return ctx.marshal_as<System::String^>((*m_pData)->GetResolution().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+void FtpDataWrapper::SetResolution(System::String^ resolution)
+    {
+    Utf8String resUtf8;
+    BeStringUtilities::WCharToUtf8(resUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(resolution).ToPointer()));
+
+    (*m_pData)->SetResolution(resUtf8.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+System::String^ FtpDataWrapper::GetProvider()
+    {
+    marshal_context ctx;
+    return ctx.marshal_as<System::String^>((*m_pData)->GetProvider().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+void FtpDataWrapper::SetProvider(System::String^ provider)
+    {
+    Utf8String providerUtf8;
+    BeStringUtilities::WCharToUtf8(providerUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(provider).ToPointer()));
+
+    (*m_pData)->SetProvider(providerUtf8.c_str());
     }
 
 //-------------------------------------------------------------------------------------

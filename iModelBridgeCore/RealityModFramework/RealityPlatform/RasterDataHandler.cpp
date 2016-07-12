@@ -18,6 +18,8 @@
 #define THUMBNAIL_WIDTH     256
 #define THUMBNAIL_HEIGHT    256
 
+#define M_PI                3.14159265358979323846  /* pi */
+
 USING_NAMESPACE_IMAGEPP
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -179,6 +181,58 @@ void RasterData::Terminate()
 RealityDataPtr RasterData::Create(Utf8CP inFilename)
     {
     return new RasterData(inFilename);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    7/2016
+//-------------------------------------------------------------------------------------
+const Utf8String RasterData::ComputeResolutionInMeters()
+    {
+    try
+        {
+        // Get extent.
+        DRange2d footprint = DRange2d::NullRange();
+        if (SUCCESS != ExtractFootprint(&footprint) || footprint.IsNull())
+            return NULL;
+
+        // Get width and height.
+        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename.c_str());
+        if (rasterFile == 0 || rasterFile->CountPages() <= 0)
+            return NULL;
+        
+        HFCPtr<HRFResolutionDescriptor> pRes(rasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0));
+
+        CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetWidth())
+        CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetHeight())
+
+        double imageWidth = (double) pRes->GetWidth();
+        double imageHeight = (double) pRes->GetHeight();
+
+        // Compute degree to meter.
+        // Earth circumference in meters = 40'075'000.
+        // Earth circumference in degrees = 360.
+        double degreeToMeterRatio = 40075000.0 / 360.0;
+        
+        // Compute yRes.
+        double deltaYInMeter = footprint.YLength() * degreeToMeterRatio;
+        double yRes = deltaYInMeter / imageHeight;
+
+        // Compute xRes.
+        double yMedInRadian = (footprint.low.y + footprint.high.y) / 2 * M_PI / 180;
+        double deltaXInMeter = footprint.XLength() * cos(yMedInRadian) * degreeToMeterRatio;
+        double xRes = deltaXInMeter / imageWidth;
+
+        // Convert to string. Format is "widthxheight" with 3 digit precision.
+        Utf8String resolutionInMeters;
+        Utf8PrintfString resStr("%.5gx%.5g", xRes, yRes);
+        resolutionInMeters.append(resStr);
+
+        return resolutionInMeters;
+        }
+    catch (...)
+        {
+        return NULL;
+        }    
     }
 
 /*---------------------------------------------------------------------------------**//**

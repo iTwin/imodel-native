@@ -143,7 +143,6 @@
     <Part Name="BentleyWMSPackageNet" BMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke" BMakeOptions="-dTranskitLink=1">
         <SubPart PartName="TranskitTools"    PartFile="TransKitTools" Repository="TransKitTools" />
         <SubPart PartName="RealityPackage"/>
-        <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />
