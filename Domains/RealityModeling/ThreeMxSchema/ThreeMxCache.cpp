@@ -12,8 +12,6 @@
 #include <folly/futures/Future.h>
 #endif
 
-USING_NAMESPACE_BENTLEY_HTTP
-
 #define TABLE_NAME_ThreeMx "ThreeMx"
 
 BEGIN_UNNAMED_NAMESPACE
@@ -50,8 +48,14 @@ public:
             m_shortName = node->GetChildFile(); // Note: we must save this in the ctor, since it is not safe to call this on other threads.
         }
 
-    MxStreamBuffer& GetOutput() const {return m_nodeBytes;}
-    StatusInt DoRead() const {return m_scene.IsHttp() ? LoadFromHttp() : ReadFromFile();}
+    StatusInt DoRead() const 
+        {
+        if (m_node.IsValid() && !m_node->IsQueued())
+            return SUCCESS; // this node was abandoned.
+
+        return m_scene.IsHttp() ? LoadFromHttp() : ReadFromFile();
+        }
+
     StatusInt ReadFromFile() const;
     StatusInt LoadFromHttp() const;
     StatusInt LoadFromDb() const;
@@ -68,9 +72,6 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ThreeMxFileData::ReadFromFile() const
     {
-    if (m_node.IsValid() && !m_node->IsQueued())
-        return 0; // this node was abandoned.
-
     BeFile dataFile;
     if (BeFileStatus::Success != dataFile.Open(m_fileName.c_str(), BeFileAccess::Read))
         {
@@ -100,6 +101,7 @@ StatusInt ThreeMxFileData::ReadFromFile() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Attempt to load a node from the local cache.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ThreeMxFileData::LoadFromDb() const
@@ -108,11 +110,10 @@ StatusInt ThreeMxFileData::LoadFromDb() const
     if (!cache.IsValid())
         return ERROR;
 
-    DbR db = cache->GetDb();
     if (true)
         {
         CachedStatementPtr stmt;
-        if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
+        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
             return ERROR;
 
         Utf8StringCR name = m_shortName.empty() ? m_fileName : m_shortName;
@@ -121,49 +122,42 @@ StatusInt ThreeMxFileData::LoadFromDb() const
         if (BE_SQLITE_ROW != stmt->Step())
             return ERROR;
 
-        const void* data = stmt->GetValueBlob(0);
-        int dataSize = stmt->GetValueInt(1);
-        m_nodeBytes.SaveData((Byte*)data, dataSize);
+        m_nodeBytes.SaveData((Byte*)stmt->GetValueBlob(0), stmt->GetValueInt(1));
         m_nodeBytes.SetPos(0);
         }
 
     if (nullptr != m_output) // is this is the scene file?
         {
-        *m_output = m_nodeBytes;  // yes, just save its data. We're going to load it synchronously
+        *m_output = std::move(m_nodeBytes); // yes, just save its data. We're going to load it synchronously
         return SUCCESS;
         }
 
     BeAssert(m_node->IsQueued());
-    BentleyStatus result = m_node->Read3MXB(m_nodeBytes, m_scene);
-    if (SUCCESS != result)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    return SUCCESS;
+    return m_node->Read3MXB(m_nodeBytes, m_scene);
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Load a node from an http source. This method runs on an IOThreadPool thread and waits for the http request to 
+* complete or timeout.
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ThreeMxFileData::LoadFromHttp() const
     {
-    if (m_node.IsValid() && !m_node->IsQueued())
-        return SUCCESS; // this node was abandoned.
-    
     if (SUCCESS == LoadFromDb())
-        return SUCCESS;
+        return SUCCESS; // node was available from local cache
 
-    HttpByteStreamBodyPtr responseBody = HttpByteStreamBody::Create();
-    HttpRequest request(m_fileName);
+    Http::HttpByteStreamBodyPtr responseBody = Http::HttpByteStreamBody::Create();
+    Http::Request request(m_fileName);
     request.SetResponseBody(responseBody);
-    HttpResponse response = request.Perform();
+    Http::Response response = request.Perform();
 
-    if (ConnectionStatus::OK != response.GetConnectionStatus() || HttpStatus::OK != response.GetHttpStatus())
+    if (Http::ConnectionStatus::OK != response.GetConnectionStatus() || Http::HttpStatus::OK != response.GetHttpStatus())
+        {
+        m_node->SetNotFound();
         return ERROR;
+        }
 
-    if (m_output)
+    if (nullptr != m_output) // is this is the scene file?
         {
         *m_output = std::move(responseBody->GetByteStream());
         return SUCCESS;
@@ -180,7 +174,7 @@ StatusInt ThreeMxFileData::LoadFromHttp() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* save the data for a 3mx file into the tile cache. Note that this is also called for the scene file.
+* Save the data for a 3mx file into the tile cache. Note that this is also called for the scene file.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ThreeMxFileData::SaveToDb() const
@@ -192,12 +186,11 @@ StatusInt ThreeMxFileData::SaveToDb() const
         return ERROR;
         }
 
-    DbR db = cache->GetDb();
     BeAssert(m_nodeBytes.HasData());
 
     Utf8StringCR name = m_shortName.empty() ? m_fileName : m_shortName;
     CachedStatementPtr stmt;
-    db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_ThreeMx " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)");
+    cache->GetDb().GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_ThreeMx " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)");
 
     stmt->ClearBindings();
     stmt->BindText(1, name, Statement::MakeCopy::No);
