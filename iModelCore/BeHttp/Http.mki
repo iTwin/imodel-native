@@ -29,11 +29,11 @@ HttpHeaders + $(BeHttpPublicApiDir)ProxyHttpHandler.h
 #   Setup HTTP library
 #---------------------------------------------------------------------------------------+
 %if !defined (HTTP_LIB)
-	%if $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTx86" || $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTARM"
-		HTTP_LIB = CASABLANCA
-	%else
-		HTTP_LIB = CURL
-	%endif
+        %if $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTx86" || $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTARM"
+                HTTP_LIB = CASABLANCA
+        %else
+                HTTP_LIB = CURL
+        %endif
 %endif
 
 %if $(HTTP_LIB) == "CASABLANCA"
@@ -60,8 +60,6 @@ $(o)DefaultHttpHandler$(oext)               : $(BeHttpSourceDir)DefaultHttpHandl
 
 $(o)HttpClient$(oext)                       : $(BeHttpSourceDir)HttpClient.cpp $(HttpHeaders) ${MultiCompileDepends}
 
-$(o)HttpConfigurationHandler$(oext)         : $(BeHttpSourceDir)HttpConfigurationHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
-
 $(o)HttpHeaders$(oext)                      : $(BeHttpSourceDir)HttpHeaders.cpp $(HttpHeaders) ${MultiCompileDepends}
 
 $(o)HttpBody$(oext)                         : $(BeHttpSourceDir)HttpBody.cpp $(HttpHeaders) ${MultiCompileDepends}
@@ -71,8 +69,6 @@ $(o)HttpResponse$(oext)                     : $(BeHttpSourceDir)HttpResponse.cpp
 $(o)HttpError$(oext)                        : $(BeHttpSourceDir)HttpError.cpp $(HttpHeaders) ${MultiCompileDepends}
 
 $(o)HttpStatusHelper$(oext)                 : $(BeHttpSourceDir)HttpStatusHelper.cpp $(HttpHeaders) ${MultiCompileDepends}
-
-$(o)IHttpHandler$(oext)                     : $(BeHttpSourceDir)IHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
 
 $(o)HttpRequest$(oext)                      : $(BeHttpSourceDir)HttpRequest.cpp $(HttpHeaders) ${MultiCompileDepends}
 
@@ -101,7 +97,7 @@ $(o)ProxyHttpHandler$(oext)                 : $(BeHttpSourceDir)ProxyHttpHandler
 %endif
 
 %if "iOS" != $(TARGET_PLATFORM)
-	$(o)NetworkIndicator$(oext)				: $(BeHttpSourceDir)NetworkIndicator.cpp $(HttpHeaders) ${MultiCompileDepends}
+        $(o)NetworkIndicator$(oext)                             : $(BeHttpSourceDir)NetworkIndicator.cpp $(HttpHeaders) ${MultiCompileDepends}
 %endif
 
 %include MultiCppCompileGo.mki

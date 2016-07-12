@@ -18,7 +18,7 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DefaultHttpHandler
     {
-    BEHTTP_EXPORT static IHttpHandlerPtr GetInstance ();
+    BEHTTP_EXPORT static IHttpHandlerPtr GetInstance();
     };
 
 END_BENTLEY_HTTP_NAMESPACE

@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 std::ostream& operator << (std::ostream &o, CredentialsCR creds)
     {
-    o << creds.GetUsername () + ":" + creds.GetPassword ();
+    o << creds.GetUsername() + ":" + creds.GetPassword();
     return o;
     }
 
@@ -32,7 +32,7 @@ std::ostream& operator << (std::ostream &o, ConnectionStatus status)
         };
 
     Utf8String name = names[status];
-    BeAssert (!name.empty () && "Add missing value");
+    BeAssert(!name.empty() && "Add missing value");
     o << name;
 
     return o;
@@ -46,7 +46,7 @@ std::ostream& operator << (std::ostream &o, HttpStatus status)
 
 std::ostream& operator << (std::ostream &o, BeVersionCR version)
     {
-    o << version.ToString ().c_str ();
+    o << version.ToString().c_str();
     return o;
     }
 
@@ -61,7 +61,7 @@ std::ostream& operator << (std::ostream &o, AsyncTask::Priority value)
     };
 
     Utf8String name = names[value];
-    BeAssert (!name.empty () && "Add missing value");
+    BeAssert(!name.empty() && "Add missing value");
     o << name;
 
     return o;
@@ -69,25 +69,17 @@ std::ostream& operator << (std::ostream &o, AsyncTask::Priority value)
 
 BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
 
-namespace Json
-    {
-    void PrintTo (JsonValueCR value, ::std::ostream* os)
-        {
-        *os << value.toStyledString ();
-        }
-    }
-
-void PrintTo (const Utf8String& value, ::std::ostream* os)
+void PrintTo(const Utf8String& value, ::std::ostream* os)
     {
     *os << '"' << value << '"';
     }
 
-void PrintTo (const WString& value, ::std::ostream* os)
+void PrintTo(const WString& value, ::std::ostream* os)
     {
-    PrintTo (Utf8String (value), os);
+    PrintTo(Utf8String(value), os);
     }
 
-void PrintTo (BentleyStatus value, ::std::ostream* os)
+void PrintTo(BentleyStatus value, ::std::ostream* os)
     {
     static std::map<BentleyStatus, Utf8String> names
         {
@@ -96,7 +88,7 @@ void PrintTo (BentleyStatus value, ::std::ostream* os)
         };
 
     Utf8String name = names[value];
-    BeAssert (!name.empty () && "Add missing value");
+    BeAssert(!name.empty() && "Add missing value");
     *os << name;
     }
 

@@ -18,9 +18,8 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 typedef std::shared_ptr<struct IHttpHeaderProvider> IHttpHeaderProviderPtr;
 struct IHttpHeaderProvider
     {
-    virtual ~IHttpHeaderProvider ()
-        {
-        };
+    virtual ~IHttpHeaderProvider (){}
+
     //! Set default header values. Should be thread safe as can be called in any thread that creates requests.
     virtual void FillHttpRequestHeaders (HttpRequestHeaders& headersOut) const = 0;
     };

@@ -10,8 +10,6 @@
 
 #include <Bentley/BeTest.h>
 #include <BeHttp/Http.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
-#include <rapidjson/BeRapidJson.h>
 
 #define BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE BEGIN_BENTLEY_HTTP_NAMESPACE namespace UnitTests {
 #define END_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE   } END_BENTLEY_HTTP_NAMESPACE
@@ -21,9 +19,6 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_HTTP
 
 BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
-
-Json::Value ToJson (Utf8StringCR jsonString);
-std::shared_ptr<rapidjson::Document> ToRapidJson (Utf8StringCR jsonString);
 
 template<typename T>
 bvector<T> StubBVector (T element)

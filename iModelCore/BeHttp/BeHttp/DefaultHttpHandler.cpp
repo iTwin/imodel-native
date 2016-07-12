@@ -18,12 +18,10 @@
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
 
-
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static IHttpHandlerPtr createDefaultHandler ()
+static IHttpHandlerPtr createDefaultHandler()
     {
 #if defined (HTTP_LIB_CASABLANCA)
     return std::make_shared<CasablancaHttpHandler> ();
@@ -32,12 +30,10 @@ static IHttpHandlerPtr createDefaultHandler ()
 #endif
     }
 
-
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-IHttpHandlerPtr DefaultHttpHandler::GetInstance ()
+IHttpHandlerPtr DefaultHttpHandler::GetInstance()
     {
     static BeMutex s_mutex;
     static IHttpHandlerPtr s_instance = nullptr;
@@ -53,4 +49,3 @@ IHttpHandlerPtr DefaultHttpHandler::GetInstance ()
 
     return s_instance;
     }
-

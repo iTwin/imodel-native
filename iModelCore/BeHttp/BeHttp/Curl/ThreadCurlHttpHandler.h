@@ -30,7 +30,7 @@ protected:
 
 public:
     ThreadCurlHttpHandler();
-    virtual ~ThreadCurlHttpHandler();
+    virtual ~ThreadCurlHttpHandler() {}
     virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(RequestCR request) override;
 };
 

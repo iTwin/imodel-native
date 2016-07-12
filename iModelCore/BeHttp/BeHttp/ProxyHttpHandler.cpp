@@ -13,46 +13,6 @@ USING_NAMESPACE_BENTLEY_TASKS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProxyHttpHandler::ProxyHttpHandler(Utf8StringCR proxyUrl, IHttpHandlerPtr customHandler) :
-m_handler(customHandler ? customHandler : DefaultHttpHandler::GetInstance()),
-m_proxyUrl(proxyUrl)
-    {
-    };
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-ProxyHttpHandler::~ProxyHttpHandler()
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Ron.Stewart     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ProxyHttpHandler::SetProxyCredentials(CredentialsCR credentials)
-    {
-    m_proxyCredentials = credentials;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Vytenis.Navalinskas    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ProxyHttpHandler::GetProxyUrl()
-    {
-    return m_proxyUrl;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Ron.Stewart     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-CredentialsCR ProxyHttpHandler::GetProxyCredentials() const
-    {
-    return m_proxyCredentials;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Response> ProxyHttpHandler::_PerformRequest(RequestCR request)
     {
     if (m_proxyUrl.empty())

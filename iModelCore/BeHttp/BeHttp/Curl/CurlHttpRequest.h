@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/WString.h>
 #include <Bentley/bmap.h>

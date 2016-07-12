@@ -28,13 +28,6 @@ ThreadCurlHttpHandler::ThreadCurlHttpHandler()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThreadCurlHttpHandler::~ThreadCurlHttpHandler()
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Response> ThreadCurlHttpHandler::_PerformRequest(RequestCR request)
     {
     if (request.GetMethod().EqualsI ("GET"))

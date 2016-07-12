@@ -23,77 +23,77 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct AuthenticationHandler> AuthenticationHandlerPtr;
 struct EXPORT_VTABLE_ATTRIBUTE AuthenticationHandler : public IHttpHandler
-    {
-    public:
-        struct Attempt;
-        typedef Attempt& AttemptR;
-        typedef const Attempt& AttemptCR;
+{
+public:
+    struct Attempt;
+    typedef Attempt& AttemptR;
+    typedef const Attempt& AttemptCR;
 
-        typedef Tasks::AsyncResult<Utf8String, Tasks::AsyncError> AuthorizationResult;
+    typedef Tasks::AsyncResult<Utf8String, Tasks::AsyncError> AuthorizationResult;
 
-    private:
-        IHttpHandlerPtr m_defaultHttpHandler;
-        struct AuthenticationState;
+private:
+    IHttpHandlerPtr m_defaultHttpHandler;
+    struct AuthenticationState;
 
-    private:
-        Tasks::AsyncTaskPtr<void> RetrieveAuthorizationAndPerformRequest
-            (
-            std::shared_ptr<AuthenticationState> authenticationState,
-            std::shared_ptr<Response> finalResponseInOut
-            );
+private:
+    Tasks::AsyncTaskPtr<void> RetrieveAuthorizationAndPerformRequest
+        (
+        std::shared_ptr<AuthenticationState> authenticationState,
+        std::shared_ptr<Response> finalResponseInOut
+        );
 
-        Tasks::AsyncTaskPtr<void> PerformRequest
-            (
-            std::shared_ptr<AuthenticationState> authenticationState,
-            std::shared_ptr<Response> responseOut
-            );
+    Tasks::AsyncTaskPtr<void> PerformRequest
+        (
+        std::shared_ptr<AuthenticationState> authenticationState,
+        std::shared_ptr<Response> responseOut
+        );
 
-    protected:
-        BEHTTP_EXPORT virtual bool _ShouldRetryAuthentication(ResponseCR response);
-        virtual Tasks::AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization(AttemptCR previousAttempt) = 0;
+protected:
+    BEHTTP_EXPORT virtual bool _ShouldRetryAuthentication(ResponseCR response);
+    virtual Tasks::AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization(AttemptCR previousAttempt) = 0;
 
-    public:
-        BEHTTP_EXPORT AuthenticationHandler(IHttpHandlerPtr customHttpHandler = nullptr);
-        virtual ~AuthenticationHandler() {}
+public:
+    AuthenticationHandler(IHttpHandlerPtr customHttpHandler = nullptr) : m_defaultHttpHandler(customHttpHandler == nullptr ? DefaultHttpHandler::GetInstance() : customHttpHandler) {}
+    virtual ~AuthenticationHandler() {}
 
-        BEHTTP_EXPORT virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(RequestCR request) override;
-    };
+    BEHTTP_EXPORT virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(RequestCR request) override;
+};
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct AuthenticationHandler::Attempt
-    {
-    private:
-        Utf8String m_requestUrl;
-        Utf8String m_authorization;
-        DateTime m_utcDate;
-        unsigned m_attemptNumber;
+{
+private:
+    Utf8String m_requestUrl;
+    Utf8String m_authorization;
+    DateTime m_utcDate;
+    unsigned m_attemptNumber;
 
-    public:
-        BEHTTP_EXPORT Attempt(Utf8String requestUrl, Utf8String authorization, DateTimeCR utcDate, unsigned attemptNumber);
+public:
+    BEHTTP_EXPORT Attempt(Utf8String requestUrl, Utf8String authorization, DateTimeCR utcDate, unsigned attemptNumber);
 
-        BEHTTP_EXPORT Utf8StringCR GetRequestUrl() const;
-        BEHTTP_EXPORT Utf8StringCR GetAuthorization() const;
-        BEHTTP_EXPORT DateTimeCR GetUtcDate() const;
-        BEHTTP_EXPORT unsigned GetAttemptNumber() const;
-    };
+    Utf8StringCR GetRequestUrl() const {return m_requestUrl;}
+    Utf8StringCR GetAuthorization() const {return m_authorization;}
+    DateTimeCR GetUtcDate() const {return m_utcDate;}
+    unsigned GetAttemptNumber() const {return m_attemptNumber;}
+};
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct AuthenticationHandler::AuthenticationState
-    {
-    private:
-        Request m_request;
-        Attempt m_attempt;
+{
+private:
+    Request m_request;
+    Attempt m_attempt;
 
-    public:
-        AuthenticationState(Request request);
-        RequestR GetRequest() {return m_request;}
+public:
+    AuthenticationState(Request request);
+    RequestR GetRequest() {return m_request;}
 
-        void RegisterNewAttempt();
-        AttemptCR GetLastAttempt() const;
-    };
+    void RegisterNewAttempt();
+    AttemptCR GetLastAttempt() const {return m_attempt;}
+};
 
 END_BENTLEY_HTTP_NAMESPACE

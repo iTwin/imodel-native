@@ -673,7 +673,7 @@ HttpStatus CurlHttpRequest::ResolveHttpStatus(int httpStatusInt)
         ContentRangeHeaderValue contentRange;
         if (SUCCESS == ContentRangeHeaderValue::Parse(content->GetHeaders().GetContentRange(), contentRange))
             {
-            if (contentRange.HasLength() && contentRange.length == content->GetBody()->GetLength())
+            if (contentRange.HasLength() && contentRange.GetLength() == content->GetBody()->GetLength())
                 {
                 httpStatus = HttpStatus::OK;
                 }

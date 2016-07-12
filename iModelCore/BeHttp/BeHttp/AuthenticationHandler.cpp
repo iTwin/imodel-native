@@ -14,14 +14,6 @@ USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    04/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-AuthenticationHandler::AuthenticationHandler(IHttpHandlerPtr customHttpHandler) :
-m_defaultHttpHandler(customHttpHandler == nullptr ? DefaultHttpHandler::GetInstance() : customHttpHandler)
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Response> AuthenticationHandler::_PerformRequest(RequestCR originalRequest)
@@ -121,38 +113,6 @@ m_attemptNumber(attemptNumber)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR AuthenticationHandler::Attempt::GetRequestUrl() const
-    {
-    return m_requestUrl;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR AuthenticationHandler::Attempt::GetAuthorization() const
-    {
-    return m_authorization;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-DateTimeCR AuthenticationHandler::Attempt::GetUtcDate() const
-    {
-    return m_utcDate;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-unsigned AuthenticationHandler::Attempt::GetAttemptNumber() const
-    {
-    return m_attemptNumber;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
 AuthenticationHandler::AuthenticationState::AuthenticationState(Request request) :
 m_request(std::move(request)),
 m_attempt(request.GetUrl(), "", DateTime(), 0)
@@ -173,10 +133,3 @@ void AuthenticationHandler::AuthenticationState::RegisterNewAttempt()
         );
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-AuthenticationHandler::AttemptCR AuthenticationHandler::AuthenticationState::GetLastAttempt() const
-    {
-    return m_attempt;
-    }

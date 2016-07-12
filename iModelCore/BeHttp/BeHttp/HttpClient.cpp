@@ -74,14 +74,6 @@ Utf8String HttpClient::EscapeString(Utf8StringCR inStr)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HttpClient::SetCredentials(Credentials credentials)
-    {
-    m_credentials = std::move(credentials);
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 Request HttpClient::CreateRequest(Utf8StringCR url, Utf8StringCR method) const

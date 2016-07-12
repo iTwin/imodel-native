@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include <BeHttp/Http.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/WString.h>
 #include <Bentley/bmap.h>

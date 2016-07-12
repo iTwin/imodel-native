@@ -13,7 +13,7 @@
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
 enum class HttpStatus
-    {
+{
     // Used in error handling, it is not an actual http status code.
     None                            = -1,
     
@@ -84,6 +84,6 @@ enum class HttpStatus
     InsufficientStorage             = 507,
     LoopDetected                    = 508,
     NotExtended                     = 510
-    };
+};
 
 END_BENTLEY_HTTP_NAMESPACE

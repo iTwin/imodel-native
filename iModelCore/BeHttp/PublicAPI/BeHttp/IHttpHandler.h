@@ -13,18 +13,15 @@
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
-struct Request;
-struct HttpResponse;
+typedef std::shared_ptr<struct IHttpHandler> IHttpHandlerPtr;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef std::shared_ptr<struct IHttpHandler> IHttpHandlerPtr;
-
-struct EXPORT_VTABLE_ATTRIBUTE IHttpHandler
+struct IHttpHandler
     {
 public:
-    BEHTTP_EXPORT virtual ~IHttpHandler();
+    virtual ~IHttpHandler() {}
 
     //! Perform HttpRequest and receive HttpResponse
     virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(RequestCR request) = 0;

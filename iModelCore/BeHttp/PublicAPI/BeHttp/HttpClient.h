@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/WString.h>
 #include <Bentley/bmap.h>
@@ -27,7 +26,7 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 * @bsiclass                                                     Vincas.Razma    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct HttpClient
-    {
+{
 private:
     IHttpHeaderProviderPtr m_defaultHeadersProvider;
     IHttpHandlerPtr m_handler;
@@ -55,7 +54,7 @@ public:
     BEHTTP_EXPORT static Utf8String EscapeString(Utf8StringCR inStr);
 
     // Set authorization for request
-    BEHTTP_EXPORT void SetCredentials(Credentials credentials);
+    void SetCredentials(Credentials credentials) {m_credentials = std::move(credentials);}
 
     // Create requests with client info
     BEHTTP_EXPORT Request CreateRequest(Utf8StringCR url, Utf8StringCR method) const;
@@ -63,7 +62,7 @@ public:
     BEHTTP_EXPORT Request CreateGetRequest(Utf8StringCR url, Utf8StringCR etag) const;
     BEHTTP_EXPORT Request CreateGetJsonRequest(Utf8StringCR url, Utf8StringCR etag = nullptr) const;
     BEHTTP_EXPORT Request CreatePostRequest(Utf8StringCR url) const;
-    };
+};
 
 typedef HttpClient& HttpClientR;
 typedef const HttpClient& HttpClientCR;

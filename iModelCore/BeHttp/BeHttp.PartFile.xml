@@ -4,8 +4,6 @@
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="G06">
         <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
-        <SubPart PartName="PublicAPI"            PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="rapidjson"            PartFile="rapidjson"        Repository="Libsrc-RapidJson"/>
         <SubPart PartName="PublicAPI"            PartFile="BeOpenSSL"        Repository="Libsrc-openssl"/>
         <SubPart PartName="PublicAPI"            PartFile="BeCasablanca"     Repository="Libsrc-casablanca"/>
         <SubPart PartName="PublicAPI"            PartFile="BeSQLite"         Repository="BeSQLite"/>
@@ -15,7 +13,7 @@
         </Bindings>
     </Part>
          
-    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi  +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
+    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
         <SubPart PartName="PublicAPI" />
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/BeHttp" />
@@ -27,8 +25,6 @@
         <SubPart PartName="BeHttpLibrary-Curl"/>
         <SubPart PartName="BeHttpLibrary-Casablanca"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley"/>
-        <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="rapidjson"       PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
         <SubPart PartName="BeSQLite"        PartFile="BeSQLite"     Repository="BeSQLite"/>
         <Bindings>
             <Libs ProductDirectoryName="BeHttpLibs">Delivery/$(libprefix)BeHttp$(libext)</Libs>

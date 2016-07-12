@@ -14,30 +14,6 @@
 USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-HttpError::HttpError() : HttpError(ConnectionStatus::None, HttpStatus::None)
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-HttpError::HttpError(Response httpResponse) : HttpError(httpResponse.GetConnectionStatus(), httpResponse.GetHttpStatus())
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-HttpError::HttpError(ConnectionStatus connectionStatus, HttpStatus httpStatus) :   
-m_connectionStatus(connectionStatus),
-m_httpStatus(httpStatus),
-AsyncError(CreateMessage(connectionStatus, httpStatus), CreateDescription(connectionStatus, httpStatus))
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                               Julius.Cepukenas      02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String HttpError::CreateMessage(ConnectionStatus connectionStatus, HttpStatus httpStatus)

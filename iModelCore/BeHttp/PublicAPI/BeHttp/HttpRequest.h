@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/WString.h>
 #include <functional>
 
@@ -86,7 +85,7 @@ public:
 
     // Request body to send, default is no body
     void SetRequestBody(HttpBodyPtr body) {m_requestBody = body;}
-    HttpBodyPtr  GetRequestBody() const {return m_requestBody;}
+    HttpBodyPtr GetRequestBody() const {return m_requestBody;}
 
     // Response body to write received data to
     void SetResponseBody(HttpBodyPtr body){m_responseBody = body;}

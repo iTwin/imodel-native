@@ -8,7 +8,6 @@
 #pragma once
 
 #include <Bentley/BeVersion.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/Tasks/AsyncTask.h>
 #include <BeHttp/Credentials.h>
 #include <BeHttp/HttpStatus.h>
@@ -32,10 +31,6 @@ std::ostream& operator << (std::ostream &o, AsyncTask::Priority value);
 // Bentley types
 BEGIN_BENTLEY_HTTP_UNIT_TESTS_NAMESPACE
 
-namespace Json
-    {
-    void PrintTo (JsonValueCR value, ::std::ostream* os);
-    }
 
 void PrintTo (const WString& value, ::std::ostream* os);
 void PrintTo (const Utf8String& value, ::std::ostream* os);
