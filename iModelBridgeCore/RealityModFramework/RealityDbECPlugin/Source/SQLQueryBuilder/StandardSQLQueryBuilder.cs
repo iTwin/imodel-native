@@ -35,7 +35,7 @@ namespace IndexECPlugin.Source
         /// <returns>The SQL query string</returns>
         override public string BuildQuery (out DataReadingHelper dataReadingHelper)
             {
-            string completeSelectStr = "SELECT ";
+            string completeSelectStr = "SELECT TOP 1000 ";
             completeSelectStr += String.Join(", ", m_sqlSelectClause.ToArray());
 
             completeSelectStr += " ";

@@ -88,6 +88,11 @@ namespace IndexECPlugin.Source.Helpers
                 List<IECInstance> instanceList = classIdMap[ecClass];
                 string query = m_mimicTableAccessor.CreateMimicSQLQuery(source, instanceList.Select(instance => instance.InstanceId), ecClass, ecClass, out drh, out paramNameValueMap, null);
 
+                if(instanceList.Count >= 1500)
+                    {
+                    throw new UserFriendlyException("The request returned too much data. Please refine the search filters.");
+                    }
+
                 List<IECInstance> modifyInstances = m_dbQuerier.QueryDbForInstances(query, drh, paramNameValueMap, ecClass, drh.GetProperties(), sqlConnection, null, false);
 
                 //For each instance in the 
