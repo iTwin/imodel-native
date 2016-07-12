@@ -17,15 +17,11 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="Assemblies\BeCurlG06.dll" target="build" />
     <file src="Assemblies\BeIcu4cG06.dll" target="build" />
     <file src="Assemblies\BeLibxml2G06.dll" target="build" />
     <file src="Assemblies\BentleyG06.dll" target="build" />
     <file src="Assemblies\BentleyGeomG06.dll" target="build" />
-    <file src="Assemblies\BeOpenSSLG06.dll" target="build" />
-    <file src="Assemblies\BeSQLiteG06.dll" target="build" />
     <file src="Assemblies\BeXmlG06.dll" target="build" />
-    <file src="Assemblies\NCSEcw.dll" target="build" />
     <file src="Assemblies\RealityPackage.dll" target="build" />
     <file src="Files\Bentley.RealityDbECPluginC.targets" target="build" />
     <file src="Assemblies\Bentley.RealityDbECPluginC.dll" target="lib\net40\Bentley.RealityDbECPluginC.dll" />
