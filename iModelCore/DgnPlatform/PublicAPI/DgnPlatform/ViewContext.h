@@ -55,11 +55,11 @@ struct RangeNodeCheck
 };
 
 //=======================================================================================
-//! Interface to supply additional topology information that describes the subsequent geometry.
-//! The ViewContext's current IElemTopology will be cloned and saved as part of the HitDetail
-//! when picking. Can be used to make transient geometry locatable; set context.SetElemTopology
-//! before drawing the geometry (ex. IViewTransients) and implement ITransientGeometryHandler.
-//! @note Always call context.SetElemTopology(nullptr) after drawing geometry.
+//! Interface to supply additional topology information to describe subsequent geometry.
+//! The current IElemTopology will be cloned and saved as part of the HitDetail
+//! when picking. Can be used to make transient geometry locatable; call _SetElemTopology
+//! before drawing the transient geometry during locate.
+//! @note Always call _SetElemTopology(nullptr) to clear after drawing geometry.
 //=======================================================================================
 struct IElemTopology : IRefCounted
 {
@@ -127,8 +127,6 @@ protected:
     Render::FrustumPlanes   m_frustumPlanes;
     DgnViewportP            m_viewport = nullptr;
     ClipPrimitiveCPtr       m_volume;
-    IElemTopologyCPtr       m_currElemTopo;
-    GeometryStreamEntryId   m_currGeometryStreamEntryId;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
@@ -295,23 +293,6 @@ public:
     //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
     //! @return the IPickGeom interface for this context. May return nullptr.
     IPickGeomP GetIPickGeom() {return _GetIPickGeom();}
-/** @} */
-
-/** @name Identifying element "topology". */
-/** @{ */
-    //! Query the current IElemTopology.
-    //! @return An object that holds additional information about the graphics that are currently being drawn.
-    IElemTopologyCP GetElemTopology() const {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
-
-    //! Set the current IElemTopology.
-    //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
-    void SetElemTopology(IElemTopologyCP topo) {m_currElemTopo = topo;}
-
-    //! Query the current GeometryStreamEntryId.
-    GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_currGeometryStreamEntryId;}
-
-    //! Get a reference to the current GeometryStreamEntryId to modify.
-    GeometryStreamEntryId& GetGeometryStreamEntryIdR() {return m_currGeometryStreamEntryId;}
 /** @} */
 
     DGNPLATFORM_EXPORT bool WantAreaPatterns();

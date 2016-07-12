@@ -32,6 +32,7 @@ protected:
     bool m_isOpen = true;
     Render::GraphicParams m_currGraphicParams;
     Render::GeometryParams m_currGeometryParams;
+    GeometryStreamEntryId m_currGeomEntryId;
 
     DGNPLATFORM_EXPORT void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
     DGNPLATFORM_EXPORT void _AddLineString(int numPoints, DPoint3dCP points) override;
@@ -64,6 +65,10 @@ protected:
     virtual bool _IsOpen() const override { return m_isOpen; }
     virtual StatusInt _Close() override { m_isOpen = false; return SUCCESS; }
     virtual StatusInt _EnsureClosed() override { return m_isOpen ? _Close() : SUCCESS; }
+
+    virtual GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const {return &m_currGeomEntryId;}
+    virtual void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}
+
 public:
     DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR, ViewContextR);
 
@@ -122,6 +127,7 @@ public:
     DGNPLATFORM_EXPORT void GetEffectiveGraphicParams(Render::GraphicParamsR graphicParams) const; // Get GraphicParams adjusted for overrides...
     Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
     Render::GeometryParamsCR GetCurrentGeometryParams() const {return m_currGeometryParams;}
+    GeometryStreamEntryIdCR GetCurrentGeometryStreamEntryId() const {return m_currGeomEntryId;} // Direct access from PickContext without making builder...
 
     DGNPLATFORM_EXPORT bool IsRangeTotallyInside(DRange3dCR range) const;
     DGNPLATFORM_EXPORT bool IsRangeTotallyInsideClip(DRange3dCR range) const;
