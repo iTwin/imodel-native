@@ -280,14 +280,14 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_delayedDataPropagation = propagateDataDown;
     m_pParentNode = 0;
     m_isParentNodeSet = false;
-    m_isGenerating = parent->m_isGenerating;
+    m_isGenerating = parent ? parent->m_isGenerating : false;
     m_nodeHeader.m_SplitTreshold = 10000;
     m_nodeHeader.m_IsLeaf = true;
     m_nodeHeader.m_IsUnSplitSubLevel = false;
     m_nodeHeader.m_IsBranched = false;
     m_nodeHeader.m_level = 0;
     m_nodeHeader.m_balanced = false;
-    m_needsBalancing = parent->m_needsBalancing;
+    m_needsBalancing = parent ? parent->m_needsBalancing : false;
     m_nodeHeader.m_numberOfSubNodesOnSplit = 8;
     m_nodeHeader.m_apSubNodeID.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
     m_apSubNodes.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
@@ -4178,7 +4178,7 @@ bool SMPointIndexNode<POINT, EXTENT>::IsTextured() const
     if(!IsLoaded())
         Load();
     
-	return(m_nodeHeader.m_isTextured);
+    return(m_nodeHeader.m_isTextured);
     }
 
 
