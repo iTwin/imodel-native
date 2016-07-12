@@ -745,7 +745,7 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
 
     //put relevant classids in a local vector as processing will imply loading more class maps
     //into the cache, hence modifying m_classMapDictionary, hence invalidating the iterator.
-    std::vector<ECClassId> endTableRelClassIds;
+    bmap<ECClassId, bool> endTableRelClassIds;
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMapCR classMap = *kvPair.second;
@@ -753,85 +753,19 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
             {
             RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
             const bool impliesNotNullOnFkCol = relClassMap.GetConstraintMap(relClassMap.GetReferencedEnd()).GetRelationshipConstraint().GetCardinality().GetLowerLimit() > 0;
-            if (impliesNotNullOnFkCol)
-                endTableRelClassIds.push_back(kvPair.first);
+            endTableRelClassIds[kvPair.first] = impliesNotNullOnFkCol;
             }
         }
 
     IdSet<DbColumnId> modifiedColumnIds;
-
-    for (ECClassId relClassId : endTableRelClassIds)
+    for (bpair<ECClassId, bool> const& kvPair : endTableRelClassIds)
         {
-        ClassMap const* classMap = GetClassMap(relClassId);
-        if (classMap == nullptr || classMap->GetType() != ClassMap::Type::RelationshipEndTable)
-            {
-            BeAssert(false);
+        ECClassId const& relClassId = kvPair.first;
+        const bool impliesNotNullOnFkCol = kvPair.second;
+        if (SUCCESS != EvaluateColumnNotNullConstraints(modifiedColumnIds, relClassId, impliesNotNullOnFkCol))
             return ERROR;
-            }
-
-        RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (*classMap);
-
-        ECRelationshipConstraintCR foreignEndConstraint = relClassMap.GetConstraintMap(relClassMap.GetForeignEnd()).GetRelationshipConstraint();
-        const bool isPolymorphicConstraint = foreignEndConstraint.GetIsPolymorphic();
-
-        std::set<ClassMap const*> constraintClassMaps;
-        for (ECRelationshipConstraintClassCP constraintClass : relClassMap.GetConstraintMap(relClassMap.GetForeignEnd()).GetRelationshipConstraint().GetConstraintClasses())
-            {
-            if (SUCCESS != GetClassMapsFromRelationshipEnd(constraintClassMaps, constraintClass->GetClass(), isPolymorphicConstraint))
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-            }
-
-        bmap<DbTable const*, bset<ClassMap const*>> constraintClassesPerTable;
-        for (ClassMap const* constraintClassMap : constraintClassMaps)
-            {
-            //only non-abstract classes need to be considered as NOT NULL can be applied if base classes are all abstract
-            //as there will not be rows for those base classes
-            if (constraintClassMap->GetClass().GetClassModifier() == ECClassModifier::Abstract)
-                continue;
-
-            for (DbTable const* table : constraintClassMap->GetTables())
-                {
-                constraintClassesPerTable[table].insert(constraintClassMap);
-                }
-            }
-
-        LightweightCache const& lwc = GetLightweightCache();
-        for (DbTable const* fkTable : relClassMap.GetTables())
-            {
-            std::vector<ECClassId> allClassIds = lwc.GetNonAbstractClassesForTable(*fkTable);
-            bset<ClassMap const*> const& constraintClassIds = constraintClassesPerTable[fkTable];
-
-            DbColumn const* fkColumn = relClassMap.GetReferencedEndECInstanceIdPropMap()->GetSingleColumn(*fkTable, true);
-            if (fkColumn == nullptr)
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            //If FK column is a key property pointing to the ECInstanceId, which is the PK, it is already NOT NULL implicitly
-            if (fkColumn->DoNotAllowDbNull())
-                continue;
-
-            if (allClassIds.size() == constraintClassIds.size())
-                {
-                DbColumn* fkColumnP = const_cast<DbColumn*> (fkColumn);
-                fkColumnP->GetConstraintsR().SetNotNullConstraint();
-                BeAssert(fkColumn->GetId().IsValid());
-                modifiedColumnIds.insert(fkColumn->GetId());
-                continue;
-                }
-
-            Issues().Report(ECDbIssueSeverity::Warning, "The cardinality of the ECRelationshipClass '%s' "
-                                                            "would imply the foreign key column to be 'not nullable'. ECDb cannot enforce that though for the "
-                                                            "foreign key column '%s' in table '%s' because other classes not involved in the ECRelationshipClass map to that table. "
-                                                            "Therefore the column is created without NOT NULL constraint.",
-                                                            relClassMap.GetClass().GetFullName(), fkColumn->GetName().c_str(), fkTable->GetName().c_str());
-            }
         }
-
+    
     //This is a temporary hack so that the DB format is correct again. Will provide a proper solution later
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "UPDATE ec_Column SET NotNullConstraint=? WHERE InVirtualSet(?,Id)") ||
@@ -842,6 +776,109 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
         {
         Issues().Report(ECDbIssueSeverity::Error, "Evaluation of NOT NULL constraints for FK columns failed: Updating the NOT NULL flag in the table 'ec_Column' failed");
         return ERROR;
+        }
+
+    return SUCCESS;
+    }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints(IdSet<DbColumnId>& modifiedColumnIds, ECN::ECClassId const& endTableRelClassId, bool impliesNotNullOnFkColumn) const
+    {
+    ClassMap const* classMap = GetClassMap(endTableRelClassId);
+    if (classMap == nullptr || classMap->GetType() != ClassMap::Type::RelationshipEndTable)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (*classMap);
+
+    ECRelationshipConstraintCR foreignEndConstraint = relClassMap.GetConstraintMap(relClassMap.GetForeignEnd()).GetRelationshipConstraint();
+    const bool isPolymorphicConstraint = foreignEndConstraint.GetIsPolymorphic();
+
+    std::set<ClassMap const*> constraintClassMaps;
+    for (ECRelationshipConstraintClassCP constraintClass : relClassMap.GetConstraintMap(relClassMap.GetForeignEnd()).GetRelationshipConstraint().GetConstraintClasses())
+        {
+        //adds class maps to the passed map (does not clear it for each call)
+        if (SUCCESS != GetClassMapsFromRelationshipEnd(constraintClassMaps, constraintClass->GetClass(), isPolymorphicConstraint))
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+        }
+
+    bmap<DbTable const*, bset<ClassMap const*>> constraintClassesPerTable;
+    for (ClassMap const* constraintClassMap : constraintClassMaps)
+        {
+        //only non-abstract classes need to be considered as NOT NULL can be applied if base classes are all abstract
+        //as there will not be rows for those base classes
+        if (constraintClassMap->GetClass().GetClassModifier() == ECClassModifier::Abstract)
+            continue;
+
+        for (DbTable const* table : constraintClassMap->GetTables())
+            {
+            constraintClassesPerTable[table].insert(constraintClassMap);
+            }
+        }
+
+    LightweightCache const& lwc = GetLightweightCache();
+    PropertyMapCP referencedEndIdPropMap = relClassMap.GetReferencedEndECInstanceIdPropMap();
+    PropertyMapCP relClassIdPropMap = relClassMap.GetECClassIdPropertyMap();
+    for (DbTable const* fkTable : relClassMap.GetTables())
+        {
+        std::vector<ECClassId> allClassIds = lwc.GetNonAbstractClassesForTable(*fkTable);
+        bset<ClassMap const*> const& constraintClassIds = constraintClassesPerTable[fkTable];
+        const bool canMakeNotNull = allClassIds.size() == constraintClassIds.size();
+
+        if (!canMakeNotNull)
+            {
+            if (impliesNotNullOnFkColumn)
+                {
+                Issues().Report(ECDbIssueSeverity::Warning, "The cardinality of the ECRelationshipClass '%s' "
+                                "would imply the foreign key column to be 'not nullable'. ECDb cannot enforce that though for the "
+                                "foreign key column in table '%s' because other classes not involved in the ECRelationshipClass map to that table. "
+                                "Therefore the column is created without NOT NULL constraint.",
+                                relClassMap.GetClass().GetFullName(), fkTable->GetName().c_str());
+                }
+
+            continue;
+            }
+
+        if (impliesNotNullOnFkColumn)
+            {
+            DbColumn const* fkColumn = referencedEndIdPropMap->GetSingleColumn(*fkTable, true);
+            if (fkColumn == nullptr)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            //If FK column is a key property pointing to the ECInstanceId, which is the PK, it is already NOT NULL implicitly
+            if (!fkColumn->DoNotAllowDbNull())
+                {
+                DbColumn* fkColumnP = const_cast<DbColumn*> (fkColumn);
+                fkColumnP->GetConstraintsR().SetNotNullConstraint();
+                BeAssert(fkColumn->GetId().IsValid());
+                modifiedColumnIds.insert(fkColumn->GetId());
+                }
+            }
+
+        DbColumn const* relClassIdColumn = relClassIdPropMap->GetSingleColumn(*fkTable, true);
+        if (relClassIdColumn == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        if (relClassIdColumn->GetPersistenceType() == PersistenceType::Persisted && !relClassIdColumn->DoNotAllowDbNull())
+            {
+            DbColumn* relClassIdColumnP = const_cast<DbColumn*> (relClassIdColumn);
+            relClassIdColumnP->GetConstraintsR().SetNotNullConstraint();
+            BeAssert(relClassIdColumn->GetId().IsValid());
+            modifiedColumnIds.insert(relClassIdColumn->GetId());
+            }
         }
 
     return SUCCESS;

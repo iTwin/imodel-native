@@ -6110,13 +6110,69 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ASSERT_EQ(2, (int) RetrieveIndicesForTable(ecdb, "ts_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
                 AssertIndex(ecdb, "ix_B_AId", false, "ts_B", {"AId"});
+                AssertIndex(ecdb, "ix_ts_B_ARelECClassId", false, "ts_B", {"ARelECClassId"});
 
                 AssertIndexExists(ecdb, "ix_ts_B_fk_ts_RelBase_target", false);
                 AssertIndexExists(ecdb, "uix_ts_B_fk_ts_RelSub1_target", false);
                 }
+
+                {
+                SchemaItem testItem(
+                    "<?xml version='1.0' encoding='utf-8'?>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                    "    <ECEntityClass typeName='A' modifier='None'>"
+                    "        <ECProperty propertyName='Id' typeName='string' />"
+                    "    </ECEntityClass>"
+                    "    <ECEntityClass typeName='B' modifier='None'>"
+                    "        <ECCustomAttributes>"
+                    "            <ClassMap xmlns='ECDbMap.01.00'>"
+                    "                <MapStrategy>"
+                    "                   <Strategy>SharedTable</Strategy>"
+                    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                    "                 </MapStrategy>"
+                    "             </ClassMap>"
+                    "        </ECCustomAttributes>"
+                    "        <ECNavigationProperty propertyName='AInstance' relationshipName='RelBase' direction='Backward' />"
+                    "    </ECEntityClass>"
+                    "    <ECEntityClass typeName='B1' modifier='None'>"
+                    "        <BaseClass>B</BaseClass>"
+                    "        <ECProperty propertyName='B1Id' typeName='long' />"
+                    "    </ECEntityClass>"
+                    "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
+                    "    <Source cardinality='(1,1)' polymorphic='True'>"
+                    "      <Class class='A'/>"
+                    "    </Source>"
+                    "    <Target cardinality='(1,N)' polymorphic='True'>"
+                    "      <Class class='B'/>"
+                    "    </Target>"
+                    "  </ECRelationshipClass>"
+                    "   <ECRelationshipClass typeName='RelSub1' modifier='Sealed' strength='referencing'>"
+                    "    <BaseClass>RelBase</BaseClass>"
+                    "    <Source cardinality='(1,1)' polymorphic='True'>"
+                    "      <Class class='A' />"
+                    "    </Source>"
+                    "    <Target cardinality='(1,1)' polymorphic='True'>"
+                    "      <Class class='B1'/>"
+                    "    </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>", true, "");
+
+                ECDb ecdb;
+                bool asserted = false;
+                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+                ASSERT_FALSE(asserted);
+
+                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+
+                AssertIndex(ecdb, "ix_ts_B_AInstanceRelECClassId", false, "ts_B", {"AInstanceRelECClassId"});
+                AssertIndex(ecdb, "ix_ts_B_fk_ts_RelBase_target", false, "ts_B", {"AInstance"});
+                AssertIndexExists(ecdb, "uix_ts_B_fk_ts_RelSub1_target", false);
+                }
+
 
                 {
                 SchemaItem testItem(
