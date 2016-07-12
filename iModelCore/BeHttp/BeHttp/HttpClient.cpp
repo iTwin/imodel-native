@@ -24,6 +24,16 @@ BeAtomic<int> HttpClient::s_tasksInProgressCount (0);
 BeFileName HttpClient::s_assetsDirectoryPath;
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpClient::Initialize(BeFileNameCR assetsDirectoryPath) {s_assetsDirectoryPath = assetsDirectoryPath;}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileNameCR HttpClient::GetAssetsDirectoryPath() {return s_assetsDirectoryPath;}
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 HttpClient::HttpClient (IHttpHeaderProviderPtr defaultHeadersProvider, IHttpHandlerPtr customHandler) :
