@@ -183,7 +183,7 @@ BentleyStatus WSError::ParseBody(Http::ResponseCR httpResponse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus WSError::ParseJsonError(Http::ResponseCR httpResponse)
     {
-    Json::Value jsonError = httpResponse.GetBody().AsJson();
+    Json::Value jsonError = Json::Reader::DoParse(httpResponse.GetBody().AsString());
     if (!IsValidErrorJson(jsonError))
         {
         return ERROR;

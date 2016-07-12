@@ -52,7 +52,7 @@ TEST_F(ImsClientTests, GetToken_ByCredentials_SendsRequestToRetrieveToken)
     {
     GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
-        auto bodyJson = request.GetRequestBody()->AsJson();
+        auto bodyJson = Json::Reader::DoParse(request.GetRequestBody()->AsString());
 
         EXPECT_EQ("http://applies.to.url", bodyJson["AppliesTo"].asString());
         EXPECT_EQ("", bodyJson["ActAs"].asString());
@@ -71,7 +71,7 @@ TEST_F(ImsClientTests, GetToken_ByCredentialsWithZeroLifetime_SendsRequestToRetr
     {
     GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
-        auto bodyJson = request.GetRequestBody()->AsJson();
+        auto bodyJson = Json::Reader::DoParse(request.GetRequestBody()->AsString());
 
         EXPECT_EQ("http://applies.to.url", bodyJson["AppliesTo"].asString());
         EXPECT_EQ("", bodyJson["ActAs"].asString());
@@ -92,7 +92,7 @@ TEST_F(ImsClientTests, GetToken_ByParentToken_SendsRequestToRetrieveToken)
 
     GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
-        auto bodyJson = request.GetRequestBody()->AsJson();
+        auto bodyJson = Json::Reader::DoParse(request.GetRequestBody()->AsString());
 
         EXPECT_EQ("http://applies.to.url", bodyJson["AppliesTo"].asString());
         EXPECT_EQ("http://applies.to.url", bodyJson["AppliesToBootstrapToken"].asString());
@@ -114,7 +114,7 @@ TEST_F(ImsClientTests, GetToken_ByParentTokenWithZeroLifetime_SendsRequestToRetr
 
     GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
-        auto bodyJson = request.GetRequestBody()->AsJson();
+        auto bodyJson = Json::Reader::DoParse(request.GetRequestBody()->AsString());
 
         EXPECT_EQ("http://applies.to.url", bodyJson["AppliesTo"].asString());
         EXPECT_EQ("http://applies.to.url", bodyJson["AppliesToBootstrapToken"].asString());

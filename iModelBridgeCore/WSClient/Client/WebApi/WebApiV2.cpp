@@ -191,7 +191,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
         }
 
     auto repositoriesJson = std::make_shared<rapidjson::Document>();
-    response.GetBody().AsRapidJson(*repositoriesJson);
+    repositoriesJson->Parse<0>(response.GetBody().AsString().c_str());
 
     auto reader = CreateJsonInstancesReader();
     WSObjectsReader::Instances instances = reader->ReadInstances(repositoriesJson);
@@ -231,7 +231,10 @@ WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse(Http::Response& respo
     {
     if (HttpStatus::Created == response.GetHttpStatus())
         {
-        return WSCreateObjectResult::Success(response.GetBody().AsJson());
+        Json::Value infoJson;
+        if (!Json::Reader::Parse(response.GetBody().AsString(), infoJson))
+            infoJson = Json::Value::null;
+        return WSCreateObjectResult::Success(infoJson);
         }
     return WSCreateObjectResult::Error(response);
     }

@@ -194,7 +194,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
                 }
 
             rapidjson::Document changesetResponse;
-            result.GetValue()->AsRapidJson(changesetResponse);
+            changesetResponse.Parse<0>(result.GetValue()->AsString().c_str());
 
             auto handler = [&] (ObjectIdCR oldId, ObjectIdCR newId)
                 {

@@ -208,7 +208,7 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
             // End request
             return;
             }
-        cuRequest->m_data->rangeFrom = range.to + 1;
+        cuRequest->m_data->rangeFrom = range.GetTo() + 1;
         }
 
     uint64_t rangeTo = cuRequest->m_data->rangeFrom + cuRequest->m_chunkSizeBytes - 1;

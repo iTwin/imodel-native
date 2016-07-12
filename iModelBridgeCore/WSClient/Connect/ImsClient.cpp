@@ -138,7 +138,7 @@ uint64_t lifetime
         if (response.GetHttpStatus() != HttpStatus::OK)
             return SamlTokenResult::Error({response});
 
-        Json::Value body = response.GetBody().AsJson();
+        Json::Value body = Json::Reader::DoParse(response.GetBody().AsString());
         if (!body["RequestedSecurityToken"].isString())
             {
             BeAssert(false && "Token not found in IMS response");

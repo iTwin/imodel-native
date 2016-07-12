@@ -52,7 +52,7 @@ bool ConnectAuthenticationHandler::_ShouldRetryAuthentication(Http::ResponseCR r
         return true;
         }
     if (response.GetHttpStatus() == HttpStatus::NotFound &&
-        response.GetBody().AsJson()["errorId"].asString().Equals("DatasourceNotFound"))
+        Json::Reader::DoParse(response.GetBody().AsString())["errorId"].asString().Equals("DatasourceNotFound"))
         {
         // Token MAY be expired, retry. Workaround for TFS#7930
         return true;

@@ -145,7 +145,10 @@ void WSInfo::ParseInfoPage(Http::ResponseCR response, Type& typeOut, BeVersion& 
         return;
         }
 
-    Json::Value infoJson = response.GetBody().AsJson();
+    Json::Value infoJson;
+    if (!Json::Reader::Parse(response.GetBody().AsString(), infoJson))
+        infoJson = Json::Value::null;
+
     JsonValueCR serverVersionJson = infoJson[INFO_ServerVersion];
     if (!serverVersionJson.isString())
         {
