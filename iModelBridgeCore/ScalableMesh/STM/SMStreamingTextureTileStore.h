@@ -75,15 +75,15 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                 void Load(DataSourceAccount *dataSourceAccount)
                 {
-                    std::unique_ptr<DataSource::Buffer[]>       dest;
-                    DataSource                              *   dataSource;
-                    DataSource::DataSize                        readSize;
+					std::unique_ptr<DataSource::Buffer[]>		dest;
+					DataSource								*	dataSource;
+					DataSource::DataSize						readSize;
 
                     assert(m_ID != -1);
                     wchar_t buffer[10000];
                     swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), m_ID);
 
-                    DataSourceURL   dataSourceURL(buffer);
+					DataSourceURL	dataSourceURL(buffer);
 
                     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -206,7 +206,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 condition_variable m_TextureCV;
                 mutex m_TextureMutex;
 
-                DataSourceAccount * m_dataSourceAccount;
+				DataSourceAccount *	m_dataSourceAccount;
             };
 
         static void OpenOrCreateBeFile(BeFile& file, const WString& path, HPMBlockID blockID)
@@ -235,7 +235,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 else
                     {
                     texture.SetDataSource(m_path);
-                    texture.SetID(blockID.m_integerID);
+                    texture.SetID(blockID.m_integerID);					
                     texture.Load(this->GetDataSourceAccount());
                     }
                 }
@@ -320,13 +320,13 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             return this->GetTexture(blockID).size() + 3 * sizeof(int);
             }
 
-        virtual size_t StoreHeader(float* header, HPMBlockID blockID)
+        virtual size_t StoreNodeHeader(float* header, HPMBlockID blockID)
             {
             assert(!"Should not pass here.");
             return 0;
             }
 
-        virtual size_t LoadHeader(float* header, HPMBlockID blockID)
+        virtual size_t LoadNodeHeader(float* header, HPMBlockID blockID)
             {
             assert(!"Should not pass here.");
             return 0;
@@ -354,5 +354,5 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
         mutable map<uint32_t, Texture> m_textureCache;
         mutable std::mutex m_textureCacheLock;
 
-        DataSourceAccount * m_dataSourceAccount;
+		DataSourceAccount *	m_dataSourceAccount;
     };

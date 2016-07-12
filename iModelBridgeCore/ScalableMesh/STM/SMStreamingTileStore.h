@@ -11,6 +11,7 @@
 
 
 
+#include "Stores/SMStoreUtils.h"
 #include "SMPointTileStore.h"
 #include "SMNodeGroup.h"
 #include <ImagePP/all/h/HCDCodecZlib.h>
@@ -64,6 +65,7 @@ public:
     }
 
     
+	
     void Load(DataSourceAccount *dataSourceAccount)
     {
         if (!IsLoaded())
@@ -77,11 +79,11 @@ public:
                 wchar_t buffer[10000];
                 swprintf(buffer, L"%sp_%llu.bin", m_dataSource.c_str(), m_id);
             
-                std::unique_ptr<DataSource::Buffer[]>       dest;
-                DataSource                              *   dataSource;
+				std::unique_ptr<DataSource::Buffer[]>		dest;
+				DataSource								*	dataSource;
                 DataSource::DataSize                        readSize;
 
-                DataSourceURL   dataSourceURL(buffer);
+				DataSourceURL	dataSourceURL(buffer);
 
                 DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -242,6 +244,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
     {
 
     private:
+
         static ISMStore::NodeID ConvertBlockID(const HPMBlockID& blockID)
             {
             return static_cast<ISMStore::NodeID>(blockID.m_integerID);
@@ -436,13 +439,13 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         {
             //NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
             std::unique_ptr<DataSource::Buffer[]>       dest;
-            DataSource                              *   dataSource;
+			DataSource								*	dataSource;
             DataSource::DataSize                        readSize;
             wchar_t                                     buffer[10000];
 
             swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
 
-            DataSourceURL   dataSourceURL(buffer);
+			DataSourceURL	dataSourceURL(buffer);
 
             DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -669,7 +672,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             m_pathToHeaders(headers_path),
             m_useNodeHeaderGrouping(areNodeHeadersGrouped)
             {
-            setDataSourceAccount(dataSourceAccount);
+			setDataSourceAccount(dataSourceAccount);			
             bool haveHeaders = false;
             switch (type)
                 {
@@ -754,6 +757,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         virtual bool StoreMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
             {
+            assert(!"////MST_TS : tobedeleted");
+
             if (indexHeader != NULL && indexHeader->m_rootNodeBlockID.IsValid())
                 {
                 Json::Value masterHeader;
@@ -795,8 +800,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         virtual size_t LoadMasterHeader(SMPointIndexHeader<EXTENT>* indexHeader, size_t headerSize)
         {
+            assert(!"////MST_TS : tobedeleted");
             std::unique_ptr<DataSource::Buffer[]>           dest;
-            DataSource                                  *   dataSource;
+			DataSource								*	dataSource;
             DataSource::DataSize                            readSize;
             DataSourceBuffer::BufferSize                    destSize = 20 * 1024 * 1024;
 
@@ -894,7 +900,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 else
                 {
                     Json::Reader    reader;
-                    Json::Value     masterHeader;
+					Json::Value		masterHeader;
 
                     DataSourceURL dataSourceURL(m_rootDirectory.data());
                     
@@ -1252,8 +1258,10 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             block["nbClipSets"] = (uint32_t)header->m_clipSetsID.size();
             }
 
-        virtual size_t StoreHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+        virtual size_t StoreNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
+            assert(!"////MST_TS : tobedeleted");
+
             uint32_t headerSize = 0;
             std::unique_ptr<Byte> headerData = nullptr;
             SerializeHeaderToBinary(header, headerData, headerSize);
@@ -1280,8 +1288,10 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             return 1;
             }
 
-        virtual size_t LoadHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+        virtual size_t LoadNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
+            assert(!"////MST_TS : tobedeleted");
+
             if (s_stream_from_grouped_store)
                 {
                 auto group = this->GetGroup(blockID);

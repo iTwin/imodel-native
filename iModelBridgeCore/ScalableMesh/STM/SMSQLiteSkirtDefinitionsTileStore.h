@@ -103,12 +103,12 @@ template <class EXTENT> class SMSQLiteSkirtDefinitionsTileStore : public SMPoint
             return m_smSQLiteFile->GetSkirtPolygonByteCount(blockID.m_integerID) / sizeof(DPoint3d);
             }
 
-        virtual size_t StoreHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+        virtual size_t StoreNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
             return 0;
             }
 
-        virtual size_t LoadHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
+        virtual size_t LoadNodeHeader(SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID)
             {
             return 0;
             }

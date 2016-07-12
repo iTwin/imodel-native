@@ -36,9 +36,9 @@ protected:
     DataSourceTransferScheduler &     getTransferScheduler           (void);
 
 public:
-CLOUD_EXPORT									DataSourceAccount			(void);
-CLOUD_EXPORT									DataSourceAccount			(const ServiceName &service, const AccountName &account);
-CLOUD_EXPORT									DataSourceAccount			(const ServiceName &service, const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+CLOUD_EXPORT                                    DataSourceAccount            (void);
+CLOUD_EXPORT                                    DataSourceAccount            (const ServiceName &service, const AccountName &account);
+CLOUD_EXPORT                                    DataSourceAccount            (const ServiceName &service, const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 
                                       ~DataSourceAccount             (void);
 

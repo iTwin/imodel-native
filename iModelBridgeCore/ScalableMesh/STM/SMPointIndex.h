@@ -27,6 +27,8 @@
 
 #include <ScalableMesh\IScalableMeshQuery.h>
 
+#include "Stores\SMSQLiteStore.h"
+
 class DataSourceAccount;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -52,7 +54,6 @@ extern bool s_useThreadsInFiltering;
 // Predeclaration of the Point Index Filter interface. This interface is defined lower in this same file.
 template<class POINT, class EXTENT> class ISMPointIndexFilter; 
 template<class POINT, class EXTENT> class ISMPointIndexQuery;
-//template <class POINT, class EXTENT> class SMPointTileStore;
 template<class POINT, class EXTENT> class SMPointIndex;
 
 
@@ -429,6 +430,14 @@ public:
         }
 
     /**----------------------------------------------------------------------------
+     Get the data store
+    -----------------------------------------------------------------------------*/
+    ISMDataStoreTypePtr<EXTENT> GetDataStore()
+        {
+        return m_SMIndex->GetDataStore();
+        }
+
+    /**----------------------------------------------------------------------------
      Stores the present node on store (Discard) and stores all sub-nodes prior to this
     -----------------------------------------------------------------------------*/
     virtual bool Store();
@@ -594,7 +603,7 @@ public:
     virtual void         SaveAllOpenGroups() const;
 
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
-    void                 SavePointsToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    void                 SavePointsToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, HFCPtr<StreamingPointStoreType> pi_pPointStore);
     virtual void         SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
 
 #ifdef INDEX_DUMPING_ACTIVATED
@@ -782,8 +791,8 @@ public:
     //Neighbor node at the same level as this node
     vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >> m_apNeighborNodes[MAX_NUM_NEIGHBORNODE_POSITIONS];
 
-    bool                    m_isGenerating;
-    mutable SMPointNodeHeader<EXTENT> m_nodeHeader;         // The node header. Contains permanent control data.
+    bool                              m_isGenerating;
+    mutable SMIndexNodeHeader<EXTENT> m_nodeHeader;         // The node header. Contains permanent control data.
     mutable bool m_wasBalanced;
     bool m_needsBalancing;
     bool m_isGrid;
@@ -1078,7 +1087,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    void SavePointDataToCloud(DataSourceAccount *dataSourceAccount, HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    void SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, HFCPtr<StreamingPointStoreType> pi_pPointStore);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1213,7 +1222,7 @@ public:
                                    node after which the node may be split.
 
     -------------------------------------------------------------------------------------------------*/
-    SMPointIndex(HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
+    SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
     /**----------------------------------------------------------------------------
      Destructor
      If the index has unstored nodes then those will be stored.
@@ -1227,10 +1236,15 @@ public:
     GetPool() const;
 
     /**----------------------------------------------------------------------------
-     Returns the store
+     Returns the point store
     -----------------------------------------------------------------------------*/
     HFCPtr<SMPointTileStore<POINT, EXTENT> >
     GetPointsStore() const;
+
+    /**----------------------------------------------------------------------------
+     Returns the data store
+    -----------------------------------------------------------------------------*/
+    ISMDataStoreTypePtr<EXTENT> GetDataStore();
 
     /**----------------------------------------------------------------------------
      Forces an immmediate store (to minimize the chances of corruption
@@ -1498,6 +1512,8 @@ protected:
         };
    
     HFCPtr<SMPointTileStore<POINT, EXTENT> > m_store;
+    ISMDataStoreTypePtr<EXTENT>              m_dataStore;
+
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    
     typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap m_createdNodeMap;
 
@@ -1509,7 +1525,7 @@ protected:
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT>>                    m_pRootNode;
 
-    SMPointIndexHeader<EXTENT>             m_indexHeader;
+    SMIndexMasterHeader<EXTENT> m_indexHeader;
 
     bool                    m_indexHeaderDirty;
 

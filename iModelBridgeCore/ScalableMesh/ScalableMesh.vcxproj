@@ -125,7 +125,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64   </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64    </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -544,6 +544,10 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\Stores\ISMDataStore.hpp" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.hpp" />
+    <ClInclude Include="STM\Stores\SMStoreUtils.h" />
+    <ClInclude Include="STM\Stores\SMStoreUtils.hpp" />
+    <ClInclude Include="STM\Stores\SMStreamingDataStore.h" />
+    <ClInclude Include="STM\Stores\SMStreamingDataStore.hpp" />
     <ClInclude Include="STM\Threading\LightThreadPool.h" />
     <ClInclude Include="STM\Threading\ScalableMeshScheduler.h" />
   </ItemGroup>
@@ -690,6 +694,8 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp" />
     <ClCompile Include="STM\SMStreamingTileStore.cpp" />
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
+    <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />
+    <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp" />
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>

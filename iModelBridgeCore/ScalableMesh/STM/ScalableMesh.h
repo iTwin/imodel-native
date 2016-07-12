@@ -54,6 +54,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include "ScalableMeshMemoryPools.h"
 
+#include "Stores/SMSQLiteStore.h"
+
 #include "ScalableMeshVolume.h"
 
 #include <CloudDataSource/DataSourceManager.h>
@@ -89,11 +91,11 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     WString                             m_baseExtraFilesPath;
 
     static DataSourceManager            s_dataSourceManager;
-    DataSourceAccount               *   m_dataSourceAccount;
+	DataSourceAccount				*	m_dataSourceAccount;
 
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
-    const WString                        m_path; 
+    const WString					     m_path; 
 
 
     explicit                            ScalableMeshBase(SMSQLiteFilePtr& smSQLiteFile, const WString&             filePath);
@@ -143,7 +145,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     virtual bool _GetTransformation(TransformR transformation) override;
     virtual IDTMVolumeP _GetDTMVolume() override;
 
-    virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP) override { return DTM_ERROR; }
+    virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP) override;
 
     public:
         ScalableMeshDTM(IScalableMeshPtr scMesh)
@@ -190,8 +192,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         typedef SMPointTileStore<INDEXPOINT, YProtPtExtentType >
             TileStoreType;
-
-
+        
         typedef SMStreamingPointTaggedTileStore<
             INDEXPOINT,
             YProtPtExtentType >        StreamingPointStoreType;
@@ -204,7 +205,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         typedef SMMeshIndex<INDEXPOINT, YProtPtExtentType>
                                         MeshIndexType;
-
+        
 
         bool                            m_areDataCompressed; 
         bool                            m_computeTileBoundary;

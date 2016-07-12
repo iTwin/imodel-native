@@ -2,6 +2,7 @@
 #include "ImagePPHeaders.h"
 #include "ScalableMesh.h"
 #include "ScalableMeshQuery.h"
+#include "Stores\SMStreamingDataStore.h"
 #include "SMPointIndex.h"
 #include "SMPointIndex.hpp"
 #include "HGF3DFilterCoord.h"

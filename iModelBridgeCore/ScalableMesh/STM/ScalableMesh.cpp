@@ -50,6 +50,8 @@ extern bool   GET_HIGHEST_RES;
 #include "SMSQLiteUVStore.h"
 #include "SMSQLiteUVIndiceTileStore.h"
 #include "SMSQLiteTextureTileStore.h"
+#include "Stores\SMStreamingDataStore.h"
+
 #include <Vu\VuApi.h>
 #include <Vu\vupoly.fdf>
 #include "vuPolygonClassifier.h"
@@ -575,7 +577,7 @@ bool ScalableMeshBase::LoadGCSFrom()
 +----------------------------------------------------------------------------*/
 DataSourceStatus ScalableMeshBase::InitializeAzureTest(void)
 {
-    DataSourceStatus    status;
+	DataSourceStatus							status;
     if (s_stream_from_disk)
     {
         DataSourceAccount                       *   accountLocalFile;
@@ -593,52 +595,52 @@ DataSourceStatus ScalableMeshBase::InitializeAzureTest(void)
     else
     {
         // NEEDS_WORK_SM_STREAMING: Add method to specify Azure CDN endpoints such as BlobEndpoint = https://scalablemesh.azureedge.net
-        DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
-        DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
-        DataSourceService                       *   serviceAzure;
-        DataSourceAccount                       *   accountAzure;
-        DataSourceAccount                       *   accountCaching;
-        DataSourceService                       *   serviceFile;
+	DataSourceAccount::AccountIdentifier		accountIdentifier(L"pcdsustest");
+	DataSourceAccount::AccountKey				accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
+	DataSourceService						*	serviceAzure;
+	DataSourceAccount						*	accountAzure;
+	DataSourceAccount						*	accountCaching;
+	DataSourceService						*	serviceFile;
 
-        //  DataSourceAccount                       *   accountCaching;
-        //  DataSourceBuffer::BufferSize                testDataSize = 1024 * 1024 * 8;
+//	DataSourceAccount						*	accountCaching;
+//	DataSourceBuffer::BufferSize				testDataSize = 1024 * 1024 * 8;
 
-                                                                    // Get the Azure service
+															// Get the Azure service
         serviceAzure = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
-        if (serviceAzure == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-        // Create an account on Azure
-        accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
-        if (accountAzure == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-        // Set ScalableMesh's DataSource
+	if(serviceAzure == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Create an account on Azure
+	accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
+	if (accountAzure == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Set ScalableMesh's DataSource
         this->SetDataSourceAccount(accountAzure);
 
         /*
-                                                                    // Create an Azure specific DataSource
-            dataSourceAzure = dynamic_cast<DataSourceAzure *>(dataSourceManager.createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
-            if (dataSourceAzure == nullptr)
-                return DataSourceStatus(DataSourceStatus::Status_Error);
-                                                                    // Blobs will be split up into segments of this size
-            dataSourceAzure->setSegmentSize(1024 * 64);
-                                                                    // Time I/O operation timeouts for threading
-            dataSourceAzure->setTimeout(DataSource::Timeout(100000));
+															// Create an Azure specific DataSource
+	dataSourceAzure = dynamic_cast<DataSourceAzure *>(dataSourceManager.createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
+	if (dataSourceAzure == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error);
+															// Blobs will be split up into segments of this size
+	dataSourceAzure->setSegmentSize(1024 * 64);
+															// Time I/O operation timeouts for threading
+	dataSourceAzure->setTimeout(DataSource::Timeout(100000));
         */
 
-        // Get the file service
+															// Get the file service
         if ((serviceFile = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-        // Create an account on the file service for caching
-        if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-        // Set prefix for caching account data sources
-        accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Create an account on the file service for caching
+	if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Set prefix for caching account data sources
+	accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
 
-        //  accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
-                                                                    // Set up local file based caching
-        accountAzure->setCaching(*accountCaching, DataSourceURL());
-        // Set up default container
-        accountAzure->setPrefixPath(DataSourceURL(L"scalablemeshtest"));
+//	accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+															// Set up local file based caching
+	accountAzure->setCaching(*accountCaching, DataSourceURL());
+															// Set up default container
+	accountAzure->setPrefixPath(DataSourceURL(L"scalablemeshtest"));
     }
 
     return status;
@@ -804,7 +806,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
 
 
-        HFCPtr<TileStoreType> pTileStore;
+        HFCPtr<TileStoreType> pTileStore;        
         HFCPtr<StreamingPointStoreType>  pStreamingTileStore;
         HFCPtr<StreamingIndiceStoreType> pStreamingIndiceTileStore;
         HFCPtr<StreamingUVStoreType> pStreamingUVTileStore;
@@ -836,7 +838,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     auto position = m_path.find_last_of(L".stm");
                     auto filenameWithoutExtension = m_path.substr(0, position - 3);
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"marseille\\");
+//                  WString azureDatasetName(L"marseille\\");
+                    WString azureDatasetName(L"quebeccityvg\\");
                     // NEEDS_WORK_SM - Check existence of the following directories
                     WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
 
@@ -846,13 +849,16 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     }
 
 
-                    // NEEDS_WORK_SM - Need to stream textures as well
                     pStreamingTileStore = new StreamingPointStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingPointStoreType::SMStreamingDataType::POINTS, AreDataCompressed(), s_stream_from_grouped_store);
                     pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, AreDataCompressed());
                     pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingUVStoreType::SMStreamingDataType::UVS, AreDataCompressed());
                     pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, AreDataCompressed());
                     pStreamingTextureTileStore = new StreamingTextureTileStore(this->GetDataSourceAccount(), streamingSourcePath);
-                    m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
+                    
+                    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(getDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store));                    
+
+                    m_scmIndexPtr = new MeshIndexType(dataStore, 
+                                                      ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
                                                             &*pStreamingIndiceTileStore,
                                                     //        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
@@ -878,10 +884,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     pUVsIndicesTileStore = new SMSQLiteUVIndiceTileStore<YProtPtExtentType >((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
                     pTextureTileStore = new SMSQLiteTextureTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
                     pGraphTileStore = new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
+                    
+                    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr));
 
-
-                    m_scmIndexPtr = new MeshIndexType(//pMemoryPool, 
-                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
+                    m_scmIndexPtr = new MeshIndexType(dataStore, 
+                                                      ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pTileStore,                                                       
                                                        &*pIndiceTileStore,
                                                      //  ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
@@ -1394,6 +1401,56 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         t.detach();
         }
     return DTM_SUCCESS;
+    }
+
+DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP) 
+    {
+    //find the highest resolution that has less than 5M points
+    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+    IScalableMeshMeshQueryPtr meshQueryInterface = m_scMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    bvector<IScalableMeshNodePtr> returnedNodes;
+    params->SetLevel(m_scMesh->GetTerrainDepth());
+
+    size_t totalPts = 0;
+    if (meshQueryInterface->Query(returnedNodes, 0, 0, params) != SUCCESS)
+        return DTM_ERROR;
+    for (auto& node : returnedNodes)
+        {
+        totalPts += node->GetPointCount();
+        }
+    while (totalPts > 5000000 && params->GetLevel() > 1)
+        {
+        returnedNodes.clear();
+        params->SetLevel(params->GetLevel() - 1);
+        meshQueryInterface->Query(returnedNodes, 0,0, params);
+        totalPts = 0;
+        for (auto& node : returnedNodes)
+            {
+            totalPts += node->GetPointCount();
+            }
+        }
+    if (returnedNodes.size() == 0) return DTM_ERROR;
+    bvector<bool> clips;
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    auto meshPtr = returnedNodes.front()->GetMesh(flags, clips);
+    ScalableMeshMesh* meshP = dynamic_cast<ScalableMeshMesh*>(meshPtr.get());
+    //add all triangles from returned nodes to DTM
+    for (auto nodeIter = returnedNodes.begin() + 1; nodeIter != returnedNodes.end(); ++nodeIter)
+        {
+        if ((*nodeIter)->GetPointCount() <= 4) continue;
+        auto currentMeshPtr = (*nodeIter)->GetMesh(flags, clips);
+        if (!currentMeshPtr.IsValid()) continue;
+        bvector<int32_t> indices(currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCount());
+        memcpy(&indices[0], currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCP(), indices.size()*sizeof(int32_t));
+        for (auto&idx : indices) idx += (int)meshP->GetNbPoints();
+        meshP->AppendMesh(currentMeshPtr->GetPolyfaceQuery()->GetPointCount(), const_cast<DPoint3d*>(currentMeshPtr->GetPolyfaceQuery()->GetPointCP()), (int)indices.size(), &indices[0],0,0,0,0,0,0);
+        }
+
+    TerrainModel::BcDTMPtr dtm;
+    DTMStatusInt val = meshP->GetAsBcDTM(dtm);
+    if (val == DTM_ERROR) return val;
+    val = dtm->ExportToGeopakTinFile(fileNameP);
+    return val;
     }
 
 bool ScalableMeshDTM::_GetTransformation(TransformR)

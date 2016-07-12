@@ -66,9 +66,9 @@ template <typename DataType, typename MasterHeaderType, typename TileHeaderType>
 
         virtual size_t LoadMasterHeader(MasterHeaderType* header, size_t maxHeaderSize) = 0;
 
-        virtual size_t StoreHeader(TileHeaderType* header, HPMBlockID blockID) = 0;
+        virtual size_t StoreNodeHeader(TileHeaderType* header, HPMBlockID blockID) = 0;
 
-        virtual size_t LoadHeader(TileHeaderType* header, HPMBlockID blockID) = 0;
+        virtual size_t LoadNodeHeader(TileHeaderType* header, HPMBlockID blockID) = 0;
 
 
         // IScalableMeshDataStore implementation

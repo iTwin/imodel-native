@@ -68,6 +68,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 //#include <DgnPlatform\Tools\ConfigurationManager.h>
 #include "Edits/ClipUtilities.hpp"
 
+#include "Stores\SMStreamingDataStore.h"
 #include "SMSQLitePointTileStore.h"
 #include "SMSQLiteIndiceTileStore.h"
 #include "SMSQLiteGraphTileStore.h"
@@ -578,9 +579,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
     typedef SMSQLitePointTileStore<PointType,
         PointIndexExtentType>             TileStoreType;
-
-  
-
+    
     typedef SMStreamingPointTaggedTileStore<
         PointType,
         PointIndexExtentType >        StreamingStoreType;
@@ -648,9 +647,12 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(account, streamingFilePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingTextureTileStore = new StreamingTextureTileStore(account, streamingFilePath);
             
-            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
-                                       &*pStreamingTileStore,                                       
-                                       &*pStreamingIndiceTileStore,
+            ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(account, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+            
+            pDataIndex = new MeshIndexType(dataStore, 
+                                           ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
+                                           &*pStreamingTileStore,                                       
+                                           &*pStreamingIndiceTileStore,
                                   //     ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
                                        pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr),                                       
                                        &*pStreamingTextureTileStore,                                                                              
@@ -683,7 +685,10 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr);
 
             //pIndiceTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
+            ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr));
+
+            pDataIndex = new MeshIndexType(dataStore,
+                                           ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
                                        &*pFinalTileStore,                                       
                                        &*pIndiceTileStore,
                                       // ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),

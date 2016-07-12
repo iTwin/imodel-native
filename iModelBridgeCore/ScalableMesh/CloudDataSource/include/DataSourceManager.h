@@ -13,7 +13,7 @@ public:
 protected:
 
 public:
-CLOUD_EXPORT								DataSourceManager		(void);
+CLOUD_EXPORT                                DataSourceManager        (void);
 
     DataSource *                         createDataSource        (const DataSourceName &name, const DataSourceAccount::AccountName &account, const DataSourceStoreConfig *config = nullptr);
     DataSource *                         createDataSource        (const DataSourceName &name, DataSourceAccount &account, const DataSourceStoreConfig *config = nullptr);

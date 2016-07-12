@@ -666,8 +666,7 @@ bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap
         params->SetLevel(ComputeLevelForTransform(w2vMap));
         bvector<IScalableMeshNodePtr> nodes;
         params->SetDirection(vecDirection);
-        /*if (query->Query(nodes, &startPt, NULL, 0, params) != SUCCESS)
-            return false;*/
+
         m_scmPtr->GetCurrentlyViewedNodes(m_nodeSelection);
         QueryNodesBasedOnParams(nodes, startPt, params);
         m_nodeSelection.clear();
@@ -684,17 +683,7 @@ bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap
         return false;
         }
     }
-#if 0
-bool ScalableMeshDraping::_FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
-    {
-    m_levelForDrapeLinear = std::min((size_t)5, m_scmPtr->GetTerrainDepth());
-    m_scmPtr->GetCurrentlyViewedNodes(m_nodeSelection);
-    bool retval = _DrapeAlongVector(endPt, slope, aspect, triangle, drapedType, point, directionOfVector, slopeOfVector);
-    m_levelForDrapeLinear = m_scmPtr->GetTerrainDepth();
-    m_nodeSelection.clear();
-    return retval;
-    }
-#endif
+
 void ScalableMeshDraping::QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>& nodes, const DPoint3d& testPt, const IScalableMeshNodeQueryParamsPtr& params)
     {
     if (m_nodeSelection.empty())
@@ -743,8 +732,7 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
     params->SetDepth(depthVal.x);
     DPoint3d transformedPt = point;
     m_UorsToStorage.Multiply(transformedPt);
-    /*if (query->Query(nodes, &transformedPt, NULL, 0, params) != SUCCESS)
-         return false;*/
+
     QueryNodesBasedOnParams(nodes, transformedPt, params);
     bvector<bool> clips;
     bool ret = false;
@@ -837,41 +825,7 @@ int PickLineSegmentForProjectedPoint(DPoint3dCP line, int nPts, int beginning, D
         }
     return beginning;
     }
-#if 0
-DTMStatusInt ScalableMeshDraping::_FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
-    {
-    /*IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
-    IScalableMeshMeshQueryPtr meshQueryInterface = m_scmPtr->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
-    bvector<IScalableMeshNodePtr> returnedNodes;
-    params->SetLevel(m_scmPtr->GetTerrainDepth());
 
-    bvector<DPoint3d> transformedLine(numPoints);
-    memcpy(&transformedLine[0], pts, numPoints*sizeof(DPoint3d));
-    m_UorsToStorage.Multiply(&transformedLine[0], numPoints);
-
-    DRange3d lineRange = DRange3d::From(&transformedLine[0], numPoints);
-    DPoint3d ext[4] = { DPoint3d::From(lineRange.low.x, lineRange.low.y, 0),
-        DPoint3d::From(lineRange.low.x, lineRange.high.y, 0),
-        DPoint3d::From(lineRange.high.x, lineRange.high.y, 0),
-        DPoint3d::From(lineRange.high.x, lineRange.low.y, 0) };
-    if (lineRange.XLength() < 1 && lineRange.YLength() < 1) return _DrapeLinear(ret, pts, numPoints);
-    if (meshQueryInterface->Query(returnedNodes, &ext[0], 4, params) != SUCCESS)
-        return DTM_ERROR;
-
-    while (returnedNodes.size() > 20 && params->GetLevel() > 1)
-        {
-        returnedNodes.clear();
-        params->SetLevel(params->GetLevel() - 1);
-        meshQueryInterface->Query(returnedNodes, &ext[0], 4, params);
-        }*/
-    m_levelForDrapeLinear = std::min((size_t)5, m_scmPtr->GetTerrainDepth());//params->GetLevel();
-    m_scmPtr->GetCurrentlyViewedNodes(m_nodeSelection);
-    auto retval = _DrapeLinear(ret, pts, numPoints);
-    m_levelForDrapeLinear = m_scmPtr->GetTerrainDepth();
-    m_nodeSelection.clear();
-    return retval;
-    }
-#endif
 DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
     if (m_type == DTMAnalysisType::Fast)
@@ -881,7 +835,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
         }
     bvector<bvector<DPoint3d>> drapedPointsTemp(numPoints);
     //Trying to find point to start drape
-//    bool findTriangleAlongRay = false;
+
     bvector<DPoint3d> transformedLine(numPoints);
     memcpy(&transformedLine[0], pts, numPoints*sizeof(DPoint3d));
     m_UorsToStorage.Multiply(&transformedLine[0], numPoints);

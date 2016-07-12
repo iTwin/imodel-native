@@ -22,9 +22,9 @@ need be.
 #include <ImagePP\all\h\HPMDataStore.h>
 USING_NAMESPACE_IMAGEPP
 
-//template <typename MasterHeaderType, typename NodeHeaderType> class ISMDataStore;      
+//template <class MasterHeaderType, class NodeHeaderType> class ISMDataStore;      
 
-template <typename DataType, typename NodeHeaderType> class ISMNodeDataStore : public RefCountedBase
+template <class DataType, class NodeHeaderType> class ISMNodeDataStore : public RefCountedBase
     {
     private : 
         
@@ -86,13 +86,14 @@ template <typename DataType, typename NodeHeaderType> class ISMNodeDataStore : p
     };
 
 
-template <typename MasterHeaderType, typename NodeHeaderType>  class ISMDataStore
+template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : public RefCountedBase
     {
     public:
 
         ISMDataStore() {};
         virtual ~ISMDataStore() {};
 
+        typedef RefCountedPtr<ISMDataStore<MasterHeaderType, NodeHeaderType>> Ptr; 
 
         /**----------------------------------------------------------------------------
          Stores the master header in the store. The master header is of an undefined type
@@ -111,14 +112,14 @@ template <typename MasterHeaderType, typename NodeHeaderType>  class ISMDataStor
          but should contain all information pertinent to the designated block except the
          block of data of type DataType.
         -----------------------------------------------------------------------------*/
-        virtual size_t StoreHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
+        virtual size_t StoreNodeHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
 
         /**----------------------------------------------------------------------------
          Loads the block header in the store. The block header is of an undefined type
          but should contain all information pertinent to the designated block except the
          block of data of type DataType.
         -----------------------------------------------------------------------------*/
-        virtual size_t LoadHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
+        virtual size_t LoadNodeHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
 
         /**----------------------------------------------------------------------------
          Get the next node ID available.
@@ -130,4 +131,3 @@ template <typename MasterHeaderType, typename NodeHeaderType>  class ISMDataStor
         virtual RefCountedPtr<ISMNodeDataStore<DPoint3d, NodeHeaderType>> GetNodeDataStore(NodeHeaderType* nodeHeader) = 0;
                             
     };
-

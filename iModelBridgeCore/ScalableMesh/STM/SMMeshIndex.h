@@ -20,6 +20,7 @@
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
 #include "SMMemoryPool.h"
+#include "Stores\SMSQLiteStore.h"
 
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 
@@ -556,6 +557,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
     typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
     void         SaveMeshToCloud(DataSourceAccount *dataSourceAccount,
+                                 ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, 
                                  HFCPtr<StreamingPointStoreType> pi_pPointStore,
                                  HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                  HFCPtr<StreamingUVStoreType> pi_pUVStore,
@@ -740,7 +742,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     {
     friend class SMMeshIndexNode < POINT, EXTENT > ;
     public:
-        SMMeshIndex(SMMemoryPoolPtr& smMemoryPool,                         
+        SMMeshIndex(ISMDataStoreTypePtr<EXTENT>& smDataStore,
+                    SMMemoryPoolPtr& smMemoryPool,                         
                      HFCPtr<SMPointTileStore<POINT, EXTENT> > ptsStore,                      
                      HFCPtr<SMPointTileStore<int32_t, EXTENT>> ptsIndiceStore,
                      HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> graphStore,                     
@@ -772,6 +775,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         virtual void        GetCloudFormatStores(DataSourceAccount *dataSourceAccount,
                                                  const WString& pi_pOutputDirPath,
                                                  const bool& pi_pCompress,
+                                                 ISMDataStoreTypePtr<EXTENT>&     po_pDataStore, 
                                                  HFCPtr<StreamingPointStoreType>& po_pPointStore,
                                                  HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
                                                  HFCPtr<StreamingUVStoreType>& po_pUVStore,
@@ -846,7 +850,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     private:
         
-        SMMemoryPoolPtr m_smMemoryPool;
+        SMMemoryPoolPtr   m_smMemoryPool;
+        ISMDataStoreTypePtr<EXTENT> m_smDataStore;
         
         HFCPtr<SMPointTileStore<int32_t, EXTENT> > m_ptsIndicesStore;
  

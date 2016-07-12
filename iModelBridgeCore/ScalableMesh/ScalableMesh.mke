@@ -292,6 +292,10 @@ $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCom
 #-----------------------------------------------------------------------
 $(o)SMSQLiteStore$(oext) : $(stmDir)Stores/SMSQLiteStore.cpp $(stmDir)Stores/SMSQLiteStore.h $(stmDir)Stores/SMSQLiteStore.hpp ${MultiCompileDepends}
 
+$(o)SMStreamingDataStore$(oext) : $(stmDir)Stores/SMStreamingDataStore.cpp $(stmDir)Stores/SMStreamingDataStore.h $(stmDir)Stores/SMStreamingDataStore.hpp ${MultiCompileDepends}
+
+$(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMStoreUtils.h ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
 #-----------------------------------------------------------------------
