@@ -838,7 +838,7 @@ Utf8String StreetMapModel::CreateMapBoxUrl(TileId tileid) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StreetMapModel::_ShouldRejectTile(TileId tileid, Utf8StringCR url, ByteStream const& data) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+#if defined (IS_THIS_NECESSARY)
     if (m_properties.m_mapService[0] != '0' || m_properties.m_mapType[0] != '1')
         return false;
 

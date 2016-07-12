@@ -150,6 +150,7 @@ public:
     TilePtr CreateTile(TileId id, Tile::Corners const&, Render::SystemR) const;
 
     TileCache& GetTileCache() const {return m_tileCache;}
+
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
     WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {CreateCache();}
 
