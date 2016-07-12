@@ -30,17 +30,4 @@ public:
     explicit ECDbExpressionSymbolProvider(ECDbCR db) : ECN::IECSymbolProvider(), m_db(db) {}
 };
 
-//=======================================================================================
-// @bsiclass                                      Grigas.Petraitis              02/2016
-//+===============+===============+===============+===============+===============+======
-struct ECDbExpressionSymbolContext
-{
-private:
-    ECDbExpressionSymbolProvider* m_provider;
-public:
-    explicit ECDbExpressionSymbolContext(ECDbCR ecdb);
-    ~ECDbExpressionSymbolContext() { LeaveContext(); }
-    void LeaveContext();
-};
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
