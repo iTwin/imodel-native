@@ -71,9 +71,9 @@ HANDLER_DEFINE_MEMBERS(AnnotationTextStyleHandler);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void AnnotationTextStyleHandler::_GetClassParams(ECSqlClassParams& params)
+void AnnotationTextStyleHandler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_GetClassParams(params);
+    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
     params.Add(PROP_Data);
     params.Add(PROP_Description);
     }

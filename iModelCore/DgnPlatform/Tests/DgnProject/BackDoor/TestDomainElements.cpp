@@ -13,15 +13,15 @@ HANDLER_DEFINE_MEMBERS(TestElementSub2Handler)
 HANDLER_DEFINE_MEMBERS(TestElementSub3Handler)
 HANDLER_DEFINE_MEMBERS(TestElementComplexHandler)
 
-void TestElementSub1Handler::_GetClassParams(ECSqlClassParams& params)      { T_Super::_GetClassParams(params); TestElementSub1::GetParams(params); }
-void TestElementSub2Handler::_GetClassParams(ECSqlClassParams& params)      { T_Super::_GetClassParams(params); TestElementSub2::GetParams(params); }
-void TestElementSub3Handler::_GetClassParams(ECSqlClassParams& params)      { T_Super::_GetClassParams(params); TestElementSub3::GetParams(params); }
-void TestElementComplexHandler::_GetClassParams(ECSqlClassParams& params)   { T_Super::_GetClassParams(params); TestElementComplex::GetParams(params); }
+void TestElementSub1Handler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); TestElementSub1::TEMPORARY_GetHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementSub2Handler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); TestElementSub2::TEMPORARY_GetHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementSub3Handler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); TestElementSub3::TEMPORARY_GetHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementComplexHandler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params)   { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); TestElementComplex::TEMPORARY_GetHandlingCustomAttributes(params); }    // *** WIP_AUTO_HANDLED_PROPERTIES
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestElementSub1::GetParams(ECSqlClassParams& params)
+void TestElementSub1::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop1_1");
     params.Add("Prop1_2");
@@ -111,7 +111,7 @@ TestElementSub1CPtr TestElementSub1::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestElementSub2::GetParams(ECSqlClassParams& params)
+void TestElementSub2::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop2_1");
     params.Add("Prop2_2");
@@ -202,7 +202,7 @@ TestElementSub2CPtr TestElementSub2::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestElementSub3::GetParams(ECSqlClassParams& params)
+void TestElementSub3::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop3_1");
     params.Add("Prop3_2");
@@ -293,7 +293,7 @@ TestElementSub3CPtr TestElementSub3::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestElementComplex::GetParams(ECSqlClassParams& params)
+void TestElementComplex::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop_point3d");
     params.Add("Prop_struct");

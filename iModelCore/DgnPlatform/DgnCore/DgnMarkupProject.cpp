@@ -67,7 +67,7 @@ MarkupExternalLinkCPtr MarkupExternalLink::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/2016
 //---------------------------------------------------------------------------------------
-void MarkupExternalLink::AddClassParams(ECSqlClassParamsR params)
+void MarkupExternalLink::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add(MARKUPEXTERNALLINK_LinkedElementId);
     }

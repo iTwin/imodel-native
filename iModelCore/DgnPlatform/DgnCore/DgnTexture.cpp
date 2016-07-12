@@ -22,9 +22,9 @@ namespace dgn_ElementHandler
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Texture::_GetClassParams(ECSqlClassParams& params)
+void Texture::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_GetClassParams(params);
+    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
     params.Add(PROP_Data);
     params.Add(PROP_Descr);
     params.Add(PROP_Format);

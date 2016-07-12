@@ -10,13 +10,13 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlClassParams::Add(Utf8CP name, StatementType type)
+void ECSqlClassParams::Add(Utf8CP name, StatementType type, bool ah)
     {
     BeAssert(!Utf8String::IsNullOrEmpty(name));
     if (!Utf8String::IsNullOrEmpty(name))
         {
         BeAssert(m_entries.end() == std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return 0 == ::strcmp(name, arg.m_name); }));
-        Entry entry(name, type);
+        Entry entry(name, type, ah);
         if (StatementType::Select == (type & StatementType::Select) && 0 < m_entries.size())
             {
             // We want to be able to quickly look up the index for a name for SELECT query results...so group them together at the front of the list.

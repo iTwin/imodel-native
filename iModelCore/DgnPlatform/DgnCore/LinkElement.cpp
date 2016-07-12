@@ -235,7 +235,7 @@ UrlLinkCPtr UrlLink::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-void UrlLink::AddClassParams(ECSqlClassParamsR params)
+void UrlLink::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add(URLLINK_Url);
     params.Add(URLLINK_Description);
@@ -383,7 +383,7 @@ EmbeddedFileLinkCPtr EmbeddedFileLink::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-void EmbeddedFileLink::AddClassParams(ECSqlClassParamsR params)
+void EmbeddedFileLink::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add(EMBEDDEDFILELINK_Name);
     params.Add(EMBEDDEDFILELINK_Description);

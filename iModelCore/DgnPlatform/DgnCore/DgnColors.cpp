@@ -18,9 +18,9 @@ namespace dgn_ElementHandler
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TrueColor::_GetClassParams(ECSqlClassParams& params)
+void TrueColor::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_GetClassParams(params);
+    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
     params.Add(PROP_Value, ECSqlClassParams::StatementType::ReadOnly);
     }
 

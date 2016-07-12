@@ -15,9 +15,9 @@ namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(DimensionStyleHandler)
 
-void DimensionStyleHandler::_GetClassParams(ECSqlClassParams& params)
+void DimensionStyleHandler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_GetClassParams(params);
+    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
     params.Add(PROP_TextStyleId);
     }
 };

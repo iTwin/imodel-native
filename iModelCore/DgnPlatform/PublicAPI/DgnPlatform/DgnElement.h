@@ -1445,7 +1445,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
 
-    static void AddBaseClassParams(ECSqlClassParams& params);
+    static void _TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params);
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
     DgnDbStatus InsertGeomStream() const;
@@ -1521,7 +1521,7 @@ protected:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
-    DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
+    DGNPLATFORM_EXPORT static void _TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
 
     DGNPLATFORM_EXPORT DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value) override;
@@ -1590,7 +1590,7 @@ protected:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
-    DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
+    DGNPLATFORM_EXPORT static void _TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
 };
 
 //=======================================================================================
@@ -1916,6 +1916,8 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     friend struct dgn_TxnTable::Element;
     friend struct GeometricElement;
 
+    typedef bmap<DgnClassId, ECSqlClassParams> T_ClassParamsMap;
+
     //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
     {
@@ -1979,6 +1981,8 @@ private:
     DgnElementIdSet m_selectionSet;
     mutable BeSQLite::BeDbMutex m_mutex;
     mutable ClassInfoMap m_classInfos;
+    mutable T_ClassParamsMap m_classParams;
+    mutable ECSqlClassParams::HandlingCustomAttributes m_customAttributes; // *** TEMPORARY *** WIP_AUTO_HANDLED_PROPERTIES
 
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
@@ -2007,6 +2011,8 @@ private:
 
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!
+
+    ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
 
 public:
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private

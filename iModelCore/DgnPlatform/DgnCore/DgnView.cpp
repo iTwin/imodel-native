@@ -16,10 +16,10 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #define VIEWDEF_HANDLER_DEFINE_MEMBERS(CLASSNAME) \
     HANDLER_DEFINE_MEMBERS(CLASSNAME) \
-    void CLASSNAME ::_GetClassParams(ECSqlClassParams& params) \
+    void CLASSNAME ::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) \
         { \
-        T_Super::_GetClassParams(params); \
-        ViewDefinition::AddClassParams(params); \
+        T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); \
+        ViewDefinition::_TEMPORARY_GetHandlingCustomAttributes(params); \
         }
 
 namespace dgn_ElementHandler
@@ -38,7 +38,7 @@ HANDLER_EXTENSION_DEFINE_MEMBERS(ViewControllerOverride)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::AddClassParams(ECSqlClassParams& params)
+void ViewDefinition::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add(PROPNAME_Descr);
     params.Add(PROPNAME_Source);

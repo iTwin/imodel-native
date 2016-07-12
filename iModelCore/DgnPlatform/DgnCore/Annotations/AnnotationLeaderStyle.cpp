@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationLeaderStyle.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h>
@@ -63,9 +63,9 @@ HANDLER_DEFINE_MEMBERS(AnnotationLeaderStyleHandler);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-void AnnotationLeaderStyleHandler::_GetClassParams(ECSqlClassParams& params)
+void AnnotationLeaderStyleHandler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_GetClassParams(params);
+    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
     params.Add(PROP_Data);
     params.Add(PROP_Description);
     }

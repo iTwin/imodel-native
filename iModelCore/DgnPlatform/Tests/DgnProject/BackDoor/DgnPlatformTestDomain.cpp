@@ -157,9 +157,9 @@ DgnDbStatus TestElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestElementHandler::_GetClassParams(ECSqlClassParams& params)
+void TestElementHandler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_GetClassParams(params);
+    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
     params.Add(DPTEST_TEST_ELEMENT_TestElementProperty);
     params.Add(DPTEST_TEST_ELEMENT_IntegerProperty1);
     params.Add(DPTEST_TEST_ELEMENT_IntegerProperty2);

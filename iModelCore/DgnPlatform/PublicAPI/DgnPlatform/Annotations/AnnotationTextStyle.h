@@ -223,7 +223,7 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTextStyle, AnnotationTextStyle, AnnotationTextStyleHandler, Element, DGNPLATFORM_EXPORT);
 
     protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams&) override;
+        DGNPLATFORM_EXPORT virtual void _TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes&) override; // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 }
 

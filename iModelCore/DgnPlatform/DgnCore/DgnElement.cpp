@@ -491,7 +491,7 @@ void DgnElement::_OnReversedAdd() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ElementHandler::Element::_GetClassParams(ECSqlClassParamsR params)
+void dgn_ElementHandler::Element::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add(DGN_ELEMENT_PROPNAME_ECInstanceId, ECSqlClassParams::StatementType::Insert);
     params.Add(DGN_ELEMENT_PROPNAME_ModelId, ECSqlClassParams::StatementType::Insert);
@@ -3292,7 +3292,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::AddBaseClassParams(ECSqlClassParams& params)
+void GeometricElement::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params)
     {
     params.Add(GEOM_Category);
     params.Add(GEOM_Origin);
@@ -3304,9 +3304,9 @@ void GeometricElement::AddBaseClassParams(ECSqlClassParams& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement2d::AddClassParams(ECSqlClassParams& params)
+void GeometricElement2d::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    AddBaseClassParams(params);
+    GeometricElement::_TEMPORARY_GetHandlingCustomAttributes(params);
 
     params.Add(GEOM2_Rotation);
     }
@@ -3314,9 +3314,9 @@ void GeometricElement2d::AddClassParams(ECSqlClassParams& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement3d::AddClassParams(ECSqlClassParams& params)
+void GeometricElement3d::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    AddBaseClassParams(params);
+    GeometricElement::_TEMPORARY_GetHandlingCustomAttributes(params);
 
     params.Add(GEOM3_InSpatialIndex);
     params.Add(GEOM3_Yaw);

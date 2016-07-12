@@ -18,16 +18,16 @@ namespace dgn_ElementHandler
 HANDLER_DEFINE_MEMBERS(LinearDimensionHandler2d)
 HANDLER_DEFINE_MEMBERS(LinearDimensionHandler3d)
 
-void LinearDimensionHandler2d::_GetClassParams(ECSqlClassParams& params)
+void LinearDimensionHandler2d::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_GetClassParams(params);
+    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
     params.Add(PROP_StyleId);
     params.Add(PROP_Points);
     }
 
-void LinearDimensionHandler3d::_GetClassParams(ECSqlClassParams& params)
+void LinearDimensionHandler3d::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_GetClassParams(params);
+    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
     params.Add(PROP_StyleId);
     params.Add(PROP_Points);
     }

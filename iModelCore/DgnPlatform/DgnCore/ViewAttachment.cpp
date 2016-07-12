@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewAttachment.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -20,9 +20,9 @@ HANDLER_DEFINE_MEMBERS(ViewAttachmentHandler);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewAttachmentHandler::_GetClassParams(ECSqlClassParams& params)
+void ViewAttachmentHandler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_GetClassParams(params);
+    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
     params.Add(PROP_ViewId);
     params.Add(PROP_Scale);
     }

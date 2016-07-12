@@ -1486,6 +1486,56 @@ uint32_t DgnElements::CachedSelectStatement::Release()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct GenericClassParamsProvider : IECSqlClassParamsProvider
+    {
+    DgnDbR m_db;
+    DgnClassId m_classId;
+    ECSqlClassParams::HandlingCustomAttributes const& m_customAttributes; // *** TEMPORARY *** WIP_AUTO_HANDLED_PROPERTIES
+    GenericClassParamsProvider(DgnDbR db, DgnClassId classId, ECSqlClassParams::HandlingCustomAttributes const& cas) : m_db(db), m_classId(classId), m_customAttributes(cas) {}
+    void _GetClassParams(ECSqlClassParamsR ecSqlParams) override;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GenericClassParamsProvider::_GetClassParams(ECSqlClassParamsR ecSqlParams)
+    {
+    auto ecclass = m_db.Schemas().GetECClass(ECN::ECClassId(m_classId.GetValue()));
+    for (auto prop : ecclass->GetProperties())
+        {
+        Utf8StringCR propName = prop->GetName();
+
+        ECSqlClassParams::HandlingCustomAttributesBundle ca;
+        auto ica = m_customAttributes.find(propName);
+        if (ica != m_customAttributes.end())
+            ca = ica->second;
+        else
+            {
+            ca.m_statementType = ECSqlClassParams::StatementType::All;
+            ca.m_useAutoHandler = true;
+            }
+
+        ecSqlParams.Add(propName.c_str(), ca.m_statementType, ca.m_useAutoHandler);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlClassParams const& DgnElements::GetECSqlClassParams(DgnClassId classId) const
+    {
+    ECSqlClassParams& params = m_classParams[classId];
+    if (!params.IsInitialized())
+        {
+        GenericClassParamsProvider provider(GetDgnDb(), classId, m_customAttributes);
+        params.Initialize(provider);
+        }
+    return params;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
@@ -1495,8 +1545,12 @@ DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     if (m_classInfos.end() != found)
         return found->second;
 
+    el.GetElementHandler()._TEMPORARY_GetHandlingCustomAttributes(m_customAttributes); // *** WIP_AUTO_HANDLED_PROPERTIES
+
     ClassInfo& classInfo = m_classInfos[classId];
-    bool populated = el.GetElementHandler().GetECSqlClassParams().BuildClassInfo(classInfo, GetDgnDb(), classId);
+    ECSqlClassParams const& params = GetECSqlClassParams(classId);
+
+    bool populated = params.BuildClassInfo(classInfo, GetDgnDb(), classId);
     BeAssert(populated);
     UNUSED_VARIABLE(populated);
 
@@ -1538,7 +1592,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
     if (stmt.IsValid())
         stmt->BindId(1, el.GetElementId());
 
-    return ElementSelectStatement(stmt.get(), el.GetElementHandler().GetECSqlClassParams());
+    return ElementSelectStatement(stmt.get(), GetECSqlClassParams(el.GetElementClassId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1562,13 +1616,13 @@ CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlClassParams const& dgn_ElementHandler::Element::GetECSqlClassParams()
-    {
-    if (!m_classParams.IsInitialized())
-        m_classParams.Initialize(*this);
-
-    return m_classParams;
-    }
+//ECSqlClassParams const& dgn_ElementHandler::Element::GetECSqlClassParams()
+//    {
+//    if (!m_classParams.IsInitialized())
+//        m_classParams.Initialize(*this);
+//
+//    return m_classParams;
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
