@@ -41,8 +41,8 @@ public:
     BEHTTP_EXPORT HttpClient(IHttpHeaderProviderPtr defaultHeadersProvider = nullptr, IHttpHandlerPtr customHandler = nullptr);
 
     // Initialize HttpClient before using any function related to http requests 
-    static void Initialize(BeFileNameCR assetsDirectoryPath) { s_assetsDirectoryPath = assetsDirectoryPath; }
-    static BeFileNameCR GetAssetsDirectoryPath() { return s_assetsDirectoryPath; }
+    BEHTTP_EXPORT static void Initialize(BeFileNameCR assetsDirectoryPath);
+    BEHTTP_EXPORT static BeFileNameCR GetAssetsDirectoryPath();
 
     // Methods for grouping multiple network requests to one activity
     BEHTTP_EXPORT static void BeginNetworkActivity();
