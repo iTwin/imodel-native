@@ -67,12 +67,12 @@ StatusInt Passport::HasUserPassport(Utf8StringCR userGuid)
         return PASSPORT_ERROR;
         }
 
-    Json::Value retVal = httpResponse.GetBody().AsJson();
+    Json::Value retVal;
+    if (!Json::Reader::Parse(httpResponse.GetBody().AsString(), retVal))
+        return NO_PASSPORT;
 
     if (!retVal.asBool())
-        {
         return NO_PASSPORT;
-        }
 
     return HAS_PASSPORT;
     }

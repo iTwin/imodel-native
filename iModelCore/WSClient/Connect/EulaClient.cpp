@@ -26,12 +26,6 @@ m_customHandler(customHandler)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Vytautas.Barkauskas    01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-EulaClient::~EulaClient()
-    {}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Vytautas.Barkauskas    01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 Http::Request EulaClient::CreateRequest(Utf8StringCR serverUrl, Utf8StringCR requestUrl, Utf8StringCR method)
     {
     Http::Request request(requestUrl, method, m_authProvider.GetAuthenticationHandler(serverUrl, m_customHandler));
@@ -95,7 +89,7 @@ AsyncTaskPtr<EulaStatusResult> EulaClient::CheckEula()
                 return;
                 }
 
-            Json::Value body = httpResponse.GetBody().AsJson();
+            Json::Value body = Json::Reader::DoParse(httpResponse.GetBody().AsString());
             const Json::Value &accepted = body["accepted"];
 
             if (!accepted.isBool())
@@ -134,7 +128,7 @@ AsyncTaskPtr<EulaDownloadResult> EulaClient::DownloadEula()
                 return;
                 }
 
-            Json::Value body = httpResponse.GetBody().AsJson();
+            Json::Value body = Json::Reader::DoParse(httpResponse.GetBody().AsString());
             const Json::Value &eulaText = body["text"];
 
             if (!eulaText.isString())

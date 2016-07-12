@@ -115,8 +115,7 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
 
     Http::Response httpResponse = request.Perform();
 
-    Json::Value usages = httpResponse.GetBody().AsJson();
-    return usages;
+    return Json::Reader::DoParse(httpResponse.GetBody().AsString());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -136,8 +135,7 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
 
     Http::Response httpResponse = request.Perform();
 
-    Json::Value usages = httpResponse.GetBody().AsJson();
-    return usages;
+    return Json::Reader::DoParse(httpResponse.GetBody().AsString());
     }
 
 #ifndef BENTLEY_WINRT

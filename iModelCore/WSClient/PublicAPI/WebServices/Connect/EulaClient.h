@@ -34,7 +34,7 @@ struct EulaClient
 
     public:
         WSCLIENT_EXPORT EulaClient(ClientInfoPtr clientInfo, IConnectAuthenticationProvider& authenticationProvider, IHttpHandlerPtr customHandler = nullptr);
-        WSCLIENT_EXPORT ~EulaClient();
+        ~EulaClient() {}
 
         WSCLIENT_EXPORT AsyncTaskPtr<EulaStatusResult> CheckEula();
         WSCLIENT_EXPORT AsyncTaskPtr<EulaDownloadResult> DownloadEula();

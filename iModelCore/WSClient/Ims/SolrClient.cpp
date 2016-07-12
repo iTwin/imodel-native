@@ -75,8 +75,13 @@ AsyncTaskPtr<SolrGetResult> SolrClient::SendGetRequest(SolrQueryCR query) const
         if (HttpStatus::OK == status ||
             HttpStatus::NotModified == status)
             {
-            return SolrGetResult::Success(httpResponse.GetBody().AsJson());
+            Json::Value json;
+            if (!Json::Reader::Parse(httpResponse.GetBody().AsString(), json))
+                json = Json::Value::null;
+
+            return SolrGetResult::Success(json);
             }
+
         return SolrGetResult::Error(httpResponse);
         });
     }

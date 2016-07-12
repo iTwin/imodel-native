@@ -944,7 +944,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithCorrectJson_
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v1.2/DataSources/foo/Objects/TestClass", request.GetUrl().c_str());
-        EXPECT_EQ(objectCreationJson["instance"]["properties"], request.GetRequestBody()->AsJson());
+        EXPECT_EQ(objectCreationJson["instance"]["properties"], Json::Reader::DoParse(request.GetRequestBody()->AsString()));
         return StubHttpResponse();
         });
 
@@ -971,7 +971,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndC
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v1.2/DataSources/foo/Objects/TestClass", request.GetUrl().c_str());
-        EXPECT_EQ(objectCreationJson["instance"]["properties"], request.GetRequestBody()->AsJson());
+        EXPECT_EQ(objectCreationJson["instance"]["properties"], Json::Reader::DoParse(request.GetRequestBody()->AsString()));
         return StubHttpResponse();
         });
 
@@ -1213,7 +1213,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithCorrectJson_
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass", request.GetUrl().c_str());
-        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        EXPECT_EQ(objectCreationJson, Json::Reader::DoParse(request.GetRequestBody()->AsString()));
         return StubHttpResponse();
         });
 
@@ -1241,7 +1241,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdAndC
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass", request.GetUrl().c_str());
-        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        EXPECT_EQ(objectCreationJson, Json::Reader::DoParse(request.GetRequestBody()->AsString()));
         return StubHttpResponse();
         });
 
@@ -1270,7 +1270,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndRootInstanceC
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId", request.GetUrl().c_str());
-        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        EXPECT_EQ(objectCreationJson, Json::Reader::DoParse(request.GetRequestBody()->AsString()));
         return StubHttpResponse();
         });
 
@@ -1299,7 +1299,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdThat
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass", request.GetUrl().c_str());
-        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        EXPECT_EQ(objectCreationJson, Json::Reader::DoParse(request.GetRequestBody()->AsString()));
         return StubHttpResponse();
         });
 
@@ -1328,7 +1328,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdThat
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId", request.GetUrl().c_str());
-        EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
+        EXPECT_EQ(objectCreationJson, Json::Reader::DoParse(request.GetRequestBody()->AsString()));
         return StubHttpResponse();
         });
 
@@ -1693,7 +1693,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1_SendsPostReques
         {
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v1.1/DataSources/foo/Objects/TestClass/TestId", request.GetUrl().c_str());
-        EXPECT_EQ(propertiesJson, request.GetRequestBody()->AsJson());
+        EXPECT_EQ(propertiesJson, Json::Reader::DoParse(request.GetRequestBody()->AsString()));
         return StubHttpResponse();
         });
 
@@ -1750,7 +1750,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2_SendsPostReques
                         }
                     }
                 })");
-        EXPECT_EQ(expectedBodyJson, request.GetRequestBody()->AsJson());
+        EXPECT_EQ(expectedBodyJson, Json::Reader::DoParse(request.GetRequestBody()->AsString()));
         return StubHttpResponse();
         });
 

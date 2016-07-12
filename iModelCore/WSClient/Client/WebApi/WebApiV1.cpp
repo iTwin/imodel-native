@@ -213,7 +213,8 @@ WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(Http::Response& re
         {
         return WSRepositoriesResult::Error(response);
         }
-    Json::Value responseJson = response.GetBody().AsJson();
+
+    Json::Value responseJson = Json::Reader::DoParse(response.GetBody().AsString());
     if (responseJson.isNull() || !responseJson.isArray())
         {
         return WSRepositoriesResult::Error(response);
@@ -236,7 +237,7 @@ WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(Http::Response& re
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSCreateObjectResult WebApiV1::ResolveCreateObjectResponse(Http::Response& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId)
     {
-    Utf8String remoteId = response.GetBody().AsJson()["id"].asString();
+    Utf8String remoteId = Json::Reader::DoParse(response.GetBody().AsString())["id"].asString();
     if (HttpStatus::Created == response.GetHttpStatus() && !remoteId.empty())
         {
         Json::Value createdObject;

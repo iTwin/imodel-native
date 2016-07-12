@@ -280,8 +280,8 @@ void ConnectSpaces::ResetEula(bool getNewToken)
         if (httpResponse.GetHttpStatus() == HttpStatus::OK)
             {
             SendStatusToUIThread(ResetEulaAction, OK);
-            Json::Value dsData = httpResponse.GetBody().AsJson();
-            SendJsonMessageToUiThread(CS_MESSAGE_ResetEula, httpResponse.GetBody().AsJson().asString());
+            Json::Value dsData = Json::Reader::DoParse(httpResponse.GetBody().AsString());
+            SendJsonMessageToUiThread(CS_MESSAGE_ResetEula, dsData.asString());
             }
         else
             {
@@ -332,7 +332,7 @@ void ConnectSpaces::CheckEula(bool getNewToken)
 
         if (httpResponse.GetHttpStatus() == HttpStatus::OK)
             {
-            Json::Value dsData = httpResponse.GetBody().AsJson();
+            Json::Value dsData = Json::Reader::DoParse(httpResponse.GetBody().AsString());
             try
                 {
                 const Json::Value &accepted = dsData["accepted"];
@@ -438,7 +438,7 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
 
         if (httpResponse.GetHttpStatus() == HttpStatus::OK)
             {
-            Json::Value dsData = httpResponse.GetBody().AsJson();
+            Json::Value dsData = Json::Reader::DoParse(httpResponse.GetBody().AsString());
             try
                 {
                 const Json::Value &text = dsData["text"];
