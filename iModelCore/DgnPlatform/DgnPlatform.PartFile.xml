@@ -31,12 +31,13 @@
     </Part>
 
     <!-- We need this shim part because there is no LKG for WinRT,MacOS and Linux, and thus builds cannot get a partfile from the LKG to see that the part excludes WinRT, MacOS or Linux. -->
-    <Part Name="OpenCASCADEShim" ExcludePlatforms="WinRT*,MacOS*,Linux*">
+    <Part Name="OpenCASCADEShim" ExcludePlatforms="WinRT*,MacOS*,Linux*,Android*">
         <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/>
     </Part>
 
     <!-- We need this shim part because folly doesn't build everywhere yet. -->
-    <Part Name="FollyShim" ExcludePlatforms="MacOS*,Linux*">
+    <!-- *** WIP_ANDROID_CLANG *** -->
+    <Part Name="FollyShim" ExcludePlatforms="Android*,MacOS*,Linux*">
         <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 
     </Part>
 
