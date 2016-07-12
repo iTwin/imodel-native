@@ -820,7 +820,7 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
             pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
             }
         else
-#endif		
+#endif
             {
             pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
             }

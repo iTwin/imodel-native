@@ -14,33 +14,33 @@ class DataSourceService : public Manager<DataSourceAccount>
 
 public:
 
-	typedef std::wstring					ServiceName;
-	typedef std::wstring					AccountName;
+    typedef std::wstring                    ServiceName;
+    typedef std::wstring                    AccountName;
 
 
 protected:
 
-	DataSourceManager					*	dataSourceManager;
+    DataSourceManager                    *    dataSourceManager;
 
-	ServiceName								serviceName;
+    ServiceName                                serviceName;
 
 protected:
 
-			void							setDataSourceManager		(DataSourceManager &manager);
+            void                            setDataSourceManager        (DataSourceManager &manager);
 
-			void							createAccount				(DataSourceManager &manager, DataSourceAccount &account);
+            void                            createAccount                (DataSourceManager &manager, DataSourceAccount &account);
 
 
 public:
-											DataSourceService			(DataSourceManager &manager, const ServiceName &name);
+                                            DataSourceService            (DataSourceManager &manager, const ServiceName &name);
 
-			void							setServiceName				(const ServiceName &serviceName);
-			const ServiceName			&	getServiceName				(void);
+            void                            setServiceName                (const ServiceName &serviceName);
+            const ServiceName            &    getServiceName                (void);
 
-			DataSourceManager			&	getDataSourceManager		(void);
+            DataSourceManager            &    getDataSourceManager        (void);
 
-	virtual	DataSourceAccount			*	createAccount				(const AccountName &accountName, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey &key) = 0;
-	virtual	DataSourceStatus				destroyAccount				(const AccountName &accountName) = 0;
+    virtual    DataSourceAccount            *    createAccount                (const AccountName &accountName, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey &key) = 0;
+    virtual    DataSourceStatus                destroyAccount                (const AccountName &accountName) = 0;
 
-			DataSourceAccount			*	getAccount					(const AccountName &accountName);
+            DataSourceAccount            *    getAccount                    (const AccountName &accountName);
 };

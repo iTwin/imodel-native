@@ -11,10 +11,10 @@
 +--------------------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------+
-|																		|
-|	ScalableMeshNewFileCreator.h    		  	    		(C) Copyright 2001.		|
-|												BCIVIL Corporation.		|
-|												All Rights Reserved.	|
+|                                                                       |
+|    ScalableMeshNewFileCreator.h            (C) Copyright 2001.        |
+|                                                BCIVIL Corporation.    |
+|                                                All Rights Reserved.   |
 |                                                                       |
 +----------------------------------------------------------------------*/
 
@@ -123,7 +123,7 @@ struct IScalableMeshSourceImporter::Impl : public EditListener
 
         /*
         template <typename PointIndex>
-		StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<ISMStore::Extent3d64f> listRemoveExtent) const;
+        StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<ISMStore::Extent3d64f> listRemoveExtent) const;
         */
 /*        
         template <typename PointType, typename PointIndex, typename LinearIndex>

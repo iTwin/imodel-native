@@ -7,9 +7,9 @@ class DataSourceCloud : public DataSourceCached
 {
 protected:
 
-	typedef DataSourceCached	Super;
+    typedef DataSourceCached    Super;
 
 public:
 
-			DataSourceCloud		(DataSourceAccount *sourceAccount);
+            DataSourceCloud        (DataSourceAccount *sourceAccount);
 };

@@ -32,11 +32,11 @@ class DataSourceStoreConfig;
 
 
 // ***********************************************************************************************************************************************
-// @bsiclass    :	DataSource
-// Description	:	Base class for abstracted data sources for file or cloud access.
-// Author		:	Lee Bull
-// Date			:	18 Feb 2016
-// Notes		:	
+// @bsiclass    :    DataSource
+// Description    :    Base class for abstracted data sources for file or cloud access.
+// Author        :    Lee Bull
+// Date            :    18 Feb 2016
+// Notes        :    
 //
 // ***********************************************************************************************************************************************
 
@@ -46,42 +46,42 @@ class DataSource : public DataSourceLocator
 
 public:
 
-	typedef unsigned long long int				DataPtr;
-	typedef unsigned long long int				DataSize;
-	typedef unsigned char 						Buffer;
+    typedef unsigned long long int                DataPtr;
+    typedef unsigned long long int                DataSize;
+    typedef unsigned char                         Buffer;
 
-	typedef	DataSourceBuffer::TimeoutStatus		TimeoutStatus;
-	typedef DataSourceBuffer::Timeout			Timeout;
+    typedef    DataSourceBuffer::TimeoutStatus        TimeoutStatus;
+    typedef DataSourceBuffer::Timeout            Timeout;
 
-	typedef std::wstring						Name;
-
-protected:
-
-	Timeout										timeout;
+    typedef std::wstring                        Name;
 
 protected:
 
-	void										setStoreConfig		(DataSourceStoreConfig *newConfig);
-	DataSourceStoreConfig					*	getStoreConfig		(void);
+    Timeout                                        timeout;
+
+protected:
+
+    void                                        setStoreConfig        (DataSourceStoreConfig *newConfig);
+    DataSourceStoreConfig                    *    getStoreConfig        (void);
 
 public:
 
-												DataSource			(DataSourceAccount *sourceAccount);
-	virtual						   			   ~DataSource			(void);
+                                                DataSource            (DataSourceAccount *sourceAccount);
+    virtual                                          ~DataSource            (void);
 
-	DataSourceService						*	getService			(void);
+    DataSourceService                        *    getService            (void);
 
-	virtual			DataSourceStatus			open				(const DataSourceURL & sourceURL, DataSourceMode sourceMode);
-	virtual			DataSourceStatus			close				(void) = 0;
+    virtual            DataSourceStatus            open                (const DataSourceURL & sourceURL, DataSourceMode sourceMode);
+    virtual            DataSourceStatus            close                (void) = 0;
 
-	virtual			DataSourceStatus			read				(Buffer *dest,   DataSize destSize, DataSize &readSize, DataSize size = 0) = 0;
-	virtual			DataSourceStatus			write				(Buffer *source, DataSize size) = 0;
+    virtual            DataSourceStatus            read                (Buffer *dest,   DataSize destSize, DataSize &readSize, DataSize size = 0) = 0;
+    virtual            DataSourceStatus            write                (Buffer *source, DataSize size) = 0;
 
-	virtual			bool						isValid				(void);
+    virtual            bool                        isValid                (void);
 
-	virtual			void						setTimeout			(Timeout timeMilliseconds);
-	virtual			Timeout						getTimeout			(void);
+    virtual            void                        setTimeout            (Timeout timeMilliseconds);
+    virtual            Timeout                        getTimeout            (void);
 
-	virtual			void						setCachingEnabled	(bool enabled);
-	virtual			bool						getCachingEnabled	(void);
+    virtual            void                        setCachingEnabled    (bool enabled);
+    virtual            bool                        getCachingEnabled    (void);
 };

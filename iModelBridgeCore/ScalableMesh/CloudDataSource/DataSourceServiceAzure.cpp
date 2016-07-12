@@ -11,21 +11,21 @@ DataSourceServiceAzure::DataSourceServiceAzure(DataSourceManager &manager, const
 
 DataSourceAccount * DataSourceServiceAzure::createAccount(const DataSourceAccount::AccountName & account, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey &key)
 {
-	DataSourceAccountAzure *	accountAzure;
+    DataSourceAccountAzure *    accountAzure;
 
-	if ((accountAzure = new DataSourceAccountAzure(account, identifier, key)) == nullptr)
-		return accountAzure;
+    if ((accountAzure = new DataSourceAccountAzure(account, identifier, key)) == nullptr)
+        return accountAzure;
 
-	DataSourceService::createAccount(getDataSourceManager(), *accountAzure);
+    DataSourceService::createAccount(getDataSourceManager(), *accountAzure);
 
-	return Manager<DataSourceAccount>::create(account, accountAzure);
+    return Manager<DataSourceAccount>::create(account, accountAzure);
 }
 
 DataSourceStatus DataSourceServiceAzure::destroyAccount(const AccountName & account)
 {
-	(void) account;
+    (void) account;
 
-	return DataSourceStatus();
+    return DataSourceStatus();
 }
 
 

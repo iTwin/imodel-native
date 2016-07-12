@@ -61,63 +61,63 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     file.Close();
                     }
 
-				DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
-				{
-					if (dataSourceAccount == nullptr)
-						return nullptr;
-															// Get the thread's DataSource or create a new one
-					DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
-					if (dataSource == nullptr)
-						return nullptr;
-															// Make sure caching is enabled for this DataSource
-					dataSource->setCachingEnabled(s_stream_enable_caching);
+                DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
+                {
+                    if (dataSourceAccount == nullptr)
+                        return nullptr;
+                                                            // Get the thread's DataSource or create a new one
+                    DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
+                    if (dataSource == nullptr)
+                        return nullptr;
+                                                            // Make sure caching is enabled for this DataSource
+                    dataSource->setCachingEnabled(s_stream_enable_caching);
 
-					dest.reset(new unsigned char[destSize]);
-															// Return the DataSource
-					return dataSource;
-				}
+                    dest.reset(new unsigned char[destSize]);
+                                                            // Return the DataSource
+                    return dataSource;
+                }
 
-				void Load(DataSourceAccount *dataSourceAccount)
-				{
-					std::unique_ptr<DataSource::Buffer[]>		dest;
-					DataSource								*	dataSource;
-					DataSource::DataSize						readSize;
+                void Load(DataSourceAccount *dataSourceAccount)
+                {
+                    std::unique_ptr<DataSource::Buffer[]>        dest;
+                    DataSource                                *  dataSource;
+                    DataSource::DataSize                         readSize;
 
-					assert(m_ID != -1);
-					wchar_t buffer[10000];
-					swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), m_ID);
+                    assert(m_ID != -1);
+                    wchar_t buffer[10000];
+                    swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), m_ID);
 
-					DataSourceURL	dataSourceURL(buffer);
+                    DataSourceURL    dataSourceURL(buffer);
 
-					DataSourceBuffer::BufferSize	destSize = 5 * 1024 * 1024;
+                    DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
-					dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
-					if (dataSource == nullptr)
-						return;
+                    dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
+                    if (dataSource == nullptr)
+                        return;
 
-					if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
-						return;
+                    if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                        return;
 
-					if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
-						return;
+                    if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+                        return;
 
-					dataSource->close();
+                    dataSource->close();
 
-					if (readSize > 0)
-					{
-						m_Width = reinterpret_cast<int&>(dest.get()[0]);
-						m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
-						m_NbChannels = reinterpret_cast<int&>(dest.get()[2 * sizeof(int)]);
-						m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
+                    if (readSize > 0)
+                    {
+                        m_Width = reinterpret_cast<int&>(dest.get()[0]);
+                        m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
+                        m_NbChannels = reinterpret_cast<int&>(dest.get()[2 * sizeof(int)]);
+                        m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
 
-						auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
-						uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
+                        auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
+                        uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
 
-						DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
-					}
+                        DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
+                    }
 
-					m_IsLoaded = true;
-				}
+                    m_IsLoaded = true;
+                }
 
                 void Load_Old()
 
@@ -285,8 +285,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                     }
 
-				void				setDataSourceAccount	(DataSourceAccount *dataSourceAccount)		{ m_dataSourceAccount = dataSourceAccount; }
-				DataSourceAccount *	getDataSourceAccount	(void) const								{ return m_dataSourceAccount; }
+                void                setDataSourceAccount    (DataSourceAccount *dataSourceAccount)      { m_dataSourceAccount = dataSourceAccount; }
+                DataSourceAccount * getDataSourceAccount    (void) const                                { return m_dataSourceAccount; }
 
             private:
                 uint64_t m_ID = -1;
@@ -301,7 +301,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 mutex m_TextureMutex;
                 const scalable_mesh::azure::Storage* m_stream_store;
 
-				DataSourceAccount *	m_dataSourceAccount;
+                DataSourceAccount *    m_dataSourceAccount;
             };
 
         static void OpenOrCreateBeFile(BeFile& file, const WString& path, HPMBlockID blockID)
@@ -331,7 +331,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     {
                     texture.SetDataSource(m_path);
                     texture.SetStore(m_stream_store);
-                    texture.SetID(blockID.m_integerID);					
+                    texture.SetID(blockID.m_integerID);                    
                     texture.Load(getDataSourceAccount());
                     }
                 }
@@ -345,9 +345,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                            , L"scalablemeshtest")
             {
             m_path += L"textures/";
-			
-			setDataSourceAccount(dataSourceAccount);
-			
+            
+            setDataSourceAccount(dataSourceAccount);
+            
             // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
             if (s_stream_from_disk)
                 {
@@ -443,8 +443,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             return std::min(textureSize + 3 * sizeof(int), maxCountData);
             }
 
-		void				setDataSourceAccount	(DataSourceAccount *dataSourceAccount)	{m_dataSourceAccount = dataSourceAccount;}
-		DataSourceAccount *	getDataSourceAccount	(void) const							{return m_dataSourceAccount;}
+        void                    setDataSourceAccount    (DataSourceAccount *dataSourceAccount)    {m_dataSourceAccount = dataSourceAccount;}
+        DataSourceAccount *     getDataSourceAccount    (void) const                              {return m_dataSourceAccount;}
 
     private:
         WString m_path;
@@ -454,5 +454,5 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
         // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
         scalable_mesh::azure::Storage m_stream_store;
 
-		DataSourceAccount *	m_dataSourceAccount;
+        DataSourceAccount *    m_dataSourceAccount;
     };

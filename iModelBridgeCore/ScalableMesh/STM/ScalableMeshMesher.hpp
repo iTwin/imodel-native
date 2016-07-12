@@ -1875,8 +1875,8 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             }
         node->m_nodeHeader.m_nodeCount = stitchedPoints.size();        
         assert(pointsPtr->size() == stitchedPoints.size());
-		if (s_useThreadsInStitching) node->UnlockPts();
-				
+        if (s_useThreadsInStitching) node->UnlockPts();
+                
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
         linearFeaturesPtr->clear();
         if (features.size() > 0)
@@ -1936,7 +1936,7 @@ will compute the mesh.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> bool ScalableMesh3DDelaunayMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {  
-#ifdef NO_3D_MESH	
+#ifdef NO_3D_MESH    
 return true;
 #else
     //NEEDS_WORK_SM
@@ -1949,7 +1949,7 @@ return true;
         PtToPtConverter::Transform(&points[0], &(*pointsPtr)[0], points.size());
 
         IScalableMeshMeshPtr meshPtr;
-#ifndef NO_3D_MESH	
+#ifndef NO_3D_MESH    
         Create3dDelaunayMesh(&points[0], (int)pointsPtr->size(), &draw, &meshPtr, nullptr, m_tetGen);
 #endif
 
@@ -2413,7 +2413,7 @@ template<class POINT, class EXTENT> bool ScalableMesh3DDelaunayMesher<POINT, EXT
     extentMin = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(node->m_nodeHeader.m_nodeExtent));
     extentMax = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(node->m_nodeHeader.m_nodeExtent));
     if (stitchedPoints.size() <= 3) return false;
-#ifndef NO_3D_MESH	
+#ifndef NO_3D_MESH    
     Create3dDelaunayMesh (&stitchedPoints[0], (int)stitchedPoints.size (), &draw, &meshPtr, nullptr, m_tetGen);
 #endif
     ScalableMeshMesh* meshP((ScalableMeshMesh*)meshPtr.get());

@@ -577,55 +577,55 @@ bool ScalableMeshBase::LoadGCSFrom()
 +----------------------------------------------------------------------------*/
 DataSourceStatus ScalableMeshBase::initializeAzureTest(void)
 {
-	DataSourceStatus							status;
-	DataSourceAccount::AccountIdentifier		accountIdentifier(L"pcdsustest");
-	DataSourceAccount::AccountKey				accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
-	DataSourceService						*	serviceAzure;
-	DataSourceAccount						*	accountAzure;
-	DataSourceAccount						*	accountCaching;
-	DataSourceService						*	serviceFile;
+    DataSourceStatus                            status;
+    DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
+    DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
+    DataSourceService                        *  serviceAzure;
+    DataSourceAccount                        *  accountAzure;
+    DataSourceAccount                        *  accountCaching;
+    DataSourceService                        *  serviceFile;
 
-//	DataSourceAccount						*	accountCaching;
-//	DataSourceBuffer::BufferSize				testDataSize = 1024 * 1024 * 8;
+//    DataSourceAccount                        *    accountCaching;
+//    DataSourceBuffer::BufferSize                testDataSize = 1024 * 1024 * 8;
 
-															// Get the Azure service
-	serviceAzure = getDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
-	if(serviceAzure == nullptr)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-															// Create an account on Azure
-	accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
-	if (accountAzure == nullptr)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-															// Set ScalableMesh's DataSource
-	setDataSourceAccount(accountAzure);
+                                                            // Get the Azure service
+    serviceAzure = getDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
+    if(serviceAzure == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+                                                            // Create an account on Azure
+    accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
+    if (accountAzure == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+                                                            // Set ScalableMesh's DataSource
+    setDataSourceAccount(accountAzure);
 
 /*
-															// Create an Azure specific DataSource
-	dataSourceAzure = dynamic_cast<DataSourceAzure *>(dataSourceManager.createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
-	if (dataSourceAzure == nullptr)
-		return DataSourceStatus(DataSourceStatus::Status_Error);
-															// Blobs will be split up into segments of this size
-	dataSourceAzure->setSegmentSize(1024 * 64);
-															// Time I/O operation timeouts for threading
-	dataSourceAzure->setTimeout(DataSource::Timeout(100000));
+                                                            // Create an Azure specific DataSource
+    dataSourceAzure = dynamic_cast<DataSourceAzure *>(dataSourceManager.createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
+    if (dataSourceAzure == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+                                                            // Blobs will be split up into segments of this size
+    dataSourceAzure->setSegmentSize(1024 * 64);
+                                                            // Time I/O operation timeouts for threading
+    dataSourceAzure->setTimeout(DataSource::Timeout(100000));
 */
-															// Get the file service
-	if ((serviceFile = getDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-															// Create an account on the file service for caching
-	if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-															// Set prefix for caching account data sources
-	accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+                                                            // Get the file service
+    if ((serviceFile = getDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+                                                            // Create an account on the file service for caching
+    if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+                                                            // Set prefix for caching account data sources
+    accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
 
-//	accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
-															// Set up local file based caching
-	accountAzure->setCaching(*accountCaching, DataSourceURL());
-															// Set up default container
-	accountAzure->setPrefixPath(DataSourceURL(L"scalablemeshtest"));
+//    accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+                                                            // Set up local file based caching
+    accountAzure->setCaching(*accountCaching, DataSourceURL());
+                                                            // Set up default container
+    accountAzure->setPrefixPath(DataSourceURL(L"scalablemeshtest"));
 
 
-	return status;
+    return status;
 }
 
 
@@ -820,14 +820,15 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     auto position = m_path.find_last_of(L".stm");
                     auto filenameWithoutExtension = m_path.substr(0, position - 3);
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"marseille\\");
+//                  WString azureDatasetName(L"marseille\\");
+                    WString azureDatasetName(L"quebeccityvg\\");
                     // NEEDS_WORK_SM - Check existence of the following directories
                     WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
 
-					if (initializeAzureTest().isFailed())
-					{
-						return BSIERROR; // Error loading layer gcs
-					}
+                    if (initializeAzureTest().isFailed())
+                    {
+                        return BSIERROR; // Error loading layer gcs
+                    }
 
 
                     // NEEDS_WORK_SM - Need to stream textures as well                    
