@@ -36,7 +36,8 @@
     </Part>
 
     <!-- We need this shim part because folly doesn't build everywhere yet. -->
-    <Part Name="FollyShim" ExcludePlatforms="MacOS*,Linux*">
+    <!-- *** WIP_ANDROID_CLANG *** -->
+    <Part Name="FollyShim" ExcludePlatforms="Android*,MacOS*,Linux*">
         <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 
     </Part>
 
