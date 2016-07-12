@@ -68,7 +68,7 @@ struct FtpClient : public RefCountedBase
         typedef bvector<bpair<Utf8String, Utf8String>> RepositoryMapping;
 
         //! Create ftp client by setting the url/root.
-        REALITYDATAPLATFORM_EXPORT static FtpClientPtr ConnectTo(Utf8CP url);
+        REALITYDATAPLATFORM_EXPORT static FtpClientPtr ConnectTo(Utf8CP serverUrl, Utf8CP serverName = NULL);
 
         //! Download all files from root and saved them in the specified directory. Default is temp directory.
         REALITYDATAPLATFORM_EXPORT FtpStatus DownloadContent(Utf8CP outputDirPath = NULL) const;
@@ -80,8 +80,11 @@ struct FtpClient : public RefCountedBase
         //! An observer must be set to catch the data after each extraction.
         REALITYDATAPLATFORM_EXPORT FtpStatus GetData() const;
 
-        //! Get url/root.
+        //! Get server url.
         REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerUrl() const;
+
+        //! Get server name.
+        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const;
 
         //! Get repository mapping (remote and local repository).
         REALITYDATAPLATFORM_EXPORT const RepositoryMapping& GetRepositoryMapping() const;
@@ -89,10 +92,10 @@ struct FtpClient : public RefCountedBase
         //! Set the IFtpTraversalObserver to be called after each extraction. Only one observer
         //! can be set. Typically, the user of the handler would implement the IFtpTraversalObserver
         //! interface and send "this" as the argument to this method.
-        REALITYDATAPLATFORM_EXPORT void SetObserver(IFtpTraversalObserver* pObserver);        
+        REALITYDATAPLATFORM_EXPORT void SetObserver(IFtpTraversalObserver* pObserver);    
 
     private:
-        FtpClient(Utf8CP url);
+        FtpClient(Utf8CP serverUrl, Utf8CP serverName);
         ~FtpClient();
 
         //! Recurse into sub directories and create a list of all files.
@@ -206,6 +209,14 @@ struct FtpData : public RefCountedBase
         REALITYDATAPLATFORM_EXPORT void SetSize(uint64_t size); // in bytes.
 
         //! Get/Set
+        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetResolution() const; // in meters.
+        REALITYDATAPLATFORM_EXPORT void SetResolution(Utf8CP resolution); // in meters.
+
+        //! Get/Set
+        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvider() const;
+        REALITYDATAPLATFORM_EXPORT void SetProvider(Utf8CP provider);
+
+        //! Get/Set
         REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataType() const;
         REALITYDATAPLATFORM_EXPORT void SetDataType(Utf8CP type);
 
@@ -240,6 +251,8 @@ struct FtpData : public RefCountedBase
         Utf8String m_url;
         Utf8String m_compoundType;
         uint64_t m_size;
+        Utf8String m_resolution;
+        Utf8String m_provider;
         Utf8String m_dataType;
         Utf8String m_locationInCompound;        
         DateTime m_date;
@@ -363,7 +376,7 @@ struct FtpServer : public RefCountedBase
         REALITYDATAPLATFORM_EXPORT static FtpServerPtr Create();
 
         //! Create from url.
-        REALITYDATAPLATFORM_EXPORT static FtpServerPtr Create(Utf8CP url);
+        REALITYDATAPLATFORM_EXPORT static FtpServerPtr Create(Utf8CP url, Utf8CP name = NULL);
 
         //! Get/Set
         REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProtocol() const;
@@ -411,7 +424,7 @@ struct FtpServer : public RefCountedBase
 
     private:
         FtpServer();
-        FtpServer(Utf8CP url);
+        FtpServer(Utf8CP url, Utf8CP name);
 
         Utf8String m_protocol;
         Utf8String m_name;

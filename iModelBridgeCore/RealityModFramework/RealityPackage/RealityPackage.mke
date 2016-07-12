@@ -46,6 +46,10 @@ $(o)RealityDataPackage$(oext) : $(baseDir)RealityDataPackage.cpp $(PublicApiDir)
 
 $(o)RealityDataSource$(oext) : $(baseDir)RealityDataSource.cpp $(PublicApiDir)RealityDataSource.h $(RealityDepends) ${MultiCompileDepends}
 
+$(o)WMSSource$(oext) : $(baseDir)WMSSource.cpp $(PublicApiDir)WMSSource.h ${MultiCompileDepends}
+
+$(o)OsmSource$(oext) : $(baseDir)OsmSource.cpp $(PublicApiDir)OsmSource.h ${MultiCompileDepends}
+
 $(o)RealitySerialization$(oext) : $(baseDir)RealitySerialization.cpp $(baseDir)RealitySerialization.h $(PublicApiDir)RealityPackage.h ${MultiCompileDepends}
 
 

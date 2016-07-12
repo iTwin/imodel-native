@@ -1,15 +1,15 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/RealityPlatform/WMSSource.h $
+|     $Source: PublicApi/RealityPackage/WMSSource.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <RealityPlatform/RealityPlatformAPI.h>
+#include <RealityPackage/RealityPackage.h>
 
-BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
+BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote               5/2015
@@ -18,65 +18,65 @@ struct WmsMapSettings : public RefCountedBase
     {
 public:
     //! Create WMS MapRequest info with all the required information. 
-    REALITYDATAPLATFORM_EXPORT static WmsMapSettingsPtr Create(Utf8CP uri, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
-    REALITYDATAPLATFORM_EXPORT static WmsMapSettingsPtr CreateFromXml(Utf8CP xmlFragment);
+    REALITYPACKAGE_EXPORT static WmsMapSettingsPtr Create(Utf8CP uri, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
+    REALITYPACKAGE_EXPORT static WmsMapSettingsPtr CreateFromXml(Utf8CP xmlFragment);
 
     //! Get/Set the server uri. 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUri() const;
-    REALITYDATAPLATFORM_EXPORT void         SetUri(Utf8CP uri);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetUri() const;
+    REALITYPACKAGE_EXPORT void         SetUri(Utf8CP uri);
 
     //! Get/Set the bounding box.
-    REALITYDATAPLATFORM_EXPORT DRange2dCR   GetBBox() const;
-    REALITYDATAPLATFORM_EXPORT void         SetBBox(DRange2dCP bbox);
+    REALITYPACKAGE_EXPORT DRange2dCR   GetBBox() const;
+    REALITYPACKAGE_EXPORT void         SetBBox(DRange2dCP bbox);
 
     //! Get/Set the width of the window in pixels.
     //! The pixel ratio should be equal to the 'BoundingBox' ratio to avoid any distorsion.
     //! Sub-Resolutions will be generated from this size.
-    REALITYDATAPLATFORM_EXPORT uint32_t GetMetaWidth() const;
-    REALITYDATAPLATFORM_EXPORT void     SetMetaWidth(uint32_t width);
+    REALITYPACKAGE_EXPORT uint32_t GetMetaWidth() const;
+    REALITYPACKAGE_EXPORT void     SetMetaWidth(uint32_t width);
 
     //! Get/Set the height of the window in pixels.
     //! The pixel ratio should be equal to the 'BoundingBox' ratio to avoid any distorsion.
     //! Sub-Resolutions will be generated from this size.
-    REALITYDATAPLATFORM_EXPORT uint32_t GetMetaHeight() const;
-    REALITYDATAPLATFORM_EXPORT void     SetMetaHeight(uint32_t height);
+    REALITYPACKAGE_EXPORT uint32_t GetMetaHeight() const;
+    REALITYPACKAGE_EXPORT void     SetMetaHeight(uint32_t height);
 
     //! Get/Set the WMS version. 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const;
-    REALITYDATAPLATFORM_EXPORT void         SetVersion(Utf8CP version);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetVersion() const;
+    REALITYPACKAGE_EXPORT void         SetVersion(Utf8CP version);
 
     //! Get/Set the layer list. 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetLayers() const;
-    REALITYDATAPLATFORM_EXPORT void         SetLayers(Utf8CP layers);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetLayers() const;
+    REALITYPACKAGE_EXPORT void         SetLayers(Utf8CP layers);
 
     //! Get/Set the style list. 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetStyles() const;
-    REALITYDATAPLATFORM_EXPORT void         SetStyles(Utf8CP styles);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetStyles() const;
+    REALITYPACKAGE_EXPORT void         SetStyles(Utf8CP styles);
 
     //! Get/Set the coordinate system type attribute. 
     //! CRS for version 1.3, SRS for 1.1.1 and below.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCoordSysType() const;
-    REALITYDATAPLATFORM_EXPORT void         SetCoordSysType(Utf8CP csType);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetCoordSysType() const;
+    REALITYPACKAGE_EXPORT void         SetCoordSysType(Utf8CP csType);
 
     //! Get/Set the coordinate system. 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCoordSysLabel() const;
-    REALITYDATAPLATFORM_EXPORT void         SetCoordSysLabel(Utf8CP csLabel);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetCoordSysLabel() const;
+    REALITYPACKAGE_EXPORT void         SetCoordSysLabel(Utf8CP csLabel);
 
     //! Get/Set the output format. 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetFormat() const;
-    REALITYDATAPLATFORM_EXPORT void         SetFormat(Utf8CP format);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetFormat() const;
+    REALITYPACKAGE_EXPORT void         SetFormat(Utf8CP format);
 
     //! Get/Set the vendor specific parameters.
     //! Unparsed, vendor specific parameters that will be appended to the request.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVendorSpecific() const;
-    REALITYDATAPLATFORM_EXPORT void         SetVendorSpecific(Utf8CP vendorSpecific);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetVendorSpecific() const;
+    REALITYPACKAGE_EXPORT void         SetVendorSpecific(Utf8CP vendorSpecific);
 
     //! Get/Set the transparency. 
-    REALITYDATAPLATFORM_EXPORT bool IsTransparent() const;
-    REALITYDATAPLATFORM_EXPORT void SetTransparency(bool isTransparent);
+    REALITYPACKAGE_EXPORT bool IsTransparent() const;
+    REALITYPACKAGE_EXPORT void SetTransparency(bool isTransparent);
 
     //! Xml fragment.
-    REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR xmlFragment) const;
+    REALITYPACKAGE_EXPORT void ToXml(Utf8StringR xmlFragment) const;
     
 private:
     WmsMapSettings(Utf8CP uri, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
@@ -103,4 +103,4 @@ private:
     bool        m_transparent;          //! [optional] Background is transparent?     
     };
 
-END_BENTLEY_REALITYPLATFORM_NAMESPACE
+END_BENTLEY_REALITYPACKAGE_NAMESPACE

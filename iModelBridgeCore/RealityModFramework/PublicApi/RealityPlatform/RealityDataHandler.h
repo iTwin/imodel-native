@@ -56,6 +56,9 @@ struct RasterData : public RealityData
 public:
     REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create(Utf8CP inFilename);
 
+    //! Get resolution in meters. Format is "widthxheight".
+    REALITYDATAPLATFORM_EXPORT const Utf8String ComputeResolutionInMeters();
+
 protected:
     RasterData(Utf8CP filename);
     virtual ~RasterData();

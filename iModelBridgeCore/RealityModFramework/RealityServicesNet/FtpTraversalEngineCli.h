@@ -67,7 +67,10 @@ namespace RealityServicesCli
         {
         public:
             //! Create ftp client by setting the ftp url/root.
-            static FtpClientWrapper^ ConnectTo(System::String^ url);
+            static FtpClientWrapper^ ConnectTo(System::String^ serverUrl);
+
+            //! Create ftp client by setting the ftp url/root and name.
+            static FtpClientWrapper^ ConnectTo(System::String^ serverUrl, System::String^ serverName);
 
             //! Download all files from root and saved them to an optional output path. Default is temp directory.
             FtpStatusWrapper DownloadContent(System::String^ outputPath);
@@ -79,8 +82,11 @@ namespace RealityServicesCli
             //! An observer must be set to catch the data after each extraction.
             FtpStatusWrapper GetData();
 
-            //! Get url/root.
+            //! Get server url.
             System::String^ GetServerUrl();
+
+            //! Get server name.
+            System::String^ GetServerName();
 
             //! Set the IFtpTraversalObserver to be called after each extraction. Only one observer
             //! can be set. Typically, the user of the handler would implement the IFtpTraversalObserver
@@ -88,7 +94,7 @@ namespace RealityServicesCli
             void SetObserver(IFtpTraversalObserverWrapper^ traversalObserver);
 
         private:
-            FtpClientWrapper(System::String^ url);
+            FtpClientWrapper(System::String^ serverUrl, System::String^ serverName);
             ~FtpClientWrapper();
             !FtpClientWrapper();
 
@@ -120,6 +126,14 @@ namespace RealityServicesCli
             //! Get/Set
             uint64_t GetSize();  // in bytes.
             void SetSize(uint64_t size);  // in bytes.
+
+            //! Get/Set
+            System::String^ GetResolution();  // in meters.
+            void SetResolution(System::String^ resolution);  // in meters.
+
+            //! Get/Set
+            System::String^ GetProvider();
+            void SetProvider(System::String^ provider);
 
             //! Get/Set
             System::String^ GetDataType();

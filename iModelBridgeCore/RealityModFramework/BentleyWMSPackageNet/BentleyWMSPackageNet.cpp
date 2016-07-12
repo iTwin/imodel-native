@@ -8,8 +8,8 @@
 
 #include "BentleyWMSPackageNet.h"
 
-#include <RealityPlatform/WMSSource.h>
-#include <RealityPlatform/OsmSource.h>
+#include <RealityPackage/WMSSource.h>
+#include <RealityPackage/OsmSource.h>
 
 using namespace RealityDataPackageWrapper;
 using namespace System;
@@ -667,12 +667,12 @@ WmsSourceNet::WmsSourceNet(System::String^ uri,
     Utf8String csLabelUtf8;
     BeStringUtilities::WCharToUtf8(csLabelUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(csLabel).ToPointer()));
 
-    RealityPlatform::WmsMapSettingsPtr pMapSettings = RealityPlatform::WmsMapSettings::Create(mapUriUtf8.c_str(),
-                                                                                              bbox,
-                                                                                              versionUtf8.c_str(),
-                                                                                              layersUtf8.c_str(),
-                                                                                              csTypeUtf8.c_str(),
-                                                                                              csLabelUtf8.c_str());
+    RealityPackage::WmsMapSettingsPtr pMapSettings = RealityPackage::WmsMapSettings::Create(mapUriUtf8.c_str(),
+                                                                                            bbox,
+                                                                                            versionUtf8.c_str(),
+                                                                                            layersUtf8.c_str(),
+                                                                                            csTypeUtf8.c_str(),
+                                                                                            csLabelUtf8.c_str());
     
     // Optional parameters.
     Utf8String stylesUtf8;
@@ -795,7 +795,7 @@ OsmSourceNet::OsmSourceNet(System::String^ uri,
     bbox.InitFrom(minX, minY, maxX, maxY);
 
     // Create OsmResource with required parameters.
-    RealityPlatform::OsmResourcePtr pOsmResource = RealityPlatform::OsmResource::Create(bbox);
+    RealityPackage::OsmResourcePtr pOsmResource = RealityPackage::OsmResource::Create(bbox);
 
     // Optional parameters.    
     if (0 != urls->Count)

@@ -11,6 +11,7 @@ namespace FtpTraversalEngineNet
     {
         public int Id { get; set; }
 
+        [Required]
         public DbGeometry Footprint { get; set; }
 
         public string Name { get; set; }
@@ -24,6 +25,12 @@ namespace FtpTraversalEngineNet
         public string DataSourceTypesAvailable { get; set; }
 
         public string AccuracyResolutionDensity { get; set; }
+
+        public string ResolutionInMeters { get; set; }
+
+        public string DataProvider { get; set; }
+
+        public string DataProviderName { get; set; }
 
         public int? ParentDataset_Id { get; set; }
 

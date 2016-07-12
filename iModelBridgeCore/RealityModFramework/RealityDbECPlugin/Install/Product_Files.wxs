@@ -101,9 +101,6 @@
   </Fragment>
   <Fragment>
     <ComponentGroup Id ="CG_BentleyFiles">
-      <Component Id="BaseGeoCoordG06.dll" Directory="bin" Guid="{5A79AEE3-8957-4B8C-9BB3-896EF2DE8986}">
-        <File Id="BaseGeoCoordG06.dll" KeyPath="yes" Source="$(var.ProductDir)BaseGeoCoordG06.dll" />
-      </Component>
       <Component Id="BeCurlG06.dll" Directory="bin" Guid="{11EB6944-AFF3-4078-A389-DEC290D3AB07}">
         <File Id="BeCurlG06.dll" KeyPath="yes" Source="$(var.ProductDir)BeCurlG06.dll" />
       </Component>
@@ -128,17 +125,11 @@
       <Component Id="BeXmlG06.dll" Directory="bin" Guid="{3C48BDAE-0D90-4CDA-8993-70CAAB456216}">
         <File Id="BeXmlG06.dll" KeyPath="yes" Source="$(var.ProductDir)BeXmlG06.dll" />
       </Component>
-      <Component Id="ImagePPG06.dll" Directory="bin" Guid="{ADB2DF63-BB0F-463C-941A-05A8DC96CF5E}">
-        <File Id="ImagePPG06.dll" KeyPath="yes" Source="$(var.ProductDir)ImagePPG06.dll" />
-      </Component>
       <Component Id="NCSEcw.dll" Directory="bin" Guid="{20521954-2999-45EC-B45D-93F8DECB776B}">
         <File Id="NCSEcw.dll" KeyPath="yes" Source="$(var.ProductDir)NCSEcw.dll" />
       </Component>
       <Component Id="RealityPackage.dll" Directory="bin" Guid="{D4049E0D-CDD5-4BCE-BBA5-9A74488B4454}">
         <File Id="RealityPackage.dll" KeyPath="yes" Source="$(var.ProductDir)RealityPackage.dll" />
-      </Component>
-      <Component Id="RealityPlatform.dll" Directory="bin" Guid="{3412A325-0963-4F44-A8DF-03C5F646F62E}">
-        <File Id="RealityPlatform.dll" KeyPath="yes" Source="$(var.ProductDir)RealityPlatform.dll" />
       </Component>
     </ComponentGroup>
   </Fragment>
