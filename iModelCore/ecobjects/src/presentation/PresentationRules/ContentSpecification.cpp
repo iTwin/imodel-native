@@ -91,3 +91,8 @@ RelatedPropertiesSpecificationList const& ContentSpecification::GetRelatedProper
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayRelatedItemsSpecificationList& ContentSpecification::GetDisplayRelatedItems (void) { return m_displayRelatedItemsSpecification; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrew.Menzies                          07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayRelatedItemsSpecificationList const& ContentSpecification::GetDisplayRelatedItems(void) const { return m_displayRelatedItemsSpecification; }

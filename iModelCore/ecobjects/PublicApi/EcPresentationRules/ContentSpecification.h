@@ -67,6 +67,9 @@ public:
     ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&   GetRelatedPropertiesR(void);
 
     //! Include related items with current instances when display commands are executed.
+    ECOBJECTS_EXPORT DisplayRelatedItemsSpecificationList const& GetDisplayRelatedItems(void) const;    
+
+    //! Include related items with current instances when display commands are executed.
     ECOBJECTS_EXPORT DisplayRelatedItemsSpecificationList& GetDisplayRelatedItems (void);
     };
 
