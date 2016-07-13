@@ -14,7 +14,8 @@ if __name__ == '__main__':
     failureCount = 0
     with open(sys.argv[1], 'r') as logfile:
         for line in logfile.readlines():
-            if line.lower().startswith("failure in test"):
+            lline = line.lower()
+            if lline.startswith("failure in test") or lline.startswith('instrumentation_result:'):
                 failureCount = failureCount + 1
                 print line,
      
