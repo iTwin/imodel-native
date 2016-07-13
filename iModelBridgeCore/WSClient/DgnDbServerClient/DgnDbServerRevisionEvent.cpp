@@ -18,15 +18,13 @@ DgnDbServerRevisionEvent::DgnDbServerRevisionEvent
 Utf8String eventTopic, 
 Utf8String fromEventSubscriptionId, 
 Utf8String revisionId, 
-Utf8String revisionIndex, 
-Utf8String date
+Utf8String revisionIndex
 )
     {
     m_eventTopic = eventTopic;
     m_fromEventSubscriptionId = fromEventSubscriptionId;
     m_revisionId = revisionId;
     m_revisionIndex = revisionIndex;
-    m_date = date;
     }
 
 //---------------------------------------------------------------------------------------
@@ -37,8 +35,7 @@ std::shared_ptr<struct DgnDbServerRevisionEvent> DgnDbServerRevisionEvent::Creat
 Utf8String eventTopic, 
 Utf8String fromEventSubscriptionId, 
 Utf8String revisionId, 
-Utf8String revisionIndex, 
-Utf8String date
+Utf8String revisionIndex
 )
     {
     return std::shared_ptr<struct DgnDbServerRevisionEvent>
@@ -47,8 +44,7 @@ Utf8String date
                eventTopic,
                fromEventSubscriptionId,
                revisionId, 
-               revisionIndex,
-               date));
+               revisionIndex));
     }
 
 //---------------------------------------------------------------------------------------
@@ -65,14 +61,6 @@ Utf8String DgnDbServerRevisionEvent::GetEventTopic()
 Utf8String DgnDbServerRevisionEvent::GetFromEventSubscriptionId()
     {
     return m_fromEventSubscriptionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerRevisionEvent::GetDate()
-    {
-    return m_date;
     }
 
 //---------------------------------------------------------------------------------------

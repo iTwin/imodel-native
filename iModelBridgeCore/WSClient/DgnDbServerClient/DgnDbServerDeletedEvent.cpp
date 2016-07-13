@@ -18,14 +18,12 @@ DgnDbServerDeletedEvent::DgnDbServerDeletedEvent
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
 Utf8String briefcaseId,
-Utf8String date,
 DgnDbServerEvent::DgnDbServerEventType deletedEventType
 )
     {
     m_eventTopic = eventTopic;
     m_fromEventSubscriptionId = fromEventSubscriptionId;
     m_briefcaseId = briefcaseId;
-    m_date = date;
     m_deletedEventType = deletedEventType;
     }
 
@@ -37,7 +35,6 @@ std::shared_ptr<struct DgnDbServerDeletedEvent> DgnDbServerDeletedEvent::Create
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
 Utf8String briefcaseId,
-Utf8String date,
 DgnDbServerEvent::DgnDbServerEventType deletedEventType
 )
     {
@@ -53,7 +50,6 @@ DgnDbServerEvent::DgnDbServerEventType deletedEventType
             eventTopic,
             fromEventSubscriptionId,
             briefcaseId,
-            date,
             deletedEventType
             )
             );       
@@ -74,14 +70,6 @@ Utf8String DgnDbServerDeletedEvent::GetEventTopic()
 Utf8String DgnDbServerDeletedEvent::GetFromEventSubscriptionId()
     {
     return m_fromEventSubscriptionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             07/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerDeletedEvent::GetDate()
-    {
-    return m_date;
     }
 
 //---------------------------------------------------------------------------------------

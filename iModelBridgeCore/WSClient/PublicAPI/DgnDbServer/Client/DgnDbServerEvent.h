@@ -27,13 +27,11 @@ namespace DgnDbServerEvent
         static Utf8CP LockLevel = "LockLevel";
         static Utf8CP BriefcaseId = "BriefcaseId";
         static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
-        static Utf8CP Date = "Date";
         }
     namespace RevisionEventProperties
         {
         static Utf8CP RevisionId = "RevisionId";
         static Utf8CP RevisionIndex = "RevisionIndex";
-        static Utf8CP Date = "Date";
         }
     namespace CodeEventProperties
         {
@@ -43,14 +41,12 @@ namespace DgnDbServerEvent
         static Utf8CP State = "State";
         static Utf8CP BriefcaseId = "BriefcaseId";
         static Utf8CP UsedWithRevision = "UsedWithRevision";
-        static Utf8CP Date = "Date";
         }
     namespace DeletedEventProperties
         {
         static Utf8CP AllLocksDeletedEvent = "AllLocksDeletedEvent";
         static Utf8CP AllCodesDeletedEvent = "AllCodesDeletedEvent";
         static Utf8CP BriefcaseId = "BriefcaseId";
-        static Utf8CP Date = "Date";
         }
 
     enum DgnDbServerEventType

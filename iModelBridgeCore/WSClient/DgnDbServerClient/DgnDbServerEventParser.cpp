@@ -225,8 +225,7 @@ DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
         data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
         data.isMember(DgnDbServerEvent::LockEventProperties::LockLevel) &&
         data.isMember(DgnDbServerEvent::LockEventProperties::BriefcaseId) &&
-        data.isMember(DgnDbServerEvent::LockEventProperties::ReleasedWithRevision) &&
-        data.isMember(DgnDbServerEvent::LockEventProperties::Date)
+        data.isMember(DgnDbServerEvent::LockEventProperties::ReleasedWithRevision)
         )
         return DgnDbServerLockEvent::Create
         (
@@ -236,8 +235,7 @@ DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
         data[DgnDbServerEvent::LockEventProperties::LockType].asString(),
         data[DgnDbServerEvent::LockEventProperties::LockLevel].asString(),
         data[DgnDbServerEvent::LockEventProperties::BriefcaseId].asString(),
-        data[DgnDbServerEvent::LockEventProperties::ReleasedWithRevision].asString(),
-        data[DgnDbServerEvent::LockEventProperties::Date].asString()
+        data[DgnDbServerEvent::LockEventProperties::ReleasedWithRevision].asString()
         );
     return nullptr;
     }
@@ -255,16 +253,14 @@ DgnDbServerEventPtr ParseIntoRevisionEvent(Utf8String jsonString)
         data.isMember(DgnDbServerEvent::EventTopic) &&
         data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
         data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionId) &&
-        data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionIndex) &&
-        data.isMember(DgnDbServerEvent::RevisionEventProperties::Date)
+        data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionIndex)
         )
         return DgnDbServerRevisionEvent::Create
         (
         data[DgnDbServerEvent::EventTopic].asString(),
         data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
         data[DgnDbServerEvent::RevisionEventProperties::RevisionId].asString(),
-        data[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString(),
-        data[DgnDbServerEvent::RevisionEventProperties::Date].asString()
+        data[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString()
         );
     return nullptr;
     }
@@ -286,8 +282,7 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
         data.isMember(DgnDbServerEvent::CodeEventProperties::Value) &&
         data.isMember(DgnDbServerEvent::CodeEventProperties::State) &&
         data.isMember(DgnDbServerEvent::CodeEventProperties::BriefcaseId) &&
-        data.isMember(DgnDbServerEvent::CodeEventProperties::UsedWithRevision) &&
-        data.isMember(DgnDbServerEvent::CodeEventProperties::Date)
+        data.isMember(DgnDbServerEvent::CodeEventProperties::UsedWithRevision)
         )
         return DgnDbServerCodeEvent::Create
         (
@@ -298,8 +293,7 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
         data[DgnDbServerEvent::CodeEventProperties::Value].asString(),
         data[DgnDbServerEvent::CodeEventProperties::State].asString(),
         data[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asString(),
-        data[DgnDbServerEvent::CodeEventProperties::UsedWithRevision].asString(),
-        data[DgnDbServerEvent::CodeEventProperties::Date].asString()
+        data[DgnDbServerEvent::CodeEventProperties::UsedWithRevision].asString()
         );
     return nullptr;
     }
@@ -318,7 +312,6 @@ DgnDbServerEventPtr ParseIntoDeletedEvent(Utf8String jsonString, DgnDbServerEven
         data.isMember(DgnDbServerEvent::EventTopic) &&
         data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
         data.isMember(DgnDbServerEvent::DeletedEventProperties::BriefcaseId) &&
-        data.isMember(DgnDbServerEvent::DeletedEventProperties::Date) &&
         !data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
         !data.isMember(DgnDbServerEvent::CodeEventProperties::CodeAuthorityId)
         )   
@@ -327,7 +320,6 @@ DgnDbServerEventPtr ParseIntoDeletedEvent(Utf8String jsonString, DgnDbServerEven
             data[DgnDbServerEvent::EventTopic].asString(),
             data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
             data[DgnDbServerEvent::DeletedEventProperties::BriefcaseId].asString(),
-            data[DgnDbServerEvent::DeletedEventProperties::Date].asString(),
             deletedEventType
             );
         return nullptr;      
