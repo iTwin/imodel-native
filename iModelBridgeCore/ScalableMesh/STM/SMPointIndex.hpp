@@ -3975,6 +3975,30 @@ template<class POINT, class EXTENT> const HFCPtr<SMPointIndexNode<POINT, EXTENT>
     }
 
 //=======================================================================================
+// @bsimethod                                                   Mathieu.St-Pierre 07/16
+//=======================================================================================
+template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<POINT>> SMPointIndexNode<POINT, EXTENT>::GetPointsPtr(bool loadPts = true)
+    {
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> poolMemVectorItemPtr;
+                    
+    if (!SMMemoryPool::GetInstance()->GetItem<POINT>(poolMemVectorItemPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex) && loadPts)
+        {                  
+        //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
+        ISMPointDataStorePtr pointDataStore;
+        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(pointDataStore, &m_nodeHeader);
+        assert(result == true);        
+
+        RefCountedPtr<SMStoredMemoryPoolVectorItem<POINT>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<POINT>(GetBlockID().m_integerID, pointDataStore, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex));
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
+        m_pointsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+        assert(m_pointsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        poolMemVectorItemPtr = storedMemoryPoolVector.get();            
+        }
+
+    return poolMemVectorItemPtr;
+    }        
+
+//=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 02/15
 //=======================================================================================
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Track3dPoints(size_t countPoints)

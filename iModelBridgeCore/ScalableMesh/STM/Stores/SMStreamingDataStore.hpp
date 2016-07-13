@@ -779,11 +779,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
         }   
     }
 
-template <class EXTENT> RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> SMStreamingStore<EXTENT>::GetNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> pointDataStore;
-
-    return pointDataStore; 
+    assert(!"Not yet implemented");
+    return false;
     }
 
 template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::initializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
@@ -811,3 +810,116 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::setDataSourceAccount(Data
     {
     m_dataSourceAccount = dataSourceAccount;
     }
+
+
+//------------------SMStreamingNodePointStore--------------------------------------------
+#if 0 
+template <class POINT, class EXTENT> SMStreamingNodePointStore<POINT, EXTENT>::SMStreamingNodePointStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true)
+    :m_dataSourceAccount(dataSourceAccount),     
+     m_pathToPoints(path),
+     m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
+     m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")     
+    {       
+    m_nodeHeader = nodeHeader;
+
+    switch (type)
+        {
+        case SMStreamingDataType::POINTS:
+            m_pathToPoints += L"points/";
+            haveHeaders = true; // only points can carry node header information
+            break;
+        case SMStreamingDataType::INDICES:
+            m_pathToPoints += L"indices/";
+            break;
+        case SMStreamingDataType::UVS:
+            m_pathToPoints += L"uvs/";
+            break;
+        case SMStreamingDataType::UVINDICES:
+            m_pathToPoints += L"uvindices/";
+            break;
+        default:
+            assert(!"Unkown data type for streaming");
+        }
+
+
+    // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
+    if (s_stream_from_disk)
+        {
+        // Create base directory structure to store information if not already done
+        // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only        
+        if (0 == CreateDirectoryW(m_pathToPoints.c_str(), NULL))
+            {
+            assert(ERROR_PATH_NOT_FOUND != GetLastError());
+            }        
+        }
+    else
+        {
+        // stream from azure
+        }
+    }
+
+template <class POINT, class EXTENT> SMStreamingNodePointStore<POINT, EXTENT>::~SMStreamingNodePointStore()
+    {            
+    }
+
+template <class POINT, class EXTENT> HPMBlockID SMStreamingNodePointStore<POINT, EXTENT>::StoreNewBlock(POINT* DataTypeArray, size_t countData)
+    {        
+    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+    pi_uncompressedPacket.SetBuffer(DataTypeArray, countData*sizeof(POINT));
+    pi_uncompressedPacket.SetDataSize(countData*sizeof(POINT));
+    WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket);
+    bvector<uint8_t> ptData(pi_compressedPacket.GetDataSize());
+    memcpy(&ptData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+    int64_t id = SQLiteNodeHeader::NO_NODEID;
+    m_smSQLiteFile->StorePoints(id, ptData, countData*sizeof(POINT));
+    return HPMBlockID(id);
+    }
+
+template <class POINT, class EXTENT> HPMBlockID SMStreamingNodePointStore<POINT, EXTENT>::StoreBlock(POINT* DataTypeArray, size_t countData, HPMBlockID blockID)
+    {
+    if (!blockID.IsValid()) return StoreNewBlock(DataTypeArray, countData);
+    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+    pi_uncompressedPacket.SetBuffer(DataTypeArray, countData*sizeof(POINT));
+    pi_uncompressedPacket.SetDataSize(countData*sizeof(POINT));
+    WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket);
+    bvector<uint8_t> ptData(pi_compressedPacket.GetDataSize());
+    memcpy(&ptData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+    int64_t id = blockID.m_integerID;
+    m_smSQLiteFile->StorePoints(id, ptData, countData*sizeof(POINT));
+    return HPMBlockID(id);
+    }
+
+template <class POINT, class EXTENT> size_t SMStreamingNodePointStore<POINT, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
+    {
+    if(!blockID.IsValid()) return 0;
+    return m_smSQLiteFile->GetNumberOfPoints(blockID.m_integerID) / sizeof(POINT);
+    }
+
+template <class POINT, class EXTENT> void SMStreamingNodePointStore<POINT, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
+    {
+    int i = 6;
+    i = i;
+    }
+
+template <class POINT, class EXTENT> size_t SMStreamingNodePointStore<POINT, EXTENT>::LoadBlock(POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+    {
+    if (!blockID.IsValid()) return 0;
+    bvector<uint8_t> ptData;
+    size_t uncompressedSize = 0;
+    m_smSQLiteFile->GetPoints(blockID.m_integerID, ptData, uncompressedSize);
+    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+    pi_compressedPacket.SetBuffer(&ptData[0], ptData.size());
+    pi_compressedPacket.SetDataSize(ptData.size());
+    pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(POINT));
+    pi_uncompressedPacket.SetBufferOwnership(false);
+    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
+
+    return std::min(uncompressedSize, maxCountData*sizeof(POINT));
+    }
+
+template <class POINT, class EXTENT> bool SMStreamingNodePointStore<POINT, EXTENT>::DestroyBlock(HPMBlockID blockID)
+    {
+    return false;
+    }
+
+#endif

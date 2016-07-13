@@ -16,6 +16,10 @@
 #include <ImagePP/h/HIterators.h>
 #include "ComputeMemoryUseTraits.h"
 #include <iostream>
+
+#include "Stores\ISMDataStore.h"
+#include "Stores\SMStoreUtils.h"
+
 using namespace std;
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -96,7 +100,8 @@ class SMMemoryPoolItemBase : public RefCountedBase
     {
     private : 
 
-        SMMemoryPoolItemId        m_poolItemId;         
+        SMMemoryPoolItemId        m_poolItemId;
+
 
     protected : 
 
@@ -111,7 +116,7 @@ class SMMemoryPoolItemBase : public RefCountedBase
 
         //type_info m_dataType;
         
-        void NotifySizeChangePoolItem(int64_t sizeDelta);
+        virtual void NotifySizeChangePoolItem(int64_t sizeDelta, int64_t nbItemDelta);
         
     public :
 
@@ -236,7 +241,7 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
             if (m_data != nullptr && m_size > 0)
                 delete (DataType*)m_data;
             m_data = (Byte*)data;
-            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) NotifySizeChangePoolItem(GetSizeInMemory(data) - m_size);
+            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) NotifySizeChangePoolItem(GetSizeInMemory(data) - m_size, GetSizeInMemory(data) - m_size);
             m_size = GetSizeInMemory(data);
             }
     };
@@ -495,7 +500,7 @@ public:
         m_size = m_nbItems * sizeof(DataType);
         m_dirty = true;        
 
-        NotifySizeChangePoolItem(sizeof(DataType));
+        NotifySizeChangePoolItem(sizeof(DataType), 1);
 
         assert(m_size <= m_allocatedSize);
 
@@ -517,7 +522,7 @@ public:
         m_size = m_nbItems * sizeof(DataType);
         m_dirty = true;
 
-        NotifySizeChangePoolItem(count * sizeof(DataType));
+        NotifySizeChangePoolItem(count * sizeof(DataType), count);
 
         assert(m_size <= m_allocatedSize);
        
@@ -594,12 +599,12 @@ public:
                 newDataInd++;
                 }            
             }
-
+        
         m_nbItems -= indexes.size();        
         m_size = m_nbItems * sizeof(DataType);
         m_dirty = true;
 
-        NotifySizeChangePoolItem(-1 * indexes.size() * sizeof(DataType));
+        NotifySizeChangePoolItem(-1 * indexes.size() * sizeof(DataType), -1 * indexes.size());
         }
 
      virtual void erase (size_t index)
@@ -609,7 +614,7 @@ public:
         m_size = m_nbItems * sizeof(DataType);
         m_dirty = true;  
 
-        NotifySizeChangePoolItem(-1 * (int64_t)sizeof(DataType));
+        NotifySizeChangePoolItem(-1 * (int64_t)sizeof(DataType), -1);
         }
 
     virtual void clearFrom(size_t indexToClearFrom)
@@ -620,7 +625,7 @@ public:
             clear();
         else
             {
-            NotifySizeChangePoolItem((indexToClearFrom - m_nbItems) * sizeof(DataType));
+            NotifySizeChangePoolItem((indexToClearFrom - m_nbItems) * sizeof(DataType), (indexToClearFrom - m_nbItems));
             m_nbItems = indexToClearFrom; 
             m_size = m_nbItems * sizeof(DataType);
             m_dirty = true;
@@ -631,7 +636,7 @@ public:
         {   
         if (m_data != 0)
             {
-            NotifySizeChangePoolItem(-(int64_t)m_nbItems * sizeof(DataType));        
+            NotifySizeChangePoolItem(-(int64_t)m_nbItems * sizeof(DataType), -(int64_t)m_nbItems);        
             delete [] m_data;                        
             m_nbItems = 0;
             m_data = 0;  
@@ -727,7 +732,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
             size_t clearedDataSize = 0;
             for (size_t i = indexToClearFrom; i < m_nbItems; ++i)
                 clearedDataSize += GetSizeInMemory((DataType*)m_data + i);
-            NotifySizeChangePoolItem(-(int64_t)clearedDataSize);
+            NotifySizeChangePoolItem(-(int64_t)clearedDataSize, -(int64_t)clearedDataSize);
             m_nbItems = indexToClearFrom;
             m_dirty = true;
             }
@@ -769,7 +774,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         m_size -= erasedSize;
         m_dirty = true;
 
-        NotifySizeChangePoolItem(-1 * erasedSize);
+        NotifySizeChangePoolItem(-1 * erasedSize, -1 * erasedSize);
         }
 
     virtual void Replace(size_t index, const DataType& val)
@@ -778,7 +783,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         size_t newSize = GetSizeInMemory((DataType*)&val);
         *((DataType*)m_data + index) = val;
         m_size += newSize - oldSize;
-        NotifySizeChangePoolItem(newSize - oldSize);
+        NotifySizeChangePoolItem(newSize - oldSize, newSize - oldSize);
         }
 
     virtual void erase(size_t index)
@@ -789,7 +794,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         m_size -= erasedSize;
         m_dirty = true;
 
-        NotifySizeChangePoolItem(-1 * (int64_t)erasedSize);
+        NotifySizeChangePoolItem(-1 * (int64_t)erasedSize, -1 * (int64_t)erasedSize);
         }
 
     virtual bool push_back(const DataType& newObject)
@@ -805,7 +810,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         m_size += addedSize;
         m_dirty = true;
 
-        NotifySizeChangePoolItem(addedSize);
+        NotifySizeChangePoolItem(addedSize, addedSize);
 
         assert(m_nbItems*sizeof(DataType) <= m_allocatedSize);
 
@@ -829,7 +834,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         m_size += addedSize;
         m_dirty = true;
 
-        NotifySizeChangePoolItem(addedSize);
+        NotifySizeChangePoolItem(addedSize, addedSize);
 
         assert(m_nbItems*sizeof(DataType) <= m_allocatedSize);
 
@@ -873,7 +878,10 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
         {
         private:
 
-            IHPMDataStore<DataType>* m_store;
+            
+            ////MST_TS : All IHPMDataStore in this file (or everywhere in SM?) should be removed.
+            IHPMDataStore<DataType>*          m_store;
+            ISMNodeDataStoreTypePtr<DataType> m_dataStore;
 
         public:
 
@@ -881,6 +889,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
                 : SMMemoryPoolVectorItem(store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
                 {
                 m_store = store;
+                m_dataStore = 0;
 
                 if (m_nbItems > 0)
                     {
@@ -890,13 +899,42 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
                     }
                 }
 
+            SMStoredMemoryPoolVectorItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMPoolDataTypeDesc dataType, uint64_t smId)
+                : SMMemoryPoolVectorItem(dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
+                {
+                m_store = 0;
+                m_dataStore = dataStore;
+
+                if (m_nbItems > 0)
+                    {
+                    HPMBlockID blockID(m_nodeId);
+                    size_t nbBytesLoaded = m_dataStore->LoadBlock((DataType*)m_data, m_nbItems, blockID);
+                    assert(nbBytesLoaded == sizeof(DataType) * m_nbItems);
+                    }
+                }
+
             virtual ~SMStoredMemoryPoolVectorItem()
                 {
                 if (m_dirty)
                     {
                     HPMBlockID blockID(m_nodeId);
-                    m_store->StoreBlock((DataType*)m_data, m_nbItems, blockID);
+
+                    if (m_store != 0)
+                        m_store->StoreBlock((DataType*)m_data, m_nbItems, blockID);
+                    else
+                        m_dataStore->StoreBlock((DataType*)m_data, m_nbItems, blockID);                
                     }
+                }
+
+            virtual void NotifySizeChangePoolItem(int64_t sizeDelta, int64_t nbItemDelta)
+                {
+                if (m_dataStore != 0)
+                    {
+                    HPMBlockID blockID(m_nodeId);
+                    m_dataStore->ModifyBlockDataCount(blockID, nbItemDelta);
+                    }
+
+                __super::NotifySizeChangePoolItem(sizeDelta, nbItemDelta);
                 }
         };
 

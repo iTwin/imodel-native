@@ -45,7 +45,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"");
        
         virtual ~SMStreamingStore();
-                    
+                   
+        //Inherited from ISMDataStore
         virtual uint64_t GetNextID() const override;
             
         virtual void Close() override;
@@ -57,8 +58,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual size_t StoreNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;
             
         virtual size_t LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;            
-        
-        virtual RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> GetNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+                
+        virtual bool GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+        //Inherited from ISMDataStore - End
 
         DataSource *initializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const;
 
@@ -73,4 +75,47 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
     };
 
 
+#if 0 
 
+template <class POINT, class EXTENT> class SMStreamingNodeDataStore : public ISMNodeDataStore<POINT> 
+    {
+    private:
+        
+        SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
+        DataSourceAccount*            m_dataSourceAccount;
+        WString                       m_pathToPoints;
+        WString                       m_storage_connection_string;
+        scalable_mesh::azure::Storage m_stream_store;
+
+        // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
+        mutable std::map<ISMStore::NodeID, PointBlock> m_pointCache;
+        mutable std::mutex m_pointCacheLock;
+
+    public:
+
+        enum SMStreamingDataType
+            {
+            POINTS,
+            INDICES,
+            UVS,
+            UVINDICES
+            };
+              
+        SMStreamingNodePointStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true);
+            
+        virtual ~SMStreamingNodePointStore();
+              
+        virtual HPMBlockID StoreNewBlock(POINT* DataTypeArray, size_t countData) override;
+            
+        virtual HPMBlockID StoreBlock(POINT* DataTypeArray, size_t countData, HPMBlockID blockID) override;
+            
+        virtual size_t GetBlockDataCount(HPMBlockID blockID) const override;
+            
+        virtual size_t LoadBlock(POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
+            
+        virtual bool DestroyBlock(HPMBlockID blockID) override;         
+
+        virtual void ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) override;        
+    };
+
+#endif
