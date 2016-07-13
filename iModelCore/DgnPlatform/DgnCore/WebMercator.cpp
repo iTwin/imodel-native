@@ -637,6 +637,8 @@ void WebMercatorDisplay::DrawCoarserTiles(DrawArgs& args, uint8_t zoomLevel, uin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
+    CreateCache();
+
     WebMercatorDisplay display(*this, *context.GetViewport());
     display.DrawView(context);
     }
@@ -992,7 +994,7 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/16
 //=======================================================================================
-struct TiledRasterCache : RealityData::Cache2
+struct TiledRasterCache : RealityData::Cache
 {
     uint64_t m_allowedSize = MAX_DB_CACHE_SIZE;
     virtual BentleyStatus _Prepare() const override;
@@ -1005,7 +1007,7 @@ struct TiledRasterCache : RealityData::Cache2
 struct TileData 
 {
 private:
-    RealityData::Cache2* m_cache;
+    RealityData::Cache* m_cache;
     Utf8String  m_url;
     mutable ByteStream m_data;
     mutable DateTime m_creationDate;
@@ -1021,7 +1023,7 @@ public:
     StatusInt LoadFromDb() const;
     StatusInt SaveToDb() const;
 
-    TileData(RealityData::Cache2* cache, TileR tile, Render::SystemR renderSys, ColorDef color, Utf8CP url) : m_cache(cache), m_tile(&tile), m_renderSys(renderSys), m_color(color), m_url(url) {}
+    TileData(RealityData::Cache* cache, TileR tile, Render::SystemR renderSys, ColorDef color, Utf8CP url) : m_cache(cache), m_tile(&tile), m_renderSys(renderSys), m_color(color), m_url(url) {}
     ByteStream const& GetData() const {return m_data;}
     DateTime GetCreationDate() const {return m_creationDate;}
     Utf8String ToString() const {return Utf8PrintfString("%d,%d,%d", m_tile->m_id.m_zoomLevel, m_tile->m_id.m_column, m_tile->m_id.m_row);} 
@@ -1222,8 +1224,12 @@ StatusInt TileData::SaveToDb() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::CreateCache()
+void WebMercatorModel::CreateCache() const
     {
+    if (m_cacheInitialized)
+        return;
+    m_cacheInitialized = true;
+
     BeFileName cacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
     cacheName.AppendToPath(BeFileName(GetName()));
     cacheName.AppendExtension(L"tilecache");
