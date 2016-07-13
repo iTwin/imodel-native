@@ -12,6 +12,7 @@
 // POINTCLOUD_WIP_GR06 - When ExternalModelHandler will be implemented, maybe PointCloudScene.h should be private (not in PublicApi)
 //                       and have no exported methods, of course. Reevealuate when we have ExternalModelHandler.
 
+#include <Vortex/VortexAPI.h>
 #include <BePointCloud/IPointCloudFileEdit.h>
 
 BEPOINTCLOUD_TYPEDEFS(PointCloudScene);
