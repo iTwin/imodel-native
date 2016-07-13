@@ -12,6 +12,7 @@
 #include <BeHttp/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Vytautas.Barkauskas    01/2016
