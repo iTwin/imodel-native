@@ -10955,6 +10955,53 @@ static RtreeValue rtreeValueUp(sqlite3_value *v){
 }
 #endif /* !defined(SQLITE_RTREE_INT_ONLY) */
 
+/*
+** A constraint has failed while inserting a row into an rtree table. 
+** Assuming no OOM error occurs, this function sets the error message 
+** (at pRtree->base.zErrMsg) to an appropriate value and returns
+** SQLITE_CONSTRAINT.
+**
+** Parameter iCol is the index of the leftmost column involved in the
+** constraint failure. If it is 0, then the constraint that failed is
+** the unique constraint on the id column. Otherwise, it is the rtree
+** (c1<=c2) constraint on columns iCol and iCol+1 that has failed.
+**
+** If an OOM occurs, SQLITE_NOMEM is returned instead of SQLITE_CONSTRAINT.
+*/
+static int rtreeConstraintError(Rtree *pRtree, int iCol){
+  sqlite3_stmt *pStmt = 0;
+  char *zSql; 
+  int rc;
+
+  assert( iCol==0 || iCol%2 );
+  zSql = sqlite3_mprintf("SELECT * FROM %Q.%Q", pRtree->zDb, pRtree->zName);
+  if( zSql ){
+    rc = sqlite3_prepare_v2(pRtree->db, zSql, -1, &pStmt, 0);
+  }else{
+    rc = SQLITE_NOMEM;
+  }
+  sqlite3_free(zSql);
+
+  if( rc==SQLITE_OK ){
+    if( iCol==0 ){
+      const char *zCol = sqlite3_column_name(pStmt, 0);
+      pRtree->base.zErrMsg = sqlite3_mprintf(
+          "UNIQUE constraint failed: %s.%s", pRtree->zName, zCol
+      );
+    }else{
+      const char *zCol1 = sqlite3_column_name(pStmt, iCol);
+      const char *zCol2 = sqlite3_column_name(pStmt, iCol+1);
+      pRtree->base.zErrMsg = sqlite3_mprintf(
+          "rtree constraint failed: %s.(%s<=%s)", pRtree->zName, zCol1, zCol2
+      );
+    }
+  }
+
+  sqlite3_finalize(pStmt);
+  return (rc==SQLITE_OK ? SQLITE_CONSTRAINT : rc);
+}
+
+
 
 /*
 ** The xUpdate method for rtree module virtual tables.
@@ -11005,7 +11052,7 @@ static int rtreeUpdate(
         cell.aCoord[ii].f = rtreeValueDown(azData[ii+3]);
         cell.aCoord[ii+1].f = rtreeValueUp(azData[ii+4]);
         if( cell.aCoord[ii].f>cell.aCoord[ii+1].f ){
-          rc = SQLITE_CONSTRAINT;
+          rc = rtreeConstraintError(pRtree, ii+1);
           goto constraint;
         }
       }
@@ -11016,7 +11063,7 @@ static int rtreeUpdate(
         cell.aCoord[ii].i = sqlite3_value_int(azData[ii+3]);
         cell.aCoord[ii+1].i = sqlite3_value_int(azData[ii+4]);
         if( cell.aCoord[ii].i>cell.aCoord[ii+1].i ){
-          rc = SQLITE_CONSTRAINT;
+          rc = rtreeConstraintError(pRtree, ii+1);
           goto constraint;
         }
       }
@@ -11037,7 +11084,7 @@ static int rtreeUpdate(
           if( sqlite3_vtab_on_conflict(pRtree->db)==SQLITE_REPLACE ){
             rc = rtreeDeleteRowid(pRtree, cell.iRowid);
           }else{
-            rc = SQLITE_CONSTRAINT;
+            rc = rtreeConstraintError(pRtree, 0);
             goto constraint;
           }
         }
@@ -11120,6 +11167,11 @@ static int rtreeQueryStat1(sqlite3 *db, Rtree *pRtree){
   int rc;
   i64 nRow = 0;
 
+  if( sqlite3_table_column_metadata(db,pRtree->zDb,"sqlite_stat1",
+          0,0,0,0,0,0)==SQLITE_ERROR ){
+    pRtree->nRowEst = RTREE_DEFAULT_ROWEST;
+    return SQLITE_OK;
+  }
   zSql = sqlite3_mprintf(zFmt, pRtree->zDb, pRtree->zName);
   if( zSql==0 ){
     rc = SQLITE_NOMEM;
@@ -13052,6 +13104,44 @@ SQLITE_API sqlite3_int64 SQLITE_STDCALL sqlite3rbu_progress(sqlite3rbu *pRbu);
 SQLITE_API void SQLITE_STDCALL sqlite3rbu_bp_progress(sqlite3rbu *pRbu, int *pnOne, int *pnTwo);
 
 /*
+** Obtain an indication as to the current stage of an RBU update or vacuum.
+** This function always returns one of the SQLITE_RBU_STATE_XXX constants
+** defined in this file. Return values should be interpreted as follows:
+**
+** SQLITE_RBU_STATE_OAL:
+**   RBU is currently building a *-oal file. The next call to sqlite3rbu_step()
+**   may either add further data to the *-oal file, or compute data that will
+**   be added by a subsequent call.
+**
+** SQLITE_RBU_STATE_MOVE:
+**   RBU has finished building the *-oal file. The next call to sqlite3rbu_step()
+**   will move the *-oal file to the equivalent *-wal path. If the current
+**   operation is an RBU update, then the updated version of the database
+**   file will become visible to ordinary SQLite clients following the next
+**   call to sqlite3rbu_step().
+**
+** SQLITE_RBU_STATE_CHECKPOINT:
+**   RBU is currently performing an incremental checkpoint. The next call to
+**   sqlite3rbu_step() will copy a page of data from the *-wal file into
+**   the target database file.
+**
+** SQLITE_RBU_STATE_DONE:
+**   The RBU operation has finished. Any subsequent calls to sqlite3rbu_step()
+**   will immediately return SQLITE_DONE.
+**
+** SQLITE_RBU_STATE_ERROR:
+**   An error has occurred. Any subsequent calls to sqlite3rbu_step() will
+**   immediately return the SQLite error code associated with the error.
+*/
+#define SQLITE_RBU_STATE_OAL        1
+#define SQLITE_RBU_STATE_MOVE       2
+#define SQLITE_RBU_STATE_CHECKPOINT 3
+#define SQLITE_RBU_STATE_DONE       4
+#define SQLITE_RBU_STATE_ERROR      5
+
+SQLITE_API int SQLITE_STDCALL sqlite3rbu_state(sqlite3rbu *pRbu);
+
+/*
 ** Create an RBU VFS named zName that accesses the underlying file-system
 ** via existing VFS zParent. Or, if the zParent parameter is passed NULL, 
 ** then the new RBU VFS uses the default system VFS to access the file-system.
@@ -13946,12 +14036,14 @@ static int rbuObjIterFirst(sqlite3rbu *p, RbuObjIter *pIter){
   int rc;
   memset(pIter, 0, sizeof(RbuObjIter));
 
-  rc = prepareAndCollectError(p->dbRbu, &pIter->pTblIter, &p->zErrmsg, 
+  rc = prepareFreeAndCollectError(p->dbRbu, &pIter->pTblIter, &p->zErrmsg, 
+    sqlite3_mprintf(
       "SELECT rbu_target_name(name, type='view') AS target, name "
       "FROM sqlite_master "
       "WHERE type IN ('table', 'view') AND target IS NOT NULL "
+      " %s "
       "ORDER BY name"
-  );
+  , rbuIsVacuum(p) ? "AND rootpage!=0 AND rootpage IS NOT NULL" : ""));
 
   if( rc==SQLITE_OK ){
     rc = prepareAndCollectError(p->dbMain, &pIter->pIdxIter, &p->zErrmsg,
@@ -15530,9 +15622,9 @@ static void rbuFileSuffix3(const char *zBase, char *z){
 #endif
   {
     int i, sz;
-    sz = sqlite3Strlen30(z);
+    sz = (int)strlen(z)&0xffffff;
     for(i=sz-1; i>0 && z[i]!='/' && z[i]!='.'; i--){}
-    if( z[i]=='.' && ALWAYS(sz>i+4) ) memmove(&z[i+1], &z[sz-3], 4);
+    if( z[i]=='.' && sz>i+4 ) memmove(&z[i+1], &z[sz-3], 4);
   }
 #endif
 }
@@ -16578,30 +16670,7 @@ static sqlite3rbu *openRbuHandle(
     if( p->rc==SQLITE_OK ){
       if( p->eStage==RBU_STAGE_OAL ){
         sqlite3 *db = p->dbMain;
-
-        if( pState->eStage==0 && rbuIsVacuum(p) ){
-          rbuCopyPragma(p, "page_size");
-          rbuCopyPragma(p, "auto_vacuum");
-        }
-
-        /* Open transactions both databases. The *-oal file is opened or
-        ** created at this point. */
-        if( p->rc==SQLITE_OK ){
-          p->rc = sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
-        }
-        if( p->rc==SQLITE_OK ){
-          p->rc = sqlite3_exec(p->dbRbu, "BEGIN", 0, 0, &p->zErrmsg);
-        }
-
-        /* Check if the main database is a zipvfs db. If it is, set the upper
-        ** level pager to use "journal_mode=off". This prevents it from 
-        ** generating a large journal using a temp file.  */
-        if( p->rc==SQLITE_OK ){
-          int frc = sqlite3_file_control(db, "main", SQLITE_FCNTL_ZIPVFS, 0);
-          if( frc==SQLITE_OK ){
-            p->rc = sqlite3_exec(db, "PRAGMA journal_mode=off",0,0,&p->zErrmsg);
-          }
-        }
+        p->rc = sqlite3_exec(p->dbRbu, "BEGIN", 0, 0, &p->zErrmsg);
 
         /* Point the object iterator at the first object */
         if( p->rc==SQLITE_OK ){
@@ -16612,12 +16681,34 @@ static sqlite3rbu *openRbuHandle(
         ** update finished.  */
         if( p->rc==SQLITE_OK && p->objiter.zTbl==0 ){
           p->rc = SQLITE_DONE;
-        }
+          p->eStage = RBU_STAGE_DONE;
+        }else{
+          if( p->rc==SQLITE_OK && pState->eStage==0 && rbuIsVacuum(p) ){
+            rbuCopyPragma(p, "page_size");
+            rbuCopyPragma(p, "auto_vacuum");
+          }
 
-        if( p->rc==SQLITE_OK ){
-          rbuSetupOal(p, pState);
-        }
+          /* Open transactions both databases. The *-oal file is opened or
+          ** created at this point. */
+          if( p->rc==SQLITE_OK ){
+            p->rc = sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+          }
 
+          /* Check if the main database is a zipvfs db. If it is, set the upper
+          ** level pager to use "journal_mode=off". This prevents it from 
+          ** generating a large journal using a temp file.  */
+          if( p->rc==SQLITE_OK ){
+            int frc = sqlite3_file_control(db, "main", SQLITE_FCNTL_ZIPVFS, 0);
+            if( frc==SQLITE_OK ){
+              p->rc = sqlite3_exec(
+                db, "PRAGMA journal_mode=off",0,0,&p->zErrmsg);
+            }
+          }
+
+          if( p->rc==SQLITE_OK ){
+            rbuSetupOal(p, pState);
+          }
+        }
       }else if( p->eStage==RBU_STAGE_MOVE ){
         /* no-op */
       }else if( p->eStage==RBU_STAGE_CKPT ){
@@ -16784,9 +16875,39 @@ SQLITE_API void SQLITE_STDCALL sqlite3rbu_bp_progress(sqlite3rbu *p, int *pnOne,
   }
 }
 
+/*
+** Return the current state of the RBU vacuum or update operation.
+*/
+SQLITE_API int SQLITE_STDCALL sqlite3rbu_state(sqlite3rbu *p){
+  int aRes[] = {
+    0, SQLITE_RBU_STATE_OAL, SQLITE_RBU_STATE_MOVE,
+    0, SQLITE_RBU_STATE_CHECKPOINT, SQLITE_RBU_STATE_DONE
+  };
+
+  assert( RBU_STAGE_OAL==1 );
+  assert( RBU_STAGE_MOVE==2 );
+  assert( RBU_STAGE_CKPT==4 );
+  assert( RBU_STAGE_DONE==5 );
+  assert( aRes[RBU_STAGE_OAL]==SQLITE_RBU_STATE_OAL );
+  assert( aRes[RBU_STAGE_MOVE]==SQLITE_RBU_STATE_MOVE );
+  assert( aRes[RBU_STAGE_CKPT]==SQLITE_RBU_STATE_CHECKPOINT );
+  assert( aRes[RBU_STAGE_DONE]==SQLITE_RBU_STATE_DONE );
+
+  if( p->rc!=SQLITE_OK && p->rc!=SQLITE_DONE ){
+    return SQLITE_RBU_STATE_ERROR;
+  }else{
+    assert( p->rc!=SQLITE_DONE || p->eStage==RBU_STAGE_DONE );
+    assert( p->eStage==RBU_STAGE_OAL
+         || p->eStage==RBU_STAGE_MOVE
+         || p->eStage==RBU_STAGE_CKPT
+         || p->eStage==RBU_STAGE_DONE
+    );
+    return aRes[p->eStage];
+  }
+}
+
 SQLITE_API int SQLITE_STDCALL sqlite3rbu_savestate(sqlite3rbu *p){
   int rc = p->rc;
-  
   if( rc==SQLITE_DONE ) return SQLITE_OK;
 
   assert( p->eStage>=RBU_STAGE_OAL && p->eStage<=RBU_STAGE_DONE );
@@ -17768,10 +17889,10 @@ SQLITE_API int SQLITE_STDCALL sqlite3rbu_create_vfs(const char *zName, const cha
 */
 #define VTAB_SCHEMA                                                         \
   "CREATE TABLE xx( "                                                       \
-  "  name       STRING,           /* Name of table or index */"             \
-  "  path       INTEGER,          /* Path to page from root */"             \
+  "  name       TEXT,             /* Name of table or index */"             \
+  "  path       TEXT,             /* Path to page from root */"             \
   "  pageno     INTEGER,          /* Page number */"                        \
-  "  pagetype   STRING,           /* 'internal', 'leaf' or 'overflow' */"   \
+  "  pagetype   TEXT,             /* 'internal', 'leaf' or 'overflow' */"   \
   "  ncell      INTEGER,          /* Cells on page (0 for overflow) */"     \
   "  payload    INTEGER,          /* Bytes of payload on this page */"      \
   "  unused     INTEGER,          /* Bytes of unused space on this page */" \

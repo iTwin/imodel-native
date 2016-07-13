@@ -1819,6 +1819,11 @@ SQLITE_PRIVATE int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int 
           eType = IN_INDEX_INDEX_ASC + pIdx->aSortOrder[0];
 
           if( prRhsHasNull && !pTab->aCol[iCol].notNull ){
+#ifdef SQLITE_ENABLE_COLUMN_USED_MASK
+            const i64 sOne = 1;
+            sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, 
+                iTab, 0, 0, (u8*)&sOne, P4_INT64);
+#endif
             *prRhsHasNull = ++pParse->nMem;
             sqlite3SetHasNullFlag(v, iTab, *prRhsHasNull);
           }
@@ -1831,7 +1836,7 @@ SQLITE_PRIVATE int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int 
   /* If no preexisting index is available for the IN clause
   ** and IN_INDEX_NOOP is an allowed reply
   ** and the RHS of the IN operator is a list, not a subquery
-  ** and the RHS is not contant or has two or fewer terms,
+  ** and the RHS is not constant or has two or fewer terms,
   ** then it is not worth creating an ephemeral table to evaluate
   ** the IN operator so return IN_INDEX_NOOP.
   */
@@ -2223,8 +2228,7 @@ static void sqlite3ExprCodeIN(
     if( eType==IN_INDEX_ROWID ){
       /* In this case, the RHS is the ROWID of table b-tree
       */
-      sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, destIfFalse); VdbeCoverage(v);
-      sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, destIfFalse, r1);
+      sqlite3VdbeAddOp3(v, OP_SeekRowid, pExpr->iTable, destIfFalse, r1);
       VdbeCoverage(v);
     }else{
       /* In this case, the RHS is an index b-tree.
@@ -2537,7 +2541,7 @@ SQLITE_PRIVATE void sqlite3ExprCodeGetColumnOfTable(
   }else{
     int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
     int x = iCol;
-    if( !HasRowid(pTab) ){
+    if( !HasRowid(pTab) && !IsVirtual(pTab) ){
       x = sqlite3ColumnOfIndex(sqlite3PrimaryKeyIndex(pTab), iCol);
     }
     sqlite3VdbeAddOp3(v, op, iTabCur, x, regOut);
@@ -8198,7 +8202,7 @@ SQLITE_PRIVATE Table *sqlite3FindTable(sqlite3 *db, const char *zName, const cha
 */
 SQLITE_PRIVATE Table *sqlite3LocateTable(
   Parse *pParse,         /* context in which to report errors */
-  int isView,            /* True if looking for a VIEW rather than a TABLE */
+  u32 flags,             /* LOCATE_VIEW or LOCATE_NOERR */
   const char *zName,     /* Name of the table we are looking for */
   const char *zDbase     /* Name of the database.  Might be NULL */
 ){
@@ -8212,7 +8216,7 @@ SQLITE_PRIVATE Table *sqlite3LocateTable(
 
   p = sqlite3FindTable(pParse->db, zName, zDbase);
   if( p==0 ){
-    const char *zMsg = isView ? "no such view" : "no such table";
+    const char *zMsg = flags & LOCATE_VIEW ? "no such view" : "no such table";
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( sqlite3FindDbName(pParse->db, zDbase)<1 ){
       /* If zName is the not the name of a table in the schema created using
@@ -8224,12 +8228,14 @@ SQLITE_PRIVATE Table *sqlite3LocateTable(
       }
     }
 #endif
-    if( zDbase ){
-      sqlite3ErrorMsg(pParse, "%s: %s.%s", zMsg, zDbase, zName);
-    }else{
-      sqlite3ErrorMsg(pParse, "%s: %s", zMsg, zName);
+    if( (flags & LOCATE_NOERR)==0 ){
+      if( zDbase ){
+        sqlite3ErrorMsg(pParse, "%s: %s.%s", zMsg, zDbase, zName);
+      }else{
+        sqlite3ErrorMsg(pParse, "%s: %s", zMsg, zName);
+      }
+      pParse->checkSchema = 1;
     }
-    pParse->checkSchema = 1;
   }
 
   return p;
@@ -8246,7 +8252,7 @@ SQLITE_PRIVATE Table *sqlite3LocateTable(
 */
 SQLITE_PRIVATE Table *sqlite3LocateTableItem(
   Parse *pParse, 
-  int isView, 
+  u32 flags,
   struct SrcList_item *p
 ){
   const char *zDb;
@@ -8257,7 +8263,7 @@ SQLITE_PRIVATE Table *sqlite3LocateTableItem(
   }else{
     zDb = p->zDatabase;
   }
-  return sqlite3LocateTable(pParse, isView, p->zName, zDb);
+  return sqlite3LocateTable(pParse, flags, p->zName, zDb);
 }
 
 /*
@@ -8465,8 +8471,9 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   /* Delete all indices associated with this table. */
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
     pNext = pIndex->pNext;
-    assert( pIndex->pSchema==pTable->pSchema );
-    if( !db || db->pnBytesFreed==0 ){
+    assert( pIndex->pSchema==pTable->pSchema
+         || (IsVirtual(pTable) && pIndex->idxType!=SQLITE_IDXTYPE_APPDEF) );
+    if( (db==0 || db->pnBytesFreed==0) && !IsVirtual(pTable) ){
       char *zName = pIndex->zName; 
       TESTONLY ( Index *pOld = ) sqlite3HashInsert(
          &pIndex->pSchema->idxHash, zName, 0
@@ -9148,7 +9155,7 @@ SQLITE_PRIVATE void sqlite3AddPrimaryKey(
   Column *pCol = 0;
   int iCol = -1, i;
   int nTerm;
-  if( pTab==0 || IN_DECLARE_VTAB ) goto primary_key_exit;
+  if( pTab==0 ) goto primary_key_exit;
   if( pTab->tabFlags & TF_HasPrimaryKey ){
     sqlite3ErrorMsg(pParse, 
       "table \"%s\" has more than one primary key", pTab->zName);
@@ -9194,12 +9201,8 @@ SQLITE_PRIVATE void sqlite3AddPrimaryKey(
        "INTEGER PRIMARY KEY");
 #endif
   }else{
-    Index *p;
-    p = sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0,
-                           0, sortOrder, 0);
-    if( p ){
-      p->idxType = SQLITE_IDXTYPE_PRIMARYKEY;
-    }
+    sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0,
+                           0, sortOrder, 0, SQLITE_IDXTYPE_PRIMARYKEY);
     pList = 0;
   }
 
@@ -9516,21 +9519,23 @@ static int hasColumn(const i16 *aiCol, int nCol, int x){
 ** are appropriate for a WITHOUT ROWID table instead of a rowid table.
 ** Changes include:
 **
-**     (1)  Convert the OP_CreateTable into an OP_CreateIndex.  There is
+**     (1)  Set all columns of the PRIMARY KEY schema object to be NOT NULL.
+**     (2)  Convert the OP_CreateTable into an OP_CreateIndex.  There is
 **          no rowid btree for a WITHOUT ROWID.  Instead, the canonical
 **          data storage is a covering index btree.
-**     (2)  Bypass the creation of the sqlite_master table entry
+**     (3)  Bypass the creation of the sqlite_master table entry
 **          for the PRIMARY KEY as the primary key index is now
 **          identified by the sqlite_master table entry of the table itself.
-**     (3)  Set the Index.tnum of the PRIMARY KEY Index object in the
+**     (4)  Set the Index.tnum of the PRIMARY KEY Index object in the
 **          schema to the rootpage from the main table.
-**     (4)  Set all columns of the PRIMARY KEY schema object to be NOT NULL.
 **     (5)  Add all table columns to the PRIMARY KEY Index object
 **          so that the PRIMARY KEY is a covering index.  The surplus
 **          columns are part of KeyInfo.nXField and are not used for
 **          sorting or lookup or uniqueness checks.
 **     (6)  Replace the rowid tail on all automatically generated UNIQUE
 **          indices with the PRIMARY KEY columns.
+**
+** For virtual tables, only (1) is performed.
 */
 static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   Index *pIdx;
@@ -9539,6 +9544,20 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   int i, j;
   sqlite3 *db = pParse->db;
   Vdbe *v = pParse->pVdbe;
+
+  /* Mark every PRIMARY KEY column as NOT NULL (except for imposter tables)
+  */
+  if( !db->init.imposterTable ){
+    for(i=0; i<pTab->nCol; i++){
+      if( (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0 ){
+        pTab->aCol[i].notNull = OE_Abort;
+      }
+    }
+  }
+
+  /* The remaining transformations only apply to b-tree tables, not to
+  ** virtual tables */
+  if( IN_DECLARE_VTAB ) return;
 
   /* Convert the OP_CreateTable opcode that would normally create the
   ** root-page for the table into an OP_CreateIndex opcode.  The index
@@ -9561,9 +9580,10 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     if( pList==0 ) return;
     pList->a[0].sortOrder = pParse->iPkSortOrder;
     assert( pParse->pNewTable==pTab );
-    pPk = sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0);
-    if( pPk==0 ) return;
-    pPk->idxType = SQLITE_IDXTYPE_PRIMARYKEY;
+    sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0,
+                       SQLITE_IDXTYPE_PRIMARYKEY);
+    if( db->mallocFailed ) return;
+    pPk = sqlite3PrimaryKeyIndex(pTab);
     pTab->iPKey = -1;
   }else{
     pPk = sqlite3PrimaryKeyIndex(pTab);
@@ -9591,18 +9611,10 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     }
     pPk->nKeyCol = j;
   }
-  pPk->isCovering = 1;
   assert( pPk!=0 );
+  pPk->isCovering = 1;
+  if( !db->init.imposterTable ) pPk->uniqNotNull = 1;
   nPk = pPk->nKeyCol;
-
-  /* Make sure every column of the PRIMARY KEY is NOT NULL.  (Except,
-  ** do not enforce this for imposter tables.) */
-  if( !db->init.imposterTable ){
-    for(i=0; i<nPk; i++){
-      pTab->aCol[pPk->aiColumn[i]].notNull = OE_Abort;
-    }
-    pPk->uniqNotNull = 1;
-  }
 
   /* The root page of the PRIMARY KEY is the table root page */
   pPk->tnum = pTab->tnum;
@@ -10358,6 +10370,7 @@ SQLITE_PRIVATE void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, 
   assert( pName->nSrc==1 );
   if( sqlite3ReadSchema(pParse) ) goto exit_drop_table;
   if( noErr ) db->suppressErr++;
+  assert( isView==0 || isView==LOCATE_VIEW );
   pTab = sqlite3LocateTableItem(pParse, isView, &pName->a[0]);
   if( noErr ) db->suppressErr--;
 
@@ -10728,12 +10741,8 @@ SQLITE_PRIVATE Index *sqlite3AllocateIndexObject(
 ** pList is a list of columns to be indexed.  pList will be NULL if this
 ** is a primary key or unique-constraint on the most recent column added
 ** to the table currently under construction.  
-**
-** If the index is created successfully, return a pointer to the new Index
-** structure. This is used by sqlite3AddPrimaryKey() to mark the index
-** as the tables primary key (Index.idxType==SQLITE_IDXTYPE_PRIMARYKEY)
 */
-SQLITE_PRIVATE Index *sqlite3CreateIndex(
+SQLITE_PRIVATE void sqlite3CreateIndex(
   Parse *pParse,     /* All information about this parse */
   Token *pName1,     /* First part of index name. May be NULL */
   Token *pName2,     /* Second part of index name. May be NULL */
@@ -10743,9 +10752,9 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
   Token *pStart,     /* The CREATE token that begins this statement */
   Expr *pPIWhere,    /* WHERE clause for partial indices */
   int sortOrder,     /* Sort order of primary key when pList==NULL */
-  int ifNotExist     /* Omit error if index already exists */
+  int ifNotExist,    /* Omit error if index already exists */
+  u8 idxType         /* The index type */
 ){
-  Index *pRet = 0;     /* Pointer to return */
   Table *pTab = 0;     /* Table to be indexed */
   Index *pIndex = 0;   /* The index to be created */
   char *zName = 0;     /* Name of the index */
@@ -10763,7 +10772,10 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
   char *zExtra = 0;                /* Extra space after the Index object */
   Index *pPk = 0;      /* PRIMARY KEY index for WITHOUT ROWID tables */
 
-  if( db->mallocFailed || IN_DECLARE_VTAB || pParse->nErr>0 ){
+  if( db->mallocFailed || pParse->nErr>0 ){
+    goto exit_create_index;
+  }
+  if( IN_DECLARE_VTAB && idxType!=SQLITE_IDXTYPE_PRIMARYKEY ){
     goto exit_create_index;
   }
   if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
@@ -10952,7 +10964,7 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
   pIndex->pTable = pTab;
   pIndex->onError = (u8)onError;
   pIndex->uniqNotNull = onError!=OE_None;
-  pIndex->idxType = pName ? SQLITE_IDXTYPE_APPDEF : SQLITE_IDXTYPE_UNIQUE;
+  pIndex->idxType = idxType;
   pIndex->pSchema = db->aDb[iDb].pSchema;
   pIndex->nKeyCol = pList->nExpr;
   if( pPIWhere ){
@@ -11132,7 +11144,7 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
             pIdx->onError = pIndex->onError;
           }
         }
-        pRet = pIdx;
+        if( idxType==SQLITE_IDXTYPE_PRIMARYKEY ) pIdx->idxType = idxType;
         goto exit_create_index;
       }
     }
@@ -11144,6 +11156,7 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
   assert( pParse->nErr==0 );
   if( db->init.busy ){
     Index *p;
+    assert( !IN_DECLARE_VTAB );
     assert( sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
     p = sqlite3HashInsert(&pIndex->pSchema->idxHash, 
                           pIndex->zName, pIndex);
@@ -11225,7 +11238,7 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
       sqlite3ChangeCookie(pParse, iDb);
       sqlite3VdbeAddParseSchemaOp(v, iDb,
          sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
-      sqlite3VdbeAddOp1(v, OP_Expire, 0);
+      sqlite3VdbeAddOp0(v, OP_Expire);
     }
 
     sqlite3VdbeJumpHere(v, pIndex->tnum);
@@ -11250,7 +11263,6 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
       pIndex->pNext = pOther->pNext;
       pOther->pNext = pIndex;
     }
-    pRet = pIndex;
     pIndex = 0;
   }
 
@@ -11261,7 +11273,6 @@ exit_create_index:
   sqlite3ExprListDelete(db, pList);
   sqlite3SrcListDelete(db, pTblName);
   sqlite3DbFree(db, zName);
-  return pRet;
 }
 
 /*
@@ -11290,10 +11301,11 @@ SQLITE_PRIVATE void sqlite3DefaultRowEst(Index *pIdx){
   int i;
 
   /* Set the first entry (number of rows in the index) to the estimated 
-  ** number of rows in the table. Or 10, if the estimated number of rows 
-  ** in the table is less than that.  */
+  ** number of rows in the table, or half the number of rows in the table
+  ** for a partial index.   But do not let the estimate drop below 10. */
   a[0] = pIdx->pTable->nRowLogEst;
-  if( a[0]<33 ) a[0] = 33;        assert( 33==sqlite3LogEst(10) );
+  if( pIdx->pPartIdxWhere!=0 ) a[0] -= 10;  assert( 10==sqlite3LogEst(2) );
+  if( a[0]<33 ) a[0] = 33;                  assert( 33==sqlite3LogEst(10) );
 
   /* Estimate that a[1] is 10, a[2] is 9, a[3] is 8, a[4] is 7, a[5] is
   ** 6 and each subsequent value (if any) is 5.  */
@@ -12174,10 +12186,6 @@ SQLITE_PRIVATE void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
 
 /*
 ** Return a KeyInfo structure that is appropriate for the given Index.
-**
-** The KeyInfo structure for an index is cached in the Index object.
-** So there might be multiple references to the returned pointer.  The
-** caller should not try to modify the KeyInfo object.
 **
 ** The caller should invoke sqlite3KeyInfoUnref() on the returned object
 ** when it has finished using it.
@@ -14410,7 +14418,7 @@ static int patternCompare(
     }
     c2 = Utf8Read(zString);
     if( c==c2 ) continue;
-    if( noCase && c<0x80 && c2<0x80 && sqlite3Tolower(c)==sqlite3Tolower(c2) ){
+    if( noCase  && sqlite3Tolower(c)==sqlite3Tolower(c2) && c<0x80 && c2<0x80 ){
       continue;
     }
     if( c==matchOne && zPattern!=zEscaped && c2!=0 ) continue;
@@ -16869,7 +16877,8 @@ SQLITE_PRIVATE void sqlite3FkDelete(sqlite3 *db, Table *pTab){
   FKey *pFKey;                    /* Iterator variable */
   FKey *pNext;                    /* Copy of pFKey->pNextFrom */
 
-  assert( db==0 || sqlite3SchemaMutexHeld(db, 0, pTab->pSchema) );
+  assert( db==0 || IsVirtual(pTab)
+         || sqlite3SchemaMutexHeld(db, 0, pTab->pSchema) );
   for(pFKey=pTab->pFKey; pFKey; pFKey=pNext){
 
     /* Remove the FK from the fkeyHash hash table. */
@@ -19279,8 +19288,8 @@ exec_out:
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 */
-#ifndef _SQLITE3EXT_H_
-#define _SQLITE3EXT_H_
+#ifndef SQLITE3EXT_H
+#define SQLITE3EXT_H
 /* #include "sqlite3.h" */
 
 typedef struct sqlite3_api_routines sqlite3_api_routines;
@@ -19807,7 +19816,7 @@ struct sqlite3_api_routines {
 # define SQLITE_EXTENSION_INIT3     /*no-op*/
 #endif
 
-#endif /* _SQLITE3EXT_H_ */
+#endif /* SQLITE3EXT_H */
 
 /************** End of sqlite3ext.h ******************************************/
 /************** Continuing where we left off in loadext.c ********************/
@@ -20240,6 +20249,7 @@ static int sqlite3LoadExtension(
   void **aHandle;
   u64 nMsg = 300 + sqlite3Strlen30(zFile);
   int ii;
+  int rc;
 
   /* Shared library endings to try if zFile cannot be loaded as written */
   static const char *azEndings[] = {
@@ -20342,7 +20352,9 @@ static int sqlite3LoadExtension(
     return SQLITE_ERROR;
   }
   sqlite3_free(zAltEntry);
-  if( xInit(db, &zErrmsg, &sqlite3Apis) ){
+  rc = xInit(db, &zErrmsg, &sqlite3Apis);
+  if( rc ){
+    if( rc==SQLITE_OK_LOAD_PERMANENTLY ) return SQLITE_OK;
     if( pzErrMsg ){
       *pzErrMsg = sqlite3_mprintf("error during initialization: %s", zErrmsg);
     }
@@ -22080,7 +22092,7 @@ SQLITE_PRIVATE void sqlite3Pragma(
       ** compiler (eg. count_changes). So add an opcode to expire all
       ** compiled SQL statements after modifying a pragma value.
       */
-      sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
+      sqlite3VdbeAddOp0(v, OP_Expire);
       setAllPagerFlags(db);
     }
     break;
@@ -22102,7 +22114,7 @@ SQLITE_PRIVATE void sqlite3Pragma(
   */
   case PragTyp_TABLE_INFO: if( zRight ){
     Table *pTab;
-    pTab = sqlite3FindTable(db, zRight, zDb);
+    pTab = sqlite3LocateTable(pParse, LOCATE_NOERR, zRight, zDb);
     if( pTab ){
       static const char *azCol[] = {
          "cid", "name", "type", "notnull", "dflt_value", "pk"
@@ -22384,12 +22396,10 @@ SQLITE_PRIVATE void sqlite3Pragma(
             sqlite3VdbeAddOp3(v, OP_Column, 0, iKey, regRow);
             sqlite3ColumnDefault(v, pTab, iKey, regRow);
             sqlite3VdbeAddOp2(v, OP_IsNull, regRow, addrOk); VdbeCoverage(v);
-            sqlite3VdbeAddOp2(v, OP_MustBeInt, regRow, 
-               sqlite3VdbeCurrentAddr(v)+3); VdbeCoverage(v);
           }else{
             sqlite3VdbeAddOp2(v, OP_Rowid, 0, regRow);
           }
-          sqlite3VdbeAddOp3(v, OP_NotExists, i, 0, regRow); VdbeCoverage(v);
+          sqlite3VdbeAddOp3(v, OP_SeekRowid, i, 0, regRow); VdbeCoverage(v);
           sqlite3VdbeGoto(v, addrOk);
           sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
         }else{
@@ -23960,6 +23970,7 @@ struct SortCtx {
   int addrSortIndex;    /* Address of the OP_SorterOpen or OP_OpenEphemeral */
   int labelDone;        /* Jump here when done, ex: LIMIT reached */
   u8 sortFlags;         /* Zero or more SORTFLAG_* bits */
+  u8 bOrderedInnerLoop; /* ORDER BY correctly sorts the inner loop */
 };
 #define SORTFLAG_UseSorter  0x01   /* Use SorterOpen instead of OpenEphemeral */
 
@@ -24493,9 +24504,30 @@ static void pushOntoSorter(
   sqlite3VdbeAddOp2(v, op, pSort->iECursor, regRecord);
   if( iLimit ){
     int addr;
+    int r1 = 0;
+    /* Fill the sorter until it contains LIMIT+OFFSET entries.  (The iLimit
+    ** register is initialized with value of LIMIT+OFFSET.)  After the sorter
+    ** fills up, delete the least entry in the sorter after each insert.
+    ** Thus we never hold more than the LIMIT+OFFSET rows in memory at once */
     addr = sqlite3VdbeAddOp3(v, OP_IfNotZero, iLimit, 0, 1); VdbeCoverage(v);
     sqlite3VdbeAddOp1(v, OP_Last, pSort->iECursor);
+    if( pSort->bOrderedInnerLoop ){
+      r1 = ++pParse->nMem;
+      sqlite3VdbeAddOp3(v, OP_Column, pSort->iECursor, nExpr, r1);
+      VdbeComment((v, "seq"));
+    }
     sqlite3VdbeAddOp1(v, OP_Delete, pSort->iECursor);
+    if( pSort->bOrderedInnerLoop ){
+      /* If the inner loop is driven by an index such that values from
+      ** the same iteration of the inner loop are in sorted order, then
+      ** immediately jump to the next iteration of an inner loop if the
+      ** entry from the current iteration does not fit into the top
+      ** LIMIT+OFFSET entries of the sorter. */
+      int iBrk = sqlite3VdbeCurrentAddr(v) + 2;
+      sqlite3VdbeAddOp3(v, OP_Eq, regBase+nExpr, iBrk, r1);
+      sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
+      VdbeCoverage(v);
+    }
     sqlite3VdbeJumpHere(v, addr);
   }
 }
@@ -24910,7 +24942,7 @@ static void selectInnerLoop(
 */
 SQLITE_PRIVATE KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
   int nExtra = (N+X)*(sizeof(CollSeq*)+1);
-  KeyInfo *p = sqlite3Malloc(sizeof(KeyInfo) + nExtra);
+  KeyInfo *p = sqlite3DbMallocRaw(db, sizeof(KeyInfo) + nExtra);
   if( p ){
     p->aSortOrder = (u8*)&p->aColl[N+X];
     p->nField = (u16)N;
@@ -24932,7 +24964,7 @@ SQLITE_PRIVATE void sqlite3KeyInfoUnref(KeyInfo *p){
   if( p ){
     assert( p->nRef>0 );
     p->nRef--;
-    if( p->nRef==0 ) sqlite3DbFree(0, p);
+    if( p->nRef==0 ) sqlite3DbFree(p->db, p);
   }
 }
 
@@ -29080,6 +29112,7 @@ SQLITE_PRIVATE int sqlite3Select(
     }
     if( sSort.pOrderBy ){
       sSort.nOBSat = sqlite3WhereIsOrdered(pWInfo);
+      sSort.bOrderedInnerLoop = sqlite3WhereOrderedInnerLoop(pWInfo);
       if( sSort.nOBSat==sSort.pOrderBy->nExpr ){
         sSort.pOrderBy = 0;
       }

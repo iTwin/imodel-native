@@ -13,8 +13,8 @@
 ** Internal interface definitions for SQLite.
 **
 */
-#ifndef _SQLITEINT_H_
-#define _SQLITEINT_H_
+#ifndef SQLITEINT_H
+#define SQLITEINT_H
 
 /* Special Comments:
 **
@@ -73,8 +73,8 @@
 **
 ** This file contains code that is specific to MSVC.
 */
-#ifndef _MSVC_H_
-#define _MSVC_H_
+#ifndef SQLITE_MSVC_H
+#define SQLITE_MSVC_H
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4054)
@@ -94,7 +94,7 @@
 #pragma warning(disable : 4706)
 #endif /* defined(_MSC_VER) */
 
-#endif /* _MSVC_H_ */
+#endif /* SQLITE_MSVC_H */
 
 /************** End of msvc.h ************************************************/
 /************** Continuing where we left off in sqliteInt.h ******************/
@@ -258,8 +258,8 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 */
-#ifndef _SQLITE3_H_
-#define _SQLITE3_H_
+#ifndef SQLITE3_H
+#define SQLITE3_H
 #include <stdarg.h>     /* Needed for the definition of va_list */
 
 /*
@@ -339,9 +339,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.13.0"
-#define SQLITE_VERSION_NUMBER 3013000
-#define SQLITE_SOURCE_ID      "2016-05-13 17:22:33 b369980f0c4550a9034833caa2c7c85d6030f5ff"
+#define SQLITE_VERSION        "3.14.0"
+#define SQLITE_VERSION_NUMBER 3014000
+#define SQLITE_SOURCE_ID      "2016-07-13 13:05:13 824b39e54fb9ba562be4d92cc9a54aee1cdf84cb"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -734,6 +734,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_exec(
 #define SQLITE_NOTICE_RECOVER_ROLLBACK (SQLITE_NOTICE | (2<<8))
 #define SQLITE_WARNING_AUTOINDEX       (SQLITE_WARNING | (1<<8))
 #define SQLITE_AUTH_USER               (SQLITE_AUTH | (1<<8))
+#define SQLITE_OK_LOAD_PERMANENTLY     (SQLITE_OK | (1<<8))
 
 /*
 ** CAPI3REF: Flags For File Open Operations
@@ -6992,6 +6993,18 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_status(sqlite3*, int op, int *pCur, int
 ** memory used by all pager caches associated with the database connection.)^
 ** ^The highwater mark associated with SQLITE_DBSTATUS_CACHE_USED is always 0.
 **
+** [[SQLITE_DBSTATUS_CACHE_USED_SHARED]] 
+** ^(<dt>SQLITE_DBSTATUS_CACHE_USED_SHARED</dt>
+** <dd>This parameter is similar to DBSTATUS_CACHE_USED, except that if a
+** pager cache is shared between two or more connections the bytes of heap
+** memory used by that pager cache is divided evenly between the attached
+** connections.)^  In other words, if none of the pager caches associated
+** with the database connection are shared, this request returns the same
+** value as DBSTATUS_CACHE_USED. Or, if one or more or the pager caches are
+** shared, the value returned by this call will be smaller than that returned
+** by DBSTATUS_CACHE_USED. ^The highwater mark associated with
+** SQLITE_DBSTATUS_CACHE_USED_SHARED is always 0.
+**
 ** [[SQLITE_DBSTATUS_SCHEMA_USED]] ^(<dt>SQLITE_DBSTATUS_SCHEMA_USED</dt>
 ** <dd>This parameter returns the approximate number of bytes of heap
 ** memory used to store the schema for all databases associated
@@ -7049,7 +7062,8 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_status(sqlite3*, int op, int *pCur, int
 #define SQLITE_DBSTATUS_CACHE_MISS           8
 #define SQLITE_DBSTATUS_CACHE_WRITE          9
 #define SQLITE_DBSTATUS_DEFERRED_FKS        10
-#define SQLITE_DBSTATUS_MAX                 10   /* Largest defined DBSTATUS */
+#define SQLITE_DBSTATUS_CACHE_USED_SHARED   11
+#define SQLITE_DBSTATUS_MAX                 11   /* Largest defined DBSTATUS */
 
 
 /*
@@ -8432,7 +8446,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int SQLITE_STDCALL sqlite3_snapshot_cmp(
 #if 0
 }  /* End of the 'extern "C"' block */
 #endif
-#endif /* _SQLITE3_H_ */
+#endif /* SQLITE3_H */
 
 /******** Begin file sqlite3rtree.h *********/
 /*
@@ -10987,8 +11001,8 @@ SQLITE_PRIVATE   void sqlite3Coverage(int);
 ** This is the header file for the generic hash-table implementation
 ** used in SQLite.
 */
-#ifndef _SQLITE_HASH_H_
-#define _SQLITE_HASH_H_
+#ifndef SQLITE_HASH_H
+#define SQLITE_HASH_H
 
 /* Forward declarations of structures. */
 typedef struct Hash Hash;
@@ -11068,7 +11082,7 @@ SQLITE_PRIVATE void sqlite3HashClear(Hash*);
 */
 /* #define sqliteHashCount(H)  ((H)->count) // NOT USED */
 
-#endif /* _SQLITE_HASH_H_ */
+#endif /* SQLITE_HASH_H */
 
 /************** End of hash.h ************************************************/
 /************** Continuing where we left off in sqliteInt.h ******************/
@@ -11816,8 +11830,8 @@ typedef struct With With;
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 */
-#ifndef _BTREE_H_
-#define _BTREE_H_
+#ifndef SQLITE_BTREE_H
+#define SQLITE_BTREE_H
 
 /* TODO: This definition is just included so other modules compile. It
 ** needs to be revisited.
@@ -11842,6 +11856,7 @@ typedef struct With With;
 typedef struct Btree Btree;
 typedef struct BtCursor BtCursor;
 typedef struct BtShared BtShared;
+typedef struct BtreePayload BtreePayload;
 
 
 SQLITE_PRIVATE int sqlite3BtreeOpen(
@@ -12053,19 +12068,43 @@ SQLITE_PRIVATE int sqlite3BtreeDelete(BtCursor*, u8 flags);
 #define BTREE_SAVEPOSITION 0x02  /* Leave cursor pointing at NEXT or PREV */
 #define BTREE_AUXDELETE    0x04  /* not the primary delete operation */
 
-SQLITE_PRIVATE int sqlite3BtreeInsert(BtCursor*, const void *pKey, i64 nKey,
-                                  const void *pData, int nData,
-                                  int nZero, int bias, int seekResult);
+/* An instance of the BtreePayload object describes the content of a single
+** entry in either an index or table btree.
+**
+** Index btrees (used for indexes and also WITHOUT ROWID tables) contain
+** an arbitrary key and no data.  These btrees have pKey,nKey set to their
+** key and pData,nData,nZero set to zero.
+**
+** Table btrees (used for rowid tables) contain an integer rowid used as
+** the key and passed in the nKey field.  The pKey field is zero.  
+** pData,nData hold the content of the new entry.  nZero extra zero bytes
+** are appended to the end of the content when constructing the entry.
+**
+** This object is used to pass information into sqlite3BtreeInsert().  The
+** same information used to be passed as five separate parameters.  But placing
+** the information into this object helps to keep the interface more 
+** organized and understandable, and it also helps the resulting code to
+** run a little faster by using fewer registers for parameter passing.
+*/
+struct BtreePayload {
+  const void *pKey;       /* Key content for indexes.  NULL for tables */
+  sqlite3_int64 nKey;     /* Size of pKey for indexes.  PRIMARY KEY for tabs */
+  const void *pData;      /* Data for tables.  NULL for indexes */
+  int nData;              /* Size of pData.  0 if none. */
+  int nZero;              /* Extra zero data appended after pData,nData */
+};
+
+SQLITE_PRIVATE int sqlite3BtreeInsert(BtCursor*, const BtreePayload *pPayload,
+                       int bias, int seekResult);
 SQLITE_PRIVATE int sqlite3BtreeFirst(BtCursor*, int *pRes);
 SQLITE_PRIVATE int sqlite3BtreeLast(BtCursor*, int *pRes);
 SQLITE_PRIVATE int sqlite3BtreeNext(BtCursor*, int *pRes);
 SQLITE_PRIVATE int sqlite3BtreeEof(BtCursor*);
 SQLITE_PRIVATE int sqlite3BtreePrevious(BtCursor*, int *pRes);
-SQLITE_PRIVATE int sqlite3BtreeKeySize(BtCursor*, i64 *pSize);
+SQLITE_PRIVATE i64 sqlite3BtreeIntegerKey(BtCursor*);
 SQLITE_PRIVATE int sqlite3BtreeKey(BtCursor*, u32 offset, u32 amt, void*);
-SQLITE_PRIVATE const void *sqlite3BtreeKeyFetch(BtCursor*, u32 *pAmt);
-SQLITE_PRIVATE const void *sqlite3BtreeDataFetch(BtCursor*, u32 *pAmt);
-SQLITE_PRIVATE int sqlite3BtreeDataSize(BtCursor*, u32 *pSize);
+SQLITE_PRIVATE const void *sqlite3BtreePayloadFetch(BtCursor*, u32 *pAmt);
+SQLITE_PRIVATE u32 sqlite3BtreePayloadSize(BtCursor*);
 SQLITE_PRIVATE int sqlite3BtreeData(BtCursor*, u32 offset, u32 amt, void*);
 
 SQLITE_PRIVATE char *sqlite3BtreeIntegrityCheck(Btree*, int *aRoot, int nRoot, int, int*);
@@ -12106,11 +12145,13 @@ SQLITE_PRIVATE   void sqlite3BtreeEnter(Btree*);
 SQLITE_PRIVATE   void sqlite3BtreeEnterAll(sqlite3*);
 SQLITE_PRIVATE   int sqlite3BtreeSharable(Btree*);
 SQLITE_PRIVATE   void sqlite3BtreeEnterCursor(BtCursor*);
+SQLITE_PRIVATE   int sqlite3BtreeConnectionCount(Btree*);
 #else
 # define sqlite3BtreeEnter(X) 
 # define sqlite3BtreeEnterAll(X)
 # define sqlite3BtreeSharable(X) 0
 # define sqlite3BtreeEnterCursor(X)
+# define sqlite3BtreeConnectionCount(X) 1
 #endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE
@@ -12135,7 +12176,7 @@ SQLITE_PRIVATE   int sqlite3SchemaMutexHeld(sqlite3*,int,Schema*);
 #endif
 
 
-#endif /* _BTREE_H_ */
+#endif /* SQLITE_BTREE_H */
 
 /************** End of btree.h ***********************************************/
 /************** Continuing where we left off in sqliteInt.h ******************/
@@ -12158,8 +12199,8 @@ SQLITE_PRIVATE   int sqlite3SchemaMutexHeld(sqlite3*,int,Schema*);
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 */
-#ifndef _SQLITE_VDBE_H_
-#define _SQLITE_VDBE_H_
+#ifndef SQLITE_VDBE_H
+#define SQLITE_VDBE_H
 /* #include <stdio.h> */
 
 /*
@@ -12344,8 +12385,8 @@ typedef struct VdbeOpList VdbeOpList;
 #define OP_NoConflict     29 /* synopsis: key=r[P3@P4]                     */
 #define OP_NotFound       30 /* synopsis: key=r[P3@P4]                     */
 #define OP_Found          31 /* synopsis: key=r[P3@P4]                     */
-#define OP_NotExists      32 /* synopsis: intkey=r[P3]                     */
-#define OP_Last           33
+#define OP_SeekRowid      32 /* synopsis: intkey=r[P3]                     */
+#define OP_NotExists      33 /* synopsis: intkey=r[P3]                     */
 #define OP_IsNull         34 /* same as TK_ISNULL, synopsis: if r[P1]==NULL goto P2 */
 #define OP_NotNull        35 /* same as TK_NOTNULL, synopsis: if r[P1]!=NULL goto P2 */
 #define OP_Ne             36 /* same as TK_NE, synopsis: if r[P1]!=r[P3] goto P2 */
@@ -12354,7 +12395,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define OP_Le             39 /* same as TK_LE, synopsis: if r[P1]<=r[P3] goto P2 */
 #define OP_Lt             40 /* same as TK_LT, synopsis: if r[P1]<r[P3] goto P2 */
 #define OP_Ge             41 /* same as TK_GE, synopsis: if r[P1]>=r[P3] goto P2 */
-#define OP_SorterSort     42
+#define OP_Last           42
 #define OP_BitAnd         43 /* same as TK_BITAND, synopsis: r[P3]=r[P1]&r[P2] */
 #define OP_BitOr          44 /* same as TK_BITOR, synopsis: r[P3]=r[P1]|r[P2] */
 #define OP_ShiftLeft      45 /* same as TK_LSHIFT, synopsis: r[P3]=r[P2]<<r[P1] */
@@ -12365,114 +12406,115 @@ typedef struct VdbeOpList VdbeOpList;
 #define OP_Divide         50 /* same as TK_SLASH, synopsis: r[P3]=r[P2]/r[P1] */
 #define OP_Remainder      51 /* same as TK_REM, synopsis: r[P3]=r[P2]%r[P1] */
 #define OP_Concat         52 /* same as TK_CONCAT, synopsis: r[P3]=r[P2]+r[P1] */
-#define OP_Sort           53
+#define OP_SorterSort     53
 #define OP_BitNot         54 /* same as TK_BITNOT, synopsis: r[P1]= ~r[P1] */
-#define OP_Rewind         55
-#define OP_IdxLE          56 /* synopsis: key=r[P3@P4]                     */
-#define OP_IdxGT          57 /* synopsis: key=r[P3@P4]                     */
-#define OP_IdxLT          58 /* synopsis: key=r[P3@P4]                     */
-#define OP_IdxGE          59 /* synopsis: key=r[P3@P4]                     */
-#define OP_RowSetRead     60 /* synopsis: r[P3]=rowset(P1)                 */
-#define OP_RowSetTest     61 /* synopsis: if r[P3] in rowset(P1) goto P2   */
-#define OP_Program        62
-#define OP_FkIfZero       63 /* synopsis: if fkctr[P1]==0 goto P2          */
-#define OP_IfPos          64 /* synopsis: if r[P1]>0 then r[P1]-=P3, goto P2 */
-#define OP_IfNotZero      65 /* synopsis: if r[P1]!=0 then r[P1]-=P3, goto P2 */
-#define OP_DecrJumpZero   66 /* synopsis: if (--r[P1])==0 goto P2          */
-#define OP_IncrVacuum     67
-#define OP_VNext          68
-#define OP_Init           69 /* synopsis: Start at P2                      */
-#define OP_Return         70
-#define OP_EndCoroutine   71
-#define OP_HaltIfNull     72 /* synopsis: if r[P3]=null halt               */
-#define OP_Halt           73
-#define OP_Integer        74 /* synopsis: r[P2]=P1                         */
-#define OP_Int64          75 /* synopsis: r[P2]=P4                         */
-#define OP_String         76 /* synopsis: r[P2]='P4' (len=P1)              */
-#define OP_Null           77 /* synopsis: r[P2..P3]=NULL                   */
-#define OP_SoftNull       78 /* synopsis: r[P1]=NULL                       */
-#define OP_Blob           79 /* synopsis: r[P2]=P4 (len=P1)                */
-#define OP_Variable       80 /* synopsis: r[P2]=parameter(P1,P4)           */
-#define OP_Move           81 /* synopsis: r[P2@P3]=r[P1@P3]                */
-#define OP_Copy           82 /* synopsis: r[P2@P3+1]=r[P1@P3+1]            */
-#define OP_SCopy          83 /* synopsis: r[P2]=r[P1]                      */
-#define OP_IntCopy        84 /* synopsis: r[P2]=r[P1]                      */
-#define OP_ResultRow      85 /* synopsis: output=r[P1@P2]                  */
-#define OP_CollSeq        86
-#define OP_Function0      87 /* synopsis: r[P3]=func(r[P2@P5])             */
-#define OP_Function       88 /* synopsis: r[P3]=func(r[P2@P5])             */
-#define OP_AddImm         89 /* synopsis: r[P1]=r[P1]+P2                   */
-#define OP_RealAffinity   90
-#define OP_Cast           91 /* synopsis: affinity(r[P1])                  */
-#define OP_Permutation    92
-#define OP_Compare        93 /* synopsis: r[P1@P3] <-> r[P2@P3]            */
-#define OP_Column         94 /* synopsis: r[P3]=PX                         */
-#define OP_Affinity       95 /* synopsis: affinity(r[P1@P2])               */
-#define OP_MakeRecord     96 /* synopsis: r[P3]=mkrec(r[P1@P2])            */
+#define OP_Sort           55
+#define OP_Rewind         56
+#define OP_IdxLE          57 /* synopsis: key=r[P3@P4]                     */
+#define OP_IdxGT          58 /* synopsis: key=r[P3@P4]                     */
+#define OP_IdxLT          59 /* synopsis: key=r[P3@P4]                     */
+#define OP_IdxGE          60 /* synopsis: key=r[P3@P4]                     */
+#define OP_RowSetRead     61 /* synopsis: r[P3]=rowset(P1)                 */
+#define OP_RowSetTest     62 /* synopsis: if r[P3] in rowset(P1) goto P2   */
+#define OP_Program        63
+#define OP_FkIfZero       64 /* synopsis: if fkctr[P1]==0 goto P2          */
+#define OP_IfPos          65 /* synopsis: if r[P1]>0 then r[P1]-=P3, goto P2 */
+#define OP_IfNotZero      66 /* synopsis: if r[P1]!=0 then r[P1]-=P3, goto P2 */
+#define OP_DecrJumpZero   67 /* synopsis: if (--r[P1])==0 goto P2          */
+#define OP_IncrVacuum     68
+#define OP_VNext          69
+#define OP_Init           70 /* synopsis: Start at P2                      */
+#define OP_Return         71
+#define OP_EndCoroutine   72
+#define OP_HaltIfNull     73 /* synopsis: if r[P3]=null halt               */
+#define OP_Halt           74
+#define OP_Integer        75 /* synopsis: r[P2]=P1                         */
+#define OP_Int64          76 /* synopsis: r[P2]=P4                         */
+#define OP_String         77 /* synopsis: r[P2]='P4' (len=P1)              */
+#define OP_Null           78 /* synopsis: r[P2..P3]=NULL                   */
+#define OP_SoftNull       79 /* synopsis: r[P1]=NULL                       */
+#define OP_Blob           80 /* synopsis: r[P2]=P4 (len=P1)                */
+#define OP_Variable       81 /* synopsis: r[P2]=parameter(P1,P4)           */
+#define OP_Move           82 /* synopsis: r[P2@P3]=r[P1@P3]                */
+#define OP_Copy           83 /* synopsis: r[P2@P3+1]=r[P1@P3+1]            */
+#define OP_SCopy          84 /* synopsis: r[P2]=r[P1]                      */
+#define OP_IntCopy        85 /* synopsis: r[P2]=r[P1]                      */
+#define OP_ResultRow      86 /* synopsis: output=r[P1@P2]                  */
+#define OP_CollSeq        87
+#define OP_Function0      88 /* synopsis: r[P3]=func(r[P2@P5])             */
+#define OP_Function       89 /* synopsis: r[P3]=func(r[P2@P5])             */
+#define OP_AddImm         90 /* synopsis: r[P1]=r[P1]+P2                   */
+#define OP_RealAffinity   91
+#define OP_Cast           92 /* synopsis: affinity(r[P1])                  */
+#define OP_Permutation    93
+#define OP_Compare        94 /* synopsis: r[P1@P3] <-> r[P2@P3]            */
+#define OP_Column         95 /* synopsis: r[P3]=PX                         */
+#define OP_Affinity       96 /* synopsis: affinity(r[P1@P2])               */
 #define OP_String8        97 /* same as TK_STRING, synopsis: r[P2]='P4'    */
-#define OP_Count          98 /* synopsis: r[P2]=count()                    */
-#define OP_ReadCookie     99
-#define OP_SetCookie     100
-#define OP_ReopenIdx     101 /* synopsis: root=P2 iDb=P3                   */
-#define OP_OpenRead      102 /* synopsis: root=P2 iDb=P3                   */
-#define OP_OpenWrite     103 /* synopsis: root=P2 iDb=P3                   */
-#define OP_OpenAutoindex 104 /* synopsis: nColumn=P2                       */
-#define OP_OpenEphemeral 105 /* synopsis: nColumn=P2                       */
-#define OP_SorterOpen    106
-#define OP_SequenceTest  107 /* synopsis: if( cursor[P1].ctr++ ) pc = P2   */
-#define OP_OpenPseudo    108 /* synopsis: P3 columns in r[P2]              */
-#define OP_Close         109
-#define OP_ColumnsUsed   110
-#define OP_Sequence      111 /* synopsis: r[P2]=cursor[P1].ctr++           */
-#define OP_NewRowid      112 /* synopsis: r[P2]=rowid                      */
-#define OP_Insert        113 /* synopsis: intkey=r[P3] data=r[P2]          */
-#define OP_InsertInt     114 /* synopsis: intkey=P3 data=r[P2]             */
-#define OP_Delete        115
-#define OP_ResetCount    116
-#define OP_SorterCompare 117 /* synopsis: if key(P1)!=trim(r[P3],P4) goto P2 */
-#define OP_SorterData    118 /* synopsis: r[P2]=data                       */
-#define OP_RowKey        119 /* synopsis: r[P2]=key                        */
-#define OP_RowData       120 /* synopsis: r[P2]=data                       */
-#define OP_Rowid         121 /* synopsis: r[P2]=rowid                      */
-#define OP_NullRow       122
-#define OP_SorterInsert  123
-#define OP_IdxInsert     124 /* synopsis: key=r[P2]                        */
-#define OP_IdxDelete     125 /* synopsis: key=r[P2@P3]                     */
-#define OP_Seek          126 /* synopsis: Move P3 to P1.rowid              */
-#define OP_IdxRowid      127 /* synopsis: r[P2]=rowid                      */
-#define OP_Destroy       128
-#define OP_Clear         129
-#define OP_ResetSorter   130
-#define OP_CreateIndex   131 /* synopsis: r[P2]=root iDb=P1                */
-#define OP_CreateTable   132 /* synopsis: r[P2]=root iDb=P1                */
+#define OP_MakeRecord     98 /* synopsis: r[P3]=mkrec(r[P1@P2])            */
+#define OP_Count          99 /* synopsis: r[P2]=count()                    */
+#define OP_ReadCookie    100
+#define OP_SetCookie     101
+#define OP_ReopenIdx     102 /* synopsis: root=P2 iDb=P3                   */
+#define OP_OpenRead      103 /* synopsis: root=P2 iDb=P3                   */
+#define OP_OpenWrite     104 /* synopsis: root=P2 iDb=P3                   */
+#define OP_OpenAutoindex 105 /* synopsis: nColumn=P2                       */
+#define OP_OpenEphemeral 106 /* synopsis: nColumn=P2                       */
+#define OP_SorterOpen    107
+#define OP_SequenceTest  108 /* synopsis: if( cursor[P1].ctr++ ) pc = P2   */
+#define OP_OpenPseudo    109 /* synopsis: P3 columns in r[P2]              */
+#define OP_Close         110
+#define OP_ColumnsUsed   111
+#define OP_Sequence      112 /* synopsis: r[P2]=cursor[P1].ctr++           */
+#define OP_NewRowid      113 /* synopsis: r[P2]=rowid                      */
+#define OP_Insert        114 /* synopsis: intkey=r[P3] data=r[P2]          */
+#define OP_InsertInt     115 /* synopsis: intkey=P3 data=r[P2]             */
+#define OP_Delete        116
+#define OP_ResetCount    117
+#define OP_SorterCompare 118 /* synopsis: if key(P1)!=trim(r[P3],P4) goto P2 */
+#define OP_SorterData    119 /* synopsis: r[P2]=data                       */
+#define OP_RowKey        120 /* synopsis: r[P2]=key                        */
+#define OP_RowData       121 /* synopsis: r[P2]=data                       */
+#define OP_Rowid         122 /* synopsis: r[P2]=rowid                      */
+#define OP_NullRow       123
+#define OP_SorterInsert  124
+#define OP_IdxInsert     125 /* synopsis: key=r[P2]                        */
+#define OP_IdxDelete     126 /* synopsis: key=r[P2@P3]                     */
+#define OP_Seek          127 /* synopsis: Move P3 to P1.rowid              */
+#define OP_IdxRowid      128 /* synopsis: r[P2]=rowid                      */
+#define OP_Destroy       129
+#define OP_Clear         130
+#define OP_ResetSorter   131
+#define OP_CreateIndex   132 /* synopsis: r[P2]=root iDb=P1                */
 #define OP_Real          133 /* same as TK_FLOAT, synopsis: r[P2]=P4       */
-#define OP_ParseSchema   134
-#define OP_LoadAnalysis  135
-#define OP_DropTable     136
-#define OP_DropIndex     137
-#define OP_DropTrigger   138
-#define OP_IntegrityCk   139
-#define OP_RowSetAdd     140 /* synopsis: rowset(P1)=r[P2]                 */
-#define OP_Param         141
-#define OP_FkCounter     142 /* synopsis: fkctr[P1]+=P2                    */
-#define OP_MemMax        143 /* synopsis: r[P1]=max(r[P1],r[P2])           */
-#define OP_OffsetLimit   144 /* synopsis: if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1) */
-#define OP_AggStep0      145 /* synopsis: accum=r[P3] step(r[P2@P5])       */
-#define OP_AggStep       146 /* synopsis: accum=r[P3] step(r[P2@P5])       */
-#define OP_AggFinal      147 /* synopsis: accum=r[P1] N=P2                 */
-#define OP_Expire        148
-#define OP_TableLock     149 /* synopsis: iDb=P1 root=P2 write=P3          */
-#define OP_VBegin        150
-#define OP_VCreate       151
-#define OP_VDestroy      152
-#define OP_VOpen         153
-#define OP_VColumn       154 /* synopsis: r[P3]=vcolumn(P2)                */
-#define OP_VRename       155
-#define OP_Pagecount     156
-#define OP_MaxPgcnt      157
-#define OP_CursorHint    158
-#define OP_Noop          159
-#define OP_Explain       160
+#define OP_CreateTable   134 /* synopsis: r[P2]=root iDb=P1                */
+#define OP_ParseSchema   135
+#define OP_LoadAnalysis  136
+#define OP_DropTable     137
+#define OP_DropIndex     138
+#define OP_DropTrigger   139
+#define OP_IntegrityCk   140
+#define OP_RowSetAdd     141 /* synopsis: rowset(P1)=r[P2]                 */
+#define OP_Param         142
+#define OP_FkCounter     143 /* synopsis: fkctr[P1]+=P2                    */
+#define OP_MemMax        144 /* synopsis: r[P1]=max(r[P1],r[P2])           */
+#define OP_OffsetLimit   145 /* synopsis: if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1) */
+#define OP_AggStep0      146 /* synopsis: accum=r[P3] step(r[P2@P5])       */
+#define OP_AggStep       147 /* synopsis: accum=r[P3] step(r[P2@P5])       */
+#define OP_AggFinal      148 /* synopsis: accum=r[P1] N=P2                 */
+#define OP_Expire        149
+#define OP_TableLock     150 /* synopsis: iDb=P1 root=P2 write=P3          */
+#define OP_VBegin        151
+#define OP_VCreate       152
+#define OP_VDestroy      153
+#define OP_VOpen         154
+#define OP_VColumn       155 /* synopsis: r[P3]=vcolumn(P2)                */
+#define OP_VRename       156
+#define OP_Pagecount     157
+#define OP_MaxPgcnt      158
+#define OP_CursorHint    159
+#define OP_Noop          160
+#define OP_Explain       161
 
 /* Properties such as "out2" or "jump" that are specified in
 ** comments following the "case" for each opcode in the vdbe.c
@@ -12489,23 +12531,23 @@ typedef struct VdbeOpList VdbeOpList;
 /*   8 */ 0x00, 0x10, 0x00, 0x01, 0x00, 0x01, 0x01, 0x01,\
 /*  16 */ 0x03, 0x03, 0x01, 0x12, 0x01, 0x03, 0x03, 0x09,\
 /*  24 */ 0x09, 0x09, 0x09, 0x26, 0x26, 0x09, 0x09, 0x09,\
-/*  32 */ 0x09, 0x01, 0x03, 0x03, 0x0b, 0x0b, 0x0b, 0x0b,\
+/*  32 */ 0x09, 0x09, 0x03, 0x03, 0x0b, 0x0b, 0x0b, 0x0b,\
 /*  40 */ 0x0b, 0x0b, 0x01, 0x26, 0x26, 0x26, 0x26, 0x26,\
 /*  48 */ 0x26, 0x26, 0x26, 0x26, 0x26, 0x01, 0x12, 0x01,\
-/*  56 */ 0x01, 0x01, 0x01, 0x01, 0x23, 0x0b, 0x01, 0x01,\
-/*  64 */ 0x03, 0x03, 0x03, 0x01, 0x01, 0x01, 0x02, 0x02,\
-/*  72 */ 0x08, 0x00, 0x10, 0x10, 0x10, 0x10, 0x00, 0x10,\
-/*  80 */ 0x10, 0x00, 0x00, 0x10, 0x10, 0x00, 0x00, 0x00,\
-/*  88 */ 0x00, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00,\
-/*  96 */ 0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0x00,\
-/* 104 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,\
-/* 112 */ 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
-/* 120 */ 0x00, 0x10, 0x00, 0x04, 0x04, 0x00, 0x00, 0x10,\
-/* 128 */ 0x10, 0x00, 0x00, 0x10, 0x10, 0x10, 0x00, 0x00,\
-/* 136 */ 0x00, 0x00, 0x00, 0x00, 0x06, 0x10, 0x00, 0x04,\
-/* 144 */ 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
-/* 152 */ 0x00, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00, 0x00,\
-/* 160 */ 0x00,}
+/*  56 */ 0x01, 0x01, 0x01, 0x01, 0x01, 0x23, 0x0b, 0x01,\
+/*  64 */ 0x01, 0x03, 0x03, 0x03, 0x01, 0x01, 0x01, 0x02,\
+/*  72 */ 0x02, 0x08, 0x00, 0x10, 0x10, 0x10, 0x10, 0x00,\
+/*  80 */ 0x10, 0x10, 0x00, 0x00, 0x10, 0x10, 0x00, 0x00,\
+/*  88 */ 0x00, 0x00, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00,\
+/*  96 */ 0x00, 0x10, 0x00, 0x10, 0x10, 0x00, 0x00, 0x00,\
+/* 104 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
+/* 112 */ 0x10, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
+/* 120 */ 0x00, 0x00, 0x10, 0x00, 0x04, 0x04, 0x00, 0x00,\
+/* 128 */ 0x10, 0x10, 0x00, 0x00, 0x10, 0x10, 0x10, 0x00,\
+/* 136 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x10, 0x00,\
+/* 144 */ 0x04, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
+/* 152 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00,\
+/* 160 */ 0x00, 0x00,}
 
 /* The sqlite3P2Values() routine is able to run faster if it knows
 ** the value of the largest JUMP opcode.  The smaller the maximum
@@ -12513,7 +12555,7 @@ typedef struct VdbeOpList VdbeOpList;
 ** generated this include file strives to group all JUMP opcodes
 ** together near the beginning of the list.
 */
-#define SQLITE_MX_JUMP_OPCODE  69  /* Maximum JUMP opcode */
+#define SQLITE_MX_JUMP_OPCODE  70  /* Maximum JUMP opcode */
 
 /************** End of opcodes.h *********************************************/
 /************** Continuing where we left off in vdbe.h ***********************/
@@ -12660,7 +12702,7 @@ SQLITE_PRIVATE void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const ch
 # define sqlite3VdbeScanStatus(a,b,c,d,e)
 #endif
 
-#endif
+#endif /* SQLITE_VDBE_H */
 
 /************** End of vdbe.h ************************************************/
 /************** Continuing where we left off in sqliteInt.h ******************/
@@ -12682,8 +12724,8 @@ SQLITE_PRIVATE void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const ch
 ** at a time and provides a journal for rollback.
 */
 
-#ifndef _PAGER_H_
-#define _PAGER_H_
+#ifndef SQLITE_PAGER_H
+#define SQLITE_PAGER_H
 
 /*
 ** Default maximum size for persistent journal files. A negative 
@@ -12871,7 +12913,6 @@ SQLITE_PRIVATE const char *sqlite3PagerJournalname(Pager*);
 SQLITE_PRIVATE void *sqlite3PagerTempSpace(Pager*);
 SQLITE_PRIVATE int sqlite3PagerIsMemdb(Pager*);
 SQLITE_PRIVATE void sqlite3PagerCacheStat(Pager *, int, int, int *);
-SQLITE_PRIVATE void sqlite3PagerClearCache(Pager *);
 SQLITE_PRIVATE int sqlite3SectorSize(sqlite3_file *);
 
 /* Functions used to truncate the database file. */
@@ -12898,7 +12939,7 @@ SQLITE_PRIVATE   void sqlite3PagerRefdump(Pager*);
 # define enable_simulated_io_errors()
 #endif
 
-#endif /* _PAGER_H_ */
+#endif /* SQLITE_PAGER_H */
 
 /************** End of pager.h ***********************************************/
 /************** Continuing where we left off in sqliteInt.h ******************/
@@ -13136,8 +13177,8 @@ SQLITE_PRIVATE int sqlite3PCachePercentDirty(PCache*);
 ** This file contains pre-processor directives related to operating system
 ** detection and/or setup.
 */
-#ifndef _OS_SETUP_H_
-#define _OS_SETUP_H_
+#ifndef SQLITE_OS_SETUP_H
+#define SQLITE_OS_SETUP_H
 
 /*
 ** Figure out if we are dealing with Unix, Windows, or some other operating
@@ -13177,7 +13218,7 @@ SQLITE_PRIVATE int sqlite3PCachePercentDirty(PCache*);
 #  endif
 #endif
 
-#endif /* _OS_SETUP_H_ */
+#endif /* SQLITE_OS_SETUP_H */
 
 /************** End of os_setup.h ********************************************/
 /************** Continuing where we left off in os.h *************************/
@@ -14878,7 +14919,7 @@ struct SrcList {
     int regReturn;    /* Register holding return address of addrFillSub */
     int regResult;    /* Registers holding results of a co-routine */
     struct {
-      u8 jointype;      /* Type of join between this able and the previous */
+      u8 jointype;      /* Type of join between this table and the previous */
       unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
       unsigned isIndexedBy :1;   /* True if there is an INDEXED BY clause */
       unsigned isTabFunc :1;     /* True if table-valued-function syntax */
@@ -14924,19 +14965,20 @@ struct SrcList {
 #define WHERE_ORDERBY_MIN      0x0001 /* ORDER BY processing for min() func */
 #define WHERE_ORDERBY_MAX      0x0002 /* ORDER BY processing for max() func */
 #define WHERE_ONEPASS_DESIRED  0x0004 /* Want to do one-pass UPDATE/DELETE */
-#define WHERE_DUPLICATES_OK    0x0008 /* Ok to return a row more than once */
-#define WHERE_OMIT_OPEN_CLOSE  0x0010 /* Table cursors are already open */
-#define WHERE_FORCE_TABLE      0x0020 /* Do not use an index-only search */
-#define WHERE_ONETABLE_ONLY    0x0040 /* Only code the 1st table in pTabList */
-#define WHERE_NO_AUTOINDEX     0x0080 /* Disallow automatic indexes */
-#define WHERE_GROUPBY          0x0100 /* pOrderBy is really a GROUP BY */
-#define WHERE_DISTINCTBY       0x0200 /* pOrderby is really a DISTINCT clause */
-#define WHERE_WANT_DISTINCT    0x0400 /* All output needs to be distinct */
-#define WHERE_SORTBYGROUP      0x0800 /* Support sqlite3WhereIsSorted() */
-#define WHERE_REOPEN_IDX       0x1000 /* Try to use OP_ReopenIdx */
-#define WHERE_ONEPASS_MULTIROW 0x2000 /* ONEPASS is ok with multiple rows */
-#define WHERE_USE_LIMIT        0x4000 /* There is a constant LIMIT clause */
-#define WHERE_SEEK_TABLE       0x8000 /* Do not defer seeks on main table */
+#define WHERE_ONEPASS_MULTIROW 0x0008 /* ONEPASS is ok with multiple rows */
+#define WHERE_DUPLICATES_OK    0x0010 /* Ok to return a row more than once */
+#define WHERE_OR_SUBCLAUSE     0x0020 /* Processing a sub-WHERE as part of
+                                      ** the OR optimization  */
+#define WHERE_GROUPBY          0x0040 /* pOrderBy is really a GROUP BY */
+#define WHERE_DISTINCTBY       0x0080 /* pOrderby is really a DISTINCT clause */
+#define WHERE_WANT_DISTINCT    0x0100 /* All output needs to be distinct */
+#define WHERE_SORTBYGROUP      0x0200 /* Support sqlite3WhereIsSorted() */
+#define WHERE_SEEK_TABLE       0x0400 /* Do not defer seeks on main table */
+#define WHERE_ORDERBY_LIMIT    0x0800 /* ORDERBY+LIMIT on the inner loop */
+                        /*     0x1000    not currently used */
+                        /*     0x2000    not currently used */
+#define WHERE_USE_LIMIT        0x4000 /* Use the LIMIT in cost estimates */
+                        /*     0x8000    not currently used */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
 */
@@ -16009,8 +16051,8 @@ SQLITE_PRIVATE void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 SQLITE_PRIVATE void sqlite3IdListDelete(sqlite3*, IdList*);
 SQLITE_PRIVATE void sqlite3SrcListDelete(sqlite3*, SrcList*);
 SQLITE_PRIVATE Index *sqlite3AllocateIndexObject(sqlite3*,i16,int,char**);
-SQLITE_PRIVATE Index *sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
-                          Expr*, int, int);
+SQLITE_PRIVATE void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
+                          Expr*, int, int, u8);
 SQLITE_PRIVATE void sqlite3DropIndex(Parse*, SrcList*, int);
 SQLITE_PRIVATE int sqlite3Select(Parse*, Select*, SelectDest*);
 SQLITE_PRIVATE Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
@@ -16029,6 +16071,7 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo*);
 SQLITE_PRIVATE LogEst sqlite3WhereOutputRowCount(WhereInfo*);
 SQLITE_PRIVATE int sqlite3WhereIsDistinct(WhereInfo*);
 SQLITE_PRIVATE int sqlite3WhereIsOrdered(WhereInfo*);
+SQLITE_PRIVATE int sqlite3WhereOrderedInnerLoop(WhereInfo*);
 SQLITE_PRIVATE int sqlite3WhereIsSorted(WhereInfo*);
 SQLITE_PRIVATE int sqlite3WhereContinueLabel(WhereInfo*);
 SQLITE_PRIVATE int sqlite3WhereBreakLabel(WhereInfo*);
@@ -16062,8 +16105,10 @@ SQLITE_PRIVATE void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 SQLITE_PRIVATE void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
 SQLITE_PRIVATE void sqlite3ExprIfFalseDup(Parse*, Expr*, int, int);
 SQLITE_PRIVATE Table *sqlite3FindTable(sqlite3*,const char*, const char*);
-SQLITE_PRIVATE Table *sqlite3LocateTable(Parse*,int isView,const char*, const char*);
-SQLITE_PRIVATE Table *sqlite3LocateTableItem(Parse*,int isView,struct SrcList_item *);
+#define LOCATE_VIEW    0x01
+#define LOCATE_NOERR   0x02
+SQLITE_PRIVATE Table *sqlite3LocateTable(Parse*,u32 flags,const char*, const char*);
+SQLITE_PRIVATE Table *sqlite3LocateTableItem(Parse*,u32 flags,struct SrcList_item *);
 SQLITE_PRIVATE Index *sqlite3FindIndex(sqlite3*,const char*, const char*);
 SQLITE_PRIVATE void sqlite3UnlinkAndDeleteTable(sqlite3*,int,const char*);
 SQLITE_PRIVATE void sqlite3UnlinkAndDeleteIndex(sqlite3*,int,const char*);
@@ -16626,7 +16671,7 @@ SQLITE_PRIVATE int sqlite3ThreadJoin(SQLiteThread*, void**);
 SQLITE_PRIVATE int sqlite3DbstatRegister(sqlite3*);
 #endif
 
-#endif /* _SQLITEINT_H_ */
+#endif /* SQLITEINT_H */
 
 /************** End of sqliteInt.h *******************************************/
 /************** Begin file global.c ******************************************/
@@ -16961,6 +17006,13 @@ static const char * const azCompileOpt[] = {
 #if SQLITE_CHECK_PAGES
   "CHECK_PAGES",
 #endif
+#if defined(__clang__) && defined(__clang_version__)
+  "COMPILER=clang-" __clang_version__,
+#elif defined(_MSC_VER)
+  "COMPILER=msvc-" CTIMEOPT_VAL(_MSC_VER),
+#elif defined(__GNUC__) && defined(__VERSION__)
+  "COMPILER=gcc-" __VERSION__,
+#endif
 #if SQLITE_COVERAGE_TEST
   "COVERAGE_TEST",
 #endif
@@ -16980,7 +17032,7 @@ static const char * const azCompileOpt[] = {
   "DISABLE_LFS",
 #endif
 #if SQLITE_ENABLE_8_3_NAMES
-  "ENABLE_8_3_NAMES",
+  "ENABLE_8_3_NAMES=" CTIMEOPT_VAL(SQLITE_ENABLE_8_3_NAMES),
 #endif
 #if SQLITE_ENABLE_API_ARMOR
   "ENABLE_API_ARMOR",
@@ -17394,8 +17446,8 @@ SQLITE_API const char *SQLITE_STDCALL sqlite3_compileoption_get(int N){
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 */
-#ifndef _VDBEINT_H_
-#define _VDBEINT_H_
+#ifndef SQLITE_VDBEINT_H
+#define SQLITE_VDBEINT_H
 
 /*
 ** The maximum number of times that a statement will try to reparse
@@ -17937,7 +17989,7 @@ SQLITE_PRIVATE   int sqlite3VdbeMemExpandBlob(Mem *);
   #define ExpandBlob(P) SQLITE_OK
 #endif
 
-#endif /* !defined(_VDBEINT_H_) */
+#endif /* !defined(SQLITE_VDBEINT_H) */
 
 /************** End of vdbeInt.h *********************************************/
 /************** Continuing where we left off in status.c *********************/
@@ -18145,6 +18197,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_status(
     ** by all pagers associated with the given database connection.  The
     ** highwater mark is meaningless and is returned as zero.
     */
+    case SQLITE_DBSTATUS_CACHE_USED_SHARED:
     case SQLITE_DBSTATUS_CACHE_USED: {
       int totalUsed = 0;
       int i;
@@ -18153,7 +18206,11 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_status(
         Btree *pBt = db->aDb[i].pBt;
         if( pBt ){
           Pager *pPager = sqlite3BtreePager(pBt);
-          totalUsed += sqlite3PagerMemUsed(pPager);
+          int nByte = sqlite3PagerMemUsed(pPager);
+          if( op==SQLITE_DBSTATUS_CACHE_USED_SHARED ){
+            nByte = nByte / sqlite3BtreeConnectionCount(pBt);
+          }
+          totalUsed += nByte;
         }
       }
       sqlite3BtreeLeaveAll(db);
@@ -19456,9 +19513,7 @@ SQLITE_PRIVATE void sqlite3RegisterDateTimeFunctions(void){
 ** This file contains OS interface code that is common to all
 ** architectures.
 */
-#define _SQLITE_OS_C_ 1
 /* #include "sqliteInt.h" */
-#undef _SQLITE_OS_C_
 
 /*
 ** If we compile with the SQLITE_TEST macro set, then the following block
@@ -22971,8 +23026,8 @@ SQLITE_PRIVATE sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
 ** This file contains inline asm code for retrieving "high-performance"
 ** counters for x86 class CPUs.
 */
-#ifndef _HWTIME_H_
-#define _HWTIME_H_
+#ifndef SQLITE_HWTIME_H
+#define SQLITE_HWTIME_H
 
 /*
 ** The following routine only works on pentium-class (or newer) processors.
@@ -23040,7 +23095,7 @@ SQLITE_PRIVATE   sqlite_uint64 sqlite3Hwtime(void){ return ((sqlite_uint64)0); }
 
 #endif
 
-#endif /* !defined(_HWTIME_H_) */
+#endif /* !defined(SQLITE_HWTIME_H) */
 
 /************** End of hwtime.h **********************************************/
 /************** Continuing where we left off in os_common.h ******************/
@@ -23130,8 +23185,8 @@ SQLITE_API extern int sqlite3_open_file_count;
 **
 ** This file contains code that is specific to Windows.
 */
-#ifndef _OS_WIN_H_
-#define _OS_WIN_H_
+#ifndef SQLITE_OS_WIN_H
+#define SQLITE_OS_WIN_H
 
 /*
 ** Include the primary Windows SDK header file.
@@ -23203,7 +23258,7 @@ SQLITE_API extern int sqlite3_open_file_count;
 # define SQLITE_OS_WIN_THREADS 0
 #endif
 
-#endif /* _OS_WIN_H_ */
+#endif /* SQLITE_OS_WIN_H */
 
 /************** End of os_win.h **********************************************/
 /************** Continuing where we left off in mutex_w32.c ******************/
@@ -25954,6 +26009,12 @@ SQLITE_PRIVATE void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 m
       break;
     }
 #endif
+    case TK_MATCH: {
+      sqlite3TreeViewLine(pView, "MATCH {%d:%d}%s",
+                          pExpr->iTable, pExpr->iColumn, zFlgs);
+      sqlite3TreeViewExpr(pView, pExpr->pRight, 0);
+      break;
+    }
     default: {
       sqlite3TreeViewLine(pView, "op=%d", pExpr->op);
       break;
@@ -28737,8 +28798,8 @@ SQLITE_PRIVATE const char *sqlite3OpcodeName(int i){
     /*  29 */ "NoConflict"       OpHelp("key=r[P3@P4]"),
     /*  30 */ "NotFound"         OpHelp("key=r[P3@P4]"),
     /*  31 */ "Found"            OpHelp("key=r[P3@P4]"),
-    /*  32 */ "NotExists"        OpHelp("intkey=r[P3]"),
-    /*  33 */ "Last"             OpHelp(""),
+    /*  32 */ "SeekRowid"        OpHelp("intkey=r[P3]"),
+    /*  33 */ "NotExists"        OpHelp("intkey=r[P3]"),
     /*  34 */ "IsNull"           OpHelp("if r[P1]==NULL goto P2"),
     /*  35 */ "NotNull"          OpHelp("if r[P1]!=NULL goto P2"),
     /*  36 */ "Ne"               OpHelp("if r[P1]!=r[P3] goto P2"),
@@ -28747,7 +28808,7 @@ SQLITE_PRIVATE const char *sqlite3OpcodeName(int i){
     /*  39 */ "Le"               OpHelp("if r[P1]<=r[P3] goto P2"),
     /*  40 */ "Lt"               OpHelp("if r[P1]<r[P3] goto P2"),
     /*  41 */ "Ge"               OpHelp("if r[P1]>=r[P3] goto P2"),
-    /*  42 */ "SorterSort"       OpHelp(""),
+    /*  42 */ "Last"             OpHelp(""),
     /*  43 */ "BitAnd"           OpHelp("r[P3]=r[P1]&r[P2]"),
     /*  44 */ "BitOr"            OpHelp("r[P3]=r[P1]|r[P2]"),
     /*  45 */ "ShiftLeft"        OpHelp("r[P3]=r[P2]<<r[P1]"),
@@ -28758,114 +28819,115 @@ SQLITE_PRIVATE const char *sqlite3OpcodeName(int i){
     /*  50 */ "Divide"           OpHelp("r[P3]=r[P2]/r[P1]"),
     /*  51 */ "Remainder"        OpHelp("r[P3]=r[P2]%r[P1]"),
     /*  52 */ "Concat"           OpHelp("r[P3]=r[P2]+r[P1]"),
-    /*  53 */ "Sort"             OpHelp(""),
+    /*  53 */ "SorterSort"       OpHelp(""),
     /*  54 */ "BitNot"           OpHelp("r[P1]= ~r[P1]"),
-    /*  55 */ "Rewind"           OpHelp(""),
-    /*  56 */ "IdxLE"            OpHelp("key=r[P3@P4]"),
-    /*  57 */ "IdxGT"            OpHelp("key=r[P3@P4]"),
-    /*  58 */ "IdxLT"            OpHelp("key=r[P3@P4]"),
-    /*  59 */ "IdxGE"            OpHelp("key=r[P3@P4]"),
-    /*  60 */ "RowSetRead"       OpHelp("r[P3]=rowset(P1)"),
-    /*  61 */ "RowSetTest"       OpHelp("if r[P3] in rowset(P1) goto P2"),
-    /*  62 */ "Program"          OpHelp(""),
-    /*  63 */ "FkIfZero"         OpHelp("if fkctr[P1]==0 goto P2"),
-    /*  64 */ "IfPos"            OpHelp("if r[P1]>0 then r[P1]-=P3, goto P2"),
-    /*  65 */ "IfNotZero"        OpHelp("if r[P1]!=0 then r[P1]-=P3, goto P2"),
-    /*  66 */ "DecrJumpZero"     OpHelp("if (--r[P1])==0 goto P2"),
-    /*  67 */ "IncrVacuum"       OpHelp(""),
-    /*  68 */ "VNext"            OpHelp(""),
-    /*  69 */ "Init"             OpHelp("Start at P2"),
-    /*  70 */ "Return"           OpHelp(""),
-    /*  71 */ "EndCoroutine"     OpHelp(""),
-    /*  72 */ "HaltIfNull"       OpHelp("if r[P3]=null halt"),
-    /*  73 */ "Halt"             OpHelp(""),
-    /*  74 */ "Integer"          OpHelp("r[P2]=P1"),
-    /*  75 */ "Int64"            OpHelp("r[P2]=P4"),
-    /*  76 */ "String"           OpHelp("r[P2]='P4' (len=P1)"),
-    /*  77 */ "Null"             OpHelp("r[P2..P3]=NULL"),
-    /*  78 */ "SoftNull"         OpHelp("r[P1]=NULL"),
-    /*  79 */ "Blob"             OpHelp("r[P2]=P4 (len=P1)"),
-    /*  80 */ "Variable"         OpHelp("r[P2]=parameter(P1,P4)"),
-    /*  81 */ "Move"             OpHelp("r[P2@P3]=r[P1@P3]"),
-    /*  82 */ "Copy"             OpHelp("r[P2@P3+1]=r[P1@P3+1]"),
-    /*  83 */ "SCopy"            OpHelp("r[P2]=r[P1]"),
-    /*  84 */ "IntCopy"          OpHelp("r[P2]=r[P1]"),
-    /*  85 */ "ResultRow"        OpHelp("output=r[P1@P2]"),
-    /*  86 */ "CollSeq"          OpHelp(""),
-    /*  87 */ "Function0"        OpHelp("r[P3]=func(r[P2@P5])"),
-    /*  88 */ "Function"         OpHelp("r[P3]=func(r[P2@P5])"),
-    /*  89 */ "AddImm"           OpHelp("r[P1]=r[P1]+P2"),
-    /*  90 */ "RealAffinity"     OpHelp(""),
-    /*  91 */ "Cast"             OpHelp("affinity(r[P1])"),
-    /*  92 */ "Permutation"      OpHelp(""),
-    /*  93 */ "Compare"          OpHelp("r[P1@P3] <-> r[P2@P3]"),
-    /*  94 */ "Column"           OpHelp("r[P3]=PX"),
-    /*  95 */ "Affinity"         OpHelp("affinity(r[P1@P2])"),
-    /*  96 */ "MakeRecord"       OpHelp("r[P3]=mkrec(r[P1@P2])"),
+    /*  55 */ "Sort"             OpHelp(""),
+    /*  56 */ "Rewind"           OpHelp(""),
+    /*  57 */ "IdxLE"            OpHelp("key=r[P3@P4]"),
+    /*  58 */ "IdxGT"            OpHelp("key=r[P3@P4]"),
+    /*  59 */ "IdxLT"            OpHelp("key=r[P3@P4]"),
+    /*  60 */ "IdxGE"            OpHelp("key=r[P3@P4]"),
+    /*  61 */ "RowSetRead"       OpHelp("r[P3]=rowset(P1)"),
+    /*  62 */ "RowSetTest"       OpHelp("if r[P3] in rowset(P1) goto P2"),
+    /*  63 */ "Program"          OpHelp(""),
+    /*  64 */ "FkIfZero"         OpHelp("if fkctr[P1]==0 goto P2"),
+    /*  65 */ "IfPos"            OpHelp("if r[P1]>0 then r[P1]-=P3, goto P2"),
+    /*  66 */ "IfNotZero"        OpHelp("if r[P1]!=0 then r[P1]-=P3, goto P2"),
+    /*  67 */ "DecrJumpZero"     OpHelp("if (--r[P1])==0 goto P2"),
+    /*  68 */ "IncrVacuum"       OpHelp(""),
+    /*  69 */ "VNext"            OpHelp(""),
+    /*  70 */ "Init"             OpHelp("Start at P2"),
+    /*  71 */ "Return"           OpHelp(""),
+    /*  72 */ "EndCoroutine"     OpHelp(""),
+    /*  73 */ "HaltIfNull"       OpHelp("if r[P3]=null halt"),
+    /*  74 */ "Halt"             OpHelp(""),
+    /*  75 */ "Integer"          OpHelp("r[P2]=P1"),
+    /*  76 */ "Int64"            OpHelp("r[P2]=P4"),
+    /*  77 */ "String"           OpHelp("r[P2]='P4' (len=P1)"),
+    /*  78 */ "Null"             OpHelp("r[P2..P3]=NULL"),
+    /*  79 */ "SoftNull"         OpHelp("r[P1]=NULL"),
+    /*  80 */ "Blob"             OpHelp("r[P2]=P4 (len=P1)"),
+    /*  81 */ "Variable"         OpHelp("r[P2]=parameter(P1,P4)"),
+    /*  82 */ "Move"             OpHelp("r[P2@P3]=r[P1@P3]"),
+    /*  83 */ "Copy"             OpHelp("r[P2@P3+1]=r[P1@P3+1]"),
+    /*  84 */ "SCopy"            OpHelp("r[P2]=r[P1]"),
+    /*  85 */ "IntCopy"          OpHelp("r[P2]=r[P1]"),
+    /*  86 */ "ResultRow"        OpHelp("output=r[P1@P2]"),
+    /*  87 */ "CollSeq"          OpHelp(""),
+    /*  88 */ "Function0"        OpHelp("r[P3]=func(r[P2@P5])"),
+    /*  89 */ "Function"         OpHelp("r[P3]=func(r[P2@P5])"),
+    /*  90 */ "AddImm"           OpHelp("r[P1]=r[P1]+P2"),
+    /*  91 */ "RealAffinity"     OpHelp(""),
+    /*  92 */ "Cast"             OpHelp("affinity(r[P1])"),
+    /*  93 */ "Permutation"      OpHelp(""),
+    /*  94 */ "Compare"          OpHelp("r[P1@P3] <-> r[P2@P3]"),
+    /*  95 */ "Column"           OpHelp("r[P3]=PX"),
+    /*  96 */ "Affinity"         OpHelp("affinity(r[P1@P2])"),
     /*  97 */ "String8"          OpHelp("r[P2]='P4'"),
-    /*  98 */ "Count"            OpHelp("r[P2]=count()"),
-    /*  99 */ "ReadCookie"       OpHelp(""),
-    /* 100 */ "SetCookie"        OpHelp(""),
-    /* 101 */ "ReopenIdx"        OpHelp("root=P2 iDb=P3"),
-    /* 102 */ "OpenRead"         OpHelp("root=P2 iDb=P3"),
-    /* 103 */ "OpenWrite"        OpHelp("root=P2 iDb=P3"),
-    /* 104 */ "OpenAutoindex"    OpHelp("nColumn=P2"),
-    /* 105 */ "OpenEphemeral"    OpHelp("nColumn=P2"),
-    /* 106 */ "SorterOpen"       OpHelp(""),
-    /* 107 */ "SequenceTest"     OpHelp("if( cursor[P1].ctr++ ) pc = P2"),
-    /* 108 */ "OpenPseudo"       OpHelp("P3 columns in r[P2]"),
-    /* 109 */ "Close"            OpHelp(""),
-    /* 110 */ "ColumnsUsed"      OpHelp(""),
-    /* 111 */ "Sequence"         OpHelp("r[P2]=cursor[P1].ctr++"),
-    /* 112 */ "NewRowid"         OpHelp("r[P2]=rowid"),
-    /* 113 */ "Insert"           OpHelp("intkey=r[P3] data=r[P2]"),
-    /* 114 */ "InsertInt"        OpHelp("intkey=P3 data=r[P2]"),
-    /* 115 */ "Delete"           OpHelp(""),
-    /* 116 */ "ResetCount"       OpHelp(""),
-    /* 117 */ "SorterCompare"    OpHelp("if key(P1)!=trim(r[P3],P4) goto P2"),
-    /* 118 */ "SorterData"       OpHelp("r[P2]=data"),
-    /* 119 */ "RowKey"           OpHelp("r[P2]=key"),
-    /* 120 */ "RowData"          OpHelp("r[P2]=data"),
-    /* 121 */ "Rowid"            OpHelp("r[P2]=rowid"),
-    /* 122 */ "NullRow"          OpHelp(""),
-    /* 123 */ "SorterInsert"     OpHelp(""),
-    /* 124 */ "IdxInsert"        OpHelp("key=r[P2]"),
-    /* 125 */ "IdxDelete"        OpHelp("key=r[P2@P3]"),
-    /* 126 */ "Seek"             OpHelp("Move P3 to P1.rowid"),
-    /* 127 */ "IdxRowid"         OpHelp("r[P2]=rowid"),
-    /* 128 */ "Destroy"          OpHelp(""),
-    /* 129 */ "Clear"            OpHelp(""),
-    /* 130 */ "ResetSorter"      OpHelp(""),
-    /* 131 */ "CreateIndex"      OpHelp("r[P2]=root iDb=P1"),
-    /* 132 */ "CreateTable"      OpHelp("r[P2]=root iDb=P1"),
+    /*  98 */ "MakeRecord"       OpHelp("r[P3]=mkrec(r[P1@P2])"),
+    /*  99 */ "Count"            OpHelp("r[P2]=count()"),
+    /* 100 */ "ReadCookie"       OpHelp(""),
+    /* 101 */ "SetCookie"        OpHelp(""),
+    /* 102 */ "ReopenIdx"        OpHelp("root=P2 iDb=P3"),
+    /* 103 */ "OpenRead"         OpHelp("root=P2 iDb=P3"),
+    /* 104 */ "OpenWrite"        OpHelp("root=P2 iDb=P3"),
+    /* 105 */ "OpenAutoindex"    OpHelp("nColumn=P2"),
+    /* 106 */ "OpenEphemeral"    OpHelp("nColumn=P2"),
+    /* 107 */ "SorterOpen"       OpHelp(""),
+    /* 108 */ "SequenceTest"     OpHelp("if( cursor[P1].ctr++ ) pc = P2"),
+    /* 109 */ "OpenPseudo"       OpHelp("P3 columns in r[P2]"),
+    /* 110 */ "Close"            OpHelp(""),
+    /* 111 */ "ColumnsUsed"      OpHelp(""),
+    /* 112 */ "Sequence"         OpHelp("r[P2]=cursor[P1].ctr++"),
+    /* 113 */ "NewRowid"         OpHelp("r[P2]=rowid"),
+    /* 114 */ "Insert"           OpHelp("intkey=r[P3] data=r[P2]"),
+    /* 115 */ "InsertInt"        OpHelp("intkey=P3 data=r[P2]"),
+    /* 116 */ "Delete"           OpHelp(""),
+    /* 117 */ "ResetCount"       OpHelp(""),
+    /* 118 */ "SorterCompare"    OpHelp("if key(P1)!=trim(r[P3],P4) goto P2"),
+    /* 119 */ "SorterData"       OpHelp("r[P2]=data"),
+    /* 120 */ "RowKey"           OpHelp("r[P2]=key"),
+    /* 121 */ "RowData"          OpHelp("r[P2]=data"),
+    /* 122 */ "Rowid"            OpHelp("r[P2]=rowid"),
+    /* 123 */ "NullRow"          OpHelp(""),
+    /* 124 */ "SorterInsert"     OpHelp(""),
+    /* 125 */ "IdxInsert"        OpHelp("key=r[P2]"),
+    /* 126 */ "IdxDelete"        OpHelp("key=r[P2@P3]"),
+    /* 127 */ "Seek"             OpHelp("Move P3 to P1.rowid"),
+    /* 128 */ "IdxRowid"         OpHelp("r[P2]=rowid"),
+    /* 129 */ "Destroy"          OpHelp(""),
+    /* 130 */ "Clear"            OpHelp(""),
+    /* 131 */ "ResetSorter"      OpHelp(""),
+    /* 132 */ "CreateIndex"      OpHelp("r[P2]=root iDb=P1"),
     /* 133 */ "Real"             OpHelp("r[P2]=P4"),
-    /* 134 */ "ParseSchema"      OpHelp(""),
-    /* 135 */ "LoadAnalysis"     OpHelp(""),
-    /* 136 */ "DropTable"        OpHelp(""),
-    /* 137 */ "DropIndex"        OpHelp(""),
-    /* 138 */ "DropTrigger"      OpHelp(""),
-    /* 139 */ "IntegrityCk"      OpHelp(""),
-    /* 140 */ "RowSetAdd"        OpHelp("rowset(P1)=r[P2]"),
-    /* 141 */ "Param"            OpHelp(""),
-    /* 142 */ "FkCounter"        OpHelp("fkctr[P1]+=P2"),
-    /* 143 */ "MemMax"           OpHelp("r[P1]=max(r[P1],r[P2])"),
-    /* 144 */ "OffsetLimit"      OpHelp("if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1)"),
-    /* 145 */ "AggStep0"         OpHelp("accum=r[P3] step(r[P2@P5])"),
-    /* 146 */ "AggStep"          OpHelp("accum=r[P3] step(r[P2@P5])"),
-    /* 147 */ "AggFinal"         OpHelp("accum=r[P1] N=P2"),
-    /* 148 */ "Expire"           OpHelp(""),
-    /* 149 */ "TableLock"        OpHelp("iDb=P1 root=P2 write=P3"),
-    /* 150 */ "VBegin"           OpHelp(""),
-    /* 151 */ "VCreate"          OpHelp(""),
-    /* 152 */ "VDestroy"         OpHelp(""),
-    /* 153 */ "VOpen"            OpHelp(""),
-    /* 154 */ "VColumn"          OpHelp("r[P3]=vcolumn(P2)"),
-    /* 155 */ "VRename"          OpHelp(""),
-    /* 156 */ "Pagecount"        OpHelp(""),
-    /* 157 */ "MaxPgcnt"         OpHelp(""),
-    /* 158 */ "CursorHint"       OpHelp(""),
-    /* 159 */ "Noop"             OpHelp(""),
-    /* 160 */ "Explain"          OpHelp(""),
+    /* 134 */ "CreateTable"      OpHelp("r[P2]=root iDb=P1"),
+    /* 135 */ "ParseSchema"      OpHelp(""),
+    /* 136 */ "LoadAnalysis"     OpHelp(""),
+    /* 137 */ "DropTable"        OpHelp(""),
+    /* 138 */ "DropIndex"        OpHelp(""),
+    /* 139 */ "DropTrigger"      OpHelp(""),
+    /* 140 */ "IntegrityCk"      OpHelp(""),
+    /* 141 */ "RowSetAdd"        OpHelp("rowset(P1)=r[P2]"),
+    /* 142 */ "Param"            OpHelp(""),
+    /* 143 */ "FkCounter"        OpHelp("fkctr[P1]+=P2"),
+    /* 144 */ "MemMax"           OpHelp("r[P1]=max(r[P1],r[P2])"),
+    /* 145 */ "OffsetLimit"      OpHelp("if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1)"),
+    /* 146 */ "AggStep0"         OpHelp("accum=r[P3] step(r[P2@P5])"),
+    /* 147 */ "AggStep"          OpHelp("accum=r[P3] step(r[P2@P5])"),
+    /* 148 */ "AggFinal"         OpHelp("accum=r[P1] N=P2"),
+    /* 149 */ "Expire"           OpHelp(""),
+    /* 150 */ "TableLock"        OpHelp("iDb=P1 root=P2 write=P3"),
+    /* 151 */ "VBegin"           OpHelp(""),
+    /* 152 */ "VCreate"          OpHelp(""),
+    /* 153 */ "VDestroy"         OpHelp(""),
+    /* 154 */ "VOpen"            OpHelp(""),
+    /* 155 */ "VColumn"          OpHelp("r[P3]=vcolumn(P2)"),
+    /* 156 */ "VRename"          OpHelp(""),
+    /* 157 */ "Pagecount"        OpHelp(""),
+    /* 158 */ "MaxPgcnt"         OpHelp(""),
+    /* 159 */ "CursorHint"       OpHelp(""),
+    /* 160 */ "Noop"             OpHelp(""),
+    /* 161 */ "Explain"          OpHelp(""),
   };
   return azName[i];
 }

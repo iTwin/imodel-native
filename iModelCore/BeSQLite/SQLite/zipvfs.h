@@ -7,10 +7,10 @@
 **
 */
 
-#ifndef _ZIPVFS_H
-#define _ZIPVFS_H
+#ifndef ZIPVFS_H
+#define ZIPVFS_H
 
-#ifndef _SQLITE3_H_
+#ifndef SQLITE3_H
 #include <sqlite3.h>
 #endif
 
