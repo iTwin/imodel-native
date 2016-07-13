@@ -50,7 +50,7 @@ BentleyStatus Scene::DeleteCacheFile()
 BentleyStatus Scene::ReadSceneFile(SceneInfo& sceneInfo)
     {
     MxStreamBuffer rootStream;
-    return RealityData::CacheResult::Success != RequestData(nullptr, true, &rootStream) ? ERROR : sceneInfo.Read(rootStream);
+    return SUCCESS != RequestData(nullptr, true, &rootStream) ? ERROR : sceneInfo.Read(rootStream);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -65,7 +65,7 @@ BentleyStatus Scene::LoadScene()
     m_rootNode = new Node(nullptr);
     m_rootNode->m_childPath = sceneInfo.m_rootNodePath;
 
-    return RealityData::CacheResult::Success == RequestData(m_rootNode.get(), true, nullptr) ? SUCCESS : ERROR;
+    return RequestData(m_rootNode.get(), true, nullptr);
     }
 
 //----------------------------------------------------------------------------------------

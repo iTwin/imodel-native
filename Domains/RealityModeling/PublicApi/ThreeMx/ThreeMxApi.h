@@ -205,12 +205,12 @@ private:
     double m_scale = 1.0;
     NodePtr m_rootNode;
     std::chrono::seconds m_expirationTime = std::chrono::seconds(20); // save unused nodes for 20 seconds
-    Dgn::RealityData::Cache2Ptr m_cache;
+    Dgn::RealityData::CachePtr m_cache;
     Dgn::Render::SystemP m_renderSystem = nullptr;
 
     BentleyStatus ReadGeoLocation(SceneInfo const&);
     BentleyStatus LoadScene(); // synchronous
-    Dgn::RealityData::CacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
+    BentleyStatus RequestData(Node* node, bool synchronous, MxStreamBuffer*);
     void CreateCache();
 
 public:
@@ -229,7 +229,7 @@ public:
     double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetLocation() const {return m_location;}
     double GetScale() const {return m_scale;}
-    Dgn::RealityData::Cache2Ptr GetCache() const {return m_cache;}
+    Dgn::RealityData::CachePtr GetCache() const {return m_cache;}
     THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
     THREEMX_EXPORT BentleyStatus DeleteCacheFile(); //! delete the local SQLite file holding the cache of downloaded tiles.
     THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP sceneFile, Dgn::Render::SystemP);
@@ -269,6 +269,8 @@ private:
 
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
+    ~ThreeMxModel() {}
+
     THREEMX_EXPORT void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
