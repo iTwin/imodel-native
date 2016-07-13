@@ -44,8 +44,7 @@
     #define BENTLEYCONFIG_GRAPHICS_OPENGLES
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #define BENTLEYCONFIG_DISPLAY_ANDROID
-    // *** WIP_ANDROID_CLANG -- still working on etting OpenCASCADE to build using clang
-    // #define BENTLEYCONFIG_OPENCASCADE
+    #define BENTLEYCONFIG_OPENCASCADE
 
 #elif defined (_WIN32)
 

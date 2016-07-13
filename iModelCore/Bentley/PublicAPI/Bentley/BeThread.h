@@ -12,7 +12,7 @@
 #include "RefCounted.h"
 #include "WString.h"
 
-#if defined (_WIN32)
+#if defined (_WIN32) && defined(_MANAGED)
     //=======================================================================================
     //
     // All of this miserable crap is here only because the stupid C++/CLI compiler doesn't support std::threads.
