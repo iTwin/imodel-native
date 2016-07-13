@@ -23,9 +23,9 @@ HANDLER_DEFINE_MEMBERS(SubCategory);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Category::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void Category::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
+    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
     params.Add(CAT_PROP_Descr);
     params.Add(CAT_PROP_Scope);
     params.Add(CAT_PROP_Rank);
@@ -34,9 +34,9 @@ void Category::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::Handling
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SubCategory::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void SubCategory::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
+    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
     params.Add(SUBCAT_PROP_Descr);
     params.Add(SUBCAT_PROP_Props);
     }

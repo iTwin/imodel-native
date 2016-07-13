@@ -36,7 +36,7 @@ struct TestElementSub1 : TestElement
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_TESTELEMENTSUB1_CLASS, TestElement);
 
     private:
-        static void _TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
+        static void _TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop1_1;
@@ -67,7 +67,7 @@ struct TestElementSub2 : TestElementSub1
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_TESTELEMENTSUB2_CLASS, TestElementSub1);
 
     private:
-        static void _TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
+        static void _TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop2_1;
@@ -103,7 +103,7 @@ struct TestElementSub3 : TestElementSub2
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_TESTELEMENTSUB3_CLASS, TestElementSub2);
 
     private:
-        static void _TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
+        static void _TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop3_1;
@@ -152,7 +152,7 @@ struct TestElementComplex : TestElement
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_TestElementComplex_CLASS, TestElement);
 
     private:
-        static void _TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
+        static void _TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         DPoint3d    m_prop_DPoint3d;

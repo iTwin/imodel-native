@@ -636,7 +636,7 @@ public:
 private:
     DgnElementId m_linkedElementId;
 
-    static void _TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
+    static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
     Dgn::DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
@@ -718,7 +718,7 @@ namespace dgn_ElementHandler
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : Element
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, Element, DGNPLATFORM_EXPORT)
-    virtual void _TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) override { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); MarkupExternalLink::_TEMPORARY_GetHandlingCustomAttributes(params); } // *** WIP_AUTO_HANDLED_PROPERTIES
+    virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); MarkupExternalLink::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); } // *** WIP_AUTO_HANDLED_PROPERTIES
 };
 
 //! The handler for MarkupExternalLinkGroup elements

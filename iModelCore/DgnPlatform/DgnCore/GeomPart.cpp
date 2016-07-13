@@ -14,7 +14,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnGeometryPart::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void DgnGeometryPart::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add(PARAM_BBoxLow);
     params.Add(PARAM_BBoxHigh);

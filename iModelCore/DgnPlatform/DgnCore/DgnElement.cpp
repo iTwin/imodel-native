@@ -491,7 +491,7 @@ void DgnElement::_OnReversedAdd() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ElementHandler::Element::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void dgn_ElementHandler::Element::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add(DGN_ELEMENT_PROPNAME_ECInstanceId, ECSqlClassParams::StatementType::Insert);
     params.Add(DGN_ELEMENT_PROPNAME_ModelId, ECSqlClassParams::StatementType::Insert);
@@ -2845,10 +2845,43 @@ DgnElementIdSet ElementAssemblyUtil::GetAssemblyElementIdSet(DgnElementCR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstanceR DgnElement::GetAutoHandledProperties()
+    {
+    if (!m_autoHandledProperties.IsValid())
+        m_autoHandledProperties = GetElementClass()->GetDefaultStandaloneEnabler()->CreateInstance();
+    return *m_autoHandledProperties;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    ECInstanceECSqlSelectAdapter adapter(stmt);     // *** WIP_AUTO_HANDLED_PROPERTIES is this too slow to do every time? Should we cache the adapter itself?
+    bset<Utf8String> const& autoHandledProps = params.GetCustomHandled();
+    for (ECN::ECPropertyCP ecProperty : GetElementClass()->GetProperties(true))
+        {
+        Utf8StringCR propName = ecProperty->GetName();
+        if (autoHandledProps.find(propName) != autoHandledProps.end())
+            {
+            IECSqlValue const& value = stmt.GetValue(params.GetSelectIndex(propName.c_str()));
+            adapter.SetSimpleProperty(GetAutoHandledProperties(), value);
+            }
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
     m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
 
     // Read GeomStream
@@ -3292,7 +3325,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params)
+void GeometricElement::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)
     {
     params.Add(GEOM_Category);
     params.Add(GEOM_Origin);
@@ -3304,9 +3337,9 @@ void GeometricElement::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement2d::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void GeometricElement2d::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    GeometricElement::_TEMPORARY_GetHandlingCustomAttributes(params);
+    GeometricElement::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
 
     params.Add(GEOM2_Rotation);
     }
@@ -3314,9 +3347,9 @@ void GeometricElement2d::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement3d::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void GeometricElement3d::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    GeometricElement::_TEMPORARY_GetHandlingCustomAttributes(params);
+    GeometricElement::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
 
     params.Add(GEOM3_InSpatialIndex);
     params.Add(GEOM3_Yaw);

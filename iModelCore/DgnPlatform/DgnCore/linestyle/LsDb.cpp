@@ -694,9 +694,9 @@ HANDLER_DEFINE_MEMBERS(LineStyleHandler);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LineStyleHandler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void LineStyleHandler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
+    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
     params.Add(PROPNAME_Data);
     params.Add(PROPNAME_Descr);
     }

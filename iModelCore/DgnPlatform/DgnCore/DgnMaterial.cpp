@@ -30,9 +30,9 @@ DgnDbStatus DgnMaterial::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ElementHandler::Material::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void dgn_ElementHandler::Material::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
-    T_Super::_TEMPORARY_GetHandlingCustomAttributes(params);
+    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
     params.Add(PROPNAME_Descr);
     params.Add(PROPNAME_Data);
     }

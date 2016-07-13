@@ -76,10 +76,6 @@ namespace dgn_ElementHandler
         friend struct Dgn::DgnElements;
         DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
-    private:
-        //ECSqlClassParams m_classParams;
-
-        //ECSqlClassParams const& GetECSqlClassParams();
     protected:
         virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
         virtual ElementHandlerP _ToElementHandler() {return this;}
@@ -88,9 +84,11 @@ namespace dgn_ElementHandler
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnElement::RestrictedAction::Parse(name); }
 
         //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
-        //! If you override this method, you @em must invoke T_Super::_TEMPORARY_GetHandlingCustomAttributes().
-        DGNPLATFORM_EXPORT virtual void _TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) override; // *** WIP_AUTO_HANDLED_PROPERTIES
+        //! If you override this method, you @em must invoke T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes().
+        DGNPLATFORM_EXPORT virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override; // *** WIP_AUTO_HANDLED_PROPERTIES
     public:
+        void TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) {return _TEMPORARY_GetPropertyHandlingCustomAttributes(params);} // *** WIP_AUTO_HANDLED_PROPERTIES
+
         //! Create a new instance of a DgnElement from a CreateParams. 
         //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
         DgnElementPtr Create(DgnElement::CreateParams const& params) {return (DgnElementP) _CreateInstance(params);}
@@ -103,14 +101,14 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Geometric3d : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement3d, Geometric3d, Element, DGNPLATFORM_EXPORT)
-        virtual void _TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) override { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); GeometricElement3d::_TEMPORARY_GetHandlingCustomAttributes(params); } // *** WIP_AUTO_HANDLED_PROPERTIES
+        virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); GeometricElement3d::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); } // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 
     //! The ElementHandler for GeometricElement2d
     struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement2d, GeometricElement2d, Geometric2d, Element, DGNPLATFORM_EXPORT)
-        virtual void _TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) override { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); GeometricElement2d::_TEMPORARY_GetHandlingCustomAttributes(params); } // *** WIP_AUTO_HANDLED_PROPERTIES
+        virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); GeometricElement2d::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); } // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 
     //! The ElementHandler for AnnotationElement2d

@@ -220,7 +220,7 @@ namespace dgn_ElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_MaterialElement, DgnMaterial, Material, Element, DGNPLATFORM_EXPORT);
     protected:
-        DGNPLATFORM_EXPORT virtual void _TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) override; // *** WIP_AUTO_HANDLED_PROPERTIES
+        DGNPLATFORM_EXPORT virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override; // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 }
 

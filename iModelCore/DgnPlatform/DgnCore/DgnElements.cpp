@@ -1490,10 +1490,9 @@ uint32_t DgnElements::CachedSelectStatement::Release()
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GenericClassParamsProvider : IECSqlClassParamsProvider
     {
-    DgnDbR m_db;
     DgnClassId m_classId;
-    ECSqlClassParams::HandlingCustomAttributes const& m_customAttributes; // *** TEMPORARY *** WIP_AUTO_HANDLED_PROPERTIES
-    GenericClassParamsProvider(DgnDbR db, DgnClassId classId, ECSqlClassParams::HandlingCustomAttributes const& cas) : m_db(db), m_classId(classId), m_customAttributes(cas) {}
+    DgnElements const& m_elements;
+    GenericClassParamsProvider(DgnClassId classId, DgnElements const& e) : m_classId(classId), m_elements(e) {}
     void _GetClassParams(ECSqlClassParamsR ecSqlParams) override;
     };
 
@@ -1502,14 +1501,23 @@ struct GenericClassParamsProvider : IECSqlClassParamsProvider
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GenericClassParamsProvider::_GetClassParams(ECSqlClassParamsR ecSqlParams)
     {
-    auto ecclass = m_db.Schemas().GetECClass(ECN::ECClassId(m_classId.GetValue()));
+
+    // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will just read them
+    //                                  For now, we let the handlers tell us which properties have custom handling attributes
+    auto handler = dgn_ElementHandler::Element::FindHandler(m_elements.GetDgnDb(), m_classId);
+    ECSqlClassParams::PropertyHandlingCustomAttributes cas;
+    handler->TEMPORARY_GetPropertyHandlingCustomAttributes(cas); // *** WIP_AUTO_HANDLED_PROPERTIES
+
+    auto ecclass = m_elements.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(m_classId.GetValue()));
     for (auto prop : ecclass->GetProperties())
         {
         Utf8StringCR propName = prop->GetName();
 
-        ECSqlClassParams::HandlingCustomAttributesBundle ca;
-        auto ica = m_customAttributes.find(propName);
-        if (ica != m_customAttributes.end())
+        // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will just read them
+        //                                  For now, we let the handlers tell us which properties have custom handling attributes
+        ECSqlClassParams::PropertyHandlingCustomAttributesBundle ca;
+        auto ica = cas.find(propName);
+        if (ica != cas.end())
             ca = ica->second;
         else
             {
@@ -1529,7 +1537,7 @@ ECSqlClassParams const& DgnElements::GetECSqlClassParams(DgnClassId classId) con
     ECSqlClassParams& params = m_classParams[classId];
     if (!params.IsInitialized())
         {
-        GenericClassParamsProvider provider(GetDgnDb(), classId, m_customAttributes);
+        GenericClassParamsProvider provider(classId, *this);
         params.Initialize(provider);
         }
     return params;
@@ -1544,8 +1552,6 @@ DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     auto found = m_classInfos.find(classId);
     if (m_classInfos.end() != found)
         return found->second;
-
-    el.GetElementHandler()._TEMPORARY_GetHandlingCustomAttributes(m_customAttributes); // *** WIP_AUTO_HANDLED_PROPERTIES
 
     ClassInfo& classInfo = m_classInfos[classId];
     ECSqlClassParams const& params = GetECSqlClassParams(classId);
@@ -1600,7 +1606,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) const
     {
-    // Not bothering to cache per handler...use our general-purpose ECSql statement cache
+    // Not bothering to cache per class...use our general-purpose ECSql statement cache
     return FindClassInfo(el).GetInsertStmt(GetDgnDb());
     }
 
@@ -1609,20 +1615,9 @@ CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) const
     {
-    // Not bothering to cache per handler...use our general-purpose ECSql statement cache
+    // Not bothering to cache per class...use our general-purpose ECSql statement cache
     return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-//ECSqlClassParams const& dgn_ElementHandler::Element::GetECSqlClassParams()
-//    {
-//    if (!m_classParams.IsInitialized())
-//        m_classParams.Initialize(*this);
-//
-//    return m_classParams;
-//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15

@@ -17,10 +17,10 @@ HANDLER_DEFINE_MEMBERS (PerformanceElement4Handler)
 
 DOMAIN_DEFINE_MEMBERS (PerformanceElementTestDomain)
 
-void PerformanceElement1Handler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); PerformanceElement1::_TEMPORARY_GetAutoHandlerInfo(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
-void PerformanceElement2Handler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); PerformanceElement2::_TEMPORARY_GetAutoHandlerInfo(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
-void PerformanceElement3Handler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); PerformanceElement3::_TEMPORARY_GetAutoHandlerInfo(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
-void PerformanceElement4Handler::_TEMPORARY_GetHandlingCustomAttributes(ECSqlClassParams::HandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetHandlingCustomAttributes(params); PerformanceElement4::_TEMPORARY_GetAutoHandlerInfo(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
+void PerformanceElement1Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); PerformanceElement1::_TEMPORARY_GetAutoHandlerInfo(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
+void PerformanceElement2Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); PerformanceElement2::_TEMPORARY_GetAutoHandlerInfo(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
+void PerformanceElement3Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); PerformanceElement3::_TEMPORARY_GetAutoHandlerInfo(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
+void PerformanceElement4Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); PerformanceElement4::_TEMPORARY_GetAutoHandlerInfo(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
@@ -176,7 +176,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement1::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void PerformanceElement1::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop1_1");
     params.Add("Prop1_2");
@@ -342,7 +342,7 @@ void PerformanceElement1::ExtendGeometry()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement2::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void PerformanceElement2::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop2_1");
     params.Add("Prop2_2");
@@ -433,7 +433,7 @@ PerformanceElement2CPtr PerformanceElement2::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement3::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void PerformanceElement3::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop3_1");
     params.Add("Prop3_2");
@@ -524,7 +524,7 @@ PerformanceElement3CPtr PerformanceElement3::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement4::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::HandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void PerformanceElement4::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop4_1");
     params.Add("Prop4_2");
