@@ -205,7 +205,7 @@
       #if (BENTLEY_CPLUSPLUS <= 199711L) || defined(_MANAGED)
           #define NULL    0
       #else
-          // nullptr is part C++11
+          // nullptr is C++11
           #define NULL nullptr
       #endif
   #endif
@@ -331,7 +331,4 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeFileName)
     #define BENTLEYDLL_EXPORT IMPORT_ATTRIBUTE
 //__PUBLISH_SECTION_END__
 #endif
-
-
-
 
