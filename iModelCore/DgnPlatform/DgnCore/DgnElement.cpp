@@ -557,19 +557,18 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_BindInsertParams(ECSqlStatement& statement)
     {
-    auto eclass = GetElementClass();
-
     auto const& classParamsMap = GetDgnDb().Elements().GetClassParamsMap();
-    auto iclassParms = classParamsMap.find(DgnClassId(eclass->GetId()));
+    auto iclassParms = classParamsMap.find(DgnClassId(GetElementClassId()));
     if (iclassParms == classParamsMap.end())
         {
         BeAssert(false);
         return DgnDbStatus::BadRequest;
         }
-    bset<Utf8String> const& autoHandledProps = iclassParms->second.GetCustomHandled();
-    for (ECN::ECPropertyCP ecProperty : eclass->GetProperties(true))
+    bset<Utf8String> const& customHandledProps = iclassParms->second.GetCustomHandled();
+    for (auto const& entry: iclassParms->second.GetEntries())
         {
-        if (autoHandledProps.end() == autoHandledProps.find(ecProperty->GetName()))
+        Utf8StringCR propName = entry.m_name;
+        if (customHandledProps.end() == customHandledProps.find(propName))
             {
             // *** WIP_AUTO_HANDLED_PROPERTIES - bind ECValue 
             }
@@ -2212,7 +2211,11 @@ DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     {
-    if (0 == strcmp("Code", name))
+    // Common case: auto-handled properties
+    if (ECN::ECObjectsStatus::Success == GetAutoHandledProperties().SetValue(name, value))
+        return DgnDbStatus::Success;
+
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_Code, name))
         {
         //Json::Value json(Json::objectValue);
         //if (!Json::Reader::Parse(value.ToString(), json))
@@ -2222,24 +2225,24 @@ DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
         //return SetCode(code);
         return DgnDbStatus::BadRequest;
         }
-    if (0 == strcmp("Id", name))
+    if (0 == strcmp("Id", name) || 0 == strcmp(DGN_ELEMENT_PROPNAME_ECInstanceId, name))
         {
         return DgnDbStatus::ReadOnly;
         }
-    if (0 == strcmp("ModelId", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_ModelId, name))
         {
         return DgnDbStatus::ReadOnly;
         }
-    if (0 == strcmp("ParentId", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_ParentId, name))
         {
         return SetParentId(DgnElementId((uint64_t)value.GetLong()));
         }
-    if (0 == strcmp("Label", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_Label, name))
         {
         SetLabel(value.ToString().c_str());
         return DgnDbStatus::Success;
         }
-    if (0 == strcmp("LastMod", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_LastMode, name))
         {
         return DgnDbStatus::BadRequest;
         }
@@ -2900,11 +2903,11 @@ ECN::IECInstanceR DgnElement::GetAutoHandledProperties() const
 DgnDbStatus DgnElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     ECInstanceECSqlSelectAdapter adapter(stmt);     // *** WIP_AUTO_HANDLED_PROPERTIES is this too slow to do every time? Should we cache the adapter itself?
-    bset<Utf8String> const& autoHandledProps = params.GetCustomHandled();
+    bset<Utf8String> const& customHandledProps = params.GetCustomHandled();
     for (auto const& entry: params.GetEntries())
         {
         Utf8StringCR propName = entry.m_name;
-        if (autoHandledProps.find(propName) != autoHandledProps.end())
+        if (customHandledProps.end() == customHandledProps.find(propName))
             {
             IECSqlValue const& value = stmt.GetValue(params.GetSelectIndex(propName.c_str()));
             adapter.SetSimpleProperty(GetAutoHandledProperties(), value);
