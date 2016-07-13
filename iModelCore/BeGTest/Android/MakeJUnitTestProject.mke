@@ -20,7 +20,6 @@
 # Optional. TEST_FRAMEWORK_SQLANG - Full filepath of .db3 file to return as the "framework" sqlang file
 
 GCC_DEFAULT_VISIBILITY=default
-ANDROID_API_LEVEL=18
 
 %include mdl.mki
 %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
