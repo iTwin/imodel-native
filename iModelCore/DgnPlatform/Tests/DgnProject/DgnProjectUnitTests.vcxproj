@@ -118,6 +118,7 @@
     <ClCompile Include="Published\ViewAttachment_Test.cpp" />
     <ClCompile Include="Published\VolumeElement_Test.cpp" />
     <ClCompile Include="TestFixture\DgnDbTestFixtures.cpp" />
+    <ClCompile Include="TestFixture\GenericDgnModelTestFixture.cpp" />
     <ClCompile Include="TestFixture\GeomHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +140,9 @@
     <ClInclude Include="TestFixture\DgnDbTestFixtures.h" />
     <ClInclude Include="TestFixture\GenericDgnModelTestFixture.h" />
     <ClInclude Include="TestFixture\GeomHelper.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\DgnPlatform.PartFile.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7782F16A-217A-417A-BF3B-B7B8A137BE16}</ProjectGuid>

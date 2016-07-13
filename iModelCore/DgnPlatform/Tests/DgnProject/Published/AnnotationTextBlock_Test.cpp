@@ -8,15 +8,8 @@
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-class AnnotationTextBlockTest : public AnnotationTestFixture
+struct AnnotationTextBlockTest : public AnnotationTestFixture
 {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   Jeff.Marker     05/2014
-    //---------------------------------------------------------------------------------------
-    public: AnnotationTextBlockTest () :
-        AnnotationTestFixture(__FILE__, false /*2D*/, false /*needBriefcase*/)
-        {
-        }
 
 }; // AnnotationTextBlockTest
 
@@ -78,8 +71,7 @@ class AnnotationTextBlockTest : public AnnotationTestFixture
 TEST_F(AnnotationTextBlockTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     AnnotationTextBlockPtr doc = AnnotationTextBlock::Create(project);
@@ -166,8 +158,7 @@ TEST_F(AnnotationTextBlockTest, DefaultsAndAccessors)
 TEST_F(AnnotationTextBlockTest, DeepCopy)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     DgnFontCR ttFont = DgnFontManager::GetLastResortTrueTypeFont();
@@ -262,8 +253,7 @@ TEST_F(AnnotationTextBlockTest, DeepCopy)
 TEST_F(AnnotationTextBlockTest, CreateAnnotationTextBlock)
 {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     AnnotationTextBlockPtr doc = AnnotationTextBlock::Create(project);
@@ -353,8 +343,7 @@ TEST_F(AnnotationTextBlockTest, CreateAnnotationTextBlock)
 TEST_F(AnnotationTextBlockTest, Unicode)
 {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     // Text Style
@@ -387,7 +376,7 @@ TEST_F(AnnotationTextBlockTest, Unicode)
 //---------------------------------------------------------------------------------------
 TEST_F(AnnotationTextBlockTest, ToString)
     {
-    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR db = *GetDgnDb();
 
     AnnotationTextStylePtr style = AnnotationTextStyle::Create(db);
     style->SetName("style");

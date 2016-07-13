@@ -8,25 +8,11 @@
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/Annotations/Annotations.h>
 
-// Republish API:           bb re DgnPlatform:PublishedApi
-// Rebuild API:             bb re DgnPlatformDll
-// Republish seed files:    bb re UnitTests_Documents
-// Rebuild test:            bb DgnPlatform:UnitTests-Published
-// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnPlatform:UnitTests-Published
-// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="AnnotationLeaderStyleTest.*"
-
 //=======================================================================================
 // @bsiclass                                                   Umar.Hayat     07/15
 //=======================================================================================
 struct AnnotationLeaderStyleTest : public GenericDgnModelTestFixture
 {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   Umar.Hayat     07/15
-    //---------------------------------------------------------------------------------------
-public: AnnotationLeaderStyleTest() :
-        GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/)
-        {
-        }
 
 }; // AnnotationLeaderStyleTest
 
@@ -77,8 +63,7 @@ TEST_F(AnnotationLeaderStyleTest, PropertyBagTypes)
 TEST_F(AnnotationLeaderStyleTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project);
@@ -111,8 +96,7 @@ TEST_F(AnnotationLeaderStyleTest, DefaultsAndAccessors)
 TEST_F(AnnotationLeaderStyleTest, DeepCopy)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project);
@@ -137,8 +121,7 @@ TEST_F(AnnotationLeaderStyleTest, DeepCopy)
 TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.

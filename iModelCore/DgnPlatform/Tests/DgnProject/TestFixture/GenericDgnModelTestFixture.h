@@ -11,43 +11,66 @@
 #include <Bentley/BeTest.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/BackDoor.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+
+
+#define TEST_MODEL2D_NAME     "TestModel2D"
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
-
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                                     Sam.Wilson     02/2012
+* @bsiclass                                             Umar.Hayat          07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct GenericDgnModelTestFixture : public testing::Test
+struct GenericBaseFixture : public testing::Test
 {
+private:
+    Dgn::ScopedDgnHost m_testHost;
+
 protected:
-    bool                     m_is3d;
-    Dgn::ScopedDgnHost       m_host;
-    DgnDbTestDgnManager      m_testDgnManager;
+    DgnDbPtr m_dgnDb;
 
 public:
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson     02/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-GenericDgnModelTestFixture (char const* sourcefile, bool is3d, bool needBriefcase)
-    :
-    m_is3d(is3d),
-    m_testDgnManager (is3d? L"3dMetricGeneral.ibim": L"2dMetricGeneral.ibim", sourcefile, BeSQLite::Db::OpenMode::ReadWrite, needBriefcase)
-    {
-    BeAssert( NULL != GetDgnModelP() );
-    }
+    GenericBaseFixture() {  }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson     02/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual ~GenericDgnModelTestFixture ()
-    {
-    }
+    virtual ~GenericBaseFixture() {}
 
-    DgnModelP       GetDgnModelP() const {return m_testDgnManager.GetDgnModelP();}
-    DgnDbP          GetDgnDb() const {return m_testDgnManager.GetDgnProjectP();}
-    void            CloseTestFile() {m_testDgnManager.CloseTestFile();}
-    BentleyStatus   ReopenTestFile() {return m_testDgnManager.OpenTestFile (false);}
-    bool            Is3d() const {return m_is3d;}
+    virtual void TearDown() override;
+
+    DgnDbPtr GetDgnDb();
 };
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                             Umar.Hayat          07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct GenericDgnModelTestFixture : public GenericBaseFixture
+{
+    BETEST_DECLARE_TC_SETUP
+    BETEST_DECLARE_TC_TEARDOWN
+public:
+    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
 
+    GenericDgnModelTestFixture() { }
+
+    virtual ~GenericDgnModelTestFixture() {}
+
+    bool            Is3d() const { return true; }
+
+    DgnDbPtr GetDgnDb();
+};
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                             Umar.Hayat          07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct GenericDgnModel2dTestFixture : public GenericBaseFixture
+{
+    BETEST_DECLARE_TC_SETUP
+    BETEST_DECLARE_TC_TEARDOWN
+public:
+    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+
+    GenericDgnModel2dTestFixture() { }
+
+    virtual ~GenericDgnModel2dTestFixture() {}
+
+    bool            Is3d() const { return false; }
+
+    DgnDbPtr GetDgnDb();
+};
 END_DGNDB_UNIT_TESTS_NAMESPACE
