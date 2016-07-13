@@ -31,8 +31,6 @@ private:
     IHttpHeaderProviderPtr m_defaultHeadersProvider;
     IHttpHandlerPtr m_handler;
     Credentials m_credentials;
-    static BeFileName s_assetsDirectoryPath;
-    static BeAtomic<int> s_tasksInProgressCount;
 
 public:
     //! Construct new client with predefined configuration

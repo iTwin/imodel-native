@@ -20,8 +20,8 @@
 
 USING_NAMESPACE_BENTLEY_HTTP
 
-BeAtomic<int> HttpClient::s_tasksInProgressCount(0);
-BeFileName HttpClient::s_assetsDirectoryPath;
+static BeFileName s_assetsDirectoryPath;
+static BeAtomic<int> s_tasksInProgressCount;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Grigas.Petraitis                07/2016

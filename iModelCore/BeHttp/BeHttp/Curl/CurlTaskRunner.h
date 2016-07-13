@@ -38,7 +38,7 @@ private:
 protected:
     virtual void _RunAsyncTasksLoop () override;
 
-    BEHTTP_EXPORT CurlTaskRunner ();
+    CurlTaskRunner () : AsyncTaskRunner(){}
     
 public:
     BEHTTP_EXPORT static std::shared_ptr<CurlTaskRunner> Create ()
