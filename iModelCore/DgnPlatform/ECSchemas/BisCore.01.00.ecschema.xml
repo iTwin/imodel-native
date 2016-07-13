@@ -737,7 +737,7 @@
         <Target cardinality="(0,1)" polymorphic="true">
             <Class class="TextAnnotationData">
                 <Key>
-                    <Property name="ECInstanceId"/>
+                    <Property name="ElementId"/>
                 </Key>
             </Class>
         </Target>
@@ -758,7 +758,7 @@
         <Target cardinality="(0,1)" polymorphic="true">
             <Class class="TextAnnotationData">
                 <Key>
-                    <Property name="ECInstanceId"/>
+                    <Property name="ElementId"/>
                 </Key>
             </Class>
         </Target>
@@ -821,7 +821,7 @@
         <Target cardinality="(0,1)" polymorphic="false">
             <Class class="AnnotationTableHeader">
                 <Key>
-                    <Property name="ECInstanceId"/>
+                    <Property name="ElementId"/>
                 </Key>
             </Class>
         </Target>
@@ -1076,11 +1076,16 @@
         <!-- An ElementAspect is related to an Element with a relationship of strength="embedding" (ElementAspect is deleted if the Element is deleted) -->
         <!-- Semantically, an ElementAspect can be considered part of the Element -->
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-            </ClassMap>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+        <ECProperty propertyName="ElementId" typeName="long">
+            <!-- Foreign key relationship to Element that owns the aspect -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract">
@@ -1095,8 +1100,6 @@
                     <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
-                <!-- The ECInstanceId for ElementUniqueAspect is the same as the Id of the owning Element -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -1113,17 +1116,8 @@
                     <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="ElementId" typeName="long">
-            <!-- Foreign key relationship to Element that owns the aspect -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="ElementExternalKey">

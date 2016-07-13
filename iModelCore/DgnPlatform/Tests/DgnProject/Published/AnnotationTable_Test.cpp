@@ -94,11 +94,7 @@ public:
         {
         Utf8String sqlString ("SELECT count(*) FROM ");
         sqlString.append (aspectDescr.m_className);
-
-        Utf8CP  idPropertyName = aspectDescr.m_isUniqueAspect ? "ECInstanceId" : "ElementId";
-        Utf8PrintfString whereStr(" WHERE %s=?", idPropertyName);
-        sqlString.append (whereStr);
-
+        sqlString.append (" WHERE ElementId=?");
         return sqlString;
         }
 

@@ -88,7 +88,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
 
-    // dgn_DefinitionElement
+    // bis_DefinitionElement
         {
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_DefinitionElement));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
@@ -97,7 +97,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
 
-    // dgn_GeometricElement2d
+    // bis_GeometricElement2d
         {
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_GeometricElement2d));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
@@ -107,13 +107,27 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }
 
-    // dgn_GeometricElement3d
+    // bis_GeometricElement3d
         {
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_GeometricElement3d));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CategoryId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])")); 
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
+        }
+
+    // bis_ElementUniqueAspect
+        {
+        Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_ElementUniqueAspect));
+        ASSERT_TRUE(ddl.Contains("[ECInstanceId] INTEGER PRIMARY KEY"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
+        }
+
+    // bis_ElementMultiAspect
+        {
+        Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_ElementMultiAspect));
+        ASSERT_TRUE(ddl.Contains("[ECInstanceId] INTEGER PRIMARY KEY"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
         }
 
     // Validate unique indices

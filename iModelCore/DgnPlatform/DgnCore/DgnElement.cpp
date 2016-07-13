@@ -1903,8 +1903,8 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ECInstanceId) VALUES(?)", GetFullEcSqlClassName().c_str()).c_str());
-    stmt->BindId(1, GetAspectInstanceId(el));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ElementId) VALUES(?)", GetFullEcSqlClassName().c_str()).c_str());
+    stmt->BindId(1, el.GetElementId());
     DbResult status = stmt->Step();
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
@@ -1915,8 +1915,8 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
 DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
-    stmt->BindId(1, GetAspectInstanceId(el));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ElementId=?)", GetFullEcSqlClassName().c_str()).c_str());
+    stmt->BindId(1, el.GetElementId());
     DbResult status = stmt->Step();
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
@@ -1929,13 +1929,13 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     // We know what the class and the ID of an instance *would be* if it exists. See if such an instance actually exists.
     DgnClassId classId = GetECClassId(el.GetDgnDb());
 
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ElementId=?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, el.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         return ECInstanceKey();
 
     // And we know the ID. See if such an instance actually exists.
-    return ECInstanceKey(classId, GetAspectInstanceId(el));
+    return ECInstanceKey(classId, stmt->GetValueId<ECInstanceId>(0));
     }
 
 /*---------------------------------------------------------------------------------**//**

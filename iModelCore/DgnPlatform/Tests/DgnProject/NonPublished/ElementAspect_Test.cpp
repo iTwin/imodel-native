@@ -61,8 +61,8 @@ TEST_F(ElementAspectTests, UniqueAspect_CRUD)
         ASSERT_NE( nullptr , aspect ) << "element should have a peristent aspect";
         ASSERT_STREQ( "Initial Value" , aspect->GetTestUniqueAspectProperty().c_str() );
 
-        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ECInstanceId=?)");
-        stmt->BindId(1, aspect->GetAspectInstanceId(*el));
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ElementId=?)");
+        stmt->BindId(1, el->GetElementId());
         ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "Initial Value" , stmt->GetValueText(0) );
         }
@@ -90,8 +90,8 @@ TEST_F(ElementAspectTests, UniqueAspect_CRUD)
         ASSERT_STREQ( "Changed Value" , aspect->GetTestUniqueAspectProperty().c_str() ) << "I should see the changed value of the aspect now";
 
         // Verify that the aspect's property was changed in the Db
-        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ECInstanceId=?)");
-        stmt->BindId(1, aspect->GetAspectInstanceId(*el));
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ElementId=?)");
+        stmt->BindId(1, el->GetElementId());
         ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "Changed Value" , stmt->GetValueText(0) );
         }
@@ -139,10 +139,9 @@ TEST_F(ElementAspectTests, UniqueAspect_Uniqueness)
     ASSERT_NE(nullptr, aspect) << "element should have a peristent aspect";
     ASSERT_STREQ("Latest Value", aspect->GetTestUniqueAspectProperty().c_str());
     ASSERT_STREQ("TestUniqueAspect", aspect->GetECClassName());
-    ASSERT_EQ(el->GetElementId(), aspect->GetAspectInstanceId(*el));
 
-    BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ECInstanceId=?)");
-    stmt->BindId(1, aspect->GetAspectInstanceId(*el));
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ElementId=?)");
+    stmt->BindId(1, el->GetElementId());
     ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
     ASSERT_STREQ("Latest Value", stmt->GetValueText(0));
     }

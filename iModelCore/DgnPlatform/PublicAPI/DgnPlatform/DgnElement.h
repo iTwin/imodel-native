@@ -566,9 +566,6 @@ public:
             Other           //!< An unspecified reason
         };
 
-        //! Get the Id of this aspect. The aspect's Id is always the same as the host element's Id. This is a convenience function that converts from DgnElementId to ECInstanceId.
-        BeSQLite::EC::ECInstanceId GetAspectInstanceId(DgnElementCR el) const {return BeSQLite::EC::ECInstanceId(el.GetElementId().GetValueUnchecked());}
-
         //! Prepare to insert or update an Aspect for the specified element
         //! @param el   The host element
         //! @param aspect The new aspect to be adopted by the host.

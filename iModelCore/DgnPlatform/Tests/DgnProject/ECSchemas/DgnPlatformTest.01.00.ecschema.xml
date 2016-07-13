@@ -68,11 +68,11 @@
             <Class class="bis:Element" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="False">
-          <Class class="TestUniqueAspect">
-            <Key>
-                <Property name="ECInstanceId" />
-            </Key>
-          </Class>
+            <Class class="TestUniqueAspect">
+                <Key>
+                    <Property name="ElementId" />
+                </Key>
+            </Class>
         </Target>
     </ECRelationshipClass>
 
