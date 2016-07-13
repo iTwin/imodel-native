@@ -22,8 +22,7 @@ Utf8String codeNamespace,
 Utf8String value,
 Utf8String state,
 Utf8String briefcaseId,
-Utf8String usedWithRevision,
-Utf8String date
+Utf8String usedWithRevision
 )
     {
     m_eventTopic = eventTopic;
@@ -34,7 +33,6 @@ Utf8String date
     m_state = state;
     m_briefcaseId = briefcaseId;
     m_usedWithRevision = usedWithRevision;
-    m_date = date;
     }
 
 //---------------------------------------------------------------------------------------
@@ -49,8 +47,7 @@ Utf8String codeNamespace,
 Utf8String value,
 Utf8String state,
 Utf8String briefcaseId,
-Utf8String usedWithRevision,
-Utf8String date
+Utf8String usedWithRevision
 )
     {
     return std::shared_ptr<struct DgnDbServerCodeEvent>
@@ -63,8 +60,7 @@ Utf8String date
                 value,
                 state,
                 briefcaseId,
-                usedWithRevision,
-                date));
+                usedWithRevision));
     }
 
 //---------------------------------------------------------------------------------------
@@ -81,14 +77,6 @@ Utf8String DgnDbServerCodeEvent::GetEventTopic()
 Utf8String DgnDbServerCodeEvent::GetFromEventSubscriptionId()
     {
     return m_fromEventSubscriptionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetDate()
-    {
-    return m_date;
     }
 
 //---------------------------------------------------------------------------------------

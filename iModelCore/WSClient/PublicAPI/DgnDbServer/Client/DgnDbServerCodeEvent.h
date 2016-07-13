@@ -24,7 +24,6 @@ struct DgnDbServerCodeEvent : public DgnDbServerEvent::GenericEvent
         Utf8String m_state;
         Utf8String m_briefcaseId;
         Utf8String m_usedWithRevision;
-        Utf8String m_date;
 
         DgnDbServerCodeEvent
             (
@@ -35,8 +34,7 @@ struct DgnDbServerCodeEvent : public DgnDbServerEvent::GenericEvent
             Utf8String value,
             Utf8String state,
             Utf8String briefcaseId,
-            Utf8String usedWithRevision,
-            Utf8String date
+            Utf8String usedWithRevision
             );
 
     public:
@@ -49,13 +47,11 @@ struct DgnDbServerCodeEvent : public DgnDbServerEvent::GenericEvent
             Utf8String value,
             Utf8String state,
             Utf8String briefcaseId,
-            Utf8String usedWithRevision,
-            Utf8String date
+            Utf8String usedWithRevision
             );
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
         DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetDate();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetCodeAuthorityId();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetNamespace();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetValue();

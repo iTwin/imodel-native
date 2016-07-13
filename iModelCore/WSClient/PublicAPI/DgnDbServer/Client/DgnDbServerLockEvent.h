@@ -18,7 +18,6 @@ struct DgnDbServerLockEvent : public DgnDbServerEvent::GenericEvent
     private:
         Utf8String m_eventTopic;
         Utf8String m_fromEventSubscriptionId;
-        Utf8String m_date;
         Utf8String m_objectId;
         Utf8String m_lockType;
         Utf8String m_lockLevel;
@@ -33,8 +32,7 @@ struct DgnDbServerLockEvent : public DgnDbServerEvent::GenericEvent
                             Utf8String lockType, 
                             Utf8String lockLevel, 
                             Utf8String briefcaseId, 
-                            Utf8String releasedWithRevision, 
-                            Utf8String date
+                            Utf8String releasedWithRevision
                             );
 
     public:
@@ -46,13 +44,11 @@ struct DgnDbServerLockEvent : public DgnDbServerEvent::GenericEvent
                                                                                            Utf8String lockType, 
                                                                                            Utf8String lockLevel, 
                                                                                            Utf8String briefcaseId, 
-                                                                                           Utf8String releasedWithRevision, 
-                                                                                           Utf8String date
+                                                                                           Utf8String releasedWithRevision
                                                                                            );
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
         DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetDate();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetObjectId();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetLockType();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetLockLevel();

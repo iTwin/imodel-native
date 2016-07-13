@@ -305,8 +305,7 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEventString(bool longPolling, I
                                     (DgnDbServerEventStringResult::Success
                                     (
                                     "Lock Info-> LockId: " + lockEvent->GetObjectId() + 
-                                    " LockType: " + lockEvent->GetLockType() + 
-                                    " Date: " + lockEvent->GetDate()
+                                    " LockType: " + lockEvent->GetLockType()
                                     ));
                 }
 
@@ -322,8 +321,7 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEventString(bool longPolling, I
                 return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
                     (DgnDbServerEventStringResult::Success
                     (
-                    "Revision Info-> RevisionId: " + revisionEvent->GetRevisionId() +
-                    " Date: " + revisionEvent->GetDate()
+                    "Revision Info-> RevisionId: " + revisionEvent->GetRevisionId()
                     ));
                 }
 

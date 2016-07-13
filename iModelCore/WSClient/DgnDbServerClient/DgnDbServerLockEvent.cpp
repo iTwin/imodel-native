@@ -21,8 +21,7 @@ Utf8String objectId,
 Utf8String lockType, 
 Utf8String lockLevel, 
 Utf8String briefcaseId, 
-Utf8String releasedWithRevision, 
-Utf8String date
+Utf8String releasedWithRevision
 )
     {
     m_eventTopic = eventTopic;
@@ -32,7 +31,6 @@ Utf8String date
     m_lockLevel = lockLevel;
     m_briefcaseId = briefcaseId;
     m_releasedWithRevision = releasedWithRevision;
-    m_date = date;
     }
 
 //---------------------------------------------------------------------------------------
@@ -46,8 +44,7 @@ Utf8String objectId,
 Utf8String lockType, 
 Utf8String lockLevel, 
 Utf8String briefcaseId, 
-Utf8String releasedWithRevision, 
-Utf8String date
+Utf8String releasedWithRevision
 )
     {
     return std::shared_ptr<struct DgnDbServerLockEvent>
@@ -59,8 +56,7 @@ Utf8String date
                lockType, 
                lockLevel, 
                briefcaseId, 
-               releasedWithRevision, 
-               date
+               releasedWithRevision
                )
          );
     }
@@ -79,14 +75,6 @@ Utf8String DgnDbServerLockEvent::GetEventTopic()
 Utf8String DgnDbServerLockEvent::GetFromEventSubscriptionId()
     {
     return m_fromEventSubscriptionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetDate()
-    {
-    return m_date;
     }
 
 //---------------------------------------------------------------------------------------

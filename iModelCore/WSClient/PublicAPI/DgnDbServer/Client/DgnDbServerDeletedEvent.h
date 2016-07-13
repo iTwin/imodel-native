@@ -19,7 +19,6 @@ struct DgnDbServerDeletedEvent : public DgnDbServerEvent::GenericEvent
         Utf8String m_eventTopic;
         Utf8String m_fromEventSubscriptionId;
         Utf8String m_briefcaseId;
-        Utf8String m_date;
         DgnDbServerEvent::DgnDbServerEventType m_deletedEventType;
 
         DgnDbServerDeletedEvent
@@ -27,7 +26,6 @@ struct DgnDbServerDeletedEvent : public DgnDbServerEvent::GenericEvent
             Utf8String eventTopic,
             Utf8String fromEventSubscriptionId,
             Utf8String briefcaseId,
-            Utf8String date,
             DgnDbServerEvent::DgnDbServerEventType deletedEventType
             );
 
@@ -37,13 +35,11 @@ struct DgnDbServerDeletedEvent : public DgnDbServerEvent::GenericEvent
             Utf8String eventTopic,
             Utf8String fromEventSubscriptionId,
             Utf8String briefcaseId,
-            Utf8String date,
             DgnDbServerEvent::DgnDbServerEventType deletedEventType
             );
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
         DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetDate();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetBriefcaseId();
         DGNDBSERVERCLIENT_EXPORT DgnDbServerEvent::DgnDbServerEventType GetDeletedEventType();
     };
