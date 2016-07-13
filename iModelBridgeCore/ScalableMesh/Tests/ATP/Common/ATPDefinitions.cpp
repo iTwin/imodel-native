@@ -91,8 +91,8 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     else
         {
         WString outputDir;
-        int maxLevel;
-        bool exportTexture;
+        int maxLevel = 10000;
+        //bool exportTexture;
 
         assert(ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode) == true);
 
