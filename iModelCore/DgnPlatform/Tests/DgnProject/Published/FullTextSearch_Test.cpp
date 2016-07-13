@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/FullTextSearch_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -19,9 +19,9 @@ struct SearchableTextTest : public GenericDgnModelTestFixture
 
     typedef DgnSearchableText ST;
 
-    SearchableTextTest() : GenericDgnModelTestFixture(__FILE__, false, false), m_db(*m_testDgnManager.GetDgnProjectP())
+    SearchableTextTest() :  m_db(*GetDgnDb())
         {
-        BeAssert(nullptr != m_testDgnManager.GetDgnProjectP());
+        BeAssert(GetDgnDb().IsValid());
         }
 
     BeInt64Id PeekNextId() const { return BeInt64Id(m_curIdInt); }

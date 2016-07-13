@@ -280,6 +280,9 @@
     <ClCompile Include="Published\LinearDimension_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="TestFixture\GenericDgnModelTestFixture.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
@@ -371,5 +374,8 @@
     <None Include="Published\TSG_GeometryB.ts">
       <Filter>Published</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\DgnPlatform.PartFile.xml" />
   </ItemGroup>
 </Project>

@@ -5,25 +5,11 @@
 
 #include "AnnotationTestFixture.h"
 
-// Republish API:           bb re DgnPlatform:PublishedApi
-// Rebuild API:             bb re DgnPlatformDll
-// Republish seed files:    bb re UnitTests_Documents
-// Rebuild test:            bb re DgnProjectUnitTests BeGTestExe
-// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnProjectUnitTests BeGTestExe
-// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="BasicAnnotationLeaderTest.*:AnnotationLeaderTest.*"
-
 //=======================================================================================
 // @bsiclass                                                   Umar.Hayat     07/15
 //=======================================================================================
 struct AnnotationLeaderTest : public AnnotationTestFixture
 {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   Umar.Hayat     07/15
-    //---------------------------------------------------------------------------------------
-public: AnnotationLeaderTest() :
-    AnnotationTestFixture(__FILE__, false /*2D*/, false /*needBriefcase*/)
-        {
-        }
 
 }; // AnnotationLeaderTest
 
@@ -42,8 +28,7 @@ public: AnnotationLeaderTest() :
 TEST_F(AnnotationLeaderTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     AnnotationLeaderStylePtr style = createAnnotationLeaderStyle(project, "TestLeaderStyle");
@@ -78,8 +63,7 @@ TEST_F(AnnotationLeaderTest, DefaultsAndAccessors)
 TEST_F(AnnotationLeaderTest, DeepCopy)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     AnnotationLeaderPtr leader = AnnotationLeader::Create(project);

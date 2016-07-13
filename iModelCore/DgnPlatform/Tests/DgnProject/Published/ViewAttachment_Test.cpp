@@ -30,7 +30,7 @@ protected:
 public:
     DEFINE_T_SUPER(GenericDgnModelTestFixture);
 
-    ViewAttachmentTest() : T_Super(__FILE__, true, true) { }
+    ViewAttachmentTest() /*: T_Super(__FILE__, true, true)*/ { }
 
     virtual void SetUp() override;
 
@@ -109,6 +109,7 @@ void ViewAttachmentTest::SetUp()
     view.Insert();
     m_viewId = view.GetViewId();
     ASSERT_TRUE(m_viewId.IsValid());
+    db.SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -248,8 +249,10 @@ TEST_F(ViewAttachmentTest, Geom)
     static const double scale = 2.0;
     ViewAttachment::Data data(m_viewId, scale);
     auto cpAttach = InsertAttachment(MakeParams(data, m_sheetId, m_attachmentCatId, MakePlacement()));
+    ASSERT_TRUE(cpAttach.IsValid());
 
     ViewAttachmentPtr pAttach = cpAttach->MakeCopy<ViewAttachment>();
+    ASSERT_TRUE(pAttach.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, pAttach->GenerateGeomStream());
     cpAttach = pAttach->Update();
     EXPECT_TRUE(cpAttach.IsValid());

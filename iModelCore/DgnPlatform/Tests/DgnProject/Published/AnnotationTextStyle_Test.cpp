@@ -3,30 +3,17 @@
 //  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
-#include "DgnHandlersTests.h"
+#include "AnnotationTestFixture.h"
 #include <DgnPlatform/Annotations/Annotations.h>
-
-// Republish API:           bb re DgnPlatform:PublishedApi
-// Rebuild API:             bb re DgnPlatformDll
-// Republish seed files:    bb re UnitTests_Documents
-// Rebuild test:            bb re DgnPlatform:UnitTests-Published
-// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnPlatform:UnitTests-Published
-// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="BasicAnnotationTextStyleTest.*:AnnotationTextStyleTest.*"
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-class AnnotationTextStyleTest : public GenericDgnModelTestFixture
+struct AnnotationTextStyleTest : public AnnotationTestFixture
 {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   Jeff.Marker     05/2014
-    //---------------------------------------------------------------------------------------
-    public: AnnotationTextStyleTest () :
-        GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/)
-        {
-        }
 
 }; // AnnotationTextStyleTest
+
 
 //---------------------------------------------------------------------------------------
 // Verifies the mapping between AnnotationTextStyleProperty and data type in AnnotationTextStylePropertyBag by ensuring it does not assert.
@@ -98,8 +85,7 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
 TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     AnnotationTextStylePtr style = AnnotationTextStyle::Create(project);
@@ -133,8 +119,7 @@ TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
 TEST_F(AnnotationTextStyleTest, DeepCopy)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     AnnotationTextStylePtr style = AnnotationTextStyle::Create(project);
@@ -159,14 +144,11 @@ TEST_F(AnnotationTextStyleTest, DeepCopy)
 TEST_F(AnnotationTextStyleTest, TableReadWrite)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     // Verify initial state.
-    // The GenericDgnModelTestFixture will open 2dMetricGeneral, which contains a text element with style (none), thus there will be 1 style (the equivalent of style (none)).
-    static const size_t SEED_STYLE_COUNT = 1;
-    EXPECT_EQ((0 + SEED_STYLE_COUNT), AnnotationTextStyle::QueryCount(project));
+    EXPECT_EQ((0 ), AnnotationTextStyle::QueryCount(project));
 
     //.............................................................................................
     // Insert
@@ -176,7 +158,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     ASSERT_TRUE(testStyle->Insert().IsValid());
     ASSERT_TRUE(testStyle->GetElementId().IsValid());
 
-    EXPECT_EQ((1 + SEED_STYLE_COUNT), AnnotationTextStyle::QueryCount(project));
+    EXPECT_EQ((1), AnnotationTextStyle::QueryCount(project));
 
     //.............................................................................................
     // Query
@@ -209,7 +191,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
 
     ASSERT_TRUE(mutatedStyle->Update().IsValid());
 
-    EXPECT_EQ((1 + SEED_STYLE_COUNT), AnnotationTextStyle::QueryCount(project));
+    EXPECT_EQ((1), AnnotationTextStyle::QueryCount(project));
 
     fileStyle = AnnotationTextStyle::Get(project, name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
@@ -238,7 +220,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
         ++numStyles;
         }
 
-    EXPECT_EQ((1 + SEED_STYLE_COUNT), numStyles);
+    EXPECT_EQ((1), numStyles);
     EXPECT_TRUE(foundOurStyle);
 
     auto iter2 = AnnotationTextStyle::MakeIterator(project);
@@ -259,6 +241,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
         ++numStyles;
         }
 
-    EXPECT_EQ((1 + SEED_STYLE_COUNT), numStyles);
+    EXPECT_EQ((1), numStyles);
     EXPECT_TRUE(foundOurStyle);
+    project.SaveChanges();
     }

@@ -6,25 +6,11 @@
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/Annotations/Annotations.h>
 
-// Republish API:           bb re DgnPlatform:PublishedApi
-// Rebuild API:             bb re DgnPlatformDll
-// Republish seed files:    bb re UnitTests_Documents
-// Rebuild test:            bb re DgnPlatform:UnitTests-Published
-// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnProjectUnitTests BeGTestExe
-// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="AnnotationFrameStyleTest.*"
-
 //=======================================================================================
 // @bsiclass                                                   Umar.Hayat     07/15
 //=======================================================================================
 struct AnnotationFrameStyleTest : public GenericDgnModelTestFixture
 {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   Umar.Hayat     07/15
-    //---------------------------------------------------------------------------------------
-public: AnnotationFrameStyleTest() :
-        GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/)
-        {
-        }
 
 }; // AnnotationFrameStyleTest
 
@@ -90,8 +76,7 @@ TEST_F(AnnotationFrameStyleTest, PropertyBagTypes)
 TEST_F(AnnotationFrameStyleTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project);
@@ -120,8 +105,7 @@ TEST_F(AnnotationFrameStyleTest, DefaultsAndAccessors)
 TEST_F(AnnotationFrameStyleTest, DeepCopy)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project);
@@ -146,8 +130,7 @@ TEST_F(AnnotationFrameStyleTest, DeepCopy)
 TEST_F(AnnotationFrameStyleTest, TableReadWrite)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.
@@ -255,8 +238,7 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
 TEST_F(AnnotationFrameStyleTest, InvalidOperations)
     {
         //.............................................................................................
-        ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-        DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+        DgnDbR project = *GetDgnDb();
 
         //.............................................................................................
         // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.

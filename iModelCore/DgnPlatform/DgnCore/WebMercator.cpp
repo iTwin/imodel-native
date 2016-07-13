@@ -1244,6 +1244,7 @@ void WebMercatorModel::CreateCache() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) const
     {
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
     DgnDb::VerifyClientThread();
 
     tile.SetQueued();
@@ -1257,6 +1258,7 @@ void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) c
 
     TileData data(m_cache.get(), tile, sys, color, url.c_str());
     folly::via(&BeFolly::IOThreadPool::GetPool(), [=](){return data.LoadFromHttp();});
+#endif
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

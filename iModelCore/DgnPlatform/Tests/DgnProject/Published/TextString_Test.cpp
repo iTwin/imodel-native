@@ -18,9 +18,8 @@ USING_NAMESPACE_BENTLEY_DGN
 //=======================================================================================
 struct TextStringTest : public GenericDgnModelTestFixture
 {
-    TextStringTest() : GenericDgnModelTestFixture (__FILE__, true /*3D*/, false /*needsBriefcase*/) { }
-    DgnDbR GetProjectR() { return *m_testDgnManager.GetDgnProjectP(); }
-    DgnModelR GetModelR() { return *GetDgnModelP(); }
+    TextStringTest()  { }
+    DgnDbR GetProjectR() { return *GetDgnDb(); }
 };
 
 //---------------------------------------------------------------------------------------
