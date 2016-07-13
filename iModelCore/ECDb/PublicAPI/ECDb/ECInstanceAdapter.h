@@ -40,7 +40,7 @@ private:
     void CreateColumnHandlers();
     //column handlers
     BentleyStatus SetInstanceId(ECN::IECInstanceR instance, IECSqlValue const& value) const;
-    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, IECSqlValue const& value) const;
+    ECDB_EXPORT BentleyStatus SetPropertyData(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetPropertyData(ECN::IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value) const;
     BentleyStatus SetRelationshipSource(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetRelationshipTarget(ECN::IECInstanceR instance, IECSqlValue const& value) const;
@@ -51,6 +51,11 @@ private:
     ECN::IECInstancePtr FindRelationshipEndpoint(ECInstanceId endpointInstanceId, ECN::ECClassId endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
 
 public:
+
+    //__PUBLISH_SECTION_END__
+    BentleyStatus SetSimpleProperty(ECN::IECInstanceR instance, IECSqlValue const& value) const {return SetPropertyData(instance, value);}
+    //__PUBLISH_SECTION_START__
+
     //! Creates a new instance of the adapter
     //! @param[in] ecSqlStatement Prepared statement
     //! @see ECSqlStatement
