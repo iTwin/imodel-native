@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/Cpp_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -939,8 +939,10 @@ void test_numeric_limits ()
 
 TEST(Cpp, LanguageFeatures)
     {
-    #if defined (__clang__)
+    #if defined(__APPLE__) && defined (__clang__)
         ASSERT_TRUE( CLANG_VERSION >= 4010 ) << CLANG_VERSION;
+    #elif defined(ANDROID) && defined (__clang__)
+        ASSERT_TRUE( CLANG_VERSION >= 3080 ) << CLANG_VERSION;
     #elif defined (__GNUC__)
         ASSERT_TRUE( GCC_VERSION >= 4060 ) << GCC_VERSION;
     #elif defined (BENTLEY_WIN32)
