@@ -10,52 +10,54 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlClassParams::Add(Utf8CP name, StatementType type, bool ah)
+void ECSqlClassParams::Add(Utf8StringCR name, StatementType type, bool ah)
     {
-    BeAssert(!Utf8String::IsNullOrEmpty(name));
-    if (!Utf8String::IsNullOrEmpty(name))
+    if (name.empty())
         {
-        BeAssert(m_entries.end() == std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return 0 == ::strcmp(name, arg.m_name); }));
-        Entry entry(name, type, ah);
-        if (StatementType::Select == (type & StatementType::Select) && 0 < m_entries.size())
-            {
-            // We want to be able to quickly look up the index for a name for SELECT query results...so group them together at the front of the list.
-            m_entries.insert(m_entries.begin(), entry);
-            }
-        else
-            {
-            m_entries.push_back(entry);
-            }
+        BeAssert(false);
+        return;
+        }
+
+    BeAssert(m_entries.end() == std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return name.Equals(arg.m_name); }));
+    Entry entry(name, type, ah);
+    if (StatementType::Select == (type & StatementType::Select) && 0 < m_entries.size())
+        {
+        // We want to be able to quickly look up the index for a name for SELECT query results...so group them together at the front of the list.
+        m_entries.insert(m_entries.begin(), entry);
+        }
+    else
+        {
+        m_entries.push_back(entry);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ECSqlClassParams::GetSelectIndex(Utf8CP name) const
+int ECSqlClassParams::GetSelectIndex(Utf8StringCR name) const
     {
-    // NB: All parameters valid for SELECT statements are grouped at the beginning of the list.
-    BeAssert(!Utf8String::IsNullOrEmpty(name));
-    if (!Utf8String::IsNullOrEmpty(name))
+    if (name.empty())
         {
-        auto found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return arg.m_name == name; });
-        if (m_entries.end() == found)
-            {
-            // Ideally callers always pass the same static string we originally stored...fallback to string comparison...
-            found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return 0 == ::strcmp(arg.m_name, name); });
-            BeAssert(m_entries.end() == found && "Prefer to pass the same string with static storage duration to GetSelectIndex() as was previously passed to Add()");
-            }
-
-        BeAssert(m_entries.end() != found);
-        if (m_entries.end() != found)
-            {
-            BeAssert(StatementType::Select == (found->m_type & StatementType::Select));
-            if (StatementType::Select == (found->m_type & StatementType::Select))
-                return static_cast<int>(found - m_entries.begin());
-            }
+        BeAssert(false);
+        return -1;
         }
 
-    return -1;
+    // NB: All parameters valid for SELECT statements are grouped at the beginning of the list.
+    auto found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return arg.m_name.Equals(name); });
+
+    if (m_entries.end() == found)
+        {
+        BeAssert(false);
+        return -1;
+        }
+
+    if (StatementType::Select != (found->m_type & StatementType::Select))
+        {
+        BeAssert(false);
+        return -1;
+        }
+
+    return static_cast<int>(found - m_entries.begin());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -200,7 +202,7 @@ void ECSqlClassParams::Initialize(IECSqlClassParamsProvider& provider)
     // Build SELECT statement
     m_selectTemplate = "SELECT ";
     uint16_t numSelectParams = buildParamString(m_selectTemplate, entries, ECSqlClassParams::StatementType::Select,
-                                                [&] (Utf8CP name, uint16_t count) { m_selectTemplate.append(1, '[').append(name).append(1, ']'); });
+                                                [&] (Utf8StringCR name, uint16_t count) { m_selectTemplate.append(1, '[').append(name).append(1, ']'); });
 
     if (0 == numSelectParams)
         m_selectTemplate.clear();
@@ -209,7 +211,7 @@ void ECSqlClassParams::Initialize(IECSqlClassParamsProvider& provider)
     m_insertTemplate.append(1, '(');
     Utf8String insertValues;
     uint16_t numInsertParams = buildParamString(m_insertTemplate, entries, ECSqlClassParams::StatementType::Insert,
-                                                [&] (Utf8CP name, uint16_t count)
+                                                [&] (Utf8StringCR name, uint16_t count)
         {
         m_insertTemplate.append(1, '[').append(name).append(1, ']');
         if (0 < count)
@@ -226,7 +228,7 @@ void ECSqlClassParams::Initialize(IECSqlClassParamsProvider& provider)
     // Build UPDATE statement
     m_updateTemplate.append(" SET ");
     m_numUpdateParams = buildParamString(m_updateTemplate, entries, ECSqlClassParams::StatementType::Update,
-                                                     [&] (Utf8CP name, uint16_t count)
+                                                     [&] (Utf8StringCR name, uint16_t count)
         {
         m_updateTemplate.append(1, '[').append(name).append("]=:[").append(name).append(1, ']');
         });

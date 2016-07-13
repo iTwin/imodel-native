@@ -1501,6 +1501,8 @@ struct GenericClassParamsProvider : IECSqlClassParamsProvider
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GenericClassParamsProvider::_GetClassParams(ECSqlClassParamsR ecSqlParams)
     {
+    // *** WIP_AUTO_HANDLED_PROPERTIES: "ECInstanceId" is handled specially. It's in the table but not in the properties collection
+    ecSqlParams.Add("ECInstanceId", ECSqlClassParams::StatementType::Insert, false);
 
     // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will just read them
     //                                  For now, we let the handlers tell us which properties have custom handling attributes
@@ -1512,6 +1514,10 @@ void GenericClassParamsProvider::_GetClassParams(ECSqlClassParamsR ecSqlParams)
     for (auto prop : ecclass->GetProperties())
         {
         Utf8StringCR propName = prop->GetName();
+
+        // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will detect these special properties from them.
+        if (propName.Equals("LastMod") || propName.Equals("UserProperties"))
+            continue;
 
         // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will just read them
         //                                  For now, we let the handlers tell us which properties have custom handling attributes
@@ -1525,7 +1531,7 @@ void GenericClassParamsProvider::_GetClassParams(ECSqlClassParamsR ecSqlParams)
             ca.m_useAutoHandler = true;
             }
 
-        ecSqlParams.Add(propName.c_str(), ca.m_statementType, ca.m_useAutoHandler);
+        ecSqlParams.Add(propName, ca.m_statementType, ca.m_useAutoHandler);
         }
     }
 

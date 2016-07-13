@@ -654,7 +654,7 @@ protected:
     DgnClassId    m_classId;
     DgnCode       m_code;
     Utf8String    m_label;
-    ECN::IECInstancePtr m_autoHandledProperties;
+    mutable ECN::IECInstancePtr m_autoHandledProperties;
     mutable Flags m_flags;
     mutable ECN::AdHocJsonContainerP m_userProperties;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
@@ -668,7 +668,7 @@ protected:
     void InvalidateCode() {m_code = DgnCode();}
 #endif
     
-    ECN::IECInstanceR GetAutoHandledProperties();
+    ECN::IECInstanceR GetAutoHandledProperties() const;
 
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -1155,7 +1155,7 @@ public:
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
 
-    //! @private
+    //! @private *** WIP_AUTO_HANDLED_PROPERTIES Get rid of "unhandledprops"
     DGNPLATFORM_EXPORT void ComputeUnhandledProperties(bvector<ECN::ECPropertyCP>&) const;
     
     //! @}

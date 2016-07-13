@@ -13,15 +13,15 @@ HANDLER_DEFINE_MEMBERS(TestElementSub2Handler)
 HANDLER_DEFINE_MEMBERS(TestElementSub3Handler)
 HANDLER_DEFINE_MEMBERS(TestElementComplexHandler)
 
-void TestElementSub1Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementSub1::TEMPORARY_GetPropertyHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
-void TestElementSub2Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementSub2::TEMPORARY_GetPropertyHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
-void TestElementSub3Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementSub3::TEMPORARY_GetPropertyHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
-void TestElementComplexHandler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)   { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementComplex::TEMPORARY_GetPropertyHandlingCustomAttributes(params); }    // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementSub1Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementSub1::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementSub2Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementSub2::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementSub3Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementSub3::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementComplexHandler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)   { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementComplex::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }    // *** WIP_AUTO_HANDLED_PROPERTIES
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestElementSub1::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementSub1::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop1_1");
     params.Add("Prop1_2");
@@ -111,7 +111,7 @@ TestElementSub1CPtr TestElementSub1::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestElementSub2::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementSub2::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop2_1");
     params.Add("Prop2_2");
@@ -202,7 +202,7 @@ TestElementSub2CPtr TestElementSub2::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestElementSub3::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementSub3::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop3_1");
     params.Add("Prop3_2");
@@ -293,7 +293,7 @@ TestElementSub3CPtr TestElementSub3::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestElementComplex::_TEMPORARY_GetAutoHandlerInfo(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
+void TestElementComplex::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
     {
     params.Add("Prop_point3d");
     params.Add("Prop_struct");

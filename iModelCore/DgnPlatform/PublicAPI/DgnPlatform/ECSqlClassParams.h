@@ -9,6 +9,8 @@
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+struct DgnElement;
+
 //=======================================================================================
 //! Interface adopted by a DgnDomain::Handler which can supply ECSqlClassParams
 // @bsiclass                                                     Paul.Connelly   09/15
@@ -52,9 +54,11 @@ public:
 //=======================================================================================
 struct ECSqlClassParams
 {
+    friend struct DgnElement;
 public:
     enum class StatementType
         {
+        None = 0, //!< Property should not be included in any statement -- it has completely custom I/O
         Select = 1 << 0, //!< Property should be included in SELECT statements from DgnElement::_LoadFromDb()
         Insert = 1 << 1, //!< Property should be included in INSERT statements from DgnElement::_InsertInDb()
         Update = 1 << 2, //!< Property should be included in UPDATE statements from DgnElement::_UpdateInDb()
@@ -65,12 +69,12 @@ public:
 
     struct Entry
         {
-        Utf8CP          m_name;
+        Utf8String      m_name;
         StatementType   m_type;
         bool            m_useAutoHandler;
 
-        Entry() : m_name(nullptr), m_type(StatementType::All), m_useAutoHandler(true) {}
-        Entry(Utf8CP name, StatementType type, bool useAutoHandler) : m_name(name), m_type(type), m_useAutoHandler(useAutoHandler) {}
+        Entry() : m_type(StatementType::All), m_useAutoHandler(true) {}
+        Entry(Utf8StringCR name, StatementType type, bool useAutoHandler) : m_name(name), m_type(type), m_useAutoHandler(useAutoHandler) {}
         };
 
     typedef bvector<Entry> Entries;
@@ -83,7 +87,7 @@ public:
 
     struct PropertyHandlingCustomAttributes : bmap<Utf8String, PropertyHandlingCustomAttributesBundle>  // *** TEMPORARY *** WIP_AUTO_HANDLED_PROPERTIES
         {
-        void Add(Utf8CP propName, StatementType stype = StatementType::All, bool ah = false)
+        void Add(Utf8StringCR propName, StatementType stype = StatementType::All, bool ah = false)
             {
             auto& bundle = (*this)[propName];
             bundle.m_statementType = stype;
@@ -117,15 +121,15 @@ public:
     bool BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnClassId classId) const;
 
     //! Adds a parameter to the list
-    //! @param[in]      parameterName The name of the parameter. @em Must be a pointer to a string with static storage duration.
+    //! @param[in]      parameterName The name of the parameter.
     //! @param[in]      type          The type(s) of statements in which this parameter is used.
     //! @param[in]      useAutoHandler If true, the DgnElement base class will take care of caching reads and writes of this property. If false, then DgnElement subclass must get and bind it.
-    DGNPLATFORM_EXPORT void Add(Utf8CP parameterName, StatementType type = StatementType::All, bool useAutoHandler = true);
+    DGNPLATFORM_EXPORT void Add(Utf8StringCR parameterName, StatementType type = StatementType::All, bool useAutoHandler = true);
 
     //! Returns an index usable for accessing the columns with the specified name in the results of an ECSql SELECT query.
     //! @param[in]      parameterName The name of the parameter
     //! @return The index of the corresponding column in the query results, or -1 if no such column exists
-    DGNPLATFORM_EXPORT int GetSelectIndex(Utf8CP parameterName) const;
+    DGNPLATFORM_EXPORT int GetSelectIndex(Utf8StringCR parameterName) const;
 
     //! The properties in a given ECClass that are NOT auto-handled
     bset<Utf8String> const& GetCustomHandled() const {return m_customHandled;}
