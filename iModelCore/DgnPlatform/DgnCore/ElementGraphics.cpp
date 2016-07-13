@@ -485,16 +485,16 @@ static void clearCurveVectorIds(CurveVectorCR curveVector)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawSolidPrimitiveCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curveVector, CurveTopologyIdCR topologyId, GeometryStreamEntryIdCR entryId)
+static void drawSolidPrimitiveCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curveVector, CurveTopologyIdCR topologyId, GeometryStreamEntryIdCP entryId)
     {
-    if (!entryId.IsValid())
+    if (nullptr == entryId || !entryId->IsValid())
         {
         WireframeGeomUtil::DrawOutline(curveVector, graphic); // Always output as open profile...
         return;
         }
 
     clearCurveVectorIds(curveVector);
-    CurveTopologyId::AddCurveVectorIds(curveVector, CurvePrimitiveId::Type::SolidPrimitive, topologyId, entryId.GetIndex(), entryId.GetPartIndex());
+    CurveTopologyId::AddCurveVectorIds(curveVector, CurvePrimitiveId::Type::SolidPrimitive, topologyId, entryId->GetIndex(), entryId->GetPartIndex());
     WireframeGeomUtil::DrawOutline(curveVector, graphic); // Always output as open profile...
     clearCurveVectorIds(curveVector); // Best not to leave our curve ids on the curve primitives...
     }
@@ -502,15 +502,15 @@ static void drawSolidPrimitiveCurveVector(Render::GraphicBuilderR graphic, Curve
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimitivePtr primitive, CurveTopologyIdCR topologyId, GeometryStreamEntryIdCR entryId)
+static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimitivePtr primitive, CurveTopologyIdCR topologyId, GeometryStreamEntryIdCP entryId)
     {
-    if (!entryId.IsValid())
+    if (nullptr == entryId || !entryId->IsValid())
         {
         graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
         return;
         }
 
-    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::SolidPrimitive, topologyId, entryId.GetIndex(), entryId.GetPartIndex());
+    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::SolidPrimitive, topologyId, entryId->GetIndex(), entryId->GetPartIndex());
     primitive->SetId(newId.get());
 
     graphic.AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
@@ -521,7 +521,7 @@ static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR primitive, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
-    GeometryStreamEntryId entryId = context.GetGeometryStreamEntryId();
+    GeometryStreamEntryIdCP entryId = graphic.GetGeometryStreamEntryId();
 
     switch (primitive.GetSolidPrimitiveType())
         {
