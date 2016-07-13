@@ -672,7 +672,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             m_pathToHeaders(headers_path),
             m_useNodeHeaderGrouping(areNodeHeadersGrouped)
             {
-			setDataSourceAccount(dataSourceAccount);			
+            SetDataSourceAccount(dataSourceAccount);
             bool haveHeaders = false;
             switch (type)
                 {
@@ -739,7 +739,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 }
             }
 
-        void setDataSourceAccount(DataSourceAccount *dataSourceAccount)
+        void SetDataSourceAccount(DataSourceAccount *dataSourceAccount)
         {
             m_dataSourceAccount = dataSourceAccount;
         }

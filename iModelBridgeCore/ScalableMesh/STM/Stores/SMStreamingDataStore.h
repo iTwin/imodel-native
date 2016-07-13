@@ -23,9 +23,6 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         WString m_rootDirectory;        
         WString m_pathToHeaders;
         bool m_use_node_header_grouping;
-        // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
-        WString m_storage_connection_string;
-        scalable_mesh::azure::Storage m_stream_store;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
 
@@ -60,11 +57,11 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         
         virtual RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> GetNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
-        DataSource *initializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const;
+        DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const;
 
-        DataSourceAccount *getDataSourceAccount(void) const;
+        DataSourceAccount *GetDataSourceAccount(void) const;
 
-        void setDataSourceAccount(DataSourceAccount *dataSourceAccount);        
+        void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);        
 
         void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const;
             
