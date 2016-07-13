@@ -19,7 +19,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 This specification returns all instance nodes available in the repository.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct AllInstanceNodesSpecification : public ChildNodeSpecification
+struct EXPORT_VTABLE_ATTRIBUTE AllInstanceNodesSpecification : public ChildNodeSpecification
     {
     private:
         bool     m_groupByClass;
