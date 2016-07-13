@@ -38,7 +38,7 @@ CurlHttpHandler::CurlHttpHandler()
         LOG.debugv("HttpBackend: %s", curl_version());
         }
 
-#if defined (__APPLE__)
+#if defined (BENTLEYCONFIG_OS_APPLE_IOS)
     ApplicationEventsManager::GetInstance().AddApplicationEventsListener(*this);
 #endif
     }
@@ -57,17 +57,17 @@ CurlHttpHandler::~CurlHttpHandler()
     //
     //  I have checked with WinDbg that all threads are already destroyed when this destructor is called. Therefore
     //  we will be good citizens on Androis and iOS only :-)
-#if defined (__APPLE__) || defined (ANDROID)
+#if defined (BENTLEYCONFIG_OS_APPLE_IOS) || defined (BENTLEYCONFIG_OS_ANDROID)
     m_curlPool.Resize(0);
     curl_global_cleanup();
 #endif
     
-#if defined (__APPLE__)
+#if defined (BENTLEYCONFIG_OS_APPLE_IOS)
     ApplicationEventsManager::GetInstance().RemoveApplicationEventsListener(*this);
 #endif
     }
 
-#if !defined (__APPLE__)
+#if !defined (BENTLEYCONFIG_OS_APPLE_IOS)
 void ApplicationEventsManager::InitializeApplicationEventsListening(){}
 #endif
 
