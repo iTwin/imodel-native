@@ -125,11 +125,22 @@ private:
 
 template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public ISMNodeDataStore<DATATYPE> 
     {
+    public:
+
+        enum SMStreamingDataType
+            {
+            POINTS,
+            INDICES,
+            UVS,
+            UVINDICES
+            };
+
     private:
         
         SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
         DataSourceAccount*            m_dataSourceAccount;
-        WString                       m_pathToPoints;
+        WString                       m_pathToNodeData;
+        SMStreamingDataType           m_dataType;
         WString                       m_storage_connection_string;        
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
@@ -141,15 +152,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         StreamingDataBlock    & GetBlock(HPMBlockID blockID) const;
 
     public:
-
-        enum SMStreamingDataType
-            {
-            POINTS,
-            INDICES,
-            UVS,
-            UVINDICES
-            };
-              
+       
         SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true);
             
         virtual ~SMStreamingNodeDataStore();

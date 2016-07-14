@@ -814,24 +814,25 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(Data
 //------------------SMStreamingNodeDataStore--------------------------------------------
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true)
     :m_dataSourceAccount(dataSourceAccount),     
-     m_pathToPoints(path),
+     m_pathToNodeData(path),
      m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==")
     {       
     m_nodeHeader = nodeHeader;
+    m_dataType = type;
 
     switch (type)
         {
-        case SMStreamingDataType::POINTS:
-            m_pathToPoints += L"points/";
+        case SMStreamingDataType::POINTS: 
+            m_pathToNodeData += L"points/";
             break;
         case SMStreamingDataType::INDICES:
-            m_pathToPoints += L"indices/";
+            m_pathToNodeData += L"indices/";
             break;
         case SMStreamingDataType::UVS:
-            m_pathToPoints += L"uvs/";
+            m_pathToNodeData += L"uvs/";
             break;
         case SMStreamingDataType::UVINDICES:
-            m_pathToPoints += L"uvindices/";
+            m_pathToNodeData += L"uvindices/";
             break;
         default:
             assert(!"Unkown data type for streaming");
@@ -843,7 +844,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         {
         // Create base directory structure to store information if not already done
         // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only        
-        if (0 == CreateDirectoryW(m_pathToPoints.c_str(), NULL))
+        if (0 == CreateDirectoryW(m_pathToNodeData.c_str(), NULL))
             {
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }        
@@ -871,7 +872,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
     if (NULL != DataTypeArray && countData > 0)
         {
         wchar_t buffer[10000];
-        swprintf(buffer, L"%sp_%llu.bin", m_pathToPoints.c_str(), blockID.m_integerID);
+        swprintf(buffer, L"%sp_%llu.bin", m_pathToNodeData.c_str(), blockID.m_integerID);
         std::wstring filename(buffer);
         BeFile file;
         auto fileOpened = OPEN_FILE(file, filename.c_str(), BeFileAccess::Write);
@@ -914,6 +915,9 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
+    if (m_dataType == SMStreamingDataType::POINTS)
+        return m_nodeHeader->m_nodeCount;
+    else
     if (IsValidID(blockID))
         return this->GetBlock(blockID).size() / sizeof(DATATYPE);
 
@@ -922,8 +926,8 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
 
 template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
     {
-    int i = 6;
-    i = i;
+    assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) > 0);
+    m_nodeHeader->m_nodeCount += countDelta;
     }
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
@@ -952,7 +956,7 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
     if (!block.IsLoaded())
         {
         block.SetID(blockID.m_integerID);
-        block.SetDataSource(m_pathToPoints);        
+        block.SetDataSource(m_pathToNodeData);        
         block.Load(m_dataSourceAccount);
         }
     assert(block.GetID() == blockID.m_integerID);

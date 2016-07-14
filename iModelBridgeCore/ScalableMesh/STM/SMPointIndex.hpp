@@ -3668,9 +3668,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
         if (needStoreHeader) 
             {
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
-
-            const_cast<SMPointIndexNode<POINT, EXTENT>*>(this)->m_nodeHeader.m_nodeCount = ptsPtr->size();
-
+            
             //NEEDS_WORK_SM : During partial update some synchro problem can occur.
             //NEEDS_WORK_SM : Should not be required now that ID is attributed during node creation.
                 

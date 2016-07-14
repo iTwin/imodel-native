@@ -129,14 +129,18 @@ template <class POINT, class EXTENT> HPMBlockID SMSQLiteNodePointStore<POINT, EX
 
 template <class POINT, class EXTENT> size_t SMSQLiteNodePointStore<POINT, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
+    /*
     if(!blockID.IsValid()) return 0;
     return m_smSQLiteFile->GetNumberOfPoints(blockID.m_integerID) / sizeof(POINT);
+    */
+
+    return m_nodeHeader->m_nodeCount;
     }
 
 template <class POINT, class EXTENT> void SMSQLiteNodePointStore<POINT, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
     {
-    int i = 6;
-    i = i;
+    assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) > 0);
+    m_nodeHeader->m_nodeCount += countDelta;    
     }
 
 template <class POINT, class EXTENT> size_t SMSQLiteNodePointStore<POINT, EXTENT>::LoadBlock(POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID)

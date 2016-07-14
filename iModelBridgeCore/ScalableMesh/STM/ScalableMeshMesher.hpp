@@ -385,7 +385,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     {
                     node->m_nodeHeader.m_totalCount = pointsPtr->size();
                     }
-                node->m_nodeHeader.m_nodeCount = pointsPtr->size();
+
 #if SM_TRACE_MESH_STATS
                 Utf8String nameStats = "e:\\output\\scmesh\\2015-11-18\\defects\\tileaftermeshing_";
                 nameStats.append(std::to_string(node->m_nodeHeader.m_level).c_str());
@@ -1873,7 +1873,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             node->m_nodeHeader.m_totalCount -= nodePoints.size();
             node->m_nodeHeader.m_totalCount += stitchedPoints.size();
             }
-        node->m_nodeHeader.m_nodeCount = stitchedPoints.size();        
+       
         assert(pointsPtr->size() == stitchedPoints.size());
         if (s_useThreadsInStitching) node->UnlockPts();
                 
@@ -1966,7 +1966,7 @@ return true;
                 {
                 node->m_nodeHeader.m_totalCount = meshP->GetNbPoints();
                 }
-            node->m_nodeHeader.m_nodeCount = meshP->GetNbPoints();
+
             vector<POINT> nodePts(meshP->GetNbPoints());
 
             for (size_t pointInd = 0; pointInd < meshP->GetNbPoints(); pointInd++)
@@ -2051,7 +2051,7 @@ return true;
                 {
                 node->m_nodeHeader.m_totalCount = node->size();
                 }
-            node->m_nodeHeader.m_nodeCount = pointsPtr->size();
+
           //  isMeshingDone = true;
 
            
