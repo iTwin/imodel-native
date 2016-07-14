@@ -71,9 +71,11 @@ uiLibName = $(GCDlmLib)$(uiAppName)
 %endif
 
 libName = $(csmapLibDir)$(appName)
+cCompOpts + -wd4477
 
 %ifdef MFC
     cCompOpts + -D__MFC__ -DNO_IODEFS
+
     
     %ifdef debug
         crt_opt = -MDd
