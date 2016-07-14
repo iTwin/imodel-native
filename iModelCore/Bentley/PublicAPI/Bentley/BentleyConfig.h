@@ -23,7 +23,7 @@
     #define BENTLEYCONFIG_OS_UNIX
 
     #include <TargetConditionals.h>
-    #if defined (TARGET_OS_IPHONE) || defined (TARGET_IPHONE_SIMULATOR)
+    #if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
         #define BENTLEYCONFIG_OS_APPLE_IOS
         #define BENTLEYCONFIG_GRAPHICS_OPENGLES
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
