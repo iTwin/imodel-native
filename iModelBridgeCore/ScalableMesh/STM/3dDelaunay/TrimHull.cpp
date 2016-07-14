@@ -5679,9 +5679,9 @@ void TrimHull::UmbrellaFiltering()
                 if (face->points[i] != pt) edge.push_back(face->points[i]);
                 else ptFaceIndex = i;
                 }
-			if (ptToUmbrella[pt].containsEdge(edge[0], edge[1])) face->keep = true;
+            if (ptToUmbrella[pt].containsEdge(edge[0], edge[1])) face->keep = true;
 
-			//if (face->quality < 0.3)
+            //if (face->quality < 0.3)
             //    {
             //    //double tQuality = -1.0;
             //    //jmdlMTGSwap_quadraticXYZAspectRatio(&tQuality, &m_points[face->points[0]], &m_points[face->points[1]], &m_points[face->points[2]], m_maxL2);

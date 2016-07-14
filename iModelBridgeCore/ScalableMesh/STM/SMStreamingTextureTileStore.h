@@ -22,18 +22,14 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
         struct Texture : public bvector<uint8_t>
             {
             public:
-                Texture() : m_stream_store(nullptr) {}
+                Texture(){}
 
-                Texture(const int& width, const int& height, const int& numChannels, scalable_mesh::azure::Storage* store = nullptr)
-                    : m_Width{width}, m_Height{height}, m_NbChannels(numChannels), m_stream_store(store)
+                Texture(const int& width, const int& height, const int& numChannels)
+                    : m_Width{width}, m_Height{height}, m_NbChannels(numChannels)
                     {}
                 void SetDataSource(const WString& pi_DataSource)
                     {
                     m_DataSource = pi_DataSource;
-                    }
-                void SetStore(const scalable_mesh::azure::Storage& pi_Store)
-                    {
-                    m_stream_store = &pi_Store;
                     }
                 void SavePixelDataToDisk(uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID)
                     {
@@ -61,85 +57,63 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     file.Close();
                     }
 
-				DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
-				{
-					if (dataSourceAccount == nullptr)
-						return nullptr;
-															// Get the thread's DataSource or create a new one
-					DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
-					if (dataSource == nullptr)
-						return nullptr;
-															// Make sure caching is enabled for this DataSource
-					dataSource->setCachingEnabled(s_stream_enable_caching);
+                DataSource *InitializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
+                {
+                    if (dataSourceAccount == nullptr)
+                        return nullptr;
+                                                            // Get the thread's DataSource or create a new one
+                    DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
+                    if (dataSource == nullptr)
+                        return nullptr;
+                                                            // Make sure caching is enabled for this DataSource
+                    dataSource->setCachingEnabled(s_stream_enable_caching);
 
-					dest.reset(new unsigned char[destSize]);
-															// Return the DataSource
-					return dataSource;
-				}
+                    dest.reset(new unsigned char[destSize]);
+                                                            // Return the DataSource
+                    return dataSource;
+                }
 
-				void Load(DataSourceAccount *dataSourceAccount)
-				{
+                void Load(DataSourceAccount *dataSourceAccount)
+                {
 					std::unique_ptr<DataSource::Buffer[]>		dest;
 					DataSource								*	dataSource;
 					DataSource::DataSize						readSize;
 
-					assert(m_ID != -1);
-					wchar_t buffer[10000];
-					swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), m_ID);
-
-					DataSourceURL	dataSourceURL(buffer);
-
-					DataSourceBuffer::BufferSize	destSize = 5 * 1024 * 1024;
-
-					dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
-					if (dataSource == nullptr)
-						return;
-
-					if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
-						return;
-
-					if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
-						return;
-
-					dataSource->close();
-
-					if (readSize > 0)
-					{
-						m_Width = reinterpret_cast<int&>(dest.get()[0]);
-						m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
-						m_NbChannels = reinterpret_cast<int&>(dest.get()[2 * sizeof(int)]);
-						m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
-
-						auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
-						uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
-
-						DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
-					}
-
-					m_IsLoaded = true;
-				}
-
-                void Load_Old()
-
-                    {
                     assert(m_ID != -1);
                     wchar_t buffer[10000];
                     swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), m_ID);
-                    std::wstring filename(buffer);
 
-                    if (s_stream_from_disk)
-                        {
-                        this->LoadFromLocal(filename);
-                        }
-                    else if (s_stream_from_file_server)
-                        {
-                        this->LoadFromFileSystem(filename);
-                        }
-                    else {
-                        this->LoadFromAzure(filename);
-                        }
-                    m_IsLoaded = true;
+					DataSourceURL	dataSourceURL(buffer);
+
+                    DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
+
+                    dataSource = this->InitializeDataSource(dataSourceAccount, dest, destSize);
+                    if (dataSource == nullptr)
+                        return;
+
+                    if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                        return;
+
+                    if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+                        return;
+
+                    dataSource->close();
+
+                    if (readSize > 0)
+                    {
+                        m_Width = reinterpret_cast<int&>(dest.get()[0]);
+                        m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
+                        m_NbChannels = reinterpret_cast<int&>(dest.get()[2 * sizeof(int)]);
+                        m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
+
+                        auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
+                        uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
+
+                        DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
                     }
+
+                    m_IsLoaded = true;
+                }
 
                 bool IsLoaded() { return m_IsLoaded; }
                 bool IsLoading() { return m_IsLoading; }
@@ -196,7 +170,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     catch (const std::exception& e)
                         {
                         assert(!"There is an error decompressing texture");
-                        std::wcout << U("Error: ") << e.what() << std::endl;
+                        std::wcout << L"Error: " << e.what() << std::endl;
                         }
                     }
                 bool CompressTexture(const HCDPacket& pi_uncompressedPacket, HCDPacket& pi_compressedPacket)
@@ -216,77 +190,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                     return true;
                     }
-                void LoadFromLocal(const wstring& m_pFilename)
-                    {
-                    BeFile file;
-                    auto fileOpenStatus = OPEN_FILE(file, m_pFilename.c_str(), BeFileAccess::Read);
-                    if (BeFileStatus::Success != fileOpenStatus) return;
 
-                    assert(fileOpenStatus == BeFileStatus::Success);
-
-                    bvector<uint8_t> entire_file;
-                    BeFileStatus read_result = file.ReadEntireFile(entire_file);
-                    assert(BeFileStatus::Success == read_result);
-
-                    // Read texture header
-                    memcpy(&m_Width, entire_file.data(), sizeof(int));
-                    memcpy(&m_Height, entire_file.data() + sizeof(int), sizeof(int));
-                    memcpy(&m_NbChannels, entire_file.data() + 2 * sizeof(int), sizeof(int));
-                    memcpy(&m_Format, entire_file.data() + 3 * sizeof(int), sizeof(int));
-
-                    auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
-                    uint64_t compressedSize = entire_file.size() - 4 * sizeof(int);
-
-                    this->DecompressTexture(entire_file.data() + 4 * sizeof(int), compressedSize, textureSize);
-
-                    file.Close();
-                    }
-                void LoadFromAzure(const wstring& m_pFilename)
-                    {
-                    assert(m_stream_store != nullptr);
-                    bool blobDownloaded = false;
-                    m_stream_store->DownloadBlob(m_pFilename.c_str(), [this, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
-                        {
-                        assert(!buffer.empty());
-
-                        // Read texture header
-                        m_Width = reinterpret_cast<int&>(buffer[0]);
-                        m_Height = reinterpret_cast<int&>(buffer[sizeof(int)]);
-                        m_NbChannels = reinterpret_cast<int&>(buffer[2 * sizeof(int)]);
-                        m_Format = reinterpret_cast<int&>(buffer[3 * sizeof(int)]);
-
-                        auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
-                        uint32_t compressedSize = (uint32_t)buffer.size() - sizeof(4 * sizeof(int));
-
-                        this->DecompressTexture(&buffer[0] + 4 * sizeof(int), compressedSize, textureSize);
-                        blobDownloaded = true;
-                        });
-                    assert(blobDownloaded);
-
-                    }
-                void LoadFromFileSystem(const wstring& m_pFilename)
-                    {
-                    assert(false); // Not implemented yet
-                    /*bvector<uint8_t> buffer;
-                    DownloadBlockFromFileServer(filename, &buffer, 1000000);
-                    assert(!buffer.empty() && buffer.size() <= 1000000);
-
-                    uint32_t UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-                    uint32_t sizeData = (uint32_t)buffer.size();
-
-                    HCDPacket uncompressedPacket, compressedPacket;
-                    compressedPacket.SetBuffer(&buffer[0] + sizeof(uint32_t), sizeData - sizeof(uint32_t));
-                    compressedPacket.SetDataSize(sizeData - sizeof(uint32_t));
-                    uncompressedPacket.SetDataSize(UncompressedSize);
-                    LoadCompressedPacket(compressedPacket, uncompressedPacket);
-                    assert(UncompressedSize == uncompressedPacket.GetDataSize());
-                    points.resize(UncompressedSize);
-                    memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());*/
-
-                    }
-
-				void				setDataSourceAccount	(DataSourceAccount *dataSourceAccount)		{ m_dataSourceAccount = dataSourceAccount; }
-				DataSourceAccount *	getDataSourceAccount	(void) const								{ return m_dataSourceAccount; }
+                void                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)      { m_dataSourceAccount = dataSourceAccount; }
+                DataSourceAccount * GetDataSourceAccount    (void) const                                { return m_dataSourceAccount; }
 
             private:
                 uint64_t m_ID = -1;
@@ -299,7 +205,6 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 WString m_DataSource;
                 condition_variable m_TextureCV;
                 mutex m_TextureMutex;
-                const scalable_mesh::azure::Storage* m_stream_store;
 
 				DataSourceAccount *	m_dataSourceAccount;
             };
@@ -330,9 +235,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 else
                     {
                     texture.SetDataSource(m_path);
-                    texture.SetStore(m_stream_store);
                     texture.SetID(blockID.m_integerID);					
-                    texture.Load(getDataSourceAccount());
+                    texture.Load(this->GetDataSourceAccount());
                     }
                 }
             assert(texture.IsLoaded() && !texture.empty());
@@ -340,14 +244,12 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             }
 
         StreamingTextureTileStore(DataSourceAccount *dataSourceAccount, const WString& directory)
-            : m_path(directory),
-            m_stream_store(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="
-                           , L"scalablemeshtest")
+            : m_path(directory)
             {
             m_path += L"textures/";
-			
-			setDataSourceAccount(dataSourceAccount);
-			
+            
+            this->SetDataSourceAccount(dataSourceAccount);
+            
             // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
             if (s_stream_from_disk)
                 {
@@ -443,16 +345,14 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             return std::min(textureSize + 3 * sizeof(int), maxCountData);
             }
 
-		void				setDataSourceAccount	(DataSourceAccount *dataSourceAccount)	{m_dataSourceAccount = dataSourceAccount;}
-		DataSourceAccount *	getDataSourceAccount	(void) const							{return m_dataSourceAccount;}
+        void                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
+        DataSourceAccount * GetDataSourceAccount    (void) const                            {return m_dataSourceAccount;}
 
     private:
         WString m_path;
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
         mutable map<uint32_t, Texture> m_textureCache;
         mutable std::mutex m_textureCacheLock;
-        // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
-        scalable_mesh::azure::Storage m_stream_store;
 
 		DataSourceAccount *	m_dataSourceAccount;
     };

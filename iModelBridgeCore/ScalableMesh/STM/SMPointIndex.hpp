@@ -4181,7 +4181,7 @@ bool SMPointIndexNode<POINT, EXTENT>::IsTextured() const
     if(!IsLoaded())
         Load();
     
-	return(m_nodeHeader.m_isTextured);
+    return(m_nodeHeader.m_isTextured);
     }
 
 

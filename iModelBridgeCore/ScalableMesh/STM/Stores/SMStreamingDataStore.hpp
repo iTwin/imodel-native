@@ -10,7 +10,6 @@
 #pragma once
 
 #include "SMStreamingDataStore.h"
-#include "../ScalableMesh/Streaming/AzureStorage.h"
 #include "../Threading\LightThreadPool.h"
 #include <curl/curl.h>
 #include <condition_variable>
@@ -40,12 +39,9 @@ extern bool s_is_virtual_grouping;
 template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress, bool areNodeHeadersGrouped, WString headers_path)
     :m_rootDirectory(path),     
      m_pathToHeaders(headers_path),
-     m_use_node_header_grouping(areNodeHeadersGrouped),
-     //m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;BlobEndpoint=https://scalablemesh.azureedge.net;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
-     m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
-     m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")
+     m_use_node_header_grouping(areNodeHeadersGrouped)
     {
-    setDataSourceAccount(dataSourceAccount);            
+    SetDataSourceAccount(dataSourceAccount);            
        
     if (m_pathToHeaders.empty())
         {
@@ -73,10 +69,6 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAcc
             {
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }        
-        }
-    else
-        {
-        // stream from azure
         }
     }
 
@@ -143,9 +135,9 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
 template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMIndexMasterHeader<EXTENT>* indexHeader, size_t headerSize)
     {
     std::unique_ptr<DataSource::Buffer[]>            dest;
-    DataSource                                *    dataSource;
-    DataSource::DataSize                        readSize;
-    DataSourceBuffer::BufferSize                destSize = 20 * 1024 * 1024;
+    DataSource                                *      dataSource;
+    DataSource::DataSize                             readSize;
+    DataSourceBuffer::BufferSize                     destSize = 20 * 1024 * 1024;
 
     if (indexHeader != NULL)
         {
@@ -160,7 +152,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
             if (m_nodeHeaderGroups.empty())
                 {
-                dataSource = initializeDataSource(dest, destSize);
+                dataSource = this->InitializeDataSource(dest, destSize);
                 if (dataSource == nullptr)
                     return 0;
 
@@ -219,9 +211,9 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     position += sizeof(size_t);
                     //assert(group_size <= s_max_number_nodes_in_group);
 
-                    auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(getDataSourceAccount(), group_id, group_numNodes, group_totalSizeOfHeaders));
+                    auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), group_id, group_numNodes, group_totalSizeOfHeaders));
                     // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
-                    group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_", m_stream_store);
+                    group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_");
                     group->SetDistributor(*m_NodeHeaderFetchDistributor);
                     m_nodeHeaderGroups.push_back(group);
 
@@ -246,7 +238,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             
             dataSourceURL.append(L"MasterHeader.sscm");
 
-            dataSource = initializeDataSource(dest, destSize);
+            dataSource = this->InitializeDataSource(dest, destSize);
             if (dataSource == nullptr)
                 return 0;
 
@@ -535,7 +527,6 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
             clip = ConvertNeighborID(header->m_clipSetsID[i]);
             }
         }
-    //  else
     block["nbClipSets"] = (uint32_t)header->m_clipSetsID.size();
     }
 
@@ -746,10 +737,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
 template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
     {
     //NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
-    wstringstream                                ss;
-    std::unique_ptr<DataSource::Buffer[]>        dest;
+    std::unique_ptr<DataSource::Buffer[]>          dest;
     DataSource                                *    dataSource;
-    DataSource::DataSize                        readSize;
+    DataSource::DataSize                           readSize;
     wchar_t                                        buffer[10000];
 
     swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
@@ -758,7 +748,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
 
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
-    dataSource = initializeDataSource(dest, destSize);
+    dataSource = this->InitializeDataSource(dest, destSize);
     if (dataSource == nullptr)
         return;
 
@@ -794,9 +784,9 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
     return true;    
     }
 
-template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::initializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
+template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
     {
-    if (getDataSourceAccount() == nullptr)
+    if (this->GetDataSourceAccount() == nullptr)
         return nullptr;
                                                     // Get the thread's DataSource or create a new one
     DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
@@ -810,12 +800,12 @@ template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::initializeDataSour
     return dataSource;
     }
 
-template <class EXTENT> DataSourceAccount* SMStreamingStore<EXTENT>::getDataSourceAccount(void) const
+template <class EXTENT> DataSourceAccount* SMStreamingStore<EXTENT>::GetDataSourceAccount(void) const
     {
     return m_dataSourceAccount;
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::setDataSourceAccount(DataSourceAccount *dataSourceAccount)
+template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(DataSourceAccount *dataSourceAccount)
     {
     m_dataSourceAccount = dataSourceAccount;
     }

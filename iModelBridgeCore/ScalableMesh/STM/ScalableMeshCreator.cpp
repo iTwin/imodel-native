@@ -637,8 +637,8 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                 assert(ERROR_PATH_NOT_FOUND != GetLastError());
                 }
 
-			// Pip ToDo: Create account?
-			DataSourceAccount *account = nullptr;
+            // Pip ToDo: Create account?
+            DataSourceAccount *account = nullptr;
 
             pStreamingTileStore = new StreamingStoreType(account, streamingFilePath, StreamingStoreType::SMStreamingDataType::POINTS, (SCM_COMPRESSION_DEFLATE == m_compressionType), true);
             // SM_NEEDS_WORKS : layerID 

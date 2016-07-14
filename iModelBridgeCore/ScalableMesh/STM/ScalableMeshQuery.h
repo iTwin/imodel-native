@@ -1322,7 +1322,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
                 
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt( char relativePosX, char relativePosY, char relativePosZ) const override;
 
-		virtual bvector<IScalableMeshNodePtr> _GetChildrenNodes() const override;
+        virtual bvector<IScalableMeshNodePtr> _GetChildrenNodes() const override;
 
         virtual DRange3d _GetNodeExtent() const override;
 

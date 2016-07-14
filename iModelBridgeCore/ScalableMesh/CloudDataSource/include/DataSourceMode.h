@@ -2,10 +2,10 @@
 
 enum DataSourceMode
 {
-	DataSourceMode_Null,
+    DataSourceMode_Null,
 
-	DataSourceMode_Read,
-	DataSourceMode_Write
+    DataSourceMode_Read,
+    DataSourceMode_Write
 };
 
 

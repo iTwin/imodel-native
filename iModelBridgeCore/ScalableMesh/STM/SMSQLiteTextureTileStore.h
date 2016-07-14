@@ -88,7 +88,7 @@ public:
         int format = 0; // Keep an int to define the format and possible other options
         // Compress the image with JPEG
         WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, w, h, nOfChannels);
-        // Create the compressed data block by storing width, height, number of channels and format before the compressed image block		
+        // Create the compressed data block by storing width, height, number of channels and format before the compressed image block
         bvector<uint8_t> texData(4 * sizeof(int) + pi_compressedPacket.GetDataSize());
         int *pHeader = (int*)(texData.data());
         pHeader[0] = w;

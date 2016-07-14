@@ -6,19 +6,19 @@ class PerformanceTimer
 {
 protected:
 
-		LARGE_INTEGER	startTime;
-		LARGE_INTEGER	endTime;
+        LARGE_INTEGER    startTime;
+        LARGE_INTEGER    endTime;
 
-static	LARGE_INTEGER	Frequency;
+static    LARGE_INTEGER    Frequency;
 
 public:
 
-						PerformanceTimer			(void);
+                        PerformanceTimer            (void);
 
- static	void			initialize					(void);
+ static    void            initialize                    (void);
 
-		void			start						(void);
-		void			stop						(void);
-		long long		ellapsedTimeMicroseconds	(void);
-		double			ellapsedTimeSeconds			(void);
+        void            start                        (void);
+        void            stop                        (void);
+        long long        ellapsedTimeMicroseconds    (void);
+        double            ellapsedTimeSeconds            (void);
 };

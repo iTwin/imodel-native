@@ -576,7 +576,7 @@ int IScalableMeshSourceImporter::Impl::UpdateLastModified()
 
             //NEEDS_WORK_SM_IMPORTER : Where to put those?
             ScalableMeshData data = conf.GetReplacementSMData();
-			            
+
             const IDTMLocalFileSource& localFileSource(static_cast<const IDTMLocalFileSource&>(*sourceIt));
             const WChar*  localFileNameTemp = localFileSource.GetPath();
 

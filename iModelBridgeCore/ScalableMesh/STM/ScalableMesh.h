@@ -88,9 +88,9 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     GeoCoords::GCS                      m_sourceGCS;
     DRange3d                            m_contentExtent;
 
-	WString                             m_baseExtraFilesPath;
+    WString                             m_baseExtraFilesPath;
 
-	static DataSourceManager			s_dataSourceManager;
+    static DataSourceManager            s_dataSourceManager;
 	DataSourceAccount				*	m_dataSourceAccount;
 
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
@@ -113,13 +113,13 @@ public:
 
     const SMSQLiteFilePtr&              GetDbFile() const;
 
-    const WChar*						GetPath                 () const;
+    const WChar*                        GetPath                 () const;
 
-	static DataSourceManager &			getDataSourceManager	(void)									{return s_dataSourceManager;}
-	void								setDataSourceAccount	(DataSourceAccount *dataSourceAccount)	{m_dataSourceAccount = dataSourceAccount;}
-	DataSourceAccount *					getDataSourceAccount	(void) const							{return m_dataSourceAccount;}
-
-	DataSourceStatus					initializeAzureTest		(void);
+    static DataSourceManager &          GetDataSourceManager    (void)                                  {return s_dataSourceManager;}
+    void                                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
+    DataSourceAccount *                 GetDataSourceAccount    (void) const                            {return m_dataSourceAccount;}
+    
+    DataSourceStatus                    InitializeAzureTest     (void);
 
     };
 

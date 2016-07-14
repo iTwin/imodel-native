@@ -18,41 +18,41 @@ class DataSourceTransferScheduler
 
 protected:
 
-	typedef std::deque<DataSourceBuffer *>			DataSourceBufferSet;
-	typedef unsigned int							TaskIndex;
+    typedef std::deque<DataSourceBuffer *>            DataSourceBufferSet;
+    typedef unsigned int                            TaskIndex;
 
 protected:
 
-	TaskIndex					maxTasks;
+    TaskIndex                    maxTasks;
 
-	std::mutex					dataSourceBuffersMutex;
-	std::condition_variable		dataSourceBufferReady;
+    std::mutex                    dataSourceBuffersMutex;
+    std::condition_variable        dataSourceBufferReady;
 
-	DataSourceBufferSet			dataSourceBuffers;
-	
-	concurrency::task_group		transferTasks;
-
-protected:
-
-	DataSourceBuffer *			getBuffer;
+    DataSourceBufferSet            dataSourceBuffers;
+    
+    concurrency::task_group        transferTasks;
 
 protected:
 
-	DataSourceBuffer *			getNextSegmentJob				(DataSourceBuffer::BufferData ** buffer, DataSourceBuffer::BufferSize * bufferSize, DataSourceBuffer::SegmentIndex * index);
+    DataSourceBuffer *            getBuffer;
 
-	DataSourceStatus			initializeTransferTasks			(unsigned int maxTasks);
+protected:
 
-	DataSourceStatus			scheduleUploadJob				(void);
+    DataSourceBuffer *            getNextSegmentJob                (DataSourceBuffer::BufferData ** buffer, DataSourceBuffer::BufferSize * bufferSize, DataSourceBuffer::SegmentIndex * index);
 
-	DataSourceStatus			getAndProcessUploadJob			(void);
+    DataSourceStatus            initializeTransferTasks            (unsigned int maxTasks);
 
-	void						setMaxTasks						(TaskIndex numTasks);
-	TaskIndex					getMaxTasks						(void);
+    DataSourceStatus            scheduleUploadJob                (void);
+
+    DataSourceStatus            getAndProcessUploadJob            (void);
+
+    void                        setMaxTasks                        (TaskIndex numTasks);
+    TaskIndex                    getMaxTasks                        (void);
 
 public:
 
-								DataSourceTransferScheduler		(void);
+                                DataSourceTransferScheduler        (void);
 
-	DataSourceStatus			addBuffer					(DataSourceBuffer &buffer);
+    DataSourceStatus            addBuffer                    (DataSourceBuffer &buffer);
 };
 

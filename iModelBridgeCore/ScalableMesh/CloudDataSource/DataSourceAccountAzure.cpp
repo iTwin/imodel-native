@@ -7,192 +7,192 @@
 
 DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
 {
-	setAccount(name, identifier, key);
+    setAccount(name, identifier, key);
 }
 
 DataSourceAccountAzure::AzureConnectionString DataSourceAccountAzure::createConnectionString(AccountIdentifier identifier, AccountKey key)
 {
-	AzureConnectionString	cs;
+    AzureConnectionString    cs;
 
-	cs += std::wstring(L"DefaultEndpointsProtocol=https;");
-	cs += std::wstring(L"AccountName=") + identifier + L";";
-	cs += L"AccountKey=" + key;
+    cs += std::wstring(L"DefaultEndpointsProtocol=https;");
+    cs += std::wstring(L"AccountName=") + identifier + L";";
+    cs += L"AccountKey=" + key;
 
-	return cs;
+    return cs;
 }
 
 DataSourceStatus DataSourceAccountAzure::setConnectionString(const AzureConnectionString string)
 {
-	if (string.length() == 0)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
+    if (string.length() == 0)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
 
-	connectionString = string;
+    connectionString = string;
 
-	return DataSourceStatus();
+    return DataSourceStatus();
 }
 
 const DataSourceAccountAzure::AzureConnectionString & DataSourceAccountAzure::getConnectionString(void)
 {
-	return connectionString;
+    return connectionString;
 }
 
 void DataSourceAccountAzure::setStorageAccount(const AzureStorageAccount & account)
 {
-	storageAccount = account;
+    storageAccount = account;
 }
 
 const DataSourceAccountAzure::AzureStorageAccount & DataSourceAccountAzure::getStorageAccount(void)
 {
-	return storageAccount;
+    return storageAccount;
 }
 
 void DataSourceAccountAzure::setBlobClient(const AzureBlobClient &client)
 {
-	blobClient = client;
+    blobClient = client;
 }
 
 DataSourceAccountAzure::AzureBlobClient &DataSourceAccountAzure::getBlobClient(void)
 {
-	return blobClient;
+    return blobClient;
 }
 
 DataSource * DataSourceAccountAzure::createDataSource(void)
 {
-	return new DataSourceAzure(this);
+    return new DataSourceAzure(this);
 }
 
 
 DataSourceStatus DataSourceAccountAzure::destroyDataSource(DataSource *dataSource)
 {
-	if (dataSource)
-	{
-		delete dataSource;
+    if (dataSource)
+    {
+        delete dataSource;
 
-		return DataSourceStatus();
-	}
+        return DataSourceStatus();
+    }
 
-	return DataSourceStatus(DataSourceStatus::Status_Error);
+    return DataSourceStatus(DataSourceStatus::Status_Error);
 }
 
 
 DataSourceStatus DataSourceAccountAzure::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
 {
-	if (account.length() == 0 || identifier.length() == 0 || key.length() == 0)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
-															// Set details in base class
-	DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceAzure"), account, identifier, key);
-															// Calculate and store the Azure connection string
-	setConnectionString(createConnectionString(identifier, key));
+    if (account.length() == 0 || identifier.length() == 0 || key.length() == 0)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
+                                                            // Set details in base class
+    DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceAzure"), account, identifier, key);
+                                                            // Calculate and store the Azure connection string
+    setConnectionString(createConnectionString(identifier, key));
 
-	if (getConnectionString().length() == 0)
-		return DataSourceStatus(DataSourceStatus::Status_Error);
-															// Create storage account reference
-	setStorageAccount(AzureStorageAccount::parse(getConnectionString()));
-	if (getStorageAccount().is_initialized() == false)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Initialize_Subsystem);
+    if (getConnectionString().length() == 0)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+                                                            // Create storage account reference
+    setStorageAccount(AzureStorageAccount::parse(getConnectionString()));
+    if (getStorageAccount().is_initialized() == false)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Initialize_Subsystem);
 
-	setBlobClient(storageAccount.create_cloud_blob_client());
+    setBlobClient(storageAccount.create_cloud_blob_client());
 
-	return DataSourceStatus();
+    return DataSourceStatus();
 }
 
 
 DataSourceAccountAzure::AzureContainer DataSourceAccountAzure::initializeContainer(const DataSourceURL & containerName, DataSourceMode mode)
 {
-	AzureContainer container = getBlobClient().get_container_reference(containerName);
+    AzureContainer container = getBlobClient().get_container_reference(containerName);
 
-	if (mode == DataSourceMode::DataSourceMode_Write)
-	{
-		container.create_if_not_exists();
-	}
+    if (mode == DataSourceMode::DataSourceMode_Write)
+    {
+        container.create_if_not_exists();
+    }
 
-	return container;
+    return container;
 }
 
 
 DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize)
 {
-	DataSourceURL	url;
+    DataSourceURL    url;
 
-	dataSource.getURL(url);
+    dataSource.getURL(url);
 
-	return downloadBlobSync(url, dest, readSize, destSize);
+    return downloadBlobSync(url, dest, readSize, destSize);
 }
 
 DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
-	DataSourceStatus	status;
-	DataSourceURL		containerName;
-	DataSourceURL		blobPath;
+    DataSourceStatus    status;
+    DataSourceURL        containerName;
+    DataSourceURL        blobPath;
 
-															// Get first directory as Container and the remainder as the blob's virtual path
-	if ((status = url.getContainerAndBlob(containerName, blobPath)).isFailed())
-		return status;
-															// Make sure container exists
-	AzureContainer container = initializeContainer(containerName, DataSourceMode::DataSourceMode_Read);
+                                                            // Get first directory as Container and the remainder as the blob's virtual path
+    if ((status = url.getContainerAndBlob(containerName, blobPath)).isFailed())
+        return status;
+                                                            // Make sure container exists
+    AzureContainer container = initializeContainer(containerName, DataSourceMode::DataSourceMode_Read);
 
-	azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(blobPath);
-	if (blockBlob.is_valid() == false)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+    azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(blobPath);
+    if (blockBlob.is_valid() == false)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
 
-	std::streampos p;
+    std::streampos p;
 
-	try
-	{
-		concurrency::streams::producer_consumer_buffer<unsigned char>	pcb;
+    try
+    {
+        concurrency::streams::producer_consumer_buffer<unsigned char>    pcb;
 
-		concurrency::streams::ostream stream = pcb.create_ostream();
+        concurrency::streams::ostream stream = pcb.create_ostream();
 
-		blockBlob.download_to_stream(stream);
+        blockBlob.download_to_stream(stream);
 
-		p = stream.tell();
+        p = stream.tell();
 
-		readSize = p;
+        readSize = p;
 
-		stream.close().wait();
+        stream.close().wait();
 
-		pcb.getn(dest, size).wait();
-	}
-	catch (...)
-	{
-		return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
-	}
+        pcb.getn(dest, size).wait();
+    }
+    catch (...)
+    {
+        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
+    }
 
-	return DataSourceStatus();
+    return DataSourceStatus();
 }
 
 DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
 {
-	DataSourceURL		containerName;
-	DataSourceURL		blobPath;
-	DataSourceStatus	status;
-															// Get first directory as Container and the remainder as the blob's virtual path
-	if ((status = url.getContainerAndBlob(containerName, blobPath)).isFailed())
-		return status;
-															// Make sure container exists
-	AzureContainer container = initializeContainer(containerName, DataSourceMode::DataSourceMode_Read);
+    DataSourceURL        containerName;
+    DataSourceURL        blobPath;
+    DataSourceStatus    status;
+                                                            // Get first directory as Container and the remainder as the blob's virtual path
+    if ((status = url.getContainerAndBlob(containerName, blobPath)).isFailed())
+        return status;
+                                                            // Make sure container exists
+    AzureContainer container = initializeContainer(containerName, DataSourceMode::DataSourceMode_Read);
 
-	azure::storage::cloud_block_blob	blockBlob = container.get_block_blob_reference(blobPath);
-	if (blockBlob.is_valid() == false)
-		return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+    azure::storage::cloud_block_blob    blockBlob = container.get_block_blob_reference(blobPath);
+    if (blockBlob.is_valid() == false)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
 
-	try
-	{
-		concurrency::streams::producer_consumer_buffer<unsigned char>	pcb;
+    try
+    {
+        concurrency::streams::producer_consumer_buffer<unsigned char>    pcb;
 
-		pcb.putn_nocopy(source, size).wait();
+        pcb.putn_nocopy(source, size).wait();
 
-		concurrency::streams::istream stream = pcb.create_istream();
+        concurrency::streams::istream stream = pcb.create_istream();
 
-		blockBlob.upload_from_stream(stream, size);
+        blockBlob.upload_from_stream(stream, size);
 
-		stream.close().wait();
-	}
-	catch (...)
-	{
-		return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
-	}
+        stream.close().wait();
+    }
+    catch (...)
+    {
+        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+    }
 
 
-	return DataSourceStatus();
+    return DataSourceStatus();
 }

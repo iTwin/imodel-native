@@ -1036,8 +1036,6 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         {
         LOAD_NODE
 
-//        auto isStreaming = s_useStreamingStore;        
-
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
 
     IScalableMeshMeshPtr meshP;
@@ -1486,7 +1484,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshCachedMeshNode<POINT>::_
         return __super::_GetMeshByParts(clipsToShow);
         }
     }
-	
+
 template <class POINT> IScalableMeshTexturePtr ScalableMeshCachedMeshNode<POINT>::_GetTexture() const
     {    
     if (m_loadedTexture != 0)
@@ -2144,11 +2142,11 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
         auto var = m_node->GetSubNodeNoSplit();
         children.push_back(new ScalableMeshNode<POINT>(var));
         }
-        else
+    else
         for (size_t i = 0; i < m_node->m_apSubNodes.size(); i++)
-        {
-        children.push_back(new ScalableMeshNode<POINT>(m_node->m_apSubNodes[i]));
-        }
+            {
+            children.push_back(new ScalableMeshNode<POINT>(m_node->m_apSubNodes[i]));
+            }
 
     return children;
     }
