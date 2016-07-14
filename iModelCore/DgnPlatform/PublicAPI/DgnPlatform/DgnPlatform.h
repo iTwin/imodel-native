@@ -382,6 +382,7 @@ struct ElementAlignedBox3d : BoundingBox3d
     ElementAlignedBox3d() {}
     explicit ElementAlignedBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
     ElementAlignedBox3d(double left, double front, double bottom, double right, double back, double top) {DRange3d::InitFrom(left, front, bottom, right, back, top);}
+    explicit ElementAlignedBox3d(DRange3dCR range) {DRange3d::InitFrom(range.low, range.high);}
 
     double GetLeft() const {return low.x;}
     double GetFront() const {return low.y;}
