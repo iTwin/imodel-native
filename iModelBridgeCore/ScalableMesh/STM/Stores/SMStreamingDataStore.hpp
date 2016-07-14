@@ -815,8 +815,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(Data
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true)
     :m_dataSourceAccount(dataSourceAccount),     
      m_pathToPoints(path),
-     m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
-     m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")     
+     m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==")
     {       
     m_nodeHeader = nodeHeader;
 
@@ -953,8 +952,7 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
     if (!block.IsLoaded())
         {
         block.SetID(blockID.m_integerID);
-        block.SetDataSource(m_pathToPoints);
-        block.SetStore(m_stream_store);
+        block.SetDataSource(m_pathToPoints);        
         block.Load(m_dataSourceAccount);
         }
     assert(block.GetID() == blockID.m_integerID);
@@ -1022,9 +1020,7 @@ void StreamingDataBlock::Load_Old()
                 {
                 this->LoadFromFileSystem(filename);
                 }
-            else {
-                this->LoadFromAzure(filename);
-                }
+
             m_pIsLoaded = true;
             }
         }
@@ -1106,11 +1102,6 @@ void StreamingDataBlock::SetDataSource(const WString& pi_DataSource)
     m_pDataSource = pi_DataSource;
     }
 
-void StreamingDataBlock::SetStore(const scalable_mesh::azure::Storage& pi_Store)
-    {
-    m_stream_store = &pi_Store;
-    }
-
 void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize)
     {
     HPRECONDITION(pi_CompressedDataSize <= (numeric_limits<uint32_t>::max) ());
@@ -1175,22 +1166,6 @@ StatusInt StreamingDataBlock::LoadFromLocal(const WString& m_pFilename)
     return SUCCESS;
     }
 
-StatusInt StreamingDataBlock::LoadFromAzure(const WString& m_pFilename)
-    {
-    bool blobDownloaded = false;
-    m_stream_store->DownloadBlob(m_pFilename.c_str(), [this, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
-        {
-        assert(!buffer.empty());
-
-        uint32_t uncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-        uint32_t sizeData = (uint32_t)buffer.size() - sizeof(uint32_t);
-        this->DecompressPoints(buffer.data() + sizeof(uint32_t), sizeData, uncompressedSize);
-
-        blobDownloaded = true;
-        });
-
-    return blobDownloaded ? SUCCESS : ERROR;
-    }
 
 void StreamingDataBlock::LoadFromFileSystem(const WString& m_pFilename)
     {

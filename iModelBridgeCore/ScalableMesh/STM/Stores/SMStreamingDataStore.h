@@ -97,9 +97,7 @@ public:
         
     uint64_t GetID();
 
-    void SetDataSource(const WString& pi_DataSource);
-        
-    void SetStore(const scalable_mesh::azure::Storage& pi_Store);
+    void SetDataSource(const WString& pi_DataSource);            
         
     void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
         
@@ -111,9 +109,7 @@ private:
 
     static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
         
-    StatusInt LoadFromLocal(const WString& m_pFilename);
-        
-    StatusInt LoadFromAzure(const WString& m_pFilename);
+    StatusInt LoadFromLocal(const WString& m_pFilename);            
       
     void LoadFromFileSystem(const WString& m_pFilename);
     
@@ -122,11 +118,9 @@ private:
     bool m_pIsLoading = false;
     bool m_pIsLoaded = false;
     uint64_t m_pID = -1;
-    WString m_pDataSource;
-    const scalable_mesh::azure::Storage* m_stream_store;
+    WString m_pDataSource;    
     condition_variable m_pPointBlockCV;
     mutex m_pPointBlockMutex;
-
     };
 
 template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public ISMNodeDataStore<DATATYPE> 
@@ -136,8 +130,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
         DataSourceAccount*            m_dataSourceAccount;
         WString                       m_pathToPoints;
-        WString                       m_storage_connection_string;
-        scalable_mesh::azure::Storage m_stream_store;
+        WString                       m_storage_connection_string;        
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
         mutable std::map<ISMStore::NodeID, StreamingDataBlock    > m_pointCache;
