@@ -16,6 +16,7 @@
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_HTTP
+USING_NAMESPACE_BENTLEY_TASKS
 
 //--------------------------------------------------------------------------------------+
 // WebServices Client API for connecting to Azure blob storage.
