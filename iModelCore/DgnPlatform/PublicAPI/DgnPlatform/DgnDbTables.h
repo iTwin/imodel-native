@@ -73,6 +73,8 @@
 #define BIS_REL_ElementUsesGeometryParts    "ElementUsesGeometryParts"
 #define BIS_REL_ElementGroupsMembers        "ElementGroupsMembers"
 #define BIS_REL_ElementOwnsChildElements    "ElementOwnsChildElements"
+#define BIS_REL_ElementOwnsUniqueAspect     "ElementOwnsUniqueAspect"
+#define BIS_REL_ElementOwnsMultiAspects     "ElementOwnsMultiAspects"
 #define BIS_REL_ModelContainsElements       "ModelContainsElements"
 #define BIS_REL_SolutionOfComponent         "SolutionOfComponent"
 #define BIS_REL_InstantiationOfTemplate     "InstantiationOfTemplate"

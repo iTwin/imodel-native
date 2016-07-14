@@ -58,24 +58,6 @@
         <ECProperty propertyName="Length" typeName="double" />
     </ECClass>
 
-    <ECRelationshipClass typeName="ElementOwnsTestUniqueAspect" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="bis:Element" />
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="TestUniqueAspect">
-                <Key>
-                    <Property name="ElementId" />
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
-
     <ECClass typeName="TestMultiAspect" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />

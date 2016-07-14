@@ -729,19 +729,16 @@
         </ECCustomAttributes>
         <BaseClass>AnnotationElement2d</BaseClass>
     </ECEntityClass>
+    <!-- Specialize ElementOwnsUniqueAspect?
     <ECRelationshipClass typeName="TextAnnotation2dOwnsTextAnnotationData" strength="embedding">
-        <!-- only exists to get automatic deletion of a text element's unique aspect -->
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="TextAnnotation2d"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="true">
-            <Class class="TextAnnotationData">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
+            <Class class="TextAnnotationData"/>
         </Target>
     </ECRelationshipClass>
+    -->
     
     <!-- 3D text element -->
     <ECEntityClass typeName="TextAnnotation3d">
@@ -750,19 +747,16 @@
         </ECCustomAttributes>
         <BaseClass>GraphicalElement3d</BaseClass>
     </ECEntityClass>
+    <!-- Specialize ElementOwnsUniqueAspect?
     <ECRelationshipClass typeName="TextAnnotation3dOwnsTextAnnotationData" strength="embedding">
-        <!-- only exists to get automatic deletion of a text element's unique aspect -->
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="TextAnnotation3d"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="true">
-            <Class class="TextAnnotationData">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
+            <Class class="TextAnnotationData"/>
         </Target>
     </ECRelationshipClass>
+    -->
 
     <ECEntityClass typeName="AnnotationTable">
         <!-- An AnnotationTable is an annotation element that displays a grid containing text and or graphics -->
@@ -814,18 +808,7 @@
         <ECProperty propertyName="FooterColumnTextHeight" typeName="double"/>
         <ECProperty propertyName="TextSymbKey" typeName="int"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="false">
-            <Class class="AnnotationTableHeader">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
+    <!-- WIP: Add AnnotationTableOwnsUniqueAspect ECRelationship specialization? -->
 
     <ECEntityClass typeName="AnnotationTableRow">
         <!-- The aspect that holds properties of a row of an AnnotationTable -->
@@ -834,18 +817,7 @@
         <ECProperty propertyName="HeightLock" typeName="boolean"/>
         <ECProperty propertyName="Height" typeName="double"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsRow" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
-            <Class class="AnnotationTableRow">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
+    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
 
     <ECEntityClass typeName="AnnotationTableColumn">
         <!-- The aspect that holds properties of a column of an AnnotationTable -->
@@ -854,18 +826,7 @@
         <ECProperty propertyName="WidthLock" typeName="boolean"/>
         <ECProperty propertyName="Width" typeName="double"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsColumn" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
-            <Class class="AnnotationTableColumn">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
+    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
 
     <ECStructClass typeName="AnnotationTableCellIndex">
         <ECProperty propertyName="RowIndex" typeName="int"/>
@@ -875,19 +836,6 @@
     <ECEntityClass typeName="AnnotationTableCell">
         <!-- The aspect that holds properties of a cell of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <Indexes>
-                    <DbIndex>
-                        <Name>ix_dgn_AnnotationTableCell_ElementId</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>ElementId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
         <ECStructProperty propertyName="CellIndex" typeName="AnnotationTableCellIndex"/>
         <ECProperty propertyName="TextBlock" typeName="binary"/>
         <ECProperty propertyName="FillKey" typeName="int"/>
@@ -898,18 +846,7 @@
         <ECProperty propertyName="MarginLeft" typeName="double"/>
         <ECProperty propertyName="MarginRight" typeName="double"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsCell" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
-            <Class class="AnnotationTableCell">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
+    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
 
     <ECEntityClass typeName="AnnotationTableMerge">
         <!-- The aspect that holds properties describing merging of cells in an AnnotationTable -->
@@ -918,18 +855,7 @@
         <ECProperty propertyName="RowSpan" typeName="int"/>
         <ECProperty propertyName="ColumnSpan" typeName="int"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsMerge" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
-            <Class class="AnnotationTableMerge">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
+    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
 
     <ECEntityClass typeName="AnnotationTableSymbology">
         <!-- The aspect that holds properties describing symbology in an AnnotationTable -->
@@ -942,18 +868,7 @@
         <ECProperty propertyName="LineStyleScale" typeName="double"/>
         <ECProperty propertyName="FillColor" typeName="int"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsSymbology" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
-            <Class class="AnnotationTableSymbology">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
+    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
 
     <ECEntityClass typeName="AnnotationTableEdgeRun">
         <!-- The aspect that holds properties describing edges in an AnnotationTable -->
@@ -964,18 +879,7 @@
         <ECProperty propertyName="Span" typeName="int"/>
         <ECProperty propertyName="SymbologyKey" typeName="int"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRun" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
-            <Class class="AnnotationTableEdgeRun">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
+    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
 
     <!--
     <ECEntityClass typeName="DimensionStyle">
@@ -1075,17 +979,10 @@
     <ECEntityClass typeName="ElementAspect" modifier="Abstract">
         <!-- An ElementAspect is related to an Element with a relationship of strength="embedding" (ElementAspect is deleted if the Element is deleted) -->
         <!-- Semantically, an ElementAspect can be considered part of the Element -->
+        <!-- BIS Guideline: Subclass ElementUniqueAspect or ElementMultiAspect rather than subclassing ElementAspect directly. -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="ElementId" typeName="long">
-            <!-- Foreign key relationship to Element that owns the aspect -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract">
@@ -1102,7 +999,17 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsUniqueAspect" direction="Backward"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <!-- Note: cardinality=(0,N) is correct. While an Element can only have 1 unique apsect per aspect class, it can have N unique aspects total. -->
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="ElementMultiAspect" modifier="Abstract">
         <!-- An ElementMultiAspect is related to an Element with the following constraints: 1) there can be N instances of a given aspect class associated with a given element, and 2) the value of the ElementId foreign key column is the same ID as the element. -->
@@ -1118,7 +1025,16 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsMultiAspects" direction="Backward"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding">
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="ElementMultiAspect"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="ElementExternalKey">
         <!-- The aspect that holds an identifier from an external system -->
@@ -1164,18 +1080,16 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
+    <!-- WIP: Specialize ElementOwnsMultiAspects?
     <ECRelationshipClass typeName="ElementOwnsExternalKey" strength="embedding">
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="Element"/>
         </Source>
         <Target cardinality="(0,N)" polymorphic="true">
-            <Class class="ElementExternalKey">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
+            <Class class="ElementExternalKey"/>
         </Target>
     </ECRelationshipClass>
+    -->
 
     <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing">
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->

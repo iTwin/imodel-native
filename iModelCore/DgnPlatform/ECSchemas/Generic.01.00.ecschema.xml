@@ -77,17 +77,4 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="ElementOwnsMultiAspect" strength="embedding" modifier="Sealed">
-        <Source cardinality="(1,1)" polymorphic="true">
-            <Class class="bis:Element"/>
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
-            <Class class="MultiAspect">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
-
 </ECSchema>
