@@ -1569,7 +1569,7 @@
             </CustomImageSpecification>
         </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="DTMRasterDraping" isDomainClass="True" displayLabel="Draped Reasters">
+    <ECClass typeName="DTMRasterDraping" isDomainClass="True" displayLabel="Draped Rasters">
         <BaseClass>DTMSubElementDisplay</BaseClass>
         <ECCustomAttributes>
             <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
