@@ -75,9 +75,64 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
     };
 
 
-#if 0 
 
-template <class POINT, class EXTENT> class SMStreamingNodeDataStore : public ISMNodeDataStore<POINT> 
+// Helper point block data structure
+struct StreamingDataBlock : public bvector<uint8_t> {
+public:
+    bool IsLoading();
+    bool IsLoaded();
+
+    void LockAndWait();
+            
+    void SetLoading();
+
+    DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
+        
+    void Load_Old();
+                   
+    void Load(DataSourceAccount *dataSourceAccount);
+        
+    void UnLoad();
+            
+    void SetLoaded();
+        
+    void SetID(const uint64_t& pi_ID);
+        
+    uint64_t GetID();
+
+    void SetDataSource(const WString& pi_DataSource);
+        
+    void SetStore(const scalable_mesh::azure::Storage& pi_Store);
+        
+    void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
+        
+private:
+    struct MemoryStruct {
+        bvector<Byte>* memory;
+        size_t         size;
+        };
+
+    static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
+        
+    StatusInt LoadFromLocal(const WString& m_pFilename);
+        
+    StatusInt LoadFromAzure(const WString& m_pFilename);
+      
+    void LoadFromFileSystem(const WString& m_pFilename);
+    
+private:
+
+    bool m_pIsLoading = false;
+    bool m_pIsLoaded = false;
+    uint64_t m_pID = -1;
+    WString m_pDataSource;
+    const scalable_mesh::azure::Storage* m_stream_store;
+    condition_variable m_pPointBlockCV;
+    mutex m_pPointBlockMutex;
+
+    };
+
+template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public ISMNodeDataStore<DATATYPE> 
     {
     private:
         
@@ -88,8 +143,12 @@ template <class POINT, class EXTENT> class SMStreamingNodeDataStore : public ISM
         scalable_mesh::azure::Storage m_stream_store;
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
-        mutable std::map<ISMStore::NodeID, PointBlock> m_pointCache;
+        mutable std::map<ISMStore::NodeID, StreamingDataBlock    > m_pointCache;
         mutable std::mutex m_pointCacheLock;
+
+    protected: 
+
+        StreamingDataBlock    & GetBlock(HPMBlockID blockID) const;
 
     public:
 
@@ -101,21 +160,19 @@ template <class POINT, class EXTENT> class SMStreamingNodeDataStore : public ISM
             UVINDICES
             };
               
-        SMStreamingNodePointStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true);
             
-        virtual ~SMStreamingNodePointStore();
+        virtual ~SMStreamingNodeDataStore();
               
-        virtual HPMBlockID StoreNewBlock(POINT* DataTypeArray, size_t countData) override;
+        virtual HPMBlockID StoreNewBlock(DATATYPE* DataTypeArray, size_t countData) override;
             
-        virtual HPMBlockID StoreBlock(POINT* DataTypeArray, size_t countData, HPMBlockID blockID) override;
+        virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;
             
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const override;
             
-        virtual size_t LoadBlock(POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
+        virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
             
         virtual bool DestroyBlock(HPMBlockID blockID) override;         
 
         virtual void ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) override;        
     };
-
-#endif
