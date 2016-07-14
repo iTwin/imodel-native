@@ -414,6 +414,7 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
 
     // get distance from (potentially moved) origin to front plane.
     double newDeltaZ = std::max(extents.high.z - origin.z, 100. * DgnUnits::OneMillimeter());
+
     // noFrontClip
     delta.z = newDeltaZ;
 

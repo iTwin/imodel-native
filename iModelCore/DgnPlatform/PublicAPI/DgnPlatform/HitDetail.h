@@ -380,6 +380,13 @@ struct IPickGeom
     virtual void _SetHitPriorityOverride(HitPriority) = 0;
     virtual GeomDetailR _GetGeomDetail() = 0;
     virtual void _AddHit(HitDetailR) = 0;
+
+    //! Get the current IElemTopology.
+    //! @return An object that holds additional information about the graphics that are currently being drawn.
+    virtual IElemTopologyCP _GetElemTopology() const = 0;
+
+    //! Set the current IElemTopology.
+    virtual void _SetElemTopology(IElemTopologyCP) = 0;
 };
 
 END_BENTLEY_DGN_NAMESPACE

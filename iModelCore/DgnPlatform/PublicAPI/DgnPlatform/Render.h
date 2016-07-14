@@ -1024,6 +1024,8 @@ protected:
 
     virtual bool _IsOpen() const = 0;
     virtual StatusInt _Close() = 0;
+    virtual GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const {return nullptr;}
+    virtual void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP) {}
     virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
     virtual void _AddLineString(int numPoints, DPoint3dCP points) = 0;
     virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) = 0;
@@ -1088,6 +1090,13 @@ public:
 
     StatusInt Close() {return IsOpen() ? m_builder->_Close() : SUCCESS;}
     bool IsOpen() const { return m_builder->_IsOpen(); }
+
+    //! Get the current GeometryStreamEntryId.
+    //! @return A GeometryStream entry identifier for the graphics that are currently being drawn.
+    GeometryStreamEntryIdCP GetGeometryStreamEntryId() const {return m_builder->_GetGeometryStreamEntryId();}
+
+    //! Set the current GeometryStreamEntryId.
+    void SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) {m_builder->_SetGeometryStreamEntryId(entry);}
 
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
     //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will

@@ -2990,8 +2990,12 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
     DRange3d subGraphicRange = DRange3d::NullRange();
     Render::GraphicBuilderPtr subGraphic;
     Render::GraphicBuilderP currGraphic = &mainGraphic;
-    GeometryStreamEntryId& entryId = context.GetGeometryStreamEntryIdR();
+    GeometryStreamEntryIdCP currEntryId = currGraphic->GetGeometryStreamEntryId();
+    GeometryStreamEntryId entryId;
     GeometryStreamIO::Reader reader(context.GetDgnDb());
+
+    if (nullptr != currEntryId)
+        entryId = *currEntryId;
 
     for (auto const& egOp : *this)
         {
@@ -3000,6 +3004,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::Header:
                 {
                 entryId.SetActive(true);
+                currGraphic->SetGeometryStreamEntryId(&entryId);
                 break;
                 }
 
@@ -3035,6 +3040,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 DgnGeometryPartId geomPartId;
                 Transform geomToSource;
@@ -3043,8 +3049,12 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     break;
 
                 entryId.SetActiveGeometryPart(geomPartId);
+                currGraphic->SetGeometryStreamEntryId(&entryId);
+
                 Render::GraphicPtr partGraphic = context.AddSubGraphic(mainGraphic, geomPartId, geomToSource, geomParams);
+
                 entryId.SetActiveGeometryPart(DgnGeometryPartId());
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!partGraphic.IsValid())
                     break;
@@ -3061,6 +3071,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::PointPrimitive2d:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
@@ -3094,6 +3105,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::PointPrimitive:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
@@ -3127,6 +3139,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::ArcPrimitive:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
@@ -3158,6 +3171,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::CurvePrimitive:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
@@ -3185,6 +3199,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::CurveVector:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
@@ -3226,6 +3241,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::Polyface:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
@@ -3260,6 +3276,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::SolidPrimitive:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
@@ -3294,6 +3311,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::BsplineSurface:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
@@ -3329,6 +3347,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!useBRep)
                     break;
@@ -3461,6 +3480,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::OpenCascadeBRep:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
@@ -3484,6 +3504,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             case GeometryStreamIO::OpCode::TextString:
                 {
                 entryId.Increment();
+                currGraphic->SetGeometryStreamEntryId(&entryId);
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
@@ -3535,6 +3556,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
         }
 
     entryId.SetActive(false);
+    currGraphic->SetGeometryStreamEntryId(&entryId);
     }
 
 /*---------------------------------------------------------------------------------**//**

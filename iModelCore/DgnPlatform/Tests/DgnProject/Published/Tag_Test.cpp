@@ -14,24 +14,24 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                   08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-class TagTest : public GenericDgnModelTestFixture
-    {
-    private:
-        typedef GenericDgnModelTestFixture T_Super;
-    public:
-        static WChar* tagStyleName;
-        static WChar* tagSetName;
-        static WChar* tagName;
-        static char*    tagValue;
-        TagTest () :GenericDgnModelTestFixture (__FILE__, false)
-            {}
+struct TagTest : public GenericDgnModelTestFixture
+{
+private:
+    typedef GenericDgnModelTestFixture T_Super;
+public:
+    static WChar* tagStyleName;
+    static WChar* tagSetName;
+    static WChar* tagName;
+    static char*    tagValue;
+    TagTest () :GenericDgnModelTestFixture (__FILE__, false)
+        {}
     
-        virtual void    SetUp () override;
-        DgnTextStylePtr GetTextStyle () const {return DgnTextStyle::GetByName (tagStyleName, *GetDgnModelP()->GetDgnDb());}
-        BentleyStatus   GetTagDef (DgnTagDefinitionR tagDef);
-        BentleyStatus   CreateTagWithTextStyle (EditElementHandleR element, DgnTextStyleCR style);
-        BentleyStatus   GetOrigin (DPoint3dR origin, ElementHandleCR tagElement);
-    };
+    virtual void    SetUp () override;
+    DgnTextStylePtr GetTextStyle () const {return DgnTextStyle::GetByName (tagStyleName, *GetDgnModelP()->GetDgnDb());}
+    BentleyStatus   GetTagDef (DgnTagDefinitionR tagDef);
+    BentleyStatus   CreateTagWithTextStyle (EditElementHandleR element, DgnTextStyleCR style);
+    BentleyStatus   GetOrigin (DPoint3dR origin, ElementHandleCR tagElement);
+};
 
 WChar* TagTest::tagStyleName = L"TagStyle";
 WChar* TagTest::tagSetName = L"TagSet";
