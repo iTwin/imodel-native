@@ -51,9 +51,15 @@ always:
 
 logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/RunAndroidJUnitTest.log
 
+ADB_FILTERS=TestRunner:I
+ADB_FILTERS+ UnitsNative:* ComponentModelTest:* BeTestX:* ICU_DATA_FILE:*
+ADB_FILTERS+ BeSQLiteDb:* BeSQLite:F ECDb:F ECDbMap:F ECObjectsNative:F
+ADB_FILTERS+ test:F wpa_supplicant:F msm8660.gralloc:F libEGL:F com.samsung.app:F TODmobile:F TelephonyManager:F EmailWidget:F APNews:F PowerManagerService:F doOpenChoice:*
+ADB_FILTERS+ *:E
+
 ${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt): $(_makefilespec)
     >$@
-adb logcat BeTestX:* doOpenChoice:* ICU_DATA_FILE:* TestRunner:I BeSQLiteDb:* BeSQLite:* ECDbMap:F ECObjectsNative:F Units:F test:F wpa_supplicant:F msm8660.gralloc:F libEGL:F com.samsung.app:F TODmobile:F TelephonyManager:F EmailWidget:F APNews:F PowerManagerService:F *:E
+adb logcat $(ADB_FILTERS)
     <
 
 %message Run 
