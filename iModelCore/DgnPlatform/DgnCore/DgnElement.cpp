@@ -557,23 +557,6 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_BindInsertParams(ECSqlStatement& statement)
     {
-    auto const& classParamsMap = GetDgnDb().Elements().GetClassParamsMap();
-    auto iclassParms = classParamsMap.find(DgnClassId(GetElementClassId()));
-    if (iclassParms == classParamsMap.end())
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadRequest;
-        }
-    bset<Utf8String> const& customHandledProps = iclassParms->second.GetCustomHandled();
-    for (auto const& entry: iclassParms->second.GetEntries())
-        {
-        Utf8StringCR propName = entry.m_name;
-        if (customHandledProps.end() == customHandledProps.find(propName))
-            {
-            // *** WIP_AUTO_HANDLED_PROPERTIES - bind ECValue 
-            }
-        }
-
     return BindParams(statement, false);
     }
 
@@ -596,6 +579,14 @@ DgnDbStatus DgnElement::_InsertInDb()
         // SQLite doesn't tell us which constraint failed - check if it's the Code. (NOTE: We should catch this in _OnInsert())
         auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
         return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
+        }
+
+    if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
+        {
+        m_flags.m_autoHandledPropsDirty = false;
+        ECInstanceUpdater* updater = GetAutoHandledPropertiesUpdater();
+        if (nullptr != updater)
+            updater->Update(*m_autoHandledProperties);
         }
 
     if (m_userProperties)
@@ -1980,186 +1971,11 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void computePropertiesAddedByDerivedClass(bvector<ECN::ECPropertyCP>& props, ECN::ECClassCR rootClass, ECN::ECClassCR derivedClass)
-    {
-    if (&derivedClass == &rootClass)
-        return;
-
-    for (ECN::ECPropertyCP prop : derivedClass.GetProperties(false))
-        {
-        props.push_back(prop);
-        }
-
-    for (auto base : derivedClass.GetBaseClasses())
-        {
-        if (base->Is(&rootClass))
-            computePropertiesAddedByDerivedClass(props, rootClass, *base);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-// *** WIP_AUTO_HANDLED_PROPERTIES get rid of "unhandledprops"
-void DgnElement::ComputeUnhandledProperties(bvector<ECN::ECPropertyCP>& props) const
-    {
-    ECN::ECClassCP elemClass = GetElementClass();
-    
-    auto& handler = GetElementHandler();
-    ECN::ECClassCP handlerClass = GetDgnDb().Schemas().GetECClass(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
-    
-    computePropertiesAddedByDerivedClass(props, *handlerClass, *elemClass);
-    }
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson     02/16
-//=======================================================================================
-// *** WIP_AUTO_HANDLED_PROPERTIES get rid of "unhandledprops"
-struct UnhandledProps : DgnElement::AppData
-{
-    static Key s_key;
-
-    bset<Utf8String> m_pendingEdits;
-    ECN::IECInstancePtr m_instance;
-
-    virtual DropMe _OnInserted(DgnElementCR el){UpdateModifiedProperties(el); return DropMe::Yes;}
-    virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {UpdateModifiedProperties(original); return DropMe::Yes;}
-    virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
-    virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
-
-    static UnhandledProps& Get(DgnElementCR elem)
-        {
-        UnhandledProps* props = dynamic_cast<UnhandledProps*>(elem.FindAppData(s_key));
-        if (nullptr == props)
-            elem.AddAppData(s_key, props = new UnhandledProps);
-        return *props;
-        }
-
-    ECN::IECInstancePtr GetInstance(DgnElementCR elem);
-    DgnDbStatus UpdateModifiedProperties(DgnElementCR elem);
-};
-
-// *** WIP_AUTO_HANDLED_PROPERTIES get rid of "unhandledprops"
-UnhandledProps::Key UnhandledProps::s_key;
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson     04/16
-//=======================================================================================
-// *** WIP_AUTO_HANDLED_PROPERTIES get rid of "unhandledprops"
-struct UnhandledPropsAdapterCache : DgnDb::AppData
-    {
-    private:
-        static Key s_key;
-        bmap<ECN::ECClassCP, ECInstanceUpdater*> m_updaterCache;
-
-    public:
-        static Key& GetKey() { return s_key; }
-        static UnhandledPropsAdapterCache& Get(DgnDbR);
-        ECInstanceUpdater& GetUpdater0(DgnElementCR);
-        static ECInstanceUpdater& GetUpdater(DgnElementCR el) {return Get(el.GetDgnDb()).GetUpdater0(el);}
-        ~UnhandledPropsAdapterCache();
-    };
-
-// *** WIP_AUTO_HANDLED_PROPERTIES get rid of "unhandledprops"
-UnhandledPropsAdapterCache::Key UnhandledPropsAdapterCache::s_key;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-// *** WIP_AUTO_HANDLED_PROPERTIES get rid of "unhandledprops"
-UnhandledPropsAdapterCache::~UnhandledPropsAdapterCache()
-    {
-    for (auto v : m_updaterCache)
-        delete v.second;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-// *** WIP_AUTO_HANDLED_PROPERTIES get rid of "unhandledprops"
-UnhandledPropsAdapterCache& UnhandledPropsAdapterCache::Get(DgnDbR db)
-    {
-    UnhandledPropsAdapterCache* upd = (UnhandledPropsAdapterCache*)db.FindAppData(s_key);
-    if (nullptr == upd)
-        db.AddAppData(s_key, upd = new UnhandledPropsAdapterCache);
-    return *upd;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-// *** WIP_AUTO_HANDLED_PROPERTIES get rid of "unhandledprops"
-ECInstanceUpdater& UnhandledPropsAdapterCache::GetUpdater0(DgnElementCR elem)
-    {
-    ECN::ECClassCP cls = elem.GetElementClass();
-    auto i = m_updaterCache.find(cls);
-    if (i != m_updaterCache.end())
-        return *(i->second);
-
-    bvector<ECN::ECPropertyCP> unhprops;
-    elem.ComputeUnhandledProperties(unhprops);
-
-    auto updater = new EC::ECInstanceUpdater(elem.GetDgnDb(), *cls, unhprops);
-
-    m_updaterCache[cls] = updater;
-    return *updater;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-// *** WIP_AUTO_HANDLED_PROPERTIES get rid of "unhandledprops"
-ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
-    {
-    if (m_instance.IsValid())
-        return m_instance;
-
-    auto cls = elem.GetElementClass();
-
-    bvector<ECN::ECPropertyCP> unhandledProps;   // NEEDS WORK: This is the same for all instances of a given ECClass. It could be cached on a per-class basis.
-    elem.ComputeUnhandledProperties(unhandledProps);
-
-    if (!elem.GetElementId().IsValid())         // Element is not yet persistent?
-        {
-        m_instance = cls->GetDefaultStandaloneEnabler()->CreateInstance();
-        //for (auto prop : unhandledProps)
-        //    m_instance->SetValue(prop->GetName().c_str(), ECValue());
-        return m_instance;
-        }
-
-    //  Select properties from persistent element
-    Utf8String props;
-    Utf8CP comma = "";
-    for (auto prop : unhandledProps)
-        {
-        props.append(comma).append("[").append(prop->GetName()).append("]");
-        comma = ",";
-        }
-
-    auto stmt = elem.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=?", props.c_str(), cls->GetECSqlName().c_str()).c_str());
-    if (!stmt.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    stmt->BindId(1, elem.GetElementId());
-    if (BE_SQLITE_ROW == stmt->Step())
-        {
-        ECInstanceECSqlSelectAdapter adapter(*stmt);
-        m_instance = adapter.GetInstance();
-        }
-
-    return m_instance;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
     {
     // Common case: auto-handled properties
-    if (ECN::ECObjectsStatus::Success == GetAutoHandledProperties().GetValue(value, name))
+    auto autoHandledProps = GetAutoHandledProperties();
+    if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->GetValue(value, name))
         return DgnDbStatus::Success;
 
     // Rare: custom-handled properties
@@ -2198,12 +2014,7 @@ DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
         return DgnDbStatus::Success;
         }
 
-    // *** WIP_AUTO_HANDLED_PROPERTIES - get rid of "unhandledProps"
-    ECN::IECInstancePtr inst = UnhandledProps::Get(*this).GetInstance(*this);
-    if (!inst.IsValid())
-        return DgnDbStatus::NotFound;
-
-    return inst->GetValueOrAdhoc(value, name) == ECN::ECObjectsStatus::Success? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    return DgnDbStatus::NotFound;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -2212,8 +2023,12 @@ DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
 DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     {
     // Common case: auto-handled properties
-    if (ECN::ECObjectsStatus::Success == GetAutoHandledProperties().SetValue(name, value))
+    auto autoHandledProps = GetAutoHandledProperties();
+    if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->SetValue(name, value))
+        {
+        m_flags.m_autoHandledPropsDirty = true;
         return DgnDbStatus::Success;
+        }
 
     if (0 == strcmp(DGN_ELEMENT_PROPNAME_Code, name))
         {
@@ -2247,18 +2062,7 @@ DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
         return DgnDbStatus::BadRequest;
         }
 
-
-    UnhandledProps& props = UnhandledProps::Get(*this);
-    
-    ECN::IECInstancePtr inst = props.GetInstance(*this);
-    if (!inst.IsValid())
-        return DgnDbStatus::NotFound;
-
-    if (inst->SetValueOrAdhoc(name, value) != ECN::ECObjectsStatus::Success)
-        return DgnDbStatus::NotFound;
-
-    props.m_pendingEdits.insert(name);
-    return DgnDbStatus::Success;
+    return DgnDbStatus::NotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2358,19 +2162,6 @@ DgnDbStatus GeometricElement3d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR
    SetPlacement(plc);
    return DgnDbStatus::Success;
    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus UnhandledProps::UpdateModifiedProperties(DgnElementCR elem)
-    {
-    if (!m_instance.IsValid() || m_pendingEdits.empty())
-        return DgnDbStatus::Success;
-    
-    m_instance->SetInstanceId(Utf8PrintfString("%lld", elem.GetElementId().GetValue()).c_str());
-
-    return UnhandledPropsAdapterCache::GetUpdater(elem).Update(*m_instance) == BSISUCCESS? DgnDbStatus::Success: DgnDbStatus::WriteError;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
@@ -2890,11 +2681,96 @@ DgnElementIdSet ElementAssemblyUtil::GetAssemblyElementIdSet(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::IECInstanceR DgnElement::GetAutoHandledProperties() const
+BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() const
     {
-    if (!m_autoHandledProperties.IsValid())
-        m_autoHandledProperties = GetElementClass()->GetDefaultStandaloneEnabler()->CreateInstance();
-    return *m_autoHandledProperties;
+    BeAssert(m_flags.m_hasAutoHandledProps == 1);
+    BeAssert(m_autoHandledProperties.IsValid());
+
+    ECN::ECClassCP eclass = GetElementClass();
+    DgnClassId eclassid(eclass->GetId().GetValue());
+
+    auto& updaterCache = GetDgnDb().Elements().m_updaterCache;
+    auto iupdater = updaterCache.find(eclassid);
+    if (iupdater != updaterCache.end())
+        return iupdater->second;
+
+    // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will just read them
+    //                                  For now, we let the handlers tell us which properties have custom handling attributes
+    auto handler = dgn_ElementHandler::Element::FindHandler(GetDgnDb(), eclassid);
+    ECSqlClassParams::PropertyHandlingCustomAttributes cas;
+    handler->TEMPORARY_GetPropertyHandlingCustomAttributes(cas); // *** WIP_AUTO_HANDLED_PROPERTIES
+
+    bvector<ECN::ECPropertyCP> autoHandledProperties;
+    for (auto prop : eclass->GetProperties())
+        {
+        // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will be looking
+        //                                  for only custom-handled properties that should be included in UPDATE statements
+        if (cas.end() == cas.find(prop->GetName()))
+            {
+            autoHandledProperties.push_back(prop);
+            }
+        }
+
+    if (autoHandledProperties.empty())
+        return updaterCache[eclassid] = nullptr;
+
+    return updaterCache[eclassid] = new EC::ECInstanceUpdater(GetDgnDb(), *eclass, autoHandledProperties);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstanceP DgnElement::GetAutoHandledProperties() const
+    {
+    if (m_autoHandledProperties.IsValid())      // if we not only know that we have them but also have them loaded, return quickly.
+        return m_autoHandledProperties.get();
+
+    if (m_flags.m_hasAutoHandledProps == 2)     // if we know that we don't have any, return null quickly
+        return nullptr;
+    
+    ECN::ECClassCP eclass = GetElementClass();
+    DgnClassId eclassid(eclass->GetId().GetValue());
+
+    m_autoHandledProperties = eclass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will just read them
+    //                                  For now, we let the handlers tell us which properties have custom handling attributes
+    auto handler = dgn_ElementHandler::Element::FindHandler(GetDgnDb(), eclassid);
+    ECSqlClassParams::PropertyHandlingCustomAttributes cas;
+    handler->TEMPORARY_GetPropertyHandlingCustomAttributes(cas); // *** WIP_AUTO_HANDLED_PROPERTIES
+
+    Utf8String props;
+    Utf8CP comma = "";
+    for (auto prop : eclass->GetProperties())
+        {
+        Utf8StringCR propName = prop->GetName();
+        if (cas.end() == cas.find(propName))
+            {
+            // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will be looking
+            //                                  for custom-handled properties that should be included in SELECT statements
+            props.append(comma).append("[").append(propName).append("]");
+            comma = ",";
+            }
+        }
+
+    if (props.empty())
+        {
+        m_flags.m_hasAutoHandledProps = 2;
+        return nullptr;
+        }
+
+    m_flags.m_hasAutoHandledProps = 1;
+
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=?", props.c_str(), eclass->GetECSqlName().c_str()).c_str());
+
+    stmt->BindId(1, GetElementId());
+    if (BE_SQLITE_ROW != stmt->Step())
+        return nullptr;
+
+    ECInstanceECSqlSelectAdapter adapter(*stmt);
+    m_autoHandledProperties = adapter.GetInstance();
+
+    return m_autoHandledProperties.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2902,17 +2778,7 @@ ECN::IECInstanceR DgnElement::GetAutoHandledProperties() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    ECInstanceECSqlSelectAdapter adapter(stmt);     // *** WIP_AUTO_HANDLED_PROPERTIES is this too slow to do every time? Should we cache the adapter itself?
-    bset<Utf8String> const& customHandledProps = params.GetCustomHandled();
-    for (auto const& entry: params.GetEntries())
-        {
-        Utf8StringCR propName = entry.m_name;
-        if (customHandledProps.end() == customHandledProps.find(propName))
-            {
-            IECSqlValue const& value = stmt.GetValue(params.GetSelectIndex(propName.c_str()));
-            adapter.SetSimpleProperty(GetAutoHandledProperties(), value);
-            }
-        }
+    // See GetAutoHandledProperties for where we read auto-handled properties
     return DgnDbStatus::Success;
     }
 

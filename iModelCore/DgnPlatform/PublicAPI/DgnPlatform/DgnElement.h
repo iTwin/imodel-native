@@ -643,6 +643,8 @@ protected:
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
+        uint32_t m_hasAutoHandledProps:2; // 0==unknown, 1==yes, 2==no
+        uint32_t m_autoHandledPropsDirty:1;
         Flags() {memset(this, 0, sizeof(*this));}
     };
 
@@ -668,7 +670,8 @@ protected:
     void InvalidateCode() {m_code = DgnCode();}
 #endif
     
-    ECN::IECInstanceR GetAutoHandledProperties() const;
+    ECN::IECInstanceP GetAutoHandledProperties() const;
+    BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() const;
 
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -1984,6 +1987,7 @@ private:
     mutable BeSQLite::BeDbMutex m_mutex;
     mutable ClassInfoMap m_classInfos;
     mutable T_ClassParamsMap m_classParams;
+    mutable bmap<DgnClassId, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache;
 
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);

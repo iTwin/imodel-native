@@ -1515,23 +1515,24 @@ void GenericClassParamsProvider::_GetClassParams(ECSqlClassParamsR ecSqlParams)
         {
         Utf8StringCR propName = prop->GetName();
 
+        // Ignore a couple of very special properties
         // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will detect these special properties from them.
         if (propName.Equals("LastMod") || propName.Equals("UserProperties"))
             continue;
 
         // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will just read them
         //                                  For now, we let the handlers tell us which properties have custom handling attributes
-        ECSqlClassParams::PropertyHandlingCustomAttributesBundle ca;
         auto ica = cas.find(propName);
         if (ica != cas.end())
-            ca = ica->second;
-        else
             {
-            ca.m_statementType = ECSqlClassParams::StatementType::All;
-            ca.m_useAutoHandler = true;
+            // Only include custom-handled properties in the select, insert, and update statements that we cache in the ClassInfo map
+            // See GetAutoHandledProperties for where we read auto-handled properties in a lazy fashion.
+            ECSqlClassParams::PropertyHandlingCustomAttributesBundle ca = ica->second;
+            if (!ca.m_useAutoHandler)
+                {
+                ecSqlParams.Add(propName, ca.m_statementType, ca.m_useAutoHandler);
+                }
             }
-
-        ecSqlParams.Add(propName, ca.m_statementType, ca.m_useAutoHandler);
         }
     }
 

@@ -238,13 +238,6 @@ void ECSqlClassParams::Initialize(IECSqlClassParamsProvider& provider)
     else
         m_updateTemplate.clear();
     
-    //  Make a note of which properties are handled directly by DgnElement and its sublcasses. 
-    for (auto const& entry: m_entries)
-        {
-        if (!entry.m_useAutoHandler)
-            m_customHandled.insert(entry.m_name);
-        }
-
     // We no longer need any param names except those used in SELECT.
     RemoveAllButSelect();
 

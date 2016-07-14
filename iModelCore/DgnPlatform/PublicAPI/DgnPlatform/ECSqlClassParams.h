@@ -97,7 +97,6 @@ public:
 
 private:
     Entries     m_entries;
-    bset<Utf8String> m_customHandled; // the name of each property in a given ECClass that is NOT auto-handled
     Utf8String  m_selectTemplate;
     Utf8String  m_insertTemplate;
     Utf8String  m_updateTemplate;
@@ -130,9 +129,6 @@ public:
     //! @param[in]      parameterName The name of the parameter
     //! @return The index of the corresponding column in the query results, or -1 if no such column exists
     DGNPLATFORM_EXPORT int GetSelectIndex(Utf8StringCR parameterName) const;
-
-    //! The properties in a given ECClass that are NOT auto-handled
-    bset<Utf8String> const& GetCustomHandled() const {return m_customHandled;}
 
 };
 
