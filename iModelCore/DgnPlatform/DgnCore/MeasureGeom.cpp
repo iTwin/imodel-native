@@ -6,6 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+#include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
@@ -303,28 +306,13 @@ bool MeasureGeomCollector::_ProcessCurveVector (CurveVectorCR curves, bool isFil
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateAreas (ISolidPrimitiveCR primitive, SimplifyGraphic& graphic)
     {
-#if defined (DGNPLATFORM_WIP_MEASURE)
-    Transform   flattenTransform;
-
-    if (GetPreFlattenTransform (flattenTransform, graphic))
-        {
-        AutoRestore<bool>   saveInFlatten (&m_inFlatten, true);
-        ISolidPrimitivePtr  tmpPrimitive = primitive.Clone ();
-
-        tmpPrimitive->TransformInPlace (flattenTransform);
-
-        return DoAccumulateAreas (*tmpPrimitive, graphic);
-        }
-
-    // Compute area moments directly from ISolidPrimitive instead of always converting to BRep or facets...
-#else
-    // What does it mean to flatten a solid primitive?
-    // Call it an error -- maybe it will get meshed and the mesh will be flattened?
+    // What does it mean to flatten a solid primitive? Call it an error -- maybe it will get meshed and the mesh will be flattened?
     Transform flattenTransform;
+
     if (GetPreFlattenTransform (flattenTransform, graphic))
         return false;
-#endif
 
+    // Compute area moments directly from ISolidPrimitive instead of always converting to BRep or facets...
     double area;
     DVec3d areaCentroid;
     RotMatrix areaAxes;
@@ -375,7 +363,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidPrimitiveCR primitive, Sim
     if (method == 0)
         myStat = localPrimitive->ComputePrincipalMoments (amount, centroid, axes, moments) && localPrimitive->ComputePrincipalAreaMoments (area, areaCentroid, areaAxes, areaMoments);
     else if (method == 1)
-        myStat = false; // fall out to parasolid.
+        myStat = false; // fall out to brep.
     else
         BeAssert (false);
 
@@ -417,34 +405,6 @@ bool MeasureGeomCollector::_ProcessSolidPrimitive (ISolidPrimitiveCR primitive, 
             }
         }
     }
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct MeasureEdgeGeomProvider : MeasureGeomCollector::IGeomProvider
-{
-protected:
-
-MSBsplineSurfaceCP  m_surface;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _OutputGraphics (ViewContextR context) override
-    {
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
-
-    if (m_surface)
-        WireframeGeomUtil::Draw (*graphic, *m_surface, context, true, false);
-
-    graphic->Close();
-    }
-
-public:
-
-MeasureEdgeGeomProvider (MSBsplineSurfaceCR surface) {m_surface = &surface;}
-
-}; // MeasureEdgeGeomProvider
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
@@ -489,7 +449,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surface, Simpli
 #endif    
 
     static int  s_method = 0;
-    double      area;
+    double      area, scale;
     DVec3d      centroid, momentA, momentB;
     RotMatrix   axes;
     DMatrix4d   products;
@@ -499,19 +459,18 @@ bool MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surface, Simpli
 
     if (0 == s_method &&
         surface.ComputeSecondMomentAreaProducts (products) &&
-        products.ConvertInertiaProductsToPrincipalAreaMoments (outputTransform, area, centroid, axes, momentA))
+        products.ConvertInertiaProductsToPrincipalAreaMoments (outputTransform, area, centroid, axes, momentA) &&
+        outputTransform.IsRigidScale(scale))
         {
         double  iXY, iXZ, iYZ;
 
-        reorientPrincipalMoments (momentA, axes, momentB.x, momentB.y, momentB.z, iXY, iXZ, iYZ);
+        reorientPrincipalMoments(momentA, axes, momentB.x, momentB.y, momentB.z, iXY, iXZ, iYZ);
 
-        MeasureGeomCollector    collector (MeasureGeomCollector::AccumulateLengths);
-        MeasureEdgeGeomProvider provider (surface);
+        CurveVectorPtr bounds = surface.GetUnstructuredBoundaryCurves(0.0, true, true);
 
-        collector.SetResultOptions (NULL, &outputTransform);
-        collector.Process (provider, graphic.GetViewContext().GetDgnDb ());
+        double  length = (bounds.IsValid() ? (scale * bounds->Length()) : 0.0);
 
-		AccumulateAreaSums (area, collector.GetLength (), centroid, momentB, iXY, iXZ, iYZ);
+		AccumulateAreaSums(area, length, centroid, momentB, iXY, iXZ, iYZ);
 
         return true;
         }
@@ -579,7 +538,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery, Simplif
 
     reorientPrincipalMoments (moments, axes, momentB.x, momentB.y, momentB.z, iXY, iXZ, iYZ);
 
-    // DGNPLATFORM_WIP_MEASURE -- boundary length (if visible edge length == length of visible edge with single adjacent face...i.e. looks like CurveVector?!?).
+    // Special case? Boundary length (if visible edge length == length of visible edge with single adjacent face...i.e. looks like CurveVector?!?).
     AccumulateAreaSums (area, 0.0, centroid, moments, iXY, iXZ, iYZ);
 
     return false;
@@ -590,8 +549,9 @@ bool MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery, Simplif
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateVolumes (PolyfaceQueryCR meshQuery, SimplifyGraphic& graphic)
     {
+    bool        useRaggedMeshLogic = false;
     Transform   outputTransform;
-    bool useRaggedMeshLogic = false;
+
     GetOutputTransform (outputTransform, graphic);
 
     PolyfaceHeaderPtr  meshData = PolyfaceHeader::New ();
@@ -626,8 +586,10 @@ bool MeasureGeomCollector::DoAccumulateVolumes (PolyfaceQueryCR meshQuery, Simpl
             return true;
         }
     else
+        {
         if (!meshData->ComputePrincipalMoments (amount, centroid, axes, moments, true))
-            return SUCCESS; // Don't output edges
+            return true; // Don't output edges
+        }
 
     double      iXY, iXZ, iYZ;
 
@@ -688,6 +650,7 @@ static double getBRepTolerance (ISolidKernelEntityCR entity, IFacetOptionsPtr& f
 
     return (requestedTolerance > 0.0 && requestedTolerance < defaultTolerance) ? requestedTolerance : defaultTolerance;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
@@ -696,7 +659,7 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
     {
     /* Moment conventions - EDL Dec. 17, 2002
 
-        - PSD returns moments relative to centroid. These are returned directly to the arguments of mdlSolid_bodyMassProperties.
+        - Solid kernel returns moments relative to centroid. These are returned directly from the arguments of mass properties api.
 
         - The returned 3x3 matrix is a proper tensor --
 
@@ -733,7 +696,6 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
     moments.y = inertia[1][1];
     moments.z = inertia[2][2];
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
@@ -774,9 +736,48 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
 
         AccumulateLengthSums (amount, centroid, moments, iXY, iXZ, iYZ);
         }
-#endif
 
     return true;
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+    Transform   flattenTransform;
+
+    if (GetPreFlattenTransform (flattenTransform, graphic))
+        {
+        // Output edge geometry as CurveVector...
+        GraphicBuilder builder(graphic);
+        WireframeGeomUtil::Draw(builder, entity, graphic.GetViewContext(), true, false);
+
+        return true;
+        }
+
+    TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
+
+    if (nullptr == shapeLocal)
+        return true;
+
+    Transform outputTransform;
+    
+    GetOutputTransform(outputTransform, graphic);
+
+    TopoDS_Shape shape = shapeLocal->Located(OCBRep::ToGpTrsf(outputTransform));
+
+    GProp_GProps lProps;
+
+    BRepGProp::LinearProperties(shape, lProps);
+
+    double      amount = lProps.Mass();
+    DPoint3d    centroid = OCBRep::ToDPoint3d(lProps.CentreOfMass());
+    RotMatrix   inertia = OCBRep::ToRotMatrix(lProps.MatrixOfInertia());
+    double      iXY, iXZ, iYZ;
+    DPoint3d    moments;
+
+    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
+    AccumulateLengthSums(amount, centroid, moments, iXY, iXZ, iYZ);
+
+    return true;
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -818,9 +819,48 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
 
         AccumulateAreaSums (amount, periphery, centroid, moments, iXY, iXZ, iYZ);
         }
-#endif
 
     return true;
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+    Transform   flattenTransform;
+
+    if (GetPreFlattenTransform (flattenTransform, graphic))
+        return false; // Facet and flatten...
+
+    TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
+
+    if (nullptr == shapeLocal)
+        return true;
+
+    Transform outputTransform;
+    
+    GetOutputTransform(outputTransform, graphic);
+
+    TopoDS_Shape shape = shapeLocal->Located(OCBRep::ToGpTrsf(outputTransform));
+
+    GProp_GProps lProps;
+
+    BRepGProp::LinearProperties(shape, lProps);
+
+    double      periphery = lProps.Mass();
+
+    GProp_GProps sProps;
+
+    BRepGProp::SurfaceProperties(shape, sProps);
+
+    double      amount = sProps.Mass();
+    DPoint3d    centroid = OCBRep::ToDPoint3d(sProps.CentreOfMass());
+    RotMatrix   inertia = OCBRep::ToRotMatrix(sProps.MatrixOfInertia());
+    double      iXY, iXZ, iYZ;
+    DPoint3d    moments;
+
+    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
+    AccumulateAreaSums (amount, periphery, centroid, moments, iXY, iXZ, iYZ);
+
+    return true;
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -852,9 +892,43 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, Sim
 
         AccumulateVolumeSums (amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
         }
-#endif
 
     return true;
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+    TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
+
+    if (nullptr == shapeLocal)
+        return true;
+
+    Transform outputTransform;
+    
+    GetOutputTransform(outputTransform, graphic);
+
+    TopoDS_Shape shape = shapeLocal->Located(OCBRep::ToGpTrsf(outputTransform));
+
+    GProp_GProps sProps;
+
+    BRepGProp::SurfaceProperties(shape, sProps);
+
+    double      periphery = sProps.Mass();
+
+    GProp_GProps vProps;
+
+    BRepGProp::VolumeProperties(shape, vProps);
+
+    double      amount = vProps.Mass();
+    DPoint3d    centroid = OCBRep::ToDPoint3d(vProps.CentreOfMass());
+    RotMatrix   inertia = OCBRep::ToRotMatrix(vProps.MatrixOfInertia());
+    double      iXY, iXZ, iYZ;
+    DPoint3d    moments;
+
+    getBRepMoments(moments, iXY, iXZ, iYZ, inertia.form3d);
+    AccumulateVolumeSums(amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
+
+    return true;
+#else
+    return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -910,6 +984,46 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
             return DoAccumulateAreas (entity, graphic);
             }
         }
+
+    return true;
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+    switch (m_opType)
+        {
+        case AccumulateLengths:
+            {
+            if (ISolidKernelEntity::EntityType_Solid == entity.GetEntityType ())
+                {
+                return true; // Not valid type for operation...
+                }
+            else if (ISolidKernelEntity::EntityType_Sheet == entity.GetEntityType ())
+                {
+                TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+
+                if (nullptr == shape || OCBRep::HasCurvedFaceOrEdge(*shape))
+                    return true; // Not valid type for operation...
+                }
+
+            return DoAccumulateLengths (entity, graphic);
+            }
+
+        case AccumulateVolumes:
+            {
+            if (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType ())
+                return true; // Not valid type for operation...
+
+            return DoAccumulateVolumes (entity, graphic);
+            }
+
+        default:
+            {
+            if (ISolidKernelEntity::EntityType_Wire == entity.GetEntityType ())
+                return true; // Not valid type for operation...
+
+            return DoAccumulateAreas (entity, graphic);
+            }
+        }
+
+    return true;
 #else
     return true;
 #endif
@@ -920,8 +1034,78 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeasureGeomCollector::_OutputGraphics (ViewContextR context)
     {
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     if (m_geomProvider)
+        {
         m_geomProvider->_OutputGraphics (context);
+        return;
+        }
+#endif
+
+    if (!m_geomPrimitive.IsValid())
+        return;
+
+    Render::GraphicBuilderPtr builder = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_geomTransform));
+
+    switch (m_geomPrimitive->GetGeometryType())
+        {
+        case GeometricPrimitive::GeometryType::CurvePrimitive:
+            {
+            ICurvePrimitivePtr geom = m_geomPrimitive->GetAsICurvePrimitive();
+            builder->AddCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, geom), false);
+            break;
+            }
+
+        case GeometricPrimitive::GeometryType::CurveVector:
+            {
+            CurveVectorPtr geom = m_geomPrimitive->GetAsCurveVector();
+            builder->AddCurveVector(*geom, false);
+            break;
+            }
+
+        case GeometricPrimitive::GeometryType::SolidPrimitive:
+            {
+            ISolidPrimitivePtr geom = m_geomPrimitive->GetAsISolidPrimitive();
+            builder->AddSolidPrimitive(*geom);
+            break;
+            }
+
+        case GeometricPrimitive::GeometryType::Polyface:
+            {
+            PolyfaceHeaderPtr geom = m_geomPrimitive->GetAsPolyfaceHeader();
+            builder->AddPolyface(*geom);
+            break;
+            }
+
+        case GeometricPrimitive::GeometryType::BsplineSurface:
+            {
+            MSBsplineSurfacePtr geom = m_geomPrimitive->GetAsMSBsplineSurface();
+            builder->AddBSplineSurface(*geom);
+            break;
+            }
+
+        case GeometricPrimitive::GeometryType::SolidKernelEntity:
+            {
+            ISolidKernelEntityPtr geom = m_geomPrimitive->GetAsISolidKernelEntity();
+            builder->AddBody(*geom);
+            break;
+            }
+
+        case GeometricPrimitive::GeometryType::TextString:
+            {
+            TextStringPtr geom = m_geomPrimitive->GetAsTextString();
+            builder->AddTextString(*geom);
+            break;
+            }
+
+        default:
+            {
+            BeAssert(false);
+            break;
+            }
+        }
+
+    builder->Close();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -930,7 +1114,9 @@ void MeasureGeomCollector::_OutputGraphics (ViewContextR context)
 MeasureGeomCollector::MeasureGeomCollector (OperationType opType)
     {
     m_opType = opType;
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     m_geomProvider = NULL;
+#endif
 
     m_invCurrTransform.InitIdentity ();
     m_preFlattenTransform.InitIdentity ();
@@ -1178,15 +1364,30 @@ BentleyStatus MeasureGeomCollector::GetOperationStatus ()
         }
     }
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::Process (IGeomProvider& provider, DgnDbR project)
+BentleyStatus MeasureGeomCollector::Process (IGeomProvider& provider, DgnDbR dgnDb)
     {
     AutoRestore <IGeomProvider*> saveProvider (&m_geomProvider, &provider);
 
-    GeometryProcessor::Process (*this, project); // Calls _OutputGraphics...
+    GeometryProcessor::Process (*this, dgnDb); // Calls _OutputGraphics...
 
+    return GetOperationStatus ();
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus MeasureGeomCollector::Process (GeometricPrimitiveCR primitive, DgnDbR dgnDb, TransformCP transform)
+    {
+    m_geomPrimitive = primitive.Clone();
+    m_geomTransform = transform ? *transform : Transform::FromIdentity();
+
+    GeometryProcessor::Process (*this, dgnDb); // Calls _OutputGraphics...
+    
     return GetOperationStatus ();
     }
 
