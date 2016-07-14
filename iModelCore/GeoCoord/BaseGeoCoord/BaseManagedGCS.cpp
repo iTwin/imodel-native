@@ -2,10 +2,12 @@
 |
 |   $Source: BaseGeoCoord/BaseManagedGCS.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4189) // local variable is initialized but not referenced
+#pragma  warning(disable:4456) // hides previous local declaration
+
 #include    <windows.h>
 #include    <commctrl.h>
 #include    <vcclr.h>
