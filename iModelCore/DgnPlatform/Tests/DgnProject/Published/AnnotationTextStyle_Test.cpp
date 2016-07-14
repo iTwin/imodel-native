@@ -85,7 +85,7 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
 TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
     AnnotationTextStylePtr style = AnnotationTextStyle::Create(project);

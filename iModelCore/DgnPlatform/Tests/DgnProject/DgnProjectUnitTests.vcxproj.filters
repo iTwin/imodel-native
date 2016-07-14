@@ -283,6 +283,9 @@
     <ClCompile Include="TestFixture\GenericDgnModelTestFixture.cpp">
       <Filter>TestFixture</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbTestUtils\DgnDbTestUtils.cpp">
+      <Filter>UnitTests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
@@ -339,6 +342,12 @@
     <ClInclude Include="BackDoor\TestDomainElements.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\DgnDbTestUtils.h">
+      <Filter>UnitTests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\ScopedDgnHost.h">
+      <Filter>UnitTests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Published">
@@ -358,6 +367,9 @@
     </Filter>
     <Filter Include="TestFixture">
       <UniqueIdentifier>{55391e99-d1d3-4232-9d33-a3815859d015}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests">
+      <UniqueIdentifier>{1f5953d4-c76e-4e64-bb61-6757ff0d5019}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

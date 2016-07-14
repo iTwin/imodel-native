@@ -20,7 +20,7 @@ struct AnnotationFrameTest : public AnnotationTestFixture
 TEST_F(AnnotationFrameTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
     AnnotationFrameStylePtr style = createAnnotationFrameStyle(project, "TestFrameStyle");
@@ -49,7 +49,7 @@ TEST_F(AnnotationFrameTest, DefaultsAndAccessors)
 TEST_F(AnnotationFrameTest, DeepCopy)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
     AnnotationFramePtr frame = AnnotationFrame::Create(project);

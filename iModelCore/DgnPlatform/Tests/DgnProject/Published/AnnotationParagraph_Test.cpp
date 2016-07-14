@@ -41,7 +41,7 @@ struct AnnotationParagraphTest : public AnnotationTestFixture
 TEST_F(AnnotationParagraphTest, TextRun)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"TextRun");
 
     AnnotationTextStylePtr style = AnnotationTestFixture::createAnnotationTextStyle(project, "RunStyle");
     ASSERT_TRUE(style.IsValid());

@@ -60,7 +60,7 @@ DgnElementCPtr LinkElementTest::InsertAnnotationElement()
 //---------------------------------------------------------------------------------------
 TEST_F(LinkElementTest, RoundTripUrlLink)
     {
-    DgnDbR db = *GetDgnDb();
+    DgnDbR db = *GetDgnDb(L"RoundTripUrlLink");
 
     DgnElementCPtr annotation = InsertAnnotationElement();
     ASSERT_TRUE(annotation.IsValid());
@@ -116,7 +116,7 @@ TEST_F(LinkElementTest, RoundTripUrlLink)
 TEST_F(LinkElementTest, UrlLinkQuery)
     {
     //.............................................................................................
-    DgnDbR db = *GetDgnDb();
+    DgnDbR db = *GetDgnDb(L"UrlLinkQuery");
 
     DgnElementCPtr result = InsertAnnotationElement();
     ASSERT_TRUE(result->GetElementId().IsValid());
@@ -207,7 +207,7 @@ TEST_F(LinkElementTest, UrlLinkQuery)
 //---------------------------------------------------------------------------------------
 TEST_F(LinkElementTest, OtherIterators)
     {
-    DgnDbR db = *GetDgnDb();
+    DgnDbR db = *GetDgnDb(L"OtherIterators");
 
     DgnElementCPtr result1 = InsertAnnotationElement();
     ASSERT_TRUE(result1.IsValid());
@@ -254,7 +254,7 @@ TEST_F(LinkElementTest, OtherIterators)
 TEST_F(LinkElementTest, Update)
     {
     //.............................................................................................
-    DgnDbR db = *GetDgnDb();
+    DgnDbR db = *GetDgnDb(L"Update");
 
     DgnElementCPtr result = InsertAnnotationElement();
     ASSERT_TRUE(result.IsValid());

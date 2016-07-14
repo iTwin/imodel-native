@@ -43,11 +43,11 @@ DependencyRevisionTest.TestDependency # sometimes fails on 0601 winx64 optimized
     # Actual: 456
     # Expected: 654
 
-DgnDb.GetCoordinateSystemProperties # on merge from graphite0505; notified John
+DgnDbTest.GetCoordinateSystemProperties # on merge from graphite0505; notified John
 
 DgnECNavigatorTest.* # expected to fail until merge is done
 
-DgnDb.GetCoordinateSystemProperties
+DgnDbTest.GetCoordinateSystemProperties
     # Notified Majd
     # F:\DgnDb0601Dev\src\DgnPlatform\Tests\DgnProject\NonPublished\DgnProject_Test.cpp(348): error: Value of: fabs(azimuthExpected - azimuth) < eps
     #   Actual: false

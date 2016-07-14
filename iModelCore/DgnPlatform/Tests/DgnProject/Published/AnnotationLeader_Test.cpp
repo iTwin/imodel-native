@@ -28,7 +28,7 @@ struct AnnotationLeaderTest : public AnnotationTestFixture
 TEST_F(AnnotationLeaderTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
     AnnotationLeaderStylePtr style = createAnnotationLeaderStyle(project, "TestLeaderStyle");
@@ -63,7 +63,7 @@ TEST_F(AnnotationLeaderTest, DefaultsAndAccessors)
 TEST_F(AnnotationLeaderTest, DeepCopy)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
     AnnotationLeaderPtr leader = AnnotationLeader::Create(project);

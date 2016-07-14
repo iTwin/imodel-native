@@ -24,41 +24,32 @@ void GenericBaseFixture::TearDown()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Umar.Hayat           06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr GenericDgnModelTestFixture::GetDgnDb()
+DgnDbPtr GenericBaseFixture::GetDgnDb(WCharCP seedName)
     {
     if (m_dgnDb.IsNull())
-        m_dgnDb = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName);
+        m_dgnDb = DgnDbTestUtils::OpenSeedDbCopy(seedName);
 
     return m_dgnDb;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Umar.Hayat           06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr GenericDgnModel2dTestFixture::GetDgnDb()
+DgnDbPtr GenericBaseFixture::GetDgnDb(WCharCP seedName, WCharCP newName)
     {
     if (m_dgnDb.IsNull())
-        m_dgnDb = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName);
+        m_dgnDb = DgnDbTestUtils::OpenSeedDbCopy(seedName, newName);
 
     return m_dgnDb;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BETEST_TC_SETUP(GenericDgnModelTestFixture)
     {
     ScopedDgnHost tempHost;
-
     //  Request a root seed file.
-    DgnDbTestUtils::SeedDbInfo rootSeedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));
-
-    GenericDgnModelTestFixture::s_seedFileInfo = rootSeedInfo;
-    GenericDgnModelTestFixture::s_seedFileInfo.fileName.SetName(L"GenericDgnModelTestFixture/GenericDgnModelTestFixture.bim");
-
-    //// Make a copy of the root seed which will be customized as a seed for tests in this group
-    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, GenericDgnModelTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
-    ASSERT_TRUE(db.IsValid());
-
-    db->SaveChanges();
+    s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Umar.Hayat             07/2016
@@ -67,11 +58,14 @@ BETEST_TC_SETUP(GenericDgnModel2dTestFixture)
     {
     ScopedDgnHost tempHost;
 
+    //TODO: Need to add new enum value in SeedDbId , for 2dModel fixuture it should use flag OneSpatialModel,
+    // For 2D there seed should have a geomtric 2D model by default
+
     //  Request a root seed file.
     DgnDbTestUtils::SeedDbInfo rootSeedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));
 
     GenericDgnModel2dTestFixture::s_seedFileInfo = rootSeedInfo;
-    GenericDgnModel2dTestFixture::s_seedFileInfo.fileName.SetName(L"GenericDgnModel2dTestFixture/GenericDgnModel2dTestFixture.bim");
+    GenericDgnModel2dTestFixture::s_seedFileInfo.fileName.SetName(L"Seed_GenericDgnModel2d/DgnDbTestUtils_OneSpatialMoelWithOneGeometricModel2d.bim");
 
     //// Make a copy of the root seed which will be customized as a seed for tests in this group
     DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, GenericDgnModel2dTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
@@ -92,7 +86,7 @@ BETEST_TC_SETUP(GenericDgnModel2dTestFixture)
 //---------------------------------------------------------------------------------------
 BETEST_TC_TEARDOWN(GenericDgnModelTestFixture)
     {
-    DgnDbTestUtils::EmptySubDirectory(GenericDgnModelTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
+    //DgnDbTestUtils::EmptySubDirectory(GenericDgnModelTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
     }
 //---------------------------------------------------------------------------------------
 // Clean up what I did in my one-time setup
@@ -100,7 +94,7 @@ BETEST_TC_TEARDOWN(GenericDgnModelTestFixture)
 //---------------------------------------------------------------------------------------
 BETEST_TC_TEARDOWN(GenericDgnModel2dTestFixture)
     {
-    DgnDbTestUtils::EmptySubDirectory(GenericDgnModel2dTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
+    //DgnDbTestUtils::EmptySubDirectory(GenericDgnModel2dTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
     }
 
 
