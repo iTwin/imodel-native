@@ -35,10 +35,17 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line s
 ECInstanceSelectTests.ImportSchema			# This test doesn't really do anything and it takes 40 seconds to run
 
 DependencyRevisionTest.TestDependency # continues to fail intermittently, last time on 61-16q2 winx64 optimized.
-#F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(687): error: Value of: c->GetIntegerProperty(2)
-#Actual: 123
-#Expected: 321
-#F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(688): error: Value of: c->GetIntegerProperty(3)
-#Actual: 456
-#Expected: 654
+    #F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(687): error: Value of: c->GetIntegerProperty(2)
+    #Actual: 123
+    #Expected: 321
+    #F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(688): error: Value of: c->GetIntegerProperty(3)
+    #Actual: 456
+    #Expected: 654
 
+DgnMarkupProjectTest.CreateDgnMarkupProject
+    # WinX64, DEBUG
+    # [ RUN      ] DgnMarkupProjectTest.CreateDgnMarkupProject
+    # 2016-07-14 08:55:49,750 ERROR [0x0000b80c] BeAssert - F:\DgnDb61-16Q2-Dev\src-staging\DgnPlatform\DgnCore\DgnDb.cpp(73): ASSERTION FAILURE (0): false && "Make sure you save your outstanding Txn before deleting a DgnDb"
+    # F:\DgnDb61-16Q2-Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(215): error: Failed
+    # F:\DgnDb61-16Q2-Dev\src-staging\DgnPlatform\DgnCore\DgnDb.cpp(73): ASSERTION FAILURE (0): false && "Make sure you save your outstanding Txn before deleting a DgnDb"
+    # [  FAILED  ] DgnMarkupProjectTest.CreateDgnMarkupProject (1823 ms)
