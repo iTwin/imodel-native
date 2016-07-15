@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ConfigurationManager_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -268,23 +268,30 @@ virtual void        ShowDebugMessage (int indent,WCharCP format, ...) override
 };
 
 #endif
-
+/*=================================================================================**//**
+* @bsiclass                                                     Umar.Hayat      07/16
++===============+===============+===============+===============+===============+======*/
+struct ConfigurationManagerTest : public ::testing::Test
+{
+private:
+    Dgn::ScopedDgnHost m_testHost;
+};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, VariableLevel)
+TEST (ConfigurationManagerTest, VariableLevel)
     {
-    ConfigurationManager::DefineVariable (L"ConfigurationManager_Test", L"abc", ConfigurationVariableLevel::User);
+    ConfigurationManager::DefineVariable (L"ConfigurationManagerTest", L"abc", ConfigurationVariableLevel::User);
     WString value;
-    ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (value, L"ConfigurationManager_Test", ConfigurationVariableLevel::User) );
+    ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (value, L"ConfigurationManagerTest", ConfigurationVariableLevel::User) );
     EXPECT_TRUE( value == WString(L"abc") );
-    EXPECT_TRUE(SUCCESS != ConfigurationManager::GetVariable(value, L"ConfigurationManager_Test", ConfigurationVariableLevel::System));
+    EXPECT_TRUE(SUCCESS != ConfigurationManager::GetVariable(value, L"ConfigurationManagerTest", ConfigurationVariableLevel::System));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, Test1)
+TEST (ConfigurationManagerTest, Test1)
     {
     ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"One",                   L"TestValue1") );
     ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"Two",                   L"TestValue2") );
@@ -331,7 +338,7 @@ TEST (ConfigurationManager_Test, Test1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ConfigurationManager_Test, DeferredExpansion)
+TEST(ConfigurationManagerTest, DeferredExpansion)
     {
 #if defined (THIS_IS_HANDLED_AT_CONFIGFILE_READ)
     WString returnVal;
@@ -354,7 +361,7 @@ TEST(ConfigurationManager_Test, DeferredExpansion)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, CheckOperators)
+TEST (ConfigurationManagerTest, CheckOperators)
     {
     ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"FullFileSpec",          L"c:\\RootDirectory\\SubDirectory\\NestedDirectory\\TestFile.ext") );
     ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"BaseName",              L"$(basename($(FullFileSpec)))") );
@@ -415,7 +422,7 @@ TEST (ConfigurationManager_Test, CheckOperators)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, TestMonitoredVariables)
+TEST (ConfigurationManagerTest, TestMonitoredVariables)
     {
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"TestPreDefinedBoolean", L"true") );
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"TestPreDefinedInteger", L"134") );
@@ -542,7 +549,7 @@ struct TestMonitor : IVariableMonitor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, TestMonitoredDependencies)
+TEST (ConfigurationManagerTest, TestMonitoredDependencies)
     {
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"Test1", L"TestOneValue") );
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"Test2", L"$(Test1)") );
@@ -583,17 +590,17 @@ TEST (ConfigurationManager_Test, TestMonitoredDependencies)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, TestHandlingOfNulls)
+TEST (ConfigurationManagerTest, TestHandlingOfNulls)
     {
     WCharCP nullVar=NULL;
     WCharCP emptyVar=L"";
 
-    ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"ConfigurationManager_Test", L"abc", ConfigurationVariableLevel::User));
+    ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"ConfigurationManagerTest", L"abc", ConfigurationVariableLevel::User));
     ASSERT_TRUE( ERROR == ConfigurationManager::DefineVariable (nullVar, L"abc", ConfigurationVariableLevel::User));
     ASSERT_TRUE( ERROR == ConfigurationManager::DefineVariable (emptyVar, L"abc", ConfigurationVariableLevel::User));
 
     WString value;
-    ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (value, L"ConfigurationManager_Test", ConfigurationVariableLevel::User) );
+    ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (value, L"ConfigurationManagerTest", ConfigurationVariableLevel::User) );
     ASSERT_TRUE( value == WString(L"abc") );
     ASSERT_TRUE( SUCCESS != ConfigurationManager::GetVariable (value, nullVar, ConfigurationVariableLevel::System) );
     ASSERT_TRUE( SUCCESS != ConfigurationManager::GetVariable (value, emptyVar, ConfigurationVariableLevel::System) );
@@ -607,7 +614,7 @@ TEST (ConfigurationManager_Test, TestHandlingOfNulls)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, Undefine)
+TEST (ConfigurationManagerTest, Undefine)
     {
     WCharCP cfgVarName  = L"One";
     ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"TestValue1"));
@@ -627,7 +634,7 @@ TEST (ConfigurationManager_Test, Undefine)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, CheckBooleanStatus)
+TEST (ConfigurationManagerTest, CheckBooleanStatus)
     {
     WCharCP cfgVarName  = L"TestBoolean";
     ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"1"));
@@ -664,7 +671,7 @@ struct TestConfigVarIterator: public IConfigVariableIteratorDelegate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, IterVariable)
+TEST (ConfigurationManagerTest, IterVariable)
     {
     WCharCP cfgVarName  = L"TestBoolean";
     ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"1"));
@@ -696,7 +703,7 @@ struct SimpleTestMonitor : public SimpleConfigurationVariableMonitor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, SimpleMonitorTest)
+TEST (ConfigurationManagerTest, SimpleMonitorTest)
     {
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"Test1", L"TestOneValue") );
 
@@ -718,7 +725,7 @@ TEST (ConfigurationManager_Test, SimpleMonitorTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, StringExpand)
+TEST (ConfigurationManagerTest, StringExpand)
     {
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"Test1", L"One") );
     // Method only check string inplace macros starting with $[

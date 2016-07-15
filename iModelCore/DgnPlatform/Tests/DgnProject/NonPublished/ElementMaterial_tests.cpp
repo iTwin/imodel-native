@@ -122,7 +122,7 @@ static void appendGeometry(DPoint3dR origin, GeometryBuilderR builder)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"ElemGeometryBuilderWithMaterials.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
 

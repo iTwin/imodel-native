@@ -16,6 +16,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnElementDependency.h>
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 #define GROUP_SUBDIR L"ElementDependencyGraph"
 #define GROUP_SEED_FILENAME GROUP_SUBDIR L"/Test.bim"
@@ -59,12 +60,11 @@ struct TestElementDrivesElementHandlerShouldFail
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
-struct ElementDependencyGraph : ::testing::Test
+struct ElementDependencyGraph : DgnDbTestFixture
 {
-    enum class ElementDrivesElementColumn {TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status};
-
-    BETEST_DECLARE_TC_SETUP
     BETEST_DECLARE_TC_TEARDOWN
+
+    enum class ElementDrivesElementColumn {TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status};
 
     struct ElementsAndRelationships
         {
@@ -72,21 +72,13 @@ struct ElementDependencyGraph : ::testing::Test
         ECInstanceKey r99_3, r99_31, r3_2, r31_2, r2_1;
         };
 
-    ScopedDgnHost m_host;
-    DgnDbPtr      m_db;
-    DgnModelId    m_defaultModelId;
-    DgnCategoryId m_defaultCategoryId;
-    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
-
     ElementDependencyGraph();
     ~ElementDependencyGraph();
     void CloseDb() {m_db->CloseDb();}
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
     DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     void TwiddleTime(DgnElementCPtr);
-
-    void SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBriefcase = true);
-
+    
     WString GetTestFileName(WCharCP testname);
     ECN::ECClassCR GetElementDrivesElementClass();
 
@@ -99,20 +91,7 @@ struct ElementDependencyGraph : ::testing::Test
     void TestRelationships(DgnDb& db, ElementsAndRelationships const&);
 };
 
-DgnDbTestUtils::SeedDbInfo ElementDependencyGraph::s_seedFileInfo;
-
 END_UNNAMED_NAMESPACE
-
-//---------------------------------------------------------------------------------------
-// Do one-time setup for all tests in this group
-// In this case, I just request the (root) seed file that my tests will use and make a note of it.
-// @bsimethod                                           Sam.Wilson             01/2016
-//---------------------------------------------------------------------------------------
-BETEST_TC_SETUP(ElementDependencyGraph) 
-    {
-    ScopedDgnHost tempHost;
-    ElementDependencyGraph::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
-    }
 
 //---------------------------------------------------------------------------------------
 // Clean up what I did in my one-time setup
@@ -198,33 +177,6 @@ ElementDependencyGraph::~ElementDependencyGraph()
     {
     if (m_db.IsValid())
         m_db->SaveChanges();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .bim project file after copying it to out
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementDependencyGraph::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBriefcase)
-    {
-    // Note: We know that our group's TC_SETUP function has already created the group seed file. We can just ask for it.
-    if (Db::OpenMode::ReadWrite == mode)
-        m_db = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName, testFile);
-    else
-        m_db = DgnDbTestUtils::OpenSeedDb(s_seedFileInfo.fileName);
-    ASSERT_TRUE(m_db.IsValid());
-
-    if (needBriefcase)
-        {
-        ASSERT_TRUE(m_db->IsBriefcase());
-        ASSERT_TRUE(m_db->Txns().IsTracking());
-        }
-
-    m_defaultModelId = m_db->Models().QueryModelId(s_seedFileInfo.modelCode);
-    DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
-    ASSERT_TRUE(defaultModel.IsValid());
-    GetDefaultModel().FillModel();
-
-    m_defaultCategoryId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, *m_db);
     }
 
 /*---------------------------------------------------------------------------------**//**

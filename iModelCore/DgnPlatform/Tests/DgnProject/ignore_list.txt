@@ -16,7 +16,7 @@ UnitManagerTest.GetStandardLabel                        # fails randomonly on 06
 UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitIterator.GetName                                    # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 
-ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
+ConfigurationManagerTest.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
 
 ComponentModelBasicTest.MakeVariationInstance           # UmarH Failing Only on 0601Dev Firebug ( not locally), need to investigate
 
@@ -28,7 +28,6 @@ ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
 ElementAspectTests.ImportElementsWithAspect             # Does not element import aspects
-FontTests.QueryFonts                                    # Defect 386022 - Does not find font
 TextStringTest.BoundingShape                            # UmarH WIP
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line style unless we reload the file ( which will reload the cache )

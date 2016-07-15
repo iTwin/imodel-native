@@ -23,7 +23,7 @@ struct GeometryBuilderTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeometryBuilderTests, CreateElement3d)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"GeometryBuilderTests_CreateElement3d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
 

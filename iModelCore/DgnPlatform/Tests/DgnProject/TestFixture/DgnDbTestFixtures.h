@@ -28,6 +28,11 @@ USING_DGNDB_UNIT_TESTS_NAMESPACE
 //=======================================================================================
 struct DgnDbTestFixture : ::testing::Test
 {
+    BETEST_DECLARE_TC_SETUP
+    BETEST_DECLARE_TC_TEARDOWN
+public:
+    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
+
     ScopedDgnHost               m_host;
     DgnDbPtr                    m_db;
     DgnModelId                  m_defaultModelId;
@@ -43,9 +48,12 @@ public:
     {
     }
 
+    virtual void TearDown(){ SaveDb(); }
+
     void SetupProject(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
     void SetupProject(WCharCP baseProjFile, CharCP testFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
     void SetupSeedProject();
+    void SetupProject(WCharCP inFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
     static BeFileName CopyDb(WCharCP inputFileName, WCharCP outputFileName);
     static void OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode, bool needBriefcase = false);
     void CloseDb() { m_db->CloseDb(); }

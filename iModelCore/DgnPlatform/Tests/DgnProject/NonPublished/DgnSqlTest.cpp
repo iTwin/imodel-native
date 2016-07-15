@@ -17,51 +17,60 @@ using namespace DgnSqlTestNamespace;
 * @bsimethod                                                    Sam.Wilson      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SqlFunctionsTest : public ::testing::Test
-{
+{   
+    BETEST_DECLARE_TC_SETUP
 public:
+    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
     ScopedDgnHost m_host;
     DgnDbPtr      m_db;
     DgnModelId    m_defaultModelId;
     DgnCategoryId m_defaultCategoryId;
+    BeSQLite::Db::OpenMode m_openMode;
 
+    virtual void TearDown();
     
-    void SetUp() override;
-    void TearDown() override;
-
-    void SetupProject(WCharCP dgnDbFileName, WCharCP inFileName, BeSQLite::Db::OpenMode);
+    void SetupProject(WCharCP inFileName, BeSQLite::Db::OpenMode);
     void InsertElement(PhysicalElementR pelem);
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
     SpatialModelP GetDefaultSpatialModel() {return dynamic_cast<SpatialModelP>(&GetDefaultModel());}
     DgnCode CreateCode(Utf8StringCR value) const { return NamespaceAuthority::CreateCode("SqlFunctionsTest", value, *m_db); }
     };
 
+DgnDbTestUtils::SeedDbInfo SqlFunctionsTest::s_seedFileInfo;
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SqlFunctionsTest::SetUp()
-    {
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
+* @bsimethod                                                    Umar.Hayat    07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SqlFunctionsTest::TearDown()
     {
+    if (m_db.IsValid() && BeSQLite::Db::OpenMode::ReadWrite == m_openMode)
+        m_db->SaveChanges();
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat    07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BETEST_TC_SETUP(SqlFunctionsTest)
+    {
+    ScopedDgnHost tempHost;
 
+    //  Request a root seed file.
+    DgnDbTestUtils::SeedDbInfo rootSeedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+
+    SqlFunctionsTest::s_seedFileInfo = rootSeedInfo;
+    SqlFunctionsTest::s_seedFileInfo.fileName.SetName(L"SqlFunctionsTest/SqlFunctionsTest.bim");
+
+    //// Make a copy of the root seed which will be customized as a seed for tests in this group
+    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, SqlFunctionsTest::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    ASSERT_TRUE(db.IsValid());
+    db->SaveChanges();
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SqlFunctionsTest::SetupProject(WCharCP dgnDbFileName, WCharCP inFileName, BeSQLite::Db::OpenMode mode)
+void SqlFunctionsTest::SetupProject(WCharCP inFileName, BeSQLite::Db::OpenMode mode)
     {
-    BeFileName fullDgnDbFileName;
-    ASSERT_EQ (SUCCESS, DgnDbTestDgnManager::GetTestDataOut(fullDgnDbFileName, dgnDbFileName, inFileName, __FILE__));
-    DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, fullDgnDbFileName, DgnDb::OpenParams(mode));
-    ASSERT_TRUE (m_db.IsValid());
-    ASSERT_TRUE( result == BE_SQLITE_OK);
-
-    DgnSqlTestDomain::RegisterDomainAndImportSchema(*m_db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    m_openMode = mode;
+    m_db = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName, inFileName);
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
@@ -70,13 +79,14 @@ void SqlFunctionsTest::SetupProject(WCharCP dgnDbFileName, WCharCP inFileName, B
     
     m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
 
+    DgnSqlTestDomain::RegisterDomainAndImportSchema(*m_db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+
     auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
     DgnAuthority::CreateParams params(*m_db, m_db->Domains().GetClassId(hdlr), "SqlFunctionsTest");
     DgnAuthorityPtr auth = hdlr.Create(params);
     if (auth.IsValid())
         auth->Insert();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
@@ -93,7 +103,7 @@ void SqlFunctionsTest::InsertElement(PhysicalElementR pelem)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, placement_areaxy)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"placement_areaxy.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"placement_areaxy.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -180,7 +190,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, placement_angles)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"placement_angles.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"placement_angles.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -273,7 +283,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"DGN_point_min_distance_to_bbox.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"DGN_point_min_distance_to_bbox.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 2.0;
     double o2x = 5.0;
@@ -403,7 +413,7 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, spatialQueryECSql)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"spatialQueryECSql.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"spatialQueryECSql.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -617,7 +627,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, spatialQuery)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"spatialQuery.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"spatialQuery.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;

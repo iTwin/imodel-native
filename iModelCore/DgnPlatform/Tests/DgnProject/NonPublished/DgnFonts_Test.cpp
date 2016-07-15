@@ -23,7 +23,7 @@ struct FontTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FontTests, CRUD_DbFontMapDirect)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"CRUD_DbFontMapDirect.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnFonts::DbFontMapDirect& map = m_db->Fonts().DbFontMap();
 
@@ -127,7 +127,7 @@ TEST_F(FontTests, CRUD_DbFontMapDirect)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FontTests, QueryFonts)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"QueryFonts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnFonts::DbFontMapDirect& map = m_db->Fonts().DbFontMap();
 
@@ -138,6 +138,7 @@ TEST_F(FontTests, QueryFonts)
     DgnFontId fontId1;
     EXPECT_TRUE ( SUCCESS == map.Insert(*shxFont, fontId1) );
     EXPECT_TRUE(fontId1.IsValid());
+    m_db->Fonts().Invalidate();
 
     // Query
     //--------------------------------------------------------------------------------------
@@ -164,7 +165,7 @@ TEST_F(FontTests, QueryFonts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FontTests, CRUD_DbFaceDataDirect)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"CRUD_DbFaceDataDirect.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnFonts::DbFaceDataDirect& faceData = m_db->Fonts().DbFaceData();
 
@@ -176,7 +177,7 @@ TEST_F(FontTests, CRUD_DbFaceDataDirect)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FontTests, DgnFontManager)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"DgnFontManager.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnFontCR font = DgnFontManager::GetLastResortTrueTypeFont();
     EXPECT_TRUE(font.IsResolved());
@@ -223,7 +224,7 @@ TEST_F(FontTests, CreateMissingFont)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FontTests, EmbedTTFont)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"EmbedTTFont.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnFonts& dbFonts = m_db->Fonts();
 
@@ -253,7 +254,7 @@ TEST_F(FontTests, EmbedTTFont)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FontTests, EmbedSHxFont)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"EmbedSHxFont.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnFonts& dbFonts = m_db->Fonts();
 
@@ -293,7 +294,7 @@ TEST_F(FontTests, RegistryFonts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FontTests, EmbeddedInUserDefinedFontTable)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"EmbedTTFont.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnFonts dbFonts(*m_db, "TestFontTable");
     ASSERT_TRUE( SUCCESS  == dbFonts.DbFontMap().CreateFontTable());
@@ -324,7 +325,7 @@ TEST_F(FontTests, EmbeddedInUserDefinedFontTable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FontTests, DbFaceDataDirect)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"DbFaceDataDirect.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnFonts& dbFonts = m_db->Fonts();
     DgnFonts::DbFaceDataDirect& faceData = dbFonts.DbFaceData();

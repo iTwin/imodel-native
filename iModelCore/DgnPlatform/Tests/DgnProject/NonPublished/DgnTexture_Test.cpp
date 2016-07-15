@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../TestFixture/BlankDgnDbTestFixture.h"
+#include "DgnHandlersTests.h"
 #include <numeric>
 #include <DgnPlatform/DgnTexture.h>
 
@@ -15,8 +15,9 @@ USING_NAMESPACE_BENTLEY_RENDER
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnTexturesTest : public BlankDgnDbTestFixture
-    {
+struct DgnTexturesTest : public GenericDgnModelTestFixture
+{
+    DgnDbR GetDb(){ return *m_dgnDb; }
     ImageSource MakeTextureData(ImageSource::Format fmt, uint32_t w, uint32_t h)
         {
         // For the purposes of this test we really don't know/care about the raw texture data
@@ -42,14 +43,15 @@ struct DgnTexturesTest : public BlankDgnDbTestFixture
         EXPECT_EQ (lhData.GetByteStream().GetSize(), rhData.GetByteStream().GetSize());
         EXPECT_EQ (0, memcmp (lhData.GetByteStream().GetData(), rhData.GetByteStream().GetData(), lhData.GetByteStream().GetSize()));
         }
-    };
+    void SetupProject(WCharCP inFileName){ GetDgnDb(inFileName); }
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     {
-    SetupProject(L"textures.ibim");
+    SetupProject(L"InsertQueryUpdateDelete.bim");
     DgnDbR db = GetDb();
 
     // Textures have names

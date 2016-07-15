@@ -11,6 +11,61 @@
 USING_NAMESPACE_BENTLEY_DPTEST
 USING_NAMESPACE_BENTLEY_SQLITE
 
+DgnDbTestUtils::SeedDbInfo DgnDbTestFixture::s_seedFileInfo;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BETEST_TC_SETUP(DgnDbTestFixture)
+    {
+    ScopedDgnHost tempHost;
+    //  Request a root seed file.
+    DgnDbTestFixture::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, false));
+    }
+//---------------------------------------------------------------------------------------
+// Clean up what I did in my one-time setup
+// @bsimethod                                           Umar.Hayat             07/2016
+//---------------------------------------------------------------------------------------
+BETEST_TC_TEARDOWN(DgnDbTestFixture)
+    {
+    //DgnDbTestUtils::EmptySubDirectory(GenericDgnModel2dTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
+    }
+/*---------------------------------------------------------------------------------**//**
+* Set up method that opens an existing .bim project file after copying it to out
+* baseProjFile is the existing file and testProjFile is what we get
+* @bsimethod                                     Majd.Uddin                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDbTestFixture::SetupProject(WCharCP inFileName, BeSQLite::Db::OpenMode mode, bool needBriefcase)
+    {
+    // Note: We know that our group's TC_SETUP function has already created the group seed file. We can just ask for it.
+    if (Db::OpenMode::ReadWrite == mode)
+        m_db = DgnDbTestUtils::OpenSeedDbCopy(DgnDbTestFixture::s_seedFileInfo.fileName, inFileName);
+    else
+        m_db = DgnDbTestUtils::OpenSeedDb(s_seedFileInfo.fileName);
+
+    //m_db = DgnDbTestUtils::OpenSeedDbCopy(DgnDbTestFixture::s_seedFileInfo.fileName, inFileName);
+
+    if (needBriefcase)
+        {
+        ASSERT_TRUE(m_db->IsBriefcase());
+        ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
+        }
+
+    if (BeSQLite::Db::OpenMode::ReadWrite == mode )
+        {
+        auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
+        ASSERT_TRUE(DgnDbStatus::Success == status);
+        }
+
+    m_defaultModelId = m_db->Models().QueryFirstModelId();
+    m_defaultModelP = m_db->Models().GetModel(m_defaultModelId);
+    ASSERT_TRUE(m_defaultModelP.IsValid());
+    m_defaultModelP->FillModel();
+
+    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
+
+    m_db->SaveChanges();
+    }
 /*---------------------------------------------------------------------------------**//**
 * Inserts TestElement
 * @bsimethod                                     Majd.Uddin                   06/15
@@ -97,8 +152,8 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
 void DgnDbTestFixture::SetupSeedProject()
 {
     WString fileName (TEST_NAME, BentleyCharEncoding::Utf8);
-    fileName.append(L".ibim");
-    SetupProject(L"3dMetricGeneral.ibim", fileName.c_str(), Db::OpenMode::ReadWrite);
+    fileName.append(L".bim");
+    SetupProject(fileName.c_str(), Db::OpenMode::ReadWrite);
 }
 
 /*---------------------------------------------------------------------------------**//**
