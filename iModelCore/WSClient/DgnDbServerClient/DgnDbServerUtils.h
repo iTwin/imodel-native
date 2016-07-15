@@ -88,7 +88,7 @@ namespace ServerSchema
         static Utf8CP CodesNotFound = "CodesNotFound";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
-    static Utf8CP DeleteAllCodes = "DeleteAll";
+    static Utf8CP DiscardReservedCodes = "DiscardReservedCodes";
     }
 
 namespace Locks

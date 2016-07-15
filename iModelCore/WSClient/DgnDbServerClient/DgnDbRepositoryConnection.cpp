@@ -532,10 +532,10 @@ std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& brie
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-void CodeDeleteAllJsonRequest(std::shared_ptr<WSChangeset> changeSet, const BeBriefcaseId& briefcaseId)
+void CodeDiscardReservedJsonRequest(std::shared_ptr<WSChangeset> changeSet, const BeBriefcaseId& briefcaseId)
     {
     Utf8String id;
-    id.Sprintf("%s-%d", ServerSchema::DeleteAllCodes, briefcaseId.GetValue());
+    id.Sprintf("%s-%d", ServerSchema::DiscardReservedCodes, briefcaseId.GetValue());
 
     ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::Code, id);
 
@@ -704,7 +704,7 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     auto changeset = LockDeleteAllJsonRequest (briefcaseId);
-    CodeDeleteAllJsonRequest(changeset, briefcaseId);
+    CodeDiscardReservedJsonRequest(changeset, briefcaseId);
 
     return SendChangesetRequest(changeset, cancellationToken);
     }
