@@ -141,7 +141,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
     ASSERT_FALSE(ecdb.ColumnExists("ts_Element", "ModelRelECClassId"));
     ASSERT_TRUE(ecdb.ColumnExists("ts_Element", "ParentRelECClassId"));
     AssertIndexExists(ecdb, "ix_ts_Element_ModelRelECClassId", false);
-    AssertIndex(ecdb, "ix_ts_Element_ParentRelECClassId", false, "ts_Element", {"ParentRelECClassId"});
+    AssertIndex(ecdb, "ix_ts_Element_ParentRelECClassId", false, "ts_Element", {"ParentRelECClassId"}, "([ParentRelECClassId] IS NOT NULL)");
     }
 
 //---------------------------------------------------------------------------------------

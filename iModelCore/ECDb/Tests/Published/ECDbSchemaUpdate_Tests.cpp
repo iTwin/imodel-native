@@ -7539,7 +7539,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
         "        </ClassMap>"
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='Code' typeName='string' />"
-        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+        "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='GeometricElement' modifier='None'>"
         "    <BaseClass>Element</BaseClass>"
@@ -7582,7 +7582,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
         "        </ClassMap>"
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='Code' typeName='string' />"
-        "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
+        "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='GeometricElement' modifier='None'>"
         "    <BaseClass>Element</BaseClass>"
@@ -7625,6 +7625,9 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
     AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: Add new Derived EndTable relationship should succeed as it doens't change db schema");
     ASSERT_FALSE(asserted);
 
+    ECClassId modelHasGeometricElementsRelClassId = GetECDb().Schemas().GetECClassId("TestSchema", "ModelHasGeometricElements");
+    ASSERT_TRUE(modelHasGeometricElementsRelClassId.IsValid());
+
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
@@ -7636,12 +7639,21 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
         ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Model(ECInstanceId, Name) VALUES(102, 'Model2')");
 
         //GeometricElement
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.GeometricElement(ECInstanceId, Code, ModelId, GeometricElement) VALUES(201, 'Code1', 101, 'GeometricElement1')");
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.GeometricElement(ECInstanceId, Code, ModelId, GeometricElement) VALUES(202, 'Code2', 101, 'GeometricElement2')");
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO ts.GeometricElement(ECInstanceId, Code, Model.Id, Model.RelECClassId, GeometricElement) VALUES(201, 'Code1', 101, %s, 'GeometricElement1')",
+                      modelHasGeometricElementsRelClassId.ToString().c_str());
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+        ecsql.Sprintf("INSERT INTO ts.GeometricElement(ECInstanceId, Code, Model.Id, Model.RelECClassId, GeometricElement) VALUES(202, 'Code2', 101, %s, 'GeometricElement2')",
+                      modelHasGeometricElementsRelClassId.ToString().c_str());
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
 
         //Geometric3dElement
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Geometric3dElement(ECInstanceId, Code, ModelId, GeometricElement, Geometry3d) VALUES(301, 'Code3', 102, 'GeometricElement3', 'Geometry3d3')");
-        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Geometric3dElement(ECInstanceId, Code, ModelId, GeometricElement, Geometry3d) VALUES(302, 'Code4', 102, 'GeometricElement4', 'Geometry3d4')");
+        ecsql.Sprintf("INSERT INTO ts.Geometric3dElement(ECInstanceId, Code, Model.Id, Model.RelECClassId, GeometricElement, Geometry3d) VALUES(301, 'Code3', 102, %s, 'GeometricElement3', 'Geometry3d3')",
+                      modelHasGeometricElementsRelClassId.ToString().c_str());
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
+        ecsql.Sprintf("INSERT INTO ts.Geometric3dElement(ECInstanceId, Code, Model.Id, Model.RelECClassId, GeometricElement, Geometry3d) VALUES(302, 'Code4', 102, %s, 'GeometricElement4', 'Geometry3d4')",
+                      modelHasGeometricElementsRelClassId.ToString().c_str());
+        ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, ecsql.c_str());
 
         //Select statements
         //Verify insertions
@@ -7746,7 +7758,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         "    <BaseClass>Geometric3dElement</BaseClass>"
         "    <ECProperty propertyName='Font' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Sealed' strength='embedding'>"
         "    <Source cardinality='(1,1)' polymorphic='True'>"
         "      <Class class='Model' />"
         "    </Source>"
@@ -7857,7 +7869,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         "    <BaseClass>Geometric3dElement</BaseClass>"
         "    <ECProperty propertyName='Font' typeName='string' />"
         "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
+        "  <ECRelationshipClass typeName='ModelHasElements' modifier='Sealed' strength='embedding'>"
         "    <Source cardinality='(1,1)' polymorphic='True'>"
         "      <Class class='Model' />"
         "    </Source>"

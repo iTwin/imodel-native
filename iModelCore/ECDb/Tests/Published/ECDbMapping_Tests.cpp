@@ -6113,7 +6113,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
                 AssertIndex(ecdb, "ix_B_AId", false, "ts_B", {"AId"});
-                AssertIndex(ecdb, "ix_ts_B_ARelECClassId", false, "ts_B", {"ARelECClassId"});
+                AssertIndex(ecdb, "ix_ts_B_ARelECClassId", false, "ts_B", {"ARelECClassId"}, "([ARelECClassId] IS NOT NULL)");
 
                 AssertIndexExists(ecdb, "ix_ts_B_fk_ts_RelBase_target", false);
                 AssertIndexExists(ecdb, "uix_ts_B_fk_ts_RelSub1_target", false);
@@ -6732,7 +6732,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     Utf8String ddl;
     getDdl(ddl, ecdb, "ts_Base");
     ASSERT_FALSE(ddl.empty());
-    ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER NOT NULL,")) << "Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Actual DDL: " << ddl.c_str();
     }
 
     {

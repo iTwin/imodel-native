@@ -353,6 +353,7 @@ private:
     DbSchemaNameGenerator m_columnNameGenerator;
     Type m_type;
     PersistenceType m_persistenceType;
+    ECN::ECClassId m_exclusiveRootECClassId;
     std::map<Utf8CP, std::shared_ptr<DbColumn>, CompareIUtf8Ascii> m_columns;
     std::vector<DbColumn const*> m_orderedColumns;
     std::unique_ptr<PrimaryKeyDbConstraint> m_pkConstraint;
@@ -369,8 +370,8 @@ private:
     DbColumn* CreateColumn(DbColumnId, Utf8CP name, DbColumn::Type, int position, DbColumn::Kind, PersistenceType);
 
 public:
-    DbTable(DbTableId id, Utf8CP name, DbSchema& dbSchema, PersistenceType type, Type tableType, DbTable const* parentOfJoinedTable)
-        : m_id(id), m_name(name), m_dbSchema(dbSchema), m_columnNameGenerator("sc%02x"), m_persistenceType(type), m_type(tableType),
+    DbTable(DbTableId id, Utf8CP name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId const& exclusiveRootClass, DbTable const* parentOfJoinedTable)
+        : m_id(id), m_name(name), m_dbSchema(dbSchema), m_columnNameGenerator("sc%02x"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
         m_pkConstraint(nullptr), m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT), m_isClassIdColumnCached(false),
         m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable)
         {
@@ -393,6 +394,9 @@ public:
     PersistenceType GetPersistenceType() const { return m_persistenceType; }
     Type GetType() const { return m_type; }
     bool IsOwnedByECDb() const { return m_type != Type::Existing; }
+    bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
+    ECN::ECClassId const& GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
+
     DbColumn* CreateColumn(Utf8CP name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
     DbColumn* CreateSharedColumn() { return CreateColumn(nullptr, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Persisted); }
     DbColumn* CreateColumn(Utf8CP name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(DbColumnId(), name, type, position, kind, persType); }
@@ -618,6 +622,7 @@ private:
     DbMappings m_dbMappings;
     LoadState m_loadState;
 
+
 public:
     explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_nameGenerator("ecdb_%03d"), m_nullTable(nullptr), m_dbMappings(ecdb), m_loadState(LoadState::NotLoaded) {}
     ~DbSchema() {}
@@ -625,9 +630,9 @@ public:
     LoadState GetLoadState() const { return m_loadState; }
     void SetLoadState(LoadState state) { m_loadState = state; }
     //! Create a table with a given name or if name is null a name will be generated
-    DbTable* CreateTable(Utf8CP name, DbTable::Type, PersistenceType type, DbTable const* primaryTable);
+    DbTable* CreateTable(Utf8CP name, DbTable::Type, PersistenceType type, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateTable(DbTableId, Utf8CP name, DbTable::Type, PersistenceType type, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
     DbTable* CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP existingTableName);
-    DbTable* CreateTable(DbTableId, Utf8CP name, DbTable::Type, PersistenceType type, DbTable const* primaryTable);
     TableMap const& GetTables() const { return m_tables; }
     DbTable const* FindTable(Utf8CP name) const;
     DbTable* FindTableP(Utf8CP name) const;

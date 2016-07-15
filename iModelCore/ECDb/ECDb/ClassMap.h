@@ -110,6 +110,8 @@ struct ClassMap : RefCountedBase
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::ECPropertyCR);
 
+        bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
+
     protected:
         ClassMap(Type, ECN::ECClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
 
@@ -118,7 +120,8 @@ struct ClassMap : RefCountedBase
         MappingStatus DoMapPart2(SchemaImportContext&, ClassMappingInfo const&);
         virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* baseClassMap);
         MappingStatus AddPropertyMaps(ClassMapLoadContext&, ClassMap const* baseClassMap, ClassDbMapping const*, ClassMappingInfo const*);
-        void SetTable(DbTable& newTable, bool append = false);
+        void SetTable(DbTable& newTable) { m_tables.clear(); AddTable(newTable); }
+        void AddTable(DbTable& newTable) { m_tables.push_back(&newTable); }
         PropertyMapCollection& GetPropertyMapsR() { return m_propertyMaps; }
         ECDbSchemaManagerCR Schemas() const;
         IssueReporter const& Issues() const;

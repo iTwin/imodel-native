@@ -56,7 +56,7 @@ BentleyStatus DbSchemaPersistenceManager::Load(DbSchema& dbSchema, ECDbCR ecdb, 
 //static
 DbResult DbSchemaPersistenceManager::ReadTables(DbSchema& dbSchema, ECDbCR ecdb)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT A.Id, A.Name, A.Type, A.IsVirtual, B.Name BaseTableName FROM ec_Table A LEFT JOIN ec_Table B ON A.PrimaryTableId = B.Id ORDER BY A.PrimaryTableId");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT A.Id, A.Name, A.Type, A.IsVirtual, A.ExclusiveRootClassId, B.Name PrimaryTableName FROM ec_Table A LEFT JOIN ec_Table B ON A.PrimaryTableId = B.Id ORDER BY A.PrimaryTableId");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
@@ -66,7 +66,11 @@ DbResult DbSchemaPersistenceManager::ReadTables(DbSchema& dbSchema, ECDbCR ecdb)
         Utf8CP name = stmt->GetValueText(1);
         DbTable::Type tableType = Enum::FromInt<DbTable::Type>(stmt->GetValueInt(2));
         PersistenceType persistenceType = IsTrue(stmt->GetValueInt(3)) ? PersistenceType::Virtual : PersistenceType::Persisted;
-        Utf8CP primaryTableName = stmt->GetValueText(4);
+        ECClassId exclusiveRootClassId;
+        if (!stmt->IsColumnNull(4))
+            exclusiveRootClassId = stmt->GetValueId<ECClassId>(4);
+
+        Utf8CP primaryTableName = stmt->GetValueText(5);
 
         DbTable const* primaryTable = nullptr;
         if (!Utf8String::IsNullOrEmpty(primaryTableName))
@@ -76,7 +80,7 @@ DbResult DbSchemaPersistenceManager::ReadTables(DbSchema& dbSchema, ECDbCR ecdb)
             BeAssert(DbTable::Type::Joined == tableType && "Expecting JoinedTable");
             }
 
-        DbTable* table = dbSchema.CreateTable(id, name, tableType, persistenceType, primaryTable);
+        DbTable* table = dbSchema.CreateTable(id, name, tableType, persistenceType, exclusiveRootClassId, primaryTable);
         if (table == nullptr)
             {
             BeAssert(false && "Failed to create table definition");
@@ -299,7 +303,7 @@ DbResult DbSchemaPersistenceManager::ReadPropertyMappings(ClassDbMapping& classM
 //static
 DbResult DbSchemaPersistenceManager::ReadClassMappings(DbSchema& dbSchema, ECDbCR ecdb)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses FROM ec_ClassMap ORDER BY Id");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id, BaseId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses FROM ec_ClassMap ORDER BY Id");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -309,7 +313,7 @@ DbResult DbSchemaPersistenceManager::ReadClassMappings(DbSchema& dbSchema, ECDbC
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ClassMapId id = stmt->GetValueId<ClassMapId>(0);
-        ClassMapId parentId = stmt->IsColumnNull(1) ? ClassMapId() : stmt->GetValueId<ClassMapId>(1);
+        ClassMapId baseId = stmt->IsColumnNull(1) ? ClassMapId() : stmt->GetValueId<ClassMapId>(1);
         ECN::ECClassId classId = stmt->GetValueId<ECClassId>(2);
 
         const int minSharedColCount = stmt->IsColumnNull(5) ? ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT : stmt->GetValueInt(5);
@@ -322,7 +326,7 @@ DbResult DbSchemaPersistenceManager::ReadClassMappings(DbSchema& dbSchema, ECDbC
             return BE_SQLITE_ERROR;
             }
 
-        ClassDbMapping* classMapping = dbSchema.GetDbMappingsR().AddClassMapping(id, classId, mapStrategy, parentId);
+        ClassDbMapping* classMapping = dbSchema.GetDbMappingsR().AddClassMapping(id, classId, mapStrategy, baseId);
         if (classMapping == nullptr)
             {
             BeAssert(false && "Failed to create classMap");
@@ -472,7 +476,7 @@ DbResult DbSchemaPersistenceManager::InsertTable(ECDbCR ecdb, DbTable const& tab
         return BE_SQLITE_ERROR;
         }
 
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_Table(Id, Name, Type, IsVirtual, PrimaryTableId) VALUES (?, ?, ?, ?, ?)");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_Table(Id, Name, Type, IsVirtual, ExclusiveRootClassId, PrimaryTableId) VALUES(?,?,?,?,?,?)");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
@@ -480,10 +484,11 @@ DbResult DbSchemaPersistenceManager::InsertTable(ECDbCR ecdb, DbTable const& tab
     stmt->BindText(2, table.GetName().c_str(), Statement::MakeCopy::No);
     stmt->BindInt(3, Enum::ToInt(table.GetType()));
     stmt->BindInt(4, table.GetPersistenceType() == PersistenceType::Virtual ? 1 : 0);
+    if (table.HasExclusiveRootECClass())
+        stmt->BindId(5, table.GetExclusiveRootECClassId());
+
     if (auto primaryTable = table.GetParentOfJoinedTable())
-        stmt->BindId(5, primaryTable->GetId());
-    else
-        stmt->BindNull(5);
+        stmt->BindId(6, primaryTable->GetId());
 
     DbResult stat = stmt->Step();
     if (stat != BE_SQLITE_DONE)
@@ -641,7 +646,7 @@ DbResult DbSchemaPersistenceManager::InsertPropertyMapping(ECDbCR ecdb, Property
 //static
 DbResult DbSchemaPersistenceManager::InsertClassMapping(ECDbCR ecdb, ClassDbMapping const& cm)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(Id, BaseId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");

@@ -125,7 +125,7 @@ struct ExistingColumn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(Utf8CP name, DbTable::Type tableType, PersistenceType persType, DbTable const* primaryTable)
+DbTable* DbSchema::CreateTable(Utf8CP name, DbTable::Type tableType, PersistenceType persType, ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
     {
     if (tableType == DbTable::Type::Existing)
         {
@@ -164,13 +164,13 @@ DbTable* DbSchema::CreateTable(Utf8CP name, DbTable::Type tableType, Persistence
     BeBriefcaseBasedId tableId;
     m_ecdb.GetECDbImplR().GetTableIdSequence().GetNextValue(tableId);
 
-    return CreateTable(DbTableId(tableId.GetValue()), finalName.c_str(), tableType, persType, primaryTable);
+    return CreateTable(DbTableId(tableId.GetValue()), finalName.c_str(), tableType, persType, exclusiveRootClassId, primaryTable);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8CP name, DbTable::Type tableType, PersistenceType persType, DbTable const* primaryTable)
+DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8CP name, DbTable::Type tableType, PersistenceType persType, ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
     {
     if (Utf8String::IsNullOrEmpty(name) || !tableId.IsValid())
         {
@@ -178,7 +178,7 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8CP name, DbTable::Type tab
         return nullptr;
         }
 
-    std::unique_ptr<DbTable> table(std::unique_ptr<DbTable>(new DbTable(tableId, name, *this, persType, tableType, primaryTable)));
+    std::unique_ptr<DbTable> table(std::unique_ptr<DbTable>(new DbTable(tableId, name, *this, persType, tableType, exclusiveRootClassId, primaryTable)));
     if (tableType == DbTable::Type::Existing)
         table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
 
@@ -265,7 +265,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
 //---------------------------------------------------------------------------------------
 DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP existingTableName)
     {
-    DbTable* table = CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Persisted, nullptr);
+    DbTable* table = CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Persisted, ECClassId(), nullptr);
     if (table == nullptr)
         return nullptr;
 
@@ -481,7 +481,7 @@ DbTable const* DbSchema::GetNullTable() const
         {
         m_nullTable = FindTableP(DBSCHEMA_NULLTABLENAME);
         if (m_nullTable == nullptr)
-            m_nullTable = const_cast<DbSchema*>(this)->CreateTable(DBSCHEMA_NULLTABLENAME, DbTable::Type::Primary, PersistenceType::Virtual, nullptr);
+            m_nullTable = const_cast<DbSchema*>(this)->CreateTable(DBSCHEMA_NULLTABLENAME, DbTable::Type::Primary, PersistenceType::Virtual, ECClassId(), nullptr);
 
         if (m_nullTable != nullptr && m_nullTable->GetEditHandleR().CanEdit())
             m_nullTable->GetEditHandleR().EndEdit();

@@ -940,6 +940,444 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     AssertSchemaImport(testSchemas, "invalidrelinheritance.ecdb");
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
+    {
+    enum class RelClassIdExistenceMode
+        {
+        Persisted,
+        Virtual,
+        DoesNotExist
+        };
+
+    auto assertRelECClassId = [this] (ECDbCR ecdb, Utf8CP tableName, Utf8CP relClassIdColumnName, RelClassIdExistenceMode expectedExistenceMode, bool expectedNotNull)
+        {
+        const int relClassIdColumnKind = 2048;
+        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? AND type='table'");
+        ASSERT_TRUE(stmt != nullptr);
+        ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(1, tableName, Statement::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        Utf8String ddl(stmt->GetValueText(0));
+        stmt = nullptr;
+
+        stmt = ecdb.GetCachedStatement("SELECT c.ColumnKind, c.IsVirtual, c.NotNullConstraint FROM ec_Column c, ec_Table t WHERE c.TableId=t.Id AND t.Name=? and c.Name=?");
+        ASSERT_TRUE(stmt != nullptr);
+        ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(1, tableName, Statement::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(2, relClassIdColumnName, Statement::MakeCopy::No));
+        if (expectedExistenceMode == RelClassIdExistenceMode::DoesNotExist)
+            {
+            ASSERT_FALSE(ddl.ContainsI(relClassIdColumnName)) << "Table: " << tableName << " Column: " << relClassIdColumnName;
+            ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
+            return;
+            }
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+
+        const int actualKind = stmt->GetValueInt(0);
+        const bool actualIsVirtual = stmt->GetValueInt(1) != 0;
+        const bool actualIsNotNull = stmt->GetValueInt(2) != 0;
+        stmt = nullptr;
+
+        ASSERT_EQ(relClassIdColumnKind, actualKind) << "Table: " << tableName << " Column: " << relClassIdColumnName;
+        ASSERT_EQ(actualIsVirtual, expectedExistenceMode == RelClassIdExistenceMode::Virtual) << "Table: " << tableName << " Column: " << relClassIdColumnName;
+        ASSERT_EQ(actualIsNotNull, expectedNotNull) << "Table: " << tableName << " Column: " << relClassIdColumnName;
+
+        if (expectedExistenceMode == RelClassIdExistenceMode::Virtual)
+            ASSERT_FALSE(ddl.ContainsI(relClassIdColumnName)) << "Table: " << tableName << " Column: " << relClassIdColumnName;
+        else
+            {
+            Utf8String columnDdl("[");
+            columnDdl.append(relClassIdColumnName).append("] INTEGER");
+            if (expectedNotNull)
+                columnDdl.append(" NOT NULL");
+
+            ASSERT_TRUE(ddl.ContainsI(columnDdl.c_str())) << "Table: " << tableName << " Column: " << relClassIdColumnName << " Expected DDL: " << columnDdl.c_str();
+            }
+
+        Utf8String indexName;
+        indexName.Sprintf("ix_%s_%s", tableName, relClassIdColumnName);
+
+        if (expectedExistenceMode == RelClassIdExistenceMode::Virtual)
+            {
+            AssertIndexExists(ecdb, indexName.c_str(), false);
+            return;
+            }
+
+        if (expectedNotNull)
+            AssertIndex(ecdb, indexName.c_str(), false, tableName, {relClassIdColumnName});
+        else
+            {
+            Utf8String whereClause;
+            whereClause.Sprintf("([%s] IS NOT NULL)", relClassIdColumnName);
+            AssertIndex(ecdb, indexName.c_str(), false, tableName, {relClassIdColumnName}, whereClause.c_str());
+            }
+        };
+
+    {
+    #define NAMESPACEPREFIX "ts1"
+
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "  <ECEntityClass typeName='A' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='B' >"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
+                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECEntityClass typeName='C' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='D' >"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='CHasD' modifier='Sealed' strength='embedding'>"
+                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "      <Class class='C' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='D' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    ASSERT_FALSE(asserted);
+
+    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasB", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, NAMESPACEPREFIX "_D", "RelECClassId_" NAMESPACEPREFIX "_CHasD", RelClassIdExistenceMode::Virtual, false);
+    }
+
+    {
+    #undef NAMESPACEPREFIX
+    #define NAMESPACEPREFIX "ts2"
+
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='A' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                          "    <ECCustomAttributes>"
+                          "        <ClassMap xmlns='ECDbMap.01.01'>"
+                          "                <MapStrategy>"
+                          "                   <Strategy>SharedTable</Strategy>"
+                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                          "                </MapStrategy>"
+                          "        </ClassMap>"
+                          "    </ECCustomAttributes>"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                          "    <BaseClass>B</BaseClass>"
+                          "    <ECProperty propertyName='Prop1' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
+                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='AHasB1N' modifier='Abstract' strength='embedding'>"
+                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    ASSERT_FALSE(asserted);
+
+    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasB", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasB1N", RelClassIdExistenceMode::Persisted, true);
+    }
+
+    {
+#undef NAMESPACEPREFIX
+#define NAMESPACEPREFIX "ts3"
+
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='A' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                          "    <ECCustomAttributes>"
+                          "        <ClassMap xmlns='ECDbMap.01.01'>"
+                          "                <MapStrategy>"
+                          "                   <Strategy>SharedTable</Strategy>"
+                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                          "                </MapStrategy>"
+                          "        </ClassMap>"
+                          "    </ECCustomAttributes>"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                          "    <BaseClass>B</BaseClass>"
+                          "    <ECProperty propertyName='Prop1' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
+                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
+                          "    <BaseClass>AHasB</BaseClass>"
+                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='BSub' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='AHasB1N' modifier='Abstract' strength='embedding'>"
+                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='AHasB1NSub' modifier='Sealed' strength='embedding'>"
+                          "    <BaseClass>AHasB1N</BaseClass>"
+                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='BSub' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    ASSERT_FALSE(asserted);
+
+    Utf8CP tableName = NAMESPACEPREFIX "_B";
+    assertRelECClassId(ecdb, tableName, "RelECClassId_" NAMESPACEPREFIX "_AHasB", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, tableName, "RelECClassId_" NAMESPACEPREFIX "_AHasBSub", RelClassIdExistenceMode::DoesNotExist, false);
+    assertRelECClassId(ecdb, tableName, "RelECClassId_" NAMESPACEPREFIX "_AHasB1N", RelClassIdExistenceMode::Persisted, true);
+    assertRelECClassId(ecdb, tableName, "RelECClassId_" NAMESPACEPREFIX "_AHasB1NSub", RelClassIdExistenceMode::DoesNotExist, false);
+    }
+
+    {
+#undef NAMESPACEPREFIX
+#define NAMESPACEPREFIX "ts4"
+
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='A' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                          "    <ECCustomAttributes>"
+                          "        <ClassMap xmlns='ECDbMap.01.01'>"
+                          "                <MapStrategy>"
+                          "                   <Strategy>SharedTable</Strategy>"
+                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                          "                </MapStrategy>"
+                          "        </ClassMap>"
+                          "    </ECCustomAttributes>"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                          "    <BaseClass>B</BaseClass>"
+                          "    <ECProperty propertyName='Prop1' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='AHasBSub' modifier='Abstract' strength='embedding'>"
+                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='BSub' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Abstract' strength='embedding'>"
+                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='BSub' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    ASSERT_FALSE(asserted);
+
+    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasBSub", RelClassIdExistenceMode::Persisted, false);
+    //cardinality would imply NOT NULL on rel class id, but the column is shared by other base class rows, so no enforcement of NOT NULL.
+    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasBSub1N", RelClassIdExistenceMode::Persisted, false);
+    }
+
+    {
+#undef NAMESPACEPREFIX
+#define NAMESPACEPREFIX "ts5"
+
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='A' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                          "    <ECCustomAttributes>"
+                          "        <ClassMap xmlns='ECDbMap.01.01'>"
+                          "                <MapStrategy>"
+                          "                   <Strategy>SharedTable</Strategy>"
+                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                          "                </MapStrategy>"
+                          "        </ClassMap>"
+                          "    </ECCustomAttributes>"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                          "    <BaseClass>B</BaseClass>"
+                          "    <ECProperty propertyName='Prop1' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
+                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='BSub' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='AHasB1N' modifier='Sealed' strength='embedding'>"
+                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Sealed' strength='embedding'>"
+                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='BSub' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    ASSERT_FALSE(asserted);
+
+    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasBSub", RelClassIdExistenceMode::Virtual, false);
+    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasB1N", RelClassIdExistenceMode::Virtual, true);
+    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasBSub1N", RelClassIdExistenceMode::Virtual, false);
+    }
+
+    {
+    //LinkTable
+#undef NAMESPACEPREFIX
+#define NAMESPACEPREFIX "ts6"
+
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='A' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                          "    <BaseClass>B</BaseClass>"
+                          "    <ECProperty propertyName='Prop1' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='referencing'>"
+                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    ASSERT_FALSE(asserted);
+
+    ASSERT_TRUE(ecdb.TableExists(NAMESPACEPREFIX "_AHasB"));
+    ASSERT_FALSE(ecdb.ColumnExists(NAMESPACEPREFIX "_AHasB", "ECClassId"));
+   }
+
+    {
+    //LinkTable
+#undef NAMESPACEPREFIX
+#define NAMESPACEPREFIX "ts7"
+
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                          "  <ECEntityClass typeName='A' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                          "    <BaseClass>B</BaseClass>"
+                          "    <ECProperty propertyName='Prop1' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='referencing'>"
+                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='referencing'>"
+                          "    <BaseClass>AHasB</BaseClass>"
+                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class='B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    ASSERT_FALSE(asserted);
+
+    ASSERT_TRUE(ecdb.TableExists(NAMESPACEPREFIX "_AHasB"));
+    ASSERT_TRUE(ecdb.ColumnExists(NAMESPACEPREFIX "_AHasB", "ECClassId"));
+    }
+
+#undef NAMESPACEPREFIX
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/16
 //+---------------+---------------+---------------+---------------+---------------+------

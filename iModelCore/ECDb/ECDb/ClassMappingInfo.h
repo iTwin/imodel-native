@@ -95,7 +95,6 @@ public:
     Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
     ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
     ClassMap const* GetBaseClassMap () const { return m_baseClassMap; }
-
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }
     };

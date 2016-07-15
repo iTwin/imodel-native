@@ -64,12 +64,11 @@ struct ECDbMap :NonCopyableClass
         size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
         MappingStatus MapSchemas(SchemaImportContext&);
         BentleyStatus CreateECClassViewsInDb() const;
-        DbTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, DbTable::Type, bool isVirtual, Utf8CP primaryKeyColumnName);
         void ClearCache();
         bool IsImportingSchema() const;
         SchemaImportContext* GetSchemaImportContext() const;
         bool AssertIfIsNotImportingSchema() const;
-        DbTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, DbTable::Type, bool isVirtual, Utf8CP primaryKeyColumnName, DbTable const* baseTable);
+        DbTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, DbTable::Type, bool isVirtual, Utf8CP primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
         DbSchema const& GetDbSchema() const { return m_dbSchema; }
         DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }
         LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }

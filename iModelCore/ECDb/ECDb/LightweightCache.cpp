@@ -24,7 +24,7 @@ void LightweightCache::LoadClassIdsPerTable() const
         return;
 
     Utf8String sql;
-    sql.Sprintf("SELECT t.Id, t.Name, c.Id, c.Modifier FROM ec_Table t, ec_Class c, ec_PropertyMap pm, ec_ClassMap cm, ec_PropertyPath pp, ec_Column col "
+    sql.Sprintf("SELECT t.Id, t.Name, c.Id FROM ec_Table t, ec_Class c, ec_PropertyMap pm, ec_ClassMap cm, ec_PropertyPath pp, ec_Column col "
                 "WHERE cm.Id=pm.ClassMapId AND pp.Id=pm.PropertyPathId AND col.Id=pm.ColumnId AND (col.ColumnKind & %d = 0) AND "
                 "c.Id=cm.ClassId AND t.Id=col.TableId AND "
                 "cm.MapStrategy<>%d AND cm.MapStrategy<>%d "
@@ -47,11 +47,7 @@ void LightweightCache::LoadClassIdsPerTable() const
             }
 
         ECClassId id = stmt->GetValueId<ECClassId>(2);
-        ECClassModifier classModifier = Enum::FromInt<ECClassModifier>(stmt->GetValueInt(3));
         m_classIdsPerTable[currentTable].push_back(id);
-        if (classModifier != ECClassModifier::Abstract)
-            m_nonAbstractClassIdsPerTable[currentTable].push_back(id);
-
         m_tablesPerClassId[id].insert(currentTable);
         }
 
@@ -162,15 +158,6 @@ std::vector<ECClassId> const& LightweightCache::GetClassesForTable(DbTable const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle 05/2016
-//---------------------------------------------------------------------------------------
-std::vector<ECClassId> const& LightweightCache::GetNonAbstractClassesForTable(DbTable const& table) const
-    {
-    LoadClassIdsPerTable();
-    return m_nonAbstractClassIdsPerTable[&table];
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
 bset<DbTable const*> const& LightweightCache::GetVerticalPartitionsForClass(ECN::ECClassId classId) const
@@ -200,7 +187,6 @@ void LightweightCache::Reset()
 
     m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();
-    m_nonAbstractClassIdsPerTable.clear();
     m_relationshipClassIdsPerConstraintClassIds.clear();
     m_constraintClassIdsPerRelClassIds.clear();
     m_storageDescriptions.clear();

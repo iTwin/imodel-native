@@ -159,24 +159,6 @@ DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, SchemaVersion const& curr
     //IMPORTANT: order from low to high version
     //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
     std::vector<std::unique_ptr<ECDbProfileUpgrader>> upgraders;
-    if (currentProfileVersion < SchemaVersion(3, 7, 1, 0))
-        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3710()));
-
-    if (currentProfileVersion < SchemaVersion(3, 7, 1, 1))
-        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3711()));
-
-    if (currentProfileVersion < SchemaVersion(3, 7, 1, 2))
-        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3712()));
-
-    if (currentProfileVersion < SchemaVersion(3, 7, 1, 5))
-        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3715()));
-
-    if (currentProfileVersion < SchemaVersion(3, 7, 1, 7))
-        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3717()));
-
-    if (currentProfileVersion < SchemaVersion(3, 7, 2, 0))
-        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3720()));
-
     for (std::unique_ptr<ECDbProfileUpgrader> const& upgrader : upgraders)
         {
         DbResult stat = upgrader->Upgrade(ecdb);
@@ -439,7 +421,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     stat = ecdb.ExecuteSql("CREATE Table ec_ClassMap("
                            "Id INTEGER PRIMARY KEY,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "ParentId INTEGER REFERENCES ec_ClassMap(Id) ON DELETE CASCADE,"
+                           "BaseId INTEGER REFERENCES ec_ClassMap(Id) ON DELETE CASCADE,"
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
                            "MapStrategyOptions INTEGER NOT NULL,"
@@ -448,8 +430,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ClassId_ParentId ON ec_ClassMap(ClassId, ParentId) WHERE ParentId IS NOT NULL;"
-                           "CREATE INDEX ix_ec_ClassMap_ParentId ON ec_ClassMap(ParentId)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ClassId_BaseId ON ec_ClassMap(ClassId, BaseId) WHERE BaseId IS NOT NULL;"
+                           "CREATE INDEX ix_ec_ClassMap_BaseId ON ec_ClassMap(BaseId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -474,11 +456,15 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "PrimaryTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0,1)))");
+                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0,1)),"
+                           "ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL)"
+
+    );
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_PrimaryTableId ON ec_Table(PrimaryTableId)");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_PrimaryTableId ON ec_Table(PrimaryTableId);"
+                           "CREATE INDEX ix_ec_Table_ExclusiveRootClassId ON ec_Table(ExclusiveRootClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 

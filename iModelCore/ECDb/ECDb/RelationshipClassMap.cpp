@@ -298,6 +298,12 @@ MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, Class
     if (SUCCESS != DetermineKeyAndConstraintColumns(columns, relClassMappingInfo))
         return MappingStatus::Error;
 
+    //Set tables
+    for (DbColumn const* fkTablePkCol : columns.m_ecInstanceIdColumnsPerFkTable)
+        {
+        AddTable(fkTablePkCol->GetTableR());
+        }
+
     //Create ECInstanceId for this classMap. This must map to current table for this class evaluate above and set through SetTable();
     PropertyMapPtr ecInstanceIdPropMap = ECInstanceIdPropertyMap::Create(Schemas(), *this, columns.m_ecInstanceIdColumnsPerFkTable);
     if (ecInstanceIdPropMap == nullptr)
@@ -306,7 +312,9 @@ MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, Class
         return MappingStatus::Error;
         }
 
-    //Create ECInstanceId for this classMap. This must map to current table for this class evaluate above and set through SetTable();
+    if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropMap) != SUCCESS)
+        return MappingStatus::Error;
+
     PropertyMapPtr ecClassIdPropMap = ECClassIdPropertyMap::Create(Schemas(), *this, columns.m_relECClassIdColumnsPerFkTable);
     if (ecClassIdPropMap == nullptr)
         {
@@ -314,17 +322,6 @@ MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, Class
         return MappingStatus::Error;
         }
 
-    //Set tables
-    for (DbColumn const* fkTablePkCol : columns.m_ecInstanceIdColumnsPerFkTable)
-        {
-        SetTable(fkTablePkCol->GetTableR(), true);
-        }
-
-    //Add primary key property map
-    if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropMap) != SUCCESS)
-        return MappingStatus::Error;
-
-    //Add primary key property map
     if (GetPropertyMapsR().AddPropertyMap(ecClassIdPropMap) != SUCCESS)
         return MappingStatus::Error;
 
@@ -341,7 +338,6 @@ MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, Class
         return MappingStatus::Error;
 
     GetConstraintMapR(GetForeignEnd()).SetECInstanceIdPropMap(foreignEndIdPropertyMap.get());
-
 
     //Create ForeignEnd ClassId propertyMap
     ECRelationshipClassCR relClass = *GetClass().GetRelationshipClassCP();
@@ -403,6 +399,7 @@ MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, Class
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(ColumnLists& columns, RelationshipMappingInfo const& classMappingInfo)
     {
+    BeAssert(!GetClass().HasBaseClasses() && "RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns is expected to only be called for root rel classes.");
     ECRelationshipClassCR relClass = *GetClass().GetRelationshipClassCP();
     std::set<DbTable const*> foreignEndTables = GetForeignEnd() == ECRelationshipEnd_Source ? classMappingInfo.GetSourceTables() : classMappingInfo.GetTargetTables();
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
@@ -561,14 +558,12 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
         }
 
     Utf8String relECClassIdColName = DetermineRelECClassIdColumnName(relClass, fkColName);
-    const PersistenceType relECClassIdColPersType = relClass.GetDerivedClasses().empty() ? PersistenceType::Virtual : PersistenceType::Persisted;
-
     DbColumn const* referencedTableClassIdCol = referencedTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
     for (DbColumn const* fkCol : columns.m_fkColumnsPerFkTable)
         {
         DbTable& fkTable = fkCol->GetTableR();
 
-        DbColumn* relClassIdCol = CreateRelECClassIdColumn(fkTable, relECClassIdColName.c_str(), relECClassIdColPersType);
+        DbColumn* relClassIdCol = CreateRelECClassIdColumn(fkTable, relECClassIdColName.c_str());
         if (relClassIdCol == nullptr)
             {
             BeAssert(false && "Could not create RelClassId col");
@@ -681,9 +676,11 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& table, Utf8CP relClassIdColName, PersistenceType persType) const
+DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& table, Utf8CP relClassIdColName) const
     {
-    if (table.GetPersistenceType() == PersistenceType::Virtual || !table.IsOwnedByECDb())
+    BeAssert(!GetClass().HasBaseClasses() && "CreateRelECClassIdColumn is expected to only be called for root rel classes");
+    PersistenceType persType = PersistenceType::Persisted;
+    if (table.GetPersistenceType() == PersistenceType::Virtual || !table.IsOwnedByECDb() || GetClass().GetClassModifier() != ECClassModifier::Abstract)
         persType = PersistenceType::Virtual;
 
     DbColumn* relClassIdCol = table.FindColumnP(relClassIdColName);
@@ -818,7 +815,7 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
 
     for (DbTable const* table : clonedPropMap->GetTables())
         {
-        SetTable(*const_cast<DbTable*>(table), true);
+        AddTable(*const_cast<DbTable*>(table));
         }
 
     //Foreign ECClassId prop map

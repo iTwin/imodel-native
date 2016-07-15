@@ -61,7 +61,9 @@ MappingStatus ClassMap::_Map(SchemaImportContext& schemaImportContext, ClassMapp
 MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
     {
     ClassMap const* baseClassMap = mapInfo.GetBaseClassMap();
-    DbTable const* primaryTable = nullptr;
+    if (baseClassMap != nullptr && baseClassMap->GetMapStrategy().IsNotMapped())
+        return MappingStatus::Error;
+
     DbTable::Type tableType = DbTable::Type::Primary;
     if (Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable))
         {
@@ -71,48 +73,41 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
             BeAssert(false);
             return MappingStatus::Error;
             }
-
-        primaryTable = &baseClassMap->GetPrimaryTable();
         }
     else if (mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
         tableType = DbTable::Type::Existing;
 
-    auto findOrCreateTable = [&] ()
+    DbTable const* primaryTable = nullptr;
+    bool needsToCreateTable = false;
+    if (baseClassMap == nullptr)
+        needsToCreateTable = true;
+    else
         {
-        if (DbTable::Type::Joined == tableType)
+        m_baseClassId = baseClassMap->GetClass().GetId();
+        SetTable(baseClassMap->GetPrimaryTable());
+        if (tableType == DbTable::Type::Joined)
             {
-            BeAssert(primaryTable != nullptr);
+            if (baseClassMap->IsParentOfJoinedTable())
+                {
+                primaryTable = &baseClassMap->GetPrimaryTable();
+                needsToCreateTable = true;
+                }
+            else
+                AddTable(baseClassMap->GetJoinedTable());
             }
+        }
 
+    if (needsToCreateTable)
+        {
+        const bool isExclusiveRootClassOfTable = DetermineIsExclusiveRootClassOfTable(mapInfo);
         DbTable* table = const_cast<ECDbMap&>(m_ecDbMap).FindOrCreateTable(&schemaImportContext, mapInfo.GetTableName(), tableType,
-                                                                           mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName(), primaryTable);
-
+                                                                  mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName(),
+                                                                  isExclusiveRootClassOfTable ? mapInfo.GetECClass().GetId() : ECClassId(),
+                                                                  primaryTable);
         if (table == nullptr)
             return MappingStatus::Error;
 
-        SetTable(*table, true /*append*/);
-        return MappingStatus::Success;
-        };
-
-    BeAssert(tableType != DbTable::Type::Joined || baseClassMap != nullptr);
-    if (baseClassMap != nullptr)
-        {
-        if (baseClassMap->GetMapStrategy().IsNotMapped())
-            return MappingStatus::Error;
-
-        m_baseClassId = baseClassMap->GetClass().GetId();
-        SetTable(baseClassMap->GetPrimaryTable());
-
-        if (tableType == DbTable::Type::Joined)
-            {
-            if (findOrCreateTable() == MappingStatus::Error)
-                return MappingStatus::Error;
-            }
-        }
-    else
-        {
-        if (findOrCreateTable() == MappingStatus::Error)
-            return MappingStatus::Error;
+        AddTable(*table);
         }
 
     if (mapInfo.GetMapStrategy().GetMinimumSharedColumnCount() != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
@@ -142,6 +137,35 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
 
     return MappingStatus::Success;
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      07/2016
+//---------------------------------------------------------------------------------------
+bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mappingInfo) const
+    {
+    ECDbMapStrategy const& strategy = mappingInfo.GetMapStrategy();
+    //OwnedTable obviously always has an exclusive root because only a single class is mapped to the table.
+    //ExistingTable: For now we just declare that only a single ECClass can map to an existing table
+    if (strategy.GetStrategy() != ECDbMapStrategy::Strategy::SharedTable)
+        return true;
+
+    //Shared table for unrelated classes: Can have multiple roots
+    if (!strategy.AppliesToSubclasses())
+        return false;
+
+    //For subclasses in a shared table hierarchy, true must be returned for joined table root classes
+    ClassMap const* baseClassMap = mappingInfo.GetBaseClassMap();
+    if (baseClassMap == nullptr) //this is the root of the shared table class hierarchy
+        return true;
+
+    //if base class doesn't have SharedTable, this class is the starting point, and therefore the exclusive root.
+    //if base class has shared table strategy and is the direct parent of the joined table, this class is the
+    //starting point of the joined table, so also the exclusive root (of the joined table)
+    return baseClassMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable ||
+        baseClassMap->IsParentOfJoinedTable();
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
@@ -255,6 +279,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
 
     return table.CreateTrigger(triggerName.c_str(), DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                       Affan.Khan   02/2016
 //---------------------------------------------------------------------------------------
@@ -312,16 +337,6 @@ BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool l
     std::vector<DbColumn const*> columns;
     columns.push_back(&classIdColumn);
     return ConfigureECClassId(columns, loadingFromDisk);
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan   02/2016
-//---------------------------------------------------------------------------------------
-void ClassMap::SetTable(DbTable& newTable, bool append /*= false*/)
-    {
-    if (!append)
-        m_tables.clear();
-
-    m_tables.push_back(&newTable);
     }
 
 //---------------------------------------------------------------------------------------
@@ -629,10 +644,10 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
             }
 
         for (DbTable* table : tables)
-            SetTable(*table, true);
+            AddTable(*table);
 
         for (DbTable* table : joinedTables)
-            SetTable(*table, true);
+            AddTable(*table);
 
         BeAssert(!GetTables().empty());
         }
@@ -774,11 +789,11 @@ BentleyStatus ClassMap::GetPathToParentOfJoinedTable(std::vector<ClassMap const*
     path.insert(path.begin(), current);
     do
         {
-        ECClassId nextParentId = current->GetBaseClassId();
-        if (!nextParentId.IsValid())
+        ECClassId nextBaseId = current->GetBaseClassId();
+        if (!nextBaseId.IsValid())
             return SUCCESS;
 
-        current = GetECDbMap().GetClassMap(nextParentId);
+        current = GetECDbMap().GetClassMap(nextBaseId);
         if (current == nullptr)
             {
             BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
@@ -810,11 +825,11 @@ ClassMap const* ClassMap::FindClassMapOfParentOfJoinedTable() const
         if (current->IsParentOfJoinedTable())
             return current;
 
-        auto nextParentId = current->GetBaseClassId();
-        if (!nextParentId.IsValid())
+        auto nextBaseId = current->GetBaseClassId();
+        if (!nextBaseId.IsValid())
             return nullptr;
 
-        current = GetECDbMap().GetClassMap(nextParentId);
+        current = GetECDbMap().GetClassMap(nextBaseId);
         if (current == nullptr)
             {
             BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
@@ -827,7 +842,7 @@ ClassMap const* ClassMap::FindClassMapOfParentOfJoinedTable() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2016
+// @bsimethod                                                    Affan.Khan  01/2016
 //---------------------------------------------------------------------------------------
 ClassMap const* ClassMap::FindSharedTableRootClassMap() const
     {
