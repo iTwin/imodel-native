@@ -96,7 +96,7 @@ void CreateDateStampFile(Utf8StringCR testName, BeFileName path)
     file.Close();
     }
 
-Utf8String GetEnvStr(UrlProvider::Environment env)
+Utf8String RepositorySchemaUpgradeTests::GetEnvStr(UrlProvider::Environment env)
     {
     if (UrlProvider::Dev == env)
         return "DEV";
@@ -107,7 +107,7 @@ Utf8String GetEnvStr(UrlProvider::Environment env)
     return nullptr;
     }
 
-Utf8String GetDateStr(DateTimeCR dateTime)
+Utf8String RepositorySchemaUpgradeTests::GetDateStr(DateTimeCR dateTime)
     {
     return Utf8PrintfString("%04d-%02d-%02d", dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay());
     }
