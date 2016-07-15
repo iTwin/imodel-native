@@ -406,6 +406,7 @@ Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGr
     subGraphic->m_inTextDraw         = m_inTextDraw;
     subGraphic->m_currGraphicParams  = m_currGraphicParams;
     subGraphic->m_currGeometryParams = m_currGeometryParams;
+    subGraphic->m_currGeomEntryId    = m_currGeomEntryId;
 
     return subGraphic;
     }
@@ -633,10 +634,9 @@ void SimplifyGraphic::ProcessAsCurvePrimitives(CurveVectorCR geom, bool filled)
 void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
-    GeometryStreamEntryId entryId = m_context.GetGeometryStreamEntryId();
 
-    if (entryId.IsValid())
-        CurveTopologyId::AddCurveVectorIds(geom, CurvePrimitiveId::Type::CurveVector, CurveTopologyId::FromCurveVector(), entryId.GetIndex(), entryId.GetPartIndex());
+    if (m_currGeomEntryId.IsValid())
+        CurveTopologyId::AddCurveVectorIds(geom, CurvePrimitiveId::Type::CurveVector, CurveTopologyId::FromCurveVector(), m_currGeomEntryId.GetIndex(), m_currGeomEntryId.GetPartIndex());
 
     // Give output a chance to handle geometry directly...
     if (doClipping)
@@ -1226,27 +1226,27 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
         return;
 
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
-    GeometryStreamEntryId entryId = m_context.GetGeometryStreamEntryId();
 
     for (size_t readIndex = 0; readIndex < numIndices; readIndex++)
         {    
         // found face loop entry
         if (thisIndex = vertIndex[readIndex])
             {
-            // remember first index in this face loop
             if (!thisFaceSize)
+                {
+                // remember first index in this face loop
                 firstIndex = thisIndex;
-
-            // draw visible edge (prevIndex, thisIndex)
+                }
             else if (prevIndex > 0)
                 {
+                // draw visible edge (prevIndex, thisIndex)
                 int closeVertexId = (abs(prevIndex) - 1);
                 int segmentVertexId = (abs(thisIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
 
-                if (entryId.IsValid())
+                if (m_currGeomEntryId.IsValid())
                     {
-                    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), entryId.GetIndex(), entryId.GetPartIndex());
+                    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), m_currGeomEntryId.GetIndex(), m_currGeomEntryId.GetPartIndex());
                     curve->SetId(newId.get());
                     }
 
@@ -1287,9 +1287,9 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
                 int segmentVertexId = (abs(firstIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
 
-                if (entryId.IsValid())
+                if (m_currGeomEntryId.IsValid())
                     {
-                    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), entryId.GetIndex(), entryId.GetPartIndex());
+                    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), m_currGeomEntryId.GetIndex(), m_currGeomEntryId.GetPartIndex());
                     curve->SetId(newId.get());
                     }
 
@@ -1318,6 +1318,9 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
 
             thisFaceSize = 0;
             }
+
+        if (0 == (readIndex % 100) && m_context.CheckStop())
+            return;
         }
     }
 

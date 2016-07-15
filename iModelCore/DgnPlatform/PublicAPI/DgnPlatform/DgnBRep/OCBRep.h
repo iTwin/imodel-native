@@ -68,6 +68,7 @@
 #include <GeomConvert_ApproxCurve.hxx>
 #include <GeomLProp_CLProps.hxx>
 #include <GeomLProp_SLProps.hxx>
+#include <GProp_GProps.hxx>
 #include <IntCurvesFace_ShapeIntersector.hxx>
 #include <ShapeAnalysis_Curve.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
@@ -90,6 +91,7 @@
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepExtrema_DistShapeShape.hxx>
 #include <BRepFill.hxx>
+#include <BRepGProp.hxx>
 #include <BRepOffsetAPI_ThruSections.hxx>
 #include <BRepPrimAPI_MakeCone.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>

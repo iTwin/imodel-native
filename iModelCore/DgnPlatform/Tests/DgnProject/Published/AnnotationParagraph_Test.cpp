@@ -8,15 +8,8 @@
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-class AnnotationParagraphTest : public AnnotationTestFixture
+struct AnnotationParagraphTest : public AnnotationTestFixture
 {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   Jeff.Marker     05/2014
-    //---------------------------------------------------------------------------------------
-    public: AnnotationParagraphTest () :
-        AnnotationTestFixture(__FILE__, false /*2D*/, false /*needBriefcase*/)
-        {
-        }
 
 }; // AnnotationParagraphTest
 
@@ -48,8 +41,7 @@ class AnnotationParagraphTest : public AnnotationTestFixture
 TEST_F(AnnotationParagraphTest, TextRun)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb(L"TextRun");
 
     AnnotationTextStylePtr style = AnnotationTestFixture::createAnnotationTextStyle(project, "RunStyle");
     ASSERT_TRUE(style.IsValid());
@@ -94,8 +86,7 @@ TEST_F(AnnotationParagraphTest, TextRun)
 TEST_F(AnnotationParagraphTest, FractionRun)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
     AnnotationTextStylePtr style = AnnotationTestFixture::createAnnotationTextStyle(project, "RunStyle");
     ASSERT_TRUE(style.IsValid());
 
@@ -142,8 +133,7 @@ TEST_F(AnnotationParagraphTest, FractionRun)
 TEST_F(AnnotationParagraphTest, LineBreakRun)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
     AnnotationTextStylePtr style = AnnotationTestFixture::createAnnotationTextStyle(project, "RunStyle");
     ASSERT_TRUE(style.IsValid());
 
@@ -171,8 +161,7 @@ TEST_F(AnnotationParagraphTest, LineBreakRun)
 TEST_F(AnnotationParagraphTest, AnnotationParagraph)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
     AnnotationTextStylePtr style = AnnotationTestFixture::createAnnotationTextStyle(project, "ParaStyle");
     ASSERT_TRUE(style.IsValid());
     AnnotationTextRunPtr textRun = AnnotationTextRun::Create(project, style->GetElementId(), "PI is ");

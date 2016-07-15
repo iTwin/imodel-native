@@ -25,6 +25,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //=======================================================================================
 struct StepTimer
 {
+public:
     WCharCP m_msg;
     uint64_t m_startTime;
 
@@ -33,7 +34,18 @@ struct StepTimer
     StepTimer(WCharCP msg) {m_msg=msg; m_startTime=GetCurrentTime();}
     ~StepTimer() {wprintf(L"%ls, %lf Seconds\n", m_msg, (GetCurrentTime()-m_startTime)/1000.);}
 };
+//=======================================================================================
+// @bsiclass                                        Umar.Hayat              07/16
+//=======================================================================================
+struct DgnDbTest : public ::testing::Test
+{
+private:
+    ScopedDgnHost autoDgnHost;
+};
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/11
++---------------+---------------+---------------+---------------+---------------+------*/
 static void openProject(DgnDbPtr& project, BeFileName const& projectFileName, Db::OpenMode mode = Db::OpenMode::Readonly)
     {
     DbResult result;
@@ -49,10 +61,8 @@ static void openProject(DgnDbPtr& project, BeFileName const& projectFileName, Db
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DgnDb, Settings)
+TEST_F (DgnDbTest, Settings)
     {
-    ScopedDgnHost autoDgnHost;
-
     Utf8CP val1 = "value 1";
     Utf8CP val2 = "value 2";
     Utf8CP val3 = "value 3";
@@ -105,10 +115,8 @@ TEST (DgnDb, Settings)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (DgnDb, CheckStandardProperties)
+TEST_F (DgnDbTest, CheckStandardProperties)
     {
-    ScopedDgnHost autoDgnHost;
-
     //DbResult rc;
     Utf8String val;
 
@@ -142,10 +150,8 @@ TEST (DgnDb, CheckStandardProperties)
 * Schema Version can be accessed and it is correct
 * @bsimethod                                    Majd.Uddin                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, ProjectSchemaVersions)
+TEST_F(DgnDbTest, ProjectSchemaVersions)
     {
-    ScopedDgnHost autoDgnHost;
-
     DgnDbTestDgnManager tdm(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, TestDgnManager::DGNINITIALIZEMODE_None);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL);
@@ -175,10 +181,8 @@ static DgnSubCategoryId facetId1, facetId2;
 * Creating a project with Duplicate name
 * @bsimethod                                    Majd.Uddin                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, ProjectWithDuplicateName)
+TEST_F(DgnDbTest, ProjectWithDuplicateName)
     {
-    ScopedDgnHost autoDgnHost;
-
     CreateDgnDbParams params;
     params.SetOverwriteExisting(false);
     DbResult status, status2;
@@ -202,10 +206,8 @@ TEST(DgnDb, ProjectWithDuplicateName)
 * Try multiple read/write for project
 * @bsimethod                                    Algirdas.Mikoliunas                02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, MultipleReadWrite)
+TEST_F(DgnDbTest, MultipleReadWrite)
     {
-    ScopedDgnHost autoDgnHost;
-
     BeFileName fullFileName;
     TestDataManager::FindTestData(fullFileName, L"3dMetricGeneral.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
     
@@ -228,9 +230,8 @@ TEST(DgnDb, MultipleReadWrite)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adeel.Shoukat                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, InvalidFileFormat)
+TEST_F(DgnDbTest, InvalidFileFormat)
     {
-    ScopedDgnHost           autoDgnHost;
     DgnDbPtr      dgnProj;
     BeFileName path;
     StatusInt testDataFound = TestDataManager::FindTestData(path, L"ECSqlTest.01.00.ecschema.xml", BeFileName(L"DgnDb\\Schemas"));
@@ -245,9 +246,8 @@ TEST(DgnDb, InvalidFileFormat)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adeel.Shoukat                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, CreateDgnDb)
+TEST_F(DgnDbTest, CreateDgnDb)
     {
-    ScopedDgnHost           autoDgnHost;
     DgnDbPtr      dgnProj;
     BeFileName dgndbFileName;
     BeTest::GetHost().GetOutputRoot(dgndbFileName);
@@ -264,9 +264,8 @@ TEST(DgnDb, CreateDgnDb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adeel.Shoukat                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, CreateWithInvalidName)
+TEST_F(DgnDbTest, CreateWithInvalidName)
     {
-    ScopedDgnHost           autoDgnHost;
     DgnDbPtr      dgnProj;
 
     BeFileName dgndbFileName;
@@ -286,9 +285,8 @@ TEST(DgnDb, CreateWithInvalidName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adeel.Shoukat                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, FileNotFoundToOpen)
+TEST_F(DgnDbTest, FileNotFoundToOpen)
     {
-    ScopedDgnHost autoDgnHost;
     DbResult status;
     CreateDgnDbParams Obj;
     DgnDbPtr      dgnProj;
@@ -305,10 +303,8 @@ TEST(DgnDb, FileNotFoundToOpen)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adeel.Shoukat                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, OpenAlreadyOpen)
-{
-    ScopedDgnHost  autoDgnHost;
-
+TEST_F(DgnDbTest, OpenAlreadyOpen)
+    {
     WCharCP testFileName = L"3dMetricGeneral.ibim";
     BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath(testFileName);
 
@@ -333,9 +329,8 @@ TEST(DgnDb, OpenAlreadyOpen)
 * @bsimethod                                            Julija.Suboc                08/13
 * Covers GetAzimuth(), GetLatitude() and GetLongitude() in DgnDb
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, GetCoordinateSystemProperties)
+TEST_F(DgnDbTest, GetCoordinateSystemProperties)
     {
-    ScopedDgnHost autoDgnHost;
     BeFileName fullFileName;
     TestDataManager::FindTestData(fullFileName, L"GeoCoordinateSystem.i.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
     //Open project

@@ -10,15 +10,14 @@
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     02/2015
 //=======================================================================================
-class LinkElementTest : public GenericDgnModelTestFixture
+struct LinkElementTest : public GenericDgnModel2dTestFixture
 {
 protected:
     DgnElementCPtr InsertAnnotationElement();
     LinkModelPtr InsertLinkModel(DgnDbR dgndb, Utf8CP modelName);
-
-public: 
-    LinkElementTest () : GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/) {}
+    DgnModelId              GetModelId()            { return GetDgnDb()->Models().QueryModelId(DgnModel::CreateModelCode(TEST_MODEL2D_NAME)); }
 }; // LinkElementTest
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Ramanujam.Raman   05/2016
@@ -34,8 +33,8 @@ LinkModelPtr LinkElementTest::InsertLinkModel(DgnDbR dgndb, Utf8CP modelName)
 //---------------------------------------------------------------------------------------
 DgnElementCPtr LinkElementTest::InsertAnnotationElement()
     {
-    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
-    DgnModelId modelId = db.Models().QueryFirstModelId();
+    DgnDbR db = *GetDgnDb();
+    DgnModelId modelId = GetModelId();
     if(!modelId.IsValid())
         return nullptr;
 
@@ -61,8 +60,7 @@ DgnElementCPtr LinkElementTest::InsertAnnotationElement()
 //---------------------------------------------------------------------------------------
 TEST_F(LinkElementTest, RoundTripUrlLink)
     {
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR db = *GetDgnDb(L"RoundTripUrlLink");
 
     DgnElementCPtr annotation = InsertAnnotationElement();
     ASSERT_TRUE(annotation.IsValid());
@@ -118,8 +116,7 @@ TEST_F(LinkElementTest, RoundTripUrlLink)
 TEST_F(LinkElementTest, UrlLinkQuery)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR db = *GetDgnDb(L"UrlLinkQuery");
 
     DgnElementCPtr result = InsertAnnotationElement();
     ASSERT_TRUE(result->GetElementId().IsValid());
@@ -210,8 +207,7 @@ TEST_F(LinkElementTest, UrlLinkQuery)
 //---------------------------------------------------------------------------------------
 TEST_F(LinkElementTest, OtherIterators)
     {
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR db = *GetDgnDb(L"OtherIterators");
 
     DgnElementCPtr result1 = InsertAnnotationElement();
     ASSERT_TRUE(result1.IsValid());
@@ -258,8 +254,7 @@ TEST_F(LinkElementTest, OtherIterators)
 TEST_F(LinkElementTest, Update)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR db = *GetDgnDb(L"Update");
 
     DgnElementCPtr result = InsertAnnotationElement();
     ASSERT_TRUE(result.IsValid());
@@ -305,5 +300,4 @@ TEST_F(LinkElementTest, Update)
     link1E->SetName("UpdatedEmbeddedDocumentName1");
     link1E->Update();
     EXPECT_STREQ(link1E->GetName(), "UpdatedEmbeddedDocumentName1");
-}
-
+    }
