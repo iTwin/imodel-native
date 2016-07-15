@@ -116,11 +116,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         bool IsFirstDrawComplete() const {return m_firstDrawComplete;}
     };
 
-    //! Object to monitor changes to a DgnViewport
+    //! Object to monitor changes to a DgnViewport. See #AddTracker, #DropTracker
     struct Tracker
     {
-        virtual void _OnViewChanged(DgnViewport& vp) const {}
-        virtual void _OnViewClose(DgnViewport& vp) const {}
+        virtual ~Tracker() {}
+        virtual void _OnViewChanged() const {} //!< Called after this DgnViewport has been modified, e.g. through a viewing tool
+        virtual void _OnViewClose() const {} //!< Called when this DgnViewport is about to be closed.
     };
 
 protected:

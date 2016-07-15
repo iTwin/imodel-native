@@ -423,9 +423,8 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
 
 struct ViewChangedCaller
     {
-    DgnViewport&   m_vp;
-    ViewChangedCaller(DgnViewport& vp) : m_vp(vp) {}
-    void CallHandler(DgnViewport::Tracker& tracker) const {tracker._OnViewChanged(m_vp);}
+    ViewChangedCaller() {}
+    void CallHandler(DgnViewport::Tracker& tracker) const {tracker._OnViewChanged();}
     };
 /*---------------------------------------------------------------------------------**//**
 * set up this viewport from its viewController
@@ -527,7 +526,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
 
     m_sync.SetValidController();
 
-    m_trackers.CallAllHandlers(ViewChangedCaller(*this));
+    m_trackers.CallAllHandlers(ViewChangedCaller());
     return ViewportStatus::Success;
     }
 
