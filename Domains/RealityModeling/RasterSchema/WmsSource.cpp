@@ -15,10 +15,11 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
+#if defined (NEEDS_WORK_REALTY_DATA)
 //=======================================================================================
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //=======================================================================================
-struct WmsTileData : RealityData::Payload
+struct WmsTileData 
 {
     //===================================================================================
     // @bsimethod                                               Mathieu.Marchand  6/2015
@@ -245,6 +246,8 @@ BentleyStatus WmsTileData::_PersistToStorage(BeSQLite::Db& db) const
 #endif
     }
 
+#endif
+
 //----------------------------------------------------------------------------------------
 //-------------------------------  WmsSource      ----------------------------------------
 //----------------------------------------------------------------------------------------
@@ -391,6 +394,7 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     Utf8String tileUrl = BuildTileUrl(id);
     Render::Image image;
         
+#if defined (NEEDS_WORK_REALTY_DATA)
     //&&MM for WMS it looks like I will need another kind of tiledRaster to handle exception response from the server.
     //     for example, a badly formated request generate an XML response. This is badly interpreted as a valid response(HttpRealityDataSourceRequest::_Handle) and 
     //     stored into the dataCache.  contentType equals "application/vnd.ogc.se_xml" (required by wms spec).
@@ -406,7 +410,6 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
 
     BeAssert(pWmsTileData.IsValid());
 
-#if defined (NEEDS_WORK_READ_IMAGE)
     auto const& data = pWmsTileData->GetData();
     RgbImageInfo actualImageInfo;
     Utf8StringCR contentType = pWmsTileData->GetContentType();
@@ -485,6 +488,7 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
     return tileUrl;   
     }
 
+#if defined (NEEDS_WORK_REALTY_DATA)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -504,3 +508,4 @@ RealityData::CacheR WmsSource::GetRealityDataCache() const
         }
     return *m_realityDataCache;
     }
+#endif

@@ -12,7 +12,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/Render.h>
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(__clang__)
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS) /* || defined(__clang__) WIP_ANDROID_CLANG */
 #include <folly/BeFolly.h>
 #endif
 

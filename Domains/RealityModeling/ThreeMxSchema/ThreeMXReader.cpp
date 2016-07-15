@@ -29,9 +29,9 @@ struct CtmContext
         return true;
         }
 
-    static CTMuint ReadFunc(void* buf, CTMuint count, void* userData) {return ReadBytes(*(MxStreamBuffer*)userData, buf, count) ? count : 0;}
+    static CTMuint CTMCALL ReadFunc(void* buf, CTMuint count, void* userData) {return ReadBytes(*(MxStreamBuffer*)userData, buf, count) ? count : 0;}
 
-    CtmContext(MxStreamBuffer& in, uint32_t offset) {m_openCTM=::ctmNewContext(CTM_IMPORT); in.SetPos(offset); ::ctmLoadCustom(m_openCTM, (CTMreadfn)ReadFunc, &in);}
+    CtmContext(MxStreamBuffer& in, uint32_t offset) {m_openCTM=::ctmNewContext(CTM_IMPORT); in.SetPos(offset); ::ctmLoadCustom(m_openCTM, ReadFunc, &in);}
     ~CtmContext() {::ctmFreeContext(m_openCTM);}
 
     CTMenum GetError() {return ::ctmGetError(m_openCTM);}
