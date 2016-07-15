@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlStatementTestFixture.h"
+#include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -13,7 +13,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECSqlNavigationPropertyTestFixture : ECDbTestFixture
+struct ECSqlNavigationPropertyTestFixture : SchemaImportTestFixture
     {
     protected:
         void AssertPrepare(Utf8CP ecsql, bool expectedToSucceed, Utf8CP assertMessage) const
@@ -79,6 +79,69 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
     AssertPrepare("INSERT INTO ts.D (PD) VALUES(123)", true, "");
 
     AssertPrepare("UPDATE ONLY ts.B SET AId=?", true, "Updating NavProp with end table rel is supported.");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
+              SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                         "<ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' />"
+                         "    <ECEntityClass typeName='Model'>"
+                         "        <ECProperty propertyName='Name' typeName='string' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+                         "        <ECCustomAttributes>"
+                         "            <ClassMap xmlns='ECDbMap.01.00'>"
+                         "                <MapStrategy>"
+                         "                   <Strategy>SharedTable</Strategy>"
+                         "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                         "                </MapStrategy>"
+                         "            </ClassMap>"
+                         "        </ECCustomAttributes>"
+                         "        <ECProperty propertyName='Code' typeName='string' />"
+                         "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElement' direction='Backward' />"
+                         "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElement' direction='Backward' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='SubElement'>"
+                         "        <BaseClass>Element</BaseClass>"
+                         "        <ECProperty propertyName='SubProp1' typeName='int' />"
+                         "    </ECEntityClass>"
+                         "   <ECRelationshipClass typeName='ModelHasElement' strength='Embedding'  modifier='Sealed'>"
+                         "      <Source cardinality='(1,1)' polymorphic='False'>"
+                         "          <Class class ='Model' />"
+                         "      </Source>"
+                         "      <Target cardinality='(0,N)' polymorphic='True'>"
+                         "          <Class class ='Element' />"
+                         "      </Target>"
+                         "   </ECRelationshipClass>"
+                         "   <ECRelationshipClass typeName='ElementOwnsChildElement' strength='Embedding'  modifier='Abstract'>"
+                         "      <Source cardinality='(0,1)' polymorphic='True'>"
+                         "          <Class class ='Element' />"
+                         "      </Source>"
+                         "      <Target cardinality='(0,N)' polymorphic='True'>"
+                         "          <Class class ='Element' />"
+                         "      </Target>"
+                         "   </ECRelationshipClass>"
+                         "   <ECRelationshipClass typeName='ElementOwnsSubElement' strength='Embedding'  modifier='Sealed'>"
+                         "        <BaseClass>ElementOwnsChildElement</BaseClass>"
+                         "      <Source cardinality='(0,1)' polymorphic='True'>"
+                         "          <Class class ='Element' />"
+                         "      </Source>"
+                         "      <Target cardinality='(0,N)' polymorphic='True'>"
+                         "          <Class class ='SubElement' />"
+                         "      </Target>"
+                         "   </ECRelationshipClass>"
+                         "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ASSERT_FALSE(ecdb.ColumnExists("ts_Element", "ModelRelECClassId"));
+    ASSERT_TRUE(ecdb.ColumnExists("ts_Element", "ParentRelECClassId"));
+    AssertIndexExists(ecdb, "ix_ts_Element_ModelRelECClassId", false);
+    AssertIndex(ecdb, "ix_ts_Element_ParentRelECClassId", false, "ts_Element", {"ParentRelECClassId"});
     }
 
 //---------------------------------------------------------------------------------------

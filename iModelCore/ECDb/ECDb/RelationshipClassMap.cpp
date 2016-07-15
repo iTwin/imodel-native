@@ -550,10 +550,6 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
 
     //+++ Other column(s) +++
 
-    //WIP_RELCLASSID
-    Utf8String relECClassIdColName = DetermineRelECClassIdColumnName(relClass, fkColName);
-    const PersistenceType relECClassIdColPersType = relClass.GetDerivedClasses().empty() ? PersistenceType::Virtual : PersistenceType::Persisted;
-   
     std::set<DbTable const*> referencedEndTables = GetReferencedEnd() == ECRelationshipEnd_Source ? classMappingInfo.GetSourceTables() : classMappingInfo.GetTargetTables();
     BeAssert(referencedEndTables.size() == 1);
     DbTable const* referencedTable = *referencedEndTables.begin();
@@ -564,28 +560,15 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
         return ERROR;
         }
 
+    Utf8String relECClassIdColName = DetermineRelECClassIdColumnName(relClass, fkColName);
+    const PersistenceType relECClassIdColPersType = relClass.GetDerivedClasses().empty() ? PersistenceType::Virtual : PersistenceType::Persisted;
+
     DbColumn const* referencedTableClassIdCol = referencedTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
     for (DbColumn const* fkCol : columns.m_fkColumnsPerFkTable)
         {
         DbTable& fkTable = fkCol->GetTableR();
 
-        /*WIP_RELCLASSID*/
-        PersistenceType type = relECClassIdColPersType;
-        if (fkTable.GetPersistenceType() == PersistenceType::Virtual || !fkTable.IsOwnedByECDb())
-            type = PersistenceType::Virtual;
-
-        DbColumn* relClassIdCol = fkTable.FindColumnP(relECClassIdColName.c_str());
-        if (relClassIdCol == nullptr)
-            {
-            bool canEdit = fkTable.GetEditHandleR().CanEdit();
-            if (!canEdit)
-                fkTable.GetEditHandleR().BeginEdit();
-
-            relClassIdCol = fkTable.CreateColumn(relECClassIdColName.c_str(), DbColumn::Type::Integer, DbColumn::Kind::RelECClassId, relECClassIdColPersType);
-            if (!canEdit)
-                fkTable.GetEditHandleR().EndEdit();
-            }
-
+        DbColumn* relClassIdCol = CreateRelECClassIdColumn(fkTable, relECClassIdColName.c_str(), relECClassIdColPersType);
         if (relClassIdCol == nullptr)
             {
             BeAssert(false && "Could not create RelClassId col");
@@ -695,8 +678,50 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle       06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& table, Utf8CP relClassIdColName, PersistenceType persType) const
+    {
+    if (table.GetPersistenceType() == PersistenceType::Virtual || !table.IsOwnedByECDb())
+        persType = PersistenceType::Virtual;
+
+    DbColumn* relClassIdCol = table.FindColumnP(relClassIdColName);
+    if (relClassIdCol != nullptr)
+        {
+        BeAssert(Enum::Contains(relClassIdCol->GetKind(), DbColumn::Kind::RelECClassId));
+        return relClassIdCol;
+        }
+
+    const bool canEdit = table.GetEditHandleR().CanEdit();
+    if (!canEdit)
+        table.GetEditHandleR().BeginEdit();
+
+    relClassIdCol = table.CreateColumn(relClassIdColName, DbColumn::Type::Integer, DbColumn::Kind::RelECClassId, persType);
+    if (relClassIdCol == nullptr)
+        return nullptr;
+
+    if (persType != PersistenceType::Virtual)
+        {
+        Utf8String indexName("ix_");
+        indexName.append(table.GetName()).append("_").append(relClassIdCol->GetName());
+        DbIndex* index = GetECDbMap().GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {relClassIdCol}, true, true, GetClass().GetId());
+        if (index == nullptr)
+            {
+            LOG.errorv("Failed to create index on RelECClassId column %s on table %s.", relClassIdCol->GetName().c_str(), table.GetName().c_str());
+            return nullptr;
+            }
+        }
+
+    if (!canEdit)
+        table.GetEditHandleR().EndEdit();
+
+    return relClassIdCol;
+    }
+
+
 #define DEFAULT_FKCOLUMNNAME_PREFIX "ForeignECInstanceId_"
-#define RELCLASSIDCOLUMNNAME_SUFFIX "RelECClassId"
+#define RELCLASSIDCOLUMNNAME_TERM "RelECClassId"
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2016
@@ -732,10 +757,12 @@ Utf8String RelationshipClassEndTableMap::DetermineRelECClassIdColumnName(ECRelat
     if (fkColumnName.EndsWithIAscii("id"))
         {
         relECClassIdColName = fkColumnName.substr(0, fkColumnName.size() - 2);
-        relECClassIdColName.append(RELCLASSIDCOLUMNNAME_SUFFIX);
+        relECClassIdColName.append(RELCLASSIDCOLUMNNAME_TERM);
         }
+    else if (fkColumnName.StartsWithIAscii(DEFAULT_FKCOLUMNNAME_PREFIX))
+        relECClassIdColName.assign(RELCLASSIDCOLUMNNAME_TERM "_").append(relClass.GetSchema().GetNamespacePrefix()).append("_").append(relClass.GetName());
     else
-        relECClassIdColName.assign(relClass.GetSchema().GetNamespacePrefix()).append("_").append(relClass.GetName()).append("_" RELCLASSIDCOLUMNNAME_SUFFIX);
+        relECClassIdColName.assign(fkColumnName).append(RELCLASSIDCOLUMNNAME_TERM);
 
     BeAssert(!relECClassIdColName.empty());
     return relECClassIdColName;
