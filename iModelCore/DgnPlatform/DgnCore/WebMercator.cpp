@@ -6,7 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/RealityDataCache.h>
+
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
+#include <folly/BeFolly.h>
+#include <folly/futures/Future.h>
+#endif
 
 #define COMPARE_VALUES(val0, val1)  if (val0 < val1) return true; if (val0 > val1) return false;
 
@@ -59,8 +65,8 @@ enum
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct Upoint2d
     {
-    uint32_t  x;
-    uint32_t  y;
+    uint32_t x;
+    uint32_t y;
     };
 
 static Upoint2d const s_pixelOrigin = {TILE_SIZE / 2, TILE_SIZE / 2};
@@ -631,9 +637,7 @@ void WebMercatorDisplay::DrawCoarserTiles(DrawArgs& args, uint8_t zoomLevel, uin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
-    static bool s_clear=false;
-    if (s_clear)
-        m_tileCache.Clear();
+    CreateCache();
 
     WebMercatorDisplay display(*this, *context.GetViewport());
     display.DrawView(context);
@@ -678,7 +682,7 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
 
     if (tileIds.GetSize() >= m_model.GetTileCache().GetMaxSize())
         {
-        BeAssert(false);
+        BeAssert(false); // how?
         m_model.GetTileCache().SetMaxSize(tileIds.GetSize());
         }
 
@@ -836,7 +840,7 @@ Utf8String StreetMapModel::CreateMapBoxUrl(TileId tileid) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StreetMapModel::_ShouldRejectTile(TileId tileid, Utf8StringCR url, ByteStream const& data) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+#if defined (IS_THIS_NECESSARY)
     if (m_properties.m_mapService[0] != '0' || m_properties.m_mapType[0] != '1')
         return false;
 
@@ -988,41 +992,38 @@ void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
 BEGIN_UNNAMED_NAMESPACE
 
 //=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            03/2015
+// @bsiclass                                                    Keith.Bentley   07/16
 //=======================================================================================
-struct TiledRasterCache : RealityData::Storage
+struct TiledRasterCache : RealityData::Cache
 {
     uint64_t m_allowedSize = MAX_DB_CACHE_SIZE;
-    using Storage::Storage;
-    virtual BentleyStatus _PrepareDatabase(Db& db) const override;
-    virtual BentleyStatus _CleanupDatabase(Db& db) const override;
+    virtual BentleyStatus _Prepare() const override;
+    virtual BentleyStatus _Cleanup() const override;
 };
 
 //=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            10/2014
+// @bsiclass                                                    Keith.Bentley   07/16
 //=======================================================================================
-struct TileData : RealityData::Payload
+struct TileData 
 {
 private:
-    ByteStream  m_data;
-    DateTime    m_creationDate;
-    bool        m_isJpeg;
+    RealityData::Cache* m_cache;
+    Utf8String  m_url;
+    mutable ByteStream m_data;
+    mutable DateTime m_creationDate;
+    mutable bool m_isJpeg;
     TilePtr     m_tile;
     ColorDef    m_color;
     Render::SystemR m_renderSys;
 
-private:
-    BentleyStatus LoadTile();
-
-protected:
-    virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _LoadFromStorage(Db& db) override;
-    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override {return ERROR;}
-    virtual BentleyStatus _PersistToStorage(Db& db) const override;
+    BentleyStatus LoadTile() const;
 
 public:
-    TileData(TileR tile, Render::SystemR renderSys, ColorDef color, Utf8CP url) : m_tile(&tile), m_renderSys(renderSys), m_color(color), Payload(url) {}
+    StatusInt LoadFromHttp() const;
+    StatusInt LoadFromDb() const;
+    StatusInt SaveToDb() const;
+
+    TileData(RealityData::Cache* cache, TileR tile, Render::SystemR renderSys, ColorDef color, Utf8CP url) : m_cache(cache), m_tile(&tile), m_renderSys(renderSys), m_color(color), m_url(url) {}
     ByteStream const& GetData() const {return m_data;}
     DateTime GetCreationDate() const {return m_creationDate;}
     Utf8String ToString() const {return Utf8PrintfString("%d,%d,%d", m_tile->m_id.m_zoomLevel, m_tile->m_id.m_column, m_tile->m_id.m_row);} 
@@ -1035,13 +1036,13 @@ END_UNNAMED_NAMESPACE
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis           03/2015
 +---------------+---------------+---------------+---------------+---------------+--*/
-BentleyStatus TiledRasterCache::_PrepareDatabase(Db& db) const
+BentleyStatus TiledRasterCache::_Prepare() const
     {
-    if (db.TableExists(TABLE_NAME_TiledRaster))
+    if (m_db.TableExists(TABLE_NAME_TiledRaster))
         return SUCCESS;
 
     Utf8CP ddl = "Id BLOB PRIMARY KEY,Image BLOB,NumBytes INT,JPeg BOOL,Created BIGINT";
-    if (BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
+    if (BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TiledRaster, ddl))
         return SUCCESS;
 
     return ERROR;
@@ -1050,10 +1051,10 @@ BentleyStatus TiledRasterCache::_PrepareDatabase(Db& db) const
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis           03/2015
 +---------------+---------------+---------------+---------------+---------------+--*/
-BentleyStatus TiledRasterCache::_CleanupDatabase(Db& db) const
+BentleyStatus TiledRasterCache::_Cleanup() const
     {
     CachedStatementPtr sumStatement;
-    db.GetCachedStatement(sumStatement, "SELECT SUM(NumBytes) FROM " TABLE_NAME_TiledRaster);
+    m_db.GetCachedStatement(sumStatement, "SELECT SUM(NumBytes) FROM " TABLE_NAME_TiledRaster);
 
     if (BE_SQLITE_ROW != sumStatement->Step())
         return ERROR;
@@ -1065,7 +1066,7 @@ BentleyStatus TiledRasterCache::_CleanupDatabase(Db& db) const
     uint64_t garbageSize = sum - m_allowedSize;
 
     CachedStatementPtr selectStatement;
-    db.GetCachedStatement(selectStatement, "SELECT NumBytes,Created FROM " TABLE_NAME_TiledRaster " ORDER BY Created ASC");
+    m_db.GetCachedStatement(selectStatement, "SELECT NumBytes,Created FROM " TABLE_NAME_TiledRaster " ORDER BY Created ASC");
 
     uint64_t runningSum=0;
     while (runningSum < garbageSize)
@@ -1084,7 +1085,7 @@ BentleyStatus TiledRasterCache::_CleanupDatabase(Db& db) const
     BeAssert(creationDate > 0);
 
     CachedStatementPtr deleteStatement;
-    db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TiledRaster " WHERE Created <= ?");
+    m_db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TiledRaster " WHERE Created <= ?");
     deleteStatement->BindInt64(1, creationDate);
 
     return BE_SQLITE_DONE == deleteStatement->Step() ? SUCCESS : ERROR;
@@ -1093,7 +1094,7 @@ BentleyStatus TiledRasterCache::_CleanupDatabase(Db& db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::LoadTile()
+BentleyStatus TileData::LoadTile() const
     {
     auto graphic = m_renderSys._CreateGraphic(Graphic::CreateParams(nullptr));
 
@@ -1114,9 +1115,9 @@ BentleyStatus TileData::LoadTile()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
+* @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body)
+StatusInt TileData::LoadFromHttp() const
     {
     if (!m_tile->IsQueued())
         {
@@ -1124,36 +1125,41 @@ BentleyStatus TileData::_LoadFromHttp(bmap<Utf8String, Utf8String> const& header
         return SUCCESS;
         }
 
-    DEBUG_PRINTF("loading from Http %s", ToString().c_str());
-    m_creationDate = DateTime::GetCurrentTime();
+    if (SUCCESS == LoadFromDb())
+        return SUCCESS;
 
-    auto contentTypeIter = header.find("Content-Type");
-    if (contentTypeIter == header.end())
+    Http::HttpByteStreamBodyPtr responseBody = Http::HttpByteStreamBody::Create();
+    Http::Request request(m_url);
+    request.SetResponseBody(responseBody);
+    Http::Response response = request.Perform();
+
+    if (Http::ConnectionStatus::OK != response.GetConnectionStatus() || Http::HttpStatus::OK != response.GetHttpStatus())
         {
-        BeAssert(false);
+        m_tile->SetNotFound();
         return ERROR;
         }
 
-    m_isJpeg = contentTypeIter->second.Equals("image/jpeg");
+    m_isJpeg = 0==::memcmp(response.GetHeaders().GetContentType(), "image/jpeg", _countof("image/jpeg"));
     BeAssert(!m_isJpeg);
 
-    m_data = body;
-    return LoadTile();
+    m_creationDate = DateTime::GetCurrentTime();
+    m_data = std::move(responseBody->GetByteStream());
+
+    LoadTile();
+    SaveToDb();
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
+* @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_LoadFromStorage(Db& db)
+StatusInt TileData::LoadFromDb() const
     {
-    if (!m_tile->IsQueued())
-        {
-        BeAssert(m_tile->IsAbandoned());
-        return SUCCESS;
-        }
+    if (nullptr==m_cache)
+        return ERROR;
 
     CachedStatementPtr stmt;
-    auto rc = db.GetCachedStatement(stmt, "SELECT Image,NumBytes,JPeg,Created FROM " TABLE_NAME_TiledRaster " WHERE Id=?");
+    auto rc = m_cache->GetDb().GetCachedStatement(stmt, "SELECT Image,NumBytes,JPeg,Created FROM " TABLE_NAME_TiledRaster " WHERE Id=?");
     BeAssert(rc == BE_SQLITE_OK);
     stmt->BindBlob(1, &m_tile->m_id, sizeof(m_tile->m_id), Statement::MakeCopy::No);
 
@@ -1175,10 +1181,13 @@ BentleyStatus TileData::_LoadFromStorage(Db& db)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
+* @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_PersistToStorage(Db& db) const
+StatusInt TileData::SaveToDb() const
     {
+    if (nullptr==m_cache)
+        return SUCCESS;
+
     if (!m_tile->IsLoaded())
         {
         BeAssert(m_tile->IsAbandoned());
@@ -1195,7 +1204,7 @@ BentleyStatus TileData::_PersistToStorage(Db& db) const
 
     // insert
     CachedStatementPtr stmt;
-    auto rc = db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TiledRaster "(Id,Image,NumBytes,JPeg,Created) VALUES(?,?,?,?,?)");
+    auto rc = m_cache->GetDb().GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TiledRaster "(Id,Image,NumBytes,JPeg,Created) VALUES(?,?,?,?,?)");
     BeAssert(rc == BE_SQLITE_OK);
 
     stmt->BindBlob(1, &m_tile->m_id, sizeof(m_tile->m_id), Statement::MakeCopy::No);
@@ -1205,33 +1214,29 @@ BentleyStatus TileData::_PersistToStorage(Db& db) const
     stmt->BindInt64(5, creationTime);
 
     rc = stmt->Step();
-    BeAssert(BE_SQLITE_DONE == rc);
-    return BE_SQLITE_DONE == rc ? SUCCESS : ERROR;
+    if (BE_SQLITE_DONE != rc)
+        return ERROR;
+
+    m_cache->ScheduleSave();
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2016
+* @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityData::CacheR WebMercatorModel::GetRealityDataCache() const
+void WebMercatorModel::CreateCache() const
     {
-    if (!m_realityDataCache.IsValid())
-        {
-        m_realityDataCache = new RealityData::Cache();
+    if (m_cacheInitialized)
+        return;
+    m_cacheInitialized = true;
 
-        BeFileName cacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-        cacheName.AppendToPath(BeFileName(GetName()));
-        cacheName.AppendExtension(L"tilecache");
+    BeFileName cacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+    cacheName.AppendToPath(BeFileName(GetName()));
+    cacheName.AppendExtension(L"tilecache");
 
-        uint32_t threadCount = std::max((uint32_t) 2,BeThreadUtilities::GetHardwareConcurrency() / 2);
-
-        RefCountedPtr<TiledRasterCache> cache = new TiledRasterCache(threadCount);
-        if (SUCCESS == cache->OpenAndPrepare(cacheName))
-            m_realityDataCache->SetStorage(*cache);
-
-        m_realityDataCache->SetSource(*new RealityData::HttpSource(threadCount, RealityData::SchedulingMethod::FIFO));
-        }
-
-    return *m_realityDataCache;
+    m_cache = new TiledRasterCache();
+    if (SUCCESS != m_cache->OpenAndPrepare(cacheName))
+        m_cache = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1239,6 +1244,7 @@ RealityData::CacheR WebMercatorModel::GetRealityDataCache() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) const
     {
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
     DgnDb::VerifyClientThread();
 
     tile.SetQueued();
@@ -1250,7 +1256,9 @@ void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) c
     if (0.0 != m_properties.m_transparency)
         color.SetAlpha((Byte) (255.* m_properties.m_transparency));
 
-    GetRealityDataCache().RequestData(*new TileData(tile, sys, color, url.c_str()), RealityData::Options());
+    TileData data(m_cache.get(), tile, sys, color, url.c_str());
+    folly::via(&BeFolly::IOThreadPool::GetPool(), [=](){return data.LoadFromHttp();});
+#endif
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

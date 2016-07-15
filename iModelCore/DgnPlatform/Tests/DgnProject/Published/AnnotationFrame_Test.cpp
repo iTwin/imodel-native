@@ -5,25 +5,11 @@
 
 #include "AnnotationTestFixture.h"
 
-// Republish API:           bb re DgnPlatform:PublishedApi
-// Rebuild API:             bb re DgnPlatformDll
-// Republish seed files:    bb re UnitTests_Documents
-// Rebuild test:            bb re DgnPlatform:UnitTests-Published
-// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnPlatform:UnitTests-Published
-// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="AnnotationFrameTest.*"
-
 //=======================================================================================
 // @bsiclass                                                   Umar.Hayat     01/16
 //=======================================================================================
 struct AnnotationFrameTest : public AnnotationTestFixture
 {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   Umar.Hayat     01/16
-    //---------------------------------------------------------------------------------------
-public: AnnotationFrameTest() :
-    AnnotationTestFixture(__FILE__, false /*2D*/, false /*needBriefcase*/)
-        {
-        }
 
 }; // AnnotationFrameTest
 
@@ -34,8 +20,7 @@ public: AnnotationFrameTest() :
 TEST_F(AnnotationFrameTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
     AnnotationFrameStylePtr style = createAnnotationFrameStyle(project, "TestFrameStyle");
@@ -54,6 +39,7 @@ TEST_F(AnnotationFrameTest, DefaultsAndAccessors)
     frame2->SetStyleId(style->GetElementId(), SetAnnotationFrameStyleOptions::Direct);
     EXPECT_TRUE(style->GetElementId() == frame->GetStyleId());
     
+    project.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -63,8 +49,7 @@ TEST_F(AnnotationFrameTest, DefaultsAndAccessors)
 TEST_F(AnnotationFrameTest, DeepCopy)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
     AnnotationFramePtr frame = AnnotationFrame::Create(project);
@@ -77,6 +62,7 @@ TEST_F(AnnotationFrameTest, DeepCopy)
     
     EXPECT_TRUE(&project == &clonedframe->GetDbR());
     EXPECT_TRUE(frame->GetStyleId() == clonedframe->GetStyleId());
-    
+
+    project.SaveChanges();
     }
 
