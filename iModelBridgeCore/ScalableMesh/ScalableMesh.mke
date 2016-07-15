@@ -408,6 +408,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     ws2_32.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
+    $(ContextSubpartsLibs)PCLWrapper.lib
     
 LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(IppGraLibsLib) \
@@ -415,7 +416,6 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)DgnPlatform.lib \
-    $(ContextSubpartsLibs)PCLWrapper.lib \
     $(ContextSubpartsLibs)IppZlib.lib \
     $(ContextSubpartsLibs)PointCloud.lib \
     $(ContextSubpartsLibs)RmgrTools.lib \

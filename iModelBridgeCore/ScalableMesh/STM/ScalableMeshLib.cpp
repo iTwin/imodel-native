@@ -38,6 +38,8 @@ void ScalableMeshLib::Host::Initialize()
     BeAssert (NULL == m_scalableTerrainModelAdmin);   
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
     InitializeProgressiveQueries();
+        BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
+        GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
     }
     

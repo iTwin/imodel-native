@@ -46,6 +46,7 @@
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
             <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
+            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
