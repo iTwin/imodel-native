@@ -349,15 +349,28 @@ void ECClass::FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP 
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties)
     {
+    Utf8String newName;
+    FindUniquePropertyName(newName, prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
+    return RenameConflictProperty(prop, renameDerivedProperties, newName);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties, Utf8String newName)
+    {
     PropertyMap::iterator iter = m_propertyMap.find(prop->GetName().c_str());
     if (iter == m_propertyMap.end())
         return ECObjectsStatus::PropertyNotFound;
     ECPropertyP thisProp = iter->second; // Since the property that is passed in might come from a base class, we need the actual pointer of the property from this class in order to search the propertyList for it
 
-    Utf8String newName;
-    FindUniquePropertyName(newName, prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
     ECPropertyP newProperty;
-    CopyProperty(newProperty, prop, newName.c_str(), true);
+    ECObjectsStatus status;
+    if (ECObjectsStatus::Success != (status = CopyProperty(newProperty, prop, newName.c_str(), true, false)))
+        {
+        delete newProperty;
+        return status;
+        }
 
     iter = m_propertyMap.find(prop->GetName().c_str());
     m_propertyMap.erase(iter);
@@ -366,10 +379,29 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
         m_propertyList.erase(iter2);
     InvalidateDefaultStandaloneEnabler();
 
-    if (renameDerivedProperties)
-        for (ECClassP derivedClass : m_derivedClasses)
-            derivedClass->RenameConflictProperty(prop, renameDerivedProperties);
+    status = AddProperty(newProperty, newName);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete newProperty;
+        return status;
+        }
 
+    if (renameDerivedProperties)
+        {
+        for (ECClassP derivedClass : m_derivedClasses)
+            {
+            ECPropertyP fromDerived = derivedClass->GetPropertyP(newName.c_str(), false);
+            if (nullptr != fromDerived && !fromDerived->GetName().Equals(newName))
+                derivedClass->RenameConflictProperty(fromDerived, renameDerivedProperties, newName);
+            for (ECClassP derivedClassBaseClass : derivedClass->GetBaseClasses())
+                {
+                ECPropertyP fromBaseDerived = derivedClassBaseClass->GetPropertyP(newName.c_str(), true);
+                if (nullptr == fromBaseDerived || fromBaseDerived->GetName().Equals(newName))
+                    continue;
+                derivedClassBaseClass->RenameConflictProperty(fromBaseDerived, true, newName);
+                }
+            }
+        }
     return ECObjectsStatus::Success;
     }
 
@@ -588,7 +620,8 @@ ECObjectsStatus ECClass::CopyProperty
 ECPropertyP& destProperty, 
 ECPropertyCP sourceProperty,
 Utf8CP destPropertyName,
-bool copyCustomAttributes
+bool copyCustomAttributes,
+bool andAddProperty
 )
     {
     if (sourceProperty->GetIsPrimitive())
@@ -651,10 +684,13 @@ bool copyCustomAttributes
     if (copyCustomAttributes)
         sourceProperty->CopyCustomAttributesTo(*destProperty);
 
-    ECObjectsStatus status = AddProperty(destProperty, Utf8String(destPropertyName));
-    if (ECObjectsStatus::Success != status)
-        delete destProperty;
-
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    if (andAddProperty)
+        {
+        status = AddProperty(destProperty, Utf8String(destPropertyName));
+        if (ECObjectsStatus::Success != status)
+            delete destProperty;
+        }
     return status;
     }
 
@@ -1102,8 +1138,9 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
                 // Same type, different case, simply rename the second property to match the first
                 if (ECObjectsStatus::Success == status)
                     {
-                    thisProperty->SetName(prop->GetName());
                     LOG.debugv("Case-collision between %s:%s and %s:%s.  Renaming to %s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), prop->GetName().c_str());
+                    ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
+                    conflictClass->RenameConflictProperty(thisProperty, true, prop->GetName());
                     }
                 }
 
