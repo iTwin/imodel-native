@@ -32,6 +32,7 @@ private:
 
     Response                     QueryCodesLocksAvailable(Request const& req, DgnDbR db);
     Response                     HandleError(Request const& request, DgnDbServerResult<void> result, IBriefcaseManager::RequestPurpose purpose);
+    static RepositoryStatus      GetResponseStatus(DgnDbServerResult<void> result);
 
 protected:
     DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
