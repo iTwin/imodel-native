@@ -116,6 +116,13 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
         bool IsFirstDrawComplete() const {return m_firstDrawComplete;}
     };
 
+    //! Object to monitor changes to a DgnViewport
+    struct Tracker
+    {
+        virtual void _OnViewChanged(DgnViewport& vp) const {}
+        virtual void _OnViewClose(DgnViewport& vp) const {}
+    };
+
 protected:
     mutable SyncFlags m_sync;
     bool            m_zClipAdjusted = false;    // were the view z clip planes adjusted due to front/back clipping off?
@@ -145,6 +152,7 @@ protected:
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
     ViewStateStack  m_backStack;
+    EventHandlerList<Tracker> m_trackers;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
@@ -533,6 +541,10 @@ public:
 
     Utf8StringCR GetTitle() {return m_viewTitle;}
     void SetTitle(Utf8CP title) {m_viewTitle = title;}
+
+    EventHandlerList<Tracker>& GetTrackers() {return m_trackers;}
+    void AddTracker(Tracker* tracker) {m_trackers.AddHandler(tracker);}
+    void DropTramer(Tracker* tracker) {m_trackers.DropHandler(tracker);}
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
