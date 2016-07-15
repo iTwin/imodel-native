@@ -19,7 +19,7 @@ struct SearchableTextTest : public GenericDgnModelTestFixture
 
     typedef DgnSearchableText ST;
 
-    SearchableTextTest() :  m_db(*GetDgnDb())
+    SearchableTextTest() : m_db(*GetDgnDb(WString(BeTest::GetNameOfCurrentTest(),true).c_str())) // Create seed copy with the Test Name
         {
         BeAssert(GetDgnDb().IsValid());
         }

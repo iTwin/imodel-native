@@ -71,7 +71,7 @@ struct AnnotationTextBlockTest : public AnnotationTestFixture
 TEST_F(AnnotationTextBlockTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
     AnnotationTextBlockPtr doc = AnnotationTextBlock::Create(project);
@@ -158,7 +158,7 @@ TEST_F(AnnotationTextBlockTest, DefaultsAndAccessors)
 TEST_F(AnnotationTextBlockTest, DeepCopy)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
     DgnFontCR ttFont = DgnFontManager::GetLastResortTrueTypeFont();

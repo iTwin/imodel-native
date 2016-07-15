@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                     KyleDeeds  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct NotificationManagerTest : public GenericDgnModelTestFixture
+struct NotificationManagerTest : public testing::Test
 {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KyleDeeds  08/09

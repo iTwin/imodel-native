@@ -33,16 +33,22 @@ enum OperationType
     };
 
 //__PUBLISH_SECTION_END__
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 struct IGeomProvider
 {
 //! Allow an application to accumulate measure results by drawing directly to output without creating elements.
 virtual void _OutputGraphics (ViewContextR context) = 0;
 };
+#endif
 
 protected:
 
 OperationType       m_opType;
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 IGeomProvider*      m_geomProvider;
+#endif
+GeometricPrimitivePtr m_geomPrimitive;
+Transform             m_geomTransform;
 
 IFacetOptionsPtr    m_facetOptions;
 Transform           m_invCurrTransform;
@@ -60,7 +66,7 @@ double              m_iYZ;
 DPoint3d            m_moment1;
 DPoint3d            m_moment2;
 double              m_closureError;
-int                 m_calculationMode;  // 0=best available, 1=PSD preferred, 2=facets preferred.
+int                 m_calculationMode;  // 0=best available, 1=solid kernel preferred, 2=facets preferred.
 
 mutable DPoint3d    m_spinMoments; // Holds computed result...
 mutable DPoint3d    m_centroidSum; // Holds computed result...
@@ -71,6 +77,8 @@ virtual IFacetOptionsP _GetFacetOptionsP() override;
 virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
 virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
 virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
+virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
+virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return UnhandledPreference::Box;}
 
 virtual bool _ProcessCurveVector (CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
 virtual bool _ProcessSolidPrimitive (ISolidPrimitiveCR, SimplifyGraphic&) override;
@@ -152,24 +160,29 @@ double      iYZ                     //  => Iyz
 
 //__PUBLISH_SECTION_END__
 //! Supply facet options and output transform (only rigid scaling is supported).
-DGNPLATFORM_EXPORT void SetResultOptions (IFacetOptionsP options, TransformCP invCurrTrans = NULL);
+DGNPLATFORM_EXPORT void SetResultOptions (IFacetOptionsP options, TransformCP invCurrTrans = nullptr);
 
-//! Supply a flattening transform to be applied prior to doing length/area measurement (makes no sense for volume, caller is expected to valid input element/geometry).
+//! Supply a flattening transform to be applied prior to doing length/area measurement (makes no sense for volume, caller is expected to validate input element/geometry).
 DGNPLATFORM_EXPORT void SetPreFlattenTransform (TransformCR preFlattenTrans);
 
 //! Select method of calculation
 //! Values are:
-//! 0 ==> no preference -- internal when available, parasolids if needed.
-//! 1 ==> prefer parasolids
+//! 0 ==> no preference -- internal when available, solid kernel if needed.
+//! 1 ==> prefer solid kernel
 //! 2 ==> prefer faceted
 DGNPLATFORM_EXPORT void SetCalculationMethod (int selector);
 
 //! Query the calculation mode.
 DGNPLATFORM_EXPORT int GetCalculationMethod () const;
 
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 //! Call IGeomProvider::_OutputGraphics instead of visiting an element.
 DGNPLATFORM_EXPORT BentleyStatus Process (IGeomProvider&, DgnDbR);
+#endif
 //__PUBLISH_SECTION_START__
+
+//! Visit the supplied geometric primitive and accumulate the measure information.
+DGNPLATFORM_EXPORT BentleyStatus Process (GeometricPrimitiveCR, DgnDbR, TransformCP transform = nullptr);
 
 //! Visit the supplied element and accumulate the measure information.
 DGNPLATFORM_EXPORT BentleyStatus Process (GeometrySourceCR);

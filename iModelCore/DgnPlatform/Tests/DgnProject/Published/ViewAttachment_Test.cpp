@@ -194,7 +194,7 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ViewAttachmentTest, CRUD)
     {
-    auto& db = *GetDgnDb();
+    auto& db = *GetDgnDb(L"CRUD");
 
     // Test some invalid CreateParams
 
@@ -237,7 +237,7 @@ TEST_F(ViewAttachmentTest, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ViewAttachmentTest, Geom)
     {
-    auto& db = *GetDgnDb();
+    auto& db = *GetDgnDb(L"Geom");
 
     // Add some geometry to the drawing and regenerate attachment geometry
     static const double drawingViewRot = /*45.0*msGeomConst_piOver2*/ 0.0;
@@ -265,5 +265,4 @@ TEST_F(ViewAttachmentTest, Geom)
 
     db.SaveChanges();
     }
-
 

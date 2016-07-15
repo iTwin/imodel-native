@@ -48,7 +48,7 @@ TEST(BasicTextAnnotationSeedTest, PropertyBagTypes)
 TEST_F(TextAnnotationSeedTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
     TextAnnotationSeedPtr style = TextAnnotationSeed::Create(project);
@@ -77,7 +77,7 @@ TEST_F(TextAnnotationSeedTest, DefaultsAndAccessors)
 TEST_F(TextAnnotationSeedTest, DeepCopy)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
     TextAnnotationSeedPtr style = TextAnnotationSeed::Create(project);

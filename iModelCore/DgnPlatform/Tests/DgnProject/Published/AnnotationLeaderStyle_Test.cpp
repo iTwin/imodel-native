@@ -63,7 +63,7 @@ TEST_F(AnnotationLeaderStyleTest, PropertyBagTypes)
 TEST_F(AnnotationLeaderStyleTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
     AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project);
@@ -96,7 +96,7 @@ TEST_F(AnnotationLeaderStyleTest, DefaultsAndAccessors)
 TEST_F(AnnotationLeaderStyleTest, DeepCopy)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
     AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project);
@@ -121,7 +121,7 @@ TEST_F(AnnotationLeaderStyleTest, DeepCopy)
 TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"TableReadWrite");
 
     //.............................................................................................
     // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.

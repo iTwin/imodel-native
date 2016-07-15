@@ -76,7 +76,7 @@ TEST_F(AnnotationFrameStyleTest, PropertyBagTypes)
 TEST_F(AnnotationFrameStyleTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
     AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project);
@@ -105,7 +105,7 @@ TEST_F(AnnotationFrameStyleTest, DefaultsAndAccessors)
 TEST_F(AnnotationFrameStyleTest, DeepCopy)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
     AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project);
@@ -130,7 +130,7 @@ TEST_F(AnnotationFrameStyleTest, DeepCopy)
 TEST_F(AnnotationFrameStyleTest, TableReadWrite)
     {
     //.............................................................................................
-    DgnDbR project = *GetDgnDb();
+    DgnDbR project = *GetDgnDb(L"TableReadWrite");
 
     //.............................................................................................
     // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.
@@ -238,7 +238,7 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
 TEST_F(AnnotationFrameStyleTest, InvalidOperations)
     {
         //.............................................................................................
-        DgnDbR project = *GetDgnDb();
+        DgnDbR project = *GetDgnDb(L"InvalidOperations");
 
         //.............................................................................................
         // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.

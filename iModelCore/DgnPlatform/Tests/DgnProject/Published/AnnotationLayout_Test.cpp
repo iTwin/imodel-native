@@ -17,7 +17,7 @@ struct AnnotationLayoutTest : public GenericDgnModelTestFixture
 //---------------------------------------------------------------------------------------
 TEST_F(AnnotationLayoutTest, AnnotationFrameLayout)
     {
-    DgnDbR db = *GetDgnDb();
+    DgnDbR db = *GetDgnDb(L"AnnotationFrameLayout");
     AnnotationFrameStylePtr frameStyle = AnnotationTestFixture::createAnnotationFrameStyle(db, "TestFrameStyle");
     AnnotationFramePtr frame = AnnotationFrame::Create(db, frameStyle->GetElementId());
     ASSERT_TRUE(frame.IsValid());

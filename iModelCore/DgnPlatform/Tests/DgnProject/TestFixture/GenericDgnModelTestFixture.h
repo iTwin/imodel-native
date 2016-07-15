@@ -27,6 +27,10 @@ private:
 
 protected:
     DgnDbPtr m_dgnDb;
+    
+    DgnDbPtr GetDgnDb(WCharCP seedName);
+
+    DgnDbPtr GetDgnDb(WCharCP seedName, WCharCP newName);
 
 public:
     GenericBaseFixture() {  }
@@ -34,8 +38,6 @@ public:
     virtual ~GenericBaseFixture() {}
 
     virtual void TearDown() override;
-
-    DgnDbPtr GetDgnDb();
 };
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                             Umar.Hayat          07/16
@@ -45,6 +47,8 @@ struct GenericDgnModelTestFixture : public GenericBaseFixture
     BETEST_DECLARE_TC_SETUP
     BETEST_DECLARE_TC_TEARDOWN
 public:
+    DEFINE_T_SUPER(GenericBaseFixture);
+
     static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
 
     GenericDgnModelTestFixture() { }
@@ -53,7 +57,9 @@ public:
 
     bool            Is3d() const { return true; }
 
-    DgnDbPtr GetDgnDb();
+    DgnDbPtr GetDgnDb(){ return T_Super::GetDgnDb(s_seedFileInfo.fileName); }
+
+    DgnDbPtr GetDgnDb(WCharCP newName){ return T_Super::GetDgnDb(s_seedFileInfo.fileName, newName); }
 };
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                             Umar.Hayat          07/16
@@ -63,6 +69,8 @@ struct GenericDgnModel2dTestFixture : public GenericBaseFixture
     BETEST_DECLARE_TC_SETUP
     BETEST_DECLARE_TC_TEARDOWN
 public:
+    DEFINE_T_SUPER(GenericBaseFixture);
+
     static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
 
     GenericDgnModel2dTestFixture() { }
@@ -71,6 +79,8 @@ public:
 
     bool            Is3d() const { return false; }
 
-    DgnDbPtr GetDgnDb();
+    DgnDbPtr GetDgnDb(){ return T_Super::GetDgnDb(s_seedFileInfo.fileName); }
+
+    DgnDbPtr GetDgnDb(WCharCP newName){ return T_Super::GetDgnDb(s_seedFileInfo.fileName, newName); }
 };
 END_DGNDB_UNIT_TESTS_NAMESPACE
