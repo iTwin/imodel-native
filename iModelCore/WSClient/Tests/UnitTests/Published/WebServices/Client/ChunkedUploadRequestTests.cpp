@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/ChunkedUploadRequestTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -36,7 +36,7 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecified_SendsRequire
         {
         EXPECT_STREQ("foo", request.GetHeaders().GetIfMatch());
         EXPECT_STREQ("bytes */4", request.GetHeaders().GetContentRange());
-        EXPECT_STREQ("attachment; filename=Test.txt", request.GetHeaders().GetContentDisposition());
+        EXPECT_STREQ(R"(attachment; filename="Test.txt")", request.GetHeaders().GetContentDisposition());
         return StubHttpResponse(ConnectionStatus::Canceled);
         });
 
@@ -50,7 +50,7 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecifiedWithFileName_
 
     GetHandler().ExpectOneRequest().ForAnyRequest([] (HttpRequestCR request)
         {
-        EXPECT_STREQ("attachment; filename=%27A%20B%27.txt", request.GetHeaders().GetContentDisposition());
+        EXPECT_STREQ(R"(attachment; filename="'A B'.txt")", request.GetHeaders().GetContentDisposition());
         return StubHttpResponse();
         });
 
