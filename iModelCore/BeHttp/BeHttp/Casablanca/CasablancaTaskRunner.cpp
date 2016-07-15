@@ -38,9 +38,9 @@ void CasablancaTaskRunner::_RunAsyncTasksLoop()
         {
         std::shared_ptr<AsyncTask> task = GetTaskScheduler()->WaitAndPop();
 
-        auto httpTask = std::static_pointer_cast<SimplePackagedAsyncTask<std::shared_ptr<CasablancaHttpRequest>, HttpResponse>> (task);
+        auto httpTask = std::static_pointer_cast<SimplePackagedAsyncTask<std::shared_ptr<CasablancaHttpRequest>, Response>> (task);
 
-        CasablancaHttpRequest::PerformPplxAsync(httpTask->GetData ()).then([=](HttpResponse& response)
+        CasablancaHttpRequest::PerformPplxAsync(httpTask->GetData ()).then([=](Response& response)
             {
             SetCurrentRunningTask (task);
             httpTask->OnFinished (response);

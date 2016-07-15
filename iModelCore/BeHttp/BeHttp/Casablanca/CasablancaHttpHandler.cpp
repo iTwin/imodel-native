@@ -42,10 +42,10 @@ CasablancaHttpHandler::~CasablancaHttpHandler ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<HttpResponse> CasablancaHttpHandler::PerformRequest (HttpRequestCR request)
+AsyncTaskPtr<Response> CasablancaHttpHandler::_PerformRequest (RequestCR request)
     {
     auto casablancaRequest = std::make_shared<CasablancaHttpRequest> (request);
-    auto task = std::make_shared<SimplePackagedAsyncTask<std::shared_ptr<CasablancaHttpRequest>, HttpResponse>> (casablancaRequest);
+    auto task = std::make_shared<SimplePackagedAsyncTask<std::shared_ptr<CasablancaHttpRequest>, Response>> (casablancaRequest);
         
     m_webThreadPool->Push(task);
 

@@ -14,6 +14,8 @@
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_TASKS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -26,7 +28,7 @@ public:
     CasablancaHttpHandler ();
     virtual ~CasablancaHttpHandler ();
 
-    virtual Tasks::AsyncTaskPtr<HttpResponse> PerformRequest (HttpRequestCR request) override;
+    virtual AsyncTaskPtr<Response> _PerformRequest (RequestCR request) override;
     };
 
 END_BENTLEY_HTTP_NAMESPACE

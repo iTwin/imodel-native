@@ -46,11 +46,11 @@ struct ProgressInfo
     struct TransferProgress
         {
         private:
-            HttpRequest::ProgressCallbackCR m_onProgressChange;
+            Request::ProgressCallbackCR m_onProgressChange;
             double m_lastBytesCompleted;
             double m_lastBytesTotal;
         public:
-            TransferProgress (HttpRequest::ProgressCallbackCR onProgressChange) :
+            TransferProgress (Request::ProgressCallbackCR onProgressChange) :
                 m_onProgressChange (onProgressChange),
                 m_lastBytesCompleted (-1),
                 m_lastBytesTotal (-1)
@@ -61,8 +61,8 @@ struct ProgressInfo
 
     ProgressInfo
         (
-        HttpRequest::ProgressCallbackCR uploadProgressCallback,
-        HttpRequest::ProgressCallbackCR downloadProgressCallback,
+        Request::ProgressCallbackCR uploadProgressCallback,
+        Request::ProgressCallbackCR downloadProgressCallback,
         ICancellationTokenPtr cancellationToken
         ) : 
         upload (uploadProgressCallback),
@@ -132,7 +132,7 @@ struct CasablancaHttpRequest::StatusWrapper
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-CasablancaHttpRequest::CasablancaHttpRequest (HttpRequestCR httpRequest) :
+CasablancaHttpRequest::CasablancaHttpRequest (RequestCR httpRequest) :
 m_httpRequest (httpRequest),
 m_transferInfo (nullptr)
     {
@@ -172,7 +172,7 @@ void CasablancaHttpRequest::SetupHeaders (http::http_request &request)
         }
 
     // Resume interrupted transfer
-    if (HttpRequest::RetryOption::ResumeTransfer == m_httpRequest.GetRetryOption () && nullptr != m_transferInfo)
+    if (Request::RetryOption::ResumeTransfer == m_httpRequest.GetRetryOption () && nullptr != m_transferInfo)
         {
         Utf8CP previousResponseEtag = m_transferInfo->responseContent->GetHeaders ().GetValue ("ETag");
         if (nullptr != previousResponseEtag)
@@ -329,7 +329,7 @@ bool CasablancaHttpRequest::ShouldRetry (ConnectionStatus status)
         ContentRangeHeaderValue contentRangeValue;
         if (SUCCESS == ContentRangeHeaderValue::Parse (contentRange, contentRangeValue))
             {
-            if (m_httpRequest.GetResponseBody ()->GetLength () != contentRangeValue.length)
+            if (m_httpRequest.GetResponseBody ()->GetLength () != contentRangeValue.GetLength())
                 {
                 return true;
                 }
@@ -351,7 +351,7 @@ bool CasablancaHttpRequest::ShouldRetry (ConnectionStatus status)
         return false;
         }
 
-    if (HttpRequest::RetryOption::DontRetry == m_httpRequest.GetRetryOption ())
+    if (Request::RetryOption::DontRetry == m_httpRequest.GetRetryOption ())
         {
         return false;
         }
@@ -373,7 +373,7 @@ bool CasablancaHttpRequest::ShouldRetry (ConnectionStatus status)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Ryan.McNulty    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpResponse CasablancaHttpRequest::ResolveResponse (const StatusWrapper& statusWrapper)
+Response CasablancaHttpRequest::ResolveResponse (const StatusWrapper& statusWrapper)
     {
     if (!m_httpRequest.GetRequestBody ().IsNull ())
         {
@@ -401,7 +401,7 @@ HttpResponse CasablancaHttpRequest::ResolveResponse (const StatusWrapper& status
         content = HttpResponseContent::Create (HttpStringBody::Create ());
         }
 
-    return HttpResponse (content, m_effectiveUrl.c_str (), connectionStatus, httpStatus);;
+    return Response (content, m_effectiveUrl.c_str (), connectionStatus, httpStatus);;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -418,7 +418,7 @@ HttpStatus CasablancaHttpRequest::ResolveHttpStatus (int httpStatusInt)
         ContentRangeHeaderValue contentRange;
         if (SUCCESS == ContentRangeHeaderValue::Parse (content->GetHeaders ().GetContentRange (), contentRange))
             {
-            if (contentRange.HasLength () && contentRange.length == content->GetBody ()->GetLength ())
+            if (contentRange.HasLength () && contentRange.GetLength() == content->GetBody ()->GetLength ())
                 {
                 httpStatus = HttpStatus::OK;
                 }
@@ -598,7 +598,7 @@ void ProgressInfo::TransferProgress::SendTransferProgress (double bytesStarted, 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-pplx::task<HttpResponse> CasablancaHttpRequest::PerformPplxAsync (std::shared_ptr<CasablancaHttpRequest> request)
+pplx::task<Response> CasablancaHttpRequest::PerformPplxAsync (std::shared_ptr<CasablancaHttpRequest> request)
     {
     HttpClient::BeginNetworkActivity ();
 

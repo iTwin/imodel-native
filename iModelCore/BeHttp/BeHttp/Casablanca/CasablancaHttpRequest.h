@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/WString.h>
 #include <Bentley/bmap.h>
@@ -33,7 +32,7 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 struct CasablancaHttpRequest
     {
 private:
-    HttpRequest m_httpRequest;
+    Request m_httpRequest;
 
     struct TransferInfo;
 
@@ -55,7 +54,7 @@ private:
     void ConvertResponseHeaders (web::http::http_headers pHeader);
     void SetupClientCallbacks ();
 
-    HttpResponse ResolveResponse (const StatusWrapper& status);
+    Response ResolveResponse (const StatusWrapper& status);
 
     ConnectionStatus GetConnectionStatus (const StatusWrapper& status);
 
@@ -88,9 +87,9 @@ protected:
     ProgressResult OnProgress (double dltotal, double dlnow, double ultotal, double ulnow);
 
 public:
-    CasablancaHttpRequest (HttpRequestCR httpRequest);
+    CasablancaHttpRequest (RequestCR httpRequest);
 
-    static pplx::task<HttpResponse> PerformPplxAsync (std::shared_ptr<CasablancaHttpRequest> request);
+    static pplx::task<Response> PerformPplxAsync (std::shared_ptr<CasablancaHttpRequest> request);
     };
 
 END_BENTLEY_HTTP_NAMESPACE
