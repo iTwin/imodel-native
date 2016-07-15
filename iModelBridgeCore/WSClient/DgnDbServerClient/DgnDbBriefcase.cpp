@@ -301,10 +301,18 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEventString(bool longPolling, I
                                     (
                                     DgnDbServerError::Id::InternalServerError
                                     ));
+
+                Utf8String idStr;
+                for (auto const& id : lockEvent->GetObjectIds())
+                    {
+                    idStr.append(id);
+                    idStr.append(" ");
+                    }
+
                 return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
                                     (DgnDbServerEventStringResult::Success
                                     (
-                                    "Lock Info-> LockId: " + lockEvent->GetObjectId() + 
+                                    "Lock Info -> Object Ids: " + idStr + 
                                     " LockType: " + lockEvent->GetLockType()
                                     ));
                 }
@@ -330,14 +338,19 @@ DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEventString(bool longPolling, I
                 std::shared_ptr<DgnDbServerCodeEvent> codeEvent = DgnDbServerEventParser::GetInstance().GetCodeEvent(currentEvent);
                 if (codeEvent == nullptr)
                     return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
-                    (DgnDbServerEventStringResult::Error
-                    (
-                    DgnDbServerError::Id::InternalServerError
-                    ));
+                                (DgnDbServerEventStringResult::Error(DgnDbServerError::Id::InternalServerError));
+
+                Utf8String valueStr;
+                for (auto const& value : codeEvent->GetValues())
+                    {
+                    valueStr.append(value);
+                    valueStr.append(" ");
+                    }
+
                 return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
                     (DgnDbServerEventStringResult::Success
                     (
-                    "Code Info-> CodeAuthority: " + codeEvent->GetCodeAuthorityId() +
+                    "Code Info-> Values: " + valueStr +
                     " State: " + codeEvent->GetState()
                     ));
                 }

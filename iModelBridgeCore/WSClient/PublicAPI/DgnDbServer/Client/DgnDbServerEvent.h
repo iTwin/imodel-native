@@ -22,7 +22,7 @@ namespace DgnDbServerEvent
     static Utf8CP FromEventSubscriptionId = "FromEventSubscriptionId";
     namespace LockEventProperties
         {
-        static Utf8CP ObjectId = "ObjectId";
+        static Utf8CP ObjectIds = "ObjectIds";
         static Utf8CP LockType = "LockType";
         static Utf8CP LockLevel = "LockLevel";
         static Utf8CP BriefcaseId = "BriefcaseId";
@@ -37,7 +37,7 @@ namespace DgnDbServerEvent
         {
         static Utf8CP CodeAuthorityId = "CodeAuthorityId";
         static Utf8CP Namespace = "Namespace";
-        static Utf8CP Value = "Value";
+        static Utf8CP Values = "Values";
         static Utf8CP State = "State";
         static Utf8CP BriefcaseId = "BriefcaseId";
         static Utf8CP UsedWithRevision = "UsedWithRevision";

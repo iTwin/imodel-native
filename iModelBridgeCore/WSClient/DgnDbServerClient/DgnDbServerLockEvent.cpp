@@ -17,7 +17,7 @@ DgnDbServerLockEvent::DgnDbServerLockEvent
 (
 Utf8String eventTopic, 
 Utf8String fromSubscriptionId, 
-Utf8String objectId, 
+bvector<Utf8String> objectIds, 
 Utf8String lockType, 
 Utf8String lockLevel, 
 Utf8String briefcaseId, 
@@ -26,7 +26,7 @@ Utf8String releasedWithRevision
     {
     m_eventTopic = eventTopic;
     m_fromEventSubscriptionId = fromSubscriptionId;
-    m_objectId = objectId;
+    m_objectIds = objectIds;
     m_lockType = lockType;
     m_lockLevel = lockLevel;
     m_briefcaseId = briefcaseId;
@@ -40,7 +40,7 @@ std::shared_ptr<struct DgnDbServerLockEvent> DgnDbServerLockEvent::Create
 (
 Utf8String eventTopic, 
 Utf8String fromSubscriptionId, 
-Utf8String objectId, 
+bvector<Utf8String> objectIds, 
 Utf8String lockType, 
 Utf8String lockLevel, 
 Utf8String briefcaseId, 
@@ -52,7 +52,7 @@ Utf8String releasedWithRevision
                (
                eventTopic, 
                fromSubscriptionId, 
-               objectId, 
+               objectIds, 
                lockType, 
                lockLevel, 
                briefcaseId, 
@@ -80,9 +80,9 @@ Utf8String DgnDbServerLockEvent::GetFromEventSubscriptionId()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerLockEvent::GetObjectId()
+bvector<Utf8String> DgnDbServerLockEvent::GetObjectIds()
     {
-    return m_objectId;
+    return m_objectIds;
     }
 
 //---------------------------------------------------------------------------------------

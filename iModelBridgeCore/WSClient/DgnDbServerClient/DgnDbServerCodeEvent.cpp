@@ -19,7 +19,7 @@ Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
 Utf8String codeAuthorityId,
 Utf8String codeNamespace,
-Utf8String value,
+bvector<Utf8String> values,
 Utf8String state,
 Utf8String briefcaseId,
 Utf8String usedWithRevision
@@ -29,7 +29,7 @@ Utf8String usedWithRevision
     m_fromEventSubscriptionId = fromEventSubscriptionId;
     m_codeAuthorityId = codeAuthorityId;
     m_codeNamespace = codeNamespace;
-    m_value = value;
+    m_values = values;
     m_state = state;
     m_briefcaseId = briefcaseId;
     m_usedWithRevision = usedWithRevision;
@@ -44,7 +44,7 @@ Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
 Utf8String codeAuthorityId,
 Utf8String codeNamespace,
-Utf8String value,
+bvector<Utf8String> values,
 Utf8String state,
 Utf8String briefcaseId,
 Utf8String usedWithRevision
@@ -57,7 +57,7 @@ Utf8String usedWithRevision
                 fromEventSubscriptionId,
                 codeAuthorityId,
                 codeNamespace,
-                value,
+                values,
                 state,
                 briefcaseId,
                 usedWithRevision));
@@ -98,9 +98,9 @@ Utf8String DgnDbServerCodeEvent::GetNamespace()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetValue()
+bvector<Utf8String> DgnDbServerCodeEvent::GetValues()
     {
-    return m_value;
+    return m_values;
     }
 
 //---------------------------------------------------------------------------------------
