@@ -25,6 +25,6 @@
     <file src="Assemblies\RealityPackage.dll" target="build" />
     <file src="Files\Bentley.RealityDbECPluginC.targets" target="build" />
     <file src="Assemblies\Bentley.RealityDbECPluginC.dll" target="lib\net40\Bentley.RealityDbECPluginC.dll" />
-    <file src="Assemblies\BentleyWMSPackageNet.dll" target="build" />
+    <file src="Assemblies\BentleyWMSPackageNet.dll" target="lib\net40\BentleyWMSPackageNet.dll" />
   </files>
 </package>
