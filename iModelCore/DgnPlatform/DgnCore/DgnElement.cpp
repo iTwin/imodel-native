@@ -8,15 +8,14 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnScript.h>
 
-#define DGN_ELEMENT_PROPNAME_ECInstanceId "ECInstanceId"
-#define DGN_ELEMENT_PROPNAME_ModelId "ModelId"
-#define DGN_ELEMENT_PROPNAME_Code "Code"
-#define DGN_ELEMENT_CODESTRUCT_AuthorityId "AuthorityId"
-#define DGN_ELEMENT_CODESTRUCT_Namespace "Namespace"
-#define DGN_ELEMENT_CODESTRUCT_Value "Value"
-#define DGN_ELEMENT_PROPNAME_Label "Label"
-#define DGN_ELEMENT_PROPNAME_ParentId "ParentId"
-#define DGN_ELEMENT_PROPNAME_LastMode "LastMod"
+#define BIS_ELEMENT_PROP_ECInstanceId "ECInstanceId"
+#define BIS_ELEMENT_PROP_ModelId "ModelId"
+#define BIS_ELEMENT_PROP_CodeAuthorityId "CodeAuthorityId"
+#define BIS_ELEMENT_PROP_CodeNamespace "CodeNamespace"
+#define BIS_ELEMENT_PROP_CodeValue "CodeValue"
+#define BIS_ELEMENT_PROP_Label "Label"
+#define BIS_ELEMENT_PROP_ParentId "ParentId"
+#define BIS_ELEMENT_PROP_LastMode "LastMod"
 
 /* GeometrySource properties... 
  *  GeometrySource
@@ -163,7 +162,7 @@ DgnCode DgnElement::_GenerateDefaultCode() const
 DateTime DgnElement::QueryTimeStamp() const
     {
     ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT " DGN_ELEMENT_PROPNAME_LastMode " FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE " DGN_ELEMENT_PROPNAME_ECInstanceId "=?");
+    stmt.Prepare(GetDgnDb(), "SELECT " BIS_ELEMENT_PROP_LastMode " FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE " BIS_ELEMENT_PROP_ECInstanceId "=?");
     stmt.BindId(1, m_elementId);
     stmt.Step();
     return stmt.GetValueDateTime(0);
@@ -483,11 +482,13 @@ void DgnElement::_OnReversedAdd() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ElementHandler::Element::_GetClassParams(ECSqlClassParamsR params)
     {
-    params.Add(DGN_ELEMENT_PROPNAME_ECInstanceId, ECSqlClassParams::StatementType::Insert);
-    params.Add(DGN_ELEMENT_PROPNAME_ModelId, ECSqlClassParams::StatementType::Insert);
-    params.Add(DGN_ELEMENT_PROPNAME_Code, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(DGN_ELEMENT_PROPNAME_Label, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(DGN_ELEMENT_PROPNAME_ParentId, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(BIS_ELEMENT_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
+    params.Add(BIS_ELEMENT_PROP_ModelId, ECSqlClassParams::StatementType::Insert);
+    params.Add(BIS_ELEMENT_PROP_CodeAuthorityId, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(BIS_ELEMENT_PROP_CodeNamespace, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(BIS_ELEMENT_PROP_CodeValue, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(BIS_ELEMENT_PROP_Label, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(BIS_ELEMENT_PROP_ParentId, ECSqlClassParams::StatementType::InsertUpdate);
     }
 
 //---------------------------------------------------------------------------------------
@@ -500,30 +501,28 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
     if (!m_code.IsValid())
         return DgnDbStatus::InvalidName;
 
-    IECSqlStructBinder& codeBinder = statement.BindStruct(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Code));
-
-    if (m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value).BindNull()))
+    if (m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue))))
         return DgnDbStatus::BadArg;
 
-    if (!m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value).BindText(m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
+    if (!m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
 
-    if ((ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_AuthorityId).BindId(m_code.GetAuthority())) ||
-        (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Namespace).BindText(m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
+    if ((ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeAuthorityId), m_code.GetAuthority())) ||
+        (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
 
     if (HasLabel())
-        statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Label), GetLabel(), IECSqlBinder::MakeCopy::No);
+        statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_Label), GetLabel(), IECSqlBinder::MakeCopy::No);
     else
-        statement.BindNull(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Label));
+        statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_Label));
 
-    if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ParentId), m_parentId))
+    if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ParentId), m_parentId))
         return DgnDbStatus::BadArg;
 
     if (!isForUpdate)
         {
-        if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ECInstanceId), m_elementId) ||
-            ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ModelId), m_modelId))
+        if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ECInstanceId), m_elementId) ||
+            ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ModelId), m_modelId))
             return DgnDbStatus::BadArg;
         }
 

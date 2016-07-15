@@ -171,9 +171,9 @@ BaseChangeIterator::BaseChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet, ECC
 void BaseChangeIterator::_Initialize()
     {
     m_instanceIdColumnMap = m_tableMap->GetColumn("ECInstanceId");
-    m_codeAuthorityIdColumnMap = m_tableMap->GetColumn("Code.AuthorityId");
-    m_codeNamespaceColumnMap = m_tableMap->GetColumn("Code.Namespace");
-    m_codeValueColumnMap = m_tableMap->GetColumn("Code.Value");
+    m_codeAuthorityIdColumnMap = m_tableMap->GetColumn("CodeAuthorityId");
+    m_codeNamespaceColumnMap = m_tableMap->GetColumn("CodeNamespace");
+    m_codeValueColumnMap = m_tableMap->GetColumn("CodeValue");
     }
 
 //---------------------------------------------------------------------------------------

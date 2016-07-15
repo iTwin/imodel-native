@@ -426,32 +426,32 @@ module DgnScriptTests {
         // Test GetProperties and ECPropertyCollection
         // -----------------------------------------------
         var peprops: be.ECPropertyCollection = elementClass.Properties;
-        var foundCode: boolean = false;
+        var foundCodeValue: boolean = false;
         var propertyCount: number = 0;
         for (var propiter = peprops.Begin(); peprops.IsValid(propiter); peprops.ToNext(propiter))
         {
             var peprop: be.ECProperty = peprops.GetECProperty(propiter);
             be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, peprop.Name);
-            if (peprop.Name == 'Code')
-                foundCode = true;
+            if (peprop.Name == 'CodeValue')
+                foundCodeValue = true;
             ++propertyCount;
         }
-        if (!foundCode)
-            be.Script.ReportError('ECPropertyCollection must have failed -- the Code property was not found');
+        if (!foundCodeValue)
+            be.Script.ReportError('ECPropertyCollection must have failed -- the CodeValue property was not found');
         if (propertyCount <= 2)
             be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on GeometricElement3d');
 
         // -----------------------------------------------
         // Test GetProperty and PrimitiveECProperty
         // -----------------------------------------------
-        var codeProp = elementClass.GetProperty('Code');
-        if (!codeProp)
-            be.Script.ReportError('GetProperty failed to find Code property');
+        var codeValueProp = elementClass.GetProperty('CodeValue');
+        if (!codeValueProp)
+            be.Script.ReportError('GetProperty failed to find CodeValue property');
         else
         {
-            var primProp = codeProp.GetAsPrimitiveProperty();
-            if (primProp)
-                be.Script.ReportError('Code property is NOT a primitive property');
+            var primProp = codeValueProp.GetAsPrimitiveProperty();
+            if (!primProp)
+                be.Script.ReportError('CodeValue property is a primitive property');
         }
 
         var LastModProp = elementClass.GetProperty('LastMod');

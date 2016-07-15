@@ -791,11 +791,11 @@ DgnDbStatus DgnAuthority::RegenerateCode(DgnCodeR code, ICodedEntityCR codedEnti
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP DgnCode::Iterator::Options::GetECSql() const
     {
-#define SELECT_CODE_COLUMNS_FROM "SELECT Code.AuthorityId,Code.[Value],Code.Namespace,ECInstanceId FROM "
+#define SELECT_CODE_COLUMNS_FROM "SELECT [CodeAuthorityId],[CodeValue],[CodeNamespace],ECInstanceId FROM "
 #define SELECT_ELEMENT_CODES SELECT_CODE_COLUMNS_FROM BIS_SCHEMA(BIS_CLASS_Element)
 #define SELECT_MODEL_CODES SELECT_CODE_COLUMNS_FROM BIS_SCHEMA(BIS_CLASS_Model)
 #define SELECT_MODEL_AND_ELEMENT_CODES SELECT_ELEMENT_CODES " UNION ALL " SELECT_MODEL_CODES
-#define EXCLUDE_EMPTY_CODES " WHERE Code.[Value] IS NOT NULL"
+#define EXCLUDE_EMPTY_CODES " WHERE [CodeValue] IS NOT NULL"
 #define SELECT_MODEL_AND_ELEMENT_CODES_EXCLUDE_EMPTY SELECT_ELEMENT_CODES EXCLUDE_EMPTY_CODES " UNION ALL " SELECT_MODEL_CODES EXCLUDE_EMPTY_CODES
 
     switch (m_include)

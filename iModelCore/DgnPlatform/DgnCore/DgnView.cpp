@@ -319,7 +319,7 @@ DbResult ViewDefinition::DeleteSettings(DgnViewId viewId, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
     {
-    static const Utf8CP s_ecsql = "SELECT ECInstanceId,Code.[Value],[" PROPNAME_Source "]," PROPNAME_BaseModel "," PROPNAME_Descr ",GetECClassId() FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition);
+    static const Utf8CP s_ecsql = "SELECT ECInstanceId,[CodeValue],[" PROPNAME_Source "]," PROPNAME_BaseModel "," PROPNAME_Descr ",GetECClassId() FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition);
 
     Utf8CP ecsql = s_ecsql;
     Utf8String customECSql;
@@ -425,7 +425,7 @@ Utf8String ViewDefinition::Iterator::Options::ToString() const
     // ORDER BY
     if (Order::Ascending == m_order)
         {
-        str.append(" ORDER BY Code.[Value]");
+        str.append(" ORDER BY [CodeValue]");
         }
 
     return str;

@@ -191,7 +191,7 @@ Utf8String DgnElementDependencyGraph::FmtCyclePath(Edge const& edge, bvector<Edg
 Utf8String DgnElementDependencyGraph::GetElementCode(DgnElementId eid)
     {
     ECSqlStatement s;
-    s.Prepare(GetDgnDb(), "SELECT Code.[Value] FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ECInstanceId=?");
+    s.Prepare(GetDgnDb(), "SELECT [CodeValue] FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ECInstanceId=?");
     s.BindId(1, eid);
     s.Step();
     return s.GetValueText(0);

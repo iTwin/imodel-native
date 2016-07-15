@@ -54,7 +54,7 @@ static void importBisCoreSchema(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& modelCode)
     {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,Code_Value,Label,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,CodeValue,Label,ECClassId,Visibility,CodeAuthorityId,CodeNamespace) VALUES(?,?,'',?,0,?,?)");
     stmt.BindId(1, modelId);
     stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);
     stmt.BindId(3, classId);

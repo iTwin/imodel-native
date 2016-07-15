@@ -229,7 +229,7 @@ DgnCategoryIdList DgnCategory::QueryOrderedCategories(DgnDbR db)
     {
     DgnCategoryIdList ids;
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId, Code.[Value] FROM " BIS_SCHEMA(BIS_CLASS_Category) " ORDER BY Code.[Value]");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId, [CodeValue] FROM " BIS_SCHEMA(BIS_CLASS_Category) " ORDER BY [CodeValue]");
     if (stmt.IsValid())
         {
         while (BE_SQLITE_ROW == stmt->Step())

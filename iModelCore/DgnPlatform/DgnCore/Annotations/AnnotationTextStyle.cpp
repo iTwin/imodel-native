@@ -341,7 +341,7 @@ size_t AnnotationTextStyle::QueryCount(DgnDbR db)
 AnnotationTextStyle::Iterator AnnotationTextStyle::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, Code.[Value], Descr FROM " BIS_SCHEMA(BIS_CLASS_AnnotationTextStyle), 0);
+    iter.Prepare(db, "SELECT ECInstanceId, [CodeValue], Descr FROM " BIS_SCHEMA(BIS_CLASS_AnnotationTextStyle), 0);
 
     return iter;
     }

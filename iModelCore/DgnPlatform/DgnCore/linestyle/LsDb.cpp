@@ -681,7 +681,7 @@ size_t LineStyleElement::QueryCount(DgnDbR db)
 LineStyleElement::Iterator LineStyleElement::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, Code.[Value], Descr, Data FROM " BIS_SCHEMA(BIS_CLASS_LineStyle), 0);
+    iter.Prepare(db, "SELECT ECInstanceId, [CodeValue], Descr, Data FROM " BIS_SCHEMA(BIS_CLASS_LineStyle), 0);
 
     return iter;
     }

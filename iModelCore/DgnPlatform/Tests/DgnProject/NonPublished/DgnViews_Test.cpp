@@ -286,11 +286,10 @@ TEST_F(DgnViewElemTest, Iterate)
     ExpectViews(IterOpts(IterOpts::Source::Generated | IterOpts::Source::User, IterOpts::Order::Ascending, models[0]->GetModelId()), { "A-G", "A-U" });
 
     // Custom
-    ExpectViews(IterOpts("WHERE Descr='generated' ORDER BY Code.[Value] DESC"), { "B-G", "A-G" });
+    ExpectViews(IterOpts("WHERE Descr='generated' ORDER BY [CodeValue] DESC"), { "B-G", "A-G" });
 
     // Deleting a model deletes all views which use it as a base model
     EXPECT_EQ(DgnDbStatus::Success, models[0]->Delete());
     EXPECT_EQ(_countof(s_viewSources), ViewDefinition::QueryCount(*project));
     ExpectViews(IterOpts(), { "B-U", "B-G", "B-P" });
     }
-

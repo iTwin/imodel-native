@@ -42,9 +42,9 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         bvector<Utf8String> expectedColumnNames;
         expectedColumnNames.push_back("Id");
         expectedColumnNames.push_back("ECClassId");
-        expectedColumnNames.push_back("Code_AuthorityId");
-        expectedColumnNames.push_back("Code_Namespace");
-        expectedColumnNames.push_back("Code_Value");
+        expectedColumnNames.push_back("CodeAuthorityId");
+        expectedColumnNames.push_back("CodeNamespace");
+        expectedColumnNames.push_back("CodeValue");
         expectedColumnNames.push_back("ModelId");
         expectedColumnNames.push_back("ParentId");
         expectedColumnNames.push_back("Label");
@@ -76,12 +76,12 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("[ECClassId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[ParentId] INTEGER,"));
         ASSERT_TRUE(ddl.Contains("[ModelId] INTEGER NOT NULL,"));
-        ASSERT_TRUE(ddl.Contains("[Code_AuthorityId] INTEGER NOT NULL,"));
-        ASSERT_TRUE(ddl.Contains("[Code_Namespace] TEXT NOT NULL COLLATE NOCASE,"));
-        ASSERT_TRUE(ddl.Contains("[Code_Value] TEXT COLLATE NOCASE,"));
+        ASSERT_TRUE(ddl.Contains("[CodeAuthorityId] INTEGER NOT NULL,"));
+        ASSERT_TRUE(ddl.Contains("[CodeNamespace] TEXT NOT NULL COLLATE NOCASE,"));
+        ASSERT_TRUE(ddl.Contains("[CodeValue] TEXT COLLATE NOCASE,"));
         ASSERT_TRUE(ddl.Contains("[LastMod] TIMESTAMP NOT NULL DEFAULT(julianday('now')),"));
         ASSERT_FALSE(ddl.Contains("PRIMARY KEY([Id])"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([Code_AuthorityId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Authority) "]([Id])"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([CodeAuthorityId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Authority) "]([Id])"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ParentId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id])")); // Element API does the "cascade delete"
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ModelId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Model) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
@@ -134,8 +134,8 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE UNIQUE INDEX%'");
         bvector<Utf8String> expectedSqlList;
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Model)   "]([Code_AuthorityId], [Code_Namespace], [Code_Value])");
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element) "]([Code_AuthorityId], [Code_Namespace], [Code_Value])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Model)   "]([CodeAuthorityId], [CodeNamespace], [CodeValue])");
+        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element) "]([CodeAuthorityId], [CodeNamespace], [CodeValue])");
 
         for (Utf8String expectedSql : expectedSqlList)
             {

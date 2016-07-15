@@ -286,7 +286,7 @@ size_t AnnotationFrameStyle::QueryCount(DgnDbR db)
 AnnotationFrameStyle::Iterator AnnotationFrameStyle::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, Code.[Value], Descr FROM " BIS_SCHEMA(BIS_CLASS_AnnotationFrameStyle), 0);
+    iter.Prepare(db, "SELECT ECInstanceId, [CodeValue], Descr FROM " BIS_SCHEMA(BIS_CLASS_AnnotationFrameStyle), 0);
 
     return iter;
     }

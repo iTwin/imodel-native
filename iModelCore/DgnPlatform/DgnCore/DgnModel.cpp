@@ -8,10 +8,9 @@
 #include <DgnPlatformInternal.h>
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
-#define MODEL_PROP_Code "Code"
-#define MODEL_PROP_Code_AuthorityId "AuthorityId"
-#define MODEL_PROP_Code_Namespace "Namespace"
-#define MODEL_PROP_Code_Value "Value"
+#define MODEL_PROP_CodeAuthorityId "CodeAuthorityId"
+#define MODEL_PROP_CodeNamespace "CodeNamespace"
+#define MODEL_PROP_CodeValue "CodeValue"
 #define MODEL_PROP_Label "Label"
 #define MODEL_PROP_Visibility "Visibility"
 #define MODEL_PROP_Properties "Properties"
@@ -24,7 +23,7 @@
 DgnModelId DgnModels::QueryModelId(DgnCode code) const
     {
     CachedStatementPtr stmt;
-    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Code_AuthorityId=? AND Code_Namespace=? AND Code_Value=? LIMIT 1");
+    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE CodeAuthorityId=? AND CodeNamespace=? AND CodeValue=? LIMIT 1");
     stmt->BindId(1, code.GetAuthority());
     stmt->BindText(2, code.GetNamespace(), Statement::MakeCopy::No);
     stmt->BindText(3, code.GetValue(), Statement::MakeCopy::No);
@@ -36,7 +35,7 @@ DgnModelId DgnModels::QueryModelId(DgnCode code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT Code_Value,Label,ECClassId,Visibility,Code_Namespace,Code_AuthorityId FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT CodeValue,Label,ECClassId,Visibility,CodeNamespace,CodeAuthorityId FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -59,7 +58,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::GetModelCode(DgnCode& code, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT Code_AuthorityId,Code_Namespace,Code_Value FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT CodeAuthorityId,CodeNamespace,CodeValue FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -162,7 +161,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,Code_Value,Label,Visibility,ECClassId,Code_AuthorityId,Code_Namespace FROM " BIS_TABLE(BIS_CLASS_Model);
+        Utf8String sqlString = "SELECT Id,CodeValue,Label,Visibility,ECClassId,CodeAuthorityId,CodeNamespace FROM " BIS_TABLE(BIS_CLASS_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -446,13 +445,15 @@ DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
         BeAssert(false);
         return DgnDbStatus::InvalidName;
         }
-    IECSqlStructBinder& codeBinder = statement.BindStruct(statement.GetParameterIndex(MODEL_PROP_Code));
-    if (m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(MODEL_PROP_Code_Value).BindNull()))
+
+    if (m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindNull(statement.GetParameterIndex(MODEL_PROP_CodeValue))))
         return DgnDbStatus::BadArg;
-    if (!m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(MODEL_PROP_Code_Value).BindText(m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
+
+    if (!m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
-    if ((ECSqlStatus::Success != codeBinder.GetMember(MODEL_PROP_Code_AuthorityId).BindId(m_code.GetAuthority())) ||
-        (ECSqlStatus::Success != codeBinder.GetMember(MODEL_PROP_Code_Namespace).BindText(m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
+
+    if ((ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(MODEL_PROP_CodeAuthorityId), m_code.GetAuthority())) ||
+        (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(MODEL_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
         return DgnDbStatus::BadArg;
 
     if (!m_label.empty())
@@ -1183,8 +1184,8 @@ void DgnModel::_FillModel()
     if (IsFilled())
         return;
 
-    enum Column : int {Id=0,ClassId=1,Code_AuthorityId=2,Code_Namespace=3,Code_Value=4,Label=5,ParentId=6};
-    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code_AuthorityId,Code_Namespace,Code_Value,Label,ParentId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?");
+    enum Column : int {Id=0,ClassId=1,CodeAuthorityId=2,CodeNamespace=3,CodeValue=4,Label=5,ParentId=6};
+    Statement stmt(m_dgndb, "SELECT Id,ECClassId,CodeAuthorityId,CodeNamespace,CodeValue,Label,ParentId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     _SetFilled();
@@ -1203,7 +1204,7 @@ void DgnModel::_FillModel()
             }
 
         DgnCode code;
-        code.From(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace));
+        code.From(stmt.GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt.GetValueText(Column::CodeValue), stmt.GetValueText(Column::CodeNamespace));
         DgnElement::CreateParams createParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             code,
@@ -1269,7 +1270,9 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     {    
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
-    params.Add(MODEL_PROP_Code, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_CodeAuthorityId, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_CodeNamespace, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_CodeValue, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Label, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);

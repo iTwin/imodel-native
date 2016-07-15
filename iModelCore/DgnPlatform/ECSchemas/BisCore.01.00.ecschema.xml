@@ -136,60 +136,17 @@
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
 
-    <ECStructClass typeName="AuthorityIssuedCode">
-        <ECProperty propertyName="AuthorityId" typeName="long">
-            <!-- Foreign key relationship: Authority.ECInstanceId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Namespace" typeName="string">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                    <Collation>NoCase</Collation>
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-                <HideProperty xmlns="EditorCustomAttributes.01.03">
-                    <If2D>True</If2D>
-                    <If3D>True</If3D>
-                </HideProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Value" displayLabel="Code" typeName="string">
-            <!-- Note: use Code.[Value] in ECSql since "Value" is a reserved word -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>True</IsNullable>
-                    <Collation>NoCase</Collation>
-                    <IsUnique>False</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECStructClass>
-
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
+        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="true">
             <Class class="Authority"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
-            <Class class="Element">
-                <Key>
-                    <Property name="Code.AuthorityId"/>
-                </Key>
-            </Class>
+            <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="AuthorityIssuesModelCode" description="Model has a code which was issued by the given authority" strength="referencing">
@@ -198,15 +155,11 @@
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
+        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="true">
             <Class class="Authority"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
-            <Class class="Model">
-                <Key>
-                    <Property name="Code.AuthorityId"/>
-                </Key>
-            </Class>
+            <Class class="Model"/>
         </Target>
     </ECRelationshipClass>
 
@@ -227,19 +180,48 @@
                 </MapStrategy>
                 <Indexes>
                     <DbIndex>
-                        <Name>ix_dgn_Model_Code</Name>
+                        <Name>ix_bis_Model_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
+                            <string>CodeAuthorityId</string>
+                            <string>CodeNamespace</string>
+                            <string>CodeValue</string>
                         </Properties>
                     </DbIndex>
                 </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward"/>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
+        <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesModelCode" direction="Backward">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="CodeNamespace" typeName="string">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                    <Collation>NoCase</Collation>
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CodeValue" displayLabel="Code" typeName="string">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>True</IsNullable>
+                    <Collation>NoCase</Collation>
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -399,16 +381,16 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
-                        <Name>ix_dgn_Element_Code</Name>
+                        <Name>ix_bis_Element_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
+                            <string>CodeAuthorityId</string>
+                            <string>CodeNamespace</string>
+                            <string>CodeValue</string>
                         </Properties>
                     </DbIndex>
                     <DbIndex>
-                        <Name>ix_dgn_Element_Label</Name>
+                        <Name>ix_bis_Element_Label</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>Label</string>
@@ -422,7 +404,36 @@
             </ClassHasCurrentTimeStampProperty>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
+        <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesElementCode" direction="Backward">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="CodeNamespace" typeName="string">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                    <Collation>NoCase</Collation>
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CodeValue" displayLabel="Code" typeName="string">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>True</IsNullable>
+                    <Collation>NoCase</Collation>
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03">
@@ -511,7 +522,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
                     <DbIndex>
-                        <Name>ix_dgn_UrlLink_Url</Name>
+                        <Name>ix_bis_UrlLink_Url</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>Url</string>
@@ -531,7 +542,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
                     <DbIndex>
-                        <Name>ix_dgn_EmbeddedFileLink_Name</Name>
+                        <Name>ix_bis_EmbeddedFileLink_Name</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>Name</string>
@@ -1043,7 +1054,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
                     <DbIndex>
-                        <Name>ix_dgn_ElementExternalKey_ElementId_AuthorityId</Name>
+                        <Name>ix_bis_ElementExternalKey_ElementId_AuthorityId</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <!-- Only one ExternalKey per Authority per Element -->
@@ -1054,7 +1065,7 @@
                     <DbIndex>
                         <!-- Index for looking up Element by ExternalKey -->
                         <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
-                        <Name>ix_dgn_ElementExternalKey_AuthorityId_ExternalKey</Name>
+                        <Name>ix_bis_ElementExternalKey_AuthorityId_ExternalKey</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>AuthorityId</string>

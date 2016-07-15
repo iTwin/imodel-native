@@ -830,14 +830,14 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, BeSQ
     DgnCode elementCode = DgnCode::CreateEmpty();
     if (elementCode.IsEmpty())
         {
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindNull(stmt.GetParameterIndex(":Code_Value")));
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindNull(stmt.GetParameterIndex(":CodeValue")));
         }
     else
         {
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText(stmt.GetParameterIndex(":Code_Value"), elementCode.GetValue().c_str(), BeSQLite::Statement::MakeCopy::No));
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText(stmt.GetParameterIndex(":CodeValue"), elementCode.GetValue().c_str(), BeSQLite::Statement::MakeCopy::No));
         }
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId(stmt.GetParameterIndex(":Code_AuthorityId"), elementCode.GetAuthority()));
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText(stmt.GetParameterIndex(":Code_Namespace"), elementCode.GetNamespace().c_str(), BeSQLite::Statement::MakeCopy::No));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId(stmt.GetParameterIndex(":CodeAuthorityId"), elementCode.GetAuthority()));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText(stmt.GetParameterIndex(":CodeNamespace"), elementCode.GetNamespace().c_str(), BeSQLite::Statement::MakeCopy::No));
     
     if (element->HasLabel())
         {

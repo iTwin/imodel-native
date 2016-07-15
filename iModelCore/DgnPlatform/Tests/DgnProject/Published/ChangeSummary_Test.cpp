@@ -217,7 +217,7 @@ void ChangeSummaryTestFixture::GetChangeSummaryFromSavedTransactions(ChangeSumma
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
+TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromCurrentTransaction)
     {
     CreateDgnDb();
 
@@ -239,25 +239,25 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
         0:2;dgn:SpatialModel:234;Insert;No
-                Code.AuthorityId;NULL;6
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"ChangeSummaryModel"
+                CodeAuthorityId;NULL;6
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"ChangeSummaryModel"
                 DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:4;dgn:Category:149;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"ChangeSummaryCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"ChangeSummaryCategory"
                 Descr;NULL;""
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 Rank;NULL;2
                 Scope;NULL;1
         0:5;dgn:SubCategory:238;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;"10000000004"
-                Code.Value;NULL;"ChangeSummaryCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;"10000000004"
+                CodeValue;NULL;"ChangeSummaryCategory"
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 ParentId;NULL;1099511627780
@@ -270,8 +270,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 CategoryId;NULL;1099511627780
-                Code.AuthorityId;NULL;1
-                Code.Namespace;NULL;""
+                CodeAuthorityId;NULL;1
+                CodeNamespace;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45749e+06
@@ -353,8 +353,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 BBoxLow.Y;-0.5;NULL
                 BBoxLow.Z;-0.5;NULL
                 CategoryId;1099511627780;NULL
-                Code.AuthorityId;1;NULL
-                Code.Namespace;"";NULL
+                CodeAuthorityId;1;NULL
+                CodeNamespace;"";NULL
                 GeometryStream;...;NULL
                 InSpatialIndex;1;NULL
                 LastMod;2.45749e+06;NULL
@@ -383,7 +383,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
+TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromSavedTransactions)
     {
     CreateDgnDb();
 
@@ -401,25 +401,25 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
         0:1;dgn:SpatialModel:234;Insert;No
-                Code.AuthorityId;NULL;6
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestModel"
+                CodeAuthorityId;NULL;6
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestModel"
                 DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:2;dgn:Category:149;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestCategory"
                 Descr;NULL;""
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 Rank;NULL;2
                 Scope;NULL;1
         0:3;dgn:SubCategory:238;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;"10000000002"
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;"10000000002"
+                CodeValue;NULL;"TestCategory"
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 ParentId;NULL;1099511627778
@@ -432,8 +432,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 CategoryId;NULL;1099511627778
-                Code.AuthorityId;NULL;1
-                Code.Namespace;NULL;""
+                CodeAuthorityId;NULL;1
+                CodeNamespace;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45749e+06
@@ -489,25 +489,25 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
         0:1;dgn:SpatialModel:234;Insert;No
-                Code.AuthorityId;NULL;6
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestModel"
+                CodeAuthorityId;NULL;6
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestModel"
                 DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:2;dgn:Category:149;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestCategory"
                 Descr;NULL;""
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 Rank;NULL;2
                 Scope;NULL;1
         0:3;dgn:SubCategory:238;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;"10000000002"
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;"10000000002"
+                CodeValue;NULL;"TestCategory"
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 ParentId;NULL;1099511627778
@@ -520,8 +520,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
                 BBoxLow.Y;NULL;-0.5
                 BBoxLow.Z;NULL;-0.5
                 CategoryId;NULL;1099511627778
-                Code.AuthorityId;NULL;1
-                Code.Namespace;NULL;""
+                CodeAuthorityId;NULL;1
+                CodeNamespace;NULL;""
                 GeometryStream;NULL;...
                 InSpatialIndex;NULL;1
                 LastMod;NULL;2.45749e+06
@@ -577,25 +577,25 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
         0:1;dgn:SpatialModel:234;Insert;No
-                Code.AuthorityId;NULL;6
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestModel"
+                CodeAuthorityId;NULL;6
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestModel"
                 DependencyIndex;NULL;-1
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
                 Visibility;NULL;1
         0:2;dgn:Category:149;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;""
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;""
+                CodeValue;NULL;"TestCategory"
                 Descr;NULL;""
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 Rank;NULL;2
                 Scope;NULL;1
         0:3;dgn:SubCategory:238;Insert;No
-                Code.AuthorityId;NULL;3
-                Code.Namespace;NULL;"10000000002"
-                Code.Value;NULL;"TestCategory"
+                CodeAuthorityId;NULL;3
+                CodeNamespace;NULL;"10000000002"
+                CodeValue;NULL;"TestCategory"
                 LastMod;NULL;2.45749e+06
                 ModelId;NULL;1
                 ParentId;NULL;1099511627778
@@ -625,7 +625,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
+TEST_F(ChangeSummaryTestFixture, DISABLED_ValidateInstanceIterator)
     {
     CreateDgnDb();
 
