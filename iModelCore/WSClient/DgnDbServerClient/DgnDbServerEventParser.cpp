@@ -221,22 +221,29 @@ DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
         !data.isArray() &&
         data.isMember(DgnDbServerEvent::EventTopic) &&
         data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-        data.isMember(DgnDbServerEvent::LockEventProperties::ObjectId) &&
+        data.isMember(DgnDbServerEvent::LockEventProperties::ObjectIds) &&
         data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
         data.isMember(DgnDbServerEvent::LockEventProperties::LockLevel) &&
         data.isMember(DgnDbServerEvent::LockEventProperties::BriefcaseId) &&
         data.isMember(DgnDbServerEvent::LockEventProperties::ReleasedWithRevision)
         )
+        {
+        bvector<Utf8String> objectIds;
+        for (Json::ValueIterator itr = data[DgnDbServerEvent::LockEventProperties::ObjectIds].begin(); itr != data[DgnDbServerEvent::LockEventProperties::ObjectIds].end(); itr++)
+            objectIds.push_back((*itr).asString());
+
         return DgnDbServerLockEvent::Create
         (
         data[DgnDbServerEvent::EventTopic].asString(),
         data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-        data[DgnDbServerEvent::LockEventProperties::ObjectId].asString(),
+        objectIds,
         data[DgnDbServerEvent::LockEventProperties::LockType].asString(),
         data[DgnDbServerEvent::LockEventProperties::LockLevel].asString(),
         data[DgnDbServerEvent::LockEventProperties::BriefcaseId].asString(),
         data[DgnDbServerEvent::LockEventProperties::ReleasedWithRevision].asString()
         );
+        }
+
     return nullptr;
     }
 
@@ -279,22 +286,29 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
         data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
         data.isMember(DgnDbServerEvent::CodeEventProperties::CodeAuthorityId) &&
         data.isMember(DgnDbServerEvent::CodeEventProperties::Namespace) &&
-        data.isMember(DgnDbServerEvent::CodeEventProperties::Value) &&
+        data.isMember(DgnDbServerEvent::CodeEventProperties::Values) &&
         data.isMember(DgnDbServerEvent::CodeEventProperties::State) &&
         data.isMember(DgnDbServerEvent::CodeEventProperties::BriefcaseId) &&
         data.isMember(DgnDbServerEvent::CodeEventProperties::UsedWithRevision)
         )
+        {
+        bvector<Utf8String> values;
+
+        for (Json::ValueIterator itr = data[DgnDbServerEvent::CodeEventProperties::Values].begin(); itr != data[DgnDbServerEvent::CodeEventProperties::Values].end(); itr++)
+            values.push_back((*itr).asString());
+
         return DgnDbServerCodeEvent::Create
         (
         data[DgnDbServerEvent::EventTopic].asString(),
         data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
         data[DgnDbServerEvent::CodeEventProperties::CodeAuthorityId].asString(),
         data[DgnDbServerEvent::CodeEventProperties::Namespace].asString(),
-        data[DgnDbServerEvent::CodeEventProperties::Value].asString(),
+        values,
         data[DgnDbServerEvent::CodeEventProperties::State].asString(),
         data[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asString(),
         data[DgnDbServerEvent::CodeEventProperties::UsedWithRevision].asString()
         );
+        }
     return nullptr;
     }
 
