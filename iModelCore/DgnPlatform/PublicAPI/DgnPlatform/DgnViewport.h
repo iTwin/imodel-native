@@ -545,7 +545,7 @@ public:
 
     EventHandlerList<Tracker>& GetTrackers() {return m_trackers;}
     void AddTracker(Tracker* tracker) {m_trackers.AddHandler(tracker);}
-    void DropTramer(Tracker* tracker) {m_trackers.DropHandler(tracker);}
+    void DropTracker(Tracker* tracker) {m_trackers.DropHandler(tracker);}
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
