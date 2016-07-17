@@ -124,6 +124,13 @@ void IScalableMeshSourceCreator::SetSourceImportExtent(const DRange2d& ext)
     dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_extent = ext;
     }
 
+void IScalableMeshSourceCreator::SetSourceImportPolygon(const DPoint3d* polygon, size_t nPts)
+    {
+    if (nPts > 0 && polygon != nullptr)
+        dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_filterPolygon.assign(polygon, polygon + nPts);
+    }
+
+
 void IScalableMeshSourceCreator::SetSourcesDirty()
     {
     // Make sure that sources are not seen as up to date anymore
@@ -468,7 +475,10 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     if (BSISUCCESS != ImportSourcesTo(new ScalableMeshStorage<PointType>(*pDataIndex, fileGCS)))
         return BSIERROR;
 
-
+    if (!PolygonOps::IsConvex(m_filterPolygon))
+        {
+            pDataIndex->GetMesher2_5d()->AddClip(m_filterPolygon);
+        }
 
 
 #ifdef SCALABLE_MESH_ATP
@@ -898,6 +908,19 @@ StatusInt IScalableMeshSourceCreator::Impl::ImportSourcesTo(Sink* sinkP)
         clip = new HVEShape(m_extent.low.x, m_extent.low.y, m_extent.high.x, m_extent.high.y, resultingClipShapePtr->GetCoordSys());
         resultingClipShapePtr->AddClip(clip, false);
         }
+    if (!m_filterPolygon.empty())
+        {
+        bvector<double> vecOfPtCoordinates;
+        for (auto& pt : m_filterPolygon)
+            {
+            vecOfPtCoordinates.push_back(pt.x);
+            vecOfPtCoordinates.push_back(pt.y);
+            }
+        size_t size = m_filterPolygon.size() * 2;
+        clip = new HVEShape(&size, &vecOfPtCoordinates[0], resultingClipShapePtr->GetCoordSys());
+        resultingClipShapePtr->AddClip(clip, false);
+        }
+
     int status;
 
     status = TraverseSourceCollection(sourcesImporter,

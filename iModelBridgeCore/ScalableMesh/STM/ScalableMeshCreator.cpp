@@ -334,9 +334,9 @@ StatusInt IScalableMeshCreator::SetCompression(ScalableMeshCompressionType compr
     return SUCCESS;
     }
 
-StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP)
+StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform)
     {
-    return m_implP->SetTextureMosaic(mosaicP);
+    return m_implP->SetTextureMosaic(mosaicP, unitTransform);
     }
 
 
@@ -421,10 +421,10 @@ IScalableMeshCreator::Impl::~Impl()
     m_scmPtr = 0;
     }
 
-StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
+StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
-    m_scmPtr->TextureFromRaster(mosaicP);
+    m_scmPtr->TextureFromRaster(mosaicP, unitTransform);
     return SUCCESS;
     }
 

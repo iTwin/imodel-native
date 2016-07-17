@@ -347,8 +347,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     //NEEDS_WORK_SM: refactor all meshIndex recursive calls into something more like a visitor pattern
     //NEEDS_WORK_SM: move clip and raster support to point index
 
-    void                TextureFromRaster(HIMMosaic* sourceRasterP);
-    void                TextureFromRasterRecursive(HIMMosaic* sourceRasterP);
+    void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+    void                TextureFromRasterRecursive(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 
     void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
 
@@ -833,7 +833,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         void                RefreshMergedClips();
 
 
-        void                TextureFromRaster(HIMMosaic* sourceRasterP);
+        void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 #ifdef ACTIVATE_TEXTURE_DUMP
         void                DumpAllNodeTextures()
             {
@@ -939,6 +939,8 @@ template<class POINT, class EXTENT> class ISMPointIndexMesher
         virtual bool        Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const = 0;
 
         virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const = 0;
+
+        virtual void        AddClip(bvector<DPoint3d>& clip) {};
 
     };
 

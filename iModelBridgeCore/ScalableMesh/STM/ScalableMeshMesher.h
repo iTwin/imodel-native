@@ -48,6 +48,8 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
         virtual bool        Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override;
 
         virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override;
+
+        virtual void        AddClip(bvector<DPoint3d>& clip) override { m_clip = clip; }
         
         
     protected:                
@@ -59,6 +61,8 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
         size_t UpdateMeshNodeFromGraphs(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, vector<MTGGraph *>& graphs, vector<std::vector<DPoint3d>>& pts, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const;
         size_t UpdateMeshNodeFromIndexLists(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, vector<vector<int32_t>>& indices, vector<std::vector<DPoint3d>>& pts, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const;
         void   SimplifyMesh(vector<int32_t>& indices, vector<POINT>& points, HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, std::string& s) const;
+
+        bvector<DPoint3d> m_clip;
     };
 
 
@@ -117,6 +121,7 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
             virtual bool        Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override;
 
             virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override;
+
 
 
         protected:

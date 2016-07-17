@@ -261,7 +261,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
     protected : 
 
         HFCPtr<SMPointIndexNode<INDEXPOINT, YProtPtExtentType>> GetRootNode();                    
-        virtual void                               _TextureFromRaster(HIMMosaic* mosaicP) override;
+        virtual void                               _TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity()) override;
  
         virtual __int64          _GetPointCount() override;
 
@@ -370,7 +370,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual ~ScalableMeshSingleResolutionPointIndexView();
 
-        virtual void                               _TextureFromRaster(HIMMosaic* mosaicP) override;
+        virtual void                               _TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity()) override;
 
         // Inherited from IDTM   
         virtual __int64          _GetPointCount() override;

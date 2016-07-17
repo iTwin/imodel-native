@@ -190,7 +190,7 @@ struct IScalableMeshCreator::Impl
 
         virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile);  
 
-        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP);
+        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
 
         StatusInt                           Filter                         ();
 

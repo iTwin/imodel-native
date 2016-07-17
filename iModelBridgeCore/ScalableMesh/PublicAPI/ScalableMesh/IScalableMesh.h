@@ -151,7 +151,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
 
-        virtual void                               _TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP) = 0;
+        virtual void                               _TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP, Transform unitTransform=Transform::FromIdentity()) = 0;
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
 
@@ -164,7 +164,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         //! Gets the draping interface.
         //! @return The draping interface.
 
-        void TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP);
+        void TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
 

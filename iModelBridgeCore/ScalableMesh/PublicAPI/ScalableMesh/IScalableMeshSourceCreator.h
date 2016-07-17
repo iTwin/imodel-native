@@ -66,6 +66,8 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
 
         BENTLEY_SM_EXPORT void                    SetSourceImportExtent(const DRange2d& ext);
 
+        BENTLEY_SM_EXPORT void                    SetSourceImportPolygon(const DPoint3d* polygon, size_t nPts);
+
 #ifdef SCALABLE_MESH_ATP
 
         BENTLEY_SM_EXPORT static unsigned __int64 GetNbImportedPoints();

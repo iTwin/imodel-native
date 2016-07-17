@@ -140,9 +140,9 @@ const size_t DEFAULT_WORKING_LAYER = 0;
 |IScalableMesh Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
 
-void IScalableMesh::TextureFromRaster(HIMMosaic* mosaicP)
+void IScalableMesh::TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
     {
-    return _TextureFromRaster(mosaicP);
+    return _TextureFromRaster(mosaicP, unitTransform);
     }
 
 _int64 IScalableMesh::GetPointCount()
@@ -1434,8 +1434,9 @@ DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP)
     return val;
     }
 
-bool ScalableMeshDTM::_GetTransformation(TransformR)
+bool ScalableMeshDTM::_GetTransformation(TransformR transformation)
     {
+    transformation = m_transformToUors;
     return true;
     }
 
@@ -1510,12 +1511,12 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
 
     }
 
-template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
+template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
     {
     auto nextID = m_scmIndexPtr->GetPointsStore()->GetNextID();
     nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
     m_scmIndexPtr->SetNextID(nextID);
-    m_scmIndexPtr->TextureFromRaster(mosaicP);
+    m_scmIndexPtr->TextureFromRaster(mosaicP,unitTransform);
     m_scmIndexPtr->Store();
     m_smSQLitePtr->CommitAll();
     m_scmIndexPtr = 0;
@@ -2177,7 +2178,7 @@ template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::~Scala
     {
     } 
 
-template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
     {}
 
 // Inherited from IDTM   

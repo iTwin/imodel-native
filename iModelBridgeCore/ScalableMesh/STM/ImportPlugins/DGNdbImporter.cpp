@@ -109,6 +109,18 @@ private:
 
     };
 
+    struct NullContext : ViewContext
+        {
+        void _AllocateScanCriteria() override { ; }
+        QvElem* _DrawCached(IStrokeForCache&) { return nullptr; }
+        void _DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip) override {}
+        void _DeleteSymbol(IDisplaySymbol*) override {}
+        bool _FilterRangeIntersection(GeometrySourceCR element) override { return false; }
+        void _CookDisplayParams(ElemDisplayParamsR, ElemMatSymbR) override {}
+        void _SetupOutputs() override { SetIViewDraw(*m_IViewDraw); }
+        NullContext(DgnDbR db) { m_dgnDb = &db; m_IViewDraw = nullptr; m_IDrawGeom = nullptr; m_ignoreViewRange = true; }
+        };
+
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsiclass                                                  Elenie.Godzaridis   06/2016
@@ -159,7 +171,6 @@ private:
                 m_metadataPacket.AssignTo(rawEntities[2]);
                 }
 
-
             /*---------------------------------------------------------------------------------**//**
             * @description
             * @bsimethod                                                  Elenie.Godzaridis   06/2016
@@ -188,6 +199,17 @@ private:
                             geometry->TransformInPlace(m_scaleUnits);
                             PolyfaceHeaderPtr mesh = geometry->GetAsPolyfaceHeader();
                             if (!mesh.IsValid()) continue;
+                            ElemDisplayParams params(collection.GetElemDisplayParams()); //find whether element is textured
+                            NullContext ct(*m_database);
+                            params.Resolve(ct);
+                            DgnMaterialId id = params.GetMaterial();
+                            RenderMaterialPtr renderMat = JsonRenderMaterial::Create(*m_database, id);
+                            if (renderMat.IsValid())
+                                {
+                                RenderMaterialMapPtr      patternMap = renderMat->_GetMap(RENDER_MATERIAL_MAP_Pattern);
+                                if (patternMap.IsValid())
+                                    ImageBufferPtr data = patternMap->_GetImage(*m_database);
+                                }
                             mesh->Triangulate();
                             pts.insert(pts.end(), mesh->GetPointCP(), mesh->GetPointCP() + mesh->GetPointCount());
                             PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*mesh);

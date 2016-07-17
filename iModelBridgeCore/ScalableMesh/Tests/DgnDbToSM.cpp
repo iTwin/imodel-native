@@ -206,6 +206,14 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
             newMeshIndexes.push_back(indexes);
             newMeshMetadata.push_back(metadata);
             }
+        else if (Furniture::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0) 
+            {
+
+            }
+        else if (Marking::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0)
+            {
+
+            }
         else /*if (IntersectionSegment::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0)*/
             {
             Json::Value result;
@@ -247,7 +255,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
     //create a scalable mesh
     StatusInt createStatus;
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\test_dgndb_lod_hr.stm", createStatus));
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\test_dgndb_lod_hr2.stm", createStatus));
     if (!mainProject.IsValid()) OpenProject();
     if (creatorPtr == 0)
         {
