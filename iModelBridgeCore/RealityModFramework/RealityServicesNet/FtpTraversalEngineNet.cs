@@ -173,16 +173,30 @@ namespace FtpTraversalEngineNet
 
             context.SpatialDataSources.Add(source);
 
-            //Spatial Entities.
-            SpatialEntity entity = new SpatialEntity();
-            entity.Id = entityBase.Id;
-            entity.IdStr = entityBase.IdStr;
-            entity.SpatialEntityBas = entityBase;
-            List<SpatialDataSource> spatialDataSources = new List<SpatialDataSource>();
-            spatialDataSources.Add(source);
-            entity.SpatialDataSources = spatialDataSources;
-            
-            context.SpatialEntities.Add(entity);
+            // Spatial Entities.
+            // Dual Mode:
+            // Check if an entity representing the same source already exists.
+            // If an entity already exists, add this alternate source. Else, create a new entity with only one source.
+            SpatialEntityBas existingEntityBase = context.SpatialEntityBases.FirstOrDefault(SpatialEntityBas => SpatialEntityBas.Name.Equals(entityBase.Name));
+            if(FtpTraversalEngine.DualMode() && null != existingEntityBase)
+                {
+                // Retrieve correspond entity.
+                SpatialEntity existingEntity = context.SpatialEntities.FirstOrDefault(SpatialEntity => SpatialEntity.Id == existingEntityBase.Id);
+                if (null != existingEntity)
+                    existingEntity.SpatialDataSources.Add(source);
+                }
+            else
+                {
+                SpatialEntity entity = new SpatialEntity();
+                entity.Id = entityBase.Id;
+                entity.IdStr = entityBase.IdStr;
+                entity.SpatialEntityBas = entityBase;
+                List<SpatialDataSource> spatialDataSources = new List<SpatialDataSource>();
+                spatialDataSources.Add(source);
+                entity.SpatialDataSources = spatialDataSources;
+
+                context.SpatialEntities.Add(entity);
+                }           
 
             try
                 {
@@ -449,13 +463,11 @@ namespace FtpTraversalEngineNet
         {
         static void ShowUsage()
             {
-            Console.WriteLine("Usage: ftptraversalenginenet.exe [options] FtpUrl [ftpargs] [DualFtpUrl] [ftpargs]");
+            Console.WriteLine("Usage: ftptraversalenginenet.exe [options] FtpUrl [DualFtpUrl]");
             Console.WriteLine();
             Console.WriteLine("Options:");
             Console.WriteLine("  -h, --help             Show this help message and exit");
             Console.WriteLine("  -u, --update           Enable update mode");
-            Console.WriteLine();
-            Console.WriteLine("FtpArgs:");
             Console.WriteLine("  -provider:PROVIDER     Set provider name");
             }
 
@@ -465,19 +477,21 @@ namespace FtpTraversalEngineNet
 
             // Validate parameters.
             int ftpUrlCount = args.Count(arg => arg.Contains("ftp://"));
-            if (1 > ftpUrlCount || 2 < ftpUrlCount)
+            if (1 > ftpUrlCount || 2 < ftpUrlCount || 5 < args.Length)
                 {
                 ShowUsage();
 
                 // Terminate.
+                Console.WriteLine();
+                Console.WriteLine("Press any key to exit.");
                 Console.ReadKey();
                 return;
                 }
 
             // Get parameters.
             m_dualMode = (2 == ftpUrlCount);
-            List<string> ftpUrls = new List<string>(ftpUrlCount);
-            List<string> ftpProviders = new List<string>(ftpUrlCount);            
+            string provider = null;
+            List<string> ftpUrls = new List<string>(ftpUrlCount);            
             for (int i = 0; i < args.Count(); ++i)
                 {
                 // Show usage.
@@ -486,31 +500,20 @@ namespace FtpTraversalEngineNet
                     ShowUsage();
 
                     // Terminate.
+                    Console.WriteLine();
+                    Console.WriteLine("Press any key to exit.");
                     Console.ReadKey();
                     return;
                     }
                 // Update mode.
                 else if (args[i].Equals("-u") || args[i].Equals("--update"))
-                    {
                     m_updateMode = true;
-                    }
+                // Provider.
+                else if (args[i].Contains("-provider:"))
+                    provider = args[i].Substring(args[i].IndexOf(":") + 1); // For now, all data are considered to be from the same ftp provider.
                 // Ftp url.
                 else if (args[i].Contains("ftp://"))
-                    {
-                    ftpUrls.Add(args[i]);
-
-                    // Get ftp parameters, if there is any.
-                    if((i+1) < args.Count())
-                        {
-                        // Provider.
-                        if (args[i+1].Contains("-provider:"))
-                            ftpProviders.Add(args[i+1].Substring(args[i+1].IndexOf(":") + 1));
-                        else
-                            ftpProviders.Add(null);
-                        }
-                    else
-                        ftpProviders.Add(null);
-                    }                
+                    ftpUrls.Add(args[i]);            
                 }
 
             // FTP traversal.
@@ -527,7 +530,7 @@ namespace FtpTraversalEngineNet
                     Console.WriteLine("*****************");
                     Console.WriteLine();
 
-                    client = FtpClientWrapper.ConnectTo(ftpUrls[i], ftpProviders[i]);
+                    client = FtpClientWrapper.ConnectTo(ftpUrls[i], provider);
                     if (null == client)
                         {
                         Console.WriteLine("Status: Could not connect to " + ftpUrls[i]);
@@ -549,6 +552,8 @@ namespace FtpTraversalEngineNet
                         Console.WriteLine("Status: Failed, " + status);
                         continue;
                         }
+
+                    client.Dispose();
                     }
                 catch (System.Exception ex)
                     {
@@ -558,6 +563,7 @@ namespace FtpTraversalEngineNet
                 }
 
             // Terminate.
+            Console.WriteLine();
             Console.WriteLine("Press any key to exit.");
             Console.ReadKey();
             }

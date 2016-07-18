@@ -88,13 +88,32 @@ FtpStatus FtpClient::DownloadContent(Utf8CP outputDirPath) const
     if (FtpStatus::Success != status)
         return status;
 
+    if (fileList.empty())
+        return FtpStatus::Success; // There is no file to download. This is not an error because all files may already be in the cache and there is no need to redownload them.
+
     // Construct data mapping (FileFullPathAndName, FileNameOnly) for files to download.
     RealityDataDownload::UrlLink_UrlFile urlList;
     for (size_t i = 0; i < fileList.size(); ++i)
         {
-        WString filename(workingDir.c_str(), BentleyCharEncoding::Utf8);
+        // The local filename is created by appending the working dir, the ftp main url and the filename.        
+        WString ftpUrl(fileList[i].c_str(), BentleyCharEncoding::Utf8);
+        size_t pos = ftpUrl.find(L"//") + 2;
+        size_t len = ftpUrl.find(L'/', pos) - pos;
+        ftpUrl = ftpUrl.substr(pos, len);
+        WString shortUrl;
+        for (wchar_t& car : ftpUrl)
+            {
+            if (L'.' != car)
+                shortUrl.push_back(car);
+            }
+
+        WString filename;
         RealityDataDownload::ExtractFileName(filename, fileList[i]);
-        urlList.push_back(std::make_pair(fileList[i], filename));
+
+        WString localFilename(workingDir.c_str(), BentleyCharEncoding::Utf8);
+        localFilename.append(shortUrl + L'_' + filename);
+
+        urlList.push_back(std::make_pair(fileList[i], localFilename));
         }
 
     // Download files.
@@ -880,9 +899,30 @@ BeFileName FtpDataHandler::BuildMetadataFilename(Utf8CP dirPath)
     BeFileName rootDir(dirPath);
     BeDirectoryIterator::WalkDirsAndMatch(fileFoundList, rootDir, L"*.xml", false);
 
-    if (!fileFoundList.empty())
-        return fileFoundList[0];
+    if (fileFoundList.empty())
+        return BeFileName();
+        
+    // Find the xml file corresponding to the metadata.
+    for (BeFileNameCR file : fileFoundList)
+        {
+        // Create xmlDom from file.
+        BeXmlStatus xmlStatus = BEXML_Success;
+        BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, file.GetNameUtf8().c_str());
+        if (BEXML_Success != xmlStatus)
+            {
+            return BeFileName();
+            }
 
+        // Make sure the root node is <gmd:MD_Metadata>.
+        BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
+        if (NULL == pRootNode)
+            return BeFileName();
+
+        if (pRootNode->IsIName("MD_Metadata"))
+            return file;
+        }
+
+    // No metadata file found.
     return BeFileName();
     }
 
