@@ -14,22 +14,12 @@ using namespace BentleyApi::ECN;
 
 struct SchemaHolderTestFixture : ECTestFixture
     {
-    DEFINE_T_SUPER (ECTestFixture)
+    DEFINE_T_SUPER(ECTestFixture)
 
     protected:
         ECSchemaPtr m_bscaSchema;
 
-        void CreateSupplementalSchema
-        (
-        ECSchemaPtr& supplementalSchema,
-        Utf8String primarySchemaName,
-        Utf8String purpose,
-        uint32_t precedence,
-        uint32_t primaryMajorVersion,
-        uint32_t primaryMinorVersion,
-        uint32_t supplementalMajorVersion,
-        uint32_t supplementalMinorVersion
-        )
+        void CreateSupplementalSchema(ECSchemaPtr& supplementalSchema, Utf8String primarySchemaName, Utf8String purpose, uint32_t precedence, uint32_t primaryMajorVersion, uint32_t primaryMinorVersion, uint32_t supplementalMajorVersion, uint32_t supplementalMinorVersion)
             {
             Utf8String supplementalName = primarySchemaName + "_Supplemental_" + purpose;
 
@@ -40,16 +30,14 @@ struct SchemaHolderTestFixture : ECTestFixture
             }
 
     public:
-        virtual void            SetUp () override 
-            { 
-            // EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
+        virtual void            SetUp() override
+            {
             ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-            SchemaKey key ("Bentley_Standard_CustomAttributes", 1, 6);
+            SchemaKey key("Bentley_Standard_CustomAttributes", 1, 6);
 
             m_bscaSchema = ECSchema::LocateSchema(key, *schemaContext);
-            ASSERT_TRUE( m_bscaSchema.IsValid() );
-                
+            ASSERT_TRUE(m_bscaSchema.IsValid());
+
             T_Super::SetUp();
             }
 
@@ -58,7 +46,6 @@ struct SchemaHolderTestFixture : ECTestFixture
             // CoUninitialize();
             T_Super::TearDown();
             }
-
     };
 
 struct SupplementalSchemaMetaDataTests     : SchemaHolderTestFixture {};
@@ -846,9 +833,9 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
     CreateSupplementalSchema(supplemental, "TestSchema", "OverrideWidgets", (uint32_t) 200, (uint32_t) 1, (uint32_t) 0, 4, 2);
 
     EXPECT_TRUE(supplemental.IsValid());
-                ECSchemaP tempSchema = supplemental.get();
-            tempSchema->GetFullSchemaName();
-            ECCustomAttributeInstanceIterable iter = tempSchema->GetCustomAttributeContainer().GetCustomAttributes(true);
+    ECSchemaP tempSchema = supplemental.get();
+    tempSchema->GetFullSchemaName();
+    ECCustomAttributeInstanceIterable iter = tempSchema->GetCustomAttributeContainer().GetCustomAttributes(true);
 
     ECN::SupplementalSchemaMetaDataPtr metaData;
     EXPECT_TRUE(SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplemental));
@@ -859,6 +846,69 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
     EXPECT_EQ(200, metaData->GetSupplementalSchemaPrecedence());
     EXPECT_STREQ("OverrideWidgets", metaData->GetSupplementalSchemaPurpose().c_str());
     EXPECT_FALSE(metaData->IsUserSpecific());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SupplementalSchemaMetaDataTests, SetMetaDataUsingIndividualMethods)
+    {
+    ECSchemaPtr supplementalSchema;
+    ECSchema::CreateSchema(supplementalSchema, "SupplementalSchema", 1, 1);
+    ASSERT_TRUE(nullptr != supplementalSchema.get());
+    ASSERT_TRUE(supplementalSchema.IsValid());
+    supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+
+    IECInstancePtr supplementalSchemaMetaDataCustomAttribute = StandardCustomAttributeHelper::CreateCustomAttributeInstance(SupplementalSchemaMetaData::GetCustomAttributeAccessor());
+    ECN::SupplementalSchemaMetaDataPtr metaData = SupplementalSchemaMetaData::Create(*supplementalSchemaMetaDataCustomAttribute);
+    // use individual methods to set MetaData values
+    metaData->SetUserSpecific(true);
+    metaData->SetSupplementalSchemaPurpose("Supplement Primary Schema");
+    metaData->SetSupplementalSchemaPrecedence(100);
+    metaData->SetPrimarySchemaName("TestSchema");
+    metaData->SetPrimarySchemaMajorVersion(1);
+    metaData->SetPrimarySchemaMinorVersion(2);
+
+    // apply metadata to the supplemental schema
+    SupplementalSchemaMetaData::SetMetadata(*supplementalSchema, *metaData);
+
+    // validate returned values
+    ASSERT_TRUE(supplementalSchema.IsValid());
+    ASSERT_TRUE(SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplementalSchema));
+    ASSERT_TRUE(metaData->IsSupplemental(supplementalSchema.get()));
+    ASSERT_TRUE(metaData.IsValid());
+    ASSERT_STREQ("TestSchema", metaData->GetPrimarySchemaName().c_str());
+    ASSERT_EQ(1, metaData->GetPrimarySchemaMajorVersion());
+    ASSERT_EQ(2, metaData->GetPrimarySchemaMinorVersion());
+    ASSERT_EQ(100, metaData->GetSupplementalSchemaPrecedence());
+    ASSERT_STREQ("Supplement Primary Schema", metaData->GetSupplementalSchemaPurpose().c_str());
+    ASSERT_TRUE(metaData->IsUserSpecific());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SupplementalSchemaMetaDataTests, CreateMetaData)
+    {
+    ECSchemaPtr supplementalSchema;
+    ECSchema::CreateSchema(supplementalSchema, "SupplementalSchema", 1, 1);
+    ASSERT_TRUE(nullptr != supplementalSchema.get());
+    ASSERT_TRUE(supplementalSchema.IsValid());
+    supplementalSchema->AddReferencedSchema(*m_bscaSchema);
+
+    SupplementalSchemaMetaDataPtr metaData = SupplementalSchemaMetaData::Create("TestSchema", 1, 2, 100, "OverrideWidgets", true);
+    supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData->CreateCustomAttribute()));
+
+    // validate returned values
+    ASSERT_TRUE(SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplementalSchema));
+    ASSERT_TRUE(metaData->IsSupplemental(supplementalSchema.get()));
+    ASSERT_TRUE(metaData.IsValid());
+    ASSERT_STREQ("TestSchema", metaData->GetPrimarySchemaName().c_str());
+    ASSERT_EQ(1, metaData->GetPrimarySchemaMajorVersion());
+    ASSERT_EQ(2, metaData->GetPrimarySchemaMinorVersion());
+    ASSERT_EQ(100, metaData->GetSupplementalSchemaPrecedence());
+    ASSERT_STREQ("OverrideWidgets", metaData->GetSupplementalSchemaPurpose().c_str());
+    ASSERT_TRUE(metaData->IsUserSpecific());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1162,6 +1212,6 @@ TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented2)
     SchemaKey key("MasterSchema", 1, 0);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
-
     }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
