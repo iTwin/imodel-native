@@ -146,29 +146,6 @@ IBriefcaseManager::Response DgnDbRepositoryManager::HandleError(Request const& r
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Algirdas.Mikoliunas               06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response DgnDbRepositoryManager::QueryCodesLocksAvailable(Request const& req, DgnDbR db)
-    {
-    LockableIdSet lockIds;
-    for (auto const& lock : req.Locks().GetLockSet())
-        lockIds.insert(lock.GetLockableId());
-
-    DgnLockInfoSet lockStates;
-    DgnCodeInfoSet codeStates;
-    this->_QueryStates(lockStates, codeStates, lockIds, req.Codes());
-
-    if (lockStates.empty() && codeStates.empty())
-        {
-        return IBriefcaseManager::Response(IBriefcaseManager::RequestPurpose::Query, req.Options(), RepositoryStatus::Success);
-        }
-
-    // NEEDSWORK - handle errors
-    Response response(IBriefcaseManager::RequestPurpose::Query, req.Options(), RepositoryStatus::ServerUnavailable);
-    return response;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request const& req, DgnDbR db, bool queryOnly)
@@ -182,13 +159,12 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
 
     Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
 
+    DgnDbServerStatusResult result;
     if (queryOnly)
-        {
-        return QueryCodesLocksAvailable(req, db);
-        }
-
-    // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
-    auto result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
+        result = m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), lastRevisionId, m_cancellationToken)->GetResult();
+    else
+        // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
+        result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);

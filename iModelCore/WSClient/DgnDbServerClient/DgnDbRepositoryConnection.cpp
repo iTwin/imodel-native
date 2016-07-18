@@ -267,13 +267,15 @@ bvector<uint64_t> const& ids,
 BeBriefcaseId            briefcaseId,
 Utf8StringCR             releasedWithRevisionId,
 LockableType             type,
-LockLevel                level
+LockLevel                level,
+bool                     queryOnly
 )
     {
     Json::Value properties;
 
     properties[ServerSchema::Property::BriefcaseId]          = briefcaseId.GetValue();
     properties[ServerSchema::Property::ReleasedWithRevision] = releasedWithRevisionId;
+    properties[ServerSchema::Property::QueryOnly]            = queryOnly;
     RepositoryJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
     RepositoryJson::LockLevelToJson(properties[ServerSchema::Property::LockLevel], level);
 
@@ -300,13 +302,14 @@ bvector<uint64_t> const&         ids,
 BeBriefcaseId                    briefcaseId,
 Utf8StringCR                     releasedWithRevisionId,
 LockableType                     type,
-LockLevel                        level
+LockLevel                        level,
+bool                             queryOnly
 )
     {
     if (ids.empty ())
         return;
     ObjectId lockObject (ServerSchema::Schema::Repository, ServerSchema::Class::MultiLock, "MultiLock");
-    changeset.AddInstance (lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson (ids, briefcaseId, releasedWithRevisionId, type, level)));
+    changeset.AddInstance (lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson (ids, briefcaseId, releasedWithRevisionId, type, level, queryOnly)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -319,7 +322,8 @@ BeBriefcaseId                   briefcaseId,
 Utf8StringCR                    releasedWithRevisionId,
 WSChangeset&                    changeset,
 const WSChangeset::ChangeState& changeState,
-bool                            includeOnlyExclusive = false
+bool                            includeOnlyExclusive = false,
+bool                            queryOnly = false
 )
     {
     bvector<uint64_t> objects[9];
@@ -334,7 +338,7 @@ bool                            includeOnlyExclusive = false
         }
 
     for (int i = 0; i < 9; ++i)
-        AddToInstance(changeset, changeState, objects[i], briefcaseId, releasedWithRevisionId, static_cast<LockableType>(i / 3), static_cast<LockLevel>(i % 3));
+        AddToInstance(changeset, changeState, objects[i], briefcaseId, releasedWithRevisionId, static_cast<LockableType>(i / 3), static_cast<LockLevel>(i % 3), queryOnly);
     }
 
 //---------------------------------------------------------------------------------------
@@ -367,7 +371,8 @@ Json::Value CreateCodeInstanceJson
 bvector<DgnCode> const&      codes,
 DgnCodeStateCR               state,
 BeBriefcaseId                briefcaseId,
-Utf8StringCR                 stateRevisionId
+Utf8StringCR                 stateRevisionId,
+bool                         queryOnly
 )
     {
     Json::Value properties;
@@ -378,6 +383,7 @@ Utf8StringCR                 stateRevisionId
     properties[ServerSchema::Property::BriefcaseId]   = briefcaseId.GetValue();
     properties[ServerSchema::Property::State]         = CodeStateToInt (state);
     properties[ServerSchema::Property::StateRevision] = stateRevisionId;
+    properties[ServerSchema::Property::QueryOnly]     = queryOnly;
 
     properties[ServerSchema::Property::Values] = Json::arrayValue;
     int i = 0;
@@ -456,14 +462,16 @@ WSChangeset::ChangeState const&  changeState,
 bvector<DgnCode> const&          codes,
 DgnCodeStateCR                   state,
 BeBriefcaseId                    briefcaseId,
-Utf8StringCR                     stateRevisionId
+Utf8StringCR                     stateRevisionId,
+bool                             queryOnly
 )
     {
     if (codes.empty())
         return;
 
     ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::MultiCode, "MultiCode");
-    changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(CreateCodeInstanceJson(codes, state, briefcaseId, stateRevisionId)));
+    JsonValueCR codeJson = CreateCodeInstanceJson(codes, state, briefcaseId, stateRevisionId, queryOnly);
+    changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
     }
 
 //---------------------------------------------------------------------------------------
@@ -497,7 +505,8 @@ DgnCodeState                    state,
 BeBriefcaseId                   briefcaseId,
 Utf8StringCR                    stateRevisionId,
 WSChangeset&                    changeset,
-const WSChangeset::ChangeState& changeState
+const WSChangeset::ChangeState& changeState,
+bool                            queryOnly = false
 )
     {
     bmap<Utf8String, bvector<DgnCode>> groupedCodes;
@@ -508,7 +517,7 @@ const WSChangeset::ChangeState& changeState
 
     for (auto& group : groupedCodes)
         {
-        AddCodeToInstance(changeset, changeState, group.second, state, briefcaseId, stateRevisionId);
+        AddCodeToInstance(changeset, changeState, group.second, state, briefcaseId, stateRevisionId, queryOnly);
         }
     }
 
@@ -672,6 +681,31 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocks
 
     return SendChangesetRequest(changeset, cancellationToken);
     }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
+(
+    LockRequestCR         locks,
+    DgnCodeSet            codes,
+    BeBriefcaseId         briefcaseId,
+    Utf8StringCR          lastRevisionId,
+    ICancellationTokenPtr cancellationToken
+) const
+    {
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+
+    SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified, false, true);
+
+    DgnCodeState state;
+    state.SetReserved(briefcaseId);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified, true);
+
+    return SendChangesetRequest(changeset, cancellationToken);
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
