@@ -132,9 +132,10 @@ protected:
     };
 
     Properties m_properties;
-    Dgn::RealityData::Cache2Ptr m_cache;
+    mutable bool m_cacheInitialized = false;
+    mutable Dgn::RealityData::CachePtr m_cache;
     mutable TileCache m_tileCache;
-    void CreateCache();
+    void CreateCache() const;
 
 public:
     struct CreateParams : T_Super::CreateParams
@@ -148,11 +149,14 @@ public:
 
     void RequestTile(TileId, TileR, Render::SystemR) const;
     TilePtr CreateTile(TileId id, Tile::Corners const&, Render::SystemR) const;
-
     TileCache& GetTileCache() const {return m_tileCache;}
 
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
-    WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {CreateCache();}
+    WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {}
+    ~WebMercatorModel() 
+        {
+        m_cache = nullptr;
+        }
 
     void _AddTerrainGraphics(TerrainContextR) const override;
     void _WriteJsonProperties(Json::Value&) const override;

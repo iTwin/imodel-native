@@ -10,13 +10,6 @@
 //=======================================================================================
 struct AnnotationLayoutTest : public GenericDgnModelTestFixture
 {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   Umar.Hayat    02/16
-    //---------------------------------------------------------------------------------------
-    public: AnnotationLayoutTest () :
-        GenericDgnModelTestFixture(__FILE__, false /*2D*/, false /*needBriefcase*/)
-        {
-        }
 
 }; 
 //---------------------------------------------------------------------------------------
@@ -24,7 +17,7 @@ struct AnnotationLayoutTest : public GenericDgnModelTestFixture
 //---------------------------------------------------------------------------------------
 TEST_F(AnnotationLayoutTest, AnnotationFrameLayout)
     {
-    DgnDbR db = *GetDgnDb();
+    DgnDbR db = *GetDgnDb(L"AnnotationFrameLayout");
     AnnotationFrameStylePtr frameStyle = AnnotationTestFixture::createAnnotationFrameStyle(db, "TestFrameStyle");
     AnnotationFramePtr frame = AnnotationFrame::Create(db, frameStyle->GetElementId());
     ASSERT_TRUE(frame.IsValid());

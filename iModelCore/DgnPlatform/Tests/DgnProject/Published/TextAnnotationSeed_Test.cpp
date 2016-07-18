@@ -5,25 +5,11 @@
 
 #include "AnnotationTestFixture.h"
 
-// Republish API:           bb re DgnPlatform:PublishedApi
-// Rebuild API:             bb re DgnPlatformDll
-// Republish seed files:    bb re UnitTests_Documents
-// Rebuild test:            bb re DgnProjectUnitTests BeGTestExe
-// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnProjectUnitTests BeGTestExe
-// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="BasicTextAnnotationSeedTest.*:TextAnnotationSeedTest.*"
-
 //=======================================================================================
 // @bsiclass                                                   Umar.Hayat     07/15
 //=======================================================================================
 struct TextAnnotationSeedTest : public AnnotationTestFixture
 {
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   Umar.Hayat     07/15
-    //---------------------------------------------------------------------------------------
-public: TextAnnotationSeedTest() :
-        AnnotationTestFixture (__FILE__, false /*2D*/, false /*needsBriefcase*/)
-        {
-        }
 
 }; // TextAnnotationSeedTest
 
@@ -62,8 +48,7 @@ TEST(BasicTextAnnotationSeedTest, PropertyBagTypes)
 TEST_F(TextAnnotationSeedTest, DefaultsAndAccessors)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
     TextAnnotationSeedPtr style = TextAnnotationSeed::Create(project);
@@ -92,8 +77,7 @@ TEST_F(TextAnnotationSeedTest, DefaultsAndAccessors)
 TEST_F(TextAnnotationSeedTest, DeepCopy)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
     TextAnnotationSeedPtr style = TextAnnotationSeed::Create(project);
@@ -118,8 +102,7 @@ TEST_F(TextAnnotationSeedTest, DeepCopy)
 TEST_F(TextAnnotationSeedTest, TableReadWrite)
     {
     //.............................................................................................
-    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+    DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
     // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.
@@ -223,8 +206,7 @@ TEST_F(TextAnnotationSeedTest, TableReadWrite)
 TEST_F(TextAnnotationSeedTest, InvalidOperations)
     {
         //.............................................................................................
-        ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
-        DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+        DgnDbR project = *GetDgnDb();
 
         //.............................................................................................
         // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.

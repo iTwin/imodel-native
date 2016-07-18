@@ -145,7 +145,7 @@ static Standard_Integer numIsoFromCurve(Handle(Geom_Curve) const& curve)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher& hatcher, TopoDS_Face const& face)
+void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher& hatcher, TopoDS_Face const& face, bool evaluateNurbsCurvature)
     {
     // NOTE: Adapted from DBRep_IsoBuilder...
     TopLoc_Location location;
@@ -199,23 +199,35 @@ void OCBRepUtil::HatchFace(Render::GraphicBuilderR graphic, Geom2dHatch_Hatcher&
         }
     else
         {
-        Handle(Geom_Curve) uCurve = surface->UIso(faceUMin);
+        bool useCurvature = (evaluateNurbsCurvature || (STANDARD_TYPE(Geom_BSplineSurface) != kindOfSurface));
 
-        if (!uCurve.IsNull())
+        if (useCurvature)
             {
-            numVIsos = numIsoFromCurve(uCurve);
-            stepV = (numVIsos > 0 ? (deltaV / (Standard_Real) numVIsos) : 0.0);
-            vParamStart = faceVMin + stepV;
+            Handle(Geom_Curve) uCurve = surface->UIso(faceUMin);
+
+            numVIsos = (!uCurve.IsNull() ? numIsoFromCurve(uCurve) : 0);
+            }
+        else
+            {
+            numVIsos = 9; // Produces 10 V rules...
             }
 
-        Handle(Geom_Curve) vCurve = surface->VIso(faceVMin);
+        stepV = (numVIsos > 0 ? (deltaV / (Standard_Real) numVIsos) : 0.0);
+        vParamStart = faceVMin + stepV;
 
-        if (!vCurve.IsNull())
+        if (useCurvature)
             {
-            numUIsos = numIsoFromCurve(vCurve);
-            stepU = (numUIsos > 0 ? (deltaU / (Standard_Real) numUIsos) : 0.0);
-            uParamStart = faceUMin + stepU;
+            Handle(Geom_Curve) vCurve = surface->VIso(faceVMin);
+
+            numUIsos = (!vCurve.IsNull() ? numIsoFromCurve(vCurve) : 0);
             }
+        else
+            {
+            numUIsos = 9; // Produces 10 U rules...
+            }
+
+        stepU = (numUIsos > 0 ? (deltaU / (Standard_Real) numUIsos) : 0.0);
+        uParamStart = faceUMin + stepU;
         }
 
     if (0 == numUIsos && 0 == numVIsos)
