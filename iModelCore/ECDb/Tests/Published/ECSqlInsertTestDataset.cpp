@@ -265,8 +265,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::FunctionTests ()
     {
     ECSqlTestDataset dataset;
 
-    Utf8CP ecsql = "INSERT INTO ecsql.P (I, L) VALUES (123, GetECClassId ())";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql);
+    ECSqlTestFrameworkHelper::AddNonSelect (dataset, "INSERT INTO ecsql.P (I, L) VALUES (123, GetECClassId ())");
 
     return dataset;
     }
@@ -411,7 +410,13 @@ ECSqlTestDataset ECSqlInsertTestDataset::MiscTests (ECDbR ecdb)
     ecsql = "INSERT INTO ecsql.P (L) VALUES (1 + GetECClassId())";
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
 
+    ecsql = "INSERT INTO ecsql.P (L) VALUES (1 + ECClassId)";
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
+
     ecsql = "INSERT INTO ecsql.P (L) VALUES (GetECClassId() * 4)";
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
+
+    ecsql = "INSERT INTO ecsql.P (L) VALUES (ECClassId * 4)";
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
 
     //*******************************************************

@@ -623,6 +623,11 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     std::set<DbTable*> tables;
     std::set<DbTable*> joinedTables;
 
+    if (GetClass().GetName().EqualsI("ManyGooHasManyRoo"))
+        {
+        printf("Break");
+        }
+
     if (allPropertyMappings.empty())
         {
         SetTable(*const_cast<DbTable*>(GetECDbMap().GetDbSchema().GetNullTable()));

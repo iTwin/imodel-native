@@ -17,8 +17,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! directly as @ref ECN::IECInstance "ECInstances". 
 //! Works with the @ref ECSqlStatement to adapt the rows read from the %ECDb file into 
 //! @ref ECN::IECInstance "ECInstances".
-//! Note: When using Polymorphic queries, the SELECT statement must include the ClassId 
-//! column in order to correctly determine the derived class.  Example: "Select *, GetECClassId() AS ECClassId"
+//! Note: When using Polymorphic queries, the SELECT statement must include the ECClassId 
+//! column in order to correctly determine the derived class.  Example: "Select Prop1, Prop2, ECClassId FROM"
 //! @see ECSqlStatement
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Carole.MacDonald      08/2013
