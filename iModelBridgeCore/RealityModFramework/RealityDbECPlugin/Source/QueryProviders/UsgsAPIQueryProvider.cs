@@ -410,7 +410,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     {
                     continue;
                     }
-                if((relationshipClass.Name == "DetailsViewToChildren" || relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase") && 
+                if ( (relationshipClass.Name == "DetailsViewToChildren" || relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" || relationshipClass.Name == "SpatialEntityDatasetToView") && 
                    (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward))
                     {
                     if ( childWithParentRequest == null )
@@ -1280,7 +1280,7 @@ namespace IndexECPlugin.Source.QueryProviders
             List<IECInstance> instanceList;
 
             //This part is an optimization only for queries of SpatialEntitiesWithDetailsView and their parents
-            var relCrit = m_query.SelectClause.SelectedRelatedInstances.FirstOrDefault(crit => (crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren")
+            var relCrit = m_query.SelectClause.SelectedRelatedInstances.FirstOrDefault(crit => ((crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren") || (crit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToView"))
                                                                                        && (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward));
             if ( relCrit != null )
                 {
@@ -1302,7 +1302,11 @@ namespace IndexECPlugin.Source.QueryProviders
                 SRID = model.coordinate_system
             };
 
-            List<IECInstance> cachedinstanceList = m_instanceCacheManager.QuerySpatialInstancesFromCache(polyDesc, ecClass, ecClass, m_query.SelectClause, criteriaList);
+            var cacheCriteriaList = new List<SingleWhereCriteriaHolder>(criteriaList);
+            cacheCriteriaList.Add(new SingleWhereCriteriaHolder(){ Property = ecClass["Classification"], Operator = RelationalOperator.ISNOTNULL, Value = null });
+            
+            List<IECInstance> cachedinstanceList = m_instanceCacheManager.QuerySpatialInstancesFromCache(polyDesc, ecClass, ecClass, m_query.SelectClause, cacheCriteriaList);
+
             CompleteInstances(cachedinstanceList, ecClass);
 
             try
@@ -1396,7 +1400,9 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
 
             if ( relCrit != null )
-                CreateParentRelationship(instanceList, relCrit, ecClass);
+                {
+                CreateParentRelationship(instanceList, relCrit, relCrit.RelatedClassSpecifier.RelatedClass);
+                }
 
             return instanceList;
             }
