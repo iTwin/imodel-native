@@ -2646,9 +2646,13 @@ ECClassCP ECSchemaMergeTool::ResolveClass (Utf8StringCR classFullName)
     Utf8String::size_type n = classFullName.find (":");
     BeAssert (n != Utf8String::npos);
     Utf8String className = classFullName.substr (n + 1);
-    ECClassCP ecClass = GetMerged().GetClassCP (className.c_str());
-    if (ecClass != NULL)
-        return ecClass;
+    Utf8String schemaName = classFullName.substr(0, n);
+    if (schemaName.Equals(GetMerged().GetName()))
+        {
+        ECClassCP ecClass = GetMerged().GetClassCP(className.c_str());
+        if (ecClass != NULL)
+            return ecClass;
+        }
 
     //Second priority is all classes all primary and reference schema
     ClassByNameMap::const_iterator itor = m_classByNameMap.find (classFullName);
@@ -2662,6 +2666,7 @@ ECClassCP ECSchemaMergeTool::ResolveClass (Utf8StringCR classFullName)
         EnsureSchemaIsReferenced (*(itor->second));
     else
         {
+        ECClassCP ecClass = NULL;
         if (ResolveClassFromMergeContext (ecClass, className.c_str()) == MergeStatus::Success)
             return ecClass;
         }
