@@ -139,7 +139,7 @@ template <class POINT, class EXTENT> size_t SMSQLiteNodePointStore<POINT, EXTENT
 
 template <class POINT, class EXTENT> void SMSQLiteNodePointStore<POINT, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
     {
-    assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) > 0);
+    assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) >= 0);
     m_nodeHeader->m_nodeCount += countDelta;    
     }
 
