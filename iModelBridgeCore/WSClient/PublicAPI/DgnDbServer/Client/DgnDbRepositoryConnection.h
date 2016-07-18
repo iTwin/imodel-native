@@ -87,7 +87,7 @@ private:
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
 
-    //! Aquire a new briefcase id for this repository.
+    //! Acquire a new briefcase id for this repository.
     AsyncTaskPtr<WSCreateObjectResult> AcquireBriefcaseId (ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Write the briefcaseId into the file.
@@ -136,14 +136,23 @@ public:
     static DgnDbRepositoryConnectionTaskPtr Create (RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
                                                     ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
 
-    //! Aquire the requested set of locks.
+    //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
     //! @param[in] codes Set of codes to acquire
     //! @param[in] briefcaseId
     //! @param[in] lastRevisionId Last pulled revision id
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AcquireCodesLocks(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AcquireCodesLocks(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
+         Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Attempt to acquire the requested set of locks.
+    //! @param[in] locks Set of locks to check
+    //! @param[in] codes Set of codes to check
+    //! @param[in] briefcaseId
+    //! @param[in] lastRevisionId Last pulled revision id
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr QueryCodesLocksAvailability(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
+        Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Release certain locks.
     //! @param[in] locks Set of locks to release
