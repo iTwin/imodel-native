@@ -48,9 +48,9 @@ struct SchemaHolderTestFixture : ECTestFixture
             }
     };
 
-struct SupplementalSchemaMetaDataTests     : SchemaHolderTestFixture {};
+struct SupplementalSchemaMetaDataTests : SchemaHolderTestFixture {};
 
-struct SupplementalSchemaInfoTests     : SchemaHolderTestFixture   {};
+struct SupplementalSchemaInfoTests : SchemaHolderTestFixture {};
 
 struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture 
     {
@@ -942,16 +942,27 @@ TEST_F(SupplementalSchemaInfoTests, CanSetAndRetrieveInfo)
     supplementalSchemas.push_back(supplementalSchema3.get());
     supplementalSchemas.push_back(supplementalSchema4.get());
     SupplementedSchemaBuilder builder;
-    builder.UpdateSchema(*primarySchema, supplementalSchemas);
+    ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*primarySchema, supplementalSchemas));
 
     ECSchemaPtr schema2;
     ECSchema::CreateSchema(schema2, "PrimarySchema", 8, 2);
     SupplementedSchemaBuilder builder2;
-    builder2.UpdateSchema(*schema2, supplementalSchemas);
+    ASSERT_EQ(SupplementedSchemaStatus::Success, builder2.UpdateSchema(*schema2, supplementalSchemas));
 
     SupplementalSchemaInfoPtr schemaInfo1 = primarySchema->GetSupplementalInfo();
 
-    EXPECT_TRUE(schemaInfo1->HasSameSupplementalSchemasForPurpose(*schema2, "Units"));
+    ASSERT_TRUE(schemaInfo1->HasSameSupplementalSchemasForPurpose(*schema2, "Units"));
+
+    // get supplemental schemas by name
+    bvector<Utf8String> supplementalSchemaNames;
+    ASSERT_EQ(ECObjectsStatus::Success, schemaInfo1->GetSupplementalSchemaNames(supplementalSchemaNames));
+    ASSERT_TRUE(4 == supplementalSchemaNames.size());
+
+    // get supplemental Schemas purpose
+    ASSERT_STREQ("Units", schemaInfo1->GetPurposeOfSupplementalSchema(supplementalSchema1->GetFullSchemaName())->c_str());
+    ASSERT_STREQ("Units", schemaInfo1->GetPurposeOfSupplementalSchema(supplementalSchema2->GetFullSchemaName())->c_str());
+    ASSERT_STREQ("Alpha", schemaInfo1->GetPurposeOfSupplementalSchema(supplementalSchema3->GetFullSchemaName())->c_str());
+    ASSERT_STREQ("Beta", schemaInfo1->GetPurposeOfSupplementalSchema(supplementalSchema4->GetFullSchemaName())->c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
