@@ -31,12 +31,15 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     WString m_path;
     bmap<uint64_t, bvector<DPoint3d>> m_clipDefs;
     uint64_t m_maxID;
+    bool m_lastClipSet;
+    uint64_t m_lastClipID;
+    bvector<DPoint3d> m_lastClipValue;
 
     public:
 
     ClipRegistry(const WString& fileName)
         {       
-       // ISMStore::File::Ptr filePtr = ISMStore::File::Open(fileName.c_str());
+
         StatusInt status;
         SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(fileName.c_str(), false, status);
         m_path = fileName;
@@ -44,23 +47,17 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         h.m_depth = 0;
         h.m_SplitTreshold = 1;
         m_maxID = 0;
-        if (filePtr == NULL /*|| !m_clipStore->LoadMasterHeader(&h, 1)*/)
+        if (filePtr == NULL )
             {
             m_clipStore = NULL;
             }
-            //m_clipStore->StoreMasterHeader(&h, 0);
-        //m_clips.resize(h.m_depth);
-        /*for (auto& clip : m_clips)
-            {
-            clip.SetBlockID(&clip - &m_clips[0]);
-            if (clip.Discarded()) clip.Inflate();
-            }*/
+
         if (filePtr != NULL && m_clipStore != NULL)
             {
             m_skirtStore = new SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>(filePtr);
             LoadAllClips();
             }
-
+        m_lastClipSet = false;
         }
 
     SMSQLiteFilePtr GetFile()
@@ -72,11 +69,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     ~ClipRegistry()
         {
         StoreAllClips();
-        /*for (auto& clip : m_clips)
-            {
-            clip.UnPin();
-            if(clip.IsDirty() && !clip.Discarded()) clip.Discard();
-            }*/
+
         if (m_clipStore != NULL)
             {
             m_clipStore->StoreMasterHeader(&h, 0);
@@ -86,7 +79,6 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void OpenStore()
         {
-        //ISMStore::File::Ptr filePtr = ISMStore::File::Create(m_path.c_str());
         StatusInt status = 0;
         SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(m_path.c_str(), false, status);
         Utf8String utf8Path(m_path);
@@ -100,7 +92,6 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void LoadAllClips()
         {
-        //m_maxID = m_clipStore->GetNextID();
         }
 
     void StoreAllClips()
@@ -118,8 +109,6 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void ModifyClip(uint64_t id, const DPoint3d* clip, size_t clipSize)
         {
-        //m_clips[id].clear();
-        //m_clips[id].push_back(clip, clipSize);
         if (m_clipStore == NULL) OpenStore();
         m_clipStore->StoreBlock(const_cast<DPoint3d*>(clip), clipSize, id);
         }
@@ -127,10 +116,8 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void DeleteClip(uint64_t id)
         {
-        //m_clips[id].clear();
         if (m_clipStore == NULL) OpenStore();
-        m_clipStore->DestroyBlock(/*m_clips[id].GetBlockID()*/id);
-        //m_clips[id].SetDirty(false);
+        m_clipStore->DestroyBlock(id);
         }
 
     bool HasClip(uint64_t id)
@@ -151,14 +138,19 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void GetClip(uint64_t id, bvector<DPoint3d>& clip)
         {
-        /*if (id < 0 || id > m_clips.size()) return;
-        clip.resize(m_clips[id].size());
-        m_clips[id].get(&clip[0], clip.size());*/
         if (m_clipStore == NULL) OpenStore();
+        if (m_lastClipSet && m_lastClipID == id)
+            {
+            clip = m_lastClipValue;
+            return;
+            }
         size_t nOfPts = m_clipStore->GetBlockDataCount(id);
         if (nOfPts == 0) return;
         else clip.resize(nOfPts);
         m_clipStore->LoadBlock(&clip[0], nOfPts, id);
+        m_lastClipSet = true;
+        m_lastClipID = id;
+        m_lastClipValue = clip;
         }
 
     uint64_t AddSkirts(const bvector<bvector<DPoint3d>>& skirts)
@@ -198,9 +190,6 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void GetSkirt(uint64_t id, bvector<bvector<DPoint3d>>& skirts)
         {
-        /*if (id < 0 || id > m_clips.size()) return;
-        clip.resize(m_clips[id].size());
-        m_clips[id].get(&clip[0], clip.size());*/
         bvector<DPoint3d> outSkirt;
         size_t nOfPts = m_skirtStore->GetBlockDataCount(id);
         if (nOfPts == 0) return;

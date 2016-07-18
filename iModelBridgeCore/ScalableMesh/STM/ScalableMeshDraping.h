@@ -97,9 +97,14 @@ struct MeshTraversalQueue
         unsigned char m_intersectionWithNextNode = 255;
         DPoint3d    m_endOfLineInNode; //intersection between polyline and the first of the node's boundaries it hits
 
+
+
         void ComputeDirectionOfNextNode(MeshTraversalStep& start);
 
     public:
+
+        map<int64_t, std::future<DTMStatusInt>> m_nodesToLoad;
+
         MeshTraversalQueue(const DPoint3d* line, int nPts, size_t levelForDrapeLinear) :m_polylineToDrape(line), m_numPointsOnPolyline((size_t)nPts), m_levelForDrapeLinear(levelForDrapeLinear)
             {};
         void UseScalableMesh(IScalableMesh* ptr)
