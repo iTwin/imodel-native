@@ -91,11 +91,11 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     WString                             m_baseExtraFilesPath;
 
     static DataSourceManager            s_dataSourceManager;
-	DataSourceAccount				*	m_dataSourceAccount;
+    DataSourceAccount               *   m_dataSourceAccount;
 
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
-    const WString					     m_path; 
+    const WString                        m_path; 
 
 
     explicit                            ScalableMeshBase(SMSQLiteFilePtr& smSQLiteFile, const WString&             filePath);
