@@ -818,9 +818,13 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(UserECDbMapStra
 
         if (m_sourceTables.empty() || m_targetTables.empty())
             {
-            LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "Source or target constraint classes are abstract without subclasses.");
-            m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
-            return SUCCESS;
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'SharedTable' to the abstract constraint class.",
+                            m_ecClass.GetFullName());
+            return ERROR;
+            //Keep that code in case we need to relax our rule again:
+            //LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "Source or target constraint classes are abstract without subclasses.");
+            //m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
+            //return SUCCESS;
             }
 
         const size_t sourceTableCount = m_sourceTables.size();
@@ -975,9 +979,13 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(UserECDbMapStr
     
     if (m_sourceTables.empty() || m_targetTables.empty())
         {
-        LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "Source or target constraint classes are abstract without subclasses.");
-        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
-        return SUCCESS;
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'SharedTable' to the abstract constraint class.",
+                        m_ecClass.GetFullName());
+        return ERROR;
+        //Keep that code in case we need to relax our rule again:
+        //LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "Source or target constraint classes are abstract without subclasses.");
+        //m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
+        //return SUCCESS;
         }
 
     //For relationship class the strategy must apply to subclasses, too. Subclasses cannot change the strategy
