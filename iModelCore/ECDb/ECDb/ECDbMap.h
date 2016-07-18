@@ -38,8 +38,6 @@ struct ECDbMap :NonCopyableClass
         MappingStatus MapClass(ECN::ECClassCR);
         BentleyStatus SaveDbSchema() const;
         BentleyStatus CreateOrUpdateRequiredTables() const;
-        BentleyStatus EvaluateColumnNotNullConstraints() const;
-        BentleyStatus EvaluateColumnNotNullConstraints(IdSet<DbColumnId>& modifiedColumnIds, ECN::ECClassId const& endTableRelClassId, bool impliesNotNullOnFkColumn) const;
         BentleyStatus CreateOrUpdateIndexesInDb() const;
         BentleyStatus PurgeOrphanTables() const;
         BentleyStatus PurgeOrphanColumns() const;

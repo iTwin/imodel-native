@@ -144,11 +144,26 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
 //---------------------------------------------------------------------------------------
 bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mappingInfo) const
     {
+    if (GetType() == Type::RelationshipEndTable)
+        {
+        BeAssert(false && "Should not be called for end table rel class maps");
+        return false;
+        }
+
     ECDbMapStrategy const& strategy = mappingInfo.GetMapStrategy();
-    //OwnedTable obviously always has an exclusive root because only a single class is mapped to the table.
-    //ExistingTable: For now we just declare that only a single ECClass can map to an existing table
-    if (strategy.GetStrategy() != ECDbMapStrategy::Strategy::SharedTable)
-        return true;
+    switch (strategy.GetStrategy())
+        {
+        //ExistingTable: For now we just declare that only a single ECClass can map to an existing table
+            case ECDbMapStrategy::Strategy::ExistingTable:
+                return false;
+
+                //OwnedTable obviously always has an exclusive root because only a single class is mapped to the table.
+            case ECDbMapStrategy::Strategy::OwnTable:
+                return true;
+
+            default:
+                break;
+        }
 
     //Shared table for unrelated classes: Can have multiple roots
     if (!strategy.AppliesToSubclasses())

@@ -394,6 +394,7 @@ public:
     PersistenceType GetPersistenceType() const { return m_persistenceType; }
     Type GetType() const { return m_type; }
     bool IsOwnedByECDb() const { return m_type != Type::Existing; }
+    //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
     ECN::ECClassId const& GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
 

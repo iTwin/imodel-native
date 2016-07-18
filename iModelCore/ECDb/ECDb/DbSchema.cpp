@@ -265,6 +265,8 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
 //---------------------------------------------------------------------------------------
 DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP existingTableName)
     {
+    //Tables with map strategy Existing are not considered to be exclusively owned by an ECClass. Maybe there are
+    //cases where schema authors want to map two ECClasses to the same existing table.
     DbTable* table = CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Persisted, ECClassId(), nullptr);
     if (table == nullptr)
         return nullptr;

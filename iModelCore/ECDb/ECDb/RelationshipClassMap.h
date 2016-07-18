@@ -155,7 +155,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         void AddIndexToRelationshipEnd(SchemaImportContext&, ClassMappingInfo const&);
 
         virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&) override;
-        DbColumn* CreateRelECClassIdColumn(DbTable&, Utf8CP colName) const;
+        DbColumn* CreateRelECClassIdColumn(DbTable&, Utf8CP colName, bool makeNotNull) const;
 
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
         Utf8String DetermineFkColumnName(RelationshipMappingInfo const&, ForeignKeyColumnInfo const&) const;
