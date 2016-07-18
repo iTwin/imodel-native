@@ -545,10 +545,16 @@ public:
     DGNVIEW_EXPORT void UpdateView(UpdatePlan const& info = UpdatePlan());
     void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan()) {UpdateView(info);}
 
-    //! Read the current image from this viewport from the Rendering system.
-    //! @param[in] targetSize The requested size for the Image. If either x or y value is 0 or greater than the current size of this viewport, the viewport size is used.
-    //! @return the Image containing the RGBA pixels from the viewpoert. On error, image.IsValid() will return false.
-    DGNVIEW_EXPORT Render::Image ReadImage(Point2d targetSize={0,0});
+    //! Read the current image from this viewport from the Rendering system. 
+    //! @param[in] viewRect The area of the view to read. The origin of \a viewRect must specify the upper left corner. It is an error to specfy a view rectangle that lies outside the actual view. If not specified, the entire view is captured.
+    //! @param[in] targetSize The size of the Image to be returned. The size can be larger or smaller than the original view. If not specified, the returned image is full size.
+    //! @note By using a combination of \a viewRect and \a targetSize, you can tell this function to both clip and
+    //! scale the image in the view. For example, use \a viewRect to specify a rectangle within the view to get a clipped image.
+    //! Specify \a targetSize to be less than the size of the view rectangle to scale the image down. 
+    //! @note The viewRect is adjusted as necessary to preserve the aspect ratio.
+    //! The image is fitted to the smaller dimension of the viewRect and centered in the larger dimension.
+    //! @return the Image containing the RGBA pixels from the specified rectangle of the viewport. On error, image.IsValid() will return false.
+    DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = {{0,0},{-1,-1}}, Point2dCR targetSize={0,0});
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
     static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth
