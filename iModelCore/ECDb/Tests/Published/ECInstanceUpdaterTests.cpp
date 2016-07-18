@@ -449,7 +449,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
     auto insertStatus = inserter.Insert(instanceKey, *testInstance);
     ASSERT_EQ(SUCCESS, insertStatus);
 
-    Utf8CP ecSql = "SELECT ECInstanceId, GetECClassId() as ECClassId, SmallIntArray FROM KitchenSink.TestClass";
+    Utf8CP ecSql = "SELECT ECInstanceId, ECClassId, SmallIntArray FROM KitchenSink.TestClass";
     ECSqlStatement ecStatement;
     ECSqlStatus status = ecStatement.Prepare(db, ecSql);
     ASSERT_TRUE(ECSqlStatus::Success == status);

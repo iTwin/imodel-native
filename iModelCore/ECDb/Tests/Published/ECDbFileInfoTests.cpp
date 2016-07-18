@@ -134,7 +134,7 @@ TEST_F(ECDbFileInfoTests, ECFEmbeddedFileBackedInstanceSupport)
     stmt.Finalize();
 
     //RETRIEVE scenario
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT fi.Name, fi.LastModified, fi.ECInstanceId FROM ecdbf.FileInfo fi JOIN ecdbf.FileInfoOwnership o ON fi.ECInstanceId=o.FileInfoId AND fi.GetECClassId()=o.FileInfoECClassId WHERE o.OwnerId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT fi.Name, fi.LastModified, fi.ECInstanceId FROM ecdbf.FileInfo fi JOIN ecdbf.FileInfoOwnership o ON fi.ECInstanceId=o.FileInfoId AND fi.ECClassId=o.FileInfoECClassId WHERE o.OwnerId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     Utf8CP actualFileName = stmt.GetValueText(0);
@@ -433,7 +433,7 @@ void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey
     stmt.Finalize();
 
     std::sort(expectedFileInfos.begin(), expectedFileInfos.end());
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM ecdbf.FileInfo ORDER BY GetECClassId(), ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, ECInstanceId FROM ecdbf.FileInfo ORDER BY ECClassId, ECInstanceId"));
 
     i = 0;
     while (BE_SQLITE_ROW == stmt.Step())

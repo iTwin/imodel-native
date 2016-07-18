@@ -1207,7 +1207,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::FunctionTests( int rowCountPerClass )
     ecsql = "SELECT group_concat(DISTINCT S) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
 
-    //**** GetECClassId
+    //**** ECClassId
+    ecsql = "SELECT ECClassId FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
     ecsql = "SELECT GetECClassId() FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
@@ -1220,20 +1223,38 @@ ECSqlTestDataset ECSqlSelectTestDataset::FunctionTests( int rowCountPerClass )
     ecsql = "SELECT GetECClassId ( ) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
+    ecsql = "SELECT p.ECClassId FROM ecsql.PSA p";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
     ecsql = "SELECT p.GetECClassId() FROM ecsql.PSA p";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT p.ECClassId, c.ECClassId FROM ecsql.PSA p JOIN ecsql.P c USING ecsql.PSAHasP";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 0);
 
     ecsql = "SELECT p.GetECClassId(), c.GetECClassId() FROM ecsql.PSA p JOIN ecsql.P c USING ecsql.PSAHasP";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
+    ecsql = "SELECT ECInstanceId FROM ecsql.PSA p WHERE ECClassId < 1000";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
     ecsql = "SELECT ECInstanceId FROM ecsql.PSA p WHERE GetECClassId () < 1000";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT ECInstanceId FROM ecsql.PSA p WHERE p.ECClassId < 1000";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT ECInstanceId FROM ecsql.PSA p WHERE p.GetECClassId () < 1000";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
+    ecsql = "SELECT ECInstanceId FROM ecsql.PSA p ORDER BY ECClassId";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
     ecsql = "SELECT ECInstanceId FROM ecsql.PSA p ORDER BY GetECClassId ()";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT ECInstanceId FROM ecsql.PSA p ORDER BY p.ECClassId";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT ECInstanceId FROM ecsql.PSA p ORDER BY p.GetECClassId ()";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -1299,6 +1320,9 @@ ECSqlTestDataset ECSqlSelectTestDataset::GroupByTests (int rowCountPerClass)
 
     ecsql = "SELECT I, L, count(*) FROM ecsql.PSA GROUP BY I + L";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 1);
+
+    ecsql = "SELECT count(*) FROM ecsql.THBase GROUP BY ECClassId";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 6);
 
     ecsql = "SELECT count(*) FROM ecsql.THBase GROUP BY GetECClassId()";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 6);
@@ -2705,7 +2729,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::SelectClauseTests(int rowCountPerClass)
     ecsql = "select I + L, I +L FROM ecsql.P";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
 
+    ecsql = "select L, ECClassId L FROM ecsql.P";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
     ecsql = "select L, GetECClassId() L FROM ecsql.P";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "select ECClassId S, S FROM ecsql.P";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "select GetECClassId() S, S FROM ecsql.P";
@@ -2724,6 +2754,9 @@ ECSqlTestDataset ECSqlSelectTestDataset::SourceTargetConstraintTests (int rowCou
     Utf8CP ecsql = "SELECT SourceECClassId FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
+    ecsql = "SELECT ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ecsql.PSAHasP_N1";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 5, 0);
+
     ecsql = "SELECT GetECClassId (), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ecsql.PSAHasP_N1";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 5, 0);
 
@@ -2731,24 +2764,45 @@ ECSqlTestDataset ECSqlSelectTestDataset::SourceTargetConstraintTests (int rowCou
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //link table mapping
+    ecsql = "SELECT ECClassId, SourceECClassId, TargetECClassId FROM ecsql.PSAHasPSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
+
     ecsql = "SELECT GetECClassId (), SourceECClassId, TargetECClassId FROM ecsql.PSAHasPSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
 
     //end table mapping
+    ecsql = "SELECT ECClassId, SourceECClassId, TargetECClassId FROM ecsql.PSAHasP";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
+
     ecsql = "SELECT GetECClassId (), SourceECClassId, TargetECClassId FROM ecsql.PSAHasP";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
+
+    ecsql = "SELECT ECClassId, SourceECClassId, TargetECClassId FROM ecsql.PSAHasP WHERE SourceECClassId = TargetECClassId AND ECClassId = 180";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT GetECClassId (), SourceECClassId, TargetECClassId FROM ecsql.PSAHasP WHERE SourceECClassId = TargetECClassId AND GetECClassId () = 180";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
 
+    ecsql = "SELECT ECClassId, rel.SourceECClassId, rel.TargetECClassId FROM ecsql.PSAHasP rel WHERE rel.SourceECClassId = rel.TargetECClassId AND rel.ECClassId = 180";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
+
     ecsql = "SELECT rel.GetECClassId (), rel.SourceECClassId, rel.TargetECClassId FROM ecsql.PSAHasP rel WHERE rel.SourceECClassId = rel.TargetECClassId AND rel.GetECClassId () = 180";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
+
+    ecsql = "SELECT ECClassId, SourceECClassId, TargetECClassId FROM ecsql.PSAHasP ORDER BY ECClassId, SourceECClassId, TargetECClassId";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT GetECClassId (), SourceECClassId, TargetECClassId FROM ecsql.PSAHasP ORDER BY GetECClassId (), SourceECClassId, TargetECClassId";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
 
+    ecsql = "SELECT ECClassId, SourceECClassId, TargetECClassId FROM ecsql.PSAHasP rel ORDER BY rel.ECClassId, rel.SourceECClassId, rel.TargetECClassId";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
+
     ecsql = "SELECT GetECClassId (), SourceECClassId, TargetECClassId FROM ecsql.PSAHasP rel ORDER BY rel.GetECClassId (), rel.SourceECClassId, rel.TargetECClassId";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
+
+    ecsql = "SELECT rel.ECClassId, rel.SourceECClassId, rel.TargetECClassId FROM ecsql.PSAHasP rel";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT rel.GetECClassId (), rel.SourceECClassId, rel.TargetECClassId FROM ecsql.PSAHasP rel";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 0);
@@ -2931,8 +2985,14 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ecsql = "SELECT PStruct_Array FROM ecsql.PSA UNION SELECT SAStructProp.PStruct_Array FROM ecsql.SA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1,  2);
 
-    ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.SA) GROUP BY ECClassId";
+    ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT ECClassId, ECInstanceId FROM ecsql.SA) GROUP BY ECClassId";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 2);
+
+    ecsql = "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ecsql.SA) GROUP BY ECClassId";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, 2);
+
+    ecsql = "SELECT ECClassId, Name, COUNT(*) FROM (SELECT ECClassId, ECInstanceId, 'PSA' Name FROM ecsql.PSA UNION ALL SELECT ECClassId, ECInstanceId, 'SA' Name FROM ecsql.SA) GROUP BY ECClassId, Name";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 2);
 
     ecsql = "SELECT ECClassId, Name, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId, 'PSA' Name FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId, 'SA' Name FROM ecsql.SA) GROUP BY ECClassId, Name";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 2);
