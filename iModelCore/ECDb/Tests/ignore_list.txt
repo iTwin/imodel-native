@@ -40,6 +40,7 @@ ECSchemaUpdateTests.Add_Delete_ECProperty_SharedColumns
 ECRelationshipInheritanceTestFixture.BasicCRUD
 
 #TFS 494471
+MetaSchemaECSqlTestFixture.ECClassId
 JoinedTableECSqlStatementsTests.UnionTests
 ECDbFileInfoTests.Purge
 ECDbFileInfoTests.ECFEmbeddedFileBackedInstanceSupport
