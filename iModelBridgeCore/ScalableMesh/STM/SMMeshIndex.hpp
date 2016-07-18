@@ -2348,7 +2348,7 @@ void SMMeshIndexNode<POINT, EXTENT>::UpdateFromGraph(MTGGraph * graph, bvector<D
         pointsPtr->clear();
         for (size_t i = 0; i < retainedPts.size(); ++i)
             pointsPtr->push_back(PointOp<POINT>::Create(retainedPts[i].x, retainedPts[i].y, retainedPts[i].z));
-        this->m_nodeHeader.m_nodeCount = retainedPts.size();
+
         this->ReplacePtsIndices((int32_t*)&faceIndices[0], this->m_nodeHeader.m_nbFaceIndexes);
         }
     //CollectFeatureDefinitionsFromGraph(graph, retainedPts.size());

@@ -79,7 +79,7 @@ void SMMemoryPoolItemBase::SetPoolItemId(SMMemoryPoolItemId poolItemId)
     m_poolItemId = poolItemId;
     }
 
-void SMMemoryPoolItemBase::NotifySizeChangePoolItem(int64_t sizeDelta)
+void SMMemoryPoolItemBase::NotifySizeChangePoolItem(int64_t sizeDelta, int64_t nbItemDelta)
     {
     SMMemoryPool::GetInstance()->NotifySizeChangePoolItem(this, sizeDelta);
     }

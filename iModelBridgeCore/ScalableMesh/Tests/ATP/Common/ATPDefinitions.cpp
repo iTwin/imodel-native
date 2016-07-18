@@ -511,6 +511,24 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
     }
 
+
+void PerformSqlFileUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString stmFileName;
+
+    if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
+        {
+        printf("ERROR : stmFileName attribute not found\r\n");
+        return;
+        }
+
+
+    IScalableMeshPtr sm = IScalableMesh::GetFor(stmFileName.c_str(), true, true);
+    
+
+    }
+
+
 void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     WString stmFileName;

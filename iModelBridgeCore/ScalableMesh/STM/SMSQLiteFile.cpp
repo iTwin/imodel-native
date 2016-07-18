@@ -36,6 +36,25 @@ bool SMSQLiteFile::Close()
     return true;
     }
 
+bool SMSQLiteFile::UpdateDatabase()
+    {         
+    CachedStatementPtr stmtTest;
+    m_database->GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
+    assert(stmtTest != nullptr);
+    stmtTest->Step();
+
+    SchemaVersion databaseSchema(stmtTest->GetValueText(0));    
+    SchemaVersion databaseSchemaV1(1, 0, 0, 0);
+
+    if (databaseSchema.CompareTo(databaseSchemaV1) == 0)
+        {
+        //ALTER TABLE SMNodeHeader ADD  CHAR(25) DEFAULT '10' NOT NULL
+        }
+    
+    assert(!"ERROR - Unknown database schema version");
+    return false;
+    }
+
 
 bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly)
     {
@@ -44,8 +63,26 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     DbResult result;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
+
     result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
 
+    if (result == BE_SQLITE_SCHEMA)
+        {
+        Db::OpenParams openParamUpdate(Db::OpenMode::ReadWrite);
+
+        openParamUpdate.m_skipSchemaCheck = true;
+
+        result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
+
+        assert(result == BE_SQLITE_OK);
+        
+        UpdateDatabase();
+
+        m_database->CloseDb();
+
+        result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
+        }
+    
     return result == BE_SQLITE_OK;
     }
 

@@ -172,4 +172,7 @@ private:
     const std::string m_sSourceTable = "SMSources";
     std::mutex dbLock;
 
+
+    bool UpdateDatabase();
+
 };

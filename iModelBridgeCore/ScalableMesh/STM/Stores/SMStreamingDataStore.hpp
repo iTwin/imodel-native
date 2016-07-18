@@ -14,6 +14,12 @@
 #include <curl/curl.h>
 #include <condition_variable>
 #include <CloudDataSource/DataSourceAccount.h>
+
+#include <ImagePP\all\h\HCDCodecZlib.h>
+#include <ImagePP\all\h\HFCAccessMode.h>
+
+USING_NAMESPACE_IMAGEPP
+
 #ifdef VANCOUVER_API
 #define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
 #define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
@@ -23,7 +29,9 @@
 #endif
 
 extern bool s_stream_from_disk;
+extern bool s_stream_from_file_server;
 extern bool s_stream_from_grouped_store;
+extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;
 
 
@@ -770,11 +778,11 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
         }   
     }
 
-template <class EXTENT> RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> SMStreamingStore<EXTENT>::GetNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader)
-    {
-    RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> pointDataStore;
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {    
+    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStreamingNodeDataStore<DPoint3d, EXTENT>::POINTS, nodeHeader);
 
-    return pointDataStore; 
+    return true;    
     }
 
 template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
@@ -801,4 +809,427 @@ template <class EXTENT> DataSourceAccount* SMStreamingStore<EXTENT>::GetDataSour
 template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(DataSourceAccount *dataSourceAccount)
     {
     m_dataSourceAccount = dataSourceAccount;
+    }
+
+
+//------------------SMStreamingNodeDataStore--------------------------------------------
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true)
+    :m_dataSourceAccount(dataSourceAccount),     
+     m_pathToNodeData(path),
+     m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==")
+    {       
+    m_nodeHeader = nodeHeader;
+    m_dataType = type;
+
+    switch (type)
+        {
+        case SMStreamingDataType::POINTS: 
+            m_pathToNodeData += L"points/";
+            break;
+        case SMStreamingDataType::INDICES:
+            m_pathToNodeData += L"indices/";
+            break;
+        case SMStreamingDataType::UVS:
+            m_pathToNodeData += L"uvs/";
+            break;
+        case SMStreamingDataType::UVINDICES:
+            m_pathToNodeData += L"uvindices/";
+            break;
+        default:
+            assert(!"Unkown data type for streaming");
+        }
+
+
+    // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
+    if (s_stream_from_disk)
+        {
+        // Create base directory structure to store information if not already done
+        // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only        
+        if (0 == CreateDirectoryW(m_pathToNodeData.c_str(), NULL))
+            {
+            assert(ERROR_PATH_NOT_FOUND != GetLastError());
+            }        
+        }
+    else
+        {
+        // stream from azure
+        }
+    }
+
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::~SMStreamingNodeDataStore()
+    {            
+    }
+
+template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATATYPE, EXTENT>::StoreNewBlock(DATATYPE* DataTypeArray, size_t countData)
+    {            
+    assert(false); // Should not pass here
+    return HPMBlockID(-1);
+    }
+
+template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
+    {
+    HPRECONDITION(blockID.IsValid());
+
+    if (NULL != DataTypeArray && countData > 0)
+        {
+        wchar_t buffer[10000];
+        swprintf(buffer, L"%sp_%llu.bin", m_pathToNodeData.c_str(), blockID.m_integerID);
+        std::wstring filename(buffer);
+        BeFile file;
+        auto fileOpened = OPEN_FILE(file, filename.c_str(), BeFileAccess::Write);
+        if (BeFileStatus::Success != fileOpened)
+            {
+            auto fileCreated = file.Create(filename.c_str());
+            assert(BeFileStatus::Success == fileCreated);
+            fileOpened = fileCreated;
+            }
+        assert(BeFileStatus::Success == fileOpened);
+
+        HCDPacket uncompressedPacket, compressedPacket;
+        size_t bufferSize = countData * sizeof(DATATYPE);
+        Byte* dataArrayTmp = new Byte[bufferSize];
+        memcpy(dataArrayTmp, DataTypeArray, bufferSize);
+        uncompressedPacket.SetBuffer(dataArrayTmp, bufferSize);
+        uncompressedPacket.SetDataSize(bufferSize);
+        WriteCompressedPacket(uncompressedPacket, compressedPacket);
+
+        Byte* data = new Byte[compressedPacket.GetDataSize() + sizeof(uint32_t)];
+        auto UncompressedSize = (uint32_t)uncompressedPacket.GetDataSize();
+        reinterpret_cast<uint32_t&>(*data) = UncompressedSize;
+        if (m_pointCache.count(blockID.m_integerID) > 0)
+            {
+            // must update data count
+            auto& points = this->m_pointCache[blockID.m_integerID];
+            points.resize(UncompressedSize);
+            memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
+            }
+
+        memcpy(data + sizeof(uint32_t), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
+        file.Write(NULL, data, (uint32_t)compressedPacket.GetDataSize() + sizeof(uint32_t));
+        file.Close();
+        delete[] data;
+        delete[] dataArrayTmp;
+        }
+
+    return blockID;   
+    }
+
+template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
+    {
+    if (m_dataType == SMStreamingDataType::POINTS)
+        return m_nodeHeader->m_nodeCount;
+    else
+    if (IsValidID(blockID))
+        return this->GetBlock(blockID).size() / sizeof(DATATYPE);
+
+    return 0;   
+    }
+
+template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
+    {
+    assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) > 0);
+    m_nodeHeader->m_nodeCount += countDelta;
+    }
+
+template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+    {
+    auto& block = this->GetBlock(blockID);
+    auto blockSize = block.size();
+    assert(block.size() <= maxCountData * sizeof(DATATYPE));
+    memmove(DataTypeArray, block.data(), block.size());
+    block.UnLoad();
+
+    return blockSize;
+    }
+
+template <class DATATYPE, class EXTENT> bool SMStreamingNodeDataStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
+    {
+    return true;
+    }
+
+template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlock(HPMBlockID blockID) const
+    {
+    // std::map [] operator is not thread safe while inserting new elements
+    m_pointCacheLock.lock();
+    StreamingDataBlock& block = m_pointCache[blockID.m_integerID];
+    m_pointCacheLock.unlock();
+    assert((block.GetID() != uint64_t(-1) ? block.GetID() == blockID.m_integerID : true));
+    if (!block.IsLoaded())
+        {
+        block.SetID(blockID.m_integerID);
+        block.SetDataSource(m_pathToNodeData);        
+        block.Load(m_dataSourceAccount);
+        }
+    assert(block.GetID() == blockID.m_integerID);
+    assert(block.IsLoaded() && !block.empty());
+    return block;
+    }
+
+
+
+bool StreamingDataBlock::IsLoading() 
+    { 
+    return m_pIsLoading; 
+    }
+
+bool StreamingDataBlock::IsLoaded() 
+    { 
+    return m_pIsLoaded; 
+    }
+
+void StreamingDataBlock::LockAndWait()
+    {
+    unique_lock<mutex> lock(m_pPointBlockMutex);
+    m_pPointBlockCV.wait(lock, [this]() { return m_pIsLoaded; });
+    }
+
+void StreamingDataBlock::SetLoading() 
+    { 
+    m_pIsLoading = true; 
+    }
+
+DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize)
+    {
+    if (dataSourceAccount == nullptr)
+        return nullptr;
+                                                        // Get the thread's DataSource or create a new one
+    DataSource *dataSource = dataSourceAccount->getOrCreateThreadDataSource();
+    if (dataSource == nullptr)
+        return nullptr;
+                                                        // Make sure caching is enabled for this DataSource
+    dataSource->setCachingEnabled(s_stream_enable_caching);
+
+    dest.reset(new unsigned char[destSize]);
+                                                        // Return the DataSource
+    return dataSource;
+    }
+    
+void StreamingDataBlock::Load_Old()
+    {
+    if (!this->IsLoaded())
+        {
+        if (this->IsLoading())
+            {
+            this->LockAndWait();
+            }
+        else
+            {
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%sp_%llu.bin", m_pDataSource.c_str(), m_pID);
+            WString filename(buffer);
+            if (s_stream_from_disk)
+                {
+                this->LoadFromLocal(filename);
+                }
+            else if (s_stream_from_file_server)
+                {
+                this->LoadFromFileSystem(filename);
+                }
+
+            m_pIsLoaded = true;
+            }
+        }
+    assert(this->IsLoaded());
+    }
+    
+void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount)
+    {
+    if (!IsLoaded())
+        {
+        if (IsLoading())
+            {
+                LockAndWait();
+            }
+        else
+            {
+                wchar_t buffer[10000];
+                swprintf(buffer, L"%sp_%llu.bin", m_pDataSource.c_str(), m_pID);
+            
+                std::unique_ptr<DataSource::Buffer[]>        dest;
+                DataSource                                *    dataSource;
+                DataSource::DataSize                        readSize;
+
+                DataSourceURL    dataSourceURL(buffer);
+
+                DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
+
+                dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
+                if (dataSource == nullptr)
+                    return;
+
+                if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                    return;
+
+                if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+                    return;
+
+                if (dataSource->close().isFailed())
+                    return;
+
+                if (readSize > 0)
+                {
+                    m_pIsLoaded = true;
+
+                    uint32_t uncompressedSize = *reinterpret_cast<uint32_t *>(dest.get());
+                    uint32_t sizeData = (uint32_t)readSize - sizeof(uint32_t);
+                    DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
+                }
+            }
+        }
+    }
+    
+void StreamingDataBlock::UnLoad()
+    {
+    m_pIsLoaded = false;
+    m_pIsLoading = false;
+    this->clear();
+    }
+    
+void StreamingDataBlock::SetLoaded()
+    {
+    m_pIsLoaded = true;
+    m_pIsLoading = false;
+    m_pPointBlockCV.notify_all();
+    }
+
+void StreamingDataBlock::SetID(const uint64_t& pi_ID)
+    {
+    m_pID = pi_ID;
+    }
+
+uint64_t StreamingDataBlock::GetID() 
+    { 
+    return m_pID; 
+    }
+
+void StreamingDataBlock::SetDataSource(const WString& pi_DataSource)
+    {
+    m_pDataSource = pi_DataSource;
+    }
+
+void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize)
+    {
+    HPRECONDITION(pi_CompressedDataSize <= (numeric_limits<uint32_t>::max) ());
+
+    this->resize(pi_UncompressedDataSize);
+
+    // initialize codec
+    HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(pi_CompressedDataSize);
+    const size_t unCompressedDataSize = pCodec->DecompressSubset(pi_CompressedData,
+                                                                 pi_CompressedDataSize,
+                                                                 this->data(),
+                                                                 pi_UncompressedDataSize);
+    assert(unCompressedDataSize != 0 && pi_UncompressedDataSize == unCompressedDataSize);
+    }
+
+size_t StreamingDataBlock::WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
+    {
+    size_t realsize = size * nmemb;
+    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+
+    assert(mem->memory->capacity() >= mem->memory->size() + realsize);
+
+    //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
+    mem->memory->insert(mem->memory->end(), (Byte*)contents, (Byte*)contents + realsize);
+
+    return realsize;
+    }
+
+StatusInt StreamingDataBlock::LoadFromLocal(const WString& m_pFilename)
+    {
+    uint32_t uncompressedSize = 0;
+    BeFile file;
+    if (BeFileStatus::Success == OPEN_FILE_SHARE(file, m_pFilename.c_str(), BeFileAccess::Read))
+        {
+
+        size_t fileSize = 0;
+        file.GetSize(fileSize);
+
+        // Read uncompressed size
+        uint32_t bytesRead = 0;
+        auto read_result = file.Read(&uncompressedSize, &bytesRead, sizeof(uint32_t));
+        assert(BeFileStatus::Success == read_result);
+        assert(bytesRead == sizeof(uint32_t));
+
+        // Read compressed points
+        auto compressedSize = fileSize - sizeof(uint32_t);
+        bvector<uint8_t> ptData(compressedSize);
+        read_result = file.Read(&ptData[0], &bytesRead, (uint32_t)compressedSize);
+        assert(bytesRead == compressedSize);
+        assert(BeFileStatus::Success == read_result);
+        file.Close();
+
+        this->DecompressPoints(&ptData[0], (uint32_t)compressedSize, uncompressedSize);
+        }
+    else
+        {
+        //assert(!"Problem opening block of points for reading");
+        file.Close();
+        return ERROR_FILE_NOT_FOUND;
+        }
+
+    return SUCCESS;
+    }
+
+
+void StreamingDataBlock::LoadFromFileSystem(const WString& m_pFilename)
+    {
+    CURL *curl_handle;
+    bool retCode = true;
+    struct MemoryStruct chunk;
+    const int maxCountData = 100000;
+    Utf8String blockUrl = "http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/";
+    Utf8String name;
+    BeStringUtilities::WCharToUtf8(name, m_pFilename.c_str());
+    blockUrl += name;
+
+    chunk.memory = this;
+    chunk.memory->reserve(maxCountData);
+    chunk.size = 0;
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl_handle = curl_easy_init();
+
+    // NEEDS_WORK_SM_STREAMING: Remove this when streaming works reasonably well
+    //std::lock_guard<std::mutex> lock(fileMutex);
+    //BeFile file;
+    //if (BeFileStatus::Success == OPEN_FILE(file, L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node", BeFileAccess::ReadWrite) ||
+    //    BeFileStatus::Success == file.Create(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node"))
+    //    {
+    //    file.SetPointer(0, BeFileSeekOrigin::End);
+    //    auto node_location = L"http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/" + block_name + L"\n";
+    //    Utf8String utf8_node_location;
+    //    BeStringUtilities::WCharToUtf8(utf8_node_location, node_location.c_str());
+    //    file.Write(NULL, utf8_node_location.c_str(), (uint32_t)utf8_node_location.length());
+    //    }
+    //else
+    //    {
+    //    assert(!"Problem creating nodes file");
+    //    }
+    //
+    //file.Close();
+
+    curl_easy_setopt(curl_handle, CURLOPT_URL, blockUrl.c_str());
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+    //    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+    /* get it! */
+    CURLcode res = curl_easy_perform(curl_handle);
+    /* check for errors */
+    if (CURLE_OK != res)
+        {
+        retCode = false;
+        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        assert(false);
+        }
+
+    curl_easy_cleanup(curl_handle);
+    curl_global_cleanup();
+
+    assert(!chunk.memory->empty() && chunk.memory->size() <= 1000000);
+
+    uint32_t uncompressedSize = reinterpret_cast<uint32_t&>((*chunk.memory)[0]);
+    uint32_t sizeData = (uint32_t)chunk.memory->size() - sizeof(uint32_t);
+
+    this->DecompressPoints(&(*chunk.memory)[0] + sizeof(uint32_t), sizeData, uncompressedSize);
     }

@@ -82,19 +82,18 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNode
     return sizeof(*header);
     }    
 
-template <class EXTENT> RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> SMSQLiteStore<EXTENT>::GetNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader)
-    {    
-    RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> nodeDataStorePtr;
-        
-    nodeDataStorePtr = new SMSQLiteNodePointStore<DPoint3d, EXTENT>(nodeHeader, m_smSQLiteFile);
+//template <class EXTENT> RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> SMSQLiteStore<EXTENT>::GetNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {                
+    dataStore = new SMSQLiteNodePointStore<DPoint3d, EXTENT>(nodeHeader, m_smSQLiteFile);
 
-    return nodeDataStorePtr;    
+    return true;    
     }
 
-template <class POINT, class EXTENT> SMSQLiteNodePointStore<POINT, EXTENT>::SMSQLiteNodePointStore(SMIndexNodeHeader<EXTENT>* nodeHeader, /*ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile)
-    : ISMNodeDataStore(nodeHeader/*, dataStore*/)
+template <class POINT, class EXTENT> SMSQLiteNodePointStore<POINT, EXTENT>::SMSQLiteNodePointStore(SMIndexNodeHeader<EXTENT>* nodeHeader, /*ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile)    
     {       
-    m_smSQLiteFile = smSQLiteFile;            
+    m_smSQLiteFile = smSQLiteFile;      
+    m_nodeHeader = nodeHeader;
     }
 
 template <class POINT, class EXTENT> SMSQLiteNodePointStore<POINT, EXTENT>::~SMSQLiteNodePointStore()
@@ -130,8 +129,18 @@ template <class POINT, class EXTENT> HPMBlockID SMSQLiteNodePointStore<POINT, EX
 
 template <class POINT, class EXTENT> size_t SMSQLiteNodePointStore<POINT, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
+    /*
     if(!blockID.IsValid()) return 0;
     return m_smSQLiteFile->GetNumberOfPoints(blockID.m_integerID) / sizeof(POINT);
+    */
+
+    return m_nodeHeader->m_nodeCount;
+    }
+
+template <class POINT, class EXTENT> void SMSQLiteNodePointStore<POINT, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
+    {
+    assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) >= 0);
+    m_nodeHeader->m_nodeCount += countDelta;    
     }
 
 template <class POINT, class EXTENT> size_t SMSQLiteNodePointStore<POINT, EXTENT>::LoadBlock(POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID)

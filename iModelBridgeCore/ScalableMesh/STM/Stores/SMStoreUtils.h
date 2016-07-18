@@ -328,6 +328,8 @@ using ISMDataStoreType = ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHe
 template<class EXTENT>
 using ISMDataStoreTypePtr = typename ISMDataStoreType<EXTENT>::Ptr;
 
+template<class DataType>
+using ISMNodeDataStoreTypePtr = typename ISMNodeDataStore<DataType>::Ptr;
 
 bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket, HCDPacket& pi_uncompressedPacket);
 
