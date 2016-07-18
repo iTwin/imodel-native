@@ -523,6 +523,7 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
 +----------------------------------------------------------------------------*/
 ScalableMeshBase::~ScalableMeshBase ()
     {
+    this->GetDataSourceManager().getService(m_dataSourceAccount->getServiceName())->destroyAccount(m_dataSourceAccount->getAccountName());
     }
 
 /*----------------------------------------------------------------------------+

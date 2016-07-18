@@ -167,11 +167,6 @@ private:
         std::unique_lock<std::mutex> lock(*this);
         while (true) {
             if (!Queue::empty()) {
-#ifdef DEBUG_GROUPS
-                s_consoleMutex.lock();
-                std::cout << "[" << std::this_thread::get_id() << "] Going to perform work" << std::endl;
-                s_consoleMutex.unlock();
-#endif
                 Type item{ std::move(Queue::front()) };
                 Queue::pop();
                 notify_one();
@@ -194,6 +189,11 @@ private:
                 s_consoleMutex.unlock();
 #endif
                 wait(lock);
+#ifdef DEBUG_GROUPS
+                s_consoleMutex.lock();
+                std::cout << "[" << std::this_thread::get_id() << "] Going to perform work" << std::endl;
+                s_consoleMutex.unlock();
+#endif
                 }
             }
         }
@@ -643,6 +643,8 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             if (dataSource->close().isFailed())
                 return 0;
 
+            this->GetDataSourceAccount()->destroyDataSource(dataSource);
+
             if (readSize > 0)
                 {
                 pi_pData.resize(readSize);
@@ -673,7 +675,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 return pi_pNode.size > 0;
                 });
 #ifdef DEBUG_GROUPS
-            lk.unlock();
+            if (lk.owns_lock()) lk.unlock();
             s_consoleMutex.lock();
             std::cout << "[" << std::this_thread::get_id() << "," << this->m_groupHeader->GetID() << "," << pi_pNode.blockid << "] ready!" << std::endl;
             s_consoleMutex.unlock();

@@ -668,6 +668,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
     memcpy(&numberOfMeshComponents, headerData + dataIndex, sizeof(numberOfMeshComponents));
     dataIndex += sizeof(numberOfMeshComponents);
     header->m_numberOfMeshComponents = numberOfMeshComponents;
+    assert(header->m_meshComponents == nullptr);
     header->m_meshComponents = new int[numberOfMeshComponents];
     for (size_t componentIdx = 0; componentIdx < header->m_numberOfMeshComponents; componentIdx++)
         {

@@ -2,6 +2,7 @@
 #include "DataSourceServiceAzure.h"
 #include "DataSourceAccountAzure.h"
 #include "DataSourceAccount.h"
+#include <assert.h>
 
 
 DataSourceServiceAzure::DataSourceServiceAzure(DataSourceManager &manager, const DataSourceService::ServiceName & service) : DataSourceService(manager, service)
@@ -21,9 +22,14 @@ DataSourceAccount * DataSourceServiceAzure::createAccount(const DataSourceAccoun
     return Manager<DataSourceAccount>::create(account, accountAzure);
 }
 
-DataSourceStatus DataSourceServiceAzure::destroyAccount(const AccountName & account)
+DataSourceStatus DataSourceServiceAzure::destroyAccount(const AccountName & accountName)
 {
+    auto account = Manager<DataSourceAccount>::get(accountName);
+    bool isDeleted = Manager<DataSourceAccount>::destroy(account, true);
+    assert(isDeleted == true); // asking to destroy an account which does not exist!
     (void) account;
+
+    if (!isDeleted) return DataSourceStatus(DataSourceStatus::Status_Error);
 
     return DataSourceStatus();
 }

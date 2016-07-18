@@ -100,6 +100,8 @@ public:
                 if (dataSource->close().isFailed())
                     return;
 
+                dataSourceAccount->destroyDataSource(dataSource);
+
                 if (readSize > 0)
                 {
                     m_isLoaded = true;
@@ -737,6 +739,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 m_nodeHeaderFetchDistributor->CancelAll();
                 m_nodeHeaderFetchDistributor = nullptr;
                 }
+            for (auto it = m_pointCache.begin(); it != m_pointCache.end(); ++it) it->second.clear();
+            m_pointCache.clear();
             }
 
         void SetDataSourceAccount(DataSourceAccount *dataSourceAccount)
@@ -1316,7 +1320,11 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             auto blockSize = block.size();
             assert(block.size() <= maxCountData * sizeof(POINT));
             memmove(DataTypeArray, block.data(), block.size());
+
+            m_pointCacheLock.lock();
             block.UnLoad();
+            m_pointCache.erase(block.GetID());
+            m_pointCacheLock.unlock();
 
             return blockSize;
             }

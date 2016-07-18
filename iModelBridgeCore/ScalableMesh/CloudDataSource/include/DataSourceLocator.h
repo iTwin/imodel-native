@@ -33,6 +33,8 @@ public:
                                             DataSourceLocator        (void);
                                             DataSourceLocator        (DataSourceLocator &locator);
 
+                                            ~DataSourceLocator       () = default;
+
     void                                    getURL                    (DataSourceURL &url);
 
     void                                    setService                (DataSourceService *newService);
