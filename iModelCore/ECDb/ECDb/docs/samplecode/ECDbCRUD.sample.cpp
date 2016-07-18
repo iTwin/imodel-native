@@ -561,7 +561,7 @@ BentleyStatus ECDb_ECSqlStatementBindingVirtualSets()
     // Task: Repeatedly retrieve a list of Assets by their ECInstanceIds. The list of ids varies in size from call to call.
 
     ECSqlStatement statement;
-    statement.Prepare(ecdb, "SELECT ECInstanceId AS Id, GetECClassId() AS AssetSubclassId, BarCode FROM stco.Asset WHERE InVirtualSet(?,ECInstanceId)");
+    statement.Prepare(ecdb, "SELECT ECInstanceId AS Id, ECClassId AS AssetSubclassId, BarCode FROM stco.Asset WHERE InVirtualSet(?,ECInstanceId)");
 
     //First list
     ECInstanceIdSet idSet;
