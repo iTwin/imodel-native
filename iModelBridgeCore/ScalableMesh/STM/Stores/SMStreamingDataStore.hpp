@@ -74,11 +74,6 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAcc
 
 template <class EXTENT> SMStreamingStore<EXTENT>::~SMStreamingStore()
     {
-    if (m_NodeHeaderFetchDistributor)
-        {
-        m_NodeHeaderFetchDistributor->CancelAll();
-        m_NodeHeaderFetchDistributor = nullptr;
-        }
     }
 
 template <class EXTENT> uint64_t SMStreamingStore<EXTENT>::GetNextID() const
@@ -858,6 +853,8 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
 
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::~SMStreamingNodeDataStore()
     {            
+    for (auto it = m_pointCache.begin(); it != m_pointCache.end(); ++it) it->second.clear();
+    m_pointCache.clear();
     }
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATATYPE, EXTENT>::StoreNewBlock(DATATYPE* DataTypeArray, size_t countData)
@@ -937,7 +934,11 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
     auto blockSize = block.size();
     assert(block.size() <= maxCountData * sizeof(DATATYPE));
     memmove(DataTypeArray, block.data(), block.size());
+
+    m_pointCacheLock.lock();
     block.UnLoad();
+    m_pointCache.erase(block.GetID());
+    m_pointCacheLock.unlock();
 
     return blockSize;
     }
@@ -1004,34 +1005,6 @@ DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSour
     return dataSource;
     }
     
-void StreamingDataBlock::Load_Old()
-    {
-    if (!this->IsLoaded())
-        {
-        if (this->IsLoading())
-            {
-            this->LockAndWait();
-            }
-        else
-            {
-            wchar_t buffer[10000];
-            swprintf(buffer, L"%sp_%llu.bin", m_pDataSource.c_str(), m_pID);
-            WString filename(buffer);
-            if (s_stream_from_disk)
-                {
-                this->LoadFromLocal(filename);
-                }
-            else if (s_stream_from_file_server)
-                {
-                this->LoadFromFileSystem(filename);
-                }
-
-            m_pIsLoaded = true;
-            }
-        }
-    assert(this->IsLoaded());
-    }
-    
 void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount)
     {
     if (!IsLoaded())
@@ -1046,8 +1019,8 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount)
                 swprintf(buffer, L"%sp_%llu.bin", m_pDataSource.c_str(), m_pID);
             
                 std::unique_ptr<DataSource::Buffer[]>        dest;
-                DataSource                                *    dataSource;
-                DataSource::DataSize                        readSize;
+                DataSource                                *  dataSource;
+                DataSource::DataSize                         readSize;
 
                 DataSourceURL    dataSourceURL(buffer);
 
@@ -1065,6 +1038,8 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount)
 
                 if (dataSource->close().isFailed())
                     return;
+
+                dataSourceAccount->destroyDataSource(dataSource);
 
                 if (readSize > 0)
                 {
@@ -1122,114 +1097,79 @@ void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t p
     assert(unCompressedDataSize != 0 && pi_UncompressedDataSize == unCompressedDataSize);
     }
 
-size_t StreamingDataBlock::WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
-    {
-    size_t realsize = size * nmemb;
-    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-
-    assert(mem->memory->capacity() >= mem->memory->size() + realsize);
-
-    //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
-    mem->memory->insert(mem->memory->end(), (Byte*)contents, (Byte*)contents + realsize);
-
-    return realsize;
-    }
-
-StatusInt StreamingDataBlock::LoadFromLocal(const WString& m_pFilename)
-    {
-    uint32_t uncompressedSize = 0;
-    BeFile file;
-    if (BeFileStatus::Success == OPEN_FILE_SHARE(file, m_pFilename.c_str(), BeFileAccess::Read))
-        {
-
-        size_t fileSize = 0;
-        file.GetSize(fileSize);
-
-        // Read uncompressed size
-        uint32_t bytesRead = 0;
-        auto read_result = file.Read(&uncompressedSize, &bytesRead, sizeof(uint32_t));
-        assert(BeFileStatus::Success == read_result);
-        assert(bytesRead == sizeof(uint32_t));
-
-        // Read compressed points
-        auto compressedSize = fileSize - sizeof(uint32_t);
-        bvector<uint8_t> ptData(compressedSize);
-        read_result = file.Read(&ptData[0], &bytesRead, (uint32_t)compressedSize);
-        assert(bytesRead == compressedSize);
-        assert(BeFileStatus::Success == read_result);
-        file.Close();
-
-        this->DecompressPoints(&ptData[0], (uint32_t)compressedSize, uncompressedSize);
-        }
-    else
-        {
-        //assert(!"Problem opening block of points for reading");
-        file.Close();
-        return ERROR_FILE_NOT_FOUND;
-        }
-
-    return SUCCESS;
-    }
-
-
-void StreamingDataBlock::LoadFromFileSystem(const WString& m_pFilename)
-    {
-    CURL *curl_handle;
-    bool retCode = true;
-    struct MemoryStruct chunk;
-    const int maxCountData = 100000;
-    Utf8String blockUrl = "http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/";
-    Utf8String name;
-    BeStringUtilities::WCharToUtf8(name, m_pFilename.c_str());
-    blockUrl += name;
-
-    chunk.memory = this;
-    chunk.memory->reserve(maxCountData);
-    chunk.size = 0;
-    curl_global_init(CURL_GLOBAL_ALL);
-    curl_handle = curl_easy_init();
-
-    // NEEDS_WORK_SM_STREAMING: Remove this when streaming works reasonably well
-    //std::lock_guard<std::mutex> lock(fileMutex);
-    //BeFile file;
-    //if (BeFileStatus::Success == OPEN_FILE(file, L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node", BeFileAccess::ReadWrite) ||
-    //    BeFileStatus::Success == file.Create(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node"))
-    //    {
-    //    file.SetPointer(0, BeFileSeekOrigin::End);
-    //    auto node_location = L"http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/" + block_name + L"\n";
-    //    Utf8String utf8_node_location;
-    //    BeStringUtilities::WCharToUtf8(utf8_node_location, node_location.c_str());
-    //    file.Write(NULL, utf8_node_location.c_str(), (uint32_t)utf8_node_location.length());
-    //    }
-    //else
-    //    {
-    //    assert(!"Problem creating nodes file");
-    //    }
-    //
-    //file.Close();
-
-    curl_easy_setopt(curl_handle, CURLOPT_URL, blockUrl.c_str());
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-    //    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-
-    /* get it! */
-    CURLcode res = curl_easy_perform(curl_handle);
-    /* check for errors */
-    if (CURLE_OK != res)
-        {
-        retCode = false;
-        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        assert(false);
-        }
-
-    curl_easy_cleanup(curl_handle);
-    curl_global_cleanup();
-
-    assert(!chunk.memory->empty() && chunk.memory->size() <= 1000000);
-
-    uint32_t uncompressedSize = reinterpret_cast<uint32_t&>((*chunk.memory)[0]);
-    uint32_t sizeData = (uint32_t)chunk.memory->size() - sizeof(uint32_t);
-
-    this->DecompressPoints(&(*chunk.memory)[0] + sizeof(uint32_t), sizeData, uncompressedSize);
-    }
+// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
+//size_t StreamingDataBlock::WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
+//    {
+//    size_t realsize = size * nmemb;
+//    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+//
+//    assert(mem->memory->capacity() >= mem->memory->size() + realsize);
+//
+//    //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
+//    mem->memory->insert(mem->memory->end(), (Byte*)contents, (Byte*)contents + realsize);
+//
+//    return realsize;
+//    }
+//
+//// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
+//void StreamingDataBlock::LoadFromFileSystem(const WString& m_pFilename)
+//    {
+//    CURL *curl_handle;
+//    bool retCode = true;
+//    struct MemoryStruct chunk;
+//    const int maxCountData = 100000;
+//    Utf8String blockUrl = "http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/";
+//    Utf8String name;
+//    BeStringUtilities::WCharToUtf8(name, m_pFilename.c_str());
+//    blockUrl += name;
+//
+//    chunk.memory = this;
+//    chunk.memory->reserve(maxCountData);
+//    chunk.size = 0;
+//    curl_global_init(CURL_GLOBAL_ALL);
+//    curl_handle = curl_easy_init();
+//
+//    // NEEDS_WORK_SM_STREAMING: Remove this when streaming works reasonably well
+//    //std::lock_guard<std::mutex> lock(fileMutex);
+//    //BeFile file;
+//    //if (BeFileStatus::Success == OPEN_FILE(file, L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node", BeFileAccess::ReadWrite) ||
+//    //    BeFileStatus::Success == file.Create(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node"))
+//    //    {
+//    //    file.SetPointer(0, BeFileSeekOrigin::End);
+//    //    auto node_location = L"http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/" + block_name + L"\n";
+//    //    Utf8String utf8_node_location;
+//    //    BeStringUtilities::WCharToUtf8(utf8_node_location, node_location.c_str());
+//    //    file.Write(NULL, utf8_node_location.c_str(), (uint32_t)utf8_node_location.length());
+//    //    }
+//    //else
+//    //    {
+//    //    assert(!"Problem creating nodes file");
+//    //    }
+//    //
+//    //file.Close();
+//
+//    curl_easy_setopt(curl_handle, CURLOPT_URL, blockUrl.c_str());
+//    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+//    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+//    //    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+//
+//    /* get it! */
+//    CURLcode res = curl_easy_perform(curl_handle);
+//    /* check for errors */
+//    if (CURLE_OK != res)
+//        {
+//        retCode = false;
+//        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+//        assert(false);
+//        }
+//
+//    curl_easy_cleanup(curl_handle);
+//    curl_global_cleanup();
+//
+//    assert(!chunk.memory->empty() && chunk.memory->size() <= 1000000);
+//
+//    uint32_t uncompressedSize = reinterpret_cast<uint32_t&>((*chunk.memory)[0]);
+//    uint32_t sizeData = (uint32_t)chunk.memory->size() - sizeof(uint32_t);
+//
+//    this->DecompressPoints(&(*chunk.memory)[0] + sizeof(uint32_t), sizeData, uncompressedSize);
+//    }
