@@ -1432,7 +1432,7 @@ public:
 
     //! Make the specified rectangle have the specified aspect ratio 
     //! @param[in] requestedRect    The rectangle within the view that the caller would like to capture
-    //! @param[in] targetSize       The size of the image that the caller wants
+    //! @param[in] targetAspectRatio The desired aspect ratio 
     //! @return The adjusted rectangle that captures as much of the requested rectangle as possible 
     //!         with one of its dimensions adjusted to match the aspect ratio of targetSize.
     DGNPLATFORM_EXPORT static BSIRect SetAspectRatio(BSIRectCR requestedRect, double targetAspectRatio);
