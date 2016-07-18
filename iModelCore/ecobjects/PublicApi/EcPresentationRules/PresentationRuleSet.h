@@ -195,53 +195,18 @@ struct PresentationRuleSet : public RefCountedBase
         ECOBJECTS_EXPORT SortingRuleList const&         GetSortingRules (void) const;
     };
 
-//! Template specialization for root node rules.
-template<> RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();
-template ECOBJECTS_EXPORT RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();
-
-//! Template specialization for child node rules.
-template<> ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>();
-template ECOBJECTS_EXPORT ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>();
-
-//! Template specialization for content rules.
-template<> ContentRuleList* PresentationRuleSet::GetRules<ContentRule>();
-template ECOBJECTS_EXPORT ContentRuleList* PresentationRuleSet::GetRules<ContentRule>();
-
-//! Template specialization for image id overrides.
-template<> ImageIdOverrideList* PresentationRuleSet::GetRules<ImageIdOverride>();
-template ECOBJECTS_EXPORT ImageIdOverrideList* PresentationRuleSet::GetRules<ImageIdOverride>();
-
-//! Template specialization for label overrides.
-template<> LabelOverrideList* PresentationRuleSet::GetRules<LabelOverride>();
-template ECOBJECTS_EXPORT LabelOverrideList* PresentationRuleSet::GetRules<LabelOverride>();
-
-//! Template specialization for style overrides.
-template<> StyleOverrideList* PresentationRuleSet::GetRules<StyleOverride>();
-template ECOBJECTS_EXPORT StyleOverrideList* PresentationRuleSet::GetRules<StyleOverride>();
-
-//! Template specialization for grouping rules.
-template<> GroupingRuleList* PresentationRuleSet::GetRules<GroupingRule>();
-template ECOBJECTS_EXPORT GroupingRuleList* PresentationRuleSet::GetRules<GroupingRule>();
-
-//! Template specialization for check box rules.
-template<> CheckBoxRuleList* PresentationRuleSet::GetRules<CheckBoxRule>();
-template ECOBJECTS_EXPORT CheckBoxRuleList* PresentationRuleSet::GetRules<CheckBoxRule>();
-
-//! Template specialization for rename node rules.
-template<> RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>();
-template ECOBJECTS_EXPORT RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>();
-
-//! Template specialization for sorting rules.
-template<> SortingRuleList* PresentationRuleSet::GetRules<SortingRule>();
-template ECOBJECTS_EXPORT SortingRuleList* PresentationRuleSet::GetRules<SortingRule>();
-
-//! Template specialization for user settings group rules.
-template<> UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>();
-template ECOBJECTS_EXPORT UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>();
-
-//! Template specialization for localization resource key definitions.
-template<> LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
-template ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
+template<> ECOBJECTS_EXPORT RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();
+template<> ECOBJECTS_EXPORT ChildNodeRuleList* PresentationRuleSet::GetRules<ChildNodeRule>();
+template<> ECOBJECTS_EXPORT ContentRuleList* PresentationRuleSet::GetRules<ContentRule>();
+template<> ECOBJECTS_EXPORT ImageIdOverrideList* PresentationRuleSet::GetRules<ImageIdOverride>();
+template<> ECOBJECTS_EXPORT LabelOverrideList* PresentationRuleSet::GetRules<LabelOverride>();
+template<> ECOBJECTS_EXPORT StyleOverrideList* PresentationRuleSet::GetRules<StyleOverride>();
+template<> ECOBJECTS_EXPORT GroupingRuleList* PresentationRuleSet::GetRules<GroupingRule>();
+template<> ECOBJECTS_EXPORT CheckBoxRuleList* PresentationRuleSet::GetRules<CheckBoxRule>();
+template<> ECOBJECTS_EXPORT RenameNodeRuleList* PresentationRuleSet::GetRules<RenameNodeRule>();
+template<> ECOBJECTS_EXPORT SortingRuleList* PresentationRuleSet::GetRules<SortingRule>();
+template<> ECOBJECTS_EXPORT UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>();
+template<> ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
