@@ -2067,6 +2067,7 @@ public:
         enum ApplicationId : uint64_t {APPLICATION_ID_BeSQLiteDb='BeDb',} m_applicationId;
         bool m_failIfDbExists;
         DateTime m_expirationDate;
+        bool m_createStandalone;
 
         //! @param[in] pagesize The pagesize for the database. Default is 4K.
         //! @param[in] encoding The text encoding mode for the database. The default is UTF-8 and is almost always the best choice.
@@ -2075,9 +2076,11 @@ public:
         //! @param[in] retry Supply a BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
         //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. DgnDb) rely on a single non-shared connection
         //!                  to the database and do not permit sharing.
+        //! @param[in] createStandalone If true, creates a standalone database; otherwise, creates a master database
         explicit CreateParams(PageSize pagesize=PageSize::PAGESIZE_4K, Encoding encoding=Encoding::Utf8, bool failIfDbExists=true,
-                      DefaultTxn defaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr) : OpenParams(OpenMode::Create, defaultTxn, retry)
-              {m_encoding=encoding; m_pagesize=pagesize; m_compressedDb=CompressDb_None; m_failIfDbExists=failIfDbExists; m_applicationId=APPLICATION_ID_BeSQLiteDb;}
+                DefaultTxn defaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr, bool createStandalone=false)
+                : OpenParams(OpenMode::Create, defaultTxn, retry), m_encoding(encoding), m_pagesize(pagesize), m_compressedDb(CompressDb_None),
+                m_failIfDbExists(failIfDbExists), m_applicationId(APPLICATION_ID_BeSQLiteDb), m_createStandalone(createStandalone) {;}
 
         //! Set the page size for the newly created database.
         void SetPageSize(PageSize pagesize) {m_pagesize = pagesize;}
@@ -2091,6 +2094,8 @@ public:
         void SetApplicationId(ApplicationId applicationId) {m_applicationId=applicationId;}
         //! Set expiration date for the newly created database.
         void SetExpirationDate(DateTime xdate) {m_expirationDate=xdate;}
+        //! Set whether to create a standalone or master database.
+        void SetCreateStandalone(bool val) {m_createStandalone=val;}
     };
 
     //=======================================================================================
