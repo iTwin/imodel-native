@@ -230,6 +230,44 @@ public:
     DGNPLATFORM_EXPORT DgnElementCPtr ImportElement(DgnDbStatus* stat, DgnModelR destModel, DgnElementCR sourceElement);
 };
 
+//=======================================================================================
+//! Returns all auto- or custom-handled properties on a class that are for the specified type of statements
+// @bsiclass                                                    Sam.Wilson      07/16
+//=======================================================================================
+struct AutoHandledPropertiesCollection
+    {
+    ECN::ECPropertyIterable m_props;
+    ECN::ECPropertyIterable::const_iterator m_end;
+    ECN::ECClassCP m_customHandledProperty;
+    ECN::ECClassCP m_propertyStatementType;
+    ECSqlClassParams::StatementType m_stype;
+    bool m_wantCustomHandledProps;
+
+    AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
+
+    struct Iterator : std::iterator<std::input_iterator_tag, ECN::ECPropertyCP>
+        {
+        private:
+            friend struct AutoHandledPropertiesCollection;
+            ECN::ECPropertyIterable::const_iterator m_i;
+            ECSqlClassParams::StatementType m_stype;
+            AutoHandledPropertiesCollection const& m_coll;
+            Iterator(ECN::ECPropertyIterable::const_iterator it, AutoHandledPropertiesCollection const& coll);
+            void ToNextValid();
+
+        public:
+            ECN::ECPropertyCP operator*() const { BeAssert(m_i != m_coll.m_end); return *m_i; }
+            Iterator& operator++();
+            bool operator!=(Iterator const& rhs) const { return !(*this == rhs); }
+            bool operator==(Iterator const& rhs) const { return m_i == rhs.m_i; }
+            ECSqlClassParams::StatementType GetStatementType() const {return m_stype;}
+        };
+
+    typedef Iterator const_iterator;
+    const_iterator begin() const { return Iterator(m_props.begin(), *this); }
+    const_iterator end() const { return Iterator(m_props.end(), *this); }
+    };
+
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
@@ -1449,7 +1487,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
 
-    static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params);  // *** WIP_AUTO_HANDLED_PROPERTIES
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
     DgnDbStatus InsertGeomStream() const;
@@ -1525,7 +1562,6 @@ protected:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
-    DGNPLATFORM_EXPORT static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
 
     DGNPLATFORM_EXPORT DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value) override;
@@ -1593,8 +1629,6 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
-public:
-    DGNPLATFORM_EXPORT static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
 };
 
 //=======================================================================================

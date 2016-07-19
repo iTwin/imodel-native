@@ -17,11 +17,6 @@ HANDLER_DEFINE_MEMBERS (PerformanceElement4Handler)
 
 DOMAIN_DEFINE_MEMBERS (PerformanceElementTestDomain)
 
-void PerformanceElement1Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); PerformanceElement1::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
-void PerformanceElement2Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); PerformanceElement2::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
-void PerformanceElement3Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); PerformanceElement3::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
-void PerformanceElement4Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); PerformanceElement4::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }  // *** WIP_AUTO_HANDLED_PROPERTIES
-
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -172,16 +167,6 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "    </Target>"
         "  </ECRelationshipClass>"
         "</ECSchema>";
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement1::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add("Prop1_1");
-    params.Add("Prop1_2");
-    params.Add("Prop1_3");
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
@@ -342,16 +327,6 @@ void PerformanceElement1::ExtendGeometry()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement2::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add("Prop2_1");
-    params.Add("Prop2_2");
-    params.Add("Prop2_3");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus PerformanceElement2::BindParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop2_1"), m_prop2_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
@@ -433,16 +408,6 @@ PerformanceElement2CPtr PerformanceElement2::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement3::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add("Prop3_1");
-    params.Add("Prop3_2");
-    params.Add("Prop3_3");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus PerformanceElement3::BindParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop3_1"), m_prop3_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
@@ -519,16 +484,6 @@ PerformanceElement3CPtr PerformanceElement3::Insert()
 PerformanceElement3CPtr PerformanceElement3::Update()
     {
     return GetDgnDb().Elements().Update<PerformanceElement3> (*this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement4::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add("Prop4_1");
-    params.Add("Prop4_2");
-    params.Add("Prop4_3");
     }
 
 //---------------------------------------------------------------------------------------

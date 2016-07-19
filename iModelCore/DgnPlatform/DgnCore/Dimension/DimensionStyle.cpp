@@ -14,12 +14,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(DimensionStyleHandler)
-
-void DimensionStyleHandler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
-    params.Add(PROP_TextStyleId);
-    }
 };
 
 //---------------------------------------------------------------------------------------

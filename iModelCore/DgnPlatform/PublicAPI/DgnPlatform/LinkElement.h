@@ -311,7 +311,6 @@ private:
     Utf8String m_url;
     Utf8String m_description;
 
-    static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
     Dgn::DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
@@ -418,7 +417,6 @@ private:
     Utf8String m_name;
     Utf8String m_description;
 
-    static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
     Dgn::DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
@@ -485,14 +483,12 @@ namespace dgn_ElementHandler
 struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : Element
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_UrlLink, UrlLink, UrlLinkHandler, Element, DGNPLATFORM_EXPORT)
-    virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); UrlLink::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); } // *** WIP_AUTO_HANDLED_PROPERTIES
 };
 
 //! The handler for EmbeddedFileLink elements
 struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : Element
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, Element, DGNPLATFORM_EXPORT)
-    virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); EmbeddedFileLink::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); } // *** WIP_AUTO_HANDLED_PROPERTIES
 };
 
 }

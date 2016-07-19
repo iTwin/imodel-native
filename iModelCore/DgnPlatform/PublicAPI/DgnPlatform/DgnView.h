@@ -165,8 +165,6 @@ public:
     //! Look up a view by name
     static ViewDefinitionCPtr QueryView(Utf8StringCR name, DgnDbR db) { return QueryView(QueryViewId(name, db), db); }
 
-    static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); //!< @private // *** WIP_AUTO_HANDLED_PROPERTIES
-
     //! Query the settings associated with the specified view as a JSON string
     DGNPLATFORM_EXPORT static BeSQLite::DbResult QuerySettings(Utf8StringR settings, DgnViewId viewId, DgnDbR db);
     //! Save the settings associated with the specified view as a JSON string
@@ -464,8 +462,6 @@ namespace dgn_ElementHandler
     struct SpatialViewDef : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialViewDefinition, SpatialViewDefinition, SpatialViewDef, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override; // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 
     //=======================================================================================
@@ -484,8 +480,6 @@ namespace dgn_ElementHandler
     struct DrawingViewDef : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingViewDefinition, DrawingViewDefinition, DrawingViewDef, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override; // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 
     //=======================================================================================
@@ -495,8 +489,6 @@ namespace dgn_ElementHandler
     struct SheetViewDef : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetViewDefinition, SheetViewDefinition, SheetViewDef, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override; // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 
     //=======================================================================================

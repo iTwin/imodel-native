@@ -71,29 +71,12 @@ public:
         {
         Utf8String      m_name;
         StatementType   m_type;
-        bool            m_useAutoHandler;
 
-        Entry() : m_type(StatementType::All), m_useAutoHandler(true) {}
-        Entry(Utf8StringCR name, StatementType type, bool useAutoHandler) : m_name(name), m_type(type), m_useAutoHandler(useAutoHandler) {}
+        Entry() : m_type(StatementType::All) {}
+        Entry(Utf8StringCR name, StatementType type) : m_name(name), m_type(type) {}
         };
 
     typedef bvector<Entry> Entries;
-
-    struct PropertyHandlingCustomAttributesBundle           // *** TEMPORARY *** WIP_AUTO_HANDLED_PROPERTIES
-        {
-        StatementType m_statementType;
-        bool          m_useAutoHandler;
-        };
-
-    struct PropertyHandlingCustomAttributes : bmap<Utf8String, PropertyHandlingCustomAttributesBundle>  // *** TEMPORARY *** WIP_AUTO_HANDLED_PROPERTIES
-        {
-        void Add(Utf8StringCR propName, StatementType stype = StatementType::All, bool ah = false)
-            {
-            auto& bundle = (*this)[propName];
-            bundle.m_statementType = stype;
-            bundle.m_useAutoHandler = ah;
-            }
-        };
 
 private:
     Entries     m_entries;
@@ -122,8 +105,7 @@ public:
     //! Adds a parameter to the list
     //! @param[in]      parameterName The name of the parameter.
     //! @param[in]      type          The type(s) of statements in which this parameter is used.
-    //! @param[in]      useAutoHandler If true, the DgnElement base class will take care of caching reads and writes of this property. If false, then DgnElement subclass must get and bind it.
-    DGNPLATFORM_EXPORT void Add(Utf8StringCR parameterName, StatementType type = StatementType::All, bool useAutoHandler = true);
+    DGNPLATFORM_EXPORT void Add(Utf8StringCR parameterName, StatementType type = StatementType::All);
 
     //! Returns an index usable for accessing the columns with the specified name in the results of an ECSql SELECT query.
     //! @param[in]      parameterName The name of the parameter
@@ -133,13 +115,5 @@ public:
 };
 
 ENUM_IS_FLAGS(ECSqlClassParams::StatementType);
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson
-//=======================================================================================
-struct TEMPORARY_IECSqlClassParamsAutoHandlerInfoProvider // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes&) = 0; // *** WIP_AUTO_HANDLED_PROPERTIES
-    };
 
 END_BENTLEY_DGN_NAMESPACE

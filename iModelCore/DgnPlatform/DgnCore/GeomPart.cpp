@@ -14,16 +14,6 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnGeometryPart::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add(PARAM_BBoxLow);
-    params.Add(PARAM_BBoxHigh);
-    params.Add(PARAM_GeometryStream);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParams const& params)
     {
     DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);

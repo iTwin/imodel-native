@@ -85,9 +85,6 @@ namespace dgn_ElementHandler
     struct DimensionStyleHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DimensionStyle, DimensionStyle, DimensionStyleHandler, Element, DGNPLATFORM_EXPORT);
-
-    protected:
-        DGNPLATFORM_EXPORT virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes&) override;  // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 }
 
@@ -240,7 +237,6 @@ namespace dgn_ElementHandler
     struct LinearDimensionHandler2d : Annotation2d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_LinearDimension2d, LinearDimension2d, LinearDimensionHandler2d, Annotation2d, DGNPLATFORM_EXPORT);
-        virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override;  // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 
     //=======================================================================================
@@ -249,7 +245,6 @@ namespace dgn_ElementHandler
     struct LinearDimensionHandler3d : Geometric3d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_LinearDimension3d, LinearDimension3d, LinearDimensionHandler3d, Geometric3d, DGNPLATFORM_EXPORT);
-        virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override;  // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 }
 

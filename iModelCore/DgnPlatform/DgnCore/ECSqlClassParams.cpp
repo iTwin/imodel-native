@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlClassParams::Add(Utf8StringCR name, StatementType type, bool ah)
+void ECSqlClassParams::Add(Utf8StringCR name, StatementType type)
     {
     if (name.empty())
         {
@@ -19,7 +19,7 @@ void ECSqlClassParams::Add(Utf8StringCR name, StatementType type, bool ah)
         }
 
     BeAssert(m_entries.end() == std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return name.Equals(arg.m_name); }));
-    Entry entry(name, type, ah);
+    Entry entry(name, type);
     if (StatementType::Select == (type & StatementType::Select) && 0 < m_entries.size())
         {
         // We want to be able to quickly look up the index for a name for SELECT query results...so group them together at the front of the list.

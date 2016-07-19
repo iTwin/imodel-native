@@ -13,21 +13,6 @@ HANDLER_DEFINE_MEMBERS(TestElementSub2Handler)
 HANDLER_DEFINE_MEMBERS(TestElementSub3Handler)
 HANDLER_DEFINE_MEMBERS(TestElementComplexHandler)
 
-void TestElementSub1Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementSub1::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
-void TestElementSub2Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementSub2::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
-void TestElementSub3Handler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)      { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementSub3::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }       // *** WIP_AUTO_HANDLED_PROPERTIES
-void TestElementComplexHandler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)   { T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); TestElementComplex::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); }    // *** WIP_AUTO_HANDLED_PROPERTIES
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
-void TestElementSub1::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add("Prop1_1");
-    params.Add("Prop1_2");
-    params.Add("Prop1_3");
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -106,16 +91,6 @@ TestElementSub1CPtr TestElementSub1::Insert()
 TestElementSub1CPtr TestElementSub1::Update()
     {
     return GetDgnDb().Elements().Update<TestElementSub1>(*this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
-void TestElementSub2::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add("Prop2_1");
-    params.Add("Prop2_2");
-    params.Add("Prop2_3");
     }
 
 //---------------------------------------------------------------------------------------
@@ -202,16 +177,6 @@ TestElementSub2CPtr TestElementSub2::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            12/05
 //---------------+---------------+---------------+---------------+---------------+-------
-void TestElementSub3::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add("Prop3_1");
-    params.Add("Prop3_2");
-    params.Add("Prop3_3");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus TestElementSub3::BindParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop3_1"), m_prop3_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
@@ -288,15 +253,6 @@ TestElementSub3CPtr TestElementSub3::Insert()
 TestElementSub3CPtr TestElementSub3::Update()
     {
     return GetDgnDb().Elements().Update<TestElementSub3>(*this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Umar.Hayat            12/05
-//---------------+---------------+---------------+---------------+---------------+-------
-void TestElementComplex::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add("Prop_point3d");
-    params.Add("Prop_struct");
     }
 
 //---------------------------------------------------------------------------------------

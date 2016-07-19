@@ -36,7 +36,6 @@ struct TestElementSub1 : TestElement
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_TESTELEMENTSUB1_CLASS, TestElement);
 
     private:
-        static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop1_1;
@@ -67,7 +66,6 @@ struct TestElementSub2 : TestElementSub1
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_TESTELEMENTSUB2_CLASS, TestElementSub1);
 
     private:
-        static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop2_1;
@@ -103,7 +101,6 @@ struct TestElementSub3 : TestElementSub2
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_TESTELEMENTSUB3_CLASS, TestElementSub2);
 
     private:
-        static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop3_1;
@@ -152,7 +149,6 @@ struct TestElementComplex : TestElement
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_TestElementComplex_CLASS, TestElement);
 
     private:
-        static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         DPoint3d    m_prop_DPoint3d;
@@ -180,7 +176,6 @@ struct TestElementComplex : TestElement
 struct TestElementSub1Handler : TestElementHandler
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (ELEMENT_TESTELEMENTSUB1_CLASS, TestElementSub1, TestElementSub1Handler, TestElementHandler, )
-    protected: virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(Dgn::ECSqlClassParams::PropertyHandlingCustomAttributes& params) override;
     };
 
 //---------------------------------------------------------------------------------------
@@ -189,7 +184,6 @@ struct TestElementSub1Handler : TestElementHandler
 struct TestElementSub2Handler : TestElementSub1Handler
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (ELEMENT_TESTELEMENTSUB2_CLASS, TestElementSub2, TestElementSub2Handler, TestElementSub1Handler, )
-    protected: virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(Dgn::ECSqlClassParams::PropertyHandlingCustomAttributes& params) override;
     };
 
 //---------------------------------------------------------------------------------------
@@ -198,7 +192,6 @@ struct TestElementSub2Handler : TestElementSub1Handler
 struct TestElementSub3Handler : TestElementSub2Handler
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (ELEMENT_TESTELEMENTSUB3_CLASS, TestElementSub3, TestElementSub3Handler, TestElementSub2Handler, )
-    protected: virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(Dgn::ECSqlClassParams::PropertyHandlingCustomAttributes& params) override;
     };
 
 //---------------------------------------------------------------------------------------
@@ -207,5 +200,4 @@ struct TestElementSub3Handler : TestElementSub2Handler
 struct TestElementComplexHandler : TestElementHandler
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (ELEMENT_TestElementComplex_CLASS, TestElementComplex, TestElementComplexHandler, TestElementHandler, )
-    protected: virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(Dgn::ECSqlClassParams::PropertyHandlingCustomAttributes& params) override;
     };

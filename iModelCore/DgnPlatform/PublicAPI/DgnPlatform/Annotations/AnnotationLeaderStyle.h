@@ -205,9 +205,6 @@ namespace dgn_ElementHandler
     struct AnnotationLeaderStyleHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationLeaderStyle, AnnotationLeaderStyle, AnnotationLeaderStyleHandler, Element, DGNPLATFORM_EXPORT);
-
-    protected:
-        DGNPLATFORM_EXPORT virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override; // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 }
 

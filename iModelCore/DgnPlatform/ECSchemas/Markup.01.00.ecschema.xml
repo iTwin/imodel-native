@@ -9,7 +9,14 @@
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>dgn:LinkElement</BaseClass>
-        <ECProperty propertyName="LinkedElementId" typeName="long"/>
+        <ECProperty propertyName="LinkedElementId" typeName="long">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="MarkupExternalLinkGroup">

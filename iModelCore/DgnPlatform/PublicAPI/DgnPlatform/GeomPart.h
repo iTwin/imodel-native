@@ -39,7 +39,6 @@ private:
     mutable bool                m_multiChunkGeomStream = false;
 
     explicit DgnGeometryPart(CreateParams const& params) : T_Super(params) { }
-    static void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params); // *** WIP_AUTO_HANDLED_PROPERTIES
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus WriteGeometryStream();
 
@@ -102,8 +101,6 @@ namespace dgn_ElementHandler
     struct GeometryPart : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometryPart, DgnGeometryPart, GeometryPart, Element, DGNPLATFORM_EXPORT);
-    protected:
-        virtual void _TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) override {T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params); DgnGeometryPart::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);} // *** WIP_AUTO_HANDLED_PROPERTIES
     };
 };
 

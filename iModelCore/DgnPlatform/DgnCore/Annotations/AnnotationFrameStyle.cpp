@@ -67,16 +67,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(AnnotationFrameStyleHandler);
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     11/2015
-//---------------------------------------------------------------------------------------
-void AnnotationFrameStyleHandler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
-    params.Add(PROP_Data);
-    params.Add(PROP_Description);
-    }
 }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -488,18 +488,6 @@ void DgnElement::_OnReversedAdd() const
         model->_OnReversedAddElement(*this);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ElementHandler::Element::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add(DGN_ELEMENT_PROPNAME_ECInstanceId, ECSqlClassParams::StatementType::Insert);
-    params.Add(DGN_ELEMENT_PROPNAME_ModelId, ECSqlClassParams::StatementType::Insert);
-    params.Add(DGN_ELEMENT_PROPNAME_Code, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(DGN_ELEMENT_PROPNAME_Label, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(DGN_ELEMENT_PROPNAME_ParentId, ECSqlClassParams::StatementType::InsertUpdate);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -2685,10 +2673,9 @@ DgnElementIdSet ElementAssemblyUtil::GetAssemblyElementIdSet(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-// *** WIP_AUTO_HANDLED_PROPERTIES:  Delete this when we add the necessary custom attributes to the BIS core schema
-static bool notAutoHandled(Utf8StringCR propName)
+static bool isBuiltInProperty(Utf8StringCR propName)
     {
-    return propName.Equals(DGN_ELEMENT_PROPNAME_LastMode) || propName.Equals("UserProperties");
+    return propName.Equals(DGN_ELEMENT_PROPNAME_ECInstanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2720,6 +2707,90 @@ DgnDbStatus DgnElement::UpdateAutoHandledProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+AutoHandledPropertiesCollection::Iterator::Iterator(ECN::ECPropertyIterable::const_iterator it, AutoHandledPropertiesCollection const& coll)
+    : m_i(it), m_coll(coll) 
+    {
+    ToNextValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+AutoHandledPropertiesCollection::Iterator& AutoHandledPropertiesCollection::Iterator::operator++()
+    {
+    BeAssert(m_i != m_coll.m_end);
+    ++m_i;
+    ToNextValid();
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps)
+    : m_props(eclass.GetProperties(true)), m_end(m_props.end()), m_stype(stype), m_wantCustomHandledProps(wantCustomHandledProps)
+    {
+    #ifdef DEBUG_AUTO_HANDLED_PROPERTIES
+        printf("%s\n", eclass.GetName().c_str());
+        printf("---------------------------\n");
+    #endif
+    m_customHandledProperty = db.Schemas().GetECClass("dgn", "CustomHandledProperty");
+    m_propertyStatementType = db.Schemas().GetECClass("dgn", "PropertyStatementType");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void AutoHandledPropertiesCollection::Iterator::ToNextValid()
+    {
+    while (m_i != m_coll.m_end)
+        {
+        auto prop = *m_i;
+
+        #ifdef DEBUG_AUTO_HANDLED_PROPERTIES
+            auto propName = prop->GetName();
+            printf ("%s\n", propName.c_str());
+            for (auto ca : prop->GetCustomAttributes(true))
+                {
+                printf ("\t%s\n", ca->GetClass().GetName().c_str());
+                for (auto caprop : ca->GetClass().GetProperties())
+                    {
+                    ECN::ECValue v;
+                    ca->GetValue(v, caprop->GetName().c_str());
+                    printf ("\t\t%s %s\n", caprop->GetName().c_str(), v.ToString().c_str());
+                    }
+                }
+        #endif
+        
+            bool isCustom = prop->IsDefined(*m_coll.m_customHandledProperty) || isBuiltInProperty(prop->GetName());
+        if (isCustom != m_coll.m_wantCustomHandledProps)
+            {
+            ++m_i;
+            continue;
+            }
+
+        auto stype = prop->GetCustomAttribute(*m_coll.m_propertyStatementType);
+        if (!stype.IsValid())
+            {
+            m_stype = ECSqlClassParams::StatementType::All;
+            return; // default = all statement types
+            }
+
+        ECN::ECValue v;
+        stype->GetValue(v, "StatementTypes");
+        m_stype = (ECSqlClassParams::StatementType)(v.GetInteger());
+        if (0 != ((int32_t)m_stype & (int32_t)m_coll.m_stype))
+            {
+            return; // yes, this property is for the requested statement type
+            }
+
+        ++m_i;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() const
     {
     BeAssert(m_flags.m_hasAutoHandledProps == 1);
@@ -2733,22 +2804,10 @@ BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() c
     if (iupdater != updaterCache.end())
         return iupdater->second;
 
-    // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will just read them
-    //                                  For now, we let the handlers tell us which properties have custom handling attributes
-    auto handler = dgn_ElementHandler::Element::FindHandler(GetDgnDb(), eclassid);
-    ECSqlClassParams::PropertyHandlingCustomAttributes cas;
-    handler->TEMPORARY_GetPropertyHandlingCustomAttributes(cas); // *** WIP_AUTO_HANDLED_PROPERTIES
-
     bvector<ECN::ECPropertyCP> autoHandledProperties;
-    for (auto prop : eclass->GetProperties())
+    for (auto prop : AutoHandledPropertiesCollection(*eclass, GetDgnDb(), ECSqlClassParams::StatementType::InsertUpdate, false))
         {
-        // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will be looking
-        //                                  for only custom-handled properties that should be included in UPDATE statements
-        Utf8StringCR propName = prop->GetName();
-        if (!notAutoHandled(propName) && (cas.end() == cas.find(propName)))
-            {
-            autoHandledProperties.push_back(prop);
-            }
+        autoHandledProperties.push_back(prop);
         }
 
     if (autoHandledProperties.empty())
@@ -2769,26 +2828,15 @@ ECN::IECInstanceP DgnElement::GetAutoHandledProperties() const
         return nullptr;
     
     ECN::ECClassCP eclass = GetElementClass();
-    DgnClassId eclassid(eclass->GetId().GetValue());
-
-    // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will just read them
-    //                                  For now, we let the handlers tell us which properties have custom handling attributes
-    auto handler = dgn_ElementHandler::Element::FindHandler(GetDgnDb(), eclassid);
-    ECSqlClassParams::PropertyHandlingCustomAttributes cas;
-    handler->TEMPORARY_GetPropertyHandlingCustomAttributes(cas); // *** WIP_AUTO_HANDLED_PROPERTIES
 
     Utf8String props;
     Utf8CP comma = "";
-    for (auto prop : eclass->GetProperties())
+    bvector<ECN::ECPropertyCP> autoHandledProperties;
+    for (auto prop : AutoHandledPropertiesCollection(*eclass, GetDgnDb(), ECSqlClassParams::StatementType::Select, false))
         {
         Utf8StringCR propName = prop->GetName();
-        if (!notAutoHandled(propName) && (cas.end() == cas.find(propName)))
-            {
-            // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will be looking
-            //                                  for custom-handled properties that should be included in SELECT statements
-            props.append(comma).append("[").append(propName).append("]");
-            comma = ",";
-            }
+        props.append(comma).append("[").append(propName).append("]");
+        comma = ",";
         }
 
     if (props.empty())
@@ -3274,39 +3322,4 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
         }
 
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params)
-    {
-    params.Add(GEOM_Category);
-    params.Add(GEOM_Origin);
-    params.Add(GEOM_Box_Low);
-    params.Add(GEOM_Box_High);
-    params.Add(GEOM_GeometryStream);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement2d::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    GeometricElement::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
-
-    params.Add(GEOM2_Rotation);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement3d::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    GeometricElement::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
-
-    params.Add(GEOM3_InSpatialIndex);
-    params.Add(GEOM3_Yaw);
-    params.Add(GEOM3_Pitch);
-    params.Add(GEOM3_Roll);
     }

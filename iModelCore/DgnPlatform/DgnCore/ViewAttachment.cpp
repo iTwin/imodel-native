@@ -16,16 +16,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(ViewAttachmentHandler);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewAttachmentHandler::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
-    params.Add(PROP_ViewId);
-    params.Add(PROP_Scale);
-    }
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

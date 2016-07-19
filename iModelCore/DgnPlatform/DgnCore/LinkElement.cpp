@@ -235,15 +235,6 @@ UrlLinkCPtr UrlLink::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
-void UrlLink::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add(URLLINK_Url);
-    params.Add(URLLINK_Description);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    05/2016
-//---------------------------------------------------------------------------------------
 DgnDbStatus UrlLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat = BindParams(statement);
@@ -378,15 +369,6 @@ EmbeddedFileLinkCPtr EmbeddedFileLink::Update()
     EmbeddedFileLinkCPtr link = GetDgnDb().Elements().Update<EmbeddedFileLink>(*this);
     BeAssert(link.IsValid());
     return link;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    05/2016
-//---------------------------------------------------------------------------------------
-void EmbeddedFileLink::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add(EMBEDDEDFILELINK_Name);
-    params.Add(EMBEDDEDFILELINK_Description);
     }
 
 //---------------------------------------------------------------------------------------

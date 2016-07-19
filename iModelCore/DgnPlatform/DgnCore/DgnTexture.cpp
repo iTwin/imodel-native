@@ -18,20 +18,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
     HANDLER_DEFINE_MEMBERS(Texture);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Texture::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
-    params.Add(PROP_Data);
-    params.Add(PROP_Descr);
-    params.Add(PROP_Format);
-    params.Add(PROP_Width);
-    params.Add(PROP_Height);
-    params.Add(PROP_Flags);
-    }
 }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

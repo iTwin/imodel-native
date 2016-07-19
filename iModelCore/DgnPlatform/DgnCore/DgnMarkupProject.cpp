@@ -67,14 +67,6 @@ MarkupExternalLinkCPtr MarkupExternalLink::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/2016
 //---------------------------------------------------------------------------------------
-void MarkupExternalLink::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    params.Add(MARKUPEXTERNALLINK_LinkedElementId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/2016
-//---------------------------------------------------------------------------------------
 DgnDbStatus MarkupExternalLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat = BindParams(statement);

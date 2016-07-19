@@ -19,27 +19,6 @@ namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(Category);
 HANDLER_DEFINE_MEMBERS(SubCategory);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Category::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
-    params.Add(CAT_PROP_Descr);
-    params.Add(CAT_PROP_Scope);
-    params.Add(CAT_PROP_Rank);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SubCategory::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
-    params.Add(SUBCAT_PROP_Descr);
-    params.Add(SUBCAT_PROP_Props);
-    }
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

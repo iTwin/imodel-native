@@ -17,20 +17,6 @@ namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(LinearDimensionHandler2d)
 HANDLER_DEFINE_MEMBERS(LinearDimensionHandler3d)
-
-void LinearDimensionHandler2d::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
-    params.Add(PROP_StyleId);
-    params.Add(PROP_Points);
-    }
-
-void LinearDimensionHandler3d::_TEMPORARY_GetPropertyHandlingCustomAttributes(ECSqlClassParams::PropertyHandlingCustomAttributes& params) // *** WIP_AUTO_HANDLED_PROPERTIES
-    {
-    T_Super::_TEMPORARY_GetPropertyHandlingCustomAttributes(params);
-    params.Add(PROP_StyleId);
-    params.Add(PROP_Points);
-    }
 };
 
 /* ctor */ LinearDimension2d::LinearDimension2d(CreateParams const& params) : T_Super(params) { }
