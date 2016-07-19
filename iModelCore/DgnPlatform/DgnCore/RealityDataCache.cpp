@@ -1549,6 +1549,7 @@ RealityDataThread::RealityDataThread(Utf8CP threadName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RealityDataThread::Start()
     {
+    AddRef();
     BeThreadUtilities::StartNewThread(1024 * 1024, PlatformThreadRunner, this);
     }
 
@@ -1557,8 +1558,9 @@ void RealityDataThread::Start()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RealityDataThread::ThreadRunner(void* arg)
     {
-    RealityDataThreadPtr thread = (RealityDataThread*)arg;
+    RealityDataThread* thread = (RealityDataThread*)arg;
     thread->Run();
+    thread->Release();
     }
 
 /*---------------------------------------------------------------------------------**//**
