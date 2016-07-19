@@ -15,11 +15,16 @@ DataSourceManager::DataSourceManager(void) : DataSourceServiceManager(*this)
 
 }
 
+DataSourceManager::~DataSourceManager(void)
+{
+    
+}
+
 DataSource * DataSourceManager::createDataSource(const DataSourceName & name, const DataSourceAccount::AccountName & accountName, const DataSourceStoreConfig * config)
 {
-    (void)                        config;
+    (void)                   config;
 
-    DataSourceAccount        *    account;
+    DataSourceAccount   *    account;
 
     if ((account = DataSourceServiceManager::getAccount(accountName)) == NULL)
         return nullptr;
@@ -45,33 +50,6 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName &name, Dat
 
     return source;
 }
-
-
-/*
-            DataSource                            *    dataSource;
-            DataSource::Name                        dataSourceName;
-            wstringstream                            ss;
-            wstringstream                            name;
-
-            if (m_dataSourceAccount == nullptr)
-                return nullptr;
-                                                            // Get DataSourceName based on this thread's ID
-            std::thread::id threadID = std::this_thread::get_id();
-            name << threadID;
-            dataSourceName = name.str();
-                                                            // Get the thread's DataSource or create a new one
-            dataSource = m_dataSourceAccount->getOrCreateDataSource(dataSourceName);
-            if (dataSource == nullptr)
-                return nullptr;
-                                                            // Enable caching for this DataSource
-            dataSource->setCachingEnabled(true);
-
-            destSize = DEFAULT_DATA_SOURCE_BUFFER_SIZE;
-
-            dest.reset(new unsigned char[destSize]);
-
-            return dataSource;
-*/
 
 DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name, DataSourceAccount &account, bool *created)
 {
@@ -102,14 +80,41 @@ DataSourceStatus DataSourceManager::destroyDataSource(DataSource * dataSource)
     return DataSourceStatus(DataSourceStatus::Status_Error);
 }
 
+DataSourceStatus DataSourceManager::destroyDataSources(DataSourceAccount * dataSourceAccount)
+{
+    if (dataSourceAccount == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+
+    Manager<DataSource>::ApplyFunction deleteAccountDataSource = [this, dataSourceAccount](typename Manager<DataSource>::ItemMap::iterator it) -> bool
+    {
+        if (it->second)
+        {
+                                                            // If DataSource belongs to DataSourceAccount
+            if (it->second->getAccount() == dataSourceAccount)
+            {
+                                                            // Destroy the DataSource
+                destroyDataSource(it->second);
+                                                            // Return don't traverse any more
+                return false;
+            }
+        }
+                                                            // Return continue traversing
+        return true;
+    };
+                                                            // Delete account's DataSources
+    Manager<DataSource>::apply(deleteAccountDataSource);
+
+    return DataSourceStatus();
+}
+
 
 DataSourceAccount *DataSourceManager::initializeAzureTest(void)
 {
     DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
-    DataSourceAccount::AccountKey                accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
+    DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
     DataSourceStatus                            status;
-    DataSourceService                        *    serviceAzure;
-    DataSourceAccount                        *    accountAzure;
+    DataSourceService                        *  serviceAzure;
+    DataSourceAccount                        *  accountAzure;
 
                                                             // Get the Azure service
     serviceAzure = getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));

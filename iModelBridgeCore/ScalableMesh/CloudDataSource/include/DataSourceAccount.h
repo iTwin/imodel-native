@@ -14,75 +14,78 @@ class DataSourceAccount
 
 public:
 
-    typedef std::wstring            ServiceName;
-    typedef std::wstring            AccountName;
-    typedef std::wstring            AccountIdentifier;
-    typedef std::wstring            AccountKey;
+    typedef std::wstring                ServiceName;
+    typedef std::wstring                AccountName;
+    typedef std::wstring                AccountIdentifier;
+    typedef std::wstring                AccountKey;
 
 protected:
 
-    DataSourceManager *               dataSourceManager;
+    DataSourceManager *                 dataSourceManager;
 
-    ServiceName                       serviceName;
-    AccountName                       accountName;
-    AccountIdentifier                 accountIdentifier;
-    AccountKey                        accountKey;
-    DataSourceURL                     prefixPath;
+    ServiceName                         serviceName;
+    AccountName                         accountName;
+    AccountIdentifier                   accountIdentifier;
+    AccountKey                          accountKey;
+    DataSourceURL                       prefixPath;
 
-    DataSourceTransferScheduler       transferScheduler;
+    DataSourceTransferScheduler         transferScheduler;
 
 protected:
 
-    DataSourceTransferScheduler &     getTransferScheduler           (void);
+    DataSourceTransferScheduler &       getTransferScheduler            (void);
+
+    virtual unsigned int                getDefaultNumTransferTasks      (void);
 
 public:
-CLOUD_EXPORT                                    DataSourceAccount            (void);
-CLOUD_EXPORT                                    DataSourceAccount            (const ServiceName &service, const AccountName &account);
-CLOUD_EXPORT                                    DataSourceAccount            (const ServiceName &service, const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+CLOUD_EXPORT                            DataSourceAccount               (void);
+CLOUD_EXPORT                            DataSourceAccount               (const ServiceName &service, const AccountName &account);
+CLOUD_EXPORT                            DataSourceAccount               (const ServiceName &service, const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 
-                                      ~DataSourceAccount             (void);
+   virtual                             ~DataSourceAccount               (void);
 
-    void                               setDataSourceManager          (DataSourceManager &manager);
-    DataSourceManager &                getDataSourceManager          (void);
+    void                                setDataSourceManager            (DataSourceManager &manager);
+    DataSourceManager &                 getDataSourceManager            (void);
 
-    virtual DataSourceStatus           setAccount                    (const ServiceName &service, const AccountName &accountName, const AccountIdentifier &identifier, const AccountKey &key);
+    virtual DataSourceStatus            setAccount                      (const ServiceName &service, const AccountName &accountName, const AccountIdentifier &identifier, const AccountKey &key);
             
-    void                               setServiceName                (const ServiceName &name);
-    const ServiceName &                getServiceName                (void) const;
+    void                                setServiceName                  (const ServiceName &name);
+    const ServiceName &                 getServiceName                  (void) const;
 
-    void                               setAccountName                (const AccountName &name);
-    const AccountName &                getAccountName                (void) const;
+    void                                setAccountName                  (const AccountName &name);
+    const AccountName &                 getAccountName                  (void) const;
 
-    void                               setAccountIdentifier          (const AccountIdentifier &identifier);
-    const AccountIdentifier &          getAccountIdentifier          (void) const;
+    void                                setAccountIdentifier            (const AccountIdentifier &identifier);
+    const AccountIdentifier &           getAccountIdentifier            (void) const;
 
-    void                               setAccountKey                 (const AccountKey &key);
-    const AccountKey                   getAccountKey                 (void) const;
+    void                                setAccountKey                   (const AccountKey &key);
+    const AccountKey                    getAccountKey                   (void) const;
 
-    virtual DataSource            *    createDataSource              (void) = 0;
-            DataSource            *    createDataSource              (DataSource::Name &name);
+    virtual DataSource            *     createDataSource                (void) = 0;
+            DataSource            *     createDataSource                (DataSource::Name &name);
 
-            DataSource            *    getOrCreateDataSource         (DataSource::Name &name, bool *created = nullptr);
-    CLOUD_EXPORT DataSource* getOrCreateThreadDataSource   (bool *created = nullptr);
+            DataSource            *     getOrCreateDataSource           (DataSource::Name &name, bool *created = nullptr);
+    CLOUD_EXPORT DataSource       *     getOrCreateThreadDataSource     (bool *created = nullptr);
 
-    virtual DataSourceStatus           destroyDataSource             (DataSource *dataSource) = 0;
+            DataSourceStatus            destroyDataSources              (void);
+    virtual DataSourceStatus            destroyDataSource               (DataSource *dataSource) = 0;
 
-            DataSourceStatus           uploadSegments                (DataSource &dataSource);
-            DataSourceStatus           downloadSegments              (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size);
+            DataSourceStatus            uploadSegments                  (DataSource &dataSource);
+            DataSourceStatus            downloadSegments                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size);
 
-    virtual DataSourceStatus           downloadBlobSync              (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
-    virtual DataSourceStatus           downloadBlobSync              (const DataSourceURL &blobPath, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
-    virtual DataSourceStatus           uploadBlobSync                (const DataSourceURL &blobPath, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
+    virtual DataSourceStatus            downloadBlobSync                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
+    virtual DataSourceStatus            downloadBlobSync                (const DataSourceURL &blobPath, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
+    virtual DataSourceStatus            uploadBlobSync                  (const DataSourceURL &blobPath, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
 
 
-    virtual DataSourceStatus           setCaching                    (DataSourceAccount &cacheAccount, const DataSourceURL &cachingRootPath);
+    virtual DataSourceStatus            setCaching                      (DataSourceAccount &cacheAccount, const DataSourceURL &cachingRootPath);
 
-    virtual void                       setCacheAccount               (DataSourceAccount *account);
-    virtual DataSourceAccount    *     getCacheAccount               (void);
+    virtual void                        setCacheAccount                 (DataSourceAccount *account);
+    virtual DataSourceAccount    *      getCacheAccount                 (void);
 
-    CLOUD_EXPORT void        setPrefixPath                 (const DataSourceURL &url);
-    const   DataSourceURL              getPrefixPath                 (void) const;
+    CLOUD_EXPORT void                   setPrefixPath                   (const DataSourceURL &url);
+    const   DataSourceURL               getPrefixPath                   (void) const;
 
-    virtual DataSourceStatus           getFormattedCacheURL          (const DataSourceURL &sourceURL, DataSourceURL &fullCacheURL);
+    virtual DataSourceStatus            getFormattedCacheURL            (const DataSourceURL &sourceURL, DataSourceURL &fullCacheURL);
 
 };

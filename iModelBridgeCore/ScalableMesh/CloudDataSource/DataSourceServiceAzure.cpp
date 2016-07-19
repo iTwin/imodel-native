@@ -2,6 +2,7 @@
 #include "DataSourceServiceAzure.h"
 #include "DataSourceAccountAzure.h"
 #include "DataSourceAccount.h"
+#include "include\DataSourceServiceAzure.h"
 
 
 DataSourceServiceAzure::DataSourceServiceAzure(DataSourceManager &manager, const DataSourceService::ServiceName & service) : DataSourceService(manager, service)
@@ -23,9 +24,7 @@ DataSourceAccount * DataSourceServiceAzure::createAccount(const DataSourceAccoun
 
 DataSourceStatus DataSourceServiceAzure::destroyAccount(const AccountName & account)
 {
-    (void) account;
-
-    return DataSourceStatus();
+    return Super::destroyAccount(account);
 }
 
 

@@ -11,12 +11,26 @@ DataSourceTransferScheduler & DataSourceAccount::getTransferScheduler(void)
     return transferScheduler;
 }
 
+unsigned int DataSourceAccount::getDefaultNumTransferTasks(void)
+{
+                                                            // Default is non scheduled account type (i.e. single connection, no segmentation etc.)
+    return 0;
+}
+
 DataSourceAccount::DataSourceAccount(void) : dataSourceManager(nullptr)
 {
+
 }
 
 DataSourceAccount::~DataSourceAccount(void)
 {
+    destroyDataSources();
+}
+
+
+DataSourceStatus DataSourceAccount::destroyDataSources(void)
+{
+    return getDataSourceManager().destroyDataSources(this);
 }
 
 void DataSourceAccount::setDataSourceManager(DataSourceManager &manager)
@@ -26,8 +40,6 @@ void DataSourceAccount::setDataSourceManager(DataSourceManager &manager)
 
 DataSourceManager & DataSourceAccount::getDataSourceManager(void)
 {
-//    assert(dataSourceManager != nullptr);
-
     return *dataSourceManager;
 }
 
@@ -114,7 +126,7 @@ DataSource * DataSourceAccount::getOrCreateDataSource(DataSourceManager::DataSou
 
 DataSource * DataSourceAccount::getOrCreateThreadDataSource(bool *created)
 {
-    std::wstringstream        name;
+    std::wstringstream      name;
     DataSource::Name        dataSourceName;
                                                             // Get thread ID and use as DataSource name
     std::thread::id threadID = std::this_thread::get_id();
@@ -139,8 +151,8 @@ const DataSourceURL DataSourceAccount::getPrefixPath(void) const
 DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
 {
 
-    DataSourceBuffered    *        dataSourceBuffered;
-    DataSourceBuffer    *        buffer;
+    DataSourceBuffered      *       dataSourceBuffered;
+    DataSourceBuffer        *       buffer;
                                                             // Only buffered datasources are supported, so downcast
     if ((dataSourceBuffered = dynamic_cast<DataSourceBuffered *>(&dataSource)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error);

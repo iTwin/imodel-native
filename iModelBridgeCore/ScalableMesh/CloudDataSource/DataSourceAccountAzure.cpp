@@ -8,7 +8,17 @@
 DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
 {
     setAccount(name, identifier, key);
+
+                                                            // Multi-threaded segmented transfers used for Azure, so initialize it
+    getTransferScheduler().initializeTransferTasks(getDefaultNumTransferTasks());
 }
+
+
+unsigned int DataSourceAccountAzure::getDefaultNumTransferTasks(void)
+{
+    return DATA_SOURCE_SERVICE_AZURE_DEFAULT_TRANSFER_TASKS;
+}
+
 
 DataSourceAccountAzure::AzureConnectionString DataSourceAccountAzure::createConnectionString(AccountIdentifier identifier, AccountKey key)
 {

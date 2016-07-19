@@ -247,6 +247,13 @@ bool DataSourceBuffer::signalSegmentProcessed(void)
     return getActivitySemaphore().decrement();
 }
 
+
+void DataSourceBuffer::signalCancelled(void)
+{
+                                                            // Release all blocked threads waiting for data
+    getActivitySemaphore().releaseAll();
+}
+
 DataSourceBuffer::TimeoutStatus DataSourceBuffer::waitForSegments(Timeout timeoutMilliseconds)
 {
                                                             // Wait for all segments to be processed

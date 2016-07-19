@@ -1,16 +1,14 @@
 #pragma once
 #include "DataSourceDefs.h"
+#include <thread>
 #include <mutex>
-
-#pragma warning(push)
-#pragma warning(disable: 4002)
-#include <ppl.h>
-#pragma warning(pop)
 
 #include <condition_variable>
 #include <deque>
 #include "DataSourceBuffer.h"
 #include "DataSourceStatus.h"
+
+const unsigned int DEFAULT_NUM_TRANSFERS = 16;
 
 
 class DataSourceTransferScheduler
@@ -18,41 +16,51 @@ class DataSourceTransferScheduler
 
 protected:
 
-    typedef std::deque<DataSourceBuffer *>            DataSourceBufferSet;
+    typedef std::deque<DataSourceBuffer *>          DataSourceBufferSet;
     typedef unsigned int                            TaskIndex;
 
+    typedef std::vector<std::thread>                TransferThreads;
+
 protected:
 
-    TaskIndex                    maxTasks;
+    TaskIndex                       maxTasks;
 
-    std::mutex                    dataSourceBuffersMutex;
-    std::condition_variable        dataSourceBufferReady;
+    std::mutex                      dataSourceBuffersMutex;
+    std::condition_variable         dataSourceBufferReady;
 
-    DataSourceBufferSet            dataSourceBuffers;
+    DataSourceBufferSet             dataSourceBuffers;
     
-    concurrency::task_group        transferTasks;
+    TransferThreads                 transferThreads;
 
 protected:
 
-    DataSourceBuffer *            getBuffer;
+    DataSourceBuffer *              getBuffer;
+    volatile bool                   shutDownFlag;
 
 protected:
 
-    DataSourceBuffer *            getNextSegmentJob                (DataSourceBuffer::BufferData ** buffer, DataSourceBuffer::BufferSize * bufferSize, DataSourceBuffer::SegmentIndex * index);
+    DataSourceBuffer *              getNextSegmentJob               (DataSourceBuffer::BufferData ** buffer, DataSourceBuffer::BufferSize * bufferSize, DataSourceBuffer::SegmentIndex * index);
 
-    DataSourceStatus            initializeTransferTasks            (unsigned int maxTasks);
+    DataSourceStatus                scheduleUploadJob               (void);
 
-    DataSourceStatus            scheduleUploadJob                (void);
+    DataSourceStatus                getAndProcessUploadJob          (void);
 
-    DataSourceStatus            getAndProcessUploadJob            (void);
+    void                            setMaxTasks                     (TaskIndex numTasks);
+    TaskIndex                       getMaxTasks                     (void);
 
-    void                        setMaxTasks                        (TaskIndex numTasks);
-    TaskIndex                    getMaxTasks                        (void);
+    void                            setShutDownFlag                 (bool shutDown);
+    bool                            getShutDownFlag                 (void);
 
 public:
 
-                                DataSourceTransferScheduler        (void);
+                                    DataSourceTransferScheduler     (void);
+                                   ~DataSourceTransferScheduler     (void);
 
-    DataSourceStatus            addBuffer                    (DataSourceBuffer &buffer);
+    DataSourceStatus                initializeTransferTasks         (unsigned int maxTasks);
+
+    DataSourceStatus                addBuffer                       (DataSourceBuffer &buffer);
+
+    void                            shutDown                        (void);
+
 };
 

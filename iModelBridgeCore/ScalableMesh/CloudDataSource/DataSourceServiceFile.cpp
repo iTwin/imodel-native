@@ -20,8 +20,6 @@ DataSourceAccount * DataSourceServiceFile::createAccount(const AccountName & acc
 
 DataSourceStatus DataSourceServiceFile::destroyAccount(const AccountName & account)
 {
-    (void) account;
-
-    return DataSourceStatus();
+    return Super::destroyAccount(account);
 }
 

@@ -23,7 +23,7 @@ protected:
 
 protected:
 
-    AccessType                accessType;
+    AccessType              accessType;
     DataDivision            dataDivision;
 
 public:

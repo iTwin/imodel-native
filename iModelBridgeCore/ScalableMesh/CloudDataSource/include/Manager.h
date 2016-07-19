@@ -5,6 +5,7 @@
 #include <map>
 #include <chrono>
 #include <mutex>
+#include <functional>
 
 #define    MANAGER_DEFAULT_ACCESS_TIMEOUT    30 * 1000
 
@@ -14,46 +15,49 @@ template<typename T> class Manager
 
 public:
 
-    typedef std::wstring                ItemName;
-    typedef unsigned int                ItemCount;
+    typedef std::wstring                                        ItemName;
+    typedef unsigned int                                        ItemCount;
 
 protected:
 
-    typedef std::map<ItemName, T *>        ItemMap;
+    typedef std::map<ItemName, T *>                             ItemMap;
 
 public:
 
+    typedef std::function<bool(typename ItemMap::iterator)>     ApplyFunction;
 
-    typedef typename ItemMap::iterator            Iterator;
-    typedef typename std::chrono::milliseconds    Timeout;
-
-protected:
-
-    ItemMap                                items;
-
-    std::recursive_timed_mutex            itemMutex;
-    Timeout                                accessTimeout;
+    typedef typename ItemMap::iterator                          Iterator;
+    typedef typename std::chrono::milliseconds                  Timeout;
 
 protected:
 
+    ItemMap                                         items;
+
+    std::recursive_timed_mutex                      itemMutex;
+    Timeout                                         accessTimeout;
+
 protected:
 
-                                         Manager                (void);
-    virtual                                ~Manager                (void);
+protected:
 
-    T                *                    create                (const ItemName &name, T *item);
-    bool                                destroy                (const ItemName &name);
-    bool                                destroy                (T *item, bool deleteItem);
-    bool                                destroyAll            (void);
+                                                    Manager                 (void);
+    virtual                                        ~Manager                 (void);
 
-    ItemCount                            getCount            (void);
+    T                *                              create                  (const ItemName &name, T *item);
+    bool                                            destroy                 (const ItemName &name, bool deleteItem);
+    bool                                            destroy                 (T *item, bool deleteItem);
+    bool                                            destroyAll              (bool deleteItems);
 
-    T                *                    get                    (const ItemName &name);
-    Iterator                            getEntry            (const ItemName &name);
-    Iterator                            getEntry            (T *item);
+    bool                                            apply                   (ApplyFunction f);
 
-    void                                setAccessTimeout    (Timeout timeMilliseconds);
-    Timeout                                getAccessTimeout    (void);
+    ItemCount                                       getCount                (void);
+
+    T                *                              get                     (const ItemName &name);
+    Iterator                                        getEntry                (const ItemName &name);
+    Iterator                                        getEntry                (T *item);
+
+    void                                            setAccessTimeout        (Timeout timeMilliseconds);
+    Timeout                                         getAccessTimeout        (void);
 
 };
 
@@ -84,15 +88,31 @@ inline T * Manager<T>::create(const ItemName & name, T * item)
 }
 
 template<typename T>
-inline bool Manager<T>::destroy(const ItemName & name)
+inline bool Manager<T>::destroy(const ItemName & name, bool deleteItem)
 {
     if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
         return false;
+
+    Iterator it = getEntry(name);
+    if (it != items.end())
+    {
+        if (deleteItem && it->second)
+        {
+            delete it->second;
+        }
+
+        items.erase(it);
+
+        itemMutex.unlock();
+
+        return true;
+    }
 
     itemMutex.unlock();
 
     return false;
 }
+
 
 template<typename T>
 inline bool Manager<T>::destroy(T * item, bool deleteItem)
@@ -122,15 +142,46 @@ inline bool Manager<T>::destroy(T * item, bool deleteItem)
 }
 
 template<typename T>
-inline bool Manager<T>::destroyAll(void)
+inline bool Manager<T>::destroyAll(bool deleteItems)
 {
+    Iterator it;
+
     if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
         return false;
+
+    for (it = items.begin(); it != items.end(); it++)
+    {
+        if (deleteItems && it->second)
+        {
+            delete it->second;
+        }
+    }
+
+    items.clear();
 
     itemMutex.unlock();
 
     return false;
 }
+
+template<typename T>
+bool typename Manager<T>::apply(ApplyFunction f)
+{
+    bool traverse = true;
+
+    if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
+        return false;
+                                                            // Iterate over items
+    for (auto it = items.begin(); traverse && it != items.end(); it++)
+    {
+        traverse = f(it);
+    }
+
+    itemMutex.unlock();
+                                                            // Return whether last item returned to continue traversing
+    return traverse;
+}
+
 
 template<typename T>
 inline typename Manager<T>::ItemCount Manager<T>::getCount(void)
@@ -212,6 +263,8 @@ inline typename Manager<T>::Timeout Manager<T>::getAccessTimeout(void)
 {
     return accessTimeout;
 }
+
+
 
 
 

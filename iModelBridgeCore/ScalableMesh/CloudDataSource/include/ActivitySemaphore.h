@@ -9,7 +9,7 @@ class ActivitySemaphore
 public:
 
     typedef unsigned int                Counter;
-    typedef std::chrono::milliseconds    Timeout;
+    typedef std::chrono::milliseconds   Timeout;
 
     enum Status
     {
@@ -21,24 +21,24 @@ public:
 
 protected:
 
-    std::mutex                            mutex;
-    std::condition_variable                condition;
-    Counter                                counter;
-
+    std::mutex                          mutex;
+    std::condition_variable             condition;
+    Counter                             counter;
 
 public:
+                                        ActivitySemaphore       (void);
+                                        ActivitySemaphore       (Counter value);
+                                       ~ActivitySemaphore       (void);
 
-                                        ActivitySemaphore        (void);
-                                        ActivitySemaphore        (Counter value);
-                                       ~ActivitySemaphore        (void);
+    void                                setCounter              (Counter value);
+    Counter                             getCounter              (void);
 
-    void                                setCounter                (Counter value);
-    Counter                                getCounter                (void);
-
-    void                                increment                (void);
-    bool                                decrement                (void);
+    void                                increment               (void);
+    bool                                decrement               (void);
 
     void                                wait                    (void);
-    Status                                waitFor                    (Timeout timeout);
+    Status                              waitFor                 (Timeout timeout);
+
+    void                                releaseAll              (void);
 };
 
