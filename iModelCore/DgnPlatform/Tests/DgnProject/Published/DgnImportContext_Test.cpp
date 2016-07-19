@@ -168,7 +168,7 @@ static DgnDbPtr openCopyOfDb(WCharCP sourceName, WCharCP destName, DgnDb::OpenMo
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportGroups)
 {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, false);
+    SetupProject(L"3dMetricGeneral.ibim", L"ImportGroups.ibim", Db::OpenMode::ReadWrite, false);
 
     // ******************************
     //  Create model1
@@ -395,7 +395,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 {
     static Utf8CP s_catName="MyCat";
 
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, false);
+    SetupProject(L"3dMetricGeneral.ibim", L"ImportElementAndCategory1.ibim", Db::OpenMode::ReadWrite, false);
     DgnDbP sourceDb = m_db.get();
 
     //  Create a Category for the elements. 
@@ -494,7 +494,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportElementsWithAuthorities)
 {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, false);
+    SetupProject(L"3dMetricGeneral.ibim", L"ImportElementsWithAuthorities.ibim", Db::OpenMode::ReadWrite, false);
 
     // ******************************
     //  Create some Authorities. 
@@ -569,7 +569,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportElementsWithDependencies)
 {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, true);
+    SetupProject(L"3dMetricGeneral.ibim", L"ImportElementsWithDependencies.ibim", Db::OpenMode::ReadWrite, true);
     
     TestElementDrivesElementHandler::GetHandler().Clear();
 

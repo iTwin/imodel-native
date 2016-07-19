@@ -190,7 +190,7 @@ void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, WCharCP testProjFile, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Umar.Hayat                   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, CharCP testFile, BeSQLite::Db::OpenMode mode, bool needBriefcase)
+void DgnDbTestFixture::SetupProject_(WCharCP baseProjFile, CharCP testFile, BeSQLite::Db::OpenMode mode, bool needBriefcase)
     {
     DgnDbTestDgnManager tdm(baseProjFile, testFile, mode, needBriefcase);
     m_db = tdm.GetDgnProjectP();

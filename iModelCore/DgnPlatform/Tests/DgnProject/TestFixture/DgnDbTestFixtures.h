@@ -51,14 +51,14 @@ public:
     virtual void TearDown(){ SaveDb(); }
 
     void SetupProject(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
-    void SetupProject(WCharCP baseProjFile, CharCP testFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
+    void SetupProject_(WCharCP baseProjFile, CharCP testFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
     void SetupSeedProject();
     void SetupProject(WCharCP inFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
     static BeFileName CopyDb(WCharCP inputFileName, WCharCP outputFileName);
     static void OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode, bool needBriefcase = false);
     void CloseDb() { m_db->CloseDb(); }
     void SaveDb() {
-        if (m_db.IsValid())
+        if (m_db.IsValid() && m_db->IsDbOpen() && !m_db->IsReadonly())
             m_db->SaveChanges();
     }
 
