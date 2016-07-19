@@ -17,7 +17,7 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 //=======================================================================================
 struct NetworkIndicator
     {
-    static void SetVisible(bool visible);
+    BEHTTP_EXPORT static void SetVisible(bool visible);
     };
 
 END_BENTLEY_HTTP_NAMESPACE

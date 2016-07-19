@@ -31,12 +31,12 @@ struct IApplicationEventsListener
 struct ApplicationEventsManager
     {
     private:
-        static ApplicationEventsManager* s_instance;
+        BEHTTP_EXPORT static ApplicationEventsManager* s_instance;
         bset<IApplicationEventsListener*> m_applicationEventsListeners; 
 
     private:
         ApplicationEventsManager() { InitializeApplicationEventsListening(); }
-        void InitializeApplicationEventsListening();
+        BEHTTP_EXPORT void InitializeApplicationEventsListening();
 
     public:
         static ApplicationEventsManager& GetInstance()
