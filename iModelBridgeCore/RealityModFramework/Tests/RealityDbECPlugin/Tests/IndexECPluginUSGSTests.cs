@@ -99,6 +99,20 @@ namespace IndexECPlugin.Tests
             return instance;
             }
 
+        private IECInstance CreateParentSED ()
+            {
+            IECInstance instance = m_schema.GetClass("SpatialEntityDataset").CreateInstance();
+            instance.InstanceId = "543e6b86e4b0fd76af69cf4c";
+
+            instance["Id"].StringValue = "543e6b86e4b0fd76af69cf4c";
+
+            instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
+            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", "4f552e93e4b018de15819c51");
+            instance.ExtendedDataValueSetter.Add("Complete", true);
+
+            return instance;
+            }
+
         private JObject GetParentScienceBaseJson()
             {
             var scienceBaseJsonStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ScienceBaseJsonParent.txt"));
@@ -966,7 +980,7 @@ namespace IndexECPlugin.Tests
             }
 
         [Test]
-        public void SEWDVCachedAndParentCachedTest ()
+        public void SEWDVCachedAndParentSEWDVCachedTest ()
             {
             List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSEWDV(false, m_schema) };
             List<IECInstance> cachedParent = new List<IECInstance>() { CreateParentSEWDV() };
@@ -1012,7 +1026,53 @@ namespace IndexECPlugin.Tests
             }
 
         [Test]
-        public void SEWDVCachedAndParentNotCachedTest ()
+        public void SEWDVCachedAndParentDatasetCachedTest ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSEWDV(false, m_schema) };
+            List<IECInstance> cachedParent = new List<IECInstance>() { CreateParentSED() };
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Throw(new OperationFailedException());//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Never();//Once().Return(m_scienceBaseJson);
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(cachedParent);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Never();
+
+                }
+
+            using ( m_mock.Playback() )
+                {
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToView") as IECRelationshipClass;
+
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
+                query.SelectClause.SelectedRelatedInstances.Add(relCrit);
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+                query.ExtendedDataValueSetter.Add("polygon", "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }");
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should only be one instance returned.");
+                Assert.AreEqual(1, instanceList.First().GetRelationshipInstances().Count, "There should be only one related instance.");
+
+                IECRelationshipInstance relationshipInst = instanceList.First().GetRelationshipInstances().First();
+                IECInstance relInst = relationshipInst.Source;
+
+                Assert.IsTrue(instanceList.First().InstanceId == "553690bfe4b0b22a15807df2", "There should only be one instance returned.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The spatialEntityBase should come from the cache.");
+                Assert.IsTrue(relInst.InstanceId == "543e6b86e4b0fd76af69cf4c", "The parent does not have the expected ID.");
+                Assert.IsTrue(relInst.ExtendedData.ContainsKey("IsFromCacheTest"), "The parent should come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SEWDVCachedAndParentSEWDVNotCachedTest ()
             {
             List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSEWDV(false, m_schema) };
             List<IECInstance> emptyList = new List<IECInstance>() {};
@@ -1036,6 +1096,54 @@ namespace IndexECPlugin.Tests
                 IECRelationshipClass relClass = m_schema.GetClass("DetailsViewToChildren") as IECRelationshipClass;
 
                 RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityWithDetailsView")), false);
+
+                ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
+                query.SelectClause.SelectedRelatedInstances.Add(relCrit);
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+                UsgsAPIQueryProvider usgsAPIQueryProvider = new UsgsAPIQueryProvider(query, new ECQuerySettings(), m_usgsDataFetcherMock, m_instanceCacheManager, m_schema);
+                query.ExtendedDataValueSetter.Add("polygon", "{ \"points\" : [[-90.1111928012935,41.32950370684],[-89.9874229095346,41.32950370684],[-89.9874229095346,41.4227313251356],[-90.1111928012935,41.4227313251356],[-90.1111928012935,41.32950370684]], \"coordinate_system\" : \"4326\" }");
+                var instanceList = usgsAPIQueryProvider.CreateInstanceList();
+
+                Assert.AreEqual(1, instanceList.Count(), "There should only be one instance returned.");
+                Assert.AreEqual(1, instanceList.First().GetRelationshipInstances().Count, "There should be only one related instance.");
+                IECRelationshipInstance relationshipInst = instanceList.First().GetRelationshipInstances().First();
+                IECInstance relInst = relationshipInst.Source;
+
+
+                Assert.IsTrue(instanceList.First().InstanceId == "553690bfe4b0b22a15807df2", "There should only be one instance returned.");
+                Assert.IsTrue(instanceList.First().ExtendedData.ContainsKey("IsFromCacheTest"), "The spatialEntityBase should come from the cache.");
+                Assert.IsTrue(relInst.InstanceId == "543e6b86e4b0fd76af69cf4c", "The parent does not have the expected ID.");
+                Assert.IsFalse(relInst.ExtendedData.ContainsKey("IsFromCacheTest"), "The parent should not come from the cache.");
+                }
+            }
+
+        [Test]
+        public void SEWDVCachedAndParentDatasetNotCachedTest ()
+            {
+            List<IECInstance> cachedInstanceList = new List<IECInstance>() { SetupHelpers.CreateSEWDV(false, m_schema) };
+            List<IECInstance> emptyList = new List<IECInstance>()
+            {
+            };
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Throw(new OperationFailedException());//.Return(new List<USGSRequestBundle> { m_testBundle });
+                Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Repeat.Once().Return(GetParentScienceBaseJson());
+                Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Repeat.Never();//.Return(m_doc);
+
+                Expect.Call(m_instanceCacheManager.QueryInstancesFromCache(Arg<IEnumerable<string>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything)).Repeat.Once().Return(emptyList);
+                Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Times(1);
+
+                }
+
+            using ( m_mock.Playback() )
+                {
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToView") as IECRelationshipClass;
+
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
 
                 ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
                 query.SelectClause.SelectedRelatedInstances.Add(relCrit);

@@ -133,6 +133,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/IUSGSDataFetcher.cs \
             $(baseDir)Source/Helpers/MimicTableAccessor.cs \
             $(baseDir)Source/Helpers/MimicTableWriter.cs \
+            $(baseDir)Source/Helpers/Packager.cs \
             $(baseDir)Source/Helpers/SourceStringMap.cs \
             $(baseDir)Source/Helpers/SqlQueryHelpers.cs \
             $(baseDir)Source/Helpers/TableAliasCreator.cs \
