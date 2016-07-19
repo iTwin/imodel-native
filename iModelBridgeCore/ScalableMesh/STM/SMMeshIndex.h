@@ -440,23 +440,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void ClearPtsIndices();                
     
-    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetPtsIndicePtr()
-        {
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
-                
-        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex))
-            {                  
-            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, GetPtsIndiceStore().GetPtr(), SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_triIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-            assert(m_triIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-            }
-
-        return poolMemVectorItemPtr;
-        }
-
+    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetPtsIndicePtr();
+        
     virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetLinearFeaturesPtr()
         {
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;

@@ -640,11 +640,11 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             // Pip ToDo: Create account?
             DataSourceAccount *account = nullptr;
 
-            pStreamingTileStore = new StreamingStoreType(account, streamingFilePath, StreamingStoreType::SMStreamingDataType::POINTS, (SCM_COMPRESSION_DEFLATE == m_compressionType), true);
+            pStreamingTileStore = new StreamingStoreType(account, streamingFilePath, StreamingStoreType::SMStoreDataType::POINTS, (SCM_COMPRESSION_DEFLATE == m_compressionType), true);
             // SM_NEEDS_WORKS : layerID 
-            pStreamingIndiceTileStore = new StreamingIndiceStoreType(account, streamingFilePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVTileStore = new StreamingUVStoreType(account, streamingFilePath, StreamingUVStoreType::SMStreamingDataType::UVS, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(account, streamingFilePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingIndiceTileStore = new StreamingIndiceStoreType(account, streamingFilePath, StreamingIndiceStoreType::SMStoreDataType::INDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingUVTileStore = new StreamingUVStoreType(account, streamingFilePath, StreamingUVStoreType::SMStoreDataType::UVS, (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(account, streamingFilePath, StreamingIndiceStoreType::SMStoreDataType::UVINDICES, (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingTextureTileStore = new StreamingTextureTileStore(account, streamingFilePath);
             
             ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(account, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));

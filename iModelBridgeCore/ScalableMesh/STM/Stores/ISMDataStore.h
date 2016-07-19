@@ -74,6 +74,7 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
     };
 
 typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>> ISMPointDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<int32_t>>  ISMFaceIndDataStorePtr;
 
 template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : public RefCountedBase
     {
@@ -118,5 +119,7 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         virtual void Close () = 0;
                         
         virtual bool GetNodeDataStore(ISMPointDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+
+        virtual bool GetNodeDataStore(ISMFaceIndDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
                                     
     };

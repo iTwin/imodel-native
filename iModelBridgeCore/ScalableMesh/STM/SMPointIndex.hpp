@@ -1720,8 +1720,7 @@ void SMPointIndexNode<POINT, EXTENT>::PushNodeDown(size_t targetLevel)
 
         SetupNeighborNodesAfterPushDown();
         
-        ptsPtr->clear();
-        m_nodeHeader.m_nbFaceIndexes = 0;
+        ptsPtr->clear();        
 
         // Check if the new node is deep enough
         if (m_pSubNodeNoSplit->GetLevel() < targetLevel)
@@ -3646,8 +3645,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
 
     //NEEDS_WORK_SM - Why setting that? propagating should be done after importing as a separate call. 
     m_nodeHeader.m_filtered = false;    
-    //m_nodeHeader.m_nbFaceIndexes = 0;
-
+    
     HINVARIANTS;
 
     }
@@ -7771,7 +7769,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingPointStoreType::SMStreamingDataType::POINTS, pi_pCompress);    
+    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingPointStoreType::SMStoreDataType::POINTS, pi_pCompress);    
     ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress));                    
 
     this->GetRootNode()->SavePointsToCloud(dataSourceAccount, dataStore, pointStore);

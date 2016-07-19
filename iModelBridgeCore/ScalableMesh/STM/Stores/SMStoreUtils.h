@@ -320,6 +320,14 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         operator SQLiteNodeHeader();
            
         };
+    
+enum class SMStoreDataType
+    {
+    POINTS,
+    INDICES,
+    UVS,
+    UVINDICES
+    };
 
 
 template<class EXTENT>

@@ -36,38 +36,31 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
                         
         virtual bool GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
+        virtual bool GetNodeDataStore(ISMFaceIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;        
     };
 
-/*
-enum SMStreamingDataType
-            {
-            POINTS,
-            INDICES,
-            UVS,
-            UVINDICES
-            };
-            */
 
-template <class POINT, class EXTENT> class SMSQLiteNodePointStore : public ISMNodeDataStore<POINT> 
-    {
+template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISMNodeDataStore<DATATYPE> 
+    {    
     private:
 
         SMSQLiteFilePtr            m_smSQLiteFile;
         SMIndexNodeHeader<EXTENT>* m_nodeHeader;
-            
-    public:
+        SMStoreDataType            m_dataType;
+
+    public:      
               
-        SMSQLiteNodePointStore(SMIndexNodeHeader<EXTENT>* nodeHeader,/* ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile);
+        SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader,/* ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile);
             
-        virtual ~SMSQLiteNodePointStore();
+        virtual ~SMSQLiteNodeDataStore();
               
-        virtual HPMBlockID StoreNewBlock(POINT* DataTypeArray, size_t countData) override;
+        virtual HPMBlockID StoreNewBlock(DATATYPE* DataTypeArray, size_t countData) override;
             
-        virtual HPMBlockID StoreBlock(POINT* DataTypeArray, size_t countData, HPMBlockID blockID) override;
+        virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;
             
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const override;
             
-        virtual size_t LoadBlock(POINT* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
+        virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
             
         virtual bool DestroyBlock(HPMBlockID blockID) override;         
 
@@ -87,9 +80,9 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeIndexStore : public IS
             
     public:
               
-        SMSQLiteNodePointStore(SMIndexNodeHeader<EXTENT>* nodeHeader,/* ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile);
+        SMSQLiteNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader,/* ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile);
             
-        virtual ~SMSQLiteNodePointStore();
+        virtual ~SMSQLiteNodeDataStore();
               
         virtual HPMBlockID StoreNewBlock(DATATYPE* DataTypeArray, size_t countData) override;
             

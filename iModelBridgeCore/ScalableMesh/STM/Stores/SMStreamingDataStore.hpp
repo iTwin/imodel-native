@@ -779,7 +779,14 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {    
-    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStreamingNodeDataStore<DPoint3d, EXTENT>::POINTS, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::POINTS, nodeHeader);
+
+    return true;    
+    }
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMFaceIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {    
+    dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::INDICES, nodeHeader);
 
     return true;    
     }
@@ -812,7 +819,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(Data
 
 
 //------------------SMStreamingNodeDataStore--------------------------------------------
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true)
     :m_dataSourceAccount(dataSourceAccount),     
      m_pathToNodeData(path),
      m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==")
@@ -822,16 +829,16 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
 
     switch (type)
         {
-        case SMStreamingDataType::POINTS: 
+        case SMStoreDataType::POINTS: 
             m_pathToNodeData += L"points/";
             break;
-        case SMStreamingDataType::INDICES:
+        case SMStoreDataType::INDICES:
             m_pathToNodeData += L"indices/";
             break;
-        case SMStreamingDataType::UVS:
+        case SMStoreDataType::UVS:
             m_pathToNodeData += L"uvs/";
             break;
-        case SMStreamingDataType::UVINDICES:
+        case SMStoreDataType::UVINDICES:
             m_pathToNodeData += L"uvindices/";
             break;
         default:
@@ -915,8 +922,12 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
-    if (m_dataType == SMStreamingDataType::POINTS)
+
+    if (m_dataType == SMStoreDataType::POINTS)
         return m_nodeHeader->m_nodeCount;
+    else
+    if (m_dataType == SMStoreDataType::INDICES)
+        return m_nodeHeader->m_nbFaceIndexes;
     else
     if (IsValidID(blockID))
         return this->GetBlock(blockID).size() / sizeof(DATATYPE);
@@ -926,8 +937,20 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
 
 template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
     {
-    assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) > 0);
-    m_nodeHeader->m_nodeCount += countDelta;
+    switch (m_dataType)
+        {
+        case SMStoreDataType::POINTS : 
+            assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) >= 0);
+            m_nodeHeader->m_nodeCount += countDelta;                
+            break;
+         case SMStoreDataType::INDICES : 
+            assert((((int64_t)m_nodeHeader->m_nbFaceIndexes) + countDelta) >= 0);
+            m_nodeHeader->m_nbFaceIndexes += countDelta;                
+            break;
+        default : 
+            assert(!"Unsupported type");
+            break;
+        }        
     }
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
