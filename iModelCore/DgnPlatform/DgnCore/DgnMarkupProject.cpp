@@ -622,6 +622,12 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
     OpenParams oparams(OpenMode::ReadWrite);
     DbResult status = DoOpenDgnDb(fileName, oparams);
 
+    ChangeBriefcaseId(BeBriefcaseId(BeBriefcaseId::Standalone()));
+    SaveChanges();
+    CloseDb();
+
+    status = DoOpenDgnDb(fileName, oparams);
+
     if (BE_SQLITE_OK != status)
         {
         BeFileName::BeDeleteFile(fileName);
@@ -637,6 +643,17 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
     if (mpp.GetSpatialRedlining())
         {
         SavePropertyString(DgnProjectProperty::IsSpatialRedline(), "true");
+        }
+
+    //  ------------------------------------------------------------------
+    //  Make sure that we have at least one category
+    //  ------------------------------------------------------------------
+    if (!DgnCategory::QueryFirstCategoryId(*this).IsValid())
+        {
+        DgnCategory cat(DgnCategory::CreateParams(*this, Utf8String(fileName.GetFileNameWithoutExtension()).c_str(), DgnCategory::Scope::Any));
+        DgnSubCategory::Appearance defaultAppearance;
+        defaultAppearance.SetColor(ColorDef(0xff, 0xff, 0xff));
+        cat.Insert(defaultAppearance);
         }
 
     //  ------------------------------------------------------------------

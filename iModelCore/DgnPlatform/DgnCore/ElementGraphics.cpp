@@ -904,12 +904,13 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntity
     if (includeFaceIso)
         {
         Geom2dHatch_Hatcher hatcher = Geom2dHatch_Hatcher(Geom2dHatch_Intersector(1.e-10, 1.e-10), 1.e-8, 1.e-8);
+        bool isSheet = (ISolidKernelEntity::EntityType_Sheet == entity.GetEntityType());
 
         for (TopExp_Explorer ex(*shape, TopAbs_FACE); ex.More(); ex.Next())
             {
             TopoDS_Face const& face = TopoDS::Face(ex.Current());
 
-            OCBRepUtil::HatchFace(graphic, hatcher, face);
+            OCBRepUtil::HatchFace(graphic, hatcher, face, !isSheet);
 
             if (context.CheckStop())
                 return;

@@ -1095,22 +1095,13 @@ bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode
     return _OnOrientationEvent(matrix, mode, ui);
     }
 
+//---------------------------------------------------------------------------------------
 // Gyro vector convention:
 // gyrospace X,Y,Z are (respectively) DOWN, RIGHT, and TOWARDS THE EYE.
 // (gyrospace vectors are in the absolute system of the device.  But it is not important what that is -- just so they are to the same space and their row versus column usage is clarified by the gyroByRow parameter.
-//
 // @bsimethod                                                   Earlin.Lutz     12/2015
-//
-void ApplyGyroChangeToViewingVectors 
-(
-UiOrientation ui,
-RotMatrixCR gyro0,      //!< [in] first gyro -- corresponds to forward0, up0.   Maps screen to gyrospace
-RotMatrixCR gyro1,      //!< [in] second gyro.  Maps screen to gyrospace
-DVec3dCR forward0,      //!< [in] model coordinates forward vector when gyro0 was recorded
-DVec3dCR up0,           //!< [in] model coordinates up vector when gyro0 was recorded
-DVec3dR forward1,       //!< [out] model coordinates up vector for gyro2
-DVec3dR up1             //!< [out] model coordinates up vector for gyro1
-)
+//---------------------------------------------------------------------------------------
+void ApplyGyroChangeToViewingVectors(UiOrientation ui, RotMatrixCR gyro0, RotMatrixCR gyro1, DVec3dCR forward0, DVec3dCR up0, DVec3dR forward1, DVec3dR up1)
     {
     RotMatrix gyroToBSIColumnShuffler;
     
@@ -1542,12 +1533,23 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     m_camera.SetLensAngle(jsonObj[VIEW_SETTING_CameraAngle].asDouble());
     m_camera.SetFocusDistance(jsonObj[VIEW_SETTING_CameraFocalLength].asDouble());
 
+    m_camera.ValidateLens();
+
     DPoint3d eyePt;
     JsonUtils::DPoint3dFromJson(eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);
     m_camera.ValidateLens();
 
     VerifyFocusPlane();
+
+    if (m_isCameraOn)
+        {
+        // if the view was saved with an invalid camera lens, just turn the camera off.
+        double maxDelta = std::max(m_delta.x, m_delta.y);
+        double lensAngle = 2.0 * atan2(maxDelta*0.5, GetFocusDistance());
+        if (!CameraInfo::IsValidLensAngle(lensAngle))
+            m_isCameraOn = false;
+        }
     }
 
 //---------------------------------------------------------------------------------------

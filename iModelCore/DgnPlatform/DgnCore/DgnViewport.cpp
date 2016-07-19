@@ -255,28 +255,27 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFrac
         viewRot.Multiply(eyeToOrigin);                                                   // Rotate to view coordinates.
 
         double focusDistance = camera->GetFocusDistance();
-        double zDeltaLimit = (-focusDistance / GetCameraPlaneRatio()) - eyeToOrigin.z;   // Limit front clip to be in front of camera plane.
-        double zDelta = (delta.z > zDeltaLimit) ? zDeltaLimit : delta.z;                 // Limited zDelta.
+        double zDelta = delta.z;
         double zBack  = eyeToOrigin.z;                                                   // Distance from eye to back clip plane.
         double zFront = zBack + zDelta;                                                  // Distance from eye to front clip plane.
         double minimumFrontToBackClipRatio = GetRenderTarget()->_GetCameraFrustumNearScaleLimit();
 
         if (zFront / zBack < minimumFrontToBackClipRatio)
             {
-            // The ratio between the front and back clipping plane exceeds the resolution of the QuickVision Z-Buffer.
+            // The ratio between the front and back clipping plane exceeds the resolution of the Z-Buffer.
             // We'll handle this by calculating the front clip from the back clipping plane - but first limit
-            // the back clipping distance to 1000 Meters. - This make the minimum front clip
+            // the back clipping distance to 10000 Kilometers. - This make the minimum front clip
             // around a third of a meter and avoids the case where a very large back clip distance
             // causes objects near the camera to disappear.     - RBB 03/2007.
 
-            double maximumBackClip = DgnUnits::OneKilometer();
-
+            double maximumBackClip = 10000.* DgnUnits::OneKilometer();
             if (-zBack > maximumBackClip)
+                {
                 zBack = -maximumBackClip;
+                eyeToOrigin.z = zBack;
+                }
 
             zFront = zBack * minimumFrontToBackClipRatio;
-
-            eyeToOrigin.z = zBack;
             zDelta = zFront - eyeToOrigin.z;
             }
 
@@ -380,7 +379,7 @@ static void validateCamera(CameraViewControllerR controller)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* The front/back clipping planes may need to be adjusted to fit around the actual range of the elements in the model.
+* Adjust the back clip planes to include the project extents.
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR viewController) const
@@ -388,69 +387,45 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
     if (!m_is3dView)
         return;
 
+    DPoint3d originWorld=origin;
+
     m_rotMatrix.Multiply(origin);   // put origin into view orientation
 
     Transform viewTransform;
     viewTransform.InitFrom(m_rotMatrix);
 
     DRange3d extents = viewController.GetViewedExtents();
-    if (!extents.IsEmpty())
-        viewTransform.Multiply(extents, extents);
+    if (extents.IsEmpty())
+        return;
+
+    Frustum extFrust(extents);
+    extFrust.Multiply(viewTransform);
+    extents = extFrust.ToRange();
+
+    origin.z = extents.low.z;
+
+    if (m_isCameraOn)
+        {
+        DVec3d cameraDir;
+        cameraDir.DifferenceOf(m_camera.GetEyePoint(), originWorld);
+        m_rotMatrix.Multiply(cameraDir);
+
+        // set the front plane distance to about twice the length of the average human nose
+        delta.z = cameraDir.z - (120.0 * DgnUnits::OneMillimeter()); 
+        }
     else
         {
-        extents.low = origin;
-        extents.high.SumOf(origin,delta);
-        }
-
-    // calculate the distance from the current origin to the back plane along the eye vector
-    double dist = (origin.z - extents.low.z);
-
-    // if the distance is negative, the unadjusted backplane is further away from the eye than the back of the model.
-    // In that case, we want to bring the backplane in as close as possible to the model to give the best resolution for the z buffer.
-    // If the distance is positive, some of the model is clipped by the current frustum. Does he want that - check "noBackClip" flag.
-    // noBackClip
-    origin.z -= dist;
-    delta.z  += dist;
-
-    // get distance from (potentially moved) origin to front plane.
-    double newDeltaZ = std::max(extents.high.z - origin.z, 100. * DgnUnits::OneMillimeter());
-
-    // noFrontClip
-    delta.z = newDeltaZ;
-
-    DVec3d  zVec;
-    m_rotMatrix.GetRow(zVec, 2);
-
-    double maxDepth = SpatialViewController::CalculateMaxDepth(delta, zVec);
-    double minDepth = std::max(std::max(delta.x, delta.y),(DgnUnits::OneMillimeter() * 150.)); // About 6 inches...
-
-    if (minDepth > maxDepth)
-        minDepth = maxDepth;
-
-    if (minDepth > delta.z)     // expand depth to extents
-        {
-        double diff = (minDepth - delta.z) / 2.0;
-
-        // noBackClip
-        origin.z -= diff;
-        delta.z  += diff;
-
-        // noFrontClip
-        delta.z += diff;
-        }
-
-    // we can't allow the z dimension to be too large relative to x/y. Otherwise the transform math fails due to precision errors.
-    if (delta.z > maxDepth)
-        {
-        double diff = (maxDepth - delta.z) / 2.0;
-
-        origin.z -= diff;
-        delta.z  = maxDepth;
+        delta.z = std::max(extents.high.z - origin.z, DgnUnits::OneMeter());
         }
 
     m_rotMatrix.MultiplyTranspose(origin);
     }
 
+struct ViewChangedCaller
+    {
+    ViewChangedCaller() {}
+    void CallHandler(DgnViewport::Tracker& tracker) const {tracker._OnViewChanged();}
+    };
 /*---------------------------------------------------------------------------------**//**
 * set up this viewport from its viewController
 * @bsimethod                                                    KeithBentley    04/02
@@ -551,6 +526,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
 
     m_sync.SetValidController();
 
+    m_trackers.CallAllHandlers(ViewChangedCaller());
     return ViewportStatus::Success;
     }
 
@@ -738,7 +714,6 @@ DPoint3d DgnViewport::DetermineDefaultRotatePoint()
 
 /*---------------------------------------------------------------------------------**//**
 * scroll the view by a given number of pixels.
-* Camera position is unchanged.
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scroll in pixels
