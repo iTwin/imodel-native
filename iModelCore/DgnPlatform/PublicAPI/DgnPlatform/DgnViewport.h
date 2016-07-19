@@ -248,7 +248,7 @@ public:
     //! @param[in] subRectNpc If non-NULL, only search within a sub rectangle of the view. In NPC coordinates.
     //! @return SUCCESS if there were visible elements within the view, ERROR otherwise.
     //! @private
-    DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpc(double& low, double& high, DRange3dCP subRectNpc=NULL);
+    DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpc(double& low, double& high, DRange3dCP subRectNpc=nullptr);
 
     //! @return the point to use as the default rotation point at the center of the visible elements in the view.
     //! @note this method calls DetermineVisibleDepthNpc, which can be time consuming.
@@ -551,7 +551,7 @@ public:
     DGNVIEW_EXPORT Render::Image ReadImage(Point2d targetSize={0,0});
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
-    static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth
+    static double GetMaxViewDelta() {return 2.0 * DgnUnits::DiameterOfEarth();}
     static double GetCameraPlaneRatio() {return 300.0;}
 };
 

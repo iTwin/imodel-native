@@ -765,7 +765,7 @@ ViewportStatus  CameraViewController::_SetupFromFrustum(Frustum const& frustum)
     SetOrigin(viewOrg);
     SetDelta(viewDelta);
     SetCameraOn(true);
-    CalculateLensAngle();
+    SetLensAngle(CalcLensAngle());
     return ViewportStatus::Success;
     }
 
@@ -1018,11 +1018,10 @@ CameraViewController::CameraViewController(DgnDbR project, DgnViewId viewId) : S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::CalculateLensAngle()
+double CameraViewController::CalcLensAngle()
     {
     double maxDelta = std::max(m_delta.x, m_delta.y);
-    double lensAngle = 2.0 * atan2(maxDelta*0.5, GetFocusDistance());
-    SetLensAngle(lensAngle);
+    return 2.0 * atan2(maxDelta*0.5, GetFocusDistance());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1392,6 +1391,17 @@ void CameraViewController::VerifyFocusPlane()
 
     double backDist = eyeOrg.z;
     double frontDist = backDist - m_delta.z;
+
+    if (backDist<=0.0 || frontDist<=0.0)
+        {
+        // the camera location is invalid. Set it based on the view range.
+        double tanangle = tan(m_camera.GetLensAngle()/2.0);
+        backDist = m_delta.z / tanangle;
+        m_camera.SetFocusDistance(backDist/2);
+        CenterEyePoint(&backDist);
+        return;
+        }
+
     double focusDist = m_camera.GetFocusDistance();
     if (focusDist>frontDist && focusDist<backDist)
         return;
@@ -1469,7 +1479,7 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     SetFocusDistance(focusDist);
     SetOrigin(origin);
     SetDelta(delta);
-    CalculateLensAngle();
+    SetLensAngle(CalcLensAngle());
 
     return ViewportStatus::Success;
     }
@@ -1611,11 +1621,10 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     m_camera.SetLensAngle(jsonObj[VIEW_SETTING_CameraAngle].asDouble());
     m_camera.SetFocusDistance(jsonObj[VIEW_SETTING_CameraFocalLength].asDouble());
 
-    m_camera.ValidateLens();
-
     DPoint3d eyePt;
     JsonUtils::DPoint3dFromJson(eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);
+    m_camera.ValidateLens();
 
     VerifyFocusPlane();
     }

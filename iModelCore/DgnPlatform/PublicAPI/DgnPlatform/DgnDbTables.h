@@ -673,9 +673,10 @@ public:
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
     DGNPLATFORM_EXPORT DgnGCS* GetDgnGCS() const;
 
-    static double const OneMeter() {return 1.;}
-    static double const OneKilometer() {return 1000. * OneMeter();}
-    static double const OneMillimeter() {return OneMeter() / 1000.;}
+    static double const OneMeter() {return 1.0;}
+    static double const OneKilometer() {return 1000.0 * OneMeter();}
+    static double const OneMillimeter() {return OneMeter() / 1000.0;}
+    static double const DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
 };
 
 //=======================================================================================
