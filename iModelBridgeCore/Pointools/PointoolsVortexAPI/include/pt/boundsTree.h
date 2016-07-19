@@ -10,7 +10,7 @@
 #include <pt/flags.h>
 #include <math/matrix_math.h>
 #include <queue>
-#include <vortexobjects/IClashNode.h>
+#include <Vortex/IClashNode.h>
 
 
 namespace pt

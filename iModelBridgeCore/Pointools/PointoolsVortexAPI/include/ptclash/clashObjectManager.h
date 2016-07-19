@@ -6,7 +6,7 @@
 
 #include <ptclash/clashSet.h>
 
-#include <vortexobjects/IClashObject.h>
+#include <Vortex/IClashObject.h>
 
 namespace vortex
 {	

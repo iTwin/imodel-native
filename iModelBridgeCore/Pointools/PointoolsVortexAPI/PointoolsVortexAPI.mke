@@ -30,6 +30,12 @@ MultiCompileDepends = $(_MakeFileSpec) $(appSrc)src/PointoolsVortexAPIInternal.h
 always:
     !~@mkdir $(o)    
 
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+PointoolsPublicAPISrc       = $(SrcRoot)Pointools/PointoolsVortexAPI/PublicAPI/
+PointoolsVortexPublicAPISrc = $(PointoolsPublicAPISrc)Vortex/
+
 #----------------------------------------------------------------------
 # Encrypt GPU Shaders (Uses enc-shaders.exe part)
 #----------------------------------------------------------------------
@@ -141,7 +147,7 @@ $(o)pointoolsapi_files$(oext)            : $(basedir)src/ptapi/pointoolsapi_file
 
 $(o)renderRGBEffect$(oext)               : $(basedir)src/ptengine/renderRGBEffect.cpp                            $(basedir)include/ptengine/renderRGBEffect.h                     ${MultiCompileDepends}
 
-$(o)IClashObjectManager$(oext)           : $(basedir)src/vortexobjects/IClashObjectManager.cpp                   $(basedir)include/vortexobjects/IClashObjectManager.h            ${MultiCompileDepends}
+$(o)IClashObjectManager$(oext)           : $(basedir)src/vortexobjects/IClashObjectManager.cpp                   $(PointoolsVortexPublicAPISrc)IClashObjectManager.h              ${MultiCompileDepends}
 
 $(o)Matrix4$(oext)                       : $(basedir)src/pt/Matrix4.cpp                                          $(basedir)include/pt/matrix4.h                                   ${MultiCompileDepends}
 
@@ -257,7 +263,7 @@ $(o)DataSourceReadSet$(oext)             : $(basedir)src/ptds/DataSourceReadSet.
                                                                                                                   
 $(o)clashObjectManager$(oext)            : $(basedir)src/ptclash/clashObjectManager.cpp                          $(basedir)include/ptclash/clashObjectManager.h                   ${MultiCompileDepends}
                                                                                                                      
-$(o)IClashNode$(oext)                    : $(basedir)src/vortexobjects/IClashNode.cpp                            $(basedir)include/vortexobjects/IClashNode.h                     ${MultiCompileDepends}
+$(o)IClashNode$(oext)                    : $(basedir)src/vortexobjects/IClashNode.cpp                            $(PointoolsVortexPublicAPISrc)IClashNode.h                       ${MultiCompileDepends}
                                                                                                                   
 $(o)pod$(oext)                           : $(basedir)src/ptcloud2/pod.cpp                                        $(basedir)include/ptcloud2/pod.h                                 ${MultiCompileDepends}
                                                                                                                   
@@ -299,7 +305,7 @@ $(o)PointoolsAPI_tuning$(oext)           : $(basedir)src/ptapi/PointoolsAPI_tuni
                                                                                                                   
 $(o)PointoolsAPI_viewports$(oext)        : $(basedir)src/ptapi/PointoolsAPI_viewports.cpp                                                                                          ${MultiCompileDepends}
                                                                                                                   
-$(o)IClashObject$(oext)                  : $(basedir)src/vortexobjects/IClashObject.cpp                          $(basedir)include/vortexobjects/IClashObject.h                   ${MultiCompileDepends}
+$(o)IClashObject$(oext)                  : $(basedir)src/vortexobjects/IClashObject.cpp                          $(PointoolsVortexPublicAPISrc)IClashObject.h                     ${MultiCompileDepends}
                                                                                                                               
 $(o)clashObject$(oext)                   : $(basedir)src/ptclash/clashObject.cpp                                 $(basedir)include/ptclash/clashObject.h                          ${MultiCompileDepends}
                                                                                                                                                                                                                                     
@@ -349,7 +355,7 @@ $(o)datatreeNode$(oext)                  : $(basedir)src/pt/datatreeNode.cpp    
                                                                                                                   
 $(o)gradient$(oext)                      : $(basedir)src/ptcloud2/gradient.cpp                                   $(basedir)include/ptcloud2/gradient.h                            ${MultiCompileDepends}
                                                                                                                   
-$(o)IClashTree$(oext)                    : $(basedir)src/vortexobjects/IClashTree.cpp                            $(basedir)include/vortexobjects/IClashTree.h                     ${MultiCompileDepends}
+$(o)IClashTree$(oext)                    : $(basedir)src/vortexobjects/IClashTree.cpp                            $(PointoolsVortexPublicAPISrc)IClashTree.h                       ${MultiCompileDepends}
                                                                                                                   
 $(o)clashSet$(oext)                      : $(basedir)src/ptclash/clashSet.cpp                                    $(basedir)include/ptclash/clashSet.h                             ${MultiCompileDepends}
                                                                                                                      

@@ -2,7 +2,7 @@
 #ifndef ICLASHOBJECT_D812C84B_F4FD_4b3b_B2AC_F22966CBE251_H
 #define ICLASHOBJECT_D812C84B_F4FD_4b3b_B2AC_F22966CBE251_H
 
-#include "VortexObjects/VortexObjects_import.h"
+#include <Vortex/VortexObjects_import.h>
 #include <Vortex/VortexErrors.h>
 namespace vortex
 {	
