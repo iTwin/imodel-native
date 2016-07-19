@@ -117,8 +117,8 @@
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
-        <ProductDirectory Name="BeHttpAssets"                       Path="Assets/BeHttp"/>
-        <ProductDirectory Name="BeHttpAssets"                       Path="Assets/BeHttp" LibType="static"/>
+        <ProductDirectory Name="BeHttpAssets"                       Path="Assets/http"/>
+        <ProductDirectory Name="BeHttpAssets"                       Path="Assets/http" LibType="static"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
         <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb"/>
