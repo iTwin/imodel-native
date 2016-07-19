@@ -582,12 +582,7 @@ DgnDbStatus DgnElement::_InsertInDb()
         }
 
     if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
-        {
-        m_flags.m_autoHandledPropsDirty = false;
-        ECInstanceUpdater* updater = GetAutoHandledPropertiesUpdater();
-        if (nullptr != updater)
-            updater->Update(*m_autoHandledProperties);
-        }
+        UpdateAutoHandledProperties();
 
     if (m_userProperties)
         status = SaveUserProperties();
@@ -626,6 +621,9 @@ DgnDbStatus DgnElement::_UpdateInDb()
 
         return DgnDbStatus::WriteError;
         }
+
+    if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
+        UpdateAutoHandledProperties();
 
     if (m_userProperties)
         status = SaveUserProperties();
@@ -894,6 +892,12 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     m_label     = other.m_label;
     m_parentId  = other.m_parentId;
     
+    if (other.m_autoHandledProperties.IsValid())
+        {
+        GetAutoHandledProperties();
+        m_autoHandledProperties->CopyValues(*other.m_autoHandledProperties);
+        }
+
     CopyUserProperties(other);
     }
 
@@ -2681,6 +2685,41 @@ DgnElementIdSet ElementAssemblyUtil::GetAssemblyElementIdSet(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+// *** WIP_AUTO_HANDLED_PROPERTIES:  Delete this when we add the necessary custom attributes to the BIS core schema
+static bool notAutoHandled(Utf8StringCR propName)
+    {
+    return propName.Equals(DGN_ELEMENT_PROPNAME_LastMode) || propName.Equals("UserProperties");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::UpdateAutoHandledProperties()
+    {
+    if (!m_autoHandledProperties.IsValid() || !m_flags.m_autoHandledPropsDirty)
+        return DgnDbStatus::Success;
+    
+    m_flags.m_autoHandledPropsDirty = false;
+    ECInstanceUpdater* updater = GetAutoHandledPropertiesUpdater();
+    if (nullptr == updater)
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongClass;
+        }
+
+    if (m_autoHandledProperties->GetInstanceId().empty())
+        {
+        Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        GetElementId().ToString(idStrBuffer);
+        m_autoHandledProperties->SetInstanceId(idStrBuffer);
+        }
+
+    return (BSISUCCESS == updater->Update(*m_autoHandledProperties))? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() const
     {
     BeAssert(m_flags.m_hasAutoHandledProps == 1);
@@ -2705,7 +2744,8 @@ BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() c
         {
         // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will be looking
         //                                  for only custom-handled properties that should be included in UPDATE statements
-        if (cas.end() == cas.find(prop->GetName()))
+        Utf8StringCR propName = prop->GetName();
+        if (!notAutoHandled(propName) && (cas.end() == cas.find(propName)))
             {
             autoHandledProperties.push_back(prop);
             }
@@ -2731,8 +2771,6 @@ ECN::IECInstanceP DgnElement::GetAutoHandledProperties() const
     ECN::ECClassCP eclass = GetElementClass();
     DgnClassId eclassid(eclass->GetId().GetValue());
 
-    m_autoHandledProperties = eclass->GetDefaultStandaloneEnabler()->CreateInstance();
-
     // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will just read them
     //                                  For now, we let the handlers tell us which properties have custom handling attributes
     auto handler = dgn_ElementHandler::Element::FindHandler(GetDgnDb(), eclassid);
@@ -2744,7 +2782,7 @@ ECN::IECInstanceP DgnElement::GetAutoHandledProperties() const
     for (auto prop : eclass->GetProperties())
         {
         Utf8StringCR propName = prop->GetName();
-        if (cas.end() == cas.find(propName))
+        if (!notAutoHandled(propName) && (cas.end() == cas.find(propName)))
             {
             // *** WIP_AUTO_HANDLED_PROPERTIES: When we add the necessary custom attributes to the BIS core schema, we will be looking
             //                                  for custom-handled properties that should be included in SELECT statements
@@ -2764,11 +2802,18 @@ ECN::IECInstanceP DgnElement::GetAutoHandledProperties() const
     auto stmt = GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=?", props.c_str(), eclass->GetECSqlName().c_str()).c_str());
 
     stmt->BindId(1, GetElementId());
-    if (BE_SQLITE_ROW != stmt->Step())
-        return nullptr;
-
-    ECInstanceECSqlSelectAdapter adapter(*stmt);
-    m_autoHandledProperties = adapter.GetInstance();
+    if (BE_SQLITE_ROW == stmt->Step())
+        {
+        ECInstanceECSqlSelectAdapter adapter(*stmt);
+        m_autoHandledProperties = adapter.GetInstance();
+        Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        GetElementId().ToString(idStrBuffer);
+        m_autoHandledProperties->SetInstanceId(idStrBuffer);
+        }
+    else
+        {
+        m_autoHandledProperties = eclass->GetDefaultStandaloneEnabler()->CreateInstance();
+        }
 
     return m_autoHandledProperties.get();
     }

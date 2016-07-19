@@ -672,6 +672,7 @@ protected:
     
     ECN::IECInstanceP GetAutoHandledProperties() const;
     BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() const;
+    DgnDbStatus UpdateAutoHandledProperties();
 
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -1158,9 +1159,6 @@ public:
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
 
-    //! @private *** WIP_AUTO_HANDLED_PROPERTIES Get rid of "unhandledprops"
-    DGNPLATFORM_EXPORT void ComputeUnhandledProperties(bvector<ECN::ECPropertyCP>&) const;
-    
     //! @}
 };
 
